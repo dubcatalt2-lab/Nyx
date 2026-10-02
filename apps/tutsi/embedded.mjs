@@ -42,7 +42,7 @@ export function decorateEmbedded(doc, app) {
     const link = doc.createElement("link");
     link.id = "tutsi-embedded-style";
     link.rel = "stylesheet";
-    link.href = "/apps/tutsi/embedded.css?v=20260930-model-directory";
+    link.href = "/apps/tutsi/embedded.css?v=20261002-app-palettes";
     doc.head.append(link);
   }
   doc.title =

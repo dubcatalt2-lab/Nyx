@@ -12,7 +12,8 @@ import {installAiMedia} from './lib/ai-media.mjs';
 import {publishSurgeLink,validateSurgeToken} from './lib/surge-publisher.mjs';
 import {createGameReports} from './lib/game-reports.mjs';
 import {gameResourceTarget} from './assets/games/game-cdn.js';
-import {repairGameResource} from './lib/game-resource-repairs.mjs';
+import {gameResourceEdit} from './lib/game-resource-repairs.mjs';
+import {createGameProxy} from './lib/game-proxy-stream.mjs';
 import { exchangeVoiceAudio, createVoiceAudioAccess, cleanupVoiceAudio } from './lib/chat-voice-relay.mjs';
 import {recordAiExchange,readAiActivity} from './lib/ai-history.mjs';
 import {assignableAiModels,validateAiModelRules} from './lib/ai-model-policy.mjs';
@@ -98,7 +99,8 @@ const nyxCustomRoleLabelLimit = 64;
 const app = express();
 const appTraffic = createAppTraffic({file:process.env.NYX_TRAFFIC_FILE || (process.platform === 'win32' ? join(process.env.TEMP || __dirname, 'nyx-app-traffic.json') : '/var/lib/nyx/app-traffic.json')});
 app.use(appTraffic.middleware);
-startMemoryMonitor();
+const gameProxy = createGameProxy();
+startMemoryMonitor({details: () => ({gameProxy: gameProxy.stats()})});
 const dropOwnerScope=createDropOwnerScope({verify:async token=>(await linkGeneratorFirebase()).auth.verifyIdToken(token,true)});
 app.use(dropOwnerScope.middleware);
 app.get(['/agents','/agents/'],(_req,res)=>res.redirect(302,'/apps/agents/'));
@@ -1909,23 +1911,12 @@ app.get("/gn-math-asset", async (req, res) => {
     return;
   }
   try {
-    const upstream = await fetch(`https://raw.githubusercontent.com/${gnMathOwner}/${repo}/main/${path}`, {
-      headers: {
-        "accept": "*/*",
-        "user-agent": "nyx/1.0"
-      }
+    await gameProxy.send(req, res, {
+      candidates: [new URL(`https://raw.githubusercontent.com/${gnMathOwner}/${repo}/main/${path}`)],
+      cacheControl: 'public, max-age=3600'
     });
-    if (!upstream.ok) {
-      res.status(upstream.status).type("text/plain").send(`GN Math asset returned ${upstream.status}`);
-      return;
-    }
-    const contentType = upstream.headers.get("content-type");
-    if (contentType) res.setHeader("Content-Type", contentType);
-    res.setHeader("Cache-Control", "public, max-age=3600");
-    res.send(Buffer.from(await upstream.arrayBuffer()));
-  } catch (error) {
-    res.status(502).type("text/plain").send(`GN Math asset network error: ${error?.message || error}`);
-  }
+  } catch (error) { gameProxyError(res, error, 'GN Math asset network error'); }
+
 });
 
 const gnMathProxyHosts = new Set([
@@ -1947,35 +1938,13 @@ function safeGnMathProxyUrl(value) {
   }
 }
 
-async function directProxyFetch(url) {
-  let upstream;
-  let lastError;
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    try {
-      upstream = await fetch(url, {
-        headers: {
-          "accept": "*/*",
-          "user-agent": "nyx/1.0"
-        }
-      });
-      if (upstream.ok || ![429, 500, 502, 503, 504].includes(upstream.status)) break;
-    } catch (error) {
-      lastError = error;
-    }
-    await new Promise(resolve => setTimeout(resolve, 180 + attempt * 260));
-  }
-  if (!upstream && lastError) throw lastError;
-  if (!upstream.ok) {
-    const error = new Error(`HTTP ${upstream.status}`);
-    error.status = upstream.status;
-    throw error;
-  }
-  const body = Buffer.from(await upstream.arrayBuffer());
-  return {
-    body,
-    contentType: upstream.headers.get("content-type") || "application/octet-stream",
-    cacheControl: "no-store"
-  };
+function gameProxyError(res, error, label) {
+  if (res.destroyed) return;
+  if (res.headersSent) { res.destroy(); return; }
+  res.status(error?.status || 502).type('text/plain').send(`${label}: ${error?.message || 'upstream unavailable'}`);
+}
+function validateGameProxy(url, result) {
+  if (isHtmlProxyPayload(url, result)) throw Object.assign(new Error('upstream returned HTML for a game resource'), {status: 502});
 }
 
 function isHtmlProxyPayload(url, result) {
@@ -2071,26 +2040,14 @@ app.get("/gn-math-proxy", async (req, res) => {
     res.status(400).type("text/plain").send("Invalid GN Math proxy URL");
     return;
   }
-  let lastError;
-  for (const candidate of gnMathProxyCandidates(url)) {
-    try {
-      let result = await directProxyFetch(candidate);
-      if (isHtmlProxyPayload(candidate, result)) {
-        const error = new Error("upstream returned HTML for a game resource");
-        error.status = 502;
-        throw error;
-      }
-      result = rewriteGnMathJsonAssets(candidate, result);
-      res.setHeader("Cache-Control", result.cacheControl);
-      res.setHeader("X-Content-Type-Options", "nosniff");
-      res.type(gnMathResourceContentType(candidate, result.contentType));
-      res.send(result.body);
-      return;
-    } catch (error) {
-      lastError = error;
-    }
-  }
-  res.status(lastError?.status || 502).type("text/plain").send(`GN Math proxy error: ${lastError?.message || lastError}`);
+  try {
+    await gameProxy.send(req, res, {
+      candidates: gnMathProxyCandidates(url), validate: validateGameProxy, contentType: gnMathResourceContentType,
+      transform: (candidate, type) => /\.json$/i.test(candidate.pathname)
+        ? body => rewriteGnMathJsonAssets(candidate, {body, contentType: type}).body : null
+    });
+  } catch (error) { gameProxyError(res, error, 'GN Math proxy error'); }
+
 });
 
 app.options(/^\/gn-math-resource\//, (req, res) => { setGnMathCors(req, res); res.sendStatus(204); });
@@ -2098,18 +2055,14 @@ app.get(/^\/gn-math-resource\//, async (req, res) => {
   setGnMathCors(req, res);
   const target = gameResourceTarget(req.originalUrl);
   if (!target || !safeGnMathProxyUrl(target.href)) return res.status(400).type('text/plain').send('Invalid game resource URL');
-  let lastError;
-  for (const candidate of gnMathProxyCandidates(target)) {
-    try {
-      const result = await directProxyFetch(candidate);
-      if (isHtmlProxyPayload(candidate, result)) throw Object.assign(new Error('upstream returned HTML for a game resource'), {status: 502});
-      // Never rewrite arbitrary JSON strings. The path preserves their base.
-      res.setHeader('Cache-Control', result.cacheControl);
-      res.setHeader('X-Content-Type-Options', 'nosniff');
-      return res.type(gnMathResourceContentType(candidate, result.contentType)).send(repairGameResource(target, result.body));
-    } catch (error) { lastError = error; }
-  }
-  res.status(lastError?.status || 502).type('text/plain').send(`Game resource error: ${lastError?.message || 'upstream unavailable'}`);
+  try {
+    await gameProxy.send(req, res, {
+      candidates: gnMathProxyCandidates(target), validate: validateGameProxy, contentType: gnMathResourceContentType,
+      // Match repairs against the requested resource, even on an alternate mirror.
+      transform: (_candidate, _type, prefix) => gameResourceEdit(target, prefix)
+    });
+  } catch (error) { gameProxyError(res, error, 'Game resource error'); }
+
 });
 
 const redsMiscProxyHosts = new Set([
@@ -2166,12 +2119,8 @@ async function handleGmsGamesFetch(req, res) {
   }
   try {
     const url = new URL(`https://raw.githubusercontent.com/isaacduh123/reds-exploit-corner/main/${path}`);
-    const result = await directProxyFetch(url);
-    res.setHeader("Cache-Control", "no-store");
-    res.type("html").send(result.body);
-  } catch (error) {
-    res.status(error?.status || 502).type("text/plain").send(`GMS network error: ${error?.message || error}`);
-  }
+    await gameProxy.send(req, res, {candidates: [url], contentType: () => 'text/html; charset=utf-8'});
+  } catch (error) { gameProxyError(res, error, 'GMS network error'); }
 }
 
 async function handleGmsGamesProxy(req, res) {
@@ -2181,15 +2130,12 @@ async function handleGmsGamesProxy(req, res) {
     return;
   }
   try {
-    const result = await directProxyFetch(url);
-    const isCss = /text\/css/i.test(result.contentType) || /\.css(?:$|\?)/i.test(url.pathname);
-    const body = isCss ? rewriteGmsCssUrls(result.body, url.href) : result.body;
-    res.setHeader("Cache-Control", result.cacheControl);
-    res.type(result.contentType);
-    res.send(body);
-  } catch (error) {
-    res.status(error?.status || 502).type("text/plain").send(`GMS proxy error: ${error?.message || error}`);
-  }
+    await gameProxy.send(req, res, {
+      candidates: [url],
+      transform: (candidate, type) => /text\/css/i.test(type) || /\.css$/i.test(candidate.pathname)
+        ? body => rewriteGmsCssUrls(body, candidate.href) : null
+    });
+  } catch (error) { gameProxyError(res, error, 'GMS proxy error'); }
 }
 
 app.get("/gms-games-fetch", handleGmsGamesFetch);
@@ -7977,7 +7923,7 @@ function nyxTubeRoute(handler, cacheControl = "private, max-age=120") {
   };
 }
 
-const nyxTubeBackend = createTubeBackend({ videoInfo: (id, options) => nyxTubeCatalog.info(id, options) });
+const nyxTubeBackend = createTubeBackend({ videoInfo: (id, options) => nyxTubeCatalog.playbackInfo(id, options) });
 app.use(tubeStreamingRoutes({
   backend: nyxTubeBackend, sameOrigin: sameOriginRequest, clientIp: nyxClientIp,
   owner: async req => {

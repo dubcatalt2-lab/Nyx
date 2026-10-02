@@ -27,6 +27,23 @@ has bounded output and a private temporary cookie copy removed on completion.
 Native preparation reuses full catalog metadata; signed media URLs stay server-only.
 This replaces Google developer quotas, not YouTube's own throttling or login checks.
 
+On an extractor service, login, setup or rate failure, the catalog can use the
+Invidious API for searches, public-video details, channels and comments. Explicit
+video restrictions and full queues do not trigger this fallback. Set the server-only
+`NYX_INVIDIOUS_ORIGINS` to up to three comma-separated HTTPS instance origins;
+an empty string disables it. The default is `https://invidious.f5.si`, listed as
+API-enabled when checked on October 2, 2026. Public instances can change or fail.
+No account credentials or cookies are forwarded. Calls have a two-request admission
+limit, a two-MiB response limit, per-instance timeout and failure cooldown. The
+primary extractor is retried after 30 seconds rather than retried on every lookup.
+
+This fallback is metadata-only: its media URLs returned HTTP 403 from the VPS, and
+its local playback path returned HTML instead of video during verification. It does
+not advertise those URLs as working native formats. Native playback still requires
+valid extractor media access; the existing YouTube player remains available. Shorts
+are YouTube videos, not a separate Invidious format; Drop's existing Shorts exclusion
+and the other sites' existing Shorts players remain unchanged.
+
 `NYX_YTDLP_BIN` and the existing optional cookie-file setting also apply to the
 catalog. The OVH installer already provides the tool. Native playback can remain
 disabled while catalog search and the embedded player work. The separate Nyxify

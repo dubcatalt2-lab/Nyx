@@ -383,7 +383,9 @@ async function minifyFirstPartyMarkupAndStyles() {
     sourceBytes += Buffer.byteLength(source);
     let transformed;
     if (relative.endsWith(".css")) {
-      const result = new CleanCSS({ inline: ["none"], level: 2, rebase: false }).minify(source);
+      // CleanCSS treats a UTF-8 BOM before @import as part of a selector and
+      // silently discards both the import and the first rule after it.
+      const result = new CleanCSS({ inline: ["none"], level: 2, rebase: false }).minify(source.replace(/^\uFEFF/, ""));
       if (result.errors.length) throw new Error(`Could not minify ${relative}: ${result.errors.join("; ")}`);
       transformed = result.styles;
     } else {

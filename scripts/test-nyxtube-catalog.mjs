@@ -16,7 +16,7 @@ let catalog, running = 0, peak = 0, calls = 0, fail = false, clock = Date.now();
 const sessionPaths = [];
 try {
   const cookieFile = join(root, 'session.txt'); await writeFile(cookieFile, 'TEST-PRIVATE-SESSION');
-  catalog = createTubeCatalog({ env: { NYX_YTDLP_BIN: 'test', NYX_YOUTUBE_COOKIES_FILE: cookieFile }, now: () => clock,
+  catalog = createTubeCatalog({ fallback: false, env: { NYX_YTDLP_BIN: 'test', NYX_YOUTUBE_COOKIES_FILE: cookieFile }, now: () => clock,
     execute: async (_binary, args, opts) => {
       calls++; running++; peak = Math.max(peak, running);
       try {

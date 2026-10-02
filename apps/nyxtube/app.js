@@ -36,10 +36,26 @@
   function applyTheme() {
     if(document.documentElement.dataset.appShell==='tutsi')return;
     if (dropTube) return;
-    const raw = String(localStorage.getItem("theme") || localStorage.getItem("nyxTheme") || "").toLowerCase();
-    const theme = ["ruby", "emerald", "sakura", "fresh"].find(name => raw.includes(name));
-    if (theme) document.body.classList.add(`theme-${theme}`);
+    const root = document.documentElement;
+    const themes = ['default','midnight','ruby','emerald','sakura','fresh','halloween','custom'];
+    try {
+      const value = localStorage.getItem('nyx.theme') || 'default';
+      const theme = themes.includes(value) ? value : 'default';
+      root.dataset.nyxTheme = theme;
+      root.dataset.nyxAppearance = localStorage.getItem('nyx.appearance') === 'light' ? 'light' : 'dark';
+      document.body.classList.remove(...themes.map(name => `theme-${name}`));
+      document.body.classList.add(`theme-${theme}`);
+      const custom = localStorage.getItem('nyx.customThemeColor');
+      if (theme === 'custom' && /^#[a-f0-9]{6}$/i.test(custom || '')) root.style.setProperty('--nyx-custom-base', custom);
+      else root.style.removeProperty('--nyx-custom-base');
+    } catch { /* The parent shell can still apply the palette when storage is blocked. */ }
   }
+  addEventListener('storage', event => {
+    if (['nyx.theme','nyx.appearance','nyx.customThemeColor'].includes(event.key)) applyTheme();
+  });
+  addEventListener('message', event => {
+    if (event.source === parent && event.origin === location.origin && event.data?.type === 'nyx:theme-sync') applyTheme();
+  });
   const icon = id => `<svg aria-hidden="true"><use href="#${id}"></use></svg>`;
   function notice(message = "") { refs.notice.textContent = dropTube ? String(message).replace(/NyxTube/g, 'DropTube') : message; refs.notice.hidden = !message; }
   async function json(url, signal) {

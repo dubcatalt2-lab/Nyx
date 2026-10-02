@@ -3,6 +3,14 @@ html[data-tutsi-app] {
   --tutsi-panel: var(--surface);
   --tutsi-line: var(--border);
   --tutsi-radius: 16px;
+  /* Resolve shared app aliases here too: descendant variables can inherit them. */
+  --app-bg: var(--bg);
+  --app-panel: var(--surface);
+  --app-field: var(--field);
+  --app-raised: var(--surface-hover);
+  --app-text: var(--text);
+  --app-muted: var(--muted);
+  --app-line: var(--border);
 }
 html[data-tutsi-app] :is(button, a, .game-card, .video-card, .card) {
   transition:
@@ -12,6 +20,14 @@ html[data-tutsi-app] :is(button, a, .game-card, .video-card, .card) {
     opacity 240ms ease;
 }
 html[data-tutsi-app] body {
+  /* Shared apps consume these tokens even with Nyx's stylesheet excluded. */
+  --app-bg: var(--bg);
+  --app-panel: var(--surface);
+  --app-field: var(--field);
+  --app-raised: var(--surface-hover);
+  --app-text: var(--text);
+  --app-muted: var(--muted);
+  --app-line: var(--border);
   font-family: "Indie Flower", cursive !important;
   background-image: none !important;
 }
@@ -604,6 +620,9 @@ html[data-tutsi-app="chat"] body:has(.chat-app) {
 }
 html[data-tutsi-app="chat"] .chat-app .conversation {
   background: var(--bg) !important;
+}
+html[data-tutsi-app="chat"] .chat-app::before {
+  display: none;
 }
 html[data-tutsi-app="chat"]
   .chat-app

@@ -21,9 +21,9 @@ function request(url, statusCode=200, duration=20, aborted=false) {
 try {
   request('/healthz'); request('/api/owner-dashboard/traffic?minutes=60');
   assert.equal(collector.snapshot().totals.requests,0,'Monitoring must not inflate traffic');
-  assert.equal(collector.snapshot().peakMembers,null,'Old traffic cannot invent member history');
-  collector.recordMembers(7); collector.recordMembers(3);
-  assert.equal(collector.snapshot().peakMembers.count,7,'Peak retains concurrent high point, not accumulated visitors');
+  assert.equal(collector.snapshot().peakOnline,null,'Old traffic cannot invent online history');
+  collector.recordOnline(7); collector.recordOnline(3);
+  assert.equal(collector.snapshot().peakOnline.count,7,'Peak retains concurrent high point, not accumulated visitors');
   request('/asset.js?token=secret',200,100); request('/api/example',503,300); request('/cancel',200,50,true);
   let result = collector.snapshot();
   assert.equal(result.totals.requests,3); assert.equal(result.totals.errors,1); assert.equal(result.totals.aborted,1);
@@ -31,7 +31,7 @@ try {
   assert.equal(result.points.at(-2).requests,null,'Unmeasured history is not zero traffic');
   const first = result.peak.at;
   now=first+60000;
-  collector.recordMembers(12);
+  collector.recordOnline(12);
   for(let i=0;i<8;i++)request('/static',200,10);
   result=collector.snapshot(); assert.equal(result.peak.requests,8); assert.equal(result.peak.at,first+60000);
   assert.equal(result.totals.requests,11); assert.equal(result.points.at(-1).partial,true);
@@ -40,12 +40,19 @@ try {
   now=first+3*60000;
   const restarted=createAppTraffic({file,now:()=>now,flushMs:0});
   assert.equal(restarted.snapshot().totals.requests,11,'Counts survive a restart');
-  assert.equal(restarted.snapshot().peakMembers.count,12,'Member peak survives restart');
-  assert.equal(restarted.snapshot().peakMembers.at,first+60000);
+  assert.equal(restarted.snapshot().peakOnline.count,12,'Member peak survives restart');
+  assert.equal(restarted.snapshot().peakOnline.at,first+60000);
   assert.equal(restarted.snapshot().points.at(-2).requests,null,'Downtime is not reported as zero traffic');
   assert.equal(restarted.snapshot(1440).points.length,1440);
   assert.equal(restarted.snapshot(999999).points.length,60,'Arbitrary ranges cannot allocate unbounded histories');
   await restarted.close();
+  const legacy=JSON.parse(saved);
+  for(const bucket of legacy.buckets){delete bucket.onlinePeak;delete bucket.onlinePeakAt;bucket.membersPeak=999;bucket.membersPeakAt=bucket.at;}
+  const legacyFile=join(dir,'legacy.json');await writeFile(legacyFile,JSON.stringify(legacy));
+  const migrated=createAppTraffic({file:legacyFile,now:()=>now,flushMs:0});
+  assert.equal(migrated.snapshot().peakOnline,null,'Signed-in-only history must not be mislabeled as total online');
+  assert.equal(migrated.snapshot().totals.requests,11,'Traffic history survives the change in online measurement');
+  await migrated.close();
   now+=2*86400000; assert.equal(collector.snapshot(1440).totals.requests,0,'Old buckets expire');
   await collector.close();
   await writeFile(file,'invalid JSON');
@@ -54,12 +61,22 @@ try {
   // Run the actual endpoint, including owner authorization, without live credentials.
   const source=await readFile(new URL('../server.js',import.meta.url),'utf8');
   const ast=parse(source,{ecmaVersion:'latest',sourceType:'module'});
-  const presenceFunction=ast.body.find(n=>n.type==='FunctionDeclaration'&&n.id?.name==='recordOnlineMembers');
+  const presenceFunction=ast.body.find(n=>n.type==='FunctionDeclaration'&&n.id?.name==='onlinePresenceSnapshot');
+  const countFunction=ast.body.find(n=>n.type==='FunctionDeclaration'&&n.id?.name==='presenceCount');
   let memberSample;
-  const sessions=new Map([['a',{accountUid:'one'}],['b',{accountUid:'one'}],['c',{accountUid:'two'}],['guest',{accountUid:''}],['expired',{accountUid:'old'}]]);
-  const presenceContext={Date,Set,presenceSessionDetails:sessions,pruneLocalPresence:()=>sessions.delete('expired'),appTraffic:{recordMembers:count=>memberSample=count}};
-  vm.runInNewContext(source.slice(presenceFunction.start,presenceFunction.end)+';recordOnlineMembers();',presenceContext);
-  assert.equal(memberSample,2,'Duplicate tabs, guests and expired sessions do not inflate peak members');
+  const at=Date.now();
+  const sessions=new Map([['a',{accountUid:'one',lastSeen:at}],['b',{accountUid:'one',lastSeen:at}],['c',{accountUid:'two',lastSeen:at}],['guest',{accountUid:'',lastSeen:at}],['expired',{accountUid:'old',lastSeen:at-900000}]]);
+  const presenceContext={Date,Set,presenceSessionDetails:sessions,pruneLocalPresence:()=>sessions.delete('expired'),signedInOnlineWindowMs:360000,
+    signedInPresence:new Map([['one',at],['recent',at-120000],['stale',at-900000]]),
+    ownerDashboardSnapshotCaches:new Map([['site',{value:{users:[{uid:'recent',lastActiveAt:new Date(at-120000).toISOString()},{uid:'cached',lastActiveAt:new Date(at-240000).toISOString()}]}}]]),
+    appTraffic:{recordOnline:count=>memberSample=count}};
+  vm.runInNewContext(source.slice(presenceFunction.start,presenceFunction.end)+'\n'+source.slice(countFunction.start,countFunction.end)+';this.publicCount=presenceCount();this.dashboardCount=onlinePresenceSnapshot().total;',presenceContext);
+  assert.equal(memberSample,5,'Include guests and accounts within the dashboard window; deduplicate tabs and cached identities and exclude stale activity');
+  assert.equal(presenceContext.publicCount,memberSample,'Public counter and peak sampling use the same total');
+  assert.equal(presenceContext.dashboardCount,memberSample,'Dashboard total matches the public counter');
+  assert.match(source,/onlineUsers: presence\.total/,'Dashboard uses the shared presence count');
+  assert.match(source,/online: presence\.accounts\.has\(user\.uid\)/,'Account list uses fresh presence instead of cached online flags');
+  assert.match(source,/appTraffic\.recordOnline\(metrics\.onlineUsers\)/,'The exact returned Online now value must also contribute to the peak');
   const route=ast.body.find(n=>n.expression?.arguments?.[0]?.value==='/api/owner-dashboard/traffic');
   let handler, actor='member', reads=0;
   vm.runInNewContext(source.slice(route.start,route.end),{

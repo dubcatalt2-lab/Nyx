@@ -622,6 +622,7 @@
     }
     globalThis.NyxOwnerDashboard.open({
       getToken:()=>nyxGetFirebaseToken(true),
+      onPresence:count=>{nyxPresenceCount=count;renderNyxPresence();},
       toast
     });
   }
@@ -7561,19 +7562,29 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       async function waitForServiceWorkerScript(registration, scriptUrl, scope='/~/sj/'){
         if(!registration || !('serviceWorker' in navigator)) return null;
-        const expected=new URL(scriptUrl,location.href).href;
+        const expected=new URL(scriptUrl,location.href);
+        const compatible=worker=>{
+          if(worker?.state!=='activated') return false;
+          try{
+            const actual=new URL(worker.scriptURL);
+            // Query tags only invalidate this worker's cache. Keep the active
+            // version usable while its replacement installs; never accept a
+            // different runtime path or origin.
+            return actual.origin===expected.origin && actual.pathname===expected.pathname;
+          }catch{return false}
+        };
         const deadline=Date.now()+12000;
         let current=registration;
         while(Date.now()<deadline){
           const fresh=await navigator.serviceWorker.getRegistration(scope).catch(()=>null);
           if(fresh) current=fresh;
           const active=current?.active;
-          if(active?.state==='activated' && active.scriptURL===expected) return active;
+          if(compatible(active)) return active;
           await new Promise(resolve=>setTimeout(resolve,120));
         }
         const fresh=await navigator.serviceWorker.getRegistration(scope).catch(()=>null);
         const active=fresh?.active || current?.active || null;
-        return active?.state==='activated' && active.scriptURL===expected ? active : null;
+        return compatible(active) ? active : null;
       }
       async function refreshScramjetServiceWorker(){
         if(!('serviceWorker' in navigator)) return false;
@@ -7782,6 +7793,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     qsa('[data-nyx-online-count]').forEach(element=>{element.textContent=label});
     const usersLabel=Number.isFinite(count) ? `${count} users` : pendingLabel;
     qsa('[data-nyx-online-users]').forEach(element=>{element.textContent=usersLabel});
+    if(Number.isFinite(count)) window.dispatchEvent(new CustomEvent('nyx:presence',{detail:{online:count}}));
   }
   async function nyxPresenceFirebaseToken(timeoutMs=1200){
     let timer=0;
@@ -8813,7 +8825,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const transport=await createScramjetTransport();
       step='registering Scramjet service worker';
       const registration=await navigator.serviceWorker.register(scramjetServiceWorkerUrl,{scope:'/~/sj/',updateViaCache:'none'});
-      await registration.update().catch(()=>null);
+      // register() already checks for updates. A second blocking update can
+      // delay an otherwise usable active worker on production connections.
       step='activating Scramjet service worker';
       const serviceworker=await waitForServiceWorkerScript(registration,scramjetServiceWorkerUrl);
       if(!serviceworker) throw new Error('Scramjet service worker did not activate');
@@ -14408,7 +14421,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
     },delay);
   }
-  const NYX_RELEASE_NOTES_VERSION='2026-09-26-nyx-1.3.6.7';
+  const NYX_RELEASE_NOTES_VERSION='2026-10-02-nyx-1.6.8';
   let nyxReleaseNotesTimer=0;
   function nyxReleaseNotesStorageKey(){
     return `nyx.releaseNotes.${NYX_RELEASE_NOTES_VERSION}.seen`;
@@ -14439,10 +14452,15 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     const overlay=document.createElement('div');
     overlay.className='nyx-release-notes-overlay';
     overlay.innerHTML=`<section class="nyx-release-notes" role="dialog" aria-modal="true" aria-labelledby="nyxReleaseNotesTitle" aria-describedby="nyxReleaseNotesIntro">
-      <header><div><span>What's new</span><h1 id="nyxReleaseNotesTitle" tabindex="-1">Nyx v1.3.6.7</h1></div><button type="button" data-nyx-release-notes-close aria-label="Close update log">&times;</button></header>
+      <header><div><span>Update</span><h1 id="nyxReleaseNotesTitle" tabindex="-1">Nyx v1.6.8</h1></div><button type="button" data-nyx-release-notes-close aria-label="Close update log">&times;</button></header>
       <div class="nyx-release-message" id="nyxReleaseNotesIntro">
-        <p class="nyx-release-greeting"><strong>New UI is here!</strong></p>
-        <p class="nyx-release-changes">Everything is more clean<br>Fixed a lot of games<br>added Lightspeed Bypass<br>Fixed some settings</p>
+        <p class="nyx-release-greeting"><strong>What's new?</strong></p>
+        <ul class="nyx-release-changes">
+          <li><strong>Fixed a lot of games</strong></li>
+          <li><strong>Fixed AI issues</strong></li>
+          <li><strong>Added more themes</strong></li>
+        </ul>
+        <p class="nyx-release-community">Join the <a href="https://discord.com/invite/cAdjYAJs3u" target="_blank" rel="noopener noreferrer">Discord</a> for more links and updates!</p>
       </div>
       <footer><button type="button" data-nyx-release-notes-close>Got it</button></footer>
     </section>`;

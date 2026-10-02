@@ -7,7 +7,9 @@
 .nyx-release-notes{width:min(580px,100%);max-height:calc(100dvh - 48px);overflow:auto;border:1px solid var(--obsidian-line);border-radius:14px;background:var(--obsidian-bg);color:var(--obsidian-text);box-shadow:0 24px 70px #0005}
 .nyx-release-notes header{display:flex;justify-content:space-between;align-items:start;gap:20px;padding:26px 26px 16px}
 .nyx-release-notes header span{font-size:10px;color:var(--obsidian-muted);letter-spacing:.1em;text-transform:uppercase}
-.nyx-release-notes h1{margin:7px 0 0;font-size:25px;font-weight:500;letter-spacing:-.035em}
+.nyx-release-notes h1{margin:7px 0 0;font-size:30px;letter-spacing:-.035em}
+/* The browser shell sets all descendants to weight 400; release headings retain emphasis. */
+body.browser-shell .nyx-release-notes h1{font-weight:700!important}
 .nyx-release-notes h1:focus{outline:none}
 .nyx-release-notes header button{width:30px;height:30px;flex:none;font-size:23px;padding:0}
 .nyx-release-message{padding:0 26px;color:var(--obsidian-muted);font-size:13px;line-height:1.7}
@@ -16,6 +18,14 @@
 .nyx-release-notes li{display:grid;gap:5px;padding:13px;border:1px solid var(--obsidian-line);border-radius:8px;background:var(--obsidian-panel)}
 .nyx-release-notes li strong{font-size:13px;font-weight:500}
 .nyx-release-notes li span{font-size:12px;color:var(--obsidian-muted);line-height:1.6}
+.nyx-release-message .nyx-release-changes{padding:0;margin:16px 0 20px}
+.nyx-release-greeting{margin:0}
+.nyx-release-greeting strong{font-size:15px}
+body.browser-shell .nyx-release-greeting strong{font-weight:650!important}
+.nyx-release-community{margin:0}
+.nyx-release-community a{color:var(--obsidian-text);font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.nyx-release-community a:hover{opacity:.8}
+.nyx-release-community a:focus-visible{outline:1px solid var(--obsidian-text);outline-offset:4px;border-radius:2px}
 .nyx-release-notes footer{display:flex;justify-content:flex-end;padding:16px 26px 24px}
 .nyx-release-notes button{border:1px solid var(--obsidian-line);border-radius:7px;background:var(--obsidian-field);color:var(--obsidian-text);box-shadow:none;padding:9px 17px;cursor:pointer}
 .nyx-release-notes button:focus-visible{outline:1px solid var(--obsidian-text);outline-offset:3px}

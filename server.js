@@ -3653,22 +3653,32 @@ function recordLocalPresence(sessionId, accountUid = "", startupName = "", now =
     lastSeenIp,
     lastSeenIpAt: lastSeenIp ? now : 0
   });
-  const online = pruneLocalPresence(now);
-  recordOnlineMembers(now);
-  return online;
+  return presenceCount(now);
 }
 
-function recordOnlineMembers(now = Date.now()) {
+function onlinePresenceSnapshot(now = Date.now()) {
   pruneLocalPresence(now);
   const members = new Set();
-  for (const session of presenceSessionDetails.values()) if (session.accountUid) members.add(session.accountUid);
-  appTraffic.recordMembers(members.size);
+  // Accounts use the dashboard's six-minute activity window; guests use the
+  // existing 45-second presence window. Reuse known activity without DB polling.
+  const addAccount = (uid, at) => { if (uid && at > 0 && now - at <= signedInOnlineWindowMs) members.add(uid); };
+  for (const [uid, at] of signedInPresence) addAccount(uid, at);
+  for (const cache of ownerDashboardSnapshotCaches.values())
+    for (const user of cache.value?.users || []) addAccount(user.uid, Date.parse(user.lastActiveAt || '') || 0);
+  let guests = 0;
+  for (const session of presenceSessionDetails.values()) {
+    if (session.accountUid) addAccount(session.accountUid, session.lastSeen);
+    else guests++;
+  }
+  return { accounts:members, guests, total:members.size + guests };
 }
-const memberSamplingTimer = setInterval(recordOnlineMembers, 15000);
-memberSamplingTimer.unref();
+const onlineSamplingTimer = setInterval(() => presenceCount(), 15000);
+onlineSamplingTimer.unref();
 
 function presenceCount(now = Date.now()) {
-  return pruneLocalPresence(now);
+  const online = onlinePresenceSnapshot(now).total;
+  appTraffic.recordOnline(online);
+  return online;
 }
 
 async function sendPresence(res, status = 200, countPromise = presenceCount(), extra = {}) {
@@ -12946,8 +12956,10 @@ app.get("/api/owner-dashboard", async (req, res) => {
     ]);
     const ownerUid = founderProfileConfig().administratorUid;
     const canReviewSearchHistory = nyxActorCanReviewSearchHistory(actor);
+    const presence = onlinePresenceSnapshot();
     const accountUsersForViewer = accountUsers.map(user => ({
       ...nyxOwnerUserForViewer(user, actor.uid, ownerUid),
+      online: presence.accounts.has(user.uid),
       canReviewSearchHistory: canReviewSearchHistory && (actor.role === "owner" || user.role !== "owner")
     }));
     const allUsers = [...accountUsersForViewer, ...guestUsers];
@@ -12960,11 +12972,14 @@ app.get("/api/owner-dashboard", async (req, res) => {
       totalUsers: accountUsers.length,
       guestUsers: guestUsers.length,
       activeToday: accountUsers.filter(user => (Date.parse(user.lastActiveAt || "") || 0) >= today.getTime()).length,
-      onlineUsers: allUsers.filter(user => user.online).length,
+      onlineUsers: presence.total,
       newSignups: accountUsers.filter(user => (Date.parse(user.createdAt || "") || 0) >= sevenDaysAgo).length,
       premiumSubscribers: accountUsers.filter(user => premiumStatuses.has(user.subscriptionStatus)).length,
       monthlyRevenueCents: accountUsers.reduce((total, user) => total + (premiumStatuses.has(user.subscriptionStatus) ? user.monthlyRevenueCents : 0), 0)
     };
+    // Record the exact Online now value returned to the owner as well as the
+    // background samples, so a visible dashboard count cannot miss its peak.
+    appTraffic.recordOnline(metrics.onlineUsers);
     const search = String(req.query.search || "").trim().toLowerCase().slice(0, 120);
     const role = String(req.query.role || "all").trim().toLowerCase();
     const subscription = String(req.query.subscription || "all").trim().toLowerCase();

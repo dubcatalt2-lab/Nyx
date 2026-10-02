@@ -226,9 +226,12 @@
 
   function createTrafficPanel(host, api) {
     let enabled = false, active = true, closed = false, controller = null, minutes = 60, data = null, selectedAt = null;
-    const number = value => Number(value || 0).toLocaleString();
-    const time = at => new Date(at).toLocaleTimeString([], { hour:'numeric', minute:'2-digit' });
-    const stamp = at => new Date(at).toLocaleString([], { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+    const numbers = new Intl.NumberFormat();
+    const times = new Intl.DateTimeFormat([], { hour:'numeric', minute:'2-digit' });
+    const stamps = new Intl.DateTimeFormat([], { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+    const number = value => numbers.format(Number(value || 0));
+    const time = at => times.format(at);
+    const stamp = at => stamps.format(at);
     host.innerHTML = `<header class="nyx-traffic-heading"><div><span class="nyx-traffic-eyebrow">LIVE ACTIVITY</span><h2>Traffic</h2><p>Requests per minute &middot; all sites on this VPS</p></div><div class="nyx-traffic-ranges" aria-label="Traffic time range">${[[60,'1 hour'],[360,'6 hours'],[1440,'24 hours']].map(([value,label])=>`<button type="button" data-traffic-range="${value}" aria-pressed="${value===60}">${label}</button>`).join('')}</div></header>
       <div class="nyx-traffic-stats" data-traffic-stats></div>
       <div class="nyx-traffic-chart" data-traffic-chart></div>
@@ -243,21 +246,39 @@
     const x = index => 46 + index / Math.max(1, visiblePoints.length - 1) * (plotWidth - 64);
     let ceiling = 1;
     const y = count => 230 - (count || 0) / ceiling * 190;
+    let cursor = null, dot = null, inspectedIndex = -1, pointerFrame = 0, pointerX = null;
 
-    function inspect(index) {
+    function inspect(position) {
       if (!visiblePoints.length) return;
-      index = Math.max(0, Math.min(visiblePoints.length - 1, Math.round(index)));
+      position = Math.max(0, Math.min(visiblePoints.length - 1, position));
+      const index = Math.round(position);
       const point = visiblePoints[index];
       selectedAt = point.at;
-      slider.value = index;
-      const label = `${stamp(point.at)} · ${point.requests === null ? 'No measurement' : `${number(point.requests)} requests · ${number(point.errors)} server errors${point.membersPeak != null ? ` · ${number(point.membersPeak)} members online` : ''}${point.partial ? ' · Partial minute' : ''}`}`;
-      slider.setAttribute('aria-valuetext', label);
-      detail.textContent = label;
-      const cursor = chart.querySelector('[data-traffic-cursor]');
-      cursor?.setAttribute('x1', x(index)); cursor?.setAttribute('x2', x(index));
-      const dot = chart.querySelector('[data-traffic-dot]');
-      dot?.setAttribute('cx', x(index)); dot?.setAttribute('cy', y(point.requests));
-      dot?.setAttribute('opacity', point.requests === null ? '0' : '1');
+      // Keep the readout on a real recorded minute, but follow the plotted line
+      // continuously instead of jumping the cursor between minute samples.
+      if (index !== inspectedIndex) {
+        inspectedIndex = index;
+        slider.value = index;
+        const label = `${stamp(point.at)} · ${point.requests === null ? 'No measurement' : `${number(point.requests)} requests · ${number(point.errors)} server errors${point.onlinePeak != null ? ` · ${number(point.onlinePeak)} people online` : ''}${point.partial ? ' · Partial minute' : ''}`}`;
+        slider.setAttribute('aria-valuetext', label);
+        detail.textContent = label;
+      }
+      const px = x(position), left = Math.floor(position), right = Math.ceil(position);
+      const from = visiblePoints[left].requests, to = visiblePoints[right].requests;
+      cursor?.setAttribute('x1', px); cursor?.setAttribute('x2', px);
+      dot?.setAttribute('cx', px);
+      dot?.setAttribute('cy', y(from + (to - from) * (position - left)));
+      dot?.setAttribute('opacity', from === null || to === null ? '0' : '1');
+    }
+
+    function inspectPointer() {
+      if (pointerX === null || !data || !enabled || !active || closed) return;
+      const bounds = chart.getBoundingClientRect();
+      if (bounds.width) inspect(((pointerX-bounds.left)/bounds.width*plotWidth-46)/(plotWidth-64)*(visiblePoints.length-1));
+    }
+
+    function cancelPointer() {
+      cancelAnimationFrame(pointerFrame); pointerFrame = 0; pointerX = null;
     }
 
     function render() {
@@ -270,7 +291,7 @@
       const stats = [
         ['Requests', number(totals.requests), 'In selected window'],
         ['Peak / min', number(peak?.requests), peak ? stamp(peak.at) + (peak.partial ? ' · partial' : '') : 'No measurement'],
-        ['Peak members', data.peakMembers ? number(data.peakMembers.count) : '—', data.peakMembers ? stamp(data.peakMembers.at) + ' · signed-in Nyx accounts' : 'Collecting member history'],
+        ['Peak online', data.peakOnline ? number(data.peakOnline.count) : '—', data.peakOnline ? stamp(data.peakOnline.at) + ' · accounts and guests' : 'Collecting online history'],
         ['Server errors', number(totals.errors), `${number(totals.aborted)} interrupted requests`],
         ['Avg. response', totals.averageMs === null ? '—' : number(totals.averageMs) + ' ms', 'Completed HTTP responses']
       ];
@@ -285,11 +306,15 @@
       const grid = [0,.5,1].map(fraction => `<line x1="46" x2="${plotWidth-18}" y1="${230-fraction*190}" y2="${230-fraction*190}" class="nyx-traffic-grid"/><text x="36" y="${234-fraction*190}" text-anchor="end">${number(Math.round(ceiling*fraction))}</text>`).join('');
       const labels = [0,Math.floor((points.length-1)/2),points.length-1].map(index=>`<text x="${x(index)}" y="260" text-anchor="${index===0?'start':index===points.length-1?'end':'middle'}">${esc(time(points[index].at))}</text>`).join('');
       chart.innerHTML = `<svg viewBox="0 0 ${plotWidth} 275" preserveAspectRatio="none" role="img" aria-label="Requests per minute. Peak ${esc(number(peak?.requests))}${peak?' at '+esc(stamp(peak.at)):''}. Use the slider below to inspect a minute.">${grid}<path d="${area}" class="nyx-traffic-area"/><path d="${line}" class="nyx-traffic-line"/>${labels}<line data-traffic-cursor y1="30" y2="230" class="nyx-traffic-cursor"/><circle data-traffic-dot r="4" class="nyx-traffic-dot"/></svg>`;
+      cursor = chart.querySelector('[data-traffic-cursor]');
+      dot = chart.querySelector('[data-traffic-dot]');
+      inspectedIndex = -1;
       host.querySelector('.nyx-traffic-inspector').hidden = false;
       slider.max = points.length - 1;
       let index = selectedAt === null ? -1 : points.findIndex(point=>point.at===selectedAt);
       if (index < 0) index = peak ? points.findIndex(point=>point.at===peak.at) : points.length-1;
       inspect(index);
+      inspectPointer();
       status.textContent = `Recorded from ${stamp(points[0].at)} · updated ${new Date(data.generatedAt).toLocaleTimeString()} · refreshes every 10s · current minute incomplete`;
       host.dataset.trafficState = 'ready';
     }
@@ -312,6 +337,7 @@
     }
     host.addEventListener('click', event => {
       const button = event.target.closest('[data-traffic-range]'); if (!button) return;
+      cancelPointer();
       minutes = Number(button.dataset.trafficRange); selectedAt = null;
       controller?.abort(); controller = null;
       host.querySelectorAll('[data-traffic-range]').forEach(item=>item.setAttribute('aria-pressed', String(item===button)));
@@ -319,21 +345,23 @@
       void refresh();
     });
     chart.addEventListener('pointermove', event => {
-      const bounds = chart.getBoundingClientRect();
-      if (data) inspect(((event.clientX-bounds.left)/bounds.width*plotWidth-46)/(plotWidth-64)*(visiblePoints.length-1));
+      pointerX = event.clientX;
+      if (!pointerFrame) pointerFrame = requestAnimationFrame(() => { pointerFrame = 0; inspectPointer(); });
     });
-    slider.addEventListener('input', () => inspect(Number(slider.value)));
+    chart.addEventListener('pointerleave', cancelPointer);
+    chart.addEventListener('pointercancel', cancelPointer);
+    slider.addEventListener('input', () => { cancelPointer(); inspect(Number(slider.value)); });
     const timer = setInterval(()=>void refresh(), 10000);
     const resize = new ResizeObserver(()=>{ if (data && enabled && active && chart.clientWidth > 0 && Math.abs(Math.max(300,chart.clientWidth)-plotWidth)>1) render(); });
     resize.observe(chart);
     return {
-      enable(value) { enabled = value; host.hidden = !value; if (!value) { controller?.abort(); controller=null; data=null; chart.replaceChildren(); host.querySelector('[data-traffic-stats]').replaceChildren(); detail.textContent=''; } else void refresh(); },
-      activate(value) { active=value; if (value) void refresh(); else { controller?.abort(); controller=null; } },
-      destroy() { closed=true; clearInterval(timer); controller?.abort(); resize.disconnect(); }
+      enable(value) { enabled = value; host.hidden = !value; if (!value) { cancelPointer(); controller?.abort(); controller=null; data=null; chart.replaceChildren(); host.querySelector('[data-traffic-stats]').replaceChildren(); detail.textContent=''; } else void refresh(); },
+      activate(value) { active=value; if (value) void refresh(); else { cancelPointer(); controller?.abort(); controller=null; } },
+      destroy() { closed=true; cancelPointer(); clearInterval(timer); controller?.abort(); resize.disconnect(); }
     };
   }
 
-  function createDashboard({ getToken, toast: externalToast } = {}) {
+  function createDashboard({ getToken, toast: externalToast, onPresence } = {}) {
     if (typeof getToken !== "function") throw new Error("Owner authentication is unavailable.");
     const state = {
       page: 1,
@@ -728,6 +756,7 @@
       try {
         const data = await api(`/api/owner-dashboard?${parameters}`, { signal: state.controller.signal });
         state.data = data;
+        onPresence?.(data.metrics?.onlineUsers);
         state.access = data.access || state.access;
         traffic.enable(Boolean(state.access?.founder));
         overlay.querySelector('[data-owner-section="services"]').hidden = !state.access?.founder;
@@ -1639,6 +1668,7 @@
       clearTimeout(state.searchTimer);
       overlay.classList.remove("show");
       document.removeEventListener("keydown", onKeydown);
+      window.removeEventListener('nyx:presence', onPresenceUpdate);
       setTimeout(() => overlay.remove(), 180);
       if (activeDashboard?.overlay === overlay) activeDashboard = null;
     }
@@ -1647,6 +1677,14 @@
     overlay.addEventListener("change", onChange);
     overlay.addEventListener("input", onInput);
     overlay.addEventListener("submit", onSubmit);
+    function onPresenceUpdate(event) {
+      const online=event.detail?.online;
+      if (!Number.isSafeInteger(online) || online < 0 || !state.data?.metrics) return;
+      state.data.metrics.onlineUsers=online;
+      const value=overlay.querySelector('[data-owner-segment="online"] strong');
+      if (value) value.textContent=online.toLocaleString();
+    }
+    window.addEventListener('nyx:presence', onPresenceUpdate);
     document.addEventListener("keydown", onKeydown);
     renderLoading();
     void load();

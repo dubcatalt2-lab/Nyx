@@ -11,7 +11,7 @@ function fixture(minutes) {
   const end=Math.floor(now/60000)*60000;
   const points=Array.from({length:minutes},(_,i)=>({at:end-(minutes-1-i)*60000,requests:i<minutes-58?null:i===minutes-18?840:i===minutes-37?410:42+(i%7)*11,errors:i===minutes-18?6:0,partial:i===minutes-1}));
   points[minutes-32].requests=null;
-  return {minutes,points,startedAt:end-57*60000,generatedAt:now,totals:{requests:points.reduce((sum,p)=>sum+(p.requests||0),0),errors:6,aborted:2,averageMs:84},peak:{at:end-17*60000,requests:840,partial:false},peakMembers:{count:47,at:end-9*60000}};
+  return {minutes,points,startedAt:end-57*60000,generatedAt:now,totals:{requests:points.reduce((sum,p)=>sum+(p.requests||0),0),errors:6,aborted:2,averageMs:84},peak:{at:end-17*60000,requests:840,partial:false},peakOnline:{count:47,at:end-9*60000}};
 }
 try {
   for(const width of [1440,390]) {
@@ -53,7 +53,9 @@ try {
     assert.ok(await page.locator('[data-owner-panel="users"]').isHidden());
     assert.ok(await page.locator('[data-owner-ai-status]').isHidden());
     assert.match(await page.locator('[data-traffic-stats]').innerText(),/840/);
-    assert.match(await page.locator('[data-traffic-stats]').innerText(),/Peak members\s+47/);
+    assert.match(await page.locator('[data-traffic-stats]').innerText(),/Peak online\s+47/);
+    await page.evaluate(()=>window.dispatchEvent(new CustomEvent('nyx:presence',{detail:{online:80}})));
+    assert.equal(await page.locator('[data-owner-segment="online"] strong').innerText(),'80','Homepage heartbeat also updates the open dashboard counter');
     assert.match(await page.locator('[data-traffic-detail]').innerText(),/12:17 PM/,'Peak time uses the viewer timezone');
     const chartBox=await page.locator('[data-traffic-chart]').boundingBox();assert.ok(chartBox.width>250);
     const fit=await page.locator('.nyx-owner-dashboard').evaluate(node=>({scroll:node.scrollWidth,width:node.clientWidth}));assert.ok(fit.scroll<=fit.width+1,'Dashboard fits the viewport');
@@ -61,6 +63,32 @@ try {
     await page.locator('[data-owner-traffic]').screenshot({path:`.codex-artifacts/owner-traffic-${width}.png`});
     const slider=page.locator('[data-traffic-minute]');await slider.focus();await page.keyboard.press('ArrowRight');
     assert.match(await page.locator('[data-traffic-detail]').innerText(),/12:18 PM/,'Keyboard can inspect adjacent minutes');
+    await page.evaluate(() => {
+      const chart=document.querySelector('[data-traffic-chart]');
+      window.hoverSvg=chart.querySelector('svg');
+      window.hoverUpdates=0;
+      window.hoverObserver=new MutationObserver(records=>{window.hoverUpdates+=records.filter(r=>r.type==='childList').length;});
+      window.hoverObserver.observe(document.querySelector('[data-traffic-detail]'),{childList:true});
+      window.moveTrafficPointer=position=>{
+        const bounds=chart.getBoundingClientRect(),width=window.hoverSvg.viewBox.baseVal.width;
+        const samples=Number(document.querySelector('[data-traffic-minute]').max);
+        const clientX=bounds.left+(46+position/samples*(width-64))/width*bounds.width;
+        chart.dispatchEvent(new PointerEvent('pointermove',{clientX,bubbles:true}));
+      };
+      for(let i=0;i<200;i++)window.moveTrafficPointer(10+i/1000);
+    });
+    await page.clock.runFor(20);
+    const hoverBefore=await page.evaluate(()=>({x:Number(document.querySelector('[data-traffic-cursor]').getAttribute('x1')),label:document.querySelector('[data-traffic-detail]').textContent,updates:window.hoverUpdates}));
+    assert.equal(hoverBefore.updates,1,'A burst of pointer events updates the readout once per animation frame');
+    await page.evaluate(()=>window.moveTrafficPointer(10.35));await page.clock.runFor(20);
+    const hoverAfter=await page.evaluate(()=>({x:Number(document.querySelector('[data-traffic-cursor]').getAttribute('x1')),label:document.querySelector('[data-traffic-detail]').textContent,updates:window.hoverUpdates,sameSvg:window.hoverSvg===document.querySelector('[data-traffic-chart] svg')}));
+    assert(hoverAfter.x>hoverBefore.x,'The cursor moves smoothly within a recorded minute');
+    assert.equal(hoverAfter.label,hoverBefore.label,'The readout stays on the nearest measured minute');
+    assert.equal(hoverAfter.updates,1,'Moving within a minute does not rewrite its readout');
+    assert(hoverAfter.sameSvg,'Hover does not rebuild the chart');
+    await page.evaluate(()=>window.moveTrafficPointer(25.8));await page.clock.runFor(20);
+    assert.equal(await page.locator('[data-traffic-dot]').getAttribute('opacity'),'0','Hover never draws a point across missing measurements');
+    await page.evaluate(()=>{document.querySelector('[data-traffic-chart]').dispatchEvent(new PointerEvent('pointerleave'));window.hoverObserver.disconnect();});
     await page.locator('[data-traffic-range="1440"]').click();
     await page.waitForFunction(()=>document.querySelector('[data-traffic-minute]').max==='57');
     await slider.fill('0');assert.doesNotMatch(await page.locator('[data-traffic-detail]').innerText(),/No measurement/,'Leading unrecorded time does not squeeze the chart');

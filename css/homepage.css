@@ -118,7 +118,7 @@ html body .setup-launch-card .setup-launch-credit{
 }
 
 html body.browser-shell{
-  --nyx-themed-logo-url:url("/assets/icons/nyx-monogram.png");
+  --nyx-themed-logo-url:url("/assets/icons/nyx-cat-moon.svg?v=3");
   --nyx-title-theme-color:#92b7ed;
 }
 html body.browser-shell.theme-ruby{
@@ -138,7 +138,7 @@ html body.browser-shell.theme-fresh{
   border:0!important;
   border-radius:0!important;
   background-color:transparent!important;
-  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-monogram.png"))!important;
+  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-cat-moon.svg?v=3"))!important;
   background-position:center!important;
   background-repeat:no-repeat!important;
   background-size:100%!important;

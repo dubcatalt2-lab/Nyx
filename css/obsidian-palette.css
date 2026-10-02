@@ -6,6 +6,8 @@ html[data-nyx-theme="ruby"],[data-nyx-preview-theme="ruby"] {--nyx-tint:#ad777b}
 html[data-nyx-theme="emerald"],[data-nyx-preview-theme="emerald"] {--nyx-tint:#579c85}
 html[data-nyx-theme="sakura"],[data-nyx-preview-theme="sakura"] {--nyx-tint:#b58b9f}
 html[data-nyx-theme="fresh"],[data-nyx-preview-theme="fresh"] {--nyx-tint:#9da77b}
+html[data-nyx-theme="halloween"],[data-nyx-preview-theme="halloween"] {--nyx-tint:#ff963c;--nyx-surface-accent:#ff963c}
+html[data-nyx-theme="halloween"][data-nyx-appearance="light"],html[data-nyx-appearance="light"] [data-nyx-preview-theme="halloween"] {--nyx-surface-accent:#a84d12}
 html[data-nyx-theme="custom"],[data-nyx-preview-theme="custom"] {--nyx-tint:var(--nyx-custom-base,#6f9ee8)}
 :root,[data-nyx-preview-theme] {
   --nyx-surface-bg:color-mix(in srgb,var(--nyx-tint) 10%,#050706);

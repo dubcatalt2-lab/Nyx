@@ -1,7 +1,7 @@
 (function(){
   'use strict';
-  const source='/assets/icons/nyx-monogram.png';
-  const smallSource='/assets/icons/nyx-monogram-small.png';
+  const source='/assets/icons/nyx-cat-moon.svg?v=3';
+  const smallSource='/assets/icons/nyx-cat-moon-small.svg?v=3';
 
   async function themedUrl(){return source}
   async function croppedUrl(){return smallSource}
@@ -11,7 +11,10 @@
     root.querySelectorAll?.('[data-nyx-logo],img[src$="/assets/icons/nyx-monogram.png"],img[src$="/assets/icons/nyx-logo.png"],img[src$="firefly-tab-logo-bold.png"]').forEach(element=>{
       element.dataset.nyxLogo='true';
       if(element.tagName==='IMG') element.src=source;
-      if(element.tagName==='LINK') element.href=smallSource;
+      if(element.tagName==='LINK'){
+        element.href=smallSource;
+        element.type='image/svg+xml';
+      }
     });
     return source;
   }

@@ -216,7 +216,7 @@
     frame.addEventListener('load',()=>setTimeout(finishGameProgress,1800));
 
     const requestedPath=safeGamePath(game);
-    const gamePath=({'785-upd2.html':'785-upd3.html','253-update.html':'253-update2.html'})[requestedPath]||requestedPath;
+    const gamePath=({'785-upd2.html':'785-upd3.html','253-update.html':'253-update2.html','801-fix.html':'801-fix2.html'})[requestedPath]||requestedPath;
     const archiveGame={'82-a.html':'C/clcookieclicker.html','177.html':'R/clrun3.html'}[gamePath];
     if(archiveGame){
       location.replace('/assets/ugs/play.html?game='+encodeURIComponent(archiveGame));
@@ -226,7 +226,7 @@
       startGameProgress();
       const rawUrl=`https://raw.githubusercontent.com/freebuisness/html/main/${encodeURIComponent(gamePath)}`;
       setGameProgress(22);
-      const localGame={'4-pf.html':'/assets/games/gladihoppers.html'}[gamePath];
+      const localGame={'4-pf.html':'/assets/games/gladihoppers.html','435.html':'/assets/games/small-world-cup.html'}[gamePath];
       fetch(localGame||`/gn-math-fetch?path=${encodeURIComponent(gamePath)}`,{cache:'no-store'})
         .then(response=>{
           if(response.ok){

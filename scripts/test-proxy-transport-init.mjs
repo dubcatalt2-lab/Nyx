@@ -2,10 +2,12 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {parse} from 'acorn';
 
-const source=readFileSync('script.js','utf8');let create='';
+const source=readFileSync('script.js','utf8');let create='',normalize='',defaultTransport='';
 function visit(node){
   if(!node || typeof node!=='object')return;
   if(node.type==='FunctionDeclaration' && node.id?.name==='createScramjetTransport')create=source.slice(node.start,node.end);
+  if(node.type==='FunctionDeclaration' && node.id?.name==='normalizeBrowserTransportName')normalize=source.slice(node.start,node.end);
+  if(node.type==='VariableDeclarator' && node.id?.name==='DEFAULT_BROWSER_TRANSPORT')defaultTransport=node.init.value;
   for(const value of Object.values(node)){if(Array.isArray(value))value.forEach(visit);else if(value&&typeof value==='object')visit(value);}
 }
 visit(parse(source,{ecmaVersion:'latest'}));assert(create);
@@ -16,9 +18,11 @@ const fakeModule='data:text/javascript,'+encodeURIComponent(`export default clas
 create=create.replace("'/assets/transports/libcurl-scramjet.mjs'",JSON.stringify(fakeModule));
 const relayModule='data:text/javascript,'+encodeURIComponent("import {RelayTransport as Base} from "+JSON.stringify(new URL('../apps/tutsi/relay.mjs',import.meta.url).href)+";export class RelayTransport extends Base {constructor(options){super({...options,probe:async()=>true,online:()=>true});}}");
 create=create.replace("'/apps/tutsi/relay.mjs'",JSON.stringify(relayModule));
+const normalizeName=new Function('DEFAULT_BROWSER_TRANSPORT',`${normalize};return normalizeBrowserTransportName;`)(defaultTransport);
+assert.equal(defaultTransport,'libcurlRaw');
 const make=new Function('selectWispRelay','normalizeBrowserTransportName','store','wispUrl','setTimeout',`
   let browserTransportOverride='',scramjetTransport=null,scramjetTransportKey='',scramjetTransportPending=null;
-  const browserHttpRelayUrl=()=> 'wss://fixture.test/api/tutsi-relay/socket/'; const DEFAULT_BROWSER_TRANSPORT='libcurlRaw';${create};return createScramjetTransport;
+  const browserHttpRelayUrl=()=> 'wss://fixture.test/api/tutsi-relay/socket/'; const DEFAULT_BROWSER_TRANSPORT=${JSON.stringify(defaultTransport)};${create};return createScramjetTransport;
 `);
 function state(){
   let entered,resolve,reject;
@@ -26,6 +30,15 @@ function state(){
   const value={created:0,entered,gate,started,resolve,reject};globalThis.__nyxTransportInitTest=value;return value;
 }
 try{
+  // No stored choice and older Auto preferences must select the libcurl
+  // adapter even when a launcher calls the transport before normal tab setup.
+  for(const configured of [undefined,'auto','libcurl','libcurlRaw']){
+    const createDefault=make(async()=>{},normalizeName,{text:(_,fallback)=>configured??fallback},()=> 'wss://fixture.test/wisp/',()=>0);
+    const current=state(),request=createDefault();current.resolve();
+    assert.equal((await request).ready,true);assert.equal(current.created,1);
+  }
+  assert.equal(normalizeName('epoxy'),'epoxy','Keep explicit alternative choices');
+  assert.equal(normalizeName('wisp'),'wisp');
   const create=make(async()=>{},x=>x,{text:()=> 'libcurlRaw'},()=> 'wss://fixture.test/wisp/',()=>0);
   const first=state(),a=create(),b=create();await first.started;
   assert.equal(first.created,1,'Concurrent cold calls must share one SDK initialization');

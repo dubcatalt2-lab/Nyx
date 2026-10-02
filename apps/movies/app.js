@@ -52,7 +52,7 @@ async function api(path,signal,retries=0){
  }
 }
 
-function poster(url,alt=''){const img=document.createElement('img');img.alt=alt;img.loading='lazy';let retried=false;const fallback=()=>{img.onerror=null;img.classList.add('poster-fallback');img.src='/assets/icons/nyx-monogram.png';};img.onerror=()=>{if(!retried&&(url?.startsWith('https://image.tmdb.org/t/p/')||url?.startsWith('/api/movies/image/'))){retried=true;img.src=url.replace(/\/w\d+\//,'/w185/');}else fallback();};if(url)img.src=url;else fallback();return img;}
+function poster(url,alt=''){const img=document.createElement('img');img.alt=alt;img.loading='lazy';let retried=false;const fallback=()=>{img.onerror=null;img.classList.add('poster-fallback');img.src='/assets/icons/nyx-cat-moon.svg?v=3';};img.onerror=()=>{if(!retried&&(url?.startsWith('https://image.tmdb.org/t/p/')||url?.startsWith('/api/movies/image/'))){retried=true;img.src=url.replace(/\/w\d+\//,'/w185/');}else fallback();};if(url)img.src=url;else fallback();return img;}
 
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
 const backdropLayer=document.createElement('div');backdropLayer.id='movie-backdrop';backdropLayer.setAttribute('aria-hidden','true');document.body.prepend(backdropLayer);let backdropGeneration=0,backdropUrl='';

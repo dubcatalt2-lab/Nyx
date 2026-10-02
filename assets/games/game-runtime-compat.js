@@ -23,6 +23,9 @@
   const wrapped=function(canvas,options,...rest){
    const config={...options};
    config.streamingAssetsUrl=new URL(config.streamingAssetsUrl||'StreamingAssets',document.baseURI).href;
+   // Unity's optional download cache otherwise rejects before startup in an
+   // opaque frame, where IndexedDB cannot be opened. Keep network loads intact.
+   if(globalThis.origin==='null')config.cacheControl=()=> 'no-store';
    return Reflect.apply(factory,this,[canvas,config,...rest]);
   };
   unityFactories.add(wrapped);globalThis.createUnityInstance=wrapped;
@@ -34,7 +37,7 @@
  if(!globalThis.ytgame){
   const listeners=new Set(),empty=()=>{},resolved=async()=>{};
   const saveKey=()=> 'nyx.playable.save:'+document.baseURI;
-  globalThis.ytgame={IN_PLAYABLES_ENV:false,
+  globalThis.ytgame={IN_PLAYABLES_ENV:false,SDK_VERSION:'nyx-standalone-1',
    game:{firstFrameReady:empty,gameReady:empty,gameLoaded:empty,loadData:async()=>{try{return localStorage.getItem(saveKey())||''}catch{return''}},saveData:async data=>{try{localStorage.setItem(saveKey(),String(data))}catch{}},sendScore:resolved},
    system:{getLanguage:async()=>navigator.language||'en',isAudioEnabled:()=>true,isMuted:()=>false,onAudioEnabledChange:callback=>{listeners.add(callback);return()=>listeners.delete(callback)},onPause:()=>empty,onResume:()=>empty},
    engagement:{sendScore:resolved},health:{logError:empty,logWarning:empty},ads:{AdResult:{UNKNOWN:'unknown',SHOWED:'showed',REJECTED:'rejected'},isAdAvailable:()=>false,requestAd:async()=>'rejected'}

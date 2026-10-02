@@ -2,6 +2,7 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "lib/app-traffic.mjs",
   "lib/nyxcloud-access.mjs",
   "lib/nyxcloud-desktop.mjs",
   "apps/nyxcloud/index.html",
@@ -67,6 +68,9 @@ const requiredFiles = [
   "assets/games/game-runtime-compat.js",
   "assets/games/game-cdn.js",
   "assets/games/game-document.js",
+  "assets/games/game-viewport.js",
+  "assets/games/subway-surfers.html",
+  "assets/games/small-world-cup.html",
   "lib/game-resource-repairs.mjs",
   "lib/game-reports.mjs",
   "assets/transports/libcurl-client.mjs",
@@ -175,6 +179,10 @@ const requiredFiles = [
   "assets/credits/midnight.png",
   "assets/credits/p2p-games.png",
   "assets/icons/nyx-monogram-small.png",
+  "assets/icons/nyx-cat-moon.svg",
+  "assets/icons/nyx-cat-moon-small.svg",
+  "assets/icons/nyx-cat-moon.png",
+  "assets/backgrounds/halloween.jpg",
   "css/core.css",
   "css/chrome-and-settings.css",
   "css/fresh-theme.css",

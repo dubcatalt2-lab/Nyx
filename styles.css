@@ -3,16 +3,16 @@
 @import url("./css/fresh-theme.css?v=20260927-previews-v3");
 @import url("./css/interface-polish.css?v=20260927-previews-v3");
 @import url("./css/midnight-theme.css?v=20260927-previews-v3");
-@import url("./css/homepage.css?v=20260927-previews-v3");
+@import url("./css/homepage.css?v=20261001-halloween-v3");
 @import url("./css/theme-consistency.css?v=20260927-previews-v3");
 @import url("./css/default-theme-polish.css?v=20260927-previews-v3");
-@import url("./css/settings-dashboard.css?v=20260927-previews-v3");
+@import url("./css/settings-dashboard.css?v=20261001-wallpaper-mobile-v4");
 @import url("./css/owner-dashboard.css?v=20260927-previews-v3");
-@import url("./css/home-utilities.css?v=20260927-previews-v3");
+@import url("./css/home-utilities.css?v=20261001-halloween-v3");
 @import url("./css/hover-consistency.css?v=20260927-previews-v3");
 @import url("./css/weather-redesign.css?v=20260927-previews-v3");
 @import url("./css/theme-tints.css?v=20260927-previews-v3");
-@import url("./css/setup-wizard.css?v=20260927-previews-v3");
+@import url("./css/setup-wizard.css?v=20261001-halloween-wallpaper-v5");
 @import url("./css/credits.css?v=20260927-previews-v3");
 
 .nyx-founder-editor-overlay{position:fixed;z-index:2147483000;inset:0;display:grid;place-items:center;padding:22px;background:rgba(3,8,14,.68);backdrop-filter:blur(12px)}
@@ -2117,7 +2117,7 @@ html body .lion-ai-mark{
   border:0!important;
   border-radius:8px!important;
   background-color:transparent!important;
-  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-monogram.png"))!important;
+  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-cat-moon.svg?v=3"))!important;
   background-position:center!important;
   background-repeat:no-repeat!important;
   background-size:100%!important;
@@ -2313,7 +2313,7 @@ html body .lion-ai-orb{
   border:1px solid color-mix(in srgb,var(--ai-accent) 44%,transparent);
   border-radius:19px;
   background-color:color-mix(in srgb,var(--ai-accent) 12%,rgba(8,10,20,.86));
-  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-monogram.png"));
+  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-cat-moon.svg?v=3"));
   background-position:center;
   background-repeat:no-repeat;
   background-size:100%;

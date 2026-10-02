@@ -95,7 +95,7 @@ button:disabled{cursor:not-allowed}
   flex:0 0 31px;
   border-radius:9px;
   background-color:var(--ai-surface);
-  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-monogram.png"));
+  background-image:var(--nyx-themed-logo-url,url("/assets/icons/nyx-cat-moon.svg?v=3"));
   background-position:center;
   background-repeat:no-repeat;
   background-size:100%;

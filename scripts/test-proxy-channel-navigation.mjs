@@ -27,15 +27,20 @@ const browser=await chromium.launch({channel:'msedge',headless:true});
 try{for(const brand of (process.env.NYX_TEST_BRANDS||'nyx,tutsi,drop').split(',')){
  const context=await browser.newContext();
  await context.addInitScript(()=>{
-  localStorage.setItem('tutsi.customize.seen','1');localStorage.setItem('tutsi.settings.v1',JSON.stringify({closePrevention:false,httpBridge:true,transport:'epoxy'}));
+  localStorage.setItem('tutsi.customize.seen','1');localStorage.setItem('tutsi.settings.v1',JSON.stringify({closePrevention:false,httpBridge:true}));
   localStorage.setItem('drop.setupComplete','1');localStorage.setItem('drop.settings',JSON.stringify({connection:'bridge',restore:false}));
-  localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.releaseNotes.2026-09-26-nyx-1.3.6.7.seen','2026-09-26-nyx-1.3.6.7');localStorage.setItem('nyx.browserMode','scramjet');localStorage.setItem('nyx.transport','epoxy');
+  localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.releaseNotes.2026-09-26-nyx-1.3.6.7.seen','2026-09-26-nyx-1.3.6.7');localStorage.setItem('nyx.browserMode','scramjet');
  });
  await context.route('**/api/**',r=>r.fulfill({json:{}}));
  await context.route('**/api/tutsi-relay/sessions',r=>r.fulfill({json:{token:'fixture'}}));
  await context.route('**/api/tutsi-relay/receive',r=>r.fulfill({contentType:'application/octet-stream',body:Buffer.from([9,0,0,0,3,0,0,0,0,10,0,0,0])}));
  const paths=['/assets/transports/epoxy-scramjet.mjs','/assets/transports/libcurl-scramjet.mjs'];
- await context.route(url=>paths.some(p=>url.pathname===p||url.pathname===proxyAssetNames[p]),r=>r.fulfill({contentType:'text/javascript',body:transport}));
+ const loadedTransports=new Set();
+ await context.route(url=>paths.some(p=>url.pathname===p||url.pathname===proxyAssetNames[p]),r=>{
+  const pathname=new URL(r.request().url()).pathname;
+  loadedTransports.add(paths.find(p=>pathname===p||pathname===proxyAssetNames[p]));
+  return r.fulfill({contentType:'text/javascript',body:transport});
+ });
  const page=await context.newPage(),errors=[];
  page.on('pageerror',error=>errors.push(error.message));
  if(process.argv.includes('--debug')){page.on('framenavigated',f=>console.log('NAV',f.url()));page.on('console',m=>{if(m.type()==='error')console.log('ERROR',m.text().slice(0,300));});}
@@ -47,6 +52,7 @@ try{for(const brand of (process.env.NYX_TEST_BRANDS||'nyx,tutsi,drop').split(','
  const frame=page.frameLocator(selector);
  try{
   await frame.locator('#b').waitFor({timeout:25000});
+  assert.deepEqual([...loadedTransports],['/assets/transports/libcurl-scramjet.mjs'],brand+' must browse with libcurl by default');
   const instance=await frame.locator('body').getAttribute('data-instance');assert(instance);
   await frame.locator('#draft').fill('Keep this draft');
   await frame.locator('#b').click();

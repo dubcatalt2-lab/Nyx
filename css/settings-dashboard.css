@@ -455,3 +455,43 @@ html body.browser-shell .settings-preset[data-preset="nyx"] .quick-icon{
 
 html body.browser-shell .quick-tile[data-preset="nyx"]:hover .quick-icon,
 html body.browser-shell .settings-preset[data-preset="nyx"]:hover .quick-icon{transform:scale(1.05)!important}
+
+/* Keep wallpaper controls usable when the settings sidebar cannot fit. */
+@media (max-width: 900px) {
+  html body.browser-shell.browser-shell .browser-shell-settings-panel .settings-app.nyx-settings-dashboard {
+    grid-template-columns: minmax(0, 1fr)!important;
+    grid-template-rows: auto minmax(0, 1fr)!important;
+  }
+  html body.browser-shell .nyx-settings-side {
+    padding: 12px!important;
+    border-right: 0!important;
+    border-bottom: 1px solid var(--obsidian-line)!important;
+  }
+  html body.browser-shell .nyx-settings-filter {
+    width: 100%!important;
+    margin: 0 0 8px!important;
+  }
+  html body.browser-shell .nyx-settings-nav {
+    display: flex!important;
+    overflow-x: auto;
+  }
+  html body.browser-shell.browser-shell .browser-shell-settings-panel .nyx-settings-nav button {
+    width: auto!important;
+    flex: 0 0 auto;
+    gap: 8px!important;
+    padding: 8px 12px!important;
+    white-space: nowrap;
+  }
+  html body.browser-shell .browser-shell-settings-panel .nyx-settings-dashboard > .settings-main {
+    min-height: 0;
+    padding: 20px 12px 40px!important;
+  }
+  html body.browser-shell .browser-shell-settings-panel .nyx-settings-group > .settings-block {
+    grid-template-columns: minmax(0, 1fr)!important;
+    gap: 16px!important;
+    padding: 16px!important;
+  }
+  html body.browser-shell .nyx-settings-control :is(.nyx-color-theme-grid, .nyx-wallpaper-grid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

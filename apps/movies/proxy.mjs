@@ -5,7 +5,7 @@ function standaloneSettings() {
   const tutsi = location.hostname.startsWith('tutsi.') || new URLSearchParams(location.search).get('tutsi') === '1' || document.documentElement.dataset.site === 'tutsi';
   if (tutsi) { let saved; try { saved=JSON.parse(read('tutsi.settings.v1') || '{}'); } catch {} return {transport:'libcurl',httpBridge:true,autoRelay:true,...saved}; }
   const transport=read('nyx.transport').replace(/^"|"$/g,'');
-  return {transport:!transport || /^libcurl/i.test(transport)?'libcurl':transport==='wisp'?'wisp':'epoxy',
+  return {transport:!transport || transport==='auto' || /^libcurl/i.test(transport)?'libcurl':transport==='wisp'?'wisp':'epoxy',
     httpBridge:read('nyx.httpBridge')!=='false',relay:read('nyx.wispUrl'),autoRelay:true,
     adBlock:read('nyx.popupProtection')!=='false',popupBlock:true,downloadBlock:true};
 }

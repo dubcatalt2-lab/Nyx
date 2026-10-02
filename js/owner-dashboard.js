@@ -224,6 +224,115 @@
     return `<svg viewBox="0 0 24 24" aria-hidden="true">${paths[name] || ""}</svg>`;
   }
 
+  function createTrafficPanel(host, api) {
+    let enabled = false, active = true, closed = false, controller = null, minutes = 60, data = null, selectedAt = null;
+    const number = value => Number(value || 0).toLocaleString();
+    const time = at => new Date(at).toLocaleTimeString([], { hour:'numeric', minute:'2-digit' });
+    const stamp = at => new Date(at).toLocaleString([], { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+    host.innerHTML = `<header class="nyx-traffic-heading"><div><span class="nyx-traffic-eyebrow">LIVE ACTIVITY</span><h2>Traffic</h2><p>Requests per minute &middot; all sites on this VPS</p></div><div class="nyx-traffic-ranges" aria-label="Traffic time range">${[[60,'1 hour'],[360,'6 hours'],[1440,'24 hours']].map(([value,label])=>`<button type="button" data-traffic-range="${value}" aria-pressed="${value===60}">${label}</button>`).join('')}</div></header>
+      <div class="nyx-traffic-stats" data-traffic-stats></div>
+      <div class="nyx-traffic-chart" data-traffic-chart></div>
+      <div class="nyx-traffic-inspector" hidden><input type="range" min="0" max="59" value="59" data-traffic-minute aria-label="Inspect traffic minute"><output data-traffic-detail></output></div>
+      <footer class="nyx-traffic-footer"><span data-traffic-status role="status">Loading traffic...</span><span>Times in ${esc(Intl.DateTimeFormat().resolvedOptions().timeZone)}. CDN-only hits and WebSocket stream traffic are excluded. Gaps mean no measurement.</span></footer>`;
+    const status = host.querySelector('[data-traffic-status]');
+    const chart = host.querySelector('[data-traffic-chart]');
+    const slider = host.querySelector('[data-traffic-minute]');
+    const detail = host.querySelector('[data-traffic-detail]');
+    let visiblePoints = [];
+    let plotWidth = 1040;
+    const x = index => 46 + index / Math.max(1, visiblePoints.length - 1) * (plotWidth - 64);
+    let ceiling = 1;
+    const y = count => 230 - (count || 0) / ceiling * 190;
+
+    function inspect(index) {
+      if (!visiblePoints.length) return;
+      index = Math.max(0, Math.min(visiblePoints.length - 1, Math.round(index)));
+      const point = visiblePoints[index];
+      selectedAt = point.at;
+      slider.value = index;
+      const label = `${stamp(point.at)} · ${point.requests === null ? 'No measurement' : `${number(point.requests)} requests · ${number(point.errors)} server errors${point.membersPeak != null ? ` · ${number(point.membersPeak)} members online` : ''}${point.partial ? ' · Partial minute' : ''}`}`;
+      slider.setAttribute('aria-valuetext', label);
+      detail.textContent = label;
+      const cursor = chart.querySelector('[data-traffic-cursor]');
+      cursor?.setAttribute('x1', x(index)); cursor?.setAttribute('x2', x(index));
+      const dot = chart.querySelector('[data-traffic-dot]');
+      dot?.setAttribute('cx', x(index)); dot?.setAttribute('cy', y(point.requests));
+      dot?.setAttribute('opacity', point.requests === null ? '0' : '1');
+    }
+
+    function render() {
+      plotWidth = Math.max(300, chart.clientWidth);
+      // Fit recorded history to the chart; retain gaps within that history.
+      const firstMeasured = data.points.findIndex(point => point.requests !== null);
+      const points = visiblePoints = firstMeasured < 0 ? data.points : data.points.slice(firstMeasured);
+      const totals = data.totals, peak = data.peak;
+      ceiling = Math.max(1, Math.ceil((peak?.requests || 1) * 1.15));
+      const stats = [
+        ['Requests', number(totals.requests), 'In selected window'],
+        ['Peak / min', number(peak?.requests), peak ? stamp(peak.at) + (peak.partial ? ' · partial' : '') : 'No measurement'],
+        ['Peak members', data.peakMembers ? number(data.peakMembers.count) : '—', data.peakMembers ? stamp(data.peakMembers.at) + ' · signed-in Nyx accounts' : 'Collecting member history'],
+        ['Server errors', number(totals.errors), `${number(totals.aborted)} interrupted requests`],
+        ['Avg. response', totals.averageMs === null ? '—' : number(totals.averageMs) + ' ms', 'Completed HTTP responses']
+      ];
+      host.querySelector('[data-traffic-stats]').innerHTML = stats.map(([label,value,caption])=>`<div><span>${esc(label)}</span><strong>${esc(value)}</strong><small>${esc(caption)}</small></div>`).join('');
+      let line = '', area = '', run = [];
+      const commit = () => {
+        if (!run.length) return;
+        const path = run.map(([a,b],i) => `${i?'L':'M'}${a.toFixed(2)} ${b.toFixed(2)}`).join(' ');
+        line += path + ' '; area += `${path} L${run.at(-1)[0]} 230 L${run[0][0]} 230 Z `; run = [];
+      };
+      points.forEach((point,index) => { if (point.requests === null) commit(); else run.push([x(index), y(point.requests)]); }); commit();
+      const grid = [0,.5,1].map(fraction => `<line x1="46" x2="${plotWidth-18}" y1="${230-fraction*190}" y2="${230-fraction*190}" class="nyx-traffic-grid"/><text x="36" y="${234-fraction*190}" text-anchor="end">${number(Math.round(ceiling*fraction))}</text>`).join('');
+      const labels = [0,Math.floor((points.length-1)/2),points.length-1].map(index=>`<text x="${x(index)}" y="260" text-anchor="${index===0?'start':index===points.length-1?'end':'middle'}">${esc(time(points[index].at))}</text>`).join('');
+      chart.innerHTML = `<svg viewBox="0 0 ${plotWidth} 275" preserveAspectRatio="none" role="img" aria-label="Requests per minute. Peak ${esc(number(peak?.requests))}${peak?' at '+esc(stamp(peak.at)):''}. Use the slider below to inspect a minute.">${grid}<path d="${area}" class="nyx-traffic-area"/><path d="${line}" class="nyx-traffic-line"/>${labels}<line data-traffic-cursor y1="30" y2="230" class="nyx-traffic-cursor"/><circle data-traffic-dot r="4" class="nyx-traffic-dot"/></svg>`;
+      host.querySelector('.nyx-traffic-inspector').hidden = false;
+      slider.max = points.length - 1;
+      let index = selectedAt === null ? -1 : points.findIndex(point=>point.at===selectedAt);
+      if (index < 0) index = peak ? points.findIndex(point=>point.at===peak.at) : points.length-1;
+      inspect(index);
+      status.textContent = `Recorded from ${stamp(points[0].at)} · updated ${new Date(data.generatedAt).toLocaleTimeString()} · refreshes every 10s · current minute incomplete`;
+      host.dataset.trafficState = 'ready';
+    }
+
+    async function refresh() {
+      if (!enabled || !active || closed || document.hidden || controller) return;
+      const request = new AbortController(); controller = request;
+      const timeout = setTimeout(()=>request.abort(), 12000);
+      try {
+        const result = await api(`/api/owner-dashboard/traffic?minutes=${minutes}`, { signal:request.signal });
+        if (closed || request.signal.aborted || !enabled) return;
+        if (!Array.isArray(result.points) || !result.points.length || !result.totals) throw new Error('Invalid traffic response');
+        data = result; render();
+      } catch {
+        if (!closed && enabled && controller === request) {
+          host.dataset.trafficState = 'unavailable';
+          status.textContent = data ? `Update unavailable. Showing data from ${stamp(data.generatedAt)}; retrying automatically.` : 'Traffic is unavailable. Retrying automatically.';
+        }
+      } finally { clearTimeout(timeout); if (controller === request) controller = null; }
+    }
+    host.addEventListener('click', event => {
+      const button = event.target.closest('[data-traffic-range]'); if (!button) return;
+      minutes = Number(button.dataset.trafficRange); selectedAt = null;
+      controller?.abort(); controller = null;
+      host.querySelectorAll('[data-traffic-range]').forEach(item=>item.setAttribute('aria-pressed', String(item===button)));
+      status.textContent = 'Updating time range...';
+      void refresh();
+    });
+    chart.addEventListener('pointermove', event => {
+      const bounds = chart.getBoundingClientRect();
+      if (data) inspect(((event.clientX-bounds.left)/bounds.width*plotWidth-46)/(plotWidth-64)*(visiblePoints.length-1));
+    });
+    slider.addEventListener('input', () => inspect(Number(slider.value)));
+    const timer = setInterval(()=>void refresh(), 10000);
+    const resize = new ResizeObserver(()=>{ if (data && enabled && active && chart.clientWidth > 0 && Math.abs(Math.max(300,chart.clientWidth)-plotWidth)>1) render(); });
+    resize.observe(chart);
+    return {
+      enable(value) { enabled = value; host.hidden = !value; if (!value) { controller?.abort(); controller=null; data=null; chart.replaceChildren(); host.querySelector('[data-traffic-stats]').replaceChildren(); detail.textContent=''; } else void refresh(); },
+      activate(value) { active=value; if (value) void refresh(); else { controller?.abort(); controller=null; } },
+      destroy() { closed=true; clearInterval(timer); controller?.abort(); resize.disconnect(); }
+    };
+  }
+
   function createDashboard({ getToken, toast: externalToast } = {}) {
     if (typeof getToken !== "function") throw new Error("Owner authentication is unavailable.");
     const state = {
@@ -252,7 +361,7 @@
       globalApps: []
     };
     const overlay = document.createElement("section");
-    overlay.className = "nyx-owner-dashboard-overlay";
+    overlay.className = "nyx-owner-dashboard-overlay owner-organized";
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-modal", "true");
     overlay.setAttribute("aria-labelledby", "nyxOwnerDashboardTitle");
@@ -265,11 +374,21 @@
             <button class="nyx-owner-close" type="button" data-owner-close aria-label="Close owner dashboard">${dashboardIcon("close")}</button>
           </div>
         </header>
-        <section class="nyx-owner-tube-status" data-owner-ai-status hidden aria-live="polite"></section>
-        <section class="nyx-owner-tube-status" data-owner-game-reports hidden></section>
-        <section class="nyx-owner-tube-status" data-owner-tube-status hidden aria-live="polite"></section>
-        <section class="nyx-owner-metrics" data-owner-metrics aria-label="Account metrics"></section>
-        <section class="nyx-owner-workspace">
+        <nav class="nyx-owner-nav" aria-label="Dashboard sections">${[['overview','Overview'],['users','Users'],['services','Services'],['activity','Activity']].map(([id,label])=>`<button type="button" data-owner-section="${id}" aria-pressed="${id==='overview'}" aria-controls="nyx-owner-section-${id}">${label}</button>`).join('')}</nav>
+        <section class="nyx-owner-section" data-owner-panel="overview" id="nyx-owner-section-overview" aria-label="Overview">
+          <div class="nyx-owner-section-heading"><h2>At a glance</h2><p>Choose a metric to view matching accounts.</p></div>
+          <section class="nyx-owner-metrics" data-owner-metrics aria-label="Account metrics"></section>
+          <section class="nyx-owner-traffic" data-owner-traffic hidden aria-label="Server traffic"></section>
+        </section>
+        <section class="nyx-owner-section" data-owner-panel="services" id="nyx-owner-section-services" aria-label="Services" hidden>
+          <div class="nyx-owner-section-heading"><h2>Services</h2><p>Balances, playback health, and game reports.</p></div>
+          <div class="nyx-owner-service-grid">
+            <section class="nyx-owner-tube-status" data-owner-ai-status hidden aria-live="polite"></section>
+            <section class="nyx-owner-tube-status" data-owner-tube-status hidden aria-live="polite"></section>
+            <section class="nyx-owner-tube-status" data-owner-game-reports hidden></section>
+          </div>
+        </section>
+        <section class="nyx-owner-workspace nyx-owner-section" data-owner-panel="users" id="nyx-owner-section-users" aria-label="Users" hidden>
           <div class="nyx-owner-users-panel">
             <header class="nyx-owner-panel-head">
               <div><h2>${dashboardIcon("users")}Users</h2><span data-owner-user-count>Loading accounts…</span></div>
@@ -290,6 +409,8 @@
             <div class="nyx-owner-table-wrap" data-owner-table aria-live="polite"></div>
             <footer class="nyx-owner-pagination" data-owner-pagination></footer>
           </div>
+        </section>
+        <section class="nyx-owner-section" data-owner-panel="activity" id="nyx-owner-section-activity" aria-label="Activity" hidden>
           <aside class="nyx-owner-activity-panel">
             <header><div><h2>${dashboardIcon("activity")}Activity logs</h2><span>Security and account events</span></div></header>
             <div class="nyx-owner-activity-list" data-owner-activity></div>
@@ -308,6 +429,15 @@
     const activityHost = overlay.querySelector("[data-owner-activity]");
     const drawer = overlay.querySelector("[data-owner-user-drawer]");
     const confirmHost = overlay.querySelector("[data-owner-confirm]");
+    const traffic = createTrafficPanel(overlay.querySelector('[data-owner-traffic]'), api);
+    let section = 'overview';
+    function showSection(value) {
+      if (!['overview','users','services','activity'].includes(value)) return;
+      section = value;
+      overlay.querySelectorAll('[data-owner-panel]').forEach(panel=>panel.hidden=panel.dataset.ownerPanel!==value);
+      overlay.querySelectorAll('[data-owner-section]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.ownerSection===value)));
+      traffic.activate(value==='overview');
+    }
 
     function notify(message, type = "success") {
       externalToast?.(message);
@@ -528,6 +658,8 @@
     }
 
     function renderError(error) {
+      showSection('users');
+      traffic.enable(false);
       tableHost.innerHTML = `<div class="nyx-owner-error"><strong>Dashboard could not load</strong><span>${esc(error.message || "Try again.")}</span><button type="button" data-owner-refresh>Try again</button></div>`;
       metricsHost.innerHTML = "";
       activityHost.innerHTML = "";
@@ -597,6 +729,10 @@
         const data = await api(`/api/owner-dashboard?${parameters}`, { signal: state.controller.signal });
         state.data = data;
         state.access = data.access || state.access;
+        traffic.enable(Boolean(state.access?.founder));
+        overlay.querySelector('[data-owner-section="services"]').hidden = !state.access?.founder;
+        overlay.querySelector('[data-owner-game-reports]').hidden = !state.access?.founder;
+        if (!state.access?.founder && section === 'services') showSection('overview');
         tubeHost.hidden = !state.access?.founder;
         if (!tubeHost.hidden) void loadTubeStatus();
         aiStatusHost.hidden=!state.access?.founder;
@@ -1140,6 +1276,8 @@
     }
 
     function onClick(event) {
+      const sectionButton = event.target.closest('[data-owner-section]');
+      if (sectionButton) return showSection(sectionButton.dataset.ownerSection);
       if(event.target.closest('[data-owner-studyready]'))return void openStudyReady();
       const studyEdit=event.target.closest('[data-studyready-edit]');
       if(studyEdit){const row=studyReadyData.domains.find(item=>item.hostname===studyEdit.dataset.studyreadyEdit);const form=drawer.querySelector('[data-owner-studyready-form]');form.elements.hostname.value=row.hostname;form.elements.title.value=row.title;form.elements.title.focus();return;}
@@ -1178,6 +1316,7 @@
       if (unbanId) return void removeIpBan(unbanId);
       const segment = event.target.closest("[data-owner-segment]")?.dataset.ownerSegment;
       if (segment) {
+        showSection('users');
         state.segment = segment;
         state.search = "";
         state.role = "all";
@@ -1493,6 +1632,7 @@
     }
 
     function destroy() {
+      traffic.destroy();
       clearInterval(tubeTimer);
       clearInterval(aiStatusTimer);
       state.controller?.abort();

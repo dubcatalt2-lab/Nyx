@@ -3,6 +3,9 @@
 export const gameCdnHosts = new Set(['cdn.jsdelivr.net', 'raw.githubusercontent.com', 'rawcdn.githack.com', 'raw.githack.com']);
 
 export function repairGameResourcePath(pathname) {
+  // Verified replacement repositories retain these archived files and commits.
+  pathname=pathname.replace(/\/genizy\/google-class(?=@|\/)/g,'/taskmaster773/google-class')
+    .replace(/\/gh\/genizy\/ovo-3-dimension@[^/]+\//g,'/gh/bubblfan/ovo-3-dimension@102179bf4242fd237c46c555ba154c2f325d351c/');
   // This mirror lowercased RPG Maker data and plugin files, but not all references.
   return pathname.replace(/(\/web-ports\/fear-and-hunger-2@[^/]+\/(?:js\/plugins|data)\/)([^/]+\.(?:js|json))$/i,(_all,root,file)=>root+file.toLowerCase());
 }
@@ -12,7 +15,7 @@ export function normalizeGameCdnUrl(value, base) {
     const url = new URL(String(value), base);
     if (!['http:', 'https:'].includes(url.protocol) || !gameCdnHosts.has(url.hostname) || url.username || url.password || url.port) return null;
     if (url.hostname === 'cdn.jsdelivr.net' && /^\/(?!gh\/|npm\/|combine\/)[\w.-]+\/[\w.-]+@[^/]+\//.test(url.pathname)) url.pathname = '/gh' + url.pathname;
-    if(url.hostname==='cdn.jsdelivr.net')url.pathname=repairGameResourcePath(url.pathname);
+    url.pathname=repairGameResourcePath(url.pathname);
     return url;
   } catch { return null; }
 }

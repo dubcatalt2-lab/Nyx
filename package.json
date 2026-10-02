@@ -11,6 +11,7 @@
     "prepare:vision": "node scripts/warm-vision-model.mjs",
     "sync:gn-math": "node scripts/sync-gn-math.mjs",
     "test:account-controls": "node scripts/test-account-controls.mjs",
+    "test:owner-dashboard": "node scripts/test-app-traffic.mjs && node scripts/test-owner-traffic.mjs && node scripts/test-owner-ai-status.mjs",
     "test:account-signup": "node scripts/test-account-signup.mjs",
     "test:ai-workspace": "node scripts/test-ai-workspace.mjs",
     "test:ai-allowance": "node scripts/test-ai-allowance.mjs && node scripts/test-ai-quota-regressions.mjs && node scripts/test-ai-claude-site-pool.mjs && node scripts/test-ai-priority.mjs && node scripts/test-openrouter-balance.mjs && node scripts/test-ai-budget-integration.mjs && node scripts/test-ai-provider-retirement.mjs && node scripts/test-ai-access-policy.mjs && node scripts/test-ai-free-health.mjs && node scripts/test-ai-free-errors.mjs && node scripts/test-ai-public-pool.mjs && node scripts/test-ai-images.mjs && node scripts/test-developer-api.mjs",

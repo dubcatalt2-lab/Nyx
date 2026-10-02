@@ -1,4 +1,4 @@
-@import url('./obsidian-palette.css');
+@import url('./obsidian-palette.css?v=20261001-halloween-v1');
 :root {
   --nyx-sidebar-width:184px;
   --nyx-chrome-height:0px;
@@ -44,6 +44,7 @@ html[data-nyx-beam-wallpaper="obsidian"] body:not(.custom-bg-active)::before {
 html[data-nyx-beam-wallpaper^="photo-leaves-"] { --nyx-photo-wallpaper:url("../assets/backgrounds/leaves.jpg") }
 html[data-nyx-beam-wallpaper^="photo-moonlight-"] { --nyx-photo-wallpaper:url("../assets/backgrounds/moonlight.jpg") }
 html[data-nyx-beam-wallpaper^="photo-rain-"] { --nyx-photo-wallpaper:url("../assets/backgrounds/rain.jpg") }
+html[data-nyx-beam-wallpaper^="photo-halloween-"] { --nyx-photo-wallpaper:url("../assets/backgrounds/halloween.jpg") }
 html[data-nyx-beam-wallpaper^="photo-"] body:not(.custom-bg-active)::before {background:#000 var(--nyx-photo-wallpaper) center/cover no-repeat;filter:blur(32px) brightness(.55) saturate(.65)}
 html[data-nyx-beam-wallpaper$="-deep"] body:not(.custom-bg-active)::before {filter:blur(44px) brightness(.35) saturate(.5)}
 html[data-nyx-beam-wallpaper$="-mono"] body:not(.custom-bg-active)::before {filter:blur(32px) brightness(.5) grayscale(1)}
@@ -171,7 +172,7 @@ body.browser-shell .top-os .browser-mode-address {position:relative;inset:auto;d
 .browser-home.nyx-minimal-home.hidden {display:none!important}
 .nyx-minimal-hero {position:absolute;top:43%;left:50%;transform:translate(-50%,-50%);display:grid;justify-items:center;gap:28px;width:min(530px,calc(100% - 64px));margin:0;padding:0}
 .nyx-minimal-brand {display:grid;justify-items:center;gap:9px;background:transparent}
-.nyx-home-logo {display:block;width:57px;height:57px;object-fit:contain;filter:url('../assets/icons/nyx-mark-filter.svg#mark')}
+.nyx-home-logo {display:block;width:57px;height:57px;object-fit:contain}
 html body.browser-shell .nyx-minimal-brand h1 {margin:0;color:var(--obsidian-text);font-family:NyxRounded,"Arial Rounded MT Bold",sans-serif!important;font-size:28px;font-weight:600!important;line-height:1.15;letter-spacing:.08em;text-indent:.08em;animation:nyx-wordmark-arrive 900ms cubic-bezier(.2,.75,.25,1) both}
 .nyx-minimal-brand h1::before,.nyx-minimal-brand h1::after,.nyx-title-dot-canvas,.nyx-home-dot-field {display:none!important}
 .nyx-minimal-search {display:flex;align-items:center;gap:12px;width:100%;height:46px;padding:0 13px;border:1px solid var(--obsidian-line);border-radius:9px;background:var(--obsidian-field);backdrop-filter:blur(20px);box-shadow:0 8px 30px #0002}
@@ -235,7 +236,6 @@ html body.browser-shell .browser-mode-address>button:hover {background:var(--obs
 html body.browser-shell .browser-mode-address .browser-mode-url {color:var(--obsidian-text)!important;-webkit-text-fill-color:var(--obsidian-text)!important;border-color:var(--obsidian-line)!important;box-shadow:none!important}
 html body.browser-shell .browser-mode-address .browser-mode-url::selection {color:#fff;-webkit-text-fill-color:#fff;background:#3390ff}
 html body.browser-shell :is(.browser-mode-address>button,.nyx-home-links button):focus-visible {outline:1px solid var(--obsidian-muted);outline-offset:2px}
-html[data-nyx-appearance="light"] .nyx-home-logo {filter:url('../assets/icons/nyx-mark-filter.svg#mark') invert(1)}
 html body.browser-shell .nyx-settings-control input[type="range"] {accent-color:#9aac9f;cursor:pointer}
 html body.browser-shell .nyx-settings-control :is(button,input,select,textarea):focus-visible {outline:1px solid var(--obsidian-muted)!important;outline-offset:2px!important;border-radius:7px}
 html body.browser-shell .nyx-settings-control button {padding:8px 12px!important;transition:background-color 150ms,border-color 150ms!important}
@@ -250,3 +250,16 @@ html body.browser-shell .nyx-settings-control :is(.nyx-wallpaper-card,.nyx-color
 .nyx-wallpaper-card .nyx-photo-preview.deep{filter:blur(3px) brightness(.4)}
 .nyx-wallpaper-card .nyx-photo-preview.mono{filter:blur(2px) grayscale(1) brightness(.6)}
 .nyx-wallpaper-back{margin-bottom:16px}
+
+/* Halloween changes color only; existing glass, geometry and blue text selection remain. */
+html[data-nyx-theme="halloween"] .nyx-visual-dock [data-nyx-dock-item].active,
+html[data-nyx-theme="halloween"] body.browser-shell .browser-shell-settings-panel .nyx-settings-nav button.active {
+  color:var(--nyx-surface-accent)!important;
+}
+html[data-nyx-theme="halloween"] body.browser-shell .nyx-settings-control .nyx-color-theme-card.selected {
+  border-color:var(--nyx-surface-accent)!important;
+}
+
+.nyx-wallpaper-upload{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.nyx-wallpaper-upload button,.nyx-wallpaper-back{display:inline-flex;align-items:center;gap:8px}
+.nyx-wallpaper-upload svg,.nyx-wallpaper-back svg{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}

@@ -1,4 +1,4 @@
-@import url('../css/obsidian-palette.css');
+@import url('../css/obsidian-palette.css?v=20261001-halloween-v1');
 :root,html body {
   --app-bg:var(--nyx-surface-bg);--app-panel:var(--nyx-surface-panel);--app-raised:var(--nyx-surface-raised);
   --app-field:var(--nyx-surface-field);--app-text:var(--nyx-surface-text);--app-muted:var(--nyx-surface-muted);--app-line:var(--nyx-surface-line);
@@ -50,7 +50,7 @@ html body :is(.ai-app,.ai-workspace,.ai-composer,.ai-composer-shell) {background
 .ai-app:not(.is-sidebar-open) {grid-template-columns:0 minmax(0,1fr)}
 .ai-app:not(.is-sidebar-open) .ai-sidebar {visibility:hidden;overflow:hidden;pointer-events:none}
 .ai-sidebar-scrim {display:none!important}
-.ai-sidebar-brand-mark {width:27px;height:27px;background:url('/assets/icons/nyx-monogram-small.png') center/contain no-repeat}
+.ai-sidebar-brand-mark {width:27px;height:27px;background:url('/assets/icons/nyx-cat-moon-small.svg?v=3') center/contain no-repeat}
 .ai-sidebar-brand small,.ai-brand-copy>span {display:none}
 .ai-sidebar-brand strong {font-size:13px;font-weight:500}
 .ai-history-search {border-radius:7px;background:var(--app-field)}

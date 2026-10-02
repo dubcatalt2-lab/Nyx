@@ -30,9 +30,11 @@ To start it locally, set a throwaway development key and local public origin in 
 
 See `deploy/stratus.env.example` for the supported environment variables.
 
-## Verification failures
+## Provider access failures
 
-A healthy Stratus process does not establish that provider account preparation works. The launcher validates provider email-request and registration responses before proceeding, so rejected requests report a sanitized provider reason instead of always waiting for an email. Repeated verification-code timeouts still require checking the provider/mail delivery; longer retries do not establish a working session.
+A healthy Stratus process and successful provider login do not establish permission to stream a game. The generated runtime checks `/userGame/checkCost` before calling `/jyapi/playGame`. The provider can return HTTP 200 with a non-success status in its JSON; status `3004` means the account lacks streaming credit. That rejection now stops game allocation immediately and reports a clear setup error without exposing account data. Failed sign-in or game initialization does not consume the adapter's launch allowance.
+
+Stratus provides the integration, not provider credit. Use the provider's supported account/billing flow to restore access, then verify a real game stream before disabling Nyx's Cloud Gaming maintenance setting. No automatic recharge, registration, or trial renewal is performed.
 
 
 ## Provider account setup

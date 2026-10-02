@@ -3,6 +3,7 @@ import {createNyxCloudDesktop} from './lib/nyxcloud-desktop.mjs';
 import {isNookRequest} from './lib/nook-policy.mjs';
 import {createDropOwnerScope} from './lib/drop-owner.mjs';
 import {startMemoryMonitor} from './lib/memory-monitor.mjs';
+import {createAppTraffic} from './lib/app-traffic.mjs';
 import {supportsConversationVoice} from './apps/agents/voice-capabilities.js';
 import {configureModelVoice,collectModelVoice} from './lib/model-voice.mjs';
 import {agentInstruction,parseAgentReply} from './lib/agent-protocol.mjs';
@@ -95,6 +96,8 @@ let catClassGamesCache = { games: [], expires: 0, promise: null };
 let catClassCoverUrls = new Set();
 const nyxCustomRoleLabelLimit = 64;
 const app = express();
+const appTraffic = createAppTraffic({file:process.env.NYX_TRAFFIC_FILE || (process.platform === 'win32' ? join(process.env.TEMP || __dirname, 'nyx-app-traffic.json') : '/var/lib/nyx/app-traffic.json')});
+app.use(appTraffic.middleware);
 startMemoryMonitor();
 const dropOwnerScope=createDropOwnerScope({verify:async token=>(await linkGeneratorFirebase()).auth.verifyIdToken(token,true)});
 app.use(dropOwnerScope.middleware);
@@ -2019,7 +2022,9 @@ function gnMathProxyCandidates(url) {
 }
 
 function gnMathResourceContentType(url, upstreamType) {
-  const pathname = String(url?.pathname || "").toLowerCase();
+  // fetch has already decoded HTTP gzip/Brotli responses. Unity still keeps
+  // .br/.gz in the filename, so MIME must come from the underlying asset.
+  const pathname = String(url?.pathname || "").toLowerCase().replace(/\.(?:br|gz)$/, '');
   if (/\.(?:js|mjs|cjs)$/.test(pathname)) return "application/javascript; charset=utf-8";
   if (/\.json$/.test(pathname)) return "application/json; charset=utf-8";
   if (/\.wasm$/.test(pathname)) return "application/wasm";
@@ -3648,8 +3653,19 @@ function recordLocalPresence(sessionId, accountUid = "", startupName = "", now =
     lastSeenIp,
     lastSeenIpAt: lastSeenIp ? now : 0
   });
-  return pruneLocalPresence(now);
+  const online = pruneLocalPresence(now);
+  recordOnlineMembers(now);
+  return online;
 }
+
+function recordOnlineMembers(now = Date.now()) {
+  pruneLocalPresence(now);
+  const members = new Set();
+  for (const session of presenceSessionDetails.values()) if (session.accountUid) members.add(session.accountUid);
+  appTraffic.recordMembers(members.size);
+}
+const memberSamplingTimer = setInterval(recordOnlineMembers, 15000);
+memberSamplingTimer.unref();
 
 function presenceCount(now = Date.now()) {
   return pruneLocalPresence(now);
@@ -12898,6 +12914,14 @@ app.get('/api/owner-dashboard/game-reports',async(req,res)=>{
 });
 
 const nyxOpenRouterOwnerStatus = createOpenRouterOwnerStatus({credentials:()=>({key:nyxAiKey(),managementKey:process.env.NYX_OPENROUTER_MANAGEMENT_KEY})});
+app.get('/api/owner-dashboard/traffic', async (req,res) => {
+  res.set('Cache-Control','no-store');
+  try {
+    const {actor} = await ownerDashboardActor(req);
+    if (actor.uid !== founderProfileConfig().administratorUid) return res.status(403).json({error:'Only the owner can view server traffic.'});
+    res.json(appTraffic.snapshot(req.query.minutes));
+  } catch(error) { res.status(error.status || 503).json({error:'Traffic could not be loaded.'}); }
+});
 app.get('/api/owner-dashboard/ai-status', async (req,res)=>{
   res.set('Cache-Control','no-store');
   try {
@@ -14287,7 +14311,7 @@ async function startNyxServer() {
     shuttingDown = true;
     const workerStopped = wisp?.stop();
     chatSocketServer.disconnectSockets(true);
-    server.close(() => Promise.resolve(workerStopped).then(() => process.exit(exitCode)));
+    server.close(() => Promise.allSettled([Promise.resolve(workerStopped), appTraffic.close()]).then(() => process.exit(exitCode)));
     setTimeout(() => {
       for (const socket of serverSockets) socket.destroy();
     }, 1_000).unref();

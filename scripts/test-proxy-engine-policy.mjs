@@ -13,6 +13,7 @@ function visit(node){
 visit(parse(source,{ecmaVersion:'latest'}));
 let configured='auto';const calls=[];
 const api=vm.runInNewContext(functions.join('\n')+';({normalizeBrowserModeName,installUltraviolet,installScramjetV1,fallbackProxyEngine})',{
+ atob,
  store:{text:()=>configured},DEFAULT_BROWSER_MODE:'scramjet',
  loadScramjetTab:()=>calls.push('scramjet'),loadTab:()=>calls.push('iframe'),
  loadSelectedSearchFallback:()=>{calls.push('failure');return true;}

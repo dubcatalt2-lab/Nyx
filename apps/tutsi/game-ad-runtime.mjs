@@ -1,6 +1,6 @@
 // Same game resource rules and SDK compatibility as the Nyx game guard.
 export function installGameAdProtection() {
-  'use strict';
+'use strict';
 
   if (globalThis.__nyxGameAdProtection) return;
 
@@ -56,6 +56,13 @@ export function installGameAdProtection() {
     '[aria-label="Advertisement"]'
   ].join(',');
   const blockedElements = new WeakSet();
+  const stubbedSdkScripts = new WeakSet();
+  const completedSdkScripts = new WeakSet();
+  function rememberSdk(node,value) {
+    // These SDKs have working local shims below. Loaders must still receive
+    // their asynchronous completion callback before they start the engine.
+    if(node?.tagName==='SCRIPT' && /(?:\/poki-sdk(?:-core[^/]*)?\.js|\/sdk\.poki\.com\/)/i.test(String(value)))stubbedSdkScripts.add(node);
+  }
 
   function parsedResource(value) {
     const raw = String(value || '').trim();
@@ -104,6 +111,10 @@ export function installGameAdProtection() {
     } catch {}
     if (!blocked) return false;
     blockedElements.add(node);
+    if(stubbedSdkScripts.has(node)&&!completedSdkScripts.has(node)) {
+      completedSdkScripts.add(node);
+      queueMicrotask(()=>node.dispatchEvent(new Event('load')));
+    }
     try { node.remove(); } catch {}
     return true;
   }
@@ -123,6 +134,7 @@ export function installGameAdProtection() {
   Element.prototype.setAttribute = function (name, value) {
     const key = String(name || '').toLowerCase();
     if (['src', 'href', 'data-src', 'data'].includes(key) && isBlockedResource(value)) {
+      rememberSdk(this,value);
       blockedElements.add(this);
       if (String(this.tagName || '').toUpperCase() === 'SCRIPT') {
         try { nativeSetAttribute.call(this, 'type', 'application/x-nyx-blocked'); } catch {}
@@ -142,6 +154,7 @@ export function installGameAdProtection() {
         get() { return descriptor.get.call(this); },
         set(value) {
           if (isBlockedResource(value)) {
+            rememberSdk(this,value);
             blockedElements.add(this);
             if (String(this.tagName || '').toUpperCase() === 'SCRIPT') {
               try { nativeSetAttribute.call(this, 'type', 'application/x-nyx-blocked'); } catch {}

@@ -1,17 +1,28 @@
 import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath} from './game-cdn.js';
 
     export function prepareGameDocument(html,path,sourceUrl){
+      // This archived Getaway page lost the opening tag of its ad stylesheet,
+      // leaving CSS as visible text that pushes the game below the viewport.
+      if(['338.html','G/clgetawayshootout.html'].includes(path))html=String(html)
+        .replace(/(#sidebarad1,\s*#sidebarad2\s*\{[\s\S]*?<\/style>)/, '<style>$1')
+        .replace(/<script>\s*(?:gadgets\.util\.runOnLoadHandlers\(\)|window\.google\.csi\.tickDl\(\));?\s*<\/script>/g,'');
       if(path==='116.html')html=String(html).replaceAll('/bike.loader.js','/bike1.loader.js');
+      if(path==='823-fix2.html')html=String(html).replaceAll('.rrayBuffer()', '.arrayBuffer()').replace('EJS_color = "#0064ff";a','EJS_color = "#0064ff";');
+      if(path==='273.html')html=String(html).replaceAll('https://rawcdn.githack.com/genizy/assets/main/blockpost/', 'https://cdn.jsdelivr.net/gh/taskmaster773/google-class@c7a14eb2fe78c6a9cbe495d84aa3768fa9a38005/blockpost/');
+      // A broken placeholder in this archived Flash wrapper hides its valid movie.
+      if(path==='D/cldoom3pack.html')html=String(html).replace('src="idc about this one"', 'src="https://cdn.jsdelivr.net/gh/Stinkalistic/UGS@main/SWFs/470460_DoomGame.swf"');
       // Archived Cloudflare Rocket Loader types are inert outside their host.
       if(/type=["'][a-f0-9]+-(?:module|text\/javascript)["']/i.test(html))html=String(html)
         .replace(/(type=["'])[a-f0-9]+-(module|text\/javascript)(["'])/gi,'$1$2$3')
         .replace(/<script\b[^>]*src=["'][^"']*\/rocket-loader\.min\.js["'][^>]*>\s*<\/script>/gi,'');
       const rawBase=sourceUrl || `https://raw.githubusercontent.com/freebuisness/html/main/${path}`;
       const baseUrl=rawBase.slice(0,rawBase.lastIndexOf('/') + 1);
-      const repoRoot='https://raw.githubusercontent.com/freebuisness/html/main/';
+      const repoRoot=sourceUrl && new URL(sourceUrl).origin===location.origin ? location.origin+'/' : 'https://raw.githubusercontent.com/freebuisness/html/main/';
       const proxyUrl=url=>gameResourceUrl(url, undefined, location.origin);
       const adProtection=`<script src="${location.origin}/assets/games/game-runtime-compat.js"><\/script><script src="${location.origin}/assets/games/game-health.js"><\/script><script src="${location.origin}/assets/games/game-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;
-      const sourceHtml=String(html || '').replace(
+      const sourceHtml=String(html || '')
+        .replace(/<link\b[^>]*href=["']https:\/\/cdn\.jsdelivr\.net\/gh\/AndreajnRcm4\/b398dl2h74v@[^"']+\/style\.css["'][^>]*>/gi,'')
+        .replace(
         /https?:\/\/cdn\.jsdelivr\.net\/gh\/genizy\/fnaf@[^/"'<>\s]+/gi,
         'https://cdn.jsdelivr.net/gh/bubblfan/fnaf@latest'
       )
@@ -40,7 +51,7 @@ import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath} from './ga
         }
       };
       const proxiedHtml=sourceHtml
-        .replace(/<script\b[^>]*src=["'][^"']*\/ytgame\.js[^"']*["'][^>]*>\s*<\/script>/gi,'')
+        .replace(/<script\b[^>]*src=["'][^"']*\/ytgame\.js[^"']*["'][^>]*>[\s\S]*?<\/script>/gi,'')
         .replace(/<script\b[^>]*src=["']\/js\/(?:main|lib|all(?:\.min)?)\.js["'][^>]*>\s*<\/script>/gi,'')
         .replace(/<base\b[^>]*>/gi,'')
         .replace(/((?:src|href)=["'])(?![a-z][a-z0-9+.-]*:|\/\/|#|data:|blob:)([^"']+)/gi,(_match,prefix,raw)=>`${prefix}${toProxy(raw)}`)
@@ -115,7 +126,7 @@ import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath} from './ga
           const fail=(message,url='')=>parent.postMessage({type:'gn-math:error',message,url},'*');
            const ignorable=/adinplay|googletagmanager|google-analytics|googlesyndication|doubleclick|facebook|recaptcha|cdn\\.r9x\\.in|pagead/i;
           const important=/\\.(?:wasm|data|unityweb|json|swf|zip|7z|js)(?:[?#]|$)|\\/Build\\//i;
-          const repoRoot='https://raw.githubusercontent.com/freebuisness/html/main/';
+          const repoRoot=${JSON.stringify(repoRoot)};
           const prox='${location.origin}/gn-math-resource/';
           const proxHosts=['cdn.jsdelivr.net','raw.githubusercontent.com','rawcdn.githack.com','raw.githack.com'];
           const repairPath=${repairGameResourcePath.toString()};
@@ -134,7 +145,7 @@ import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath} from './ga
               if(/^about:\\/\\//i.test(raw))return new URL(raw.slice(8),document.baseURI).href;
               if(!raw || raw.startsWith('#') || /^(?:javascript|data|blob|about):/i.test(raw)) return raw || 'about:blank';
               const parsed=raw.startsWith('//')?new URL('https:'+raw):new URL(raw.startsWith('/') ? raw.slice(1) : raw,raw.startsWith('/') ? repoRoot : (document.baseURI || repoRoot));
-              if(parsed.hostname==='cdn.jsdelivr.net'||parsed.href.startsWith(prox))parsed.pathname=repairPath(parsed.pathname);
+              if(proxHosts.includes(parsed.hostname)||parsed.href.startsWith(prox))parsed.pathname=repairPath(parsed.pathname);
               if(ignorable.test(parsed.href)) return 'about:blank';
               if(proxHosts.includes(parsed.hostname)) {
                 if(parsed.hostname==='cdn.jsdelivr.net' && /^\\/(?!gh\\/|npm\\/|combine\\/)[\\w.-]+\\/[\\w.-]+@[^/]+\\//.test(parsed.pathname))parsed.pathname='/gh'+parsed.pathname;
@@ -152,6 +163,15 @@ import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath} from './ga
           };
           const nativeOpen=XMLHttpRequest.prototype.open;
           XMLHttpRequest.prototype.open=function(method,url,...rest){return nativeOpen.call(this,method,own(url),...rest)};
+          // Engines also create scripts, images and styles from absolute CDN URLs.
+          // Route these before insertion, just as fetch/XHR already are routed.
+          const resourceAttrs=new Set(['src','href','data']);
+          const setAttribute=Element.prototype.setAttribute;
+          Element.prototype.setAttribute=function(name,value){return setAttribute.call(this,name,resourceAttrs.has(String(name).toLowerCase())?own(value):value)};
+          for(const [Ctor,property] of [[HTMLScriptElement,'src'],[HTMLImageElement,'src'],[HTMLLinkElement,'href'],[HTMLAudioElement,'src'],[HTMLVideoElement,'src'],[HTMLSourceElement,'src'],[HTMLEmbedElement,'src'],[HTMLObjectElement,'data']]){
+            const descriptor=Object.getOwnPropertyDescriptor(Ctor.prototype,property);
+            if(descriptor?.set)Object.defineProperty(Ctor.prototype,property,{...descriptor,set(value){descriptor.set.call(this,own(value))}});
+          }
           const NativeWorker=window.Worker;
           if(NativeWorker){
             window.Worker=function(url,opts){
@@ -212,5 +232,5 @@ import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath} from './ga
         : `${adProtection}${safeFitScript()}${safeFetchGuard}${guard}${output}`;
     }
     function safeFitScript(){
-      return `<style>html,body{width:100%!important;height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#05070d!important}.ads,.ad,.adsbygoogle,iframe[src*="googlesyndication"],iframe[src*="doubleclick"],iframe[src*="recaptcha"]{display:none!important;pointer-events:none!important}</style><script>(()=>{const q='canvas,object,embed,ruffle-player,ruffle-object,iframe,#game,#game-container,#unity-container,#unity-canvas,#ruffle,#player';const visible=el=>{const r=el.getBoundingClientRect();return r.width>20&&r.height>20&&getComputedStyle(el).display!=='none'};const editing=()=>{const a=document.activeElement;return !!(a&&(a.isContentEditable||a.matches?.('input,textarea,select,[contenteditable=\"\"],[contenteditable=\"true\"]')))};const fit=()=>{try{if(editing())return;document.documentElement.style.setProperty('overflow','hidden','important');document.body?.style.setProperty('overflow','hidden','important');const target=[...document.querySelectorAll(q)].filter(visible).sort((a,b)=>{const ar=a.getBoundingClientRect(),br=b.getBoundingClientRect();return br.width*br.height-ar.width*ar.height})[0];if(!target)return;const r=target.getBoundingClientRect();const baseW=Number(target.getAttribute('width'))||r.width||innerWidth;const baseH=Number(target.getAttribute('height'))||r.height||innerHeight;const ratio=Math.max(.05,baseW/baseH);let w=innerWidth,h=innerHeight;if(w/h>ratio)w=h*ratio;else h=w/ratio;target.style.setProperty('position','fixed','important');target.style.setProperty('left','50%','important');target.style.setProperty('top','50%','important');target.style.setProperty('width',Math.round(w)+'px','important');target.style.setProperty('height',Math.round(h)+'px','important');target.style.setProperty('margin','0','important');target.style.setProperty('max-width','100vw','important');target.style.setProperty('max-height','100vh','important');target.style.setProperty('transform','translate(-50%,-50%)','important');target.style.setProperty('transform-origin','center center','important');target.style.setProperty('object-fit','contain','important');target.style.setProperty('pointer-events','auto','important')}catch{}};addEventListener('load',()=>{fit();setTimeout(fit,350);setTimeout(fit,1400)});addEventListener('resize',fit);document.addEventListener('DOMContentLoaded',fit);setInterval(fit,350)})()<\/script>`;
+      return `<script src="${location.origin}/assets/games/game-viewport.js"><\/script>`;
     }

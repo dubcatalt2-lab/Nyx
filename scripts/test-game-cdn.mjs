@@ -16,6 +16,8 @@ for(const dependency of ['game.wasm','../StreamingAssets/config.json','chunks/a.
 assert.equal(gameResourceUrl(proxied,undefined,origin),proxied);
 assert.equal(normalizeGameCdnUrl('https://cdn.jsdelivr.net/gh/web-ports/fear-and-hunger-2@latest/data/Map028.json').pathname,'/gh/web-ports/fear-and-hunger-2@latest/data/map028.json');
 assert.equal(normalizeGameCdnUrl('https://cdn.jsdelivr.net/npm/library@1/index.js').pathname,'/npm/library@1/index.js');
+assert.equal(normalizeGameCdnUrl('https://rawcdn.githack.com/genizy/google-class/commit/blockpost/master-loader.js').pathname,'/taskmaster773/google-class/commit/blockpost/master-loader.js');
+assert(normalizeGameCdnUrl('https://cdn.jsdelivr.net/gh/genizy/ovo-3-dimension@old/runtime.js').pathname.startsWith('/gh/bubblfan/ovo-3-dimension@102179bf4242fd237c46c555ba154c2f325d351c/'));
 for(const bad of ['https://evil.test/a','https://cdn.jsdelivr.net.evil.test/a','https://user:secret@cdn.jsdelivr.net/a','https://cdn.jsdelivr.net:8080/a','file:///tmp/a'])assert.equal(normalizeGameCdnUrl(bad),null);
 for(const bad of ['/gn-math-resource/https/localhost/a','/gn-math-resource/file/cdn.jsdelivr.net/a','/gn-math-resource/https/cdn.jsdelivr.net@evil.test/a'])assert.equal(gameResourceTarget(bad),null);
 globalThis.location={origin};
@@ -41,6 +43,7 @@ callbacks.load({target:{tagName:'SCRIPT'}});
 context.createUnityInstance(null,{streamingAssetsUrl:'../StreamingAssets',dataUrl:'game.data'});
 assert.equal(actual.streamingAssetsUrl,new URL('../StreamingAssets',proxied).href);
 assert.equal(actual.dataUrl,'game.data');
+assert.equal(actual.cacheControl(),'no-store','Opaque Unity sessions must skip persistent download caching');
 assert.equal(await context.ytgame.system.getLanguage(),'en-US');
 assert.equal(await context.ytgame.ads.requestAd(),context.ytgame.ads.AdResult.REJECTED);
 await context.ytgame.game.saveData('first');

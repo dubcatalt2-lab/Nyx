@@ -9,3 +9,15 @@ export async function loginProviderAccount({email, password, sn}, request) {
   if(!token)throw new Error('The cloud provider signed in without returning a session token.');
   return {sn,token};
 }
+
+// checkCost is a preflight, not a payment. Never request a game server after it
+// rejects the account, and never pass raw provider/account details to a client.
+export async function requireGameAccess(response) {
+  let payload;
+  try { payload = await response.json(); }
+  catch { throw new Error('The cloud provider returned an unreadable game-access check.'); }
+  const code = Number(payload?.status);
+  if (code === 3004) throw new Error('Cloud Gaming needs streaming credit on the provider account. The owner must top up that account before games can start.');
+  if (!response.ok || code !== 200) throw new Error(`The cloud provider denied game access (status ${Number.isFinite(code) ? code : response.status}). Ask the owner to check the provider account.`);
+  return payload;
+}

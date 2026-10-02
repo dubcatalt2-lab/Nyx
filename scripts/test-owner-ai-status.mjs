@@ -56,8 +56,10 @@ try {
     assert.match(await host.innerText(),/below \$0\.50/);
     const metric=await page.locator('.nyx-owner-metric').first().boundingBox();
     assert.ok(metric.height<160,'Status cards must not stretch the statistics row');
+    await page.locator('[data-owner-section="users"]').click();
     const workspace=page.locator('.nyx-owner-workspace');await workspace.scrollIntoViewIfNeeded();
     const area=await workspace.boundingBox();assert.ok(area.height>=300,'User controls retain usable space');
+    await page.locator('[data-owner-section="services"]').click();
     await host.scrollIntoViewIfNeeded();
     const bounds=await host.boundingBox();assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width+1,'Warning fits the viewport');
     for(const next of ['paused','unknown','ok']){
@@ -77,11 +79,14 @@ try {
     await host.locator('summary').focus();await page.keyboard.press('Enter');assert.ok(await host.locator('.nyx-owner-status-body').isVisible());
     await page.screenshot({path:`.codex-artifacts/owner-layout-${width}.png`});
     assert.doesNotMatch(await host.innerText(),/below \$0\.50/,'Refill clears the warning');
+    await page.locator('[data-owner-section="users"]').click();
     await page.locator('[data-owner-view-user=member123]').first().click();
     await page.locator('[data-ai-model] summary').click();
     await page.locator('[data-ai-rule-access]').selectOption('allow');
     await page.locator('[data-ai-rule-messages]').fill('25');
+    const savedRule=page.waitForResponse(response=>response.url().endsWith('/api/owner-dashboard/users/member123')&&response.request().method()==='PATCH');
     await page.locator('[data-owner-save-ai-models]').click();
+    await savedRule;
     await page.waitForFunction(()=>document.querySelector('[data-ai-rule-messages]')?.value==='25');
     assert.deepEqual(modelRules,[{model:'openai/gpt-5.6-luna',access:'allow',messages:25,periodDays:4}]);
     await page.locator('[data-owner-ai-activity]').click();

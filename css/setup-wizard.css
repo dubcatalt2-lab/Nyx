@@ -304,6 +304,11 @@ html body .setup-theme-card[data-setup-theme-card="sakura"]{
   --preview-border:rgba(185,130,166,.72);
 }
 
+html body .setup-theme-card[data-setup-theme-card="halloween"]{
+  --preview-accent:#ff963c;
+  --preview-border:rgba(255,150,60,.72);
+}
+
 html body .setup-theme-card[data-setup-theme-card="midnight"]{
   --preview-accent:#6f8fb9;
   --preview-border:rgba(111,143,185,.78);
@@ -603,9 +608,12 @@ html body #setupScreen[data-preview-theme="fresh"] :is(
 .setup-mini-rail svg{width:var(--mini-icon);height:var(--mini-icon);fill:none;stroke:currentColor;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round;flex:none;opacity:.75}
 .setup-mini-rail svg:last-child{margin-top:auto}
 .setup-mini-home{position:absolute;inset:0 0 0 var(--mini-rail);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--mini-icon)*.65)}
-.setup-mini-logo{width:var(--mini-logo);height:var(--mini-logo);object-fit:contain;filter:url('../assets/icons/nyx-mark-filter.svg#mark')}
+.setup-mini-logo{width:var(--mini-logo);height:var(--mini-logo);object-fit:contain}
 html body.browser-shell .setup-mini-name{font-family:NyxRounded,"Arial Rounded MT Bold",sans-serif!important;font-weight:600!important;font-size:calc(var(--mini-font)*1.8);letter-spacing:.08em;line-height:1.15}
 .setup-mini-search{display:flex;align-items:center;gap:7px;width:72%;height:var(--mini-search);padding:0 7px;margin-top:calc(var(--mini-icon)*.7);border:1px solid var(--nyx-surface-line);border-radius:calc(var(--mini-search)*.2);background:var(--nyx-surface-field);color:var(--nyx-surface-muted);font-size:var(--mini-font);white-space:nowrap}
 .setup-mini-search svg{width:var(--mini-icon);height:var(--mini-icon);fill:none;stroke:currentColor;stroke-width:1.5;flex:none}
 .setup-mini-search svg:last-child{margin-left:auto}
-html[data-nyx-appearance="light"] .setup-mini-logo{filter:url('../assets/icons/nyx-mark-filter.svg#mark') invert(1)}
+
+[data-nyx-preview-theme="halloween"]:is(.setup-theme-preview,.setup-final-stage)::before {
+  background-image:url('../assets/backgrounds/halloween.jpg');background-position:center;filter:blur(12px) brightness(.52);opacity:1;
+}

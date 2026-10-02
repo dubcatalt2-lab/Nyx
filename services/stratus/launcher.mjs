@@ -1,4 +1,4 @@
-import {loginProviderAccount} from "./provider-account.mjs";
+import {loginProviderAccount, requireGameAccess} from "./provider-account.mjs";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { spawn } from "node:child_process";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
@@ -127,6 +127,13 @@ async function createAccount() {
 ` + output.slice(accountEnd);
 
   output = replaceOnce(output,
+    '  await raccoonFetch("/userGame/checkCost", {\n    method: "POST",\n    headers: h,\n    body: new URLSearchParams({ ...common, game_key }),\n  });',
+    '  await requireGameAccess(await raccoonFetch("/userGame/checkCost", {\n    method: "POST",\n    headers: h,\n    body: new URLSearchParams({ ...common, game_key }),\n  }));',
+    'provider credit and entitlement preflight');
+  output = replaceOnce(output, '    recordUsage(apiKey);', '', 'do not charge failed account preparation');
+  output = replaceOnce(output, '    const init = await doInitGame(session);', '    const init = await doInitGame(session);\n    recordUsage(apiKey);', 'count only accepted game launches');
+
+  output = replaceOnce(output,
     '  const { site, apiKey } = req;',
     '  if (!process.env.STRATUS_PROVIDER_EMAIL?.trim() || !process.env.STRATUS_PROVIDER_PASSWORD) return res.status(503).json({ error: "Cloud Gaming needs a configured provider account. Ask the owner to finish setup." });\n  const { site, apiKey } = req;',
     "provider account preflight");
@@ -221,7 +228,7 @@ async function createAccount() {
     `let shuttingDown = false;\nfunction shutdown(signal) {\n  if (shuttingDown) return;\n  shuttingDown = true;\n  logSys(chalk.gray(\`shutdown: \${signal}\`));\n  const stops = [...sessions.keys()].map(uuid => killSession(uuid, "service_shutdown"));\n  Promise.allSettled(stops).finally(() => httpServer.close(() => process.exit(0)));\n  setTimeout(() => process.exit(1), 10_000).unref();\n}\nprocess.once("SIGTERM", () => shutdown("SIGTERM"));\nprocess.once("SIGINT", () => shutdown("SIGINT"));\n\nhttpServer.listen(PORT, "127.0.0.1", () => {`,
     "loopback binding and graceful shutdown"
   );
-  return loginProviderAccount.toString() + "\n" + output;
+  return loginProviderAccount.toString() + "\n" + requireGameAccess.toString() + "\n" + output;
 }
 
 function buildRuntimeEmbed(source) {

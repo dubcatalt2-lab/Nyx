@@ -1775,7 +1775,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   `;
   const nyxCreditsOwnerImageStyle=`.nyx-credits-owner-image{width:min(394px,100%);margin:0}.nyx-credits-owner-image img{display:block;width:100%;height:auto;border-radius:0}`;
   const DEFAULT_BROWSER_MODE='scramjet';
-  const DEFAULT_BROWSER_TRANSPORT='auto';
+  const DEFAULT_BROWSER_TRANSPORT='libcurlRaw';
   function normalizeBrowserTransportName(value=DEFAULT_BROWSER_TRANSPORT){
     const name=String(value || DEFAULT_BROWSER_TRANSPORT).trim().toLowerCase()
       .replace(atob('bGliY3VybA=='),'libcurl').replace('textlib','libcurl')
@@ -2318,7 +2318,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     dark:'Black Gradient',
     violet:'Violet Glass'
   };
-  const nyxPhotoWallpapers={leaves:'Leaves',moonlight:'Moonlight',rain:'Rain'};
+  const nyxPhotoWallpapers={leaves:'Leaves',moonlight:'Moonlight',rain:'Rain',halloween:'Halloween'};
   const nyxPhotoVariants={soft:'Soft',deep:'Deep',mono:'Mono'};
   function nyxBeamWallpaperPresets(){
     const photos={};
@@ -2338,6 +2338,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       && store.text('nyx.beamTheme','')!=='custom-wallpaper'
       && ['default','midnight'].includes(normalizeNyxTheme(store.text('nyx.theme','default')))){
       value='obsidian';
+      store.setText('nyx.beamWallpaper',value);
+    }
+    // Upgrade Halloween's original automatic Ember background, keeping manual choices.
+    if(value==='ember' && store.text('nyx.beamTheme','')==='halloween'
+      && normalizeNyxTheme(store.text('nyx.theme','default'))==='halloween'){
+      value='photo-halloween-soft';
       store.setText('nyx.beamWallpaper',value);
     }
     if(!store.text('nyx.beamTheme','')){
@@ -2375,16 +2381,19 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     window.NyxLineWavesWallpaper?.apply(value,currentNyxLineWavesOptions());
   }
   function nyxThemeBeamWallpaper(theme=store.text('nyx.theme','default')){
-    return ({default:'obsidian',midnight:'obsidian',ruby:'rose',emerald:'mint',sakura:'rose',fresh:'mint',custom:'violet'})[normalizeNyxTheme(theme)] || 'frost';
+    return ({default:'obsidian',midnight:'obsidian',ruby:'rose',emerald:'mint',sakura:'rose',fresh:'mint',halloween:'photo-halloween-soft',custom:'violet'})[normalizeNyxTheme(theme)] || 'frost';
   }
   function nyxThemeWavesColor(theme=store.text('nyx.theme','default')){
-    return ({default:'frost',midnight:'arctic',ruby:'rose',emerald:'mint',sakura:'rose',fresh:'mint',custom:'violet'})[normalizeNyxTheme(theme)] || 'frost';
+    return ({default:'frost',midnight:'arctic',ruby:'rose',emerald:'mint',sakura:'rose',fresh:'mint',halloween:'ember',custom:'violet'})[normalizeNyxTheme(theme)] || 'frost';
   }
   function applyNyxThemeBeamWallpaper(theme){
     const cleanTheme=normalizeNyxTheme(theme);
-    const wavesActive=currentNyxBeamWallpaper()==='lineWaves';
-    const photoActive=currentNyxBeamWallpaper().startsWith('photo-');
-    const value=photoActive ? currentNyxBeamWallpaper() : wavesActive ? 'lineWaves' : nyxThemeBeamWallpaper(cleanTheme);
+    const current=currentNyxBeamWallpaper();
+    const wavesActive=current==='lineWaves';
+    const themePhoto=current.startsWith('photo-halloween-') && store.text('nyx.beamTheme','')==='halloween';
+    const photoActive=current.startsWith('photo-') && !themePhoto;
+    const value=cleanTheme==='halloween' ? nyxThemeBeamWallpaper(cleanTheme)
+      : photoActive ? current : wavesActive ? 'lineWaves' : nyxThemeBeamWallpaper(cleanTheme);
     store.setText('nyx.beamWallpaper',value);
     store.setText('nyx.beamTheme',cleanTheme);
     if(wavesActive) store.setText('nyx.lineWaves.colorVariant',nyxThemeWavesColor(cleanTheme));
@@ -2415,7 +2424,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   function showNyxWallpaperFamily(root,family=''){
     root.dataset.wallpaperFamily=family;
-    const back='<button class="settings-action nyx-wallpaper-back" data-nyx-wallpaper-back type="button">? All backgrounds</button>';
+    const back='<button class="settings-action nyx-wallpaper-back" data-nyx-wallpaper-back type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6M8 12h12"/></svg>All backgrounds</button>';
     root.innerHTML=!family ? nyxWallpaperFamiliesMarkup() : back+(family==='waves' ? nyxLineWavesSettingsMarkup() : `<h2>${esc(nyxPhotoWallpapers[family] || 'Beams')}</h2><div class="nyx-wallpaper-grid">${nyxBeamWallpaperCardsMarkup(family)}</div>`);
     wireNyxBeamWallpaperSettings(root);
   }
@@ -2489,7 +2498,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
 
   const favicons = {
-    nyx:'./assets/icons/nyx-monogram-small.png',
+    nyx:'./assets/icons/nyx-cat-moon-small.svg?v=3',
     studyhub:'./assets/icons/studyhub.svg?v=20260903-cap-v3',
     classroom:`data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23fbbc04'/%3E%3Crect x='8' y='10' width='48' height='40' rx='3' fill='%2334a853'/%3E%3Ccircle cx='32' cy='25' r='6' fill='white'/%3E%3Cpath d='M18 42c4-9 20-9 24 0' fill='white'/%3E%3C/svg%3E`,
     drive:'./assets/icons/googledrive-logo.webp',
@@ -2499,7 +2508,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   const nyxTabTitle = '\u057c\u028f\u04fc';
   const studyHubTabTitle = 'StudyHub — Where Education Is Achievable';
   const studyHubTabFavicon = './assets/icons/studyhub.svg?v=20260903-cap-v3';
-  let nyxTabFavicon = './assets/icons/nyx-monogram-small.png';
+  let nyxTabFavicon = './assets/icons/nyx-cat-moon-small.svg?v=3';
   const nyxFaviconHref = () => $('appFavicon')?.href || nyxTabFavicon;
   function migrateStudyHubTabIdentity(){
     if(store.text('nyx.tabIdentityVersion','')==='studyhub-cap-v3') return;
@@ -3676,7 +3685,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       dock.className='nyx-visual-dock';
       dock.dataset.nyxVisualDock='';
       dock.setAttribute('aria-label','Nyx navigation');
-      dock.innerHTML=`<div class="nyx-visual-dock-head"><a class="nyx-rail-brand" href="#" data-browser-shell-home-nav aria-label="Nyx home"><img src="/assets/icons/nyx-monogram-small.png" alt=""><span>NYX</span></a><button class="nyx-visual-dock-expand" data-nyx-dock-expand type="button" aria-expanded="true" aria-label="Collapse sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 3v18"/><path data-sidebar-arrow d="m15 8-4 4 4 4"/></svg></button></div>
+      dock.innerHTML=`<div class="nyx-visual-dock-head"><a class="nyx-rail-brand" href="#" data-browser-shell-home-nav aria-label="Nyx home"><img src="/assets/icons/nyx-cat-moon-small.svg?v=3" alt=""><span>NYX</span></a><button class="nyx-visual-dock-expand" data-nyx-dock-expand type="button" aria-expanded="true" aria-label="Collapse sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 3v18"/><path data-sidebar-arrow d="m15 8-4 4 4 4"/></svg></button></div>
       <nav aria-label="Nyx destinations">
         <button type="button" data-nyx-dock-item="home" data-browser-shell-home-nav aria-label="Home">${nyxDashboardIcon('home')}<span>Home</span></button>
         <button type="button" data-nyx-dock-item="games" data-app-url="/assets/games/" aria-label="Games">${nyxDashboardIcon('games')}<span>Games</span></button>
@@ -5279,6 +5288,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const customColor=nyxThemeHex(store.text('nyx.customThemeColor',nyxCustomThemeDefaults.base));
         const themes=[
           ['default','Default','Pure black with neutral glass',['#000000','#151515','#333333']],
+          ['halloween','Halloween','Warm orange with dark glass',['#ff963c','#5a321e','#17100c']],
           ['midnight','Midnight','Deep blue, calm and focused',['#75b8ff','#243756','#121924']],
           ['ruby','Ruby','Deep reds with crisp highlights',['#fb7185','#5b2231','#201218']],
           ['emerald','Emerald','Rich green, balanced and clear',['#63e6a5','#1d4a36','#101b16']],
@@ -5474,7 +5484,22 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       backgroundsBlock.innerHTML='<h2>Wallpapers</h2><p>Choose a background, then explore its styles.</p>';
       const wallpaperPicker=document.createElement('div');
       showNyxWallpaperFamily(wallpaperPicker);
-      backgroundsBlock.append(wallpaperPicker);
+      const upload=document.createElement('div');
+      upload.className='nyx-wallpaper-upload';
+      upload.innerHTML='<input type="file" accept="image/*" data-custom-wallpaper-file hidden aria-label="Choose wallpaper image"><button class="settings-action" data-upload-wallpaper type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 16v5h16v-5"/></svg>Upload wallpaper</button><button class="settings-action" data-reset-wallpaper type="button">Use theme background</button>';
+      upload.querySelector('[data-upload-wallpaper]').addEventListener('click',()=>upload.querySelector('input').click());
+      upload.querySelector('[data-reset-wallpaper]').addEventListener('click',()=>{
+        store.setText('nyx.customBgData','');
+        store.setText('nyx.customBgUrl','');
+        store.setText('nyx.customBg','');
+        const theme=normalizeNyxTheme(store.text('nyx.theme','default'));
+        store.setText('nyx.beamWallpaper',nyxThemeBeamWallpaper(theme));
+        store.setText('nyx.beamTheme',theme);
+        applyUserSettings();
+        showNyxWallpaperFamily(wallpaperPicker);
+        toast('Theme background restored');
+      });
+      backgroundsBlock.append(upload,wallpaperPicker);
       const legacyScene=document.createElement('div');
       legacyScene.className='settings-row nyx-wallpaper-legacy';
       const threeDOn=store.get('nyx.threeDBackgrounds',false);
@@ -5766,11 +5791,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
 
   function browserShellPageSrcdoc(page){
-    const script='function nyxEffectPayload(){return{type:"nyx:effect-settings",effect:document.querySelector("[data-effect-value]")?.value||"none",speed:document.querySelector("[data-effect-speed]")?.value||"1.1",amount:document.querySelector("[data-effect-amount]")?.value||"16",theme:document.querySelector("[data-theme-value]")?.value||"default"}}function nyxBrowserPayload(){return{type:"nyx:browser-settings",engine:document.querySelector("[data-browser-engine]")?.value||"duckduckgo",browserMode:document.querySelector("[data-browser-mode-select]")?.value||"auto",transport:document.querySelector("[data-browser-transport]")?.value||"epoxy"}}document.addEventListener("click",e=>{const preset=e.target.closest("[data-preset]");if(preset){e.preventDefault();e.stopPropagation();parent.postMessage({type:"nyx:preset",preset:preset.dataset.preset},"*");return}const app=e.target.closest("[data-app-url]");if(app){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:app.dataset.appUrl},"*");return}const url=e.target.closest("[data-url]");if(url&&url.closest(".shell-page,.browser-shell-page")){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:url.dataset.url},"*");return}if(e.target.closest("[data-browser-settings-save]")){e.preventDefault();parent.postMessage(nyxBrowserPayload(),"*")}if(e.target.closest("[data-page-fullscreen]"))parent.postMessage({type:"nyx:fullscreen"},"*");if(e.target.closest("[data-shell-about]"))parent.postMessage({type:"nyx:about"},"*");if(e.target.closest("[data-shell-about-tab]"))parent.postMessage({type:"nyx:about-tab"},"*")});document.addEventListener("change",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){document.querySelectorAll("[data-tab-title]").forEach(el=>{el.value=presetSelect.options[presetSelect.selectedIndex]?.textContent||presetSelect.value||"nyx"});parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-value],[data-effect-speed],[data-effect-amount],[data-theme-value]"))parent.postMessage(nyxEffectPayload(),"*");if(e.target.closest("[data-browser-engine],[data-browser-mode-select],[data-browser-transport]"))parent.postMessage(nyxBrowserPayload(),"*")});document.addEventListener("input",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-speed],[data-effect-amount]")){document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=(Number(document.querySelector("[data-effect-speed]")?.value||1.1)).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=document.querySelector("[data-effect-amount]")?.value||"16"});parent.postMessage(nyxEffectPayload(),"*")}});';
+    const script='function nyxEffectPayload(){return{type:"nyx:effect-settings",effect:document.querySelector("[data-effect-value]")?.value||"none",speed:document.querySelector("[data-effect-speed]")?.value||"1.1",amount:document.querySelector("[data-effect-amount]")?.value||"16",theme:document.querySelector("[data-theme-value]")?.value||"default"}}function nyxBrowserPayload(){return{type:"nyx:browser-settings",engine:document.querySelector("[data-browser-engine]")?.value||"duckduckgo",browserMode:document.querySelector("[data-browser-mode-select]")?.value||"auto",transport:document.querySelector("[data-browser-transport]")?.value||"libcurlRaw"}}document.addEventListener("click",e=>{const preset=e.target.closest("[data-preset]");if(preset){e.preventDefault();e.stopPropagation();parent.postMessage({type:"nyx:preset",preset:preset.dataset.preset},"*");return}const app=e.target.closest("[data-app-url]");if(app){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:app.dataset.appUrl},"*");return}const url=e.target.closest("[data-url]");if(url&&url.closest(".shell-page,.browser-shell-page")){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:url.dataset.url},"*");return}if(e.target.closest("[data-browser-settings-save]")){e.preventDefault();parent.postMessage(nyxBrowserPayload(),"*")}if(e.target.closest("[data-page-fullscreen]"))parent.postMessage({type:"nyx:fullscreen"},"*");if(e.target.closest("[data-shell-about]"))parent.postMessage({type:"nyx:about"},"*");if(e.target.closest("[data-shell-about-tab]"))parent.postMessage({type:"nyx:about-tab"},"*")});document.addEventListener("change",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){document.querySelectorAll("[data-tab-title]").forEach(el=>{el.value=presetSelect.options[presetSelect.selectedIndex]?.textContent||presetSelect.value||"nyx"});parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-value],[data-effect-speed],[data-effect-amount],[data-theme-value]"))parent.postMessage(nyxEffectPayload(),"*");if(e.target.closest("[data-browser-engine],[data-browser-mode-select],[data-browser-transport]"))parent.postMessage(nyxBrowserPayload(),"*")});document.addEventListener("input",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-speed],[data-effect-amount]")){document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=(Number(document.querySelector("[data-effect-speed]")?.value||1.1)).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=document.querySelector("[data-effect-amount]")?.value||"16"});parent.postMessage(nyxEffectPayload(),"*")}});';
     const popupScript='document.addEventListener("click",e=>{const popup=e.target.closest("[data-popup-protection]");if(!popup)return;e.preventDefault();const next=popup.dataset.enabled!=="true";popup.dataset.enabled=String(next);popup.classList.toggle("on",next);popup.textContent="Popup Protection "+(next?"On":"Off");parent.postMessage({type:"nyx:popup-protection",enabled:next},"*")});';
     const panicFrameScript='let NYX_PANIC_CAPTURE=false;function nyxPanicCombo(e){const key=String(e.key||"").trim();if(!key||["Control","Shift","Alt","Meta"].includes(key))return "";const parts=[];if(e.ctrlKey)parts.push("Ctrl");if(e.altKey)parts.push("Alt");if(e.shiftKey)parts.push("Shift");if(e.metaKey)parts.push("Meta");parts.push(key.length===1?key.toUpperCase():key.replace(/^Arrow/,""));return parts.join("+")}document.addEventListener("click",e=>{if(e.target.closest("[data-panic-capture]"))NYX_PANIC_CAPTURE=true;if(e.target.closest("[data-panic-clear]"))NYX_PANIC_CAPTURE=false},true);document.addEventListener("keydown",e=>{if(!NYX_PANIC_CAPTURE)return;const combo=nyxPanicCombo(e);if(!combo)return;e.preventDefault();e.stopPropagation();NYX_PANIC_CAPTURE=false;document.querySelectorAll("[data-panic-key-display]").forEach(el=>el.textContent=combo);parent.postMessage({type:"nyx:panic-key-set",combo},"*")},true);';
     const finalInternalPaintScript='document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=Number(NYX_EFFECT_SPEED).toFixed(1)+"x"});';
-    return '<!doctype html><html data-nyx-theme="'+esc(normalizeNyxTheme(store.text('nyx.theme','default')))+'" style="--nyx-custom-base:'+esc(nyxCustomThemePalette().base)+'" data-nyx-appearance="'+esc(store.text('nyx.appearance','dark'))+'"><head><meta charset="utf-8"><base target="_self"><link rel="stylesheet" href="/css/avatar-decorations.css"><link rel="stylesheet" href="/css/profile-effects.css"><style>'+(page.style||'')+'</style><link rel="stylesheet" href="/apps/obsidian.css?v=20260926-2"><link rel="stylesheet" href="/apps/internal-pages.css?v=20260926-icons-v2"></head><body>'+page.body+'<script>const NYX_EFFECT='+JSON.stringify(store.text('nyx.visualEffect','none'))+';const NYX_EFFECT_SPEED='+JSON.stringify(store.text('nyx.visualEffectSpeed','1.1'))+';const NYX_EFFECT_AMOUNT='+JSON.stringify(store.text('nyx.visualEffectAmount','16'))+';const NYX_THEME='+JSON.stringify(normalizeNyxTheme(store.text('nyx.theme','default')))+';'+finalInternalPaintScript+script+popupScript+panicFrameScript+(page.script||'')+'<\/script></body></html>';
+    return '<!doctype html><html data-nyx-theme="'+esc(normalizeNyxTheme(store.text('nyx.theme','default')))+'" style="--nyx-custom-base:'+esc(nyxCustomThemePalette().base)+'" data-nyx-appearance="'+esc(store.text('nyx.appearance','dark'))+'"><head><meta charset="utf-8"><base target="_self"><link rel="stylesheet" href="/css/avatar-decorations.css"><link rel="stylesheet" href="/css/profile-effects.css"><style>'+(page.style||'')+'</style><link rel="stylesheet" href="/apps/obsidian.css?v=20261001-halloween-v3"><link rel="stylesheet" href="/apps/internal-pages.css?v=20260926-icons-v2"></head><body>'+page.body+'<script>const NYX_EFFECT='+JSON.stringify(store.text('nyx.visualEffect','none'))+';const NYX_EFFECT_SPEED='+JSON.stringify(store.text('nyx.visualEffectSpeed','1.1'))+';const NYX_EFFECT_AMOUNT='+JSON.stringify(store.text('nyx.visualEffectAmount','16'))+';const NYX_THEME='+JSON.stringify(normalizeNyxTheme(store.text('nyx.theme','default')))+';'+finalInternalPaintScript+script+popupScript+panicFrameScript+(page.script||'')+'<\/script></body></html>';
   }
   function showBrowserShellInternalPage(name){
     hideBrowserSuggestions();
@@ -5921,7 +5946,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       doc.documentElement.dataset.nyxTheme=normalizeNyxTheme(store.text('nyx.theme','default'));
       doc.documentElement.style.setProperty('--nyx-custom-base',nyxCustomThemePalette().base);
       if(!doc.querySelector('link[href*="/apps/obsidian.css"]')){
-        const link=doc.createElement('link');link.rel='stylesheet';link.href='/apps/obsidian.css?v=20260926-2';doc.head.appendChild(link);
+        const link=doc.createElement('link');link.rel='stylesheet';link.href='/apps/obsidian.css?v=20261001-halloween-v3';doc.head.appendChild(link);
       }
     },{once:true});
   }
@@ -6401,6 +6426,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         option.textContent='Midnight';
         select.appendChild(option);
       }
+      if(!select.querySelector('option[value="halloween"]')){
+        const option=document.createElement('option');
+        option.value='halloween';
+        option.textContent='Halloween';
+        select.appendChild(option);
+      }
       if(!select.querySelector('option[value="custom"]')){
         const option=document.createElement('option');
         option.value='custom';
@@ -6409,7 +6440,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
     });
   }
-  const nyxThemeNames=['default','ruby','emerald','sakura','fresh','midnight','custom'];
+  const nyxThemeNames=['default','ruby','emerald','sakura','fresh','midnight','halloween','custom'];
   const nyxThemeClasses=nyxThemeNames.map(name=>'theme-'+name);
   function normalizeNyxTheme(value){
     return nyxThemeNames.includes(String(value || '').toLowerCase()) ? String(value).toLowerCase() : 'default';
@@ -6417,7 +6448,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function applyThemeSetting(){
     const theme=normalizeNyxTheme(store.text('nyx.theme','default'));
     if(store.text('nyx.theme','default')!==theme) store.setText('nyx.theme',theme);
-    document.body.classList.remove('theme-default','theme-ruby','theme-emerald','theme-sakura','theme-fresh','theme-midnight','theme-custom');
+    document.body.classList.remove(...nyxThemeClasses);
     document.body.classList.add('theme-'+theme);
     if(theme==='custom') document.body.classList.add('theme-default');
     document.body.dataset.nyxTheme=theme;
@@ -7087,7 +7118,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     };
     const checks=[
       ['Checking core files',async()=>doubleCheck(async()=>(
-        await fetchOk('/assets/icons/nyx-monogram.png',850)
+        await fetchOk('/assets/icons/nyx-cat-moon.svg?v=3',850)
         && await fetchOk('/assets/vendor/three.r134.min.js',850)
       ))],
       ['Checking servers',async()=>doubleCheck(async()=>(
@@ -7834,7 +7865,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     };
     const transport=normalizeBrowserTransportName(browserTransportOverride || store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT));
     try{
-      if(transport==='libcurlRaw'){
+      if(transport==='libcurlRaw' || transport==='auto'){
         try{
           await setTransportWithRetry('/assets/transports/libcurl-baremux.mjs', [{ wisp, websocket: wisp }]);
           return connection;
@@ -7872,7 +7903,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const relay=endpoint?.url||wisp;
       let client;
       try{
-      if(name==='libcurlRaw'){
+      if(name==='libcurlRaw' || name==='auto'){
         const { default: LibcurlClient } = await import('/assets/transports/libcurl-scramjet.mjs');
         client=new LibcurlClient({ wisp:relay, websocket:relay });
       }else{
@@ -9079,7 +9110,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     {
       const searchEngine=selectedSearchEngineMeta();
       const searchLabel=`S3ARC4 ${searchEngine.label} or type a U3L`;
-      return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="S3ARC4"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home nyx-minimal-home nyx-visual-home"><main class="browser-shell-start nyx-minimal-hero"><div class="nyx-minimal-brand"><img class="nyx-home-logo" data-nyx-logo src="/assets/icons/nyx-monogram.png" alt="Nyx"><h1>NYX</h1></div><form class="browser-blank-search nyx-minimal-search" data-browser-blank-search><svg class="nyx-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input data-browser-blank-input data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"><button class="nyx-home-search-submit" type="submit" aria-label="Search"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></button></form><nav class="nyx-home-links" data-nyx-recent-searches aria-label="Recent searches" hidden></nav></main><nav class="nyx-minimal-utility-links" aria-label="Nyx tools and terms"><a data-open="terms" href="nyx://terms">Terms</a></nav><button class="nyx-appearance-toggle" data-nyx-appearance type="button" aria-label="Use light appearance" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button><button class="nyx-visual-customize" data-open="settings" type="button">${nyxDashboardIcon('settings')}<span>Customize</span></button><div class="nyx-home-presence${nyxFounderIsOwner&&nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'button':'status'}" tabindex="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${minimalPresenceText}</span></div></div></div>`;
+      return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="S3ARC4"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home nyx-minimal-home nyx-visual-home"><main class="browser-shell-start nyx-minimal-hero"><div class="nyx-minimal-brand"><img class="nyx-home-logo" data-nyx-logo src="/assets/icons/nyx-cat-moon.svg?v=3" alt="Nyx"><h1>NYX</h1></div><form class="browser-blank-search nyx-minimal-search" data-browser-blank-search><svg class="nyx-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input data-browser-blank-input data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"><button class="nyx-home-search-submit" type="submit" aria-label="Search"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6"/></svg></button></form><nav class="nyx-home-links" data-nyx-recent-searches aria-label="Recent searches" hidden></nav></main><nav class="nyx-minimal-utility-links" aria-label="Nyx tools and terms"><a data-open="terms" href="nyx://terms">Terms</a></nav><button class="nyx-appearance-toggle" data-nyx-appearance type="button" aria-label="Use light appearance" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button><button class="nyx-visual-customize" data-open="settings" type="button">${nyxDashboardIcon('settings')}<span>Customize</span></button><div class="nyx-home-presence${nyxFounderIsOwner&&nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'button':'status'}" tabindex="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${minimalPresenceText}</span></div></div></div>`;
     }
   }
 
@@ -11309,7 +11340,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       return normalizeBrowserTransportName(browserTransportOverride || store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT));
     }
     function transportRetryOrder(current){
-      const ordered=['epoxy','wisp','libcurlRaw'];
+      const ordered=['libcurlRaw','epoxy','wisp'];
       const index=ordered.indexOf(current);
       if(index<0) return ordered;
       return [...ordered.slice(index+1),...ordered.slice(0,index)];
@@ -16213,18 +16244,28 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         aiImage.value='';
         return;
       }
-      const file=e.target.closest('#settingBgFile');
+      const file=e.target.closest('#settingBgFile,[data-custom-wallpaper-file]');
       if(!file || !file.files?.[0]) return;
       const reader=new FileReader();
-      reader.onload=()=>{
-        store.setText('nyx.customBgData',reader.result);
+      const imageFile=file.files[0];
+      if(!imageFile.type.startsWith('image/')){file.value='';toast('Choose an image file');return;}
+      file.disabled=true;
+      const finish=()=>{file.disabled=false;file.value='';};
+      reader.onerror=()=>{finish();toast('Could not read this image');};
+      reader.onload=async()=>{
+        const value=String(reader.result||'');
+        const image=new Image();image.src=value;
+        try{await image.decode();}catch{finish();toast('This image could not be opened');return;}
+        try{localStorage.setItem('nyx.customBgData',value);}catch{finish();toast('Wallpaper is too large to save. Choose a smaller image.');return;}
         store.setText('nyx.customBgUrl','');
         store.setText('nyx.customBg','');
+        store.setText('nyx.beamTheme','custom-wallpaper');
         applyUserSettings();
         qsa('[data-bg-picker]').forEach(picker=>renderBackgroundChoices(picker));
-        toast('Uploaded background applied');
+        finish();
+        toast('Uploaded wallpaper applied');
       };
-      reader.readAsDataURL(file.files[0]);
+      reader.readAsDataURL(imageFile);
     });
     document.addEventListener('click',e=>{
       if(e.target.closest('[data-weather-refresh]')){

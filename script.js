@@ -342,25 +342,32 @@
     try{return await request}
     finally{if(nyxFirebaseTokenPromise===request)nyxFirebaseTokenPromise=null}
   }
-  const NYX_CLOUD_PREFERENCE_KEYS=Object.freeze(['nyx.theme','nyx.customThemeColor','nyx.font','nyx.engine','nyx.browserMode','nyx.transport','nyx.visualEffect','nyx.visualEffectSpeed','nyx.visualEffectAmount','nyx.beamWallpaper','nyx.beamTheme','nyx.lineWaves.speed','nyx.lineWaves.density','nyx.lineWaves.mouse','nyx.lineWaves.colorVariant','nyx.threeDBackgrounds','nyx.performanceTier','nyx.gamePerformanceMode','nyx.homeDesign','nyx.tabDesign','nyx.homeShortcuts']);
+  const NYX_CLOUD_PREFERENCE_KEYS=Object.freeze(['nyx.theme','nyx.customThemeColor','nyx.font','nyx.engine','nyx.browserMode','nyx.transport','nyx.visualEffect','nyx.visualEffectSpeed','nyx.visualEffectAmount','nyx.beamWallpaper','nyx.beamTheme','nyx.lineWaves.speed','nyx.lineWaves.density','nyx.lineWaves.mouse','nyx.lineWaves.colorVariant','nyx.threeDBackgrounds','nyx.performanceTier','nyx.gamePerformanceMode','nyx.homeDesign','nyx.tabDesign','nyx.homeShortcuts','nyx.customBgData','nyx.customBgUrl','nyx.background','nyx.browserBackground']);
   let nyxCloudPreferencesTimer=0;
   let nyxCloudPreferencesInterval=0;
   let nyxCloudPreferencesFingerprint='';
   let nyxCloudPreferencesUserId='';
+  let nyxCloudWallpaperSynced=null;
+  let nyxCloudPreferencesGeneration=0;
+  let nyxCloudPreferencesSaving=null;
   function nyxCloudPreferencesPayload(){
     const preferences={};
     NYX_CLOUD_PREFERENCE_KEYS.forEach(key=>{
       const value=localStorage.getItem(key);
       if(value!==null) preferences[key]=String(value);
     });
+    preferences['nyx.customBgData'] ||= '';
+    preferences['nyx.customBgUrl'] ||= '';
     return preferences;
   }
   function nyxCloudPreferencesDigest(){
     try{return JSON.stringify(nyxCloudPreferencesPayload())}catch{return ''}
   }
   async function nyxCloudRequest(path,options={}){
-    const token=await nyxGetFirebaseToken();
-    if(!token) throw new Error('Sign in to use cloud saves.');
+    const user=nyxFounderSignedInUser;
+    if(!user) throw new Error('Sign in to use cloud saves.');
+    const token=await user.getIdToken();
+    if(nyxFounderSignedInUser?.uid!==user.uid) throw new Error('Your account changed. Please try again.');
     const response=await fetch(path,{...options,headers:{...(options.headers||{}),Authorization:`Bearer ${token}`},cache:'no-store'});
     const payload=await response.json().catch(()=>({}));
     if(!response.ok) throw new Error(payload.error||'Nyx cloud save is unavailable.');
@@ -369,29 +376,47 @@
   async function loadNyxCloudPreferences(){
     const user=nyxFounderSignedInUser;
     if(!user) return false;
+    const generation=++nyxCloudPreferencesGeneration;
+    const beforeWallpaper=[localStorage.getItem('nyx.customBgData'),localStorage.getItem('nyx.customBgUrl')].join('|');
     const cloud=await nyxCloudRequest('/api/account/cloud-preferences');
+    if(nyxFounderSignedInUser?.uid!==user.uid||generation!==nyxCloudPreferencesGeneration)return false;
     const marker=localStorage.getItem('nyx.cloud.preferences.user');
     const preferences=cloud?.preferences&&typeof cloud.preferences==='object'?cloud.preferences:{};
-    if(marker!==user.uid&&Object.keys(preferences).length){
-      NYX_CLOUD_PREFERENCE_KEYS.forEach(key=>{
-        if(typeof preferences[key]==='string') localStorage.setItem(key,preferences[key]);
-      });
-      applyUserSettings();
-      applyNyxPerformanceTier?.(getNyxPerformanceTier());
+    const hasImage=typeof preferences['nyx.customBgData']==='string';
+    // Import an existing browser wallpaper once. Never copy another account's
+    // wallpaper into a fresh account when users switch on a shared computer.
+    const editedWallpaper=beforeWallpaper!==[localStorage.getItem('nyx.customBgData'),localStorage.getItem('nyx.customBgUrl')].join('|');
+    const migrateImage=editedWallpaper||!hasImage&&(!marker||marker===user.uid)&&!!(localStorage.getItem('nyx.customBgData')||localStorage.getItem('nyx.customBgUrl'));
+    if(marker&&marker!==user.uid){
+      localStorage.removeItem('nyx.customBgData');localStorage.removeItem('nyx.customBgUrl');localStorage.removeItem('nyx.customBg');
+      if(!preferences['nyx.beamTheme'])localStorage.setItem('nyx.beamTheme','theme');
     }
+    NYX_CLOUD_PREFERENCE_KEYS.forEach(key=>{
+      if(typeof preferences[key]==='string'&&!(migrateImage&&['nyx.customBgData','nyx.customBgUrl','nyx.beamTheme','nyx.beamWallpaper'].includes(key)))localStorage.setItem(key,preferences[key]);
+    });
+    applyUserSettings();
+    applyNyxPerformanceTier?.(getNyxPerformanceTier());
     localStorage.setItem('nyx.cloud.preferences.user',user.uid);
     nyxCloudPreferencesUserId=user.uid;
-    nyxCloudPreferencesFingerprint=marker!==user.uid&&!Object.keys(preferences).length?'':nyxCloudPreferencesDigest();
+    nyxCloudWallpaperSynced=hasImage?preferences['nyx.customBgData']:null;
+    nyxCloudPreferencesFingerprint=migrateImage||!Object.keys(preferences).length?'':nyxCloudPreferencesDigest();
     return true;
   }
   async function saveNyxCloudPreferences(){
-    const user=nyxFounderSignedInUser;
-    if(!user||nyxCloudPreferencesUserId!==user.uid) return false;
-    const fingerprint=nyxCloudPreferencesDigest();
-    if(fingerprint===nyxCloudPreferencesFingerprint) return true;
-    await nyxCloudRequest('/api/account/cloud-preferences',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({preferences:nyxCloudPreferencesPayload()})});
-    nyxCloudPreferencesFingerprint=fingerprint;
-    return true;
+    const user=nyxFounderSignedInUser,generation=nyxCloudPreferencesGeneration;
+    if(!user||nyxCloudPreferencesUserId!==user.uid)return false;
+    if(nyxCloudPreferencesSaving){await nyxCloudPreferencesSaving;return saveNyxCloudPreferences();}
+    const preferences=nyxCloudPreferencesPayload(),fingerprint=JSON.stringify(preferences),wallpaper=preferences['nyx.customBgData'];
+    if(fingerprint===nyxCloudPreferencesFingerprint)return true;
+    if(wallpaper===nyxCloudWallpaperSynced)delete preferences['nyx.customBgData'];
+    const pending=nyxCloudRequest('/api/account/cloud-preferences',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({preferences})});
+    nyxCloudPreferencesSaving=pending;
+    try{
+      await pending;
+      if(nyxFounderSignedInUser?.uid!==user.uid||generation!==nyxCloudPreferencesGeneration)return false;
+      nyxCloudPreferencesFingerprint=fingerprint;nyxCloudWallpaperSynced=wallpaper;
+      return true;
+    }finally{if(nyxCloudPreferencesSaving===pending)nyxCloudPreferencesSaving=null;}
   }
   function queueNyxCloudPreferencesSave(){
     if(!nyxFounderSignedInUser||!nyxCloudPreferencesUserId) return;
@@ -413,6 +438,8 @@
     nyxCloudPreferencesInterval=0;
     nyxCloudPreferencesFingerprint='';
     nyxCloudPreferencesUserId='';
+    nyxCloudWallpaperSynced=null;
+    nyxCloudPreferencesGeneration++;
   }
   async function loadNyxCloudGameSave(gameKey){
     const data=await nyxCloudRequest(`/api/account/cloud-games/${encodeURIComponent(String(gameKey||''))}`);
@@ -3612,7 +3639,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(settingsOpen) activeKey='settings';
     else if(!url) activeKey='home';
     else if(url==='nyx://ai') activeKey='ai';
-    else if(url.includes('/apps/movies/')) activeKey='movies';
+    else if(url.includes('/apps/nyxtube/')) activeKey='youtube';
     else if(url.includes('/apps/nyxify/')) activeKey='music';
     else if(url.includes('/apps/partners/')) activeKey='partners';
     else if(url.includes('/apps/chat/')) activeKey='chat';
@@ -3691,7 +3718,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         <button type="button" data-nyx-dock-item="home" data-browser-shell-home-nav aria-label="Home">${nyxDashboardIcon('home')}<span>Home</span></button>
         <button type="button" data-nyx-dock-item="games" data-app-url="/assets/games/" aria-label="Games">${nyxDashboardIcon('games')}<span>Games</span></button>
         <button type="button" data-nyx-dock-item="music" data-app-url="/apps/nyxify/" aria-label="Music">${nyxDashboardIcon('music')}<span>Music</span></button>
-        <button type="button" data-nyx-dock-item="movies" data-app-url="/apps/movies/" aria-label="Watch"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="m10 8 5 3-5 3zM8 21h8"/></svg><span>Watch</span></button>
+        <button type="button" data-nyx-dock-item="youtube" data-app-url="/apps/nyxtube/" aria-label="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="m10 8 5 3-5 3zM8 21h8"/></svg><span>YouTube</span></button>
         <button type="button" data-nyx-dock-item="ai" data-app-url="nyx://ai" aria-label="AI"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 3 2.1 6.9L19 12l-6.9 2.1L10 21l-2.1-6.9L1 12l6.9-2.1L10 3Z"/><path d="M20 2v6m-3-3h6"/><rect x="2" y="19" width="3" height="3" rx="1"/></svg><span>A1</span></button>
         <button type="button" data-nyx-dock-item="chat" data-app-url="/apps/chat/" aria-label="Chat">${nyxDashboardIcon('chat')}<span>Chat</span></button>
         <button type="button" data-nyx-dock-item="apps" data-app-url="nyx://apps" aria-label="Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="7" height="7" rx="1"/><rect x="3" y="16" width="7" height="6" rx="1"/><rect x="12" y="14" width="7" height="8" rx="1"/><rect x="14" y="2" width="7" height="7" rx="1"/></svg><span>Apps</span></button>
@@ -3729,16 +3756,16 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
 
     const headAddButton=dock.querySelector('[data-nyx-dock-new-tab]');
     if(headAddButton) headAddButton.onclick=()=>openBrowserShellTab('');
-    const moviesButton=dock.querySelector('[data-nyx-dock-item="movies"]');
-    if(moviesButton){
-      const openMovies=event=>{
+    const youtubeButton=dock.querySelector('[data-nyx-dock-item="youtube"]');
+    if(youtubeButton){
+      const openYouTube=event=>{
         event?.preventDefault?.();
         event?.stopPropagation?.();
-        openBrowserShellAppTab('/apps/movies/');
+        openBrowserShellAppTab('/apps/nyxtube/');
       };
-      moviesButton.onclick=openMovies;
-      moviesButton.onkeydown=event=>{
-        if(event.key==='Enter' || event.key===' ') openMovies(event);
+      youtubeButton.onclick=openYouTube;
+      youtubeButton.onkeydown=event=>{
+        if(event.key==='Enter' || event.key===' ') openYouTube(event);
       };
     }
     applyNyxSidebarExpansion();
@@ -16265,7 +16292,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       const file=e.target.closest('#settingBgFile,[data-custom-wallpaper-file]');
       if(!file || !file.files?.[0]) return;
       const reader=new FileReader();
-      const imageFile=file.files[0];
+      const imageFile=file.files[0],wallpaperUser=nyxFounderSignedInUser?.uid||'';
       if(!imageFile.type.startsWith('image/')){file.value='';toast('Choose an image file');return;}
       file.disabled=true;
       const finish=()=>{file.disabled=false;file.value='';};
@@ -16274,6 +16301,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         const value=String(reader.result||'');
         const image=new Image();image.src=value;
         try{await image.decode();}catch{finish();toast('This image could not be opened');return;}
+        if((nyxFounderSignedInUser?.uid||'')!==wallpaperUser){finish();return;}
         try{localStorage.setItem('nyx.customBgData',value);}catch{finish();toast('Wallpaper is too large to save. Choose a smaller image.');return;}
         store.setText('nyx.customBgUrl','');
         store.setText('nyx.customBg','');
@@ -16281,7 +16309,10 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         applyUserSettings();
         qsa('[data-bg-picker]').forEach(picker=>renderBackgroundChoices(picker));
         finish();
-        toast('Uploaded wallpaper applied');
+        if(wallpaperUser){
+          try{const saved=await saveNyxCloudPreferences();toast(saved?'Wallpaper saved to your account':'Wallpaper applied. Account sync is still connecting.');}
+          catch{toast('Wallpaper applied here. Account sync failed; Nyx will retry.');}
+        }else toast('Uploaded wallpaper applied');
       };
       reader.readAsDataURL(imageFile);
     });

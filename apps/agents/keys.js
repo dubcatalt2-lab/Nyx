@@ -1,4 +1,4 @@
-import {setupDeveloper} from './developer.js';
+import {setupDeveloper} from './developer.js?v=20261002-haiku-v1';
 import {readResponse} from './response.js';
 import {agentInstruction} from './agent-instruction.js';
 import {supportsConversationVoice} from './voice-capabilities.js';
@@ -11,7 +11,7 @@ export function setupKeys({user,busy,changed,notice,appName='Nook'}){
  function clearReveal(){$('createdKey').value='';$('createdKeyPanel').hidden=true;$('personalKey').value='';}
  async function refresh(){const mine=version;try{const data=await account('/me');if(mine!==version)return;$('createAccountKey').disabled=!!data.key||!data.configured;$('revokeAccountKey').hidden=!data.key;developer.update(data);$('accountKeyStatus').textContent=data.key?'Active key: '+data.key.prefix+'...':'No active account API key.';}catch(e){if(mine!==version)return;$('accountKeyStatus').textContent=e.message;$('createAccountKey').disabled=true;}}
  $('apiKeys').onclick=()=>{if(busy())return;sync();developer.tab('keys');$('keyError').textContent='';$('keyDialog').showModal();void refresh();};
- $('closeKeys').onclick=()=>{if(!saving)$('keyDialog').close();};$('keyDialog').addEventListener('cancel',e=>{if(saving)e.preventDefault();});$('keyDialog').addEventListener('close',()=>{clearReveal();developer.clear();});
+ $('closeKeys').onclick=()=>{if(!saving){clearReveal();developer.clear();$('keyDialog').close();}};$('keyDialog').addEventListener('cancel',e=>{if(saving)e.preventDefault();else{clearReveal();developer.clear();}});$('keyDialog').addEventListener('close',()=>{clearReveal();developer.clear();});
  $('personalKeyForm').onsubmit=async e=>{e.preventDefault();if(busy()||saving)return;const value=$('personalKey').value.trim();if(!/^sk-or-[A-Za-z0-9_-]{20,}$/.test(value)&&!/^n_api_[A-Za-z0-9_-]{43}$/.test(value)){$('keyError').textContent='Enter an OpenRouter or account API key.';return;}saving=true;const mine=version;$('usePersonalKey').disabled=true;try{if(value.startsWith('sk-or-'))await readResponse(await fetch('https://openrouter.ai/api/v1/key',{headers:{Authorization:'Bearer '+value},redirect:'error',cache:'no-store'}));if(mine!==version)return;secret=value;version++;sync();$('keyDialog').close();await changed();}catch(error){if(mine===version)$('keyError').textContent=error.message.replaceAll(value,'[key]');}finally{saving=false;$('usePersonalKey').disabled=false;}};
  $('useSharedKey').onclick=async()=>{if(busy()||saving)return;secret='';version++;sync();$('keyDialog').close();await changed();};
  $('createAccountKey').onclick=async()=>{if(saving||busy())return;saving=true;$('createAccountKey').disabled=true;const mine=version;try{const data=await account('/keys',{label:$('accountKeyLabel').value.trim()||appName});if(mine!==version)return;$('createdKey').value=data.key;$('createdKeyPanel').hidden=false;await refresh();}catch(e){if(mine!==version)return;$('keyError').textContent=e.message;await refresh();}finally{saving=false;}};

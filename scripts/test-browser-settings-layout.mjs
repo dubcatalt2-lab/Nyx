@@ -8,7 +8,7 @@ try{
   await page.addInitScript(()=>{localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.releaseNotes.2026-09-14-nyx-1.0.3.seen','2026-09-14-nyx-1.0.3');});
   await page.goto(base+'/',{waitUntil:'domcontentloaded'});
   await page.locator('[data-browser-shell-settings]').first().waitFor({state:'attached'});
-  await page.waitForFunction(()=>typeof document.querySelector('[data-nyx-dock-item="movies"]')?.onclick==='function');
+  await page.waitForFunction(()=>typeof document.querySelector('[data-nyx-dock-item="youtube"]')?.onclick==='function');
   await page.waitForFunction(()=>!document.querySelector('#nyxStudyHubStartup')&&!document.body.classList.contains('nyx-loading-active'));
   await page.locator('[data-nyx-dock-item="settings"]').click();
   await page.screenshot({path:`.codex-artifacts/settings-open-${width}.png`});

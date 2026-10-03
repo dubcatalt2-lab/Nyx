@@ -1,3 +1,5 @@
+import {storeMediaReservation,restoreMediaReservation} from './lib/ai-media-reservation.mjs';
+import {createAccountCloudPreferences} from './lib/account-cloud-preferences.mjs';
 import {createRemoteDesktop} from './lib/remote-desktop.mjs';
 import {createNyxCloudDesktop} from './lib/nyxcloud-desktop.mjs';
 import {isNookRequest} from './lib/nook-policy.mjs';
@@ -36,7 +38,7 @@ import { createNookDeveloper } from './lib/nook-developer.mjs';
 import { aiImageContent } from './lib/ai-image.mjs';
 ﻿import express from "express";
 import { AsyncLocalStorage } from "node:async_hooks";
-import { createAiAllowance, aiAllowanceConfig, premiumModelLimits, aiModelAllowed, hasAppAiAllowance, dropModelIsExpensive, nookModelIsExpensive, expensiveClaudeModel } from "./lib/ai-allowance.mjs";
+import { createAiAllowance, aiAllowanceConfig, premiumModelLimits, aiModelAllowed, hasAppAiAllowance, dropModelIsExpensive, nookModelIsExpensive, expensiveClaudeModel, nookHaikuModel, nookHaikuLimitUsd } from "./lib/ai-allowance.mjs";
 import { createOpenRouterBalanceGuard, createOpenRouterOwnerStatus } from "./lib/openrouter-balance.mjs";
 import { aiOutputImages } from "./lib/ai-output-images.mjs";
 import { aiBudgetResponse } from "./lib/ai-budget-response.mjs";
@@ -430,6 +432,7 @@ const freednsRegistryMaxAttempts = 240;
 const freednsRegistryCache = new Map();
 const freednsRegistryCacheTtlMs = 30 * 60_000;
 let linkGeneratorFirebasePromise;
+app.use("/api/account/cloud-preferences", express.json({ limit: "7mb" }));
 app.use(express.json({ limit: "2mb" }));
 
 app.use((error, _req, res, next) => {
@@ -2736,7 +2739,7 @@ app.get('/api/nyx-ai/models',async(req,res)=>{
   if(!credential.key)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
   const models=await nyxAiAvailableModels(credential.key,false,credential.provider,entitlement);
   if(!models.length)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
-  res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement,aiCatalogPrice(model))).map(model=>hasAppAiAllowance(entitlement)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'No token quota':entitlement.app==='nook'?(nookModelIsExpensive(aiCatalogPrice(model))?'1,000 expensive / browser / 4 days':'7,000 / browser / 4 days'):dropModelIsExpensive(aiCatalogPrice(model),model.id)?'500 shared / 4 days':'No token quota'}:model).map(model=>!hasFullAiCatalog(entitlement)&&expensiveClaudeModel(model.id,aiCatalogPrice(model))?{...model,allowanceLabel:[model.allowanceLabel,'$0.05 Claude / account / site / 4 days'].filter(Boolean).join(' · ')}:model),credential:'shared',ownerMediaAccess:hasFullAiCatalog(entitlement)});
+  res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement,aiCatalogPrice(model))).map(model=>hasAppAiAllowance(entitlement)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'No token quota':entitlement.app==='nook'?(nookModelIsExpensive(aiCatalogPrice(model))?'1,000 expensive / browser / 4 days':'7,000 / browser / 4 days'):dropModelIsExpensive(aiCatalogPrice(model),model.id)?'500 shared / 4 days':'No token quota'}:model).map(model=>nookHaikuModel(model.id,entitlement.app)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'Unlimited':`${model.allowanceLabel} \u00b7 $${nookHaikuLimitUsd(entitlement).toFixed(2)} Haiku / account / 4 days`}:model).map(model=>!hasFullAiCatalog(entitlement)&&expensiveClaudeModel(model.id,aiCatalogPrice(model))?{...model,allowanceLabel:[model.allowanceLabel,'$0.05 Claude / account / site / 4 days'].filter(Boolean).join(' · ')}:model),credential:'shared',ownerMediaAccess:hasFullAiCatalog(entitlement)});
 });
 
 function nyxMediaUsage(usage) {
@@ -2762,13 +2765,12 @@ installAiMedia(app,{
     const reservation=await scope.allowance.reserve(session,'shared',payload,{inputPerMillion:0,outputPerMillion:0,requestUsd:estimate},{media:true});
     try{if(!hasFullAiCatalog(session.actor))await scope.allowance.openRouterBalance.reserve({key:nyxAiKey(),amount:reservation.reserved,signal:scope.controller.signal,holdMs:1800000});}
     catch(error){await scope.allowance.settle(reservation,null,true);throw error;}
-    const {session:unused,...cost}=reservation;
-    const stored={...cost,session:{refs:Object.fromEntries(Object.entries(session.refs).map(([name,ref])=>[name,ref.path]))}};
+    const stored=storeMediaReservation(reservation);
     return {stored,accepted:()=>{scope.success=true;},settle:(usage,notSent=false)=>scope.allowance.settle(reservation,nyxMediaUsage(usage),notSent)};
   },
   settleStored:async(actor,stored,usage)=>{
     if(!stored)return;
-    const reservation={...stored,session:{refs:Object.fromEntries(Object.entries(stored.session.refs).map(([name,path])=>[name,actor.firebase.firestore.doc(path)]))}};
+    const reservation=restoreMediaReservation(stored,actor.firebase.firestore);
     await nyxSharedAiAllowance(actor.firebase).settle(reservation,nyxMediaUsage(usage));
   }
 });
@@ -9581,11 +9583,8 @@ app.get("/api/account/cloud-preferences", async (req, res) => {
   res.set("Cache-Control", "no-store");
   try {
     const { firebase, token } = await authenticatedNyxCloudUser(req);
-    const snapshot = await firebase.firestore.collection(nyxCloudSaveCollection).doc(token.uid).get();
-    res.json({
-      preferences: normalizeNyxCloudStorage(snapshot.data()?.preferences, nyxCloudPreferenceFieldLimit),
-      updatedAt: Number(snapshot.data()?.preferencesUpdatedAt || 0)
-    });
+    const store=createAccountCloudPreferences({db:firebase.firestore,collection:nyxCloudSaveCollection,normalize:value=>normalizeNyxCloudStorage(value,nyxCloudPreferenceFieldLimit)});
+    res.json(await store.read(token.uid));
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Cloud preferences are unavailable." });
   }
@@ -9599,14 +9598,8 @@ app.put("/api/account/cloud-preferences", async (req, res) => {
   }
   try {
     const { firebase, token } = await authenticatedNyxCloudUser(req);
-    const preferences = normalizeNyxCloudStorage(req.body?.preferences, nyxCloudPreferenceFieldLimit);
-    const now = Date.now();
-    await firebase.firestore.collection(nyxCloudSaveCollection).doc(token.uid).set({
-      preferences,
-      preferencesUpdatedAt: now,
-      preferencesUpdatedAtIso: new Date(now).toISOString()
-    }, { merge: true });
-    res.json({ saved: true, updatedAt: now });
+    const store=createAccountCloudPreferences({db:firebase.firestore,collection:nyxCloudSaveCollection,normalize:value=>normalizeNyxCloudStorage(value,nyxCloudPreferenceFieldLimit)});
+    res.json(await store.write(token.uid,req.body?.preferences));
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Cloud preferences could not be saved." });
   }

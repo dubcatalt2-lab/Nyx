@@ -26,7 +26,7 @@
     "watch-title", "watch-creator", "watch-video-meta", "watch-channel-mark", "watch-source", "watch-description", "watch-related", "short-stage", "short-player",
     "short-loading", "short-center-play", "short-mute", "short-captions", "short-fullscreen",
     "short-progress", "short-title", "short-creator", "profile-button", "profile-avatar",
-    "short-search-form", "short-search-input", "short-feed-label", "short-preferences-status", "short-hide-channel", "short-dislike", "short-reset", "short-heart",
+    "short-search-form", "short-search-input", "short-feed-label", "short-preferences-status", "short-hide-channel", "short-dislike", "short-reset", "short-heart", "short-menu", "short-empty", "short-empty-title", "short-retry",
     "watch-quality", "watch-engine", "watch-settings", "watch-settings-menu", "watch-speed", "watch-volume", "watch-settings-captions",
     "watch-rewind", "watch-forward", "watch-speed-indicator",
     "watch-views", "watch-likes", "watch-comments-count", "watch-tab-comments-count",
@@ -189,11 +189,13 @@
   function showView(name) {
     if (dropTube && name === 'shorts') name = 'home';
     state.view = name;
+    document.body.dataset.tubeView = name;
+    if(refs.shortMenu)refs.shortMenu.open=false;
     Object.entries(views).forEach(([key, view]) => { view.hidden = key !== name; });
     $$("[data-view-button]").forEach(button => button.classList.toggle("active", button.dataset.viewButton === (name === "watch" ? "home" : name)));
     if (name !== "watch") stopWatch();
     if (name !== "shorts") stopShorts();
-    scrollTo({ top: 0, behavior: "smooth" });
+    scrollTo({ top: 0, behavior: name==='shorts' ? 'instant' : 'smooth' });
   }
 
   const directYoutubeApi = window.NyxTubePlayerCore.createDirectYoutubeApi({ optimisticState: true });
@@ -658,6 +660,7 @@
 
   let shortFeedPage=1, shortFeedHasMore=true, shortFeedPending=null, shortFeedRetryAt=0, shortFeedError='', shortNavigation=0;
   let shortFeedCursor='', shortFeedQuery='', shortFeedTopic='discover', shortFeedGeneration=0, shortFeedController=null;
+  let shortFeedPrevious=null;
   const shortPreferenceKey=`${document.documentElement.dataset.appShell === 'tutsi' ? 'tutsi' : 'nyx'}.shorts-preferences.v1`;
   let hiddenShorts=new Set(), hiddenShortChannels=new Set(), likedShorts=new Map();
   try {
@@ -701,14 +704,16 @@
   }
   function resetShortFeed(query='',topic='discover') {
     shortFeedGeneration++;shortFeedController?.abort();shortFeedPending=null;
-    stopShorts();state.shorts=[];state.shortIndex=0;seenShortIds.clear();
+    if(!shortFeedPrevious&&state.shortPlayer&&state.shorts[state.shortIndex])shortFeedPrevious={videos:state.shorts,index:state.shortIndex,query:shortFeedQuery,topic:shortFeedTopic,page:shortFeedPage,cursor:shortFeedCursor,hasMore:shortFeedHasMore,seen:[...seenShortIds]};
+    if(!shortFeedPrevious)stopShorts();
+    state.shorts=[];state.shortIndex=0;seenShortIds.clear();
     shortFeedPage=1;shortFeedCursor='';shortFeedHasMore=true;shortFeedRetryAt=0;shortFeedError='';
     shortFeedQuery=query;shortFeedTopic=topic;
     refs.shortSearchInput.value=query;
-    refs.shortTitle.textContent='';refs.shortCreator.textContent='';
+    if(!shortFeedPrevious){refs.shortTitle.textContent='';refs.shortCreator.textContent='';}
     refs.shortDislike.disabled=true;refs.shortHideChannel.disabled=true;renderShortHeart();
-    const descriptions={discover:'A mix of science, nature, gaming and sports from selected creators.',science:'Science Shorts from Mark Rober.',nature:'Nature Shorts from BBC Earth.',gaming:'Gaming Shorts from Minecraft.',sports:'Sports Shorts from the NBA.'};
-    refs.shortFeedLabel.textContent=query?`Short videos matching “${query}”`:descriptions[topic];
+    const descriptions={discover:'For you',science:'Science',nature:'Nature',gaming:'Gaming',sports:'Sports'};
+    refs.shortFeedLabel.textContent=query?`Results for “${query}”`:descriptions[topic];
     $$('[data-short-topic]').forEach(button=>button.setAttribute('aria-pressed',String(!query&&button.dataset.shortTopic===topic)));
     void loadShorts();
   }
@@ -757,14 +762,32 @@
   async function loadShorts() {
     if (dropTube) return;
     const generation=shortFeedGeneration;
-    notice(); refs.shortLoading.hidden = false;
+    if(refs.shortMenu)refs.shortMenu.open=false;
+    if(refs.shortEmpty)refs.shortEmpty.hidden=true;
+    views.shorts.dataset.feedLoading='true';
+    notice(); refs.shortLoading.hidden = Boolean(shortFeedPrevious);
     try {
       if (!state.shorts.length) await refillShorts(1);
       if(state.view!=='shorts'||generation!==shortFeedGeneration)return;
       if (!state.shorts.length) {refs.shortDislike?.setAttribute('disabled','');refs.shortHideChannel?.setAttribute('disabled','');renderShortHeart();throw new Error(shortFeedError||"No matching Shorts. Try another search or topic, or reset your preferences.");}
+      if(shortFeedPrevious){stopShorts();shortFeedPrevious=null;}
       state.failedShortIds.clear();shortRetries.clear();
       await showShort(state.shortIndex);
-    } catch (error) { refs.shortLoading.hidden = true; notice(error.message || "Shorts could not be loaded."); }
+    } catch (error) {
+      if(generation!==shortFeedGeneration||state.view!=='shorts')return;
+      refs.shortLoading.hidden = true;
+      if(shortFeedPrevious){
+        const previous=shortFeedPrevious;shortFeedPrevious=null;
+        state.shorts=previous.videos;state.shortIndex=previous.index;shortFeedQuery=previous.query;shortFeedTopic=previous.topic;
+        shortFeedPage=previous.page;shortFeedCursor=previous.cursor;shortFeedHasMore=previous.hasMore;shortFeedRetryAt=0;
+        seenShortIds.clear();for(const id of previous.seen)seenShortIds.add(id);
+        renderShortHeart();refs.shortDislike.disabled=false;refs.shortHideChannel.disabled=!state.shorts[state.shortIndex]?.channelId;
+        notice(shortFeedError?'Search unavailable. Your current video is still playing.':'No matching Shorts.');
+      }else{
+        if(refs.shortEmpty){refs.shortEmpty.hidden=false;refs.shortEmptyTitle.textContent=shortFeedError?'Shorts could not load':'No Shorts found';}
+        notice(error.message || "Shorts could not be loaded.");
+      }
+    } finally {if(generation===shortFeedGeneration)delete views.shorts.dataset.feedLoading;}
   }
   let shortGeneration=0;
   let shortLoadTimer=0;
@@ -837,7 +860,7 @@
     frame.addEventListener('load',()=>{if(generation===shortGeneration&&state.view==='shorts')refs.shortLoading.hidden=true;},{once:true});
     state.shortPlayer={isInvidious:true,destroy:()=>frame.remove()};
     refs.shortPlayer.replaceChildren(frame);
-    notice('Use the arrows for the next Short. Playback controls are inside the video.');
+    notice();
   }
   async function showShort(index) {
     if(!state.shorts.length)return;
@@ -854,6 +877,8 @@
     const generation=++shortGeneration;
     state.shortIndex=index;
     const video=state.shorts[state.shortIndex];
+    if(refs.shortEmpty)refs.shortEmpty.hidden=true;
+    if(refs.shortMenu)refs.shortMenu.open=false;
     renderShortHeart(video);
     if(refs.shortDislike)refs.shortDislike.disabled=false;
     if(refs.shortHideChannel){refs.shortHideChannel.disabled=!video.channelId;refs.shortHideChannel.title=video.creator?`Hide ${video.creator}`:'Hide channel';}
@@ -899,6 +924,7 @@
   }
   function stopShorts() {
     if (dropTube) return;
+    shortFeedPrevious=null;
     shortNavigation++;
     finishShortHold(true);
     shortGeneration++;clearShortLoadTimer();clearInterval(state.shortTimer);state.shortTimer=0;
@@ -957,7 +983,7 @@
     finishWatchSpace({cancel:true});
     const dialog=$('[data-shortcut-help]');if(!dialog.open)dialog.showModal();
   }
-  const shortcutBlocked = target => target instanceof Element && Boolean(target.closest("input,textarea,select,button,a,[contenteditable]"));
+  const shortcutBlocked = target => target instanceof Element && Boolean(target.closest("input,textarea,select,button,a,summary,[contenteditable]"));
 
   function bind() {
     addEventListener("message", event => {
@@ -971,6 +997,8 @@
     addEventListener("blur", () => {finishWatchSpace({ cancel: true });finishShortHold(true)});
     refs.searchForm.addEventListener("submit", event => { event.preventDefault(); const query = refs.searchInput.value.trim(); if (query) loadFeed(query); });
     refs.shortSearchForm?.addEventListener('submit',event=>{event.preventDefault();const query=refs.shortSearchInput.value.trim();if(query.length>=2)resetShortFeed(query);});
+    refs.shortRetry?.addEventListener('click',()=>resetShortFeed(shortFeedQuery,shortFeedTopic));
+    document.addEventListener('pointerdown',event=>{if(refs.shortMenu?.open&&!refs.shortMenu.contains(event.target))refs.shortMenu.open=false;});
     $$('[data-short-topic]').forEach(button=>button.addEventListener('click',()=>resetShortFeed('',button.dataset.shortTopic)));
     refs.shortDislike?.addEventListener('click',()=>void hideCurrentShort());
     refs.shortHideChannel?.addEventListener('click',()=>void hideCurrentShort(true));
@@ -1061,6 +1089,7 @@
     $('[data-shortcut-help-open]').addEventListener('click',showShortcutHelp);
     refs.watchStage.addEventListener('dblclick',event=>{if(event.target.closest('[data-watch-gesture]')){finishWatchSpace({cancel:true});fullscreen(refs.watchStage)}});
     document.addEventListener("keydown", event => {
+      if(event.key==='Escape'&&refs.shortMenu?.open){refs.shortMenu.open=false;refs.shortMenu.querySelector('summary').focus();return;}
       if($('[data-shortcut-help]').open)return;
       if(event.key==='?'&&!event.target.closest?.('input,textarea,select,[contenteditable]')){event.preventDefault();showShortcutHelp();return}
       if(event.key==='/'&&!shortcutBlocked(event.target)){event.preventDefault();if(state.view==='shorts'&&refs.shortSearchInput)refs.shortSearchInput.focus();else{if(state.view!=='home')showView('home');refs.searchInput.focus();}return}

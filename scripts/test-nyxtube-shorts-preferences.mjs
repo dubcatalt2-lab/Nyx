@@ -19,6 +19,7 @@ try{
     if(path.startsWith('/api/')){
       if(path.endsWith('/shorts')){
         const params=Object.fromEntries(url.searchParams);requests.push(params);
+        if(params.q==='unavailable')return route.fulfill({status:503,json:{error:'The backup video service is unavailable.'}});
         if(params.q==='slow'){sawSlow();await slowGate;}
         let videos=params.q==='cats'?cats:params.q==='slow'?[video('OLD00000001')]:params.topic==='gaming'?[video('GAM00000001',2),video('GAM00000002',2)]:defaults;
         if(params.creators===channels[3])videos=[cats[0],...defaults];
@@ -28,6 +29,7 @@ try{
       }
       return route.fulfill({json:path.endsWith('/status')?{configured:true,nativeAvailable:false,invidiousEmbedOrigin:embed}:{videos:[],users:[]}});
     }
+    if(path==='/fixture-host')return route.fulfill({contentType:'text/html',body:'<iframe id="app" src="/apps/nyxtube/" style="width:900px;height:540px;border:0"></iframe>'});
     if(path.endsWith('/'))path+='index.html';
     const file=resolve(root,'.'+decodeURIComponent(path));
     try{
@@ -42,11 +44,29 @@ try{
   const waitForId=id=>page.waitForFunction(id=>document.querySelector('[data-short-player] iframe')?.src.includes('/embed/'+id+'?'),id);
   const search=async query=>{await page.locator('[data-short-search-input]').fill(query);await page.locator('[data-short-search-form] button').click();};
   await open();await waitForId(defaults[0].id);
-  for(const width of [390,320]){
-    await page.setViewportSize({width,height:844});
-    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Shorts search/feedback fit small screens');
+  const measure=()=>{
+    const selectors=['.shorts-discovery','.short-card','.short-caption','[data-short-heart]','[data-short-previous]','[data-short-next]','.short-menu summary'];
+    return {width:innerWidth,height:innerHeight,scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight,
+      elements:selectors.map(selector=>({selector,...document.querySelector(selector).getBoundingClientRect().toJSON()})),
+      animatedBackground:document.getAnimations().filter(a=>a.playState==='running'&&a.effect.target.closest?.('.starfield')).length};
+  };
+  const assertFit=metrics=>{
+    assert.ok(metrics.scrollHeight<=metrics.height+1,`No vertical cutoff at ${metrics.width}x${metrics.height}: ${metrics.scrollHeight}`);
+    assert.ok(metrics.scrollWidth<=metrics.width+1,'No horizontal overflow');
+    for(const e of metrics.elements)assert.ok(e.top>=-1&&e.left>=-1&&e.bottom<=metrics.height+1&&e.right<=metrics.width+1,`${e.selector} stays within ${metrics.width}x${metrics.height}: ${JSON.stringify(e)}`);
+    const stage=metrics.elements.find(e=>e.selector==='.short-card');assert.ok(Math.abs(stage.width/stage.height-9/16)<.01,'Full portrait frame retains its aspect ratio');
+    assert.equal(metrics.animatedBackground,0,'Large background layers pause during Shorts');
+  };
+  for(const [width,height] of [[1366,768],[1024,600],[390,844],[320,568],[844,390],[600,360],[320,400]]){
+    await page.setViewportSize({width,height});
+    assertFit(await page.evaluate(measure));
   }
   await page.setViewportSize({width:1280,height:900});
+  await search('cats');await waitForId(cats[0].id);
+  await current().evaluate(frame=>{frame.dataset.searchIdentity='keep';});
+  await search('unavailable');await page.waitForFunction(()=>document.querySelector('[data-notice]').textContent.includes('current video'));
+  assert.equal(await current().getAttribute('data-search-identity'),'keep','failed search preserves the playing video');
+  assert.equal(await page.locator('[data-short-empty]').isVisible(),false,'no blank stage replaces working playback');
   await search('cats');await waitForId(cats[0].id);
   await current().evaluate(frame=>{frame.dataset.playbackIdentity='keep';});
   await page.locator('[data-short-heart]').click();
@@ -63,8 +83,8 @@ try{
   assert.equal(await current().getAttribute('data-playback-identity'),'keep');
   await page.locator('[data-short-next]').click();await waitForId(defaults[0].id);
   await search('cats');await waitForId(cats[0].id);
-  await page.locator('[data-short-dislike]').click();await waitForId(cats[1].id);
-  await page.locator('[data-short-hide-channel]').click();await waitForId(cats[2].id);
+  await page.locator('[data-short-menu] summary').click();await page.locator('[data-short-dislike]').click();await waitForId(cats[1].id);
+  await page.locator('[data-short-menu] summary').click();await page.locator('[data-short-hide-channel]').click();await waitForId(cats[2].id);
   await page.reload({waitUntil:'domcontentloaded'});await page.locator('[data-view-button="shorts"]').click();await current().waitFor();
   await search('cats');await waitForId(cats[2].id);
   assert.equal(await current().count(),1,'filtering retains only one playing iframe');
@@ -72,11 +92,16 @@ try{
   await page.locator('[data-short-topic="gaming"]').click();await waitForId('GAM00000001');
   releaseSlow();await page.waitForTimeout(100);
   assert.ok((await current().getAttribute('src')).includes('GAM00000001'),'stale searches never replace a selected topic');
-  await page.locator('[data-short-reset]').click();await waitForId(defaults[0].id);
+  await page.locator('[data-short-menu] summary').click();await page.locator('[data-short-reset]').click();await waitForId(defaults[0].id);
   const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('nyx.shorts-preferences.v1')));
   assert.deepEqual(saved,{videos:[],channels:[],likes:[]});
   await search('cats');await waitForId(cats[0].id);
   await page.locator('[data-view-button="home"]').click();assert.equal(await current().count(),0);
+  const host=await context.newPage();await host.goto(base+'/fixture-host');
+  const app=host.frameLocator('#app');await app.locator('[data-view-button="shorts"]').click();await app.locator('[data-short-player] iframe').waitFor();
+  assertFit(await app.locator('body').evaluate(measure));
+  await app.locator('[data-short-menu] summary').click();await app.locator('[data-short-hide-channel]').click();
+  await host.close();
   assert.deepEqual(errors,[]);
   console.log('PASS Shorts search, mobile controls, hearts/weighted-discovery requests, uninterrupted playback, persisted likes/hides, reset and stale-search cancellation');
 }finally{releaseSlow();await browser.close();}

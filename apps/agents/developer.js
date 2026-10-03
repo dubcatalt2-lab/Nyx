@@ -26,11 +26,31 @@ export function setupDeveloper({account,user,nook,secret,refresh}){
   if([...$('playModel').options].some(o=>o.value===chosen))$('playModel').value=chosen;
   $('modelAccess').textContent=(next.models?.length||0)+' models · same access as your account';
   usage(next.usage);$('otherBrowserUsage').hidden=!next.currentBrowserUsage;if(next.currentBrowserUsage)usage(next.currentBrowserUsage,'current');
+  const haiku=next.usage?.haiku;
+  if(haiku){
+   $('usageHaiku').textContent=haiku.limitUsd===null?'Unlimited':`$${haiku.remainingUsd.toFixed(4)} / $${haiku.limitUsd.toFixed(2)} left`;
+   $('meterHaiku').max=haiku.limitUsd||1;$('meterHaiku').value=haiku.limitUsd===null?1:haiku.remainingUsd;
+   $('haikuReset').textContent=haiku.limitUsd===null?'No account usage cap':haiku.resetAt?'Resets '+new Date(haiku.resetAt).toLocaleString():'Per account, every four days. Starts with your first Haiku request.';
+  }
   const requests=next.usage?.requestsToday||0;$('usageRequests').textContent=requests.toLocaleString()+(requests===1?' request today':' requests today')+(next.usage?.pending?' · request in progress':'');
   $('usageScope').textContent=next.key&&next.key.app!=='nook'?'Your existing key uses the older API allowance. In Keys, choose “Use Nook models and allowance” to share the pool shown here.':next.keyUsesCurrentBrowser?'Chat and Nook keys share this browser’s allowance.':'Your key uses the browser allowance it was first created with. This browser’s chat allowance is shown separately.';
   example();
  }
- function example(){const model=$('playModel').value||'MODEL_ID';$('apiEndpoint').textContent=location.origin+'/api/v1/ai';$('apiExample').textContent=`curl "${location.origin}/api/v1/ai" \\\n  -H "Authorization: Bearer $NOOK_API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '${JSON.stringify({model,messages:[{role:'user',content:'Hello'}],max_tokens:512})}'`;}
+ function example(){const model=$('playModel').value||'MODEL_ID';$('nodeExample').textContent=`const key = process.env.NOOK_API_KEY;
+if (!key) throw new Error('Set NOOK_API_KEY first');
+
+const response = await fetch(${JSON.stringify(location.origin+'/api/v1/ai')}, {
+  method: 'POST',
+  headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    model: ${JSON.stringify(model)},
+    messages: [{ role: 'user', content: 'Explain this code: const sum = (a, b) => a + b;' }],
+    max_tokens: 512
+  })
+});
+const data = await response.json();
+if (!response.ok) throw new Error(data.error || 'Nook request failed');
+console.log(data.choices?.[0]?.message?.content);`;$('apiEndpoint').textContent=location.origin+'/api/v1/ai';$('apiExample').textContent=`curl "${location.origin}/api/v1/ai" \\\n  -H "Authorization: Bearer $NOOK_API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '${JSON.stringify({model,messages:[{role:'user',content:'Hello'}],max_tokens:512})}'`;}
  $('playModel').onchange=example;
  $('playForm').onsubmit=async event=>{
   event.preventDefault();if(controller)return;const key=$('playKey').value.trim();if(!/^n_api_[A-Za-z0-9_-]{43}$/.test(key)){$('playStatus').textContent='Enter your account API key.';return;}

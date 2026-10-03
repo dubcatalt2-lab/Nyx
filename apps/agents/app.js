@@ -1,12 +1,12 @@
 import {renderReply,scheduleReply} from './reply-content.js';
 const dropEmbed=new URLSearchParams(location.search).get('shell')==='drop'&&parent!==window;
 import {setupDropEmbed} from '../drop/ai-embed.mjs';
-import {setupKeys} from './keys.js';
+import {setupKeys} from './keys.js?v=20261002-haiku-v1';
 import {readResponse} from './response.js';
 import {supportsConversationVoice} from './voice-capabilities.js';
 import {setupChats} from './chats.js?v=20260928-projects-v1';
 import {setupScreen} from './screen.js?v=20260927-chat';
-import {setupPicker} from './models.js?v=20260928-voice-v2';
+import {setupPicker} from './models.js?v=20261002-haiku-v1';
 import {setupMedia} from './media.js?v=20260928-voice-v2';
 const $=id=>document.getElementById(id);
 $('model').addEventListener('change',()=>media.stopVoice());

@@ -7,7 +7,7 @@
   <meta name="color-scheme" content="dark">
   <title>NyxTube</title>
   <link rel="icon" type="image/svg+xml" href="/assets/icons/shortcut-youtube.svg">
-  <link rel="stylesheet" href="./styles.css?v=20261002-shorts-discovery">
+  <link rel="stylesheet" href="./styles.css?v=20261002-shorts-layout">
   <link rel="stylesheet" href="/apps/obsidian.css?v=20260926-2">
 </head>
 <body>
@@ -107,11 +107,11 @@
 
     <section class="shorts-view" data-view="shorts" hidden>
       <header class="shorts-discovery">
-        <div><h1>Shorts</h1><p data-short-feed-label>A mix of science, nature, gaming and sports from selected creators.</p></div>
+        <div><h1>Shorts</h1><span class="short-sr-only" data-short-feed-label aria-live="polite">For you</span></div>
         <form class="search-box" data-short-search-form role="search" aria-label="Search Shorts">
           <svg aria-hidden="true"><use href="#icon-search"></use></svg>
           <input data-short-search-input type="search" minlength="2" maxlength="100" placeholder="Search Shorts" aria-label="Search Shorts" required>
-          <button type="submit">Search</button>
+          <button type="submit" aria-label="Search Shorts"><svg aria-hidden="true"><use href="#icon-search"></use></svg></button>
         </form>
         <nav class="short-topics" aria-label="Shorts topics">
           <button type="button" data-short-topic="discover" aria-pressed="true">For you</button>
@@ -122,20 +122,28 @@
         </nav>
       </header>
       <div class="shorts-layout">
+        <div class="short-player-group">
+        <div class="short-video-column">
         <article class="short-card" data-short-stage>
           <div class="short-mount" data-short-player></div>
           <div class="short-loading" data-short-loading><span></span></div>
           <button class="short-center-play" data-short-center-play type="button" aria-label="Play Short" hidden><svg><use href="#icon-play"></use></svg></button>
           <div class="short-actions"><button data-short-mute type="button" aria-label="Mute Short"><svg><use href="#icon-muted"></use></svg></button><button data-short-captions type="button" aria-pressed="false" aria-label="Toggle captions"><svg><use href="#icon-cc"></use></svg></button><button data-short-fullscreen type="button" aria-label="Fullscreen"><svg><use href="#icon-full"></use></svg></button></div>
-          <div class="short-copy"><strong data-short-title></strong><span data-short-creator></span></div>
+          <div class="short-empty" data-short-empty hidden><strong data-short-empty-title>No Shorts found</strong><button type="button" data-short-retry>Try again</button></div>
           <i class="short-progress" data-short-progress></i>
         </article>
-        <nav class="short-nav" aria-label="Short controls"><button data-short-previous type="button" aria-label="Previous Short"><svg><use href="#icon-up"></use></svg></button><button data-short-next type="button" aria-label="Next Short"><svg><use href="#icon-down"></use></svg></button><button type="button" data-short-heart aria-pressed="false" aria-label="Like this Short" disabled><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg><span>Like</span></button></nav>
+        <div class="short-caption"><span data-short-creator></span><strong data-short-title></strong></div>
+        </div>
+        <nav class="short-nav" aria-label="Short controls">
+          <button type="button" data-short-heart aria-pressed="false" aria-label="Like this Short" title="Like" disabled><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg><span class="short-sr-only">Like</span></button>
+          <div class="short-stepper"><button data-short-previous type="button" aria-label="Previous Short" title="Previous"><svg><use href="#icon-up"></use></svg></button><button data-short-next type="button" aria-label="Next Short" title="Next"><svg><use href="#icon-down"></use></svg></button></div>
+          <details class="short-menu" data-short-menu><summary aria-label="More options" title="More options"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></summary>
+            <div class="short-menu-panel"><button type="button" data-short-dislike disabled>Not interested</button><button type="button" data-short-hide-channel disabled>Hide channel</button><button type="button" data-short-reset title="Clear likes and hidden videos">Reset preferences</button></div>
+          </details>
+        </nav>
+        </div>
       </div>
-      <div class="short-feedback">
-        <div><button type="button" data-short-dislike disabled>Not interested</button><button type="button" data-short-hide-channel disabled>Hide channel</button><button type="button" data-short-reset>Reset preferences</button></div>
-        <p data-short-preferences-status role="status">Heart videos to see more from those creators. Preferences stay in this browser.</p>
-      </div>
+      <span class="short-sr-only" data-short-preferences-status role="status"></span>
     </section>
   </main>
 <dialog data-shortcut-help class="shortcut-help"><h2>Video shortcuts</h2><dl>
@@ -143,7 +151,7 @@
   <script src="./player-core.js?v=20260914-workspace-shorts-v2"></script>
   <script src="/assets/vendor/hls.min.js?v=1.7.2"></script>
   <script src="./native-player.js?v=20260917-shorts-loading-v3"></script>
-  <script src="./app.js?v=20261002-shorts-discovery"></script>
+  <script src="./app.js?v=20261002-shorts-layout"></script>
 
 </body>
 </html>

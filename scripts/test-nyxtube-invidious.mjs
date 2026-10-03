@@ -46,3 +46,24 @@ try {
 let backups=0;
 const denied=createTubeCatalog({env:{},fallback:{enabled:true,info:async()=>{backups++;},close(){}},execute:async()=>{throw new TubeError('video','Restricted',422);}});
 try{await assert.rejects(denied.info(id),e=>e.status===422);assert.equal(backups,0);}finally{await denied.close();}
+
+const slow=createInvidiousFallback({env:{NYX_INVIDIOUS_ORIGINS:'https://fixture.example'},fetch:async(_url,{signal})=>{
+ await new Promise((resolve,reject)=>{const timer=setTimeout(resolve,4200);signal.addEventListener('abort',()=>{clearTimeout(timer);reject(Error('Aborted'));},{once:true});});return Response.json([item]);
+}});
+try{assert.equal((await slow.search('slow but healthy',5)).entries.length,1);}finally{slow.close();}
+let familyCalls=0;
+const family=createInvidiousFallback({env:{NYX_INVIDIOUS_ORIGINS:'https://fixture.example'},fetch:async url=>{
+ familyCalls++;return url.pathname.endsWith('/search')?new Response('down',{status:503}):Response.json({authorId:channelId,author:'Creator',latestVideos:[item]});
+}});
+try{await assert.rejects(family.search('bad',5));assert.equal((await family.channel(channelId)).entries.length,1);await assert.rejects(family.search('again',5));assert.equal(familyCalls,2);}finally{family.close();}
+let concurrent=0,maximum=0,release;
+const gate=new Promise(resolve=>{release=resolve});
+const queued=createInvidiousFallback({env:{NYX_INVIDIOUS_ORIGINS:'https://fixture.example'},fetch:async()=>{concurrent++;maximum=Math.max(maximum,concurrent);await gate;concurrent--;return Response.json([item]);}});
+try{
+ const first=Array.from({length:10},(_,i)=>queued.search('q'+i,1));
+ await assert.rejects(queued.search('overflow',1),e=>e.status===429);
+ release();assert.equal((await Promise.all(first)).length,10);assert.equal(maximum,2);
+}finally{queued.close();}
+const closing=createInvidiousFallback({env:{NYX_INVIDIOUS_ORIGINS:'https://fixture.example'},fetch:async(_url,{signal})=>new Promise((_,reject)=>signal.addEventListener('abort',()=>reject(Error('closed')),{once:true}))});
+const pending=Array.from({length:4},()=>closing.search('pending',1));await new Promise(resolve=>setTimeout(resolve,0));closing.close();assert((await Promise.allSettled(pending)).every(r=>r.status==='rejected'));
+console.log('PASS healthy 4-second responses, isolated endpoint failures, two-request concurrency, bounded queue and shutdown cancellation');

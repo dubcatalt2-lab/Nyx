@@ -1,3 +1,4 @@
+import {storeMediaReservation,restoreMediaReservation} from '../lib/ai-media-reservation.mjs';
 import assert from 'node:assert/strict';
 import express from 'express';
 import {unlink} from 'node:fs/promises';
@@ -22,7 +23,13 @@ const db=memoryFirestore(),config=aiAllowanceConfig({NYX_AI_DAILY_BUDGET_USD:'10
 const allowance=createAiAllowance({db,config}),actor={uid:fullCatalogUid,owner:true,requestedModel:'vendor/video'};
 const session=await allowance.begin(actor);
 const reservation=await allowance.reserve(session,'shared',{model:actor.requestedModel,messages:[{role:'user',content:'hi'}],max_tokens:1},{inputPerMillion:0,outputPerMillion:0,requestUsd:1},{media:true});
-await allowance.settle(reservation,{input:0,output:0,cost:.3});
+assert.equal(session.refs.device,null);
+const stored=storeMediaReservation(reservation);
+assert.deepEqual(JSON.parse(JSON.stringify(stored)),stored,'Media jobs must persist without runtime references');
+assert(!('device' in stored.session.refs));
+const lookup=new Map(Object.values(session.refs).filter(Boolean).map(ref=>[ref.path,ref]));
+const restored=restoreMediaReservation(stored,{doc:path=>lookup.get(path)});
+await allowance.settle(restored,{input:0,output:0,cost:.3});
 const account=(await session.refs.account.get()).data();assert.equal(account.money,300000,'Media settles to reported cost');
 await allowance.finish(session,true);
 

@@ -4,9 +4,9 @@ Native playback is optional and disabled until explicitly configured. The existi
 Extractor-backed search, metadata, community features and the iframe player remain available.
 Native playback uses HLS: the server reads the source index and fetches only the
 requested audio/video sections. Playback can start before the entire video downloads,
-and seeking requests the sections near the new position. Shorts and Nyxify retain their existing players. Native captions are not yet
-rendered over the video; the transcript remains readable and seekable, and the
-YouTube player remains selectable for captions.
+and seeking requests the sections near the new position. Shorts use the Invidious
+player described below; Nyxify retains its existing player. Native captions use
+the transcript service, and the YouTube player remains selectable for captions.
 
 ## Search and video information
 
@@ -40,9 +40,32 @@ primary extractor is retried after 30 seconds rather than retried on every looku
 This fallback is metadata-only: its media URLs returned HTTP 403 from the VPS, and
 its local playback path returned HTML instead of video during verification. It does
 not advertise those URLs as working native formats. Native playback still requires
-valid extractor media access; the existing YouTube player remains available. Shorts
-are YouTube videos, not a separate Invidious format; Drop's existing Shorts exclusion
-and the other sites' existing Shorts players remain unchanged.
+valid extractor media access. The frontend also supports a separate Invidious embed
+from `NYX_INVIDIOUS_EMBED_ORIGIN` (default `https://invidious.tiekoetter.com`; empty
+string disables it). Its public embed and companion playback were verified in a
+browser with decoded audio, frames and seeking on October 2, 2026. It streams to the
+browser using the provider's supported player, without storing video on the Nyx VPS.
+The previous instance's media routes return an Anubis bot-check page; no challenge
+is bypassed and no third-party cookies are copied to the server.
+
+The Invidious button selects this player. Native playback failures and YouTube
+player transport errors 5/153 can select it automatically. A temporary metadata
+service failure can open the same listed video in the embed; explicit 4xx video
+restrictions are retained. Initial time, volume, speed and pause preference are
+passed to the player. Invidious does not expose a public cross-origin control API,
+so its own controls handle playback/quality/fullscreen. Outer fake progress or
+mute controls are hidden. Switching away destroys the iframe and stops audio.
+
+Shorts use Invidious's hashtag feed, shared and cached separately from broad video
+searches that previously returned only long compilations and an empty filtered feed.
+The bounded extractor fallback reads the YouTube hashtag Shorts tab. Only permitted
+results with positive duration up to 180 seconds enter this feed. Shorts use one
+active Invidious iframe, muted initially and looping, with next/previous buttons;
+no hidden preloaded players run. Use the player controls and adjacent navigation
+buttons (cross-origin frame input does not bubble to the parent for custom gestures
+or automatic end detection). Playback does not wait on another metadata request.
+Drop retains its existing complete Shorts exclusion. Instance availability and
+supported video formats can still change; the YouTube player remains selectable.
 
 `NYX_YTDLP_BIN` and the existing optional cookie-file setting also apply to the
 catalog. The OVH installer already provides the tool. Native playback can remain

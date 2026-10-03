@@ -14,7 +14,7 @@ const fallback=createInvidiousFallback({env:{NYX_INVIDIOUS_ORIGINS:'https://fixt
   fetch:async(url, options)=>{
     calls++; assert.equal(options.redirect,'error'); assert.deepEqual(options.headers,{accept:'application/json'});
     if(bad)return new Response('challenge',{status:429});
-    let body=url.pathname.includes('/search')?[item]:url.pathname.includes('/comments/')?{comments:[{commentId:'c',content:'Hello'}]}:url.pathname.includes('/channels/')?{authorId:channelId,author:'Creator',latestVideos:[item]}:item;
+    let body=url.pathname.includes('/hashtag/')?{results:[item,{...item,videoId:'aqz-KE-bpKQ',lengthSeconds:800},{...item,videoId:'9FDVvWR91ww',liveNow:true}]}:url.pathname.includes('/search')?[item]:url.pathname.includes('/comments/')?{comments:[{commentId:'c',content:'Hello'}]}:url.pathname.includes('/channels/')?{authorId:channelId,author:'Creator',latestVideos:[item]}:item;
     return Response.json(body);
   }});
 const catalog=createTubeCatalog({fallback,env:{},now:()=>clock,execute:async()=>{primary++;throw new TubeError('authentication','Primary login unavailable.');}});
@@ -26,6 +26,8 @@ try {
   assert.deepEqual((await catalog.info(id)).formats, []);
   await assert.rejects(catalog.playbackInfo(id), e => e.code === 'service' && /temporarily unavailable/.test(e.message));
   assert.equal((await catalog.comments(id)).comments[0].text,'Hello');
+  const beforeShorts=calls;const shorts=await Promise.all(Array.from({length:20},()=>catalog.shorts(12)));
+  assert.equal(calls,beforeShorts+1);assert.equal(shorts[0].length,1);assert.equal(shorts[0][0].id,id);assert.equal(primary,1,'Shorts use the hashtag feed instead of broad compilation searches');
   clock+=31000;await catalog.search('another query');assert.equal(primary,2,'primary is retried after the fixed cooldown');
   const before=calls;bad=true;await assert.rejects(fallback.search('fail',5));
   await assert.rejects(fallback.search('again',5));assert.equal(calls,before+1,'failed instance is not hammered');

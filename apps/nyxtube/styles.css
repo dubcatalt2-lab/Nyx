@@ -38,4 +38,20 @@
   .channel-profile { grid-template-columns: 64px minmax(0,1fr); padding: 16px; }
   .channel-profile-avatar { width: 64px; height: 64px; }
   .channel-profile-stats { grid-column: 1 / -1; text-align: left; }
+  .watch-meta { grid-template-columns: 48px minmax(0,1fr); }
+  .watch-options { grid-column: 1 / -1; }
+  .shorts-layout { grid-template-columns: minmax(0,1fr) 44px; gap: 12px; }
+  .short-card { width: 100%; min-height: 0; height: auto; aspect-ratio: 9 / 16; }
+  .short-nav button { width: 44px; height: 44px; }
 }
+
+.watch-player.invidious-player .watch-gesture,.watch-player.invidious-player .watch-controls,.watch-player.invidious-player .mobile-seek-controls,.watch-player.invidious-player .center-play,.watch-player.invidious-player .watch-speed-indicator{display:none}
+.watch-options [data-watch-backup][aria-pressed="true"]{border-color:var(--accent);color:var(--text)}
+.watch-options{flex-wrap:wrap}
+.watch-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0}
+.watch-stats>span{min-width:0;overflow-wrap:anywhere}
+.watch-stats strong,.watch-stats small{display:block}
+.watch-stats small{margin-top:4px;color:var(--muted)}
+
+.short-card.invidious-player .short-actions,.short-card.invidious-player .short-copy,.short-card.invidious-player .short-center-play,.short-card.invidious-player .short-progress{display:none}
+.short-card.invidious-player iframe{pointer-events:auto}

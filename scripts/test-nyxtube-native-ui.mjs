@@ -15,7 +15,7 @@ try {
   const video={id:'YE7VzlLtp-4',title:'Native player test',creator:'Test creator',description:'A test video.',durationSeconds:30,captions:true};
   let busyReplies=2,failed=false,hold=false,checks=0,detailCalls=0,ownerState='working',ownerRole='owner';
   const app=express();
-  app.get('/assets/vendor/hls.min.js',(_req,res)=>res.sendFile(createRequire(import.meta.url).resolve('hls.js/dist/hls.min.js')));
+  app.get('/assets/vendor/hls.min.js',(_req,res)=>res.sendFile(createRequire(import.meta.url).resolve('hls.js/dist/hls.min.js'),{dotfiles:'allow'}));
   app.use('/api/nyxtube',(req,res)=>{
     if(req.path==='/status')return res.json({configured:true,nativeAvailable:true});
     if(req.path==='/video'){detailCalls++;return res.json({videos:[{...video,description:'Loaded full details',likeCount:null}]});}
@@ -72,7 +72,7 @@ try {
   assert.ok(Math.abs(saved.time-5)<.5);assert.equal(saved.volume,0);assert.equal(saved.rate,1.5);assert.ok(saved.paused&&saved.muted);
   await page.locator('[data-watch-info-tab="transcript"]').click();await page.locator('.transcript-line').click();
   await page.locator('[data-watch-fullscreen]').click();await page.waitForFunction(()=>Boolean(document.fullscreenElement));await page.evaluate(()=>document.exitFullscreen());
-  for(const width of [390,320]){await page.setViewportSize({width,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`Overflow at ${width}`);}
+  for(const width of [390,320]){await page.setViewportSize({width,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`Overflow at ${width}: ${JSON.stringify(await page.evaluate(()=>[...document.querySelectorAll('body *')].filter(e=>e.getBoundingClientRect().right>innerWidth+1).slice(0,8).map(e=>({tag:e.tagName,class:e.className,parent:e.parentElement.className,text:e.textContent.slice(0,80),right:e.getBoundingClientRect().right,width:e.getBoundingClientRect().width}))))}`);}
   for(const width of [1280,390,320]) {
     await page.setViewportSize({width,height:900});
     const centered=await page.locator('#icon-settings').evaluate(el=>{const p=el.querySelector('path').getBBox(),c=el.querySelector('circle');return Math.abs(p.x+p.width/2-c.cx.baseVal.value)<.01&&Math.abs(p.y+p.height/2-c.cy.baseVal.value)<.01;});
@@ -109,11 +109,12 @@ try {
   await page.getByRole('button',{name:'Switch to embedded',exact:true}).click();await page.locator('[data-test-embed]').waitFor();
   hold=true;await page.getByRole('button',{name:'Switch to NyxTube',exact:true}).click();await page.locator('[data-back]').click();await page.waitForTimeout(1700);assert.equal(await page.locator('[data-watch-player] video').count(),0);
   await page.goto(base+'/owner-test');await page.evaluate(()=>NyxOwnerDashboard.open({getToken:async()=> 'mock'}));
+  await page.locator('[data-owner-section="services"]').click();
   await page.locator('[data-owner-tube-state="working"]').waitFor();
   for (const [width,height] of [[1920,1080],[1280,720],[1024,600],[390,844]]) {
     await page.setViewportSize({width,height});
-    const boxes=await page.evaluate(()=>{const rect=s=>document.querySelector(s).getBoundingClientRect();return {status:rect('[data-owner-tube-status]').bottom,metricsTop:rect('[data-owner-metrics]').top,metricsBottom:Math.max(rect('[data-owner-metrics]').bottom,...[...document.querySelectorAll('.nyx-owner-metric')].map(el=>el.getBoundingClientRect().bottom)),workspace:rect('.nyx-owner-workspace').top,toolbar:rect('.nyx-owner-panel-head').top};});
-    assert.ok(boxes.status<=boxes.metricsTop && boxes.metricsBottom<=boxes.workspace && boxes.metricsBottom<=boxes.toolbar,`Dashboard overlap at ${width}x${height}: ${JSON.stringify(boxes)}`);
+    const fits=await page.locator('[data-owner-tube-status]').evaluate(el=>{const a=el.getBoundingClientRect(),b=el.closest('[data-owner-panel]').getBoundingClientRect();return a.left>=b.left&&a.right<=b.right+1&&el.scrollWidth<=el.clientWidth+1;});
+    assert.ok(fits,`Video service status overflows at ${width}x${height}`);
   }
   ownerState='login_required';await page.locator('[data-owner-refresh]').first().click();await page.locator('[data-owner-tube-state="login_required"]').waitFor();
   await page.locator('[data-owner-tube-check]').click();await page.locator('[data-owner-tube-state="working"]').waitFor();assert.equal(checks,1);

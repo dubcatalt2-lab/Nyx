@@ -58,6 +58,7 @@ import { linkGeneratorHourlyQuota } from "./lib/link-generator-quota.mjs";
 import { batchFiles, inspectBatchTree } from "./lib/link-generator-batch.mjs";
 import { createTubeBackend } from "./lib/nyxtube-streaming.mjs";
 import { createTubeCatalog } from "./lib/nyxtube-catalog.mjs";
+import { invidiousEmbedOrigin } from "./lib/nyxtube-invidious.mjs";
 import { tubeStreamingRoutes } from "./lib/nyxtube-routes.mjs";
 import { createMetingBackend } from "./lib/nyxify-meting.mjs";
 
@@ -7742,7 +7743,7 @@ async function nyxTubeSearch(query, limit) {
 }
 
 async function nyxTubeShorts(limit) {
-  return (await nyxTubeCatalog.search('#shorts', Math.min(50, limit * 2))).filter(video => video.isShort).slice(0, limit);
+  return nyxTubeCatalog.shorts(limit);
 }
 
 async function nyxTubeCommentsLoad(videoId, cacheKey) {
@@ -7937,7 +7938,7 @@ app.use(tubeStreamingRoutes({
   }
 }));
 app.get("/api/nyxtube/status", (_req, res) => {
-  res.set("Cache-Control", "no-store").json({ configured: true, provider: "youtube", playback: nyxTubeBackend.enabled ? "native" : "official-iframe-api", nativeAvailable: nyxTubeBackend.enabled });
+  res.set("Cache-Control", "no-store").json({ configured: true, provider: "youtube", playback: nyxTubeBackend.enabled ? "native" : "official-iframe-api", nativeAvailable: nyxTubeBackend.enabled, invidiousEmbedOrigin: invidiousEmbedOrigin() });
 });
 
 app.get("/api/nyxtube/feed", nyxTubeRoute(req => nyxTubeFeed(Math.max(1, Math.min(32, Number.parseInt(req.query?.limit, 10) || 20)))));

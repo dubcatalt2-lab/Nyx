@@ -8,7 +8,7 @@
   const $$ = selector => [...document.querySelectorAll(selector)];
   const views = Object.fromEntries($$("[data-view]").map(view => [view.dataset.view, view]));
   const state = {
-    nativeAvailable: false, watchGeneration: 0, preferredPlayer: "native",
+    nativeAvailable: false, invidiousEmbedOrigin: "", watchGeneration: 0, preferredPlayer: "native",
     view: "home", videos: [], catalog: [], shorts: [], shortIndex: 0,
     watchPlayer: null, shortPlayer: null, watchTimer: 0, shortTimer: 0,
     watchVideo: null, watchCaptions: false, shortCaptions: false, shortMuted: true,
@@ -32,6 +32,12 @@
     "watch-comments-status", "watch-comments", "watch-transcript-status", "watch-transcript",
     "channel-back", "channel-profile", "channel-avatar", "channel-title", "channel-handle", "channel-description", "channel-subscribers", "channel-videos", "channel-status",
   ].map(name => [name.replace(/-([a-z])/g, (_match, letter) => letter.toUpperCase()), $(`[data-${name}]`)]));
+
+  refs.watchBackup = document.createElement('button');
+  refs.watchBackup.type = 'button'; refs.watchBackup.textContent = 'Invidious';
+  refs.watchBackup.dataset.watchBackup = ''; refs.watchBackup.hidden = true;
+  refs.watchBackup.title = 'Use the Invidious player';
+  refs.watchEngine.after(refs.watchBackup);
 
   function applyTheme() {
     if(document.documentElement.dataset.appShell==='tutsi')return;
@@ -62,7 +68,7 @@
     const response = await fetch(url, { credentials: "same-origin", headers: { Accept: "application/json" }, signal });
     let payload = null;
     try { payload = await response.json(); } catch {                      }
-    if (!response.ok) throw new Error(payload?.error || `Request failed (${response.status})`);
+    if (!response.ok) throw Object.assign(new Error(payload?.error || `Request failed (${response.status})`), {status:response.status});
     return payload;
   }
   function duration(seconds) {
@@ -328,6 +334,7 @@
     if(state.watchTrail.length>50)state.watchTrail.shift();
     stopWatch();
     const requestGeneration = state.watchGeneration;
+    let metadataUnavailable = false;
     state.watchVideo = video; showView("watch"); notice(recoveryMessage);
     if (video.detailsPending) {
       refs.watchTitle.textContent = video.title || "Loading video";
@@ -346,8 +353,12 @@
         state.catalog = state.catalog.map(item => item.id === detail.id ? detail : item);
       } catch (error) {
         if (state.view !== "watch" || state.watchGeneration !== requestGeneration) return;
-        refs.watchLoading.hidden = true; notice(error.message || "Video details could not be loaded.");
-        return;
+        if (state.invidiousEmbedOrigin && (error.status >= 500 || error instanceof TypeError)) {
+          metadataUnavailable = true; recoveryMessage = 'Video details could not load. Opening the Invidious player.';
+        } else {
+          refs.watchLoading.hidden = true; notice(error.message || "Video details could not be loaded.");
+          return;
+        }
       }
     }
     finishWatchSpace({ cancel: true });
@@ -369,20 +380,46 @@
     state.watchCaptions = false; refs.watchCaptions.setAttribute("aria-pressed", "false"); refs.watchCaptionOption.querySelector("span").textContent = "Off";
     refs.watchLoading.hidden = false; refs.watchCenterPlay.hidden = true; refs.watchProgress.value = "0";
     refs.watchTime.textContent = `0:00 / ${duration(video.durationSeconds)}`;
-    createWatch(video).catch(error => { refs.watchLoading.hidden = true; notice(error.message || "The video player could not be started."); });
+    createWatch(video,false,false,null,metadataUnavailable?"invidious":"").catch(error => { refs.watchLoading.hidden = true; notice(error.message || "The video player could not be started."); });
   }
-  function updatePlayerSwitch(native) {
-    refs.watchEngine.value = native ? "native" : "youtube";
-    refs.watchEngine.textContent = native ? "Switch to embedded" : (dropTube ? "Switch to DropTube" : "Switch to NyxTube");
+  function updatePlayerSwitch(native, backup = false) {
+    refs.watchEngine.value = backup ? "invidious" : native ? "native" : "youtube";
+    refs.watchEngine.hidden = !state.nativeAvailable && !backup;
+    refs.watchBackup.setAttribute("aria-pressed", String(backup));
+    refs.watchEngine.textContent = native ? "Switch to embedded" : !state.nativeAvailable ? "Switch to YouTube" : (dropTube ? "Switch to DropTube" : "Switch to NyxTube");
   }
-  async function createWatch(video, forceDirect = false, fallback = false, restore = null) {
+  async function createWatch(video, forceDirect = false, fallback = false, restore = null, playerOverride = "") {
     finishWatchSpace({ cancel: true });
     const generation = ++state.watchGeneration;
-    const native = state.nativeAvailable && state.preferredPlayer === "native" && !forceDirect && !fallback;
-    updatePlayerSwitch(native);
+    const backup = Boolean(state.invidiousEmbedOrigin && !forceDirect && (playerOverride === "invidious" || (!fallback && state.preferredPlayer === "invidious")));
+    const native = !backup && state.nativeAvailable && state.preferredPlayer === "native" && !forceDirect && !fallback;
+    updatePlayerSwitch(native, backup);
+    clearInterval(state.watchTimer); state.watchTimer = 0;
+    refs.watchStage.classList.toggle('invidious-player', backup);
+    refs.watchQuality.closest('label').hidden = backup;
+    refs.watchCaptionOption.hidden = backup;
+    $('[data-shortcut-help-open]').hidden = backup;
     state.watchPlayer?.destroy?.(); state.watchPlayer = null;
     refs.watchLoading.hidden = false; refs.watchLoading.querySelector("strong").textContent = native ? "Preparing video..." : "Loading video";
     refs.watchQuality.disabled = true;
+    if (backup) {
+      if (!/^[A-Za-z0-9_-]{11}$/.test(video.id)) throw new Error('Choose a valid video.');
+      const url = new URL('/embed/' + video.id, state.invidiousEmbedOrigin);
+      const params = {local:'true', autoplay:restore?.paused?'0':'1', quality:'medium', controls:'1',
+        continue:'0', hl:'en-US', start:String(Math.max(0, Number(restore?.time)||0)),
+        volume:String(restore?.muted?0:Math.max(0,Math.min(100,Number(restore?.volume??100)))),
+        speed:String(Math.max(0.25,Math.min(2,Number(restore?.rate)||1)))};
+      for (const [key,value] of Object.entries(params)) url.searchParams.set(key,value);
+      const frame = document.createElement('iframe'); frame.title = 'Invidious video player';
+      frame.src = url.href; frame.allow = 'autoplay; fullscreen; picture-in-picture'; frame.allowFullscreen = true;
+      frame.referrerPolicy = 'strict-origin-when-cross-origin';
+      frame.addEventListener('load', () => { if(generation===state.watchGeneration)refs.watchLoading.hidden=true; }, {once:true});
+      state.watchPlayer = {isInvidious:true, destroy:()=>frame.remove()};
+      refs.watchPlayer.replaceChildren(frame); refs.watchCenterPlay.hidden = true;
+      // Invidious has no public cross-origin control API. Keep its real controls
+      // reachable; do not simulate time, mute, pause or successful playback.
+      return;
+    }
     const YT = native ? window.NyxNativePlayer : forceDirect ? directYoutubeApi : await youtubeApi();
     if (generation !== state.watchGeneration) return;
     if (state.view !== "watch" || state.watchVideo?.id !== video.id) return;
@@ -400,7 +437,7 @@
       },
       onError: event => {
         if(generation !== state.watchGeneration || state.view !== "watch") return;
-        if(native) { notice(event.target?.failure ? `Native playback stopped: ${event.target.failure} Opening the YouTube player.` : "Native playback is unavailable for this video. Opening the YouTube player."); createWatch(video, false, true, {time:event.target.getCurrentTime()||restore?.time||0,volume:event.target.getVolume(),rate:event.target.getPlaybackRate(),muted:event.target.isMuted(),paused:event.target.getCurrentTime()>0?event.target.video.paused:(restore?.paused??false)}).catch(()=>notice("The video player could not start.")); }
+        if(native) { notice(state.invidiousEmbedOrigin ? "Opening the Invidious player. Use the controls inside the video." : "Native playback is unavailable. Opening the YouTube player."); createWatch(video, false, true, {time:event.target.getCurrentTime()||restore?.time||0,volume:event.target.getVolume(),rate:event.target.getPlaybackRate(),muted:event.target.isMuted(),paused:event.target.getCurrentTime()>0?event.target.video.paused:(restore?.paused??false)}, state.invidiousEmbedOrigin ? "invidious" : "").catch(()=>notice("The video player could not start.")); }
         else recoverWatch(video, Number(event?.data), YT === directYoutubeApi);
       },
     };
@@ -477,6 +514,11 @@
     if (state.view !== "watch" || state.watchVideo?.id !== video.id) return;
     finishWatchSpace({ cancel: true });
     refs.watchLoading.hidden = true;
+    if (state.invidiousEmbedOrigin && (code === 5 || code === 153)) {
+      notice('Opening the Invidious player. Use the controls inside the video.');
+      createWatch(video, false, true, null, 'invidious').catch(error => notice(error.message));
+      return;
+    }
     if (!directPlayer && (code === 5 || code === 153)) {
       notice("Retrying this video with the Chromebook-compatible player...");
       createWatch(video, true).catch(error => notice(error.message || "The video player could not be restarted."));
@@ -535,7 +577,7 @@
     }, 250);
   }
   function stopWatch() {
-    refs.watchStage.classList.remove("mini-player");
+    refs.watchStage.classList.remove("mini-player", "invidious-player");
     showWatchControls();
     ++state.watchGeneration;
     clearInterval(state.watchTimer); state.watchTimer = 0; clearTimeout(state.watchRecoveryTimer); state.watchRecoveryTimer = 0;
@@ -681,6 +723,21 @@
     })().catch(()=>{entry.failed=true;if(state.shorts[state.shortIndex]?.id===entry.id&&state.view==='shorts')recoverShort(video);});
     return entry;
   }
+  function showInvidiousShort(video, generation) {
+    clearShortLoadTimer(); clearInterval(state.shortTimer); state.shortTimer = 0;
+    for (const entry of preparedShorts.values()) { entry.removed=true; entry.player?.destroy?.(); entry.node?.remove(); }
+    preparedShorts.clear(); state.shortPlayer?.destroy?.();
+    refs.shortStage.classList.add('invidious-player');
+    if (!/^[A-Za-z0-9_-]{11}$/.test(video.id)) throw new Error('Choose a valid Short.');
+    const url = new URL('/embed/'+video.id, state.invidiousEmbedOrigin);
+    url.search = new URLSearchParams({local:'true',autoplay:'1',quality:'medium',controls:'1',volume:'0',loop:'1',continue:'0',hl:'en-US'}).toString();
+    const frame=document.createElement('iframe');frame.title='Invidious Short player';frame.src=url.href;
+    frame.allow='autoplay; fullscreen; picture-in-picture';frame.allowFullscreen=true;frame.referrerPolicy='strict-origin-when-cross-origin';
+    frame.addEventListener('load',()=>{if(generation===shortGeneration&&state.view==='shorts')refs.shortLoading.hidden=true;},{once:true});
+    state.shortPlayer={isInvidious:true,destroy:()=>frame.remove()};
+    refs.shortPlayer.replaceChildren(frame);
+    notice('Use the arrows for the next Short. Playback controls are inside the video.');
+  }
   async function showShort(index) {
     if(!state.shorts.length)return;
     const generation=++shortGeneration;
@@ -690,6 +747,8 @@
     watchShortLoad(video,generation);
     refs.shortTitle.textContent=video.title||'Untitled Short';refs.shortCreator.textContent=video.creator||'YouTube';
     refs.shortLoading.hidden=false;refs.shortCenterPlay.hidden=true;refs.shortProgress.style.width='0';
+    if(state.invidiousEmbedOrigin){showInvidiousShort(video,generation);return;}
+    refs.shortStage.classList.remove('invidious-player');
     for(const entry of preparedShorts.values())if(entry.node){entry.node.style.visibility='hidden';entry.node.style.pointerEvents='none';entry.node.setAttribute('aria-hidden','true');}
     const keep=new Set(Array.from({length:Math.min(4,state.shorts.length)},(_,offset)=>state.shorts[(state.shortIndex+offset)%state.shorts.length].id));
     for(const [id,entry] of preparedShorts)if(!keep.has(id)){entry.removed=true;entry.player?.destroy?.();entry.node?.remove();preparedShorts.delete(id);}
@@ -728,7 +787,8 @@
     finishShortHold(true);
     shortGeneration++;clearShortLoadTimer();clearInterval(state.shortTimer);state.shortTimer=0;
     for(const entry of preparedShorts.values()){entry.removed=true;entry.player?.destroy?.();entry.node?.remove();}
-    preparedShorts.clear();state.shortPlayer=null;refs.shortPlayer.replaceChildren();
+    preparedShorts.clear();state.shortPlayer?.destroy?.();state.shortPlayer=null;refs.shortPlayer.replaceChildren();
+    refs.shortStage.classList.remove('invidious-player');
   }
   function toggleShort() {
     if (!ready(state.shortPlayer)) return;
@@ -824,7 +884,8 @@
     refs.watchStage.addEventListener("pointercancel",event=>releasePointer(event,true));
     refs.watchStage.addEventListener("lostpointercapture",event=>releasePointer(event,true));
     refs.watchQuality.addEventListener("change",()=>switchPlayback(Number(refs.watchQuality.value)));
-    refs.watchEngine.addEventListener("click",()=>{state.preferredPlayer=refs.watchEngine.value === "native" ? "youtube" : "native";switchPlayback();});
+    refs.watchEngine.addEventListener("click",()=>{state.preferredPlayer=refs.watchEngine.value === "native" || !state.nativeAvailable ? "youtube" : "native";switchPlayback();});
+    refs.watchBackup.addEventListener("click",()=>{state.preferredPlayer="invidious";notice("Use the controls inside the video for playback, quality and fullscreen.");switchPlayback();});
     refs.watchProgress.addEventListener("input", () => { if (ready(state.watchPlayer)) state.watchPlayer.seekTo((state.watchPlayer.getDuration?.() || 0) * Number(refs.watchProgress.value) / 1000, true); });
     const watchCaptions = () => changeWatchCaptions(!state.watchCaptions);
     refs.watchCaptions.addEventListener("click", watchCaptions); refs.watchCaptionOption.addEventListener("click", watchCaptions); refs.watchFullscreen.addEventListener("click", () => fullscreen(refs.watchStage));
@@ -881,6 +942,7 @@
       if (event.key === "Escape" && !refs.watchSettingsMenu.hidden) { event.preventDefault(); closeWatchSettings(); refs.watchSettings.focus(); return; }
       if (shortcutBlocked(event.target) || event.ctrlKey || event.metaKey || event.altKey) return;
       if (state.view === "watch") {
+        if (state.watchPlayer?.isInvidious) return;
         if (["Space", "KeyK", "KeyJ", "KeyL", "ArrowLeft", "ArrowRight", "KeyM", "KeyC", "KeyF", "ArrowUp", "ArrowDown", "Home", "End", "Comma", "Period", "KeyI", "KeyT", "MediaPlayPause", "MediaStop", "MediaTrackNext", "MediaTrackPrevious", ...Array.from({length:10},(_,i)=>"Digit"+i)].includes(event.code)) event.preventDefault();
         if (event.code === "Space") { beginWatchSpace(); return; }
         if (event.repeat && !["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","KeyJ","KeyL"].includes(event.code)) return;
@@ -925,10 +987,15 @@
     });
   }
 
-  if(dropTube)addEventListener('message',event=>{if(event.origin===location.origin&&event.source===parent&&event.data?.type==='drop:tube-pause')state.watchPlayer?.pauseVideo?.();});
+  if(dropTube)addEventListener('message',event=>{if(event.origin===location.origin&&event.source===parent&&event.data?.type==='drop:tube-pause'){if(state.watchPlayer?.isInvidious){stopWatch();notice('Press Invidious to reopen the video.');}else state.watchPlayer?.pauseVideo?.();}});
   applyTheme(); bind(); skeletons(); requestProfile();
   json("/api/nyxtube/status").then(status => {
     if (!status?.configured) throw new Error("NyxTube is not configured yet.");
+    try {
+      const url = new URL(status.invidiousEmbedOrigin);
+      if(url.protocol==='https:'&&!url.username&&!url.password&&!url.port&&url.href===url.origin+'/')state.invidiousEmbedOrigin=url.origin;
+    } catch { /* A missing or invalid backup setting leaves the existing players available. */ }
+    refs.watchBackup.hidden = !state.invidiousEmbedOrigin;
     state.nativeAvailable = status.nativeAvailable === true; refs.watchEngine.hidden = !state.nativeAvailable;
     return loadInitialView();
   }).catch(error => { renderVideos([]); notice(error.message || "NyxTube could not be started."); });

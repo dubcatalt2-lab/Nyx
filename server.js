@@ -7742,8 +7742,8 @@ async function nyxTubeSearch(query, limit) {
   return nyxTubeCatalog.search(query, limit);
 }
 
-async function nyxTubeShorts(limit) {
-  return nyxTubeCatalog.shorts(limit);
+async function nyxTubeShorts(limit, page = 1) {
+  return nyxTubeCatalog.shortsPage(page, limit);
 }
 
 async function nyxTubeCommentsLoad(videoId, cacheKey) {
@@ -7943,7 +7943,7 @@ app.get("/api/nyxtube/status", (_req, res) => {
 
 app.get("/api/nyxtube/feed", nyxTubeRoute(req => nyxTubeFeed(Math.max(1, Math.min(32, Number.parseInt(req.query?.limit, 10) || 20)))));
 
-app.get("/api/nyxtube/shorts", nyxTubeRoute(req => nyxTubeShorts(Math.max(1, Math.min(24, Number.parseInt(req.query?.limit, 10) || 12)))));
+app.get("/api/nyxtube/shorts", nyxTubeRoute(req => nyxTubeShorts(Math.max(1, Math.min(24, Number.parseInt(req.query?.limit, 10) || 12)), req.query?.page ?? 1)));
 
 app.get("/api/nyxtube/video", nyxTubeRoute(async req => {
   const videoId = String(req.query?.id || "").trim();

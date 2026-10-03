@@ -655,12 +655,37 @@
     const request = element.requestFullscreen || element.webkitRequestFullscreen; if (request) request.call(element).catch?.(() => {});
   }
 
+  let shortFeedPage=1, shortFeedHasMore=true, shortFeedPending=null, shortFeedRetryAt=0, shortFeedError='', shortNavigation=0;
+  const seenShortIds=new Set();
+  function refillShorts(ahead=6) {
+    if(shortFeedPending)return shortFeedPending;
+    if(dropTube||!shortFeedHasMore||Date.now()<shortFeedRetryAt)return Promise.resolve();
+    shortFeedPending=(async()=>{
+      for(let attempts=0;attempts<3&&shortFeedHasMore&&state.view==='shorts'&&state.shorts.length-state.shortIndex-1<ahead;attempts++){
+        const payload=await json(`/api/nyxtube/shorts?limit=24&page=${shortFeedPage}`);
+        for(const video of payload?.videos||[]){
+          if(!/^[A-Za-z0-9_-]{11}$/.test(video?.id||'')||!video.isShort||seenShortIds.has(video.id))continue;
+          seenShortIds.add(video.id);state.shorts.push(video);
+        }
+        const next=payload?.nextPage;
+        shortFeedHasMore=Number.isInteger(next)&&next>shortFeedPage&&next<=100;
+        if(shortFeedHasMore)shortFeedPage=next;
+        shortFeedError='';
+        // Keep recent back navigation while bounding long-session metadata.
+        const trim=Math.min(Math.max(0,state.shorts.length-240),Math.max(0,state.shortIndex-50));
+        if(trim){state.shorts.splice(0,trim);state.shortIndex-=trim;}
+      }
+    })().catch(error=>{shortFeedRetryAt=Date.now()+15000;shortFeedError=error.message||'More Shorts could not load.';})
+      .finally(()=>{shortFeedPending=null;});
+    return shortFeedPending;
+  }
   async function loadShorts() {
     if (dropTube) return;
     notice(); refs.shortLoading.hidden = false;
     try {
-      if (!state.shorts.length) state.shorts = (await json("/api/nyxtube/shorts?limit=16"))?.videos || [];
-      if (!state.shorts.length) throw new Error("No playable Shorts were found.");
+      if (!state.shorts.length) await refillShorts(1);
+      if(state.view!=='shorts')return;
+      if (!state.shorts.length) throw new Error(shortFeedError||"No playable Shorts were found.");
       state.failedShortIds.clear();shortRetries.clear();
       await showShort(state.shortIndex);
     } catch (error) { refs.shortLoading.hidden = true; notice(error.message || "Shorts could not be loaded."); }
@@ -740,17 +765,28 @@
   }
   async function showShort(index) {
     if(!state.shorts.length)return;
+    const navigation=++shortNavigation;
+    if(index>=state.shorts.length){
+      const advance=index-state.shortIndex;
+      notice('Loading more Shorts...');await refillShorts(1);
+      if(navigation!==shortNavigation||state.view!=='shorts')return;
+      index=state.shortIndex+advance;
+      if(index>=state.shorts.length){notice(shortFeedError||'No more Shorts are available right now.');return;}
+    }
+    index=Math.max(0,index);
+    if(index===state.shortIndex&&state.shortPlayer)return;
     const generation=++shortGeneration;
-    state.shortIndex=(index+state.shorts.length)%state.shorts.length;
+    state.shortIndex=index;
     const video=state.shorts[state.shortIndex];
     state.shortPlayer?.pauseVideo?.();state.shortPlayer=null;
     watchShortLoad(video,generation);
     refs.shortTitle.textContent=video.title||'Untitled Short';refs.shortCreator.textContent=video.creator||'YouTube';
     refs.shortLoading.hidden=false;refs.shortCenterPlay.hidden=true;refs.shortProgress.style.width='0';
+    void refillShorts();
     if(state.invidiousEmbedOrigin){showInvidiousShort(video,generation);return;}
     refs.shortStage.classList.remove('invidious-player');
     for(const entry of preparedShorts.values())if(entry.node){entry.node.style.visibility='hidden';entry.node.style.pointerEvents='none';entry.node.setAttribute('aria-hidden','true');}
-    const keep=new Set(Array.from({length:Math.min(4,state.shorts.length)},(_,offset)=>state.shorts[(state.shortIndex+offset)%state.shorts.length].id));
+    const keep=new Set(state.shorts.slice(state.shortIndex,state.shortIndex+4).map(item=>item.id));
     for(const [id,entry] of preparedShorts)if(!keep.has(id)){entry.removed=true;entry.player?.destroy?.();entry.node?.remove();preparedShorts.delete(id);}
     const entry=prepareShort(video);await entry.promise;
     if(generation!==shortGeneration||state.view!=='shorts')return;
@@ -759,7 +795,7 @@
     state.shortMuted=true;refs.shortMute.innerHTML=icon('icon-muted');
     if(entry.ready){entry.player.mute();entry.player.playVideo();startShortTimer();}
 
-    for(let offset=1;offset<=Math.min(3,state.shorts.length-1);offset++)prepareShort(state.shorts[(state.shortIndex+offset)%state.shorts.length]);
+    for(const next of state.shorts.slice(state.shortIndex+1,state.shortIndex+4))prepareShort(next);
   }
   function recoverShort(video) {
     if (state.view !== "shorts" || state.shorts[state.shortIndex]?.id !== video.id) return;
@@ -784,6 +820,7 @@
   }
   function stopShorts() {
     if (dropTube) return;
+    shortNavigation++;
     finishShortHold(true);
     shortGeneration++;clearShortLoadTimer();clearInterval(state.shortTimer);state.shortTimer=0;
     for(const entry of preparedShorts.values()){entry.removed=true;entry.player?.destroy?.();entry.node?.remove();}

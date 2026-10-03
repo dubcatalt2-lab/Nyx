@@ -67,6 +67,14 @@ or automatic end detection). Playback does not wait on another metadata request.
 Drop retains its existing complete Shorts exclusion. Instance availability and
 supported video formats can still change; the YouTube player remains selectable.
 
+Shorts discovery is paginated: `/api/nyxtube/shorts?page=1&limit=24` returns
+`videos` and `nextPage` (null at exhaustion). Pages 1 through 100 are accepted;
+each page is cached and concurrent requests share one upstream operation. The
+client loads ahead, requests at most three pages per refill, deduplicates IDs,
+backs off on errors, and keeps at most 240 recent entries plus bounded seen IDs.
+At the end it retains the current video instead of looping through the initial
+two or three. Previous navigation remains available for retained entries.
+
 `NYX_YTDLP_BIN` and the existing optional cookie-file setting also apply to the
 catalog. The OVH installer already provides the tool. Native playback can remain
 disabled while catalog search and the embedded player work. The separate Nyxify

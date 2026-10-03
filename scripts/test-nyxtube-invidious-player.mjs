@@ -12,10 +12,16 @@ const browser=await chromium.launch({channel:'msedge',headless:true});
 try {
  const context=await browser.newContext({viewport:{width:1280,height:900}});
  let nativeAvailable=!live,pending=false,detailStatus=503,detailCalls=0;
+ const shortRequests=new Map();
  await context.route(base+'/**', async route=>{
   const url=new URL(route.request().url());let path=url.pathname;
   if(path.startsWith('/api/')){
    if(path.endsWith('/video')){detailCalls++;return route.fulfill({status:detailStatus,json:{error:'Detail service failed'}});}
+   if(path.endsWith('/shorts')){
+    const page=Number(url.searchParams.get('page')||1);shortRequests.set(page,(shortRequests.get(page)||0)+1);
+    const ids=page===1?['ufvttxs9vEo','9FDVvWR91ww']:page===2?['9FDVvWR91ww','M7lc1UVf-VE','jNQXAC9IVRw']:[];
+    return route.fulfill({json:{videos:ids.map(id=>({...video,id,durationSeconds:30,isShort:true,detailsPending:true})),nextPage:page<3?page+1:null}});
+   }
    const json=path.endsWith('/status')?{configured:true,nativeAvailable,invidiousEmbedOrigin:origin}:path.includes('/feed')?{videos:[{...video,detailsPending:pending},{...video,id:'YE7VzlLtp-4',isShort:true,durationSeconds:90}]}:path.includes('/shorts')?{videos:[{...video,id:'ufvttxs9vEo',durationSeconds:30,isShort:true,detailsPending:true},{...video,id:'9FDVvWR91ww',durationSeconds:31,isShort:true,detailsPending:true}]}:path.includes('/community')?{comments:{available:false},transcript:{available:false}}:{videos:[],users:[]};
    return route.fulfill({json});
   }
@@ -78,6 +84,14 @@ try {
  }
  await page.locator('[data-short-next]').click();await page.waitForFunction(()=>document.querySelector('[data-short-player] iframe')?.src.includes('/embed/9FDVvWR91ww?'));
  assert.equal(await shortFrame.count(),1,'one active Short, no hidden players or background audio');
+ if(!live){
+  await page.locator('[data-short-next]').click();await page.waitForFunction(()=>document.querySelector('[data-short-player] iframe')?.src.includes('/embed/M7lc1UVf-VE?'));
+  await page.locator('[data-short-next]').click();await page.waitForFunction(()=>document.querySelector('[data-short-player] iframe')?.src.includes('/embed/jNQXAC9IVRw?'));
+  await page.locator('[data-short-next]').click();assert.ok((await shortFrame.getAttribute('src')).includes('/embed/jNQXAC9IVRw?'),'end never loops back to the first two Shorts');
+  assert.match(await page.locator('[data-notice]').innerText(),/No more Shorts/);
+  await page.locator('[data-short-previous]').click();await page.waitForFunction(()=>document.querySelector('[data-short-player] iframe')?.src.includes('/embed/M7lc1UVf-VE?'));
+  assert.deepEqual([...shortRequests],[[1,1],[2,1],[3,1]],'refills coalesce, deduplicate and stop at exhaustion');
+ }
  await page.locator('[data-view-button="home"]').click();assert.equal(await shortFrame.count(),0);
  if(!live){
   pending=true;await page.reload();await page.locator('.video-cover').first().click();await iframe.waitFor();assert.equal(detailCalls,beforeShorts+1);

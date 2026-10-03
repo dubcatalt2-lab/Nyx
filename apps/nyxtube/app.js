@@ -26,6 +26,7 @@
     "watch-title", "watch-creator", "watch-video-meta", "watch-channel-mark", "watch-source", "watch-description", "watch-related", "short-stage", "short-player",
     "short-loading", "short-center-play", "short-mute", "short-captions", "short-fullscreen",
     "short-progress", "short-title", "short-creator", "profile-button", "profile-avatar",
+    "short-search-form", "short-search-input", "short-feed-label", "short-preferences-status", "short-hide-channel", "short-dislike", "short-reset", "short-heart",
     "watch-quality", "watch-engine", "watch-settings", "watch-settings-menu", "watch-speed", "watch-volume", "watch-settings-captions",
     "watch-rewind", "watch-forward", "watch-speed-indicator",
     "watch-views", "watch-likes", "watch-comments-count", "watch-tab-comments-count",
@@ -656,36 +657,111 @@
   }
 
   let shortFeedPage=1, shortFeedHasMore=true, shortFeedPending=null, shortFeedRetryAt=0, shortFeedError='', shortNavigation=0;
+  let shortFeedCursor='', shortFeedQuery='', shortFeedTopic='discover', shortFeedGeneration=0, shortFeedController=null;
+  const shortPreferenceKey=`${document.documentElement.dataset.appShell === 'tutsi' ? 'tutsi' : 'nyx'}.shorts-preferences.v1`;
+  let hiddenShorts=new Set(), hiddenShortChannels=new Set(), likedShorts=new Map();
+  try {
+    const saved=JSON.parse(localStorage.getItem(shortPreferenceKey)||'{}');
+    hiddenShorts=new Set((Array.isArray(saved.videos)?saved.videos:[]).filter(id=>/^[A-Za-z0-9_-]{11}$/.test(id)).slice(-500));
+    hiddenShortChannels=new Set((Array.isArray(saved.channels)?saved.channels:[]).filter(id=>/^UC[A-Za-z0-9_-]{22}$/.test(id)).slice(-100));
+    likedShorts=new Map((Array.isArray(saved.likes)?saved.likes:[]).filter(item=>item&&/^[A-Za-z0-9_-]{11}$/.test(item.id)&&/^UC[A-Za-z0-9_-]{22}$/.test(item.channelId)).slice(-500).map(item=>[item.id,{id:item.id,channelId:item.channelId}]));
+  } catch { /* Preferences also work for this session when storage is unavailable. */ }
+  const wantedShort=video=>!hiddenShorts.has(video.id)&&!hiddenShortChannels.has(video.channelId);
+  function favoriteShortCreators() {
+    const scores=new Map();let order=0;
+    for(const video of likedShorts.values()){
+      if(!wantedShort(video))continue;
+      const value=scores.get(video.channelId)||{count:0,order:0};value.count++;value.order=++order;scores.set(video.channelId,value);
+    }
+    return [...scores].sort((a,b)=>b[1].count-a[1].count||b[1].order-a[1].order).slice(0,2).map(([id])=>id);
+  }
+  function renderShortHeart(video=state.shorts[state.shortIndex]) {
+    if(!refs.shortHeart)return;
+    const liked=Boolean(video&&likedShorts.has(video.id));
+    refs.shortHeart.disabled=!video?.channelId;
+    refs.shortHeart.setAttribute('aria-pressed',String(liked));refs.shortHeart.setAttribute('aria-label',liked?'Unlike this Short':'Like this Short');
+    refs.shortHeart.querySelector('span').textContent=liked?'Liked':'Like';
+  }
+  function refreshShortRecommendations() {
+    if(shortFeedQuery||shortFeedTopic!=='discover')return;
+    // Keep the current video playing; rebuild only the upcoming recommendations.
+    shortNavigation++;shortFeedGeneration++;shortFeedController?.abort();shortFeedPending=null;
+    state.shorts.splice(state.shortIndex+1);
+    seenShortIds.clear();for(const video of state.shorts)seenShortIds.add(video.id);
+    shortFeedPage=1;shortFeedCursor='';shortFeedHasMore=true;shortFeedRetryAt=0;shortFeedError='';
+    void refillShorts();
+  }
+  function saveShortPreferences(message) {
+    hiddenShorts=new Set([...hiddenShorts].slice(-500));hiddenShortChannels=new Set([...hiddenShortChannels].slice(-100));
+    likedShorts=new Map([...likedShorts].slice(-500));
+    try {
+      localStorage.setItem(shortPreferenceKey,JSON.stringify({videos:[...hiddenShorts],channels:[...hiddenShortChannels],likes:[...likedShorts.values()]}));
+      refs.shortPreferencesStatus.textContent=message+' Saved in this browser.';
+    } catch { refs.shortPreferencesStatus.textContent=message+' Saved for this session only.'; }
+  }
+  function resetShortFeed(query='',topic='discover') {
+    shortFeedGeneration++;shortFeedController?.abort();shortFeedPending=null;
+    stopShorts();state.shorts=[];state.shortIndex=0;seenShortIds.clear();
+    shortFeedPage=1;shortFeedCursor='';shortFeedHasMore=true;shortFeedRetryAt=0;shortFeedError='';
+    shortFeedQuery=query;shortFeedTopic=topic;
+    refs.shortSearchInput.value=query;
+    refs.shortTitle.textContent='';refs.shortCreator.textContent='';
+    refs.shortDislike.disabled=true;refs.shortHideChannel.disabled=true;renderShortHeart();
+    const descriptions={discover:'A mix of science, nature, gaming and sports from selected creators.',science:'Science Shorts from Mark Rober.',nature:'Nature Shorts from BBC Earth.',gaming:'Gaming Shorts from Minecraft.',sports:'Sports Shorts from the NBA.'};
+    refs.shortFeedLabel.textContent=query?`Short videos matching “${query}”`:descriptions[topic];
+    $$('[data-short-topic]').forEach(button=>button.setAttribute('aria-pressed',String(!query&&button.dataset.shortTopic===topic)));
+    void loadShorts();
+  }
+  async function hideCurrentShort(channel=false) {
+    const video=state.shorts[state.shortIndex];if(!video||channel&&!video.channelId)return;
+    if(channel)hiddenShortChannels.add(video.channelId);else hiddenShorts.add(video.id);
+    if(channel){for(const [id,liked] of likedShorts)if(liked.channelId===video.channelId)likedShorts.delete(id);}else likedShorts.delete(video.id);
+    saveShortPreferences(channel?`Hidden ${video.creator||'this channel'}.`:'This video is hidden.');
+    stopShorts();
+    const before=state.shorts.slice(0,state.shortIndex).filter(wantedShort).length;
+    state.shorts=state.shorts.filter(wantedShort);state.shortIndex=Math.min(before,Math.max(0,state.shorts.length-1));
+    refreshShortRecommendations();
+    await loadShorts();
+  }
   const seenShortIds=new Set();
   function refillShorts(ahead=6) {
     if(shortFeedPending)return shortFeedPending;
     if(dropTube||!shortFeedHasMore||Date.now()<shortFeedRetryAt)return Promise.resolve();
-    shortFeedPending=(async()=>{
+    const generation=shortFeedGeneration,controller=new AbortController();shortFeedController=controller;
+    const pending=(async()=>{
       for(let attempts=0;attempts<3&&shortFeedHasMore&&state.view==='shorts'&&state.shorts.length-state.shortIndex-1<ahead;attempts++){
-        const payload=await json(`/api/nyxtube/shorts?limit=24&page=${shortFeedPage}`);
+        const params=new URLSearchParams({limit:'24',page:String(shortFeedPage),topic:shortFeedTopic});
+        if(shortFeedQuery)params.set('q',shortFeedQuery);
+        else if(shortFeedTopic==='discover'){const favorites=favoriteShortCreators();if(favorites.length)params.set('creators',favorites.join(','));}
+        if(shortFeedCursor)params.set('cursor',shortFeedCursor);
+        const payload=await json(`/api/nyxtube/shorts?${params}`,controller.signal);
+        if(generation!==shortFeedGeneration)return;
         for(const video of payload?.videos||[]){
           if(!/^[A-Za-z0-9_-]{11}$/.test(video?.id||'')||!video.isShort||seenShortIds.has(video.id))continue;
-          seenShortIds.add(video.id);state.shorts.push(video);
+          seenShortIds.add(video.id);if(wantedShort(video))state.shorts.push(video);
         }
         const next=payload?.nextPage;
-        shortFeedHasMore=Number.isInteger(next)&&next>shortFeedPage&&next<=100;
-        if(shortFeedHasMore)shortFeedPage=next;
+        const cursor=typeof payload?.nextCursor==='string'?payload.nextCursor:'';
+        shortFeedHasMore=Boolean(cursor&&cursor!==shortFeedCursor)||Number.isInteger(next)&&next>shortFeedPage&&next<=100;
+        shortFeedCursor=cursor;
+        if(Number.isInteger(next))shortFeedPage=next;
         shortFeedError='';
         // Keep recent back navigation while bounding long-session metadata.
         const trim=Math.min(Math.max(0,state.shorts.length-240),Math.max(0,state.shortIndex-50));
         if(trim){state.shorts.splice(0,trim);state.shortIndex-=trim;}
       }
-    })().catch(error=>{shortFeedRetryAt=Date.now()+15000;shortFeedError=error.message||'More Shorts could not load.';})
-      .finally(()=>{shortFeedPending=null;});
-    return shortFeedPending;
+    })().catch(error=>{if(generation===shortFeedGeneration&&error.name!=='AbortError'){shortFeedRetryAt=Date.now()+15000;shortFeedError=error.message||'More Shorts could not load.';}})
+      .finally(()=>{if(shortFeedPending===pending)shortFeedPending=null;});
+    shortFeedPending=pending;return pending;
   }
   async function loadShorts() {
     if (dropTube) return;
+    const generation=shortFeedGeneration;
     notice(); refs.shortLoading.hidden = false;
     try {
       if (!state.shorts.length) await refillShorts(1);
-      if(state.view!=='shorts')return;
-      if (!state.shorts.length) throw new Error(shortFeedError||"No playable Shorts were found.");
+      if(state.view!=='shorts'||generation!==shortFeedGeneration)return;
+      if (!state.shorts.length) {refs.shortDislike?.setAttribute('disabled','');refs.shortHideChannel?.setAttribute('disabled','');renderShortHeart();throw new Error(shortFeedError||"No matching Shorts. Try another search or topic, or reset your preferences.");}
       state.failedShortIds.clear();shortRetries.clear();
       await showShort(state.shortIndex);
     } catch (error) { refs.shortLoading.hidden = true; notice(error.message || "Shorts could not be loaded."); }
@@ -778,6 +854,9 @@
     const generation=++shortGeneration;
     state.shortIndex=index;
     const video=state.shorts[state.shortIndex];
+    renderShortHeart(video);
+    if(refs.shortDislike)refs.shortDislike.disabled=false;
+    if(refs.shortHideChannel){refs.shortHideChannel.disabled=!video.channelId;refs.shortHideChannel.title=video.creator?`Hide ${video.creator}`:'Hide channel';}
     state.shortPlayer?.pauseVideo?.();state.shortPlayer=null;
     watchShortLoad(video,generation);
     refs.shortTitle.textContent=video.title||'Untitled Short';refs.shortCreator.textContent=video.creator||'YouTube';
@@ -891,6 +970,17 @@
     document.addEventListener("visibilitychange", () => { if (document.hidden) {finishWatchSpace({ cancel: true });finishShortHold(true)} else requestProfile(); });
     addEventListener("blur", () => {finishWatchSpace({ cancel: true });finishShortHold(true)});
     refs.searchForm.addEventListener("submit", event => { event.preventDefault(); const query = refs.searchInput.value.trim(); if (query) loadFeed(query); });
+    refs.shortSearchForm?.addEventListener('submit',event=>{event.preventDefault();const query=refs.shortSearchInput.value.trim();if(query.length>=2)resetShortFeed(query);});
+    $$('[data-short-topic]').forEach(button=>button.addEventListener('click',()=>resetShortFeed('',button.dataset.shortTopic)));
+    refs.shortDislike?.addEventListener('click',()=>void hideCurrentShort());
+    refs.shortHideChannel?.addEventListener('click',()=>void hideCurrentShort(true));
+    refs.shortHeart?.addEventListener('click',()=>{
+      const video=state.shorts[state.shortIndex];if(!video?.channelId)return;
+      if(likedShorts.has(video.id)){likedShorts.delete(video.id);saveShortPreferences('Like removed. Your For you feed has been adjusted.');}
+      else{likedShorts.set(video.id,{id:video.id,channelId:video.channelId});saveShortPreferences(`Liked. For you will show more from ${video.creator||'this creator'}.`);}
+      renderShortHeart(video);refreshShortRecommendations();
+    });
+    refs.shortReset?.addEventListener('click',()=>{hiddenShorts.clear();hiddenShortChannels.clear();likedShorts.clear();saveShortPreferences('Likes and hidden videos/channels cleared.');resetShortFeed();});
     $$("[data-topic]").forEach(button => button.addEventListener("click", () => { refs.searchInput.value = button.dataset.topic; loadFeed(button.dataset.topic); }));
     $$("[data-view-button]").forEach(button => button.addEventListener("click", () => { showView(button.dataset.viewButton); if (state.view === "shorts") loadShorts(); }));
     $("[data-back]").addEventListener("click", () => { if (state.view === "watch") showView("home"); else if (history.length > 1) history.back(); else location.href = "/"; });
@@ -973,7 +1063,7 @@
     document.addEventListener("keydown", event => {
       if($('[data-shortcut-help]').open)return;
       if(event.key==='?'&&!event.target.closest?.('input,textarea,select,[contenteditable]')){event.preventDefault();showShortcutHelp();return}
-      if(event.key==='/'&&!shortcutBlocked(event.target)){event.preventDefault();if(state.view!=='home')showView('home');refs.searchInput.focus();return}
+      if(event.key==='/'&&!shortcutBlocked(event.target)){event.preventDefault();if(state.view==='shorts'&&refs.shortSearchInput)refs.shortSearchInput.focus();else{if(state.view!=='home')showView('home');refs.searchInput.focus();}return}
       if(event.key==='Escape'&&refs.watchStage.classList.contains('mini-player')){refs.watchStage.classList.remove('mini-player');return}
       if(state.view==='watch'&&!shortcutBlocked(event.target)&&(event.ctrlKey||event.altKey)&&['ArrowLeft','ArrowRight'].includes(event.code)){event.preventDefault();chapterStep(event.code==='ArrowRight'?1:-1);return}
       if (event.key === "Escape" && !refs.watchSettingsMenu.hidden) { event.preventDefault(); closeWatchSettings(); refs.watchSettings.focus(); return; }

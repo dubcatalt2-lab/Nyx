@@ -56,10 +56,12 @@ passed to the player. Invidious does not expose a public cross-origin control AP
 so its own controls handle playback/quality/fullscreen. Outer fake progress or
 mute controls are hidden. Switching away destroys the iframe and stops audio.
 
-Shorts use Invidious's hashtag feed, shared and cached separately from broad video
-searches that previously returned only long compilations and an empty filtered feed.
-The bounded extractor fallback reads the YouTube hashtag Shorts tab. Only permitted
-results with positive duration up to 180 seconds enter this feed. Shorts use one
+Shorts discovery defaults to interleaved channel Shorts tabs from Mark Rober,
+BBC Earth, Minecraft and the NBA. Topic buttons narrow that selection. Dedicated
+Shorts search uses Invidious search with the query plus `#shorts`, short-duration
+filter and page number. Only permitted results with positive duration up to 180
+seconds enter the feed; search metadata does not guarantee portrait orientation.
+This curation is not an AI-content detector. Shorts use one
 active Invidious iframe, muted initially and looping, with next/previous buttons;
 no hidden preloaded players run. Use the player controls and adjacent navigation
 buttons (cross-origin frame input does not bubble to the parent for custom gestures
@@ -67,13 +69,30 @@ or automatic end detection). Playback does not wait on another metadata request.
 Drop retains its existing complete Shorts exclusion. Instance availability and
 supported video formats can still change; the YouTube player remains selectable.
 
-Shorts discovery is paginated: `/api/nyxtube/shorts?page=1&limit=24` returns
-`videos` and `nextPage` (null at exhaustion). Pages 1 through 100 are accepted;
-each page is cached and concurrent requests share one upstream operation. The
+`/api/nyxtube/shorts?topic=discover&limit=24` returns `videos` and `nextCursor`.
+Pass that cursor unchanged with the same topic to continue. The bounded cursor
+contains offsets and provider continuations for validated channel IDs, never URLs.
+The optional `creators` parameter accepts up to two distinct YouTube channel IDs.
+Hearts rank creators by liked-video count, then recent like; the top two receive
+three and two feed slots per round, versus one for each discovery source. Extra
+liked creators use their actual Shorts tabs. Provider metadata remains shared and
+bounded; no personalized watch history is stored on the server. Cursors bind to
+the topic and preferred creators so changing preferences restarts discovery safely.
+Unused provider entries remain cached and are consumed before the next provider
+page. `?q=cats&page=1&limit=24` returns `videos` and `nextPage`. Null means exhaustion.
+Both modes are bounded to 100 pages. Each page is cached and concurrent requests
+share one upstream operation. The
 client loads ahead, requests at most three pages per refill, deduplicates IDs,
 backs off on errors, and keeps at most 240 recent entries plus bounded seen IDs.
 At the end it retains the current video instead of looping through the initial
 two or three. Previous navigation remains available for retained entries.
+Search/topic changes abort pending fetches and ignore stale results. Not interested
+and Hide channel filter both the retained queue and future pages; up to 500 video
+IDs and 100 channel IDs persist in site-specific browser storage. Reset preferences
+restores them. Up to 500 likes also persist there. Liking/unliking adjusts future
+For you recommendations without restarting the active player; hiding a channel
+removes its positive preference. Reset clears likes and hides. These are local
+NyxTube preferences, not YouTube likes or an account-synced recommendation profile.
 
 `NYX_YTDLP_BIN` and the existing optional cookie-file setting also apply to the
 catalog. The OVH installer already provides the tool. Native playback can remain

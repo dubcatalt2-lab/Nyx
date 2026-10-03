@@ -4,6 +4,7 @@ import {readFile,writeFile} from 'node:fs/promises';
 import {join,posix} from 'node:path';
 import {createHash} from 'node:crypto';
 import {minify} from 'terser';
+import {formatPublishedHtml,formatPublishedJs} from './format-published-html.mjs';
 const alias=path=>posix.join(posix.dirname(path),'@r'+createHash('sha256').update('frontend-education-v1:'+path).digest('hex').slice(0,24)+'!'+posix.extname(path));
 function rewriteRelativeScriptUrls(source,path,aliases){
   const edits=[];
@@ -65,10 +66,13 @@ export async function buildFrontendAssets(output,files,lessonHtml) {
     const original=await readFile(join(output,path),'utf8');
     const loader=posix.join(posix.dirname('/'+path),'@r'+createHash('sha256').update('entry:'+path).digest('hex').slice(0,24)+'!.js');
     // Decode as UTF-8, preserve the original document URL, script order and handlers.
-    const boot=`(async()=>{await (${migrateStorage.toString()})(JSON.parse(atob(${JSON.stringify(Buffer.from(JSON.stringify(storageNames)).toString("base64"))})));const html=new TextDecoder().decode(Uint8Array.from(atob(${JSON.stringify(Buffer.from(original).toString('base64'))}),c=>c.charCodeAt(0)));document.open();document.write(html);document.close()})().catch(()=>{const p=document.createElement('p');p.setAttribute('role','alert');p.textContent='Saved browser data could not be updated. Close other site tabs and reload.';document.body.prepend(p)});`;
-    await writeFile(join(output,loader.slice(1)),(await minify(boot,{mangle:{toplevel:true},compress:true})).code);
+    const payload=Buffer.from(original).toString('base64').match(/.{1,112}/g)||[];
+    const boot=`(async()=>{await (${migrateStorage.toString()})(JSON.parse(atob(${JSON.stringify(Buffer.from(JSON.stringify(storageNames)).toString("base64"))})));const html=new TextDecoder().decode(Uint8Array.from(atob(${JSON.stringify(payload)}.join('')),c=>c.charCodeAt(0)));document.open();document.write(html);document.close()})().catch(()=>{const p=document.createElement('p');p.setAttribute('role','alert');p.textContent='Saved browser data could not be updated. Close other site tabs and reload.';document.body.prepend(p)});`;
+    // Compression can fold the chunk array back into one huge literal. Keep
+    // chunks intact while retaining local-name mangling and readable layout.
+    await writeFile(join(output,loader.slice(1)),formatPublishedJs((await minify(boot,{mangle:{toplevel:true},compress:false,format:{beautify:true,indent_level:2}})).code));
     const shell=lessonHtml.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'').replaceAll('/learning/','/apps/tutsi/studyready/').replace('</body>',`<script src="${loader}"></script></body>`);
-    await writeFile(join(output,path),shell);
+    await writeFile(join(output,path),formatPublishedHtml(shell));
   }
   await writeFile(join(output,'frontend-assets.json'),JSON.stringify({version:1,aliases}));
   console.log(`Frontend build: ${candidates.length} stable script aliases; lesson entry documents for Nyx, Tutsi and Drop.`);

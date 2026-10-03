@@ -2,6 +2,7 @@ import {storeMediaReservation,restoreMediaReservation} from './lib/ai-media-rese
 import {createAccountCloudPreferences} from './lib/account-cloud-preferences.mjs';
 import {createRemoteDesktop} from './lib/remote-desktop.mjs';
 import {createNyxCloudDesktop} from './lib/nyxcloud-desktop.mjs';
+import {createLoremCloud} from './lib/nyxcloud-lorem.mjs';
 import {isNookRequest} from './lib/nook-policy.mjs';
 import {createDropOwnerScope} from './lib/drop-owner.mjs';
 import {startMemoryMonitor} from './lib/memory-monitor.mjs';
@@ -763,6 +764,7 @@ app.use((req, res, next) => {
     "/startup.js",
     "/styles.css",
     "/uv.sw.js",
+    "/stem-connect.sw.js",
     "/uv.config.js",
     "/uv/uv.bundle.js",
     "/uv/uv.client.js",
@@ -14089,6 +14091,7 @@ app.get("/download/nyx-singlefile.html", (_req, res) => {
 
 const remoteDesktop=createRemoteDesktop({firebase:linkGeneratorFirebase,download:()=>companionZip(__dirname,{remote:true})});
 const nyxCloudDesktop=createNyxCloudDesktop({firebase:linkGeneratorFirebase});
+app.use('/api/nyxcloud/lorem',createLoremCloud({firebase:linkGeneratorFirebase}));
 app.use('/api/nyxcloud',nyxCloudDesktop.router);
 app.use((req,res,next)=>{let path;try{path=posix.normalize(decodeURIComponent(req.path).replaceAll('\\','/')).toLowerCase();}catch{return res.status(400).end();}if(path==='/apps/nyxcloud'||path.startsWith('/apps/nyxcloud/'))return nyxCloudDesktop.pageAccess(req,res,next);next();});
 // Express string routes match an optional trailing slash; redirect only the bare path.

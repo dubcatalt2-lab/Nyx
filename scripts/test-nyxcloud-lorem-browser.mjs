@@ -1,0 +1,51 @@
+import assert from 'node:assert/strict';
+import express from 'express';
+import {chromium} from 'playwright';
+import {readFile} from 'node:fs/promises';
+import {parse} from 'acorn';
+import vm from 'node:vm';
+const source=await readFile('script.js','utf8');let quick;
+function visit(n){if(!n||typeof n!=='object')return;if(n.type==='FunctionDeclaration'&&n.id?.name==='quickTiles')quick=source.slice(n.start,n.end);for(const v of Object.values(n))if(Array.isArray(v))v.forEach(visit);else if(v&&typeof v==='object')visit(v);}
+visit(parse(source,{ecmaVersion:'latest'}));
+for(const uid of ['other','3158eOj4ATMzkoC1PAm8H7TXc2R2']){
+  const text=vm.runInNewContext(quick+';quickTiles()', {nyxGlobalApps:[],nyxFounderSignedInUser:{uid},esc:s=>s,globalAppIconMarkup:()=>''});
+  assert.equal(text.includes('>VMs<'),uid!=='other');
+}
+const app=express();app.use('/app',express.static(process.env.NYX_TEST_STATIC_ROOT||'.'));
+app.get('/',(_req,res)=>res.send(`<div id="status"></div><main id="screen"></main><script type="module">
+import {loremDesktop} from '/app/apps/nyxcloud/lorem.js';
+const scenario=new URLSearchParams(location.search).get('case');
+window.calls=[];window.dispose=loremDesktop({screen:document.querySelector('#screen'),status:t=>document.querySelector('#status').textContent=t,connected:()=>{},api:async(path,method)=>{
+ calls.push({path,method});
+ if(path==='/lorem/vms'){
+   if(scenario==='disposed')await new Promise(r=>setTimeout(r,100));
+   return {vms:['existing','stopped'].includes(scenario)?[{id:'one',state:scenario==='stopped'?'stopped':'running',url:'https://loremgroup.org/vm/fixture/'}]:[],queued:scenario==='queued'};
+ }
+ if(path==='/lorem/create'||path==='/lorem/queue')return {status:'ready',vm:{url:'https://loremgroup.org/vm/fixture/'}};
+ return {};
+}});
+if(scenario==='disposed')dispose();
+</script>`));
+const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
+const browser=await chromium.launch({channel:'msedge',headless:true});
+try{
+  const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.route('https://loremgroup.org/**',r=>r.fulfill({contentType:'text/html',body:'<h1>Fixture desktop</h1>'}));
+  for(const scenario of ['new','existing','stopped','queued','disposed']){
+    await page.goto('http://127.0.0.1:'+server.address().port+'/?case='+scenario);
+    if(scenario==='disposed'){
+      await page.waitForTimeout(200);assert.equal(await page.locator('iframe').count(),0);
+    }else{
+      await page.locator('iframe').waitFor();assert.equal(await page.locator('iframe').getAttribute('src'),'https://loremgroup.org/vm/fixture/');
+    }
+    const calls=await page.evaluate(()=>window.calls);
+    assert.equal(calls.filter(c=>c.path==='/lorem/create').length,scenario==='new'?1:0);
+    assert.equal(calls.filter(c=>c.path==='/lorem/start/one').length,scenario==='stopped'?1:0);
+    assert.equal(calls.filter(c=>c.path==='/lorem/queue').length,scenario==='queued'?1:0);
+    assert(!(await page.locator('body').innerText()).includes('LoremGroup'));
+    await page.evaluate(()=>dispose());
+  }
+  assert.deepEqual(errors,[]);
+  console.log('PASS owner-only VMs tile, automatic create/reuse/start/queue, stale-response cleanup and provider-free UI');
+
+}finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

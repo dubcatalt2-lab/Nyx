@@ -270,6 +270,8 @@
     if(Array.isArray(account.permissions))nyxUserPermissions=account.permissions.map(String);
     if(account.subscriptionStatus)nyxUserSubscriptionStatus=String(account.subscriptionStatus||'free').toLowerCase();
     document.body.dataset.nyxSubscription=nyxUserSubscriptionStatus;
+    if(startNyxGlobalApps.started)queueMicrotask(renderNyxGlobalApps);
+    queueMicrotask(syncNyxVisualDockState);
     document.body.classList.toggle('nyx-premium-account',nyxHasPremiumSubscription());
     if(previousStatus!==nyxUserSubscriptionStatus){
       dispatchEvent(new CustomEvent('nyx:subscription-change',{detail:{subscriptionStatus:nyxUserSubscriptionStatus,premiumAccess:nyxHasPremiumSubscription()}}));
@@ -3658,10 +3660,15 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     else if(url.includes('/apps/nyxify/')) activeKey='music';
     else if(url.includes('/apps/partners/')) activeKey='partners';
     else if(url.includes('/apps/chat/')) activeKey='chat';
+    else if(url.includes('/apps/nyxcloud/')) activeKey='vms';
     else if(url.includes('/apps/link-generator/')) activeKey='links';
     else if(url.includes('/assets/games/')) activeKey='games';
     else if(url.includes('/apps') || url==='nyx://apps') activeKey='apps';
     dock.querySelectorAll('[data-nyx-dock-item]').forEach(button=>{
+      if(button.dataset.nyxDockItem==='vms'){
+        const allowed=nyxFounderSignedInUser?.uid==='3158eOj4ATMzkoC1PAm8H7TXc2R2';
+        button.hidden=!allowed;button.style.display=allowed?'':'none';
+      }
       const selected=button.dataset.nyxDockItem===activeKey;
       button.classList.toggle('active',selected);
       button.setAttribute('aria-current',selected ? 'page' : 'false');
@@ -3736,6 +3743,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         <button type="button" data-nyx-dock-item="youtube" data-app-url="/apps/nyxtube/" aria-label="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="m10 8 5 3-5 3zM8 21h8"/></svg><span>YouTube</span></button>
         <button type="button" data-nyx-dock-item="ai" data-app-url="nyx://ai" aria-label="AI"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 3 2.1 6.9L19 12l-6.9 2.1L10 21l-2.1-6.9L1 12l6.9-2.1L10 3Z"/><path d="M20 2v6m-3-3h6"/><rect x="2" y="19" width="3" height="3" rx="1"/></svg><span>A1</span></button>
         <button type="button" data-nyx-dock-item="chat" data-app-url="/apps/chat/" aria-label="Chat">${nyxDashboardIcon('chat')}<span>Chat</span></button>
+        <button type="button" data-nyx-dock-item="vms" data-app-url="/apps/nyxcloud/" aria-label="VMs" title="VMs" hidden style="display:none"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="13" rx="2"/><path d="M8 21h8m-4-5v5"/></svg><span>VMs</span></button>
         <button type="button" data-nyx-dock-item="apps" data-app-url="nyx://apps" aria-label="Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="7" height="7" rx="1"/><rect x="3" y="16" width="7" height="6" rx="1"/><rect x="12" y="14" width="7" height="8" rx="1"/><rect x="14" y="2" width="7" height="7" rx="1"/></svg><span>Apps</span></button>
       </nav>
       <div class="nyx-rail-footer"><a class="nyx-rail-discord" data-nyx-trusted-external="discord" data-nyx-dock-item="discord" href="https://discord.com/invite/cAdjYAJs3u" target="_blank" rel="noopener noreferrer" aria-label="Join the Nyx Discord server (opens in a new tab)" title="Join our Discord"><i class="nyx-rail-discord-icon" aria-hidden="true"></i><span>Discord</span></a><button type="button" data-nyx-dock-item="settings" data-open="settings" aria-label="Settings">${nyxDashboardIcon('settings')}<span>Settings</span></button><div class="nyx-visual-dock-profile" data-nyx-profile-slot></div></div>`;
@@ -5107,7 +5115,18 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     showBrowserShellInternalPage(name);
     return id;
   }
+  async function openNyxVmsApp(){
+    try{
+      const token=await nyxGetFirebaseToken();if(!token)throw Error('Sign in with your owner account.');
+      const response=await fetch('/api/nyxcloud/session',{method:'POST',headers:{Authorization:'Bearer '+token},cache:'no-store'});
+      if(!response.ok)throw Error('VMs are available only to the owner account.');
+      const id=openBrowserShellTab('/apps/nyxcloud/?embedded=1',{forceMode:'iframe'});
+      const tab=browserShellTabs.find(item=>item.id===id);if(tab)tab.title='VMs';
+      renderBrowserShellTabs();
+    }catch(error){toast(error.message);}
+  }
   function openBrowserShellAppTab(url){
+    if(String(url||'').replace(/\/+$/,'')==='/apps/nyxcloud'){void openNyxVmsApp();return;}
     hideBrowserSuggestions();
     closeWeatherForWindowOpen();
     if(String(url || '').trim().toLowerCase()==='nyx://settings'){
@@ -5225,7 +5244,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const effect=esc(store.text('nyx.visualEffect','none'));
     const effectSpeed=esc(store.text('nyx.visualEffectSpeed','1.1'));
     const effectAmount=esc(store.text('nyx.visualEffectAmount','16'));
-    return `<section class="settings-app settings-single-pane browser-only-settings"><main class="settings-main"><h1>Browser Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original tab redirect U3L"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Auto Cloak</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>S3ARC4 Engine</h2><select class="settings-select" data-browser-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>DuckDuckGo</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Proxy Engine</h2><select class="settings-select" data-browser-mode-select><option value="auto" ${browserMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${browserMode==='scramjet'?'selected':''}>Scrapmmy</option><option value="iframe" ${browserMode==='iframe'?'selected':''}>Iframe</option></select></section><section class="settings-block"><h2>HTTP bridge</h2><p>Recommended for devices or networks that block WebSockets. Turn off to use direct WebSocket connections. Applies to the default relay; custom relays keep their saved choice. Reload website tabs after changing.</p><div class="settings-row"><span>Use HTTP bridge</span><button class="settings-action ${store.get('nyx.httpBridge',true)?'on':''}" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-browser-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Eppy over Relay</option><option value="wisp" ${transport==='wisp'?'selected':''}>Relay endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Libby over Relay</option></select><div class="settings-actions"><button class="settings-action" data-browser-settings-save type="button">Save Browser Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
+    return `<section class="settings-app settings-single-pane browser-only-settings"><main class="settings-main"><h1>Browser Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original tab redirect U3L"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Auto Cloak</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>S3ARC4 Engine</h2><select class="settings-select" data-browser-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>DuckDuckGo</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Proxy Engine</h2><select class="settings-select" data-browser-mode-select><option value="auto" ${browserMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${browserMode==='scramjet'?'selected':''}>Scrapmmy</option><option value="ultraviolet" ${browserMode==='ultraviolet'?'selected':''}>U1TR4V10L$T</option></select></section><section class="settings-block"><h2>HTTP bridge</h2><p>Recommended for devices or networks that block WebSockets. Turn off to use direct WebSocket connections. Applies to the default relay; custom relays keep their saved choice. Reload website tabs after changing.</p><div class="settings-row"><span>Use HTTP bridge</span><button class="settings-action ${store.get('nyx.httpBridge',true)?'on':''}" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-browser-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Eppy over Relay</option><option value="wisp" ${transport==='wisp'?'selected':''}>Relay endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Libby over Relay</option></select><div class="settings-actions"><button class="settings-action" data-browser-settings-save type="button">Save Browser Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
   }
   function browserShellPresetTiles(){
     return `<button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${nyxTabFavicon}"><span>ռʏӼ tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
@@ -5266,7 +5285,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const browserModeLabels={
         auto:'Auto',
         scramjet:'Scramjet v2',
-        iframe:'Iframe'
+        ultraviolet:'U1TR4V10L$T'
       };
       [...browserModeSelect.options].forEach(option=>{
         if(browserModeLabels[option.value]) option.textContent=browserModeLabels[option.value];
@@ -7451,7 +7470,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       try{value=JSON.parse(value)}catch{value=value.slice(1,-1)}
     }
     value=String(value || 'auto').trim().toLowerCase().replace(atob('c2NyYW1qZXQ='),'scramjet').replace('studyjet','scramjet');
-    if(value==='uv' || value==='ultra' || value==='ultraviolet') return 'scramjet';
+    if(value==='uv' || value==='ultra' || value==='ultraviolet' || value==='stemconnect' || value==='stem-connect') return 'ultraviolet';
     if(value==='sj' || value==='scram' || value==='scramjet' || value==='scramjet-v2' || value==='sjv2') return 'scramjet';
     if(value==='scramjet-v1' || value==='sjv1' || value==='scram-v1') return 'scramjet';
     if(value==='rh' || value==='rammerhead') return 'rammerhead';
@@ -7907,7 +7926,16 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       let lastError=null;
       for(let attempt=0;attempt<3;attempt++){
         try{
-          await connection.setTransport(path,args);
+          if(wisp===browserHttpRelayUrl()){
+            await connection.setManualTransport(`
+              const {installHttpRelaySocket}=await import('/apps/tutsi/http-relay.mjs');
+              installHttpRelaySocket();
+              const {default:Transport}=await import(${JSON.stringify(path)});
+              return [Transport,${JSON.stringify(path)}];
+            `,args);
+          }else{
+            await connection.setTransport(path,args);
+          }
           return;
         }catch(error){
           lastError=error;
@@ -8806,9 +8834,24 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     store.setText('nyx.scramjetV1StateVersion',scramjetV1StateVersion);
   }
   function installUltraviolet(){
-    // Retain old assets for already-open tabs, but never start this engine.
-    return Promise.resolve(false);
-}
+    if(uvInstallPromise) return uvInstallPromise;
+    if(!('serviceWorker' in navigator)) return Promise.resolve(false);
+    uvInstallPromise=(async()=>{
+      const {loadProxyScript}=await import('/js/proxy-startup.mjs');
+      await loadProxyScript('/uv/uv.bundle.js',()=>Boolean(window.Ultraviolet));
+      await loadProxyScript('/uv.config.js',()=>Boolean(window.__uv$config));
+      await installBareMuxTransport();
+      const workerUrl='/stem-connect.sw.js?v=stem-connect-20261003';
+      uvRegistration=await navigator.serviceWorker.register(workerUrl,{scope:'/service/',updateViaCache:'none'});
+      const worker=await waitForServiceWorkerScript(uvRegistration,workerUrl,'/service/');
+      if(!worker) throw new Error('U1TR4V10L$T service worker did not activate');
+      return true;
+    })().catch(()=>{
+      uvInstallPromise=null;
+      return false;
+    });
+    return uvInstallPromise;
+  }
   function scramjetV1Config(){
     return {
       prefix:'/~/sj-v1/',
@@ -9917,6 +9960,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function globalAppIconMarkup(app){
     const symbols={'code-studio':'code','link-generator':'link','nyxify':'music','nyx-chat':'chat','nyx-movies':'movies','games':'games'};
     const tools={
+      'nyx-vms':'<rect x="3" y="3" width="18" height="13" rx="2"/><path d="M8 21h8m-4-5v5"/>',
       'link-checker':'<path d="M10 13a4 4 0 0 0 5.7 0l2.3-2.3A4 4 0 0 0 12.3 5L11 6.3M8 11l-2 2a4 4 0 0 0 3 7"/><path d="m14 19 2 2 5-5"/>',
       'jsdelivr-publisher':'<path d="M12 16V3m-4 4 4-4 4 4M4 14v6h16v-6"/>',
       'api-keys':'<circle cx="8" cy="8" r="5"/><path d="m12 12 9 9m-3-3 3-3m-6 0 3-3"/>'
@@ -9926,7 +9970,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return `<span class="quick-icon" aria-hidden="true">${icon}</span>`;
   }
   function quickTiles(){
-    return nyxGlobalApps.map((app,i)=>`<button class="quick-tile" draggable="true" style="--tile-delay:${Math.min(i,18)*34}ms" data-global-app-id="${esc(app.id)}" data-domain="${esc(app.icon)}" data-app-url="${esc(app.url)}">${globalAppIconMarkup(app)}<span>${esc(app.name)}</span></button>`).join('');
+    const apps=nyxGlobalApps.filter(app=>app.id!=='nyx-vms'&&app.url.replace(/\/+$/,'')!=='/apps/nyxcloud');
+    if(nyxFounderSignedInUser?.uid==='3158eOj4ATMzkoC1PAm8H7TXc2R2')apps.push({id:'nyx-vms',icon:'nyx-vms',name:'VMs',url:'/apps/nyxcloud/'});
+    return apps.map((app,i)=>`<button class="quick-tile" draggable="true" style="--tile-delay:${Math.min(i,18)*34}ms" data-global-app-id="${esc(app.id)}" data-domain="${esc(app.icon)}" data-app-url="${esc(app.url)}">${globalAppIconMarkup(app)}<span>${esc(app.name)}</span></button>`).join('');
   }
   function renderNyxGlobalApps(){
     const documents=[document];
@@ -12120,6 +12166,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       });
     }
     function navigate(raw,forceMode=''){
+      if(String(raw||'').replace(/\/+$/,'')==='/apps/nyxcloud'){void openNyxVmsApp();return;}
       const t=current(); if(!t)return;
       const navigationIntent='navigate-'+Date.now()+Math.random().toString(16).slice(2);
       t.navigationIntent=navigationIntent;
@@ -14152,8 +14199,8 @@ Scramjet supports more websites, while Ultraviolet can work better for some page
 Auto uses Scramjet with Libcurl by default and can recover with another relay if the connection fails.</p>
           <select id="settingBrowserMode">
             <option value="auto">Auto</option>
-            <option value="scramjet">Use Scramjet v2</option>
-            <option value="iframe">Iframe</option>
+            <option value="scramjet">Use Scramjet v2</option><option value="ultraviolet">U1TR4V10L$T</option>
+
           </select>
         </section>
         <section class="settings-card">
@@ -16001,6 +16048,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       const open=e.target.closest('[data-open]'); if(open){e.preventDefault(); document.body.classList.remove('menu-open'); const v=open.dataset.open; if(v==='browser')openBrowser(); if(v==='home')openBrowser(); if(v==='updates')openUpdates(); if(v==='settings')openSettings(); if(v==='apps')openApps(); if(v==='links')openLinks(); if(v==='weather')openWeather(open.matches('.browser-mode-weather')?'top':'bottom',open); if(v==='terms')openTermsOfService(); if(v==='developer')openDeveloperConsole(); if(v==='about'||v==='credits')openAboutNyx(); return}
       const app=e.target.closest('[data-app-url]');
       if(app && !app.closest('.browser-window')){
+        if(app.dataset.appUrl==='/apps/nyxcloud/'){e.preventDefault();void openNyxVmsApp();return;}
         e.preventDefault();
         document.body.classList.remove('menu-open');
         if(String(app.dataset.appUrl || '').trim().toLowerCase()==='nyx://ai') openBrowserShellAppTab('nyx://ai');

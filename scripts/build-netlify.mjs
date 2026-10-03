@@ -1,4 +1,5 @@
 import {buildFrontendAssets} from './build-frontend-assets.mjs';
+import {formatPublishedHtml} from './format-published-html.mjs';
 import { spawn, spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { createHash } from "node:crypto";
@@ -35,6 +36,7 @@ const rootFiles = new Set([
   "styles.css",
   "uv.config.js",
   "uv.sw.js",
+  "stem-connect.sw.js",
   "scramjet.sw.js",
   "scramjet-v1.sw.js"
 ]);
@@ -269,7 +271,8 @@ function runtimeCompressOptions() {
 function runtimeFormatOptions() {
   return {
     ascii_only: true,
-    beautify: false,
+    beautify: true,
+    indent_level: 2,
     comments: false,
     semicolons: true
   };
@@ -385,17 +388,22 @@ async function minifyFirstPartyMarkupAndStyles() {
     if (relative.endsWith(".css")) {
       // CleanCSS treats a UTF-8 BOM before @import as part of a selector and
       // silently discards both the import and the first rule after it.
-      const result = new CleanCSS({ inline: ["none"], level: 2, rebase: false }).minify(source.replace(/^\uFEFF/, ""));
+      const result = new CleanCSS({ inline: ["none"], level: 2, rebase: false, format: 'beautify' }).minify(source.replace(/^\uFEFF/, ""));
       if (result.errors.length) throw new Error(`Could not minify ${relative}: ${result.errors.join("; ")}`);
       transformed = result.styles;
     } else {
-      transformed = await minifyHtml(source, {
+      transformed = formatPublishedHtml(await minifyHtml(source, {
         collapseWhitespace: true,
         conservativeCollapse: true,
-        minifyCSS: { level: 2 },
+        maxLineLength: 120,
+        minifyCSS: { level: 2, format: 'beautify' },
         minifyJS: {
           compress: runtimeCompressOptions(),
-          mangle: false,
+          // Inline handlers can reference globals across script tags. Rename
+          // local bindings only; retain public names and property contracts.
+          mangle: { toplevel: false, eval: false, properties: false },
+          keep_fnames: true,
+          keep_classnames: true,
           format: runtimeFormatOptions()
         },
         removeComments: true,
@@ -403,7 +411,7 @@ async function minifyFirstPartyMarkupAndStyles() {
         removeScriptTypeAttributes: true,
         removeStyleLinkTypeAttributes: true,
         useShortDoctype: true
-      });
+      }));
     }
     await writeFile(path, `${transformed}\n`);
     outputBytes += Buffer.byteLength(transformed) + 1;

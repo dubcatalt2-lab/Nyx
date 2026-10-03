@@ -21,6 +21,12 @@ export function rewriteRuntimeNames(source) {
   const notices=[];
   source=source.replace(/\/\*[\s\S]*?\*\//g, text => /@license|@preserve|^\/\*!/.test(text) ? '__RUNTIME_NOTICE_'+(notices.push(text)-1)+'__' : text);
   source=renameRuntimeText(source).replaceAll('/~/sj-v1/','/~/study-v1/').replaceAll('/~/sj/','/~/study/').replaceAll('/~sj/','/~study/');
+  // Apply to the shell and transport bundles together: SharedWorker identity
+  // must agree between every client creating the same resource worker.
+  source=source.replaceAll('bare-mux-worker','ridgewood-stem-worker');
+  // Rename the JS runtime symbol consistently in the shell, config, injected
+  // scripts and worker. Keep saved engine IDs and __uv property contracts.
+  source=source.replaceAll('Ultraviolet','StemConnect').replaceAll('ULTRAVIOLET','STEMCONNECT');
   // Regex literals escape slashes and were missed by the plain path rewrites.
   // The shell then rejected its own renamed proxy URL and reloaded good pages;
   // the worker also failed to decode asset/consent request origins.

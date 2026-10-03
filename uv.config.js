@@ -11,6 +11,6 @@ self.__uv$config = {
   handler: "/uv/uv.handler.js",
   bundle: "/uv/uv.bundle.js",
   config: "/uv.config.js",
-  sw: "/uv.sw.js?v=nyx-uv-v11-20260903-game-ads",
+  sw: "/stem-connect.sw.js?v=stem-connect-20261003",
   client: "/uv/uv.client.js"
 };

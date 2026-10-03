@@ -11,6 +11,8 @@ for(const pattern of [String.raw`/^\/~\/sj\/[^/]+\/[^/]+\/([^?#]*)/`,String.raw`
  assert.equal(regex.exec('/~/study/session/frame/https%3A%2F%2Ffixture.test%2Fconsent')?.[1],'https%3A%2F%2Ffixture.test%2Fconsent');
 }
 assert.equal(rewriteRuntimeNames('/*! Scramjet license */ const ScramjetClient=1;'),'/*! Scramjet license */ const StudyJetClient=1;');
+assert.equal(rewriteRuntimeNames('"bare-mux-worker" "wisp-v2" "WebSocket"'), '"ridgewood-stem-worker" "wisp-v2" "WebSocket"');
+assert.equal(rewriteRuntimeNames('self.Ultraviolet; "ultraviolet"; self.__uv$config;'), 'self.StemConnect; "ultraviolet"; self.__uv$config;');
 assert.throws(()=>renameRuntimeWasm(Buffer.from('bad wasm')));
 const linked=rewriteProxyReferences('import "../epoxy/index.mjs";','/libcurl/index.mjs');
 assert(linked.includes('../atlas/'));assert(!linked.includes('/epoxy/'));

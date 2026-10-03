@@ -25,7 +25,7 @@
   const $ = id => document.getElementById(id);
   const qsa = (sel, root=document) => Array.from(root.querySelectorAll(sel));
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const store = {get(k,d){try{return JSON.parse(localStorage.getItem(k)) ?? d}catch{return d}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}queueNyxCloudPreferencesSave?.()}, text(k,d=''){try{return localStorage.getItem(k) ?? d}catch{return d}}, setText(k,v){try{localStorage.setItem(k,String(v))}catch{}queueNyxCloudPreferencesSave?.()}};
+  const store = {get(k,d){try{return JSON.parse(localStorage.getItem(k)) ?? d}catch{return d}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}queueNyxCloudPreferencesSave?.()}, text(k,d=''){try{return localStorage.getItem(k) ?? d}catch{return d}}, setText(k,v){try{const changed=localStorage.getItem(k)!==String(v);localStorage.setItem(k,String(v));if(changed)nyxRememberAppearanceEdit(k,String(v));}catch{}queueNyxCloudPreferencesSave?.()}};
   try{
     const savedShortcuts=JSON.parse(localStorage.getItem('nyx.homeShortcuts')||'[]');
     if(Array.isArray(savedShortcuts)){
@@ -350,6 +350,14 @@
   let nyxCloudWallpaperSynced=null;
   let nyxCloudPreferencesGeneration=0;
   let nyxCloudPreferencesSaving=null;
+  function nyxRememberAppearanceEdit(key,value){
+    if(!['nyx.theme','nyx.customThemeColor','nyx.beamTheme','nyx.beamWallpaper'].includes(key))return;
+    const uid=nyxFounderSignedInUser?.uid||localStorage.getItem('nyx.cloud.preferences.user');
+    if(!uid)return;
+    const name='nyx.cloud.appearance.pending.'+uid;
+    let edits={};try{edits=JSON.parse(localStorage.getItem(name)||'{}');}catch{}
+    localStorage.setItem(name,JSON.stringify({...edits,[key]:value}));
+  }
   function nyxCloudPreferencesPayload(){
     const preferences={};
     NYX_CLOUD_PREFERENCE_KEYS.forEach(key=>{
@@ -377,11 +385,14 @@
     const user=nyxFounderSignedInUser;
     if(!user) return false;
     const generation=++nyxCloudPreferencesGeneration;
+    const beforePreferences=nyxCloudPreferencesPayload();
+    const beforeStored=Object.fromEntries(NYX_CLOUD_PREFERENCE_KEYS.map(key=>[key,localStorage.getItem(key)]));
     const beforeWallpaper=[localStorage.getItem('nyx.customBgData'),localStorage.getItem('nyx.customBgUrl')].join('|');
     const cloud=await nyxCloudRequest('/api/account/cloud-preferences');
     if(nyxFounderSignedInUser?.uid!==user.uid||generation!==nyxCloudPreferencesGeneration)return false;
     const marker=localStorage.getItem('nyx.cloud.preferences.user');
     const preferences=cloud?.preferences&&typeof cloud.preferences==='object'?cloud.preferences:{};
+    let pendingAppearance={};try{pendingAppearance=JSON.parse(localStorage.getItem('nyx.cloud.appearance.pending.'+user.uid)||'{}');}catch{}
     const hasImage=typeof preferences['nyx.customBgData']==='string';
     // Import an existing browser wallpaper once. Never copy another account's
     // wallpaper into a fresh account when users switch on a shared computer.
@@ -392,6 +403,8 @@
       if(!preferences['nyx.beamTheme'])localStorage.setItem('nyx.beamTheme','theme');
     }
     NYX_CLOUD_PREFERENCE_KEYS.forEach(key=>{
+      if(typeof pendingAppearance[key]==='string'){localStorage.setItem(key,pendingAppearance[key]);return;}
+      if((!marker||marker===user.uid)&&localStorage.getItem(key)!==beforeStored[key])return;
       if(typeof preferences[key]==='string'&&!(migrateImage&&['nyx.customBgData','nyx.customBgUrl','nyx.beamTheme','nyx.beamWallpaper'].includes(key)))localStorage.setItem(key,preferences[key]);
     });
     applyUserSettings();
@@ -399,7 +412,7 @@
     localStorage.setItem('nyx.cloud.preferences.user',user.uid);
     nyxCloudPreferencesUserId=user.uid;
     nyxCloudWallpaperSynced=hasImage?preferences['nyx.customBgData']:null;
-    nyxCloudPreferencesFingerprint=migrateImage||!Object.keys(preferences).length?'':nyxCloudPreferencesDigest();
+    nyxCloudPreferencesFingerprint=migrateImage||Object.keys(pendingAppearance).length||!Object.keys(preferences).length?'':JSON.stringify({...beforePreferences,...preferences});
     return true;
   }
   async function saveNyxCloudPreferences(){
@@ -415,6 +428,8 @@
       await pending;
       if(nyxFounderSignedInUser?.uid!==user.uid||generation!==nyxCloudPreferencesGeneration)return false;
       nyxCloudPreferencesFingerprint=fingerprint;nyxCloudWallpaperSynced=wallpaper;
+      const name='nyx.cloud.appearance.pending.'+user.uid;
+      try{const pending=JSON.parse(localStorage.getItem(name)||'{}');for(const key of Object.keys(pending)){if(pending[key]===preferences[key])delete pending[key];}if(Object.keys(pending).length)localStorage.setItem(name,JSON.stringify(pending));else localStorage.removeItem(name);}catch{}
       return true;
     }finally{if(nyxCloudPreferencesSaving===pending)nyxCloudPreferencesSaving=null;}
   }
@@ -6478,7 +6493,6 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(store.text('nyx.theme','default')!==theme) store.setText('nyx.theme',theme);
     document.body.classList.remove(...nyxThemeClasses);
     document.body.classList.add('theme-'+theme);
-    if(theme==='custom') document.body.classList.add('theme-default');
     document.body.dataset.nyxTheme=theme;
     document.documentElement.dataset.nyxTheme=theme;
     document.documentElement.style.colorScheme='dark';

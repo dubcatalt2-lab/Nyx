@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import express from 'express';
 import {chromium} from 'playwright';
 const app=express();app.use(express.static(process.env.NYX_TEST_STATIC_ROOT||'dist'));const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base='http://127.0.0.1:'+server.address().port;
-const browser=await chromium.launch({channel:'msedge',headless:true});let preferences={},writes=0;const errors=[];
+const browser=await chromium.launch({channel:'msedge',headless:true});let preferences={},writes=0,failWrites=false,holdRead=null;const errors=[];
 async function client(){
  const context=await browser.newContext({viewport:{width:1366,height:900}}),page=await context.newPage();
  page.on('pageerror',error=>errors.push(error.message));
@@ -17,7 +17,7 @@ async function client(){
   else if(path==='/api/founder-profile/owner')body={founder:false,dashboard:false,role:'member',permissions:[]};
   else if(path==='/api/account/me')body={uid:'wallpaper-fixture',role:'member'};
   else if(path==='/api/account/cloud-preferences'){
-   if(r.request().method()==='PUT'){const incoming=r.request().postDataJSON().preferences;preferences={...incoming,'nyx.customBgData':Object.hasOwn(incoming,'nyx.customBgData')?incoming['nyx.customBgData']:preferences['nyx.customBgData']||''};writes++;body={saved:true};}else{body={preferences};}
+   if(r.request().method()==='PUT'){if(failWrites)return r.fulfill({status:503,json:{error:'Offline fixture'}});const incoming=r.request().postDataJSON().preferences;preferences={...incoming,'nyx.customBgData':Object.hasOwn(incoming,'nyx.customBgData')?incoming['nyx.customBgData']:preferences['nyx.customBgData']||''};writes++;body={saved:true};}else{body={preferences:{...preferences}};if(holdRead)await holdRead;}
   }else body={online:0,users:[],videos:[],channels:[]};return r.fulfill({json:body});
  });
  await page.goto(base,{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>localStorage.getItem('nyx.cloud.preferences.user')==='wallpaper-fixture');
@@ -36,7 +36,23 @@ try{
  await second.page.waitForFunction(()=>[...document.querySelectorAll('iframe')].some(f=>f.src.includes('/apps/nyxtube/')));
  assert.equal(await second.page.locator('[data-nyx-dock-item="youtube"]').getAttribute('aria-label'),'YouTube');
  await page.locator('[data-reset-wallpaper]').click();await page.waitForTimeout(1100);assert.equal(preferences['nyx.customBgData'],'');
+ // A tab may close before its debounced save, or while the account API is offline.
+ preferences={...preferences,'nyx.theme':'halloween','nyx.customThemeColor':'#aa6600'};failWrites=true;
+ await page.locator('[data-custom-theme-hex]').fill('#36b6a1');await page.locator('[data-apply-custom-theme]').click();
+ assert.equal(await page.evaluate(()=>document.body.classList.contains('theme-default')),false,'custom theme must not activate default selectors');
+ await page.waitForTimeout(1100);assert.equal(preferences['nyx.theme'],'halloween','failed save leaves stale cloud data');
+ await page.reload();await page.waitForTimeout(1400);
+ assert.deepEqual(await page.evaluate(()=>({theme:localStorage.getItem('nyx.theme'),color:localStorage.getItem('nyx.customThemeColor'),active:document.documentElement.dataset.nyxTheme,defaultClass:document.body.classList.contains('theme-default')})),{theme:'custom',color:'#36b6a1',active:'custom',defaultClass:false},'reopening must preserve unsynced appearance');
+ failWrites=false;await page.reload();await page.waitForFunction(()=>!localStorage.getItem('nyx.cloud.appearance.pending.wallpaper-fixture'));
+ assert.equal(preferences['nyx.theme'],'custom');assert.equal(preferences['nyx.customThemeColor'],'#36b6a1');
+ // A slow account read must not overwrite a new choice made while it was pending.
+ let release;holdRead=new Promise(resolve=>release=resolve);const reading=page.waitForRequest(r=>new URL(r.url()).pathname==='/api/account/cloud-preferences'&&r.method()==='GET');
+ await page.reload();await reading;
+ // Simulate another already-open tab changing shared localStorage during startup.
+ const savedLate=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/account/cloud-preferences'&&r.request().method()==='PUT'&&r.request().postDataJSON().preferences['nyx.customThemeColor']==='#8844ee');
+ await page.evaluate(()=>localStorage.setItem('nyx.customThemeColor','#8844ee'));release();holdRead=null;
+ await savedLate;assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.customThemeColor')),'#8844ee');assert.equal(preferences['nyx.customThemeColor'],'#8844ee');
  await page.screenshot({path:'.codex-artifacts/wallpaper-account-built.png'});
  assert.deepEqual(errors,[]);
- console.log('PASS built UI: upload saved to account, restored in a fresh browser, theme reset synced, sidebar opens NyxTube');
+ console.log('PASS UI: account wallpaper restore/reset, sidebar YouTube, custom theme survives failed save/reopen and late cloud read without default-theme overlap');
 }finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

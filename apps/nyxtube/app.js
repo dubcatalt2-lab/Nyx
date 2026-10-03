@@ -391,7 +391,7 @@
     refs.watchBackup.setAttribute("aria-pressed", String(backup));
     refs.watchEngine.textContent = native ? "Switch to embedded" : !state.nativeAvailable ? "Switch to YouTube" : (dropTube ? "Switch to DropTube" : "Switch to NyxTube");
   }
-  async function createWatch(video, forceDirect = false, fallback = false, restore = null, playerOverride = "") {
+  async function createWatch(video, forceDirect = false, fallback = false, restore = null, playerOverride = "", embedOnly = false) {
     finishWatchSpace({ cancel: true });
     const generation = ++state.watchGeneration;
     const backup = Boolean(state.invidiousEmbedOrigin && !forceDirect && (playerOverride === "invidious" || (!fallback && state.preferredPlayer === "invidious")));
@@ -407,8 +407,15 @@
     refs.watchQuality.disabled = true;
     if (backup) {
       if (!/^[A-Za-z0-9_-]{11}$/.test(video.id)) throw new Error('Choose a valid video.');
+      if(window.NyxInvidiousPlayer&&!embedOnly){
+        state.watchPlayer=window.NyxInvidiousPlayer(refs.watchPlayer,{id:video.id,restore:restore||{},
+          onLoading:loading=>{if(generation===state.watchGeneration)refs.watchLoading.hidden=!loading;},
+          onFailure:position=>{if(generation===state.watchGeneration&&state.view==='watch')void createWatch(video,false,true,position,'invidious',true);}
+        });
+        refs.watchCenterPlay.hidden=true;return;
+      }
       const url = new URL('/embed/' + video.id, state.invidiousEmbedOrigin);
-      const params = {local:'true', autoplay:restore?.paused?'0':'1', quality:'medium', controls:'1',
+      const params = {local:'true', autoplay:restore?.paused?'0':'1', quality:'dash', controls:'1',
         continue:'0', hl:'en-US', start:String(Math.max(0, Number(restore?.time)||0)),
         volume:String(restore?.muted?0:Math.max(0,Math.min(100,Number(restore?.volume??100)))),
         speed:String(Math.max(0.25,Math.min(2,Number(restore?.rate)||1)))};
@@ -847,14 +854,21 @@
     })().catch(()=>{entry.failed=true;if(state.shorts[state.shortIndex]?.id===entry.id&&state.view==='shorts')recoverShort(video);});
     return entry;
   }
-  function showInvidiousShort(video, generation) {
+  function showInvidiousShort(video, generation, embedOnly = false, restore = null) {
     clearShortLoadTimer(); clearInterval(state.shortTimer); state.shortTimer = 0;
     for (const entry of preparedShorts.values()) { entry.removed=true; entry.player?.destroy?.(); entry.node?.remove(); }
     preparedShorts.clear(); state.shortPlayer?.destroy?.();
     refs.shortStage.classList.add('invidious-player');
     if (!/^[A-Za-z0-9_-]{11}$/.test(video.id)) throw new Error('Choose a valid Short.');
+    if(window.NyxInvidiousPlayer&&!embedOnly){
+      state.shortPlayer=window.NyxInvidiousPlayer(refs.shortPlayer,{id:video.id,loop:true,
+        onLoading:loading=>{if(generation===shortGeneration&&state.view==='shorts')refs.shortLoading.hidden=!loading;},
+        onFailure:position=>{if(generation===shortGeneration&&state.view==='shorts')showInvidiousShort(video,generation,true,position);}
+      });
+      notice();return;
+    }
     const url = new URL('/embed/'+video.id, state.invidiousEmbedOrigin);
-    url.search = new URLSearchParams({local:'true',autoplay:'1',quality:'medium',controls:'1',volume:'0',loop:'1',continue:'0',hl:'en-US'}).toString();
+    url.search = new URLSearchParams({local:'true',autoplay:restore?.paused?'0':'1',quality:'dash',controls:'1',volume:String(restore?.muted===false?restore.volume:0),start:String(restore?.time||0),speed:String(restore?.rate||1),loop:'1',continue:'0',hl:'en-US'}).toString();
     const frame=document.createElement('iframe');frame.title='Invidious Short player';frame.src=url.href;
     frame.allow='autoplay; fullscreen; picture-in-picture';frame.allowFullscreen=true;frame.referrerPolicy='strict-origin-when-cross-origin';
     frame.addEventListener('load',()=>{if(generation===shortGeneration&&state.view==='shorts')refs.shortLoading.hidden=true;},{once:true});
@@ -882,7 +896,7 @@
     renderShortHeart(video);
     if(refs.shortDislike)refs.shortDislike.disabled=false;
     if(refs.shortHideChannel){refs.shortHideChannel.disabled=!video.channelId;refs.shortHideChannel.title=video.creator?`Hide ${video.creator}`:'Hide channel';}
-    state.shortPlayer?.pauseVideo?.();state.shortPlayer=null;
+    state.shortPlayer?.pauseVideo?.();if(state.shortPlayer?.isInvidious)state.shortPlayer.destroy();state.shortPlayer=null;
     watchShortLoad(video,generation);
     refs.shortTitle.textContent=video.title||'Untitled Short';refs.shortCreator.textContent=video.creator||'YouTube';
     refs.shortLoading.hidden=false;refs.shortCenterPlay.hidden=true;refs.shortProgress.style.width='0';

@@ -335,10 +335,12 @@ button:disabled{cursor:not-allowed}
 }
 .ai-model-menu::backdrop{background:#0009;backdrop-filter:blur(8px)}
 .ai-model-companies{display:contents}
-.ai-company-rail{grid-row:2 / 4;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:none;padding:0 6px;margin:8px 0 12px}
+.ai-company-column{grid-row:2 / 4;min-height:0;display:flex;flex-direction:column}
+.ai-company-column:first-child{grid-column:1;border-right:1px solid var(--ai-border)}
+.ai-company-column:last-child{grid-column:3;border-left:1px solid var(--ai-border)}
+.ai-company-pinned{display:grid;place-items:center;flex-shrink:0;padding:8px 6px;border-bottom:1px solid var(--ai-border)}
+.ai-company-rail{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:none;padding:0 6px;margin:8px 0 12px}
 .ai-company-rail::-webkit-scrollbar{display:none}
-.ai-company-rail:first-child{grid-column:1;border-right:1px solid var(--ai-border)}
-.ai-company-rail:last-child{grid-column:3;border-left:1px solid var(--ai-border)}
 .ai-company-track{display:flex;flex-direction:column;align-items:center;gap:8px;padding:4px 0}
 .ai-company-track[hidden]{display:none}
 .ai-company-rail button{flex-shrink:0}

@@ -244,6 +244,8 @@ const requiredFiles = [
   "apps/nyxify/app.js",
   "apps/nyxtube/player-core.js",
   "apps/nyxtube/native-player.js",
+  "apps/nyxtube/invidious-player.js",
+  "lib/nyxtube-invidious-playback.mjs",
   "lib/nyxtube-mp4.mjs",
   "lib/nyxtube-segments.mjs",
   "lib/nyxtube-catalog.mjs",

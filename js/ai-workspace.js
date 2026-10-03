@@ -1154,7 +1154,13 @@
     "elevenlabs":["ElevenLabs", "elevenlabs"],
     "assemblyai":["AssemblyAI", "assemblyai"],
     "suno":["Suno", "suno"],
-    "alibaba":["Alibaba", "alibaba"]
+    "alibaba":["Alibaba", "alibaba"],
+    apodex:['Apodex','apodex'],heygen:['HeyGen','heygen'],togethercomputer:['Together','togethercomputer'],
+    voyageai:['Voyage AI','voyageai'],respan:['Respan','respan'],jaredpalmer:['Jared Palmer','jaredpalmer'],
+    'fish-audio':['Fish Audio','fish-audio'],'nex-agi':['Nex AGI','nex-agi'],deepgram:['Deepgram','deepgram'],
+    krea:['Krea','krea'],sourceful:['Sourceful','sourceful'],canopylabs:['Canopy Labs','canopylabs'],
+    sesame:['Sesame','sesame'],hexgrad:['Hexgrad','hexgrad'],thenlper:['Thenlper','thenlper'],
+    intfloat:['Intfloat','intfloat'],'sentence-transformers':['Sentence Transformers','sentence-transformers'],baai:['BAAI','baai']
   };
   let modelCompanyFilter='';
   const modelSearch=document.getElementById('modelSearch');
@@ -1167,9 +1173,14 @@
   const colorCompanyIcons=new Set(["kling","assemblyai","alibaba","aionlabs", "arcee", "aws", "baidu", "bytedance", "claude", "cohere", "deepseek", "fireworks", "gemini", "gemma", "hunyuan", "kimi", "kwaipilot", "longcat", "meta", "microsoft", "minimax", "mistral", "morph", "nvidia", "openrouter", "perplexity", "poolside", "qwen", "sakana", "stepfun", "tencent", "upstage"]);
   const authorIcons={"thinkingmachines": "thinkingmachines-author.png", "inclusionai": "inclusionai-author.png", "thedrummer": "thedrummer-author.png", "typesafe": "typesafe-author.png", "unbiased": "unbiased-author.png", "writer": "writer-author.png", "stealth": "stealth-author.svg", "sao10k": "sao10k-author.webp", "anthracite-org": "anthracite-org-author.webp", "gryphe": "gryphe-author.webp", "undi95": "undi95-author.webp", "cognitivecomputations": "cognitivecomputations-author.png", "prism-ml": "prism-ml-author.png", "mancer": "mancer-author.png"};
   function modelCompanyIcon(company){
+    const extraIcons={apodex:'svg',heygen:'png',togethercomputer:'svg',voyageai:'svg',respan:'png',jaredpalmer:'png','fish-audio':'svg','nex-agi':'svg',deepgram:'svg',krea:'svg',sourceful:'png',canopylabs:'png',sesame:'png',hexgrad:'png',thenlper:'png',intfloat:'png','sentence-transformers':'png',baai:'svg'};
+    if(extraIcons[company.icon]){
+      const src=`/assets/icons/ai-companies/${company.icon}-author.${extraIcons[company.icon]}`;
+      return ['baai','fish-audio','krea','deepgram','voyageai'].includes(company.icon)?`<span class="ai-company-logo" style="--company-logo:url('${src}')" aria-hidden="true"></span>`:`<img class="ai-company-logo ai-company-logo-color" src="${src}" alt="" aria-hidden="true" width="22" height="22">`;
+    }
     if(authorIcons[company.icon])return `<img class="ai-company-logo ai-company-logo-color" src="/assets/icons/ai-companies/${authorIcons[company.icon]}" alt="" aria-hidden="true" width="22" height="22">`;
     if(colorCompanyIcons.has(company.icon))return `<img class="ai-company-logo ai-company-logo-color" src="/assets/icons/ai-companies/${company.icon}-color.svg" alt="" aria-hidden="true" width="22" height="22">`;
-    return company.icon ? `<span class="ai-company-logo" style="--company-logo:url('/assets/icons/ai-companies/${company.icon}.svg')" aria-hidden="true"></span>` : `<span class="ai-company-initial" aria-hidden="true">${escapeHtml(company.label.slice(0,2).toUpperCase())}</span>`;
+    return company.icon ? `<span class="ai-company-logo" style="--company-logo:url('/assets/icons/ai-companies/${company.icon}.svg')" aria-hidden="true"></span>` : '<svg class="ai-company-logo ai-company-logo-color" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 2v4m6-4v4M9 18v4m6-4v4M2 9h4m-4 6h4m12-6h4m-4 6h4"/></svg>';
   }
   function modelIcon(item){
     const company=modelCompany(item);
@@ -1191,12 +1202,13 @@
   function renderModelCompanies(){
     const leading=['openai','anthropic','gemini','deepseek','meta','qwen','xai','mistral'];
     const rank=key=>leading.includes(key)?leading.indexOf(key):leading.length;
-    const companies=[...new Map(modelCatalog.map(item=>{const company=modelCompany(item);return [company.key,company]})).values()].sort((a,b)=>rank(a.key)-rank(b.key)||a.label.localeCompare(b.label));
+    const companies=[...new Map([{id:'openai/'},{id:'anthropic/'},...modelCatalog].map(item=>{const company=modelCompany(item);return [company.key,company]})).values()].sort((a,b)=>rank(a.key)-rank(b.key)||a.label.localeCompare(b.label));
     if(!companies.some(company=>company.key===modelCompanyFilter))modelCompanyFilter='';
     const tutsi=tutsiModelPicker();modelCompaniesHost.dataset.layout=tutsi?'tutsi':'nyx';
     const button=company=>`<button type="button" data-model-company="${escapeHtml(company.key)}" title="${escapeHtml(company.label)}" aria-label="${escapeHtml(company.label)} models" aria-pressed="${modelCompanyFilter===company.key}">${modelCompanyIcon(company)}${tutsi?`<span class="ai-company-filter-label">${escapeHtml(company.label)}</span>`:''}</button>`;
     if(tutsi){modelCompaniesHost.innerHTML=companies.map(button).join('');syncCompanyMotion();return;}
-    modelCompaniesHost.innerHTML=[companies.filter((_,i)=>i%2===0),companies.filter((_,i)=>i%2===1)].map((items,i)=>`<div class="ai-company-rail" aria-label="${i?'Right':'Left'} company filters"><div class="ai-company-track">${items.map(button).join('')}</div></div>`).join('');
+    const scrolling=companies.filter(company=>!['openai','anthropic'].includes(company.key));
+    modelCompaniesHost.innerHTML=[0,1].map(i=>`<div class="ai-company-column"><div class="ai-company-pinned">${button(companies.find(company=>company.key===(i?'anthropic':'openai')))}</div><div class="ai-company-rail" aria-label="${i?'Right':'Left'} company filters"><div class="ai-company-track">${scrolling.filter((_,index)=>index%2===i).map(button).join('')}</div></div></div>`).join('');
     modelCompaniesHost.querySelectorAll('.ai-company-rail').forEach(rail=>{
       const copy=rail.firstElementChild.cloneNode(true);
       copy.setAttribute('aria-hidden','true');copy.dataset.loopCopy='';
@@ -1252,7 +1264,7 @@
     const query=(modelSearch.value||'').trim().toLowerCase();
     const candidates=modelCatalog.filter(item=>!modelCompanyFilter||modelCompany(item).key===modelCompanyFilter);
     const visible=NyxModelSearch.search(candidates,query,modelCompany);
-    modelOptionsHost.innerHTML=visible.length ? modelMenuOptions(visible,model.value,Boolean(query)) : '<p class="ai-model-empty" role="status">No matching models.</p>';
+    modelOptionsHost.innerHTML=visible.length ? modelMenuOptions(visible,model.value,Boolean(query)) : `<p class="ai-model-empty" role="status">${modelCompanyFilter&&!query?'No models from this provider are available for this account.':'No matching models.'}</p>`;
     modelOptionsHost.scrollTop=0;
     const match=visible.find(item=>modelCompany(item).label.toLowerCase()===query)||visible[0];
     if(query&&match)revealModelCompany(modelCompany(match).key);

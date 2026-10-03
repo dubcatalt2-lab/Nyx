@@ -61,6 +61,7 @@ import { batchFiles, inspectBatchTree } from "./lib/link-generator-batch.mjs";
 import { createTubeBackend } from "./lib/nyxtube-streaming.mjs";
 import { createTubeCatalog } from "./lib/nyxtube-catalog.mjs";
 import { invidiousEmbedOrigin } from "./lib/nyxtube-invidious.mjs";
+import { createInvidiousPlayback } from './lib/nyxtube-invidious-playback.mjs';
 import { tubeStreamingRoutes } from "./lib/nyxtube-routes.mjs";
 import { createMetingBackend } from "./lib/nyxify-meting.mjs";
 
@@ -7927,6 +7928,8 @@ function nyxTubeRoute(handler, cacheControl = "private, max-age=120") {
 }
 
 const nyxTubeBackend = createTubeBackend({ videoInfo: (id, options) => nyxTubeCatalog.playbackInfo(id, options) });
+const nyxTubeInvidiousPlayback = createInvidiousPlayback();
+app.get('/api/nyxtube/invidious-playback',nyxTubeRoute(req=>nyxTubeInvidiousPlayback.resolve(String(req.query.id||''),{refresh:req.query.refresh==='1'}),'private, no-store'));
 app.use(tubeStreamingRoutes({
   backend: nyxTubeBackend, sameOrigin: sameOriginRequest, clientIp: nyxClientIp,
   owner: async req => {
@@ -14261,6 +14264,7 @@ async function startNyxServer() {
     remoteDesktop.close();
     closeHttpRelay();
     void nyxTubeBackend.close();
+    nyxTubeInvidiousPlayback.close();
     void nyxTubeCatalog.close();
     if (shuttingDown) return;
     shuttingDown = true;

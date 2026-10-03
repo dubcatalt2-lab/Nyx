@@ -148,6 +148,22 @@ there is no guaranteed refresh interval.
 
 ## Limits and behavior
 
+NyxTube's Invidious option first resolves the public embed's MP4 source through
+`/api/nyxtube/invidious-playback`. Only validated video IDs and the configured
+HTTPS embed origin are accepted. The bounded resolver reads at most 512 KiB,
+uses a ten-second deadline, coalesces requests, allows four active resolutions
+and retains at most 64 sources for 30 seconds. It returns only an allowlisted
+local-proxy media URL, never provider HTML/scripts or cookies. Video bytes stream
+directly from the provider; this path adds no VPS video cache or transcoding.
+
+The browser uses real media events for loading and playback. A media error or
+15-second startup/stall refreshes the source at most twice, preserving position,
+volume, mute and pause state. Leaving the video cancels resolution and retries.
+If these attempts fail, the existing public embed opens in adaptive DASH mode.
+Its controls remain visible; Nyx cannot observe the cross-origin fallback's media
+state. Provider outages/rate limits can still affect that final fallback. A loaded
+iframe or successful source-resolution response is not proof of playing media.
+
 - Public YouTube videos only; full extractor metadata validation precedes preparation,
   and extraction rejects non-public, age-restricted, live, or invalid-duration videos.
   HLS has no one-hour or whole-video 1.5 GiB limit. Individual fragments, metadata,

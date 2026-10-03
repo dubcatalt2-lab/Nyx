@@ -1,0 +1,162 @@
+{
+  "thinkingmachines": {
+    "file": "thinkingmachines-author.png",
+    "source": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://thinkingmachines.ai/&size=256",
+    "reference": "https://openrouter.ai/thinkingmachines"
+  },
+  "inclusionai": {
+    "file": "inclusionai-author.png",
+    "source": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://www.inclusion-ai.org/&size=256",
+    "reference": "https://openrouter.ai/inclusionai"
+  },
+  "thedrummer": {
+    "file": "thedrummer-author.png",
+    "source": "https://openrouter.ai/images/icons/TheDrummer.png",
+    "reference": "https://openrouter.ai/thedrummer"
+  },
+  "typesafe": {
+    "file": "typesafe-author.png",
+    "source": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://typesafe.ai&size=256",
+    "reference": "https://openrouter.ai/typesafe"
+  },
+  "unbiased": {
+    "file": "unbiased-author.png",
+    "source": "https://openrouter.ai/images/icons/Unbiased.png",
+    "reference": "https://openrouter.ai/unbiased"
+  },
+  "writer": {
+    "file": "writer-author.png",
+    "source": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://writer.com/&size=256",
+    "reference": "https://openrouter.ai/writer"
+  },
+  "stealth": {
+    "file": "stealth-author.svg",
+    "source": "https://openrouter.ai/images/icons/Stealth.svg",
+    "reference": "https://openrouter.ai/stealth"
+  },
+  "sao10k": {
+    "file": "sao10k-author.webp",
+    "source": "https://cdn-avatars.huggingface.co/v1/production/uploads/64be6a5376a6e2efccc638c1/gvRRLHsicTCxpURJeQDv3.jpeg",
+    "reference": "https://openrouter.ai/sao10k"
+  },
+  "anthracite-org": {
+    "file": "anthracite-org-author.webp",
+    "source": "https://cdn-avatars.huggingface.co/v1/production/uploads/658a46cbfb9c2bdfae75b3a6/HDYkduzAwQRNHuRl5eYdP.png",
+    "reference": "https://openrouter.ai/anthracite-org"
+  },
+  "gryphe": {
+    "file": "gryphe-author.webp",
+    "source": "https://cdn-avatars.huggingface.co/v1/production/uploads/64ae4107ad6218d51a2a7d0c/3dcor68aYBKEcTlOUHJpK.png",
+    "reference": "https://openrouter.ai/gryphe"
+  },
+  "undi95": {
+    "file": "undi95-author.webp",
+    "source": "https://cdn-avatars.huggingface.co/v1/production/uploads/63ab1241ad514ca8d1430003/9UwuBl5D-GuIJKIOVHm3Z.png",
+    "reference": "https://openrouter.ai/undi95"
+  },
+  "cognitivecomputations": {
+    "file": "cognitivecomputations-author.png",
+    "source": "https://www.gravatar.com/avatar/506bfc052d479937a4f87a78e227de47?d=retro&size=100",
+    "reference": "https://openrouter.ai/cognitivecomputations"
+  },
+  "prism-ml": {
+    "file": "prism-ml-author.png",
+    "source": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://prismml.com&size=256",
+    "reference": "https://openrouter.ai/prism-ml"
+  },
+  "mancer": {
+    "file": "mancer-author.png",
+    "source": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://mancer.tech&size=256",
+    "reference": "https://openrouter.ai/mancer"
+  },
+  "apodex": {
+    "file": "apodex-author.svg",
+    "source": "https://openrouter.ai/images/icons/Apodex.svg",
+    "reference": "https://openrouter.ai/apodex"
+  },
+  "heygen": {
+    "file": "heygen-author.png",
+    "source": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://heygen.com&size=256",
+    "reference": "https://openrouter.ai/heygen"
+  },
+  "togethercomputer": {
+    "file": "togethercomputer-author.svg",
+    "source": "https://raw.githubusercontent.com/lobehub/lobe-icons/82e641b4fece9d1028a127149af9ded00df5ac0c/packages/static-svg/icons/together-color.svg",
+    "reference": "https://openrouter.ai/togethercomputer"
+  },
+  "voyageai": {
+    "file": "voyageai-author.svg",
+    "source": "https://raw.githubusercontent.com/lobehub/lobe-icons/82e641b4fece9d1028a127149af9ded00df5ac0c/packages/static-svg/icons/voyage-color.svg",
+    "reference": "https://openrouter.ai/voyageai"
+  },
+  "respan": {
+    "file": "respan-author.png",
+    "source": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://www.respan.ai/&size=256",
+    "reference": "https://openrouter.ai/respan"
+  },
+  "jaredpalmer": {
+    "file": "jaredpalmer-author.png",
+    "source": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://huggingface.co/&size=256",
+    "reference": "https://openrouter.ai/jaredpalmer"
+  },
+  "fish-audio": {
+    "file": "fish-audio-author.svg",
+    "source": "https://raw.githubusercontent.com/lobehub/lobe-icons/82e641b4fece9d1028a127149af9ded00df5ac0c/packages/static-svg/icons/fishaudio.svg",
+    "reference": "https://openrouter.ai/fish-audio"
+  },
+  "nex-agi": {
+    "file": "nex-agi-author.svg",
+    "source": "https://openrouter.ai/images/icons/NexAGI.svg",
+    "reference": "https://openrouter.ai/nex-agi"
+  },
+  "deepgram": {
+    "file": "deepgram-author.svg",
+    "source": "https://openrouter.ai/images/icons/Deepgram.svg",
+    "reference": "https://openrouter.ai/deepgram"
+  },
+  "krea": {
+    "file": "krea-author.svg",
+    "source": "https://raw.githubusercontent.com/lobehub/lobe-icons/82e641b4fece9d1028a127149af9ded00df5ac0c/packages/static-svg/icons/krea.svg",
+    "reference": "https://openrouter.ai/krea"
+  },
+  "sourceful": {
+    "file": "sourceful-author.png",
+    "source": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://www.sourceful.com/&size=256",
+    "reference": "https://openrouter.ai/sourceful"
+  },
+  "canopylabs": {
+    "file": "canopylabs-author.png",
+    "source": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://canopylabs.ai&size=256",
+    "reference": "https://openrouter.ai/canopylabs"
+  },
+  "sesame": {
+    "file": "sesame-author.png",
+    "source": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://www.sesame.com&size=256",
+    "reference": "https://openrouter.ai/sesame"
+  },
+  "hexgrad": {
+    "file": "hexgrad-author.png",
+    "source": "https://openrouter.ai/images/icons/Hexgrad.png",
+    "reference": "https://openrouter.ai/hexgrad"
+  },
+  "thenlper": {
+    "file": "thenlper-author.png",
+    "source": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://huggingface.co/&size=256",
+    "reference": "https://openrouter.ai/thenlper"
+  },
+  "intfloat": {
+    "file": "intfloat-author.png",
+    "source": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://huggingface.co/&size=256",
+    "reference": "https://openrouter.ai/intfloat"
+  },
+  "sentence-transformers": {
+    "file": "sentence-transformers-author.png",
+    "source": "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://huggingface.co/&size=256",
+    "reference": "https://openrouter.ai/sentence-transformers"
+  },
+  "baai": {
+    "file": "baai-author.svg",
+    "source": "https://raw.githubusercontent.com/lobehub/lobe-icons/82e641b4fece9d1028a127149af9ded00df5ac0c/packages/static-svg/icons/baai.svg",
+    "reference": "https://openrouter.ai/baai"
+  }
+}

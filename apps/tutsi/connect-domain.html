@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Connect a domain · Tutsi</title>
+  <link rel="stylesheet" href="/apps/connect-domain/styles.css?v=20260923-tutsi-domain-2">
+<link rel="stylesheet" href="/apps/tutsi/font.css?v=1">
+<style>
+body{background:#1e1e2e;color:#cdd6f4}.domain-card{background:#181825;border-color:#45475a}.domain-mark,.record-card button,.domain-entry button{background:#cba6f7;color:#1e1e2e}.eyebrow,.record-card code{color:#cba6f7}.intro,.back-link{color:#a6adc8}.record-card,.domain-entry input{background:#1e1e2e;border-color:#45475a;color:#cdd6f4}.steps{color:#cdd6f4}.domain-entry input,.record-card code{font-family:system-ui,sans-serif!important}.domain-entry input:focus{border-color:#cba6f7;box-shadow:0 0 0 3px #cba6f722}
+</style>
+</head>
+<body data-site="tutsi">
+  <main class="domain-shell">
+    <a class="back-link" href="/tutsi" aria-label="Back to Tutsi">← Back to Tutsi</a>
+    <section class="domain-card">
+      <div class="domain-mark" aria-hidden="true">◎</div>
+      <p class="eyebrow">TUTSI CUSTOM DOMAINS</p>
+      <h1>Point your FreeDNS domain to Tutsi</h1>
+      <p class="intro">Create an A record at FreeDNS, then register your hostname below to connect it to Tutsi. HTTPS is prepared automatically.</p>
+
+      <div class="record-card">
+        <span>A record destination</span>
+        <code data-target-ip>Loading…</code>
+        <button type="button" data-copy-ip>Copy</button>
+      </div>
+
+      <ol class="steps">
+        <li>Create an <strong>A</strong> record at FreeDNS using the address above.</li>
+        <li>Wait for the DNS change to appear publicly.</li>
+        <li>Register the hostname below, then open it with <strong>https://</strong>.</li>
+      </ol>
+
+      <form data-domain-form>
+        <label for="hostname">Connect your hostname to Tutsi</label>
+        <div class="domain-entry">
+          <input id="hostname" name="hostname" type="text" inputmode="url" autocomplete="url" placeholder="example.yourfreednsdomain.com" required maxlength="253">
+          <button type="submit" data-submit>Connect domain</button>
+        </div>
+      </form>
+
+      <div class="status" data-status hidden role="status" aria-live="polite"></div>
+    </section>
+  </main>
+  <script src="/apps/connect-domain/app.js?v=20260923-tutsi-domain-2" defer></script>
+</body>
+</html>

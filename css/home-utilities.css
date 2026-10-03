@@ -1,87 +1,3 @@
-/* Compact homepage utilities and their Nyx-native information windows. */
-html body.browser-shell .browser-window.browser-home-page .nyx-home-utility-links{
-  position:absolute;
-  right:clamp(14px,2vw,28px);
-  bottom:clamp(14px,2vh,24px);
-  z-index:8;
-  display:flex;
-  flex-direction:row;
-  align-items:center;
-  gap:16px;
-  pointer-events:auto;
-}
-
-html body.browser-shell .browser-window.browser-home-page .nyx-home-utility-links a{
-  min-height:20px;
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  margin:0;
-  padding:2px 0;
-  border:0;
-  border-radius:0;
-  background:transparent;
-  color:color-mix(in srgb,var(--nyx-home-muted) 88%,var(--nyx-home-text));
-  font:400 11px/1.25 var(--nyx-font,Outfit,Arial,sans-serif);
-  letter-spacing:.01em;
-  text-align:right;
-  text-decoration:none;
-  box-shadow:none;
-}
-
-html body.browser-shell .browser-window.browser-home-page .nyx-home-utility-links a:hover,
-html body.browser-shell .browser-window.browser-home-page .nyx-home-utility-links a:focus-visible{
-  color:var(--nyx-home-text);
-  text-decoration:underline;
-  text-underline-offset:3px;
-  outline:0;
-}
-
-html body.browser-shell .browser-window.browser-home-page .nyx-home-utility-links .nyx-home-copyright{
-  min-height:20px;
-  display:flex;
-  align-items:center;
-  margin:0;
-  padding:2px 0;
-  color:color-mix(in srgb,var(--nyx-home-muted) 68%,transparent);
-  font:400 10px/1.25 var(--nyx-font,Outfit,Arial,sans-serif);
-  letter-spacing:.02em;
-  white-space:nowrap;
-  user-select:none;
-}
-
-html body.browser-shell .browser-window.browser-home-page .nyx-home-link-checker{
-  position:absolute;
-  right:clamp(196px,16vw,224px);
-  bottom:clamp(18px,2vh,26px);
-  z-index:8;
-  padding:2px 0;
-  border:0;
-  background:transparent;
-  color:color-mix(in srgb,var(--nyx-home-muted) 90%,var(--nyx-home-text));
-  font:400 11px/1.25 var(--nyx-font,Outfit,Arial,sans-serif);
-  letter-spacing:.01em;
-  text-decoration:none;
-  box-shadow:none;
-}
-
-html body.browser-shell .browser-window.browser-home-page .nyx-home-link-checker:hover,
-html body.browser-shell .browser-window.browser-home-page .nyx-home-link-checker:focus-visible{
-  color:var(--nyx-home-text);
-  text-decoration:underline;
-  text-underline-offset:3px;
-  outline:0;
-}
-
-html body.browser-shell .browser-window.browser-home-page .nyx-home-utility-links > .nyx-home-link-checker{
-  position:static;
-  right:auto;
-  bottom:auto;
-  z-index:auto;
-  padding:2px 0;
-  white-space:nowrap;
-}
-
 html body.browser-shell .browser-window .browser-body > .nyx-eruda-host{
   position:absolute;
   inset:0;
@@ -129,7 +45,7 @@ html body .nyx-info-page{
   padding:clamp(24px,4vw,48px);
   color:var(--text,#eaf2ff);
   background:linear-gradient(145deg,color-mix(in srgb,var(--panel,#0d1522) 94%,transparent),color-mix(in srgb,var(--panel2,#111a29) 88%,transparent));
-  font-family:var(--nyx-font,Outfit,Arial,sans-serif);
+  font-family:var(--nyx-font,Inter),Arial,sans-serif;
 }
 
 html body .nyx-info-page .nyx-info-kicker{
@@ -297,7 +213,6 @@ html body .nyx-terminal-form input{
 html body .nyx-terminal-form input:focus{border-color:var(--accent,#8fb8ff)}
 html body .nyx-terminal-form button{height:36px;padding:0 15px;border-radius:9px}
 
-/* One-time versioned Terms acceptance gate. */
 html body.nyx-tos-active{overflow:hidden!important}
 html body .nyx-tos-gate{
   position:fixed;
@@ -324,7 +239,7 @@ html body .nyx-tos-dialog{
   background:color-mix(in srgb,var(--panel,#0b1422) 96%,#020711);
   color:var(--text,#eef4ff);
   box-shadow:0 30px 90px rgba(0,0,0,.48),inset 0 1px 0 rgba(255,255,255,.07);
-  font-family:var(--nyx-font,Outfit,Arial,sans-serif);
+  font-family:var(--nyx-font,Inter),Arial,sans-serif;
 }
 html body .nyx-tos-gate-header{
   min-height:86px;
@@ -342,7 +257,7 @@ html body .nyx-tos-gate-logo{
   border:1px solid color-mix(in srgb,var(--theme-border,#6f9ee8) 58%,transparent);
   border-radius:13px;
   background-color:color-mix(in srgb,var(--panel2,#111a29) 76%,transparent);
-  background-image:var(--nyx-themed-logo-url,url("../assets/icons/nyx-logo.png"));
+  background-image:var(--nyx-themed-logo-url,url("../assets/icons/nyx-cat-moon.svg?v=3"));
   background-repeat:no-repeat;
   background-position:center;
   background-size:35px 35px;
@@ -412,21 +327,3 @@ html body .nyx-tos-declined>span{width:52px;height:52px;display:grid;place-items
 html body .nyx-tos-declined h2{margin:0 0 10px;color:var(--text,#eef4ff);font-size:28px;font-weight:450}
 html body .nyx-tos-declined p{max-width:480px;margin:0;color:var(--muted,#a7b6ce);font-size:14px;line-height:1.6}
 html body .nyx-tos-gate.is-declined .nyx-tos-actions p{color:color-mix(in srgb,#ff8492 72%,var(--muted,#a7b6ce))}
-
-@media(max-width:720px){
-  html body.browser-shell .browser-window.browser-home-page .nyx-home-utility-links{right:10px;bottom:8px;max-width:calc(100% - 20px);gap:8px}
-  html body.browser-shell .browser-window.browser-home-page .nyx-home-utility-links a{min-height:18px;padding:1px 0;font-size:9px;white-space:nowrap}
-  html body.browser-shell .browser-window.browser-home-page .nyx-home-utility-links .nyx-home-copyright{min-height:18px;padding:1px 0;font-size:8px}
-  html body.browser-shell .browser-window.browser-home-page .nyx-home-link-checker{right:250px;bottom:11px;font-size:10px}
-  html body .nyx-about-details{grid-template-columns:1fr}
-  html body .nyx-info-page{padding:24px 20px}
-  html body .nyx-tos-gate{padding:8px}
-  html body .nyx-tos-dialog{width:calc(100vw - 16px);height:calc(100vh - 16px);border-radius:16px}
-  html body .nyx-tos-gate-header{min-height:72px;padding:13px 15px}
-  html body .nyx-tos-gate-logo{width:38px;height:38px;flex-basis:38px;background-size:30px 30px}
-  html body .nyx-tos-gate-header h1{font-size:18px}
-  html body .nyx-tos-document{width:calc(100% - 28px);padding-top:24px}
-  html body .nyx-tos-actions{align-items:stretch;flex-direction:column;padding:12px 14px}
-  html body .nyx-tos-actions>div{width:100%}
-  html body .nyx-tos-actions button{flex:1;min-width:0}
-}

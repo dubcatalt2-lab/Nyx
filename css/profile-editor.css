@@ -1,6 +1,3 @@
-/* Profile customization editor: visual shell only. Existing form controls and
-   live-preview event wiring remain the source of truth. */
-
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-user-profile-dialog{
   width:min(1180px,calc(100vw - 32px))!important;
   height:min(860px,calc(100dvh - 32px))!important;
@@ -293,8 +290,7 @@ html[data-nyx-theme] body .nyx-profile-palette button i{
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.22);
 }
 
-html[data-nyx-theme] body .nyx-profile-palette button:is(:hover,:focus-visible),
-html[data-nyx-theme] body .nyx-profile-palette button.active{
+html[data-nyx-theme] body .nyx-profile-palette button:is(:hover,:focus-visible),html[data-nyx-theme] body .nyx-profile-palette button.active{
   border-color:color-mix(in srgb,var(--nyx-palette-primary) 64%,#8f94a1);
   background:#272a33;
   color:#fff!important;
@@ -408,28 +404,26 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-preview-pane .nyx-edi
   position:relative!important;
   inset:auto!important;
   z-index:0!important;
-  width:min(360px,100%)!important;
+  width:min(320px,100%)!important;
   max-height:none!important;
   margin:0!important;
   opacity:1!important;
   transform:none!important;
 }
 
-/* Keep the editor preview narrow like the dropdown, but give it the taller
-   canvas needed to inspect banner, avatar, identity, and action spacing. */
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-banner{
-  height:164px!important;
+  height:106px!important;
 }
 
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-profile{
-  min-height:246px!important;
-  padding:72px 18px 26px!important;
+  min-height:0!important;
+  padding:56px 4px 14px!important;
 }
 
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-avatar{
-  top:-41px!important;
-  width:76px!important;
-  height:76px!important;
+  top:-40px!important;
+  width:80px!important;
+  height:80px!important;
 }
 
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-avatar>.nyx-avatar-decoration{
@@ -457,9 +451,9 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-acco
 }
 
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-status{
-  top:-31px!important;
-  left:102px!important;
-  max-width:calc(100% - 118px)!important;
+  top:-7px!important;
+  left:90px!important;
+  max-width:calc(100% - 94px)!important;
 }
 
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-group{
@@ -468,7 +462,7 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-acco
 }
 
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-group button{
-  min-height:58px!important;
+  min-height:40px!important;
 }
 
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-profile-media-edit-avatar{
@@ -490,9 +484,7 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview-actions{
   pointer-events:none!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-avatar:is(:hover,:focus-within) .nyx-profile-media-edit-avatar,
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-banner:is(:hover,:focus-within) .nyx-profile-media-edit-banner,
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-profile-media-edit:is(:hover,:focus-visible){
+html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-avatar:is(:hover,:focus-within) .nyx-profile-media-edit-avatar,html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-banner:is(:hover,:focus-within) .nyx-profile-media-edit-banner,html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-profile-media-edit:is(:hover,:focus-visible){
   opacity:1!important;
   pointer-events:auto!important;
   transform:none!important;
@@ -507,34 +499,6 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-user-profile-form footer{
   border-top:1px solid #333640!important;
   background:rgba(21,22,28,.95)!important;
   backdrop-filter:blur(14px);
-}
-
-@media(max-width:900px){
-  html[data-nyx-theme] body .nyx-profile-drawer .nyx-user-profile-dialog{width:calc(100vw - 20px)!important}
-  html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-profile-layout{grid-template-columns:minmax(360px,410px) minmax(0,1fr)!important}
-  html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-preview-pane{padding:32px 24px!important}
-}
-
-@media(max-width:700px){
-  html[data-nyx-theme] body .nyx-profile-drawer .nyx-user-profile-dialog{width:100vw!important;border:0!important;border-radius:0!important}
-  html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-profile-header{padding:16px 48px 14px 18px!important}
-  html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-profile-header p{display:none!important}
-  html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-profile-layout{display:flex!important;min-height:0!important;flex-direction:column-reverse!important;overflow:auto!important}
-  html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-preview-pane{flex:0 0 auto!important;min-height:0!important;padding:28px 18px 18px!important;overflow:visible!important}
-  html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-preview-pane::before{top:13px!important;left:18px!important}
-  html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-preview-pane .nyx-user-profile-view{position:relative!important;top:auto!important;margin-top:12px!important}
-  html[data-nyx-theme] body .nyx-profile-drawer .nyx-user-profile-form{height:auto!important;min-height:0!important;overflow:visible!important;padding:0 18px 88px!important}
-  html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-rail-header{margin:0 -18px!important;padding:0 18px!important}
-  html[data-nyx-theme] body .nyx-profile-editor-tabs{position:relative!important;top:auto!important;margin:0 -18px!important;padding:10px 18px!important}
-  html[data-nyx-theme] body .nyx-profile-drawer .nyx-user-profile-form footer{margin:0 -18px!important;padding:12px 18px!important}
-}
-
-@media(max-width:430px){
-  html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-field-grid,
-  html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-visual-color-grid{grid-template-columns:1fr!important}
-  html[data-nyx-theme] body .nyx-profile-editor-tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}
-  html[data-nyx-theme] body .nyx-profile-editor-tabs button{padding-inline:3px!important;font-size:9px!important}
-  html[data-nyx-theme] body .nyx-profile-palette{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
 @media(prefers-reduced-motion:reduce){

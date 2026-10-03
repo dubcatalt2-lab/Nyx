@@ -1,0 +1,20 @@
+{
+  "name": "nyx-stratus-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pinned and hardened Stratus cloud-gaming service for Nyx",
+  "type": "module",
+  "scripts": {
+    "start": "node launcher.mjs",
+    "check": "node check.mjs",
+    "test:smoke": "node smoke.mjs"
+  },
+  "engines": {
+    "node": ">=20 <25"
+  },
+  "dependencies": {
+    "chalk": "4.1.2",
+    "express": "4.22.2",
+    "ws": "8.21.3"
+  }
+}

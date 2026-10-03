@@ -1,0 +1,11 @@
+[Unit]
+Description=Check Nyx health every 30 seconds
+
+[Timer]
+OnBootSec=90
+OnUnitActiveSec=30
+AccuracySec=1
+Unit=nyx-health-check.service
+
+[Install]
+WantedBy=timers.target

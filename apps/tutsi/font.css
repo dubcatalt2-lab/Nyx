@@ -1,0 +1,24 @@
+﻿@font-face {
+  font-family: "Homemade Apple";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/apps/tutsi/fonts/homemade-apple.ttf") format("truetype");
+}
+html,
+body,
+button,
+input,
+select,
+textarea,
+pre,
+code,
+kbd,
+output,
+svg text {
+  font-family: "Indie Flower", cursive !important;
+  font-synthesis: none;
+}
+
+@font-face{font-family:"Indie Flower";font-style:normal;font-weight:400;font-display:swap;src:url("/apps/tutsi/fonts/indie-flower.ttf") format("truetype")}
+.brand,.brand *,.home-wordmark h1,.home-wordmark h1 span{font-family:"Homemade Apple",cursive!important}

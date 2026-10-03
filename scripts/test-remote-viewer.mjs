@@ -1,0 +1,36 @@
+import assert from 'node:assert/strict';
+import {createServer} from 'node:http';
+import express from 'express';
+import {randomBytes} from 'node:crypto';
+import {resolve} from 'node:path';
+import {mkdir} from 'node:fs/promises';
+import {chromium} from 'playwright';
+import sharp from 'sharp';
+import {WebSocket} from 'ws';
+import {createRemoteDesktop,remoteOwnerUid} from '../lib/remote-desktop.mjs';
+const records=new Map(),inputs=[];
+const collection={doc:id=>({get:async()=>({data:()=>records.get(id)}),set:async data=>records.set(id,data),delete:async()=>records.delete(id)}),where:()=>({get:async()=>({size:records.size,docs:[...records].map(([id,data])=>({id,data:()=>data}))})})};
+const remote=createRemoteDesktop({firebase:async()=>({auth:{verifyIdToken:async token=>({uid:token==='owner'?remoteOwnerUid:'member'})},firestore:{collection:()=>collection}}),download:async()=>Buffer.from('zip')});
+const app=express();app.get('/api/founder-profile/auth-config',(_req,res)=>res.json({enabled:true,apiKey:'fixture',projectId:'fixture'}));app.use('/api/private-remote',remote.router);app.use(express.static(resolve(process.env.REMOTE_TEST_DIST?'dist':'.')));
+const server=createServer(app);server.on('upgrade',remote.upgrade);await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+server.address().port;
+const post=async(path,body)=>{const response=await fetch(origin+'/api/private-remote'+path,{method:'POST',headers:{Authorization:'Bearer owner','Content-Type':'application/json'},body:JSON.stringify(body)});return response.json();};
+const credential=randomBytes(32).toString('base64url'),pair=await post('/pair/start',{credential,name:'My Windows PC'});await post('/pair/approve',{code:pair.code});const {deviceId:id}=await post('/pair/poll',{poll:pair.poll});
+const jpeg=await sharp({create:{width:1280,height:720,channels:3,background:'#24332c'}}).jpeg().toBuffer();
+const host=new WebSocket(origin.replace('http:','ws:')+'/api/private-remote/socket');await new Promise(resolve=>host.once('open',resolve));const ready=new Promise(resolve=>host.once('message',resolve));host.send(JSON.stringify({type:'host',id,credential}));await ready;
+host.on('message',raw=>{const data=JSON.parse(raw);inputs.push(data);if(data.type==='control'&&data.active)host.send(jpeg);});
+const browser=await chromium.launch({channel:'msedge',headless:true});
+try{
+ const page=await browser.newPage({viewport:{width:1440,height:950}});const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ let token='owner';
+ await page.route('https://www.gstatic.com/firebasejs/**/firebase-app.js',route=>route.fulfill({contentType:'text/javascript',body:'export const getApps=()=>[];export const initializeApp=()=>({});'}));
+ await page.route('https://www.gstatic.com/firebasejs/**/firebase-auth.js',route=>route.fulfill({contentType:'text/javascript',body:`const user={getIdToken:async()=>${JSON.stringify(token)}};export const getAuth=()=>({currentUser:user});export const browserLocalPersistence={};export const setPersistence=async()=>{};export const onAuthStateChanged=(a,f)=>f(user);`}));
+ await page.goto(origin+'/apps/remote/');await page.getByRole('button',{name:'Connect',exact:true}).click();await page.waitForFunction(()=>document.getElementById('frame').naturalWidth===1280);
+ await page.locator('#frame').click({position:{x:100,y:100}});await page.keyboard.press('a');await page.locator('#frame').hover();await page.mouse.wheel(0,200);
+ await page.waitForTimeout(150);assert(inputs.some(v=>v.type==='pointer'&&v.action==='down'));assert(inputs.some(v=>v.type==='key'&&v.key===65));assert(inputs.some(v=>v.type==='wheel'));
+ await page.keyboard.press('Escape');await page.waitForTimeout(50);assert(inputs.some(v=>v.type==='release'));
+ await mkdir('.codex-artifacts',{recursive:true});await page.screenshot({path:'.codex-artifacts/remote-owner-viewer.png'});
+ await page.getByRole('button',{name:'Disconnect',exact:true}).click();await page.locator('#setup').waitFor();assert(inputs.some(v=>v.type==='control'&&!v.active));
+ await page.setViewportSize({width:390,height:844});assert(await page.locator('body').evaluate(e=>e.scrollWidth<=innerWidth));
+ token='member';await page.reload();await page.getByText('This workspace is not available to your account.').waitFor();assert(await page.locator('#workspace').isHidden());assert.equal(await page.getByRole('button',{name:'Connect',exact:true}).count(),0);assert.deepEqual(errors,[]);
+ console.log('PASS: built owner viewer over real WebSocket relay, frame rendering, pointer/keyboard/wheel, release, mobile layout and member-hidden UI.');
+}finally{await browser.close();host.close();remote.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

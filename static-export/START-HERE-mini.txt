@@ -1,0 +1,44 @@
+NYX SINGLEFILE MINI
+
+Keep this complete folder together. The tiny HTML launcher needs its support
+files. This is an online edition, not a self-contained offline HTML file.
+
+Includes the Nyx interface, search/proxy browsing and the Nyx Archive game
+catalog. Games load on demand from Nyx's existing OVH server, which also
+provides Wisp. No iframe of nyxlearning.org is used. Account/AI/cloud features
+are hidden. Profile animations and the largest legacy wallpapers are omitted;
+the current rain, leaves and night wallpapers are retained. Other game
+libraries require their backend and are omitted from this static edition.
+
+LOCAL WINDOWS:
+  Extract the ZIP. Run Start-Nyx-Mini.cmd inside the extracted folder.
+  Node.js is required; no npm installation is needed. Open the printed URL
+  or http://localhost:8765/ in your browser. Keep the terminal open.
+  Ctrl+C stops the local server.
+  On other systems run: node serve-mini.mjs, then open the printed URL.
+  No hosting-path configuration is needed for the local server.
+
+Install Node.js for the one-time hosting-path setup, then open a terminal in
+this extracted folder. No npm dependencies are needed for configure-host.mjs.
+
+SURGE (or another normal HTTPS host):
+  node configure-host.mjs /
+  npx surge . your-name.surge.sh
+  Open https://your-name.surge.sh/nyx-singlefile-mini.html
+  Publish the contents of this folder, not its parent.
+
+JSDELIVR:
+  node configure-host.mjs /gh/YOUR-USER/YOUR-REPO@main/static/
+  Upload all this folder's files into static/ in that public GitHub repository.
+  Open https://cdn.jsdelivr.net/gh/YOUR-USER/YOUR-REPO@main/static/Nyx.svg
+  Keep the whole repository below jsDelivr's default 150 MB package limit.
+  Do not include the previous full ZIP or full game assets in that repository.
+
+Extract a fresh copy before configuring for a different host.
+Wisp accepts all origins. File paths must match your chosen hosting URL.
+Use HTTPS (localhost is also supported). Double-clicking the HTML as file://
+cannot start the proxy worker. A network may still block the hosting domain,
+OVH relay or a game's upstream assets. Game content requires internet access.
+
+The ZIP size includes support files; the launcher's small size alone does not.
+Keep licenses and provide corresponding source when redistributing AGPL code.

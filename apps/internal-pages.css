@@ -1,0 +1,27 @@
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:Inter,Arial,sans-serif}
+body{padding:0;color:var(--app-text);background:var(--app-bg)}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+a{color:inherit}
+.shell-page,.browser-shell-page,.nyx-utility-tab{width:100%;max-width:1280px;margin:0 auto;padding:42px 48px 64px}
+.shell-page>h1,.nyx-utility-tab h1{margin:0 0 10px;font-size:32px;font-weight:500;letter-spacing:-.04em}
+.shell-page>p,.nyx-utility-tab>p{color:var(--app-muted);font-size:13px;line-height:1.7}
+.apps-launch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:14px;margin-top:34px}
+.quick-tile{display:flex;align-items:center;gap:15px;width:100%;min-width:0;min-height:86px;padding:20px;border:1px solid var(--app-line);border-radius:10px;background:var(--app-panel);color:var(--app-text);text-decoration:none;text-align:left;font-size:13px;transition:background .15s}
+.quick-tile:hover{background:var(--app-raised)}
+.quick-tile:focus-visible{outline:1px solid var(--app-text);outline-offset:2px}
+.quick-icon{display:grid;place-items:center;flex:none;width:48px;height:48px;padding:9px;background:color-mix(in srgb,var(--app-text) 4%,transparent);border:1px solid var(--app-line);border-radius:13px;overflow:hidden;transition:transform 160ms ease,background-color 160ms ease}
+.quick-icon img,.quick-icon svg{width:28px;height:28px;object-fit:contain;border-radius:5px}
+.quick-icon svg{fill:none;stroke:currentColor;stroke-width:1.5}
+.quick-tile:hover .quick-icon{transform:translateY(-2px);background:color-mix(in srgb,var(--app-text) 8%,transparent)}
+@media(prefers-reduced-motion:reduce){.quick-icon{transition:none}.quick-tile:hover .quick-icon{transform:none}}
+.quick-tile>span:last-child{overflow:hidden;text-overflow:ellipsis}
+.quick-combo{display:flex;gap:6px;align-items:center}
+.nyx-utility-tab section{margin:24px 0;padding:22px;border:1px solid var(--app-line);border-radius:12px;background:var(--app-panel);line-height:1.7}
+.nyx-utility-tab h2{font-size:18px;font-weight:500;color:var(--app-text)}
+.nyx-utility-tab p,.nyx-utility-tab li{font-size:13px;color:var(--app-muted);line-height:1.8}
+.nyx-credits-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.nyx-credits-card{padding:22px;border:1px solid var(--app-line);border-radius:12px;background:var(--app-panel)}
+.nyx-credits-owner-image{max-width:320px}
+.nyx-credits-owner-image img{max-width:100%;height:auto}

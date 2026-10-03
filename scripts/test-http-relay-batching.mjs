@@ -1,0 +1,68 @@
+import assert from 'node:assert/strict';
+import express from 'express';
+import {createServer} from 'node:http';
+import {WebSocketServer} from 'ws';
+import {installHttpWisp} from '../server-http-wisp.mjs';
+import {HttpRelaySocket} from '../apps/tutsi/http-relay.mjs';
+globalThis.CloseEvent ??= class extends Event {constructor(type,init){super(type);Object.assign(this,init);}};
+const app=express(),server=createServer(app),upstream=new WebSocketServer({server});
+let port,requests=0;
+const received=[];
+upstream.on('connection',socket=>{socket.on('message',data=>{received.push([...data]);socket.send(data);});socket.send(Buffer.from([3,0,0,0,0,10,0,0,0]));});
+app.use((req,res,next)=>{if(req.path.endsWith('/send')||req.path.endsWith('/send-batch')){requests++;setTimeout(next,80);}else next();});
+const stop=installHttpWisp(app,{upstream:()=>({url:`ws://127.0.0.1:${port}`}),allowed:req=>req.headers.origin==='https://fixture.test',clientIp:()=> 'fixture'});
+await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));port=server.address().port;
+const nativeFetch=globalThis.fetch;
+globalThis.fetch=(url,options={})=>nativeFetch(new URL(url,`http://127.0.0.1:${port}`),{...options,headers:{...options.headers,Origin:'https://fixture.test'}});
+let socket;
+const pack=frames=>Buffer.concat(frames.map(value=>{const body=Buffer.from(value),header=Buffer.alloc(4);header.writeUInt32LE(body.length);return Buffer.concat([header,body]);}));
+try{
+ socket=new HttpRelaySocket('ws://fixture.test/');socket.binaryType='arraybuffer';
+ await new Promise((resolve,reject)=>{socket.onmessage=resolve;socket.onerror=()=>reject(new Error('Handshake failed'));});
+ const echoes=[];socket.onmessage=e=>echoes.push([...new Uint8Array(e.data)]);
+ const start=Date.now();for(let i=0;i<40;i++)socket.send(Uint8Array.of(i,255-i));
+ const until=Date.now()+10000;while(echoes.length<40&&Date.now()<until)await new Promise(resolve=>setTimeout(resolve,10));
+ assert.deepEqual(received,Array.from({length:40},(_,i)=>[i,255-i]));assert.deepEqual(echoes,received);
+ while(socket.bufferedAmount&&Date.now()<until)await new Promise(resolve=>setTimeout(resolve,10));
+ assert.equal(socket.bufferedAmount,0);
+ console.log(`40 ordered frames with 80ms HTTP latency: ${requests} requests, ${Date.now()-start}ms`);
+ assert(requests<=2,'A burst must not wait for 40 separate HTTP round trips');
+ const call=(body,sequence=40)=>fetch('/api/tutsi-relay/send-batch',{method:'POST',headers:{Authorization:'Bearer '+socket.token,'Content-Type':'application/octet-stream','X-Tutsi-Sequence':String(sequence)},body});
+ assert.equal((await call(pack([[90]]),0)).status,409,'Replayed batches are rejected');
+ assert.equal((await call(Buffer.from([1,0]))).status,400);
+ assert.equal((await call(Buffer.concat([pack([[90]]),Buffer.from([5,0,0,0,1])]))).status,400,'A truncated last frame cannot partially forward a batch');
+ assert.equal((await call(pack(Array.from({length:65},()=>[90])))).status,400);
+ assert.equal((await call(pack([Buffer.alloc(262145)]))).status,413);
+ assert.equal(received.length,40,'Malformed envelopes do not forward any frames');
+ assert.equal((await call(pack([[90],[91]]))).status,204,'Rejected envelopes do not consume the sequence');
+ assert.deepEqual(received.slice(40),[[90],[91]]);
+ socket.close();
+ // Split large bursts at both envelope limits and drain frames arriving during a request.
+ received.length=0;requests=0;
+ socket=new HttpRelaySocket('ws://fixture.test/');socket.binaryType='arraybuffer';
+ await new Promise((resolve,reject)=>{socket.onmessage=resolve;socket.onerror=()=>reject(new Error('Handshake failed'));});
+ const expected=Array.from({length:130},(_,i)=>[i]);
+ for(const frame of expected)socket.send(Uint8Array.from(frame));
+ await new Promise(resolve=>setTimeout(resolve,20));
+ expected.push([201]);socket.send(Uint8Array.of(201));
+ const splitUntil=Date.now()+4000;while(socket.bufferedAmount&&Date.now()<splitUntil)await new Promise(resolve=>setTimeout(resolve,10));
+ assert.equal(socket.bufferedAmount,0);assert.deepEqual(received,expected);assert.equal(requests,3,'Batches contain at most 64 frames');
+ received.length=0;requests=0;
+ for(let i=0;i<4;i++)socket.send(new Uint8Array(262144).fill(i));
+ const bytesUntil=Date.now()+4000;while(socket.bufferedAmount&&Date.now()<bytesUntil)await new Promise(resolve=>setTimeout(resolve,10));
+ assert.equal(socket.bufferedAmount,0);assert.equal(requests,2,'Length headers count toward the 1 MiB envelope limit');
+ assert.deepEqual(received.map(frame=>[frame.length,frame[0],frame.at(-1)]),Array.from({length:4},(_,i)=>[262144,i,i]));
+ socket.close();
+ // New browser code must still work against a server that has not advertised batching.
+ globalThis.fetch=async(url,options={})=>{const response=await nativeFetch(new URL(url,`http://127.0.0.1:${port}`),{...options,headers:{...options.headers,Origin:'https://fixture.test'}});if(String(url).endsWith('/sessions')){const data=await response.json();return Response.json({token:data.token});}return response;};
+ received.length=0;requests=0;
+ socket=new HttpRelaySocket('ws://fixture.test/');socket.binaryType='arraybuffer';
+ await new Promise(resolve=>{socket.onmessage=resolve;});
+ for(let i=0;i<4;i++)socket.send(Uint8Array.of(i));
+ const legacyUntil=Date.now()+2000;while(socket.bufferedAmount&&Date.now()<legacyUntil)await new Promise(resolve=>setTimeout(resolve,10));
+ assert.deepEqual(received,[[0],[1],[2],[3]]);assert.equal(requests,4);
+ // Closing while writes are queued must drop pending frames without negative accounting.
+ socket.send(Uint8Array.of(88));socket.send(Uint8Array.of(89));socket.close();
+ await new Promise(resolve=>setTimeout(resolve,100));assert.equal(socket.bufferedAmount,0);assert.equal(socket.queue.length,0);assert.equal(received.length,4);
+ console.log('PASS batch validation, replay/sequence safety, legacy server compatibility and cancellation.');
+}finally{socket?.close();globalThis.fetch=nativeFetch;stop();upstream.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

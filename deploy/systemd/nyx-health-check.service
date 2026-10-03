@@ -1,0 +1,21 @@
+[Unit]
+Description=Check Nyx responsiveness and recover a stalled process
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/bin/node /usr/local/lib/nyx/health-watchdog.mjs
+TimeoutStartSec=25
+RuntimeDirectory=nyx-health-watchdog
+RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=yes
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6

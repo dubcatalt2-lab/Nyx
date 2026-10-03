@@ -1,0 +1,44 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import vm from 'node:vm';
+import {parse} from 'acorn';
+import {loginProviderAccount,requireGameAccess} from '../services/stratus/provider-account.mjs';
+const account={email:'test@example.com',password:'fixture-private-password',sn:'fixture-device'};
+let calls=0;
+await assert.rejects(loginProviderAccount({},async()=>{calls++}),/configured provider account/);assert.equal(calls,0);
+const result=await loginProviderAccount(account,async(path,opts)=>{calls++;assert.equal(path,'/users/emailLogin');assert.equal(opts.body.get('email'),account.email);assert.equal(opts.body.get('password'),account.password);assert.equal(opts.body.get('sn'),account.sn);return new Response(JSON.stringify({status:200,data:{user_token:'fixture-token'}}));});
+assert.deepEqual(result,{sn:'fixture-device',token:'fixture-token'});assert.equal(calls,1);
+await assert.rejects(loginProviderAccount(account,async()=>new Response(JSON.stringify({status:400,msg:account.password}))),error=>/rejected account sign-in/.test(error.message)&&!error.message.includes(account.password));
+await assert.rejects(loginProviderAccount(account,async()=>new Response(JSON.stringify({status:200,data:{}}))),/without returning a session token/);
+const cookie=await loginProviderAccount(account,async()=>new Response(JSON.stringify({status:200,data:{}}),{headers:{'set-cookie':'as_user_token=cookie-token; Secure; HttpOnly'}}));assert.equal(cookie.token,'cookie-token');
+console.log('Existing provider account login, missing configuration, rejection redaction, token validation and cookie authentication passed.');
+await requireGameAccess(new Response(JSON.stringify({status:200})));
+await assert.rejects(requireGameAccess(new Response(JSON.stringify({status:3004,msg:'fixture-private-balance'}))),error=>/streaming credit/.test(error.message)&&!error.message.includes('fixture-private'));
+await assert.rejects(requireGameAccess(new Response(JSON.stringify({status:403,msg:'private-provider-data'}))),error=>/denied game access/.test(error.message)&&!error.message.includes('private-provider-data'));
+await assert.rejects(requireGameAccess(new Response('<html>Failure</html>')),/unreadable game-access check/);
+console.log('Provider credit rejection and malformed/denied entitlement responses fail safely.');
+
+// Exercise the patched runtime's real game initialization, never the live provider.
+const launcher=await readFile(new URL('../services/stratus/launcher.mjs',import.meta.url),'utf8');
+const launcherAst=parse(launcher,{ecmaVersion:'latest',sourceType:'module'});
+const functions=['replaceOnce','buildRuntimeSource'].map(name=>launcherAst.body.find(node=>node.type==='FunctionDeclaration'&&node.id.name===name)).map(node=>launcher.slice(node.start,node.end)).join('\n');
+const context={loginProviderAccount,requireGameAccess,expectedUpstream:{commit:'fixture'}};
+vm.runInNewContext(functions+';this.build=buildRuntimeSource;',context);
+const upstream=(await readFile(new URL('../services/stratus/upstream/api.js',import.meta.url),'utf8')).replace(/\r\n/g,'\n');
+const runtime=context.build(upstream,{publicOrigin:'https://nyx.test',port:3001,maxSessionSeconds:60,poolTarget:0,sourceUrl:'https://nyx.test/source',createTimeoutMs:30000});
+const runtimeAst=parse(runtime,{ecmaVersion:'latest',sourceType:'script'});
+const initNode=runtimeAst.body.find(node=>node.type==='FunctionDeclaration'&&node.id.name==='doInitGame');
+let providerCode=3004;const paths=[];
+const gameContext={requireGameAccess,URLSearchParams,gameHeaders:()=>({}),raccoonFetch:async path=>{
+  paths.push(path);
+  return new Response(JSON.stringify(path.endsWith('checkCost')?{status:providerCode}:{status:201,data:{play_queue_id:'fixture-queue',queue_pos:2}}));
+}};
+vm.runInNewContext(runtime.slice(initNode.start,initNode.end)+';this.init=doInitGame;',gameContext);
+await assert.rejects(gameContext.init({sn:'fixture',token:'fixture',game_key:'fixture'}),/streaming credit/);
+assert.deepEqual(paths,['/userGame/checkCost'],'Rejected credit must never allocate a game server');
+providerCode=200;paths.length=0;
+assert.equal((await gameContext.init({sn:'fixture',token:'fixture',game_key:'fixture'})).queued,true);
+assert.deepEqual(paths,['/userGame/checkCost','/jyapi/playGame']);
+const usageAt=runtime.indexOf('    recordUsage(apiKey);'),initAt=runtime.indexOf('    const init = await doInitGame(session);');
+assert.ok(usageAt>initAt,'Failed game initialization must not consume a launch allowance');
+console.log('Generated Stratus runtime stops before game allocation on rejected credit and counts accepted launches only.');

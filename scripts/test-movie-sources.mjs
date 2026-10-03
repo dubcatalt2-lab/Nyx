@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';import express from 'express';import {chromium} from 'playwright';
+const app=express();app.use(express.static(process.env.NYX_TEST_ASSET_ROOT||'.'));const server=app.listen(0);await new Promise(r=>server.once('listening',r));const origin='http://localhost:'+server.address().port;
+const b=await chromium.launch({channel:'msedge'});
+try{const p=await b.newPage({viewport:{width:390,height:850}});const movie={id:1,title:'Mapped movie',releaseDate:'2026-01-01',genres:[],cast:[],providerMappings:[{provider:'supaplay',detailPath:'movie-AbCdE123'}]};
+await p.route('**/*',r=>{const url=new URL(r.request().url());if(url.origin===origin){if(url.pathname==='/api/movies/episodes')return r.fulfill({json:{results:[]}});if(url.pathname.includes('/playback'))return r.fulfill({status:503,json:{error:'Source failed'}});if(url.pathname==='/api/movies/1')return r.fulfill({json:movie});if(url.pathname==='/api/movies/search')return r.fulfill({json:{results:[movie],page:1,totalPages:1}});return r.continue();}if(url.hostname==='supaplay.fun')return r.fulfill({contentType:'text/html',body:'<button>Play fixture</button>'});return r.abort();});
+await p.goto(origin+'/apps/movies/#movie=1');await p.locator('#watch').click();await p.locator('#player iframe').waitFor();
+assert.equal(await p.locator('#player iframe').getAttribute('sandbox'),'allow-scripts allow-same-origin allow-forms allow-presentation');
+assert.equal(await p.locator('#toggle-play').isVisible(),false);assert.equal(await p.locator('#choose-source').isVisible(),true);
+await p.evaluate(()=>{const f=document.querySelector('#player iframe');for(const time of [1,2])dispatchEvent(new MessageEvent('message',{origin:'https://evil.example',source:f.contentWindow,data:{type:'timeUpdate',currentTime:time}}));});
+assert(!((await p.locator('#source-list').innerText()).includes('Playing')));
+await p.frameLocator('#player iframe').getByText('Play fixture').waitFor();const frame=p.frames().find(f=>f.url().startsWith('https://supaplay.fun/'));await frame.evaluate(()=>{parent.postMessage({type:'timeUpdate',currentTime:1},'*');parent.postMessage({type:'timeUpdate',currentTime:2},'*');});
+await p.waitForFunction(()=>document.querySelector('#source-list').textContent.includes('Playing'));
+await p.locator('#choose-source').click();assert((await p.locator('[data-provider=supaplay]').innerText()).includes('Quality unknown'));await p.waitForTimeout(600);await p.locator('#auto-source').click();await p.frameLocator('#player iframe').getByText('Play fixture').waitFor();assert((await p.locator('#player iframe').getAttribute('src')).includes('supaplay.fun'));assert.equal(await p.locator('[data-provider]').first().getAttribute('data-provider'),'supaplay','Auto prefers the source with actual playback over failed/unknown sources');
+assert(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await p.locator('#close-player').click();assert.equal(await p.locator('#player iframe').count(),0);
+// An arbitrary URL in a stored path cannot create a third-party frame.
+movie.providerMappings=[{provider:'supaplay',detailPath:'../evil.example'}];await p.reload();await p.locator('#watch').click();await p.locator('#player iframe').waitFor();
+assert((await p.locator('#player iframe').getAttribute('src')).startsWith('https://nhdapi.com/movie/'));assert.equal(await p.locator('[data-provider=supaplay]').count(),0);console.log('PASS: native fallback, sandboxed mapped source, trusted progress origin/window, real-event status, cleanup, mobile controls and unsafe-path rejection.');
+}finally{await b.close();await new Promise(r=>server.close(r));}

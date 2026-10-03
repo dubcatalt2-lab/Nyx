@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFileSync} from 'node:fs';
+const code=readFileSync('js/relay-selection.js','utf8');
+const a='wss://a.test/wisp/',b='wss://b.test/wisp/',c='wss://c.test/wisp/';
+let remembered=b;const attempts=[];const failures=new Set();let closed=0;
+const context=vm.createContext({window:{},ArrayBuffer,Uint8Array,DataView,setTimeout,clearTimeout,localStorage:{getItem:()=>remembered,setItem:(_,v)=>remembered=v,removeItem:()=>remembered=''},WebSocket:class{constructor(url){attempts.push(url);queueMicrotask(()=>{if(failures.has(url))this.onerror?.();else {const data=new Uint8Array(9);data[0]=3;this.onmessage?.({data:data.buffer})}})}close(){closed++}}});
+vm.runInContext(code,context);let api=context.window.NyxRelaySelection;
+assert.equal(await api.choose([a,b,c]),b);assert.deepEqual(attempts,[b]);
+failures.add(b);attempts.length=0;assert.equal(await api.choose([a,b,c],b),a);assert.deepEqual(attempts,[a]);assert.equal(remembered,a);
+vm.runInContext(code,context);api=context.window.NyxRelaySelection;attempts.length=0;assert.equal(await api.choose([a,b,c]),a);assert.deepEqual(attempts,[a]);
+remembered='wss://unconfigured.test/';vm.runInContext(code,context);api=context.window.NyxRelaySelection;failures.add(a);attempts.length=0;assert.equal(await api.choose([a,b,c]),c);assert.deepEqual(attempts,[a,b,c]);
+failures.add(c);assert.equal(await api.choose([a,b,c],c),'');assert.equal(remembered,'');assert.equal(closed,attempts.length+3);
+console.log('PASS remembered relay, sequential first passing, reload, unconfigured exclusion, all-failed and socket cleanup');

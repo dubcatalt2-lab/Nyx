@@ -1,0 +1,35 @@
+@font-face{font-family:NyxRounded;src:url("../assets/fonts/fredoka/Fredoka.ttf") format("truetype");font-weight:300 700;font-style:normal;font-display:swap}
+
+:root,[data-nyx-preview-theme] {--nyx-tint:#000000}
+html[data-nyx-theme="midnight"],[data-nyx-preview-theme="midnight"] {--nyx-tint:#8194b0}
+html[data-nyx-theme="ruby"],[data-nyx-preview-theme="ruby"] {--nyx-tint:#ad777b}
+html[data-nyx-theme="emerald"],[data-nyx-preview-theme="emerald"] {--nyx-tint:#579c85}
+html[data-nyx-theme="sakura"],[data-nyx-preview-theme="sakura"] {--nyx-tint:#b58b9f}
+html[data-nyx-theme="fresh"],[data-nyx-preview-theme="fresh"] {--nyx-tint:#9da77b}
+html[data-nyx-theme="halloween"],[data-nyx-preview-theme="halloween"] {--nyx-tint:#ff963c;--nyx-surface-accent:#ff963c}
+html[data-nyx-theme="halloween"][data-nyx-appearance="light"],html[data-nyx-appearance="light"] [data-nyx-preview-theme="halloween"] {--nyx-surface-accent:#a84d12}
+html[data-nyx-theme="custom"],[data-nyx-preview-theme="custom"] {--nyx-tint:var(--nyx-custom-base,#6f9ee8)}
+:root,[data-nyx-preview-theme] {
+  --nyx-surface-bg:color-mix(in srgb,var(--nyx-tint) 10%,#050706);
+  --nyx-surface-panel:color-mix(in srgb,var(--nyx-tint) 13%,#0b0e0dee);
+  --nyx-surface-field:color-mix(in srgb,var(--nyx-tint) 18%,#0b0e0dc7);
+  --nyx-surface-raised:color-mix(in srgb,var(--nyx-tint) 23%,#101411);
+  --nyx-surface-text:color-mix(in srgb,var(--nyx-tint) 9%,#f1f3f1);
+  --nyx-surface-muted:color-mix(in srgb,var(--nyx-tint) 30%,#a1a6a2);
+  --nyx-surface-line:color-mix(in srgb,var(--nyx-tint) 22%,#ffffff10);
+}
+html:not([data-nyx-theme]),html[data-nyx-theme="default"],[data-nyx-preview-theme="default"] {
+  --nyx-surface-bg:#000000;
+  --nyx-surface-panel:#0b0b0bee;
+  --nyx-surface-field:#101010c7;
+  --nyx-surface-raised:#191919;
+}
+html[data-nyx-appearance="light"],html[data-nyx-appearance="light"] [data-nyx-preview-theme] {
+  --nyx-surface-bg:color-mix(in srgb,var(--nyx-tint) 12%,#f1f3f1);
+  --nyx-surface-panel:color-mix(in srgb,var(--nyx-tint) 6%,#ffffffee);
+  --nyx-surface-field:color-mix(in srgb,var(--nyx-tint) 5%,#ffffffdd);
+  --nyx-surface-raised:color-mix(in srgb,var(--nyx-tint) 20%,#edf1ee);
+  --nyx-surface-text:#202a24;
+  --nyx-surface-muted:color-mix(in srgb,var(--nyx-tint) 35%,#434d46);
+  --nyx-surface-line:color-mix(in srgb,var(--nyx-tint) 25%,#00000010);
+}

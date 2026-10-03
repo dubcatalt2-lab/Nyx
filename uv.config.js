@@ -1,13 +1,16 @@
+var nyxUvSessionMatch = location.pathname.match(/^\/service\/(nyx_[a-z0-9_-]{12,80})\//i);
+var nyxUvSessionId = nyxUvSessionMatch?.[1] || "";
 self.__uv$config = {
-  prefix: "/service/",
-  bare: (location.hostname === "localhost" || location.hostname === "127.0.0.1") && (!location.port || location.port === "8080")
-    ? "/wisp/"
+  prefix: nyxUvSessionId ? `/service/${nyxUvSessionId}/` : "/service/",
+  cookieDbName: nyxUvSessionId ? `__nyx_uv_tab_${nyxUvSessionId}` : "__op",
+  bare: (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+    ? "/resources/live/"
     : "wss://wisp.mercurywork.shop/",
   encodeUrl: Ultraviolet.codec.xor.encode,
   decodeUrl: Ultraviolet.codec.xor.decode,
   handler: "/uv/uv.handler.js",
   bundle: "/uv/uv.bundle.js",
   config: "/uv.config.js",
-  sw: "/uv.sw.js?v=nyx-uv-v7-20260801-critical-asset-recovery",
+  sw: "/uv.sw.js?v=nyx-uv-v11-20260903-game-ads",
   client: "/uv/uv.client.js"
 };

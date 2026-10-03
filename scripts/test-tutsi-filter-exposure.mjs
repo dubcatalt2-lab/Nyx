@@ -1,0 +1,10 @@
+﻿import assert from 'node:assert/strict';
+import {detectFilters, exposedSignatures} from '../apps/tutsi/filter-detection.mjs';
+const id='ckecmkbnoanpgplccmnoikfmpcdladkc';
+const doc={querySelectorAll:()=>[{tagName:'SCRIPT',getAttribute:()=>`chrome-extension://${id}/current-resource.js`}]};
+assert.equal(exposedSignatures(doc)[0].vendor,'securly');
+assert.deepEqual(await detectFilters({doc,fetcher:async url=>({ok:url===`chrome-extension://${id}/current-resource.js`})}),['securly']);
+assert.deepEqual(await detectFilters({doc,fetcher:async()=>{throw Error('private resource')}}),[]);
+assert.deepEqual(await detectFilters({doc,timeoutMs:5,fetcher:()=>new Promise(()=>{})}),[]);
+assert.deepEqual(exposedSignatures({querySelectorAll:()=>[{tagName:'SCRIPT',getAttribute:()=> 'https://example.com/securly.js'}]}),[]);
+console.log('Exposed current paths, private resources, timeout and unrelated URLs passed.');

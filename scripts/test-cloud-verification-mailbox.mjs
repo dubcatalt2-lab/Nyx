@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {pollVerificationMailbox} from '../services/stratus/verification-mailbox.mjs';
+const json=(data,status=200)=>new Response(JSON.stringify(data),{status});
+const timing=()=>{let time=0;return {now:()=>time,sleep:async ms=>{time+=ms},timeoutMs:7000}};
+let calls=0;
+await assert.rejects(pollVerificationMailbox('fixture',async()=>{calls++;return json({},401)},timing()),/rejected its login/);assert.equal(calls,1);
+await assert.rejects(pollVerificationMailbox('fixture',async()=>json({'hydra:member':[]}),timing()),/did not arrive/);
+calls=0;await assert.rejects(pollVerificationMailbox('fixture',async()=>{calls++;return json({},503)}, {...timing(),timeoutMs:30000}),/HTTP 503/);assert.equal(calls,3);
+assert.equal(await pollVerificationMailbox('fixture',async url=>url.includes('?')?json({'hydra:member':[{id:'one'}]}):json({html:['<p>Code: &#49;23456</p>']}),timing()),'123456');
+await assert.rejects(pollVerificationMailbox('fixture',async url=>url.includes('?')?json({'hydra:member':[{id:'one'}]}):json({text:'No code here'}),timing()),/no verification code/);
+console.log('Mailbox login rejection, empty inbox deadline, bounded service-error retries, HTML code parsing and missing-code diagnostics passed.');

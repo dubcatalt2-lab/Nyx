@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';import {chromium} from 'playwright';
+const browser=await chromium.launch({channel:'msedge',headless:true});
+try{const page=await browser.newPage({viewport:{width:1440,height:900}});let failure=false,request;
+await page.addInitScript(()=>{localStorage.setItem('nyx.codeStudio.v1',JSON.stringify({language:'javascript',codes:{javascript:'console.log("hello")',python:'print("older version")'}}));localStorage.setItem('nyx.theme','custom');localStorage.setItem('nyx.customThemeColor','#ff0000')});
+await page.route('**/api/founder-profile/auth-config',r=>r.fulfill({json:{}}));
+await page.route('**/api/nyx-ai/providers',r=>r.fulfill({json:{providers:[{id:'shared'}]}}));
+await page.route('**/api/nyx-ai/models',r=>r.fulfill({json:{models:[{id:'gemini',label:'Gemini'},{id:'luna',label:'Luna'}]}}));
+await page.route('**/api/nyx-ai',r=>{request=r.request().postDataJSON();return r.fulfill({status:failure?503:200,json:failure?{error:'Temporarily unavailable'}:{text:JSON.stringify({supported:true,code:'print("hello")'})}})});
+await page.goto((process.env.NYX_TEST_BASE_URL||'http://localhost:8080')+'/apps/code-studio/');
+await page.getByRole('combobox',{name:'AI model'}).selectOption('luna');
+await page.locator('[data-language]').selectOption('python');
+await page.waitForFunction(()=>document.querySelector('[data-code-input]').value==='print("hello")');
+assert.equal(request.model,'luna');
+const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('nyx.codeStudio.v1')));
+assert.equal(saved.codes.javascript,'console.log("hello")');assert(saved.versions.some(v=>v.code==='print("older version")'));
+await page.getByRole('button',{name:'Versions',exact:true}).click();await page.getByRole('combobox',{name:'Saved version'}).selectOption('1');
+await page.getByRole('button',{name:'Restore version',exact:true}).click();assert.equal(await page.locator('[data-code-input]').inputValue(),'print("older version")');
+failure=true;await page.locator('[data-language]').selectOption('java');await page.getByText('Temporarily unavailable',{exact:true}).waitFor();assert.equal(await page.locator('[data-language]').inputValue(),'python');assert.equal(await page.locator('[data-code-input]').inputValue(),'print("older version")');
+assert.notEqual(await page.locator('body').evaluate(el=>getComputedStyle(el).getPropertyValue('--studio-accent').trim()),'#ff0000');
+await page.screenshot({path:'.codex-artifacts/code-translation-desktop.png'});
+await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+console.log('PASS model choice, language translation, source/target backups, version restore, failed conversion preservation and mobile bounds');
+}finally{await browser.close()}

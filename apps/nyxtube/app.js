@@ -1,0 +1,1172 @@
+(() => {
+  "use strict";
+
+  const dropTube = document.body.classList.contains('drop-tube');
+  const allowedVideo = video => !dropTube || (!video?.isShort && !/\/shorts\//i.test(video?.sourceUrl || ''));
+  const filterVideos = videos => (Array.isArray(videos) ? videos : []).filter(allowedVideo);
+  const $ = selector => document.querySelector(selector);
+  const $$ = selector => [...document.querySelectorAll(selector)];
+  const views = Object.fromEntries($$("[data-view]").map(view => [view.dataset.view, view]));
+  const state = {
+    nativeAvailable: false, invidiousEmbedOrigin: "", watchGeneration: 0, preferredPlayer: "native",
+    view: "home", videos: [], catalog: [], shorts: [], shortIndex: 0,
+    watchPlayer: null, shortPlayer: null, watchTimer: 0, shortTimer: 0,
+    watchVideo: null, watchCaptions: false, shortCaptions: false, shortMuted: true,
+    channel: null, watchTrail: [],
+    failedVideoIds: new Set(), failedShortIds: new Set(), watchRecoveryTimer: 0,
+    watchSpaceTimer: 0, watchSpacePressed: false, watchSpaceHeld: false,
+    watchSpaceWasPlaying: false, watchSpacePreviousRate: 1, watchSpaceRateChanged: false,
+    watchCommunityRequestId: 0,
+    profile: { uid: "", signedIn: false, displayName: "Profile", avatarUrl: "" }, profileRequestId: "", profileRetryTimer: 0, profileRetryCount: 0, profileResolved: false,
+  };
+  const refs = Object.fromEntries([
+    "notice", "search-form", "search-input", "feed-title", "result-count", "video-grid",
+    "watch-stage", "watch-player", "watch-loading", "watch-center-play", "watch-toggle", "watch-time",
+    "watch-mute", "watch-captions", "watch-caption-option", "watch-fullscreen", "watch-progress",
+    "watch-title", "watch-creator", "watch-video-meta", "watch-channel-mark", "watch-source", "watch-description", "watch-related", "short-stage", "short-player",
+    "short-loading", "short-center-play", "short-mute", "short-captions", "short-fullscreen",
+    "short-progress", "short-title", "short-creator", "profile-button", "profile-avatar",
+    "short-search-form", "short-search-input", "short-feed-label", "short-preferences-status", "short-hide-channel", "short-dislike", "short-reset", "short-heart", "short-menu", "short-empty", "short-empty-title", "short-retry",
+    "watch-quality", "watch-engine", "watch-settings", "watch-settings-menu", "watch-speed", "watch-volume", "watch-settings-captions",
+    "watch-rewind", "watch-forward", "watch-speed-indicator",
+    "watch-views", "watch-likes", "watch-comments-count", "watch-tab-comments-count",
+    "watch-comments-status", "watch-comments", "watch-transcript-status", "watch-transcript",
+    "channel-back", "channel-profile", "channel-avatar", "channel-title", "channel-handle", "channel-description", "channel-subscribers", "channel-videos", "channel-status",
+  ].map(name => [name.replace(/-([a-z])/g, (_match, letter) => letter.toUpperCase()), $(`[data-${name}]`)]));
+
+  refs.watchBackup = document.createElement('button');
+  refs.watchBackup.type = 'button'; refs.watchBackup.textContent = 'Invidious';
+  refs.watchBackup.dataset.watchBackup = ''; refs.watchBackup.hidden = true;
+  refs.watchBackup.title = 'Use the Invidious player';
+  refs.watchEngine.after(refs.watchBackup);
+
+  function applyTheme() {
+    if(document.documentElement.dataset.appShell==='tutsi')return;
+    if (dropTube) return;
+    const root = document.documentElement;
+    const themes = ['default','midnight','ruby','emerald','sakura','fresh','halloween','custom'];
+    try {
+      const value = localStorage.getItem('nyx.theme') || 'default';
+      const theme = themes.includes(value) ? value : 'default';
+      root.dataset.nyxTheme = theme;
+      root.dataset.nyxAppearance = localStorage.getItem('nyx.appearance') === 'light' ? 'light' : 'dark';
+      document.body.classList.remove(...themes.map(name => `theme-${name}`));
+      document.body.classList.add(`theme-${theme}`);
+      const custom = localStorage.getItem('nyx.customThemeColor');
+      if (theme === 'custom' && /^#[a-f0-9]{6}$/i.test(custom || '')) root.style.setProperty('--nyx-custom-base', custom);
+      else root.style.removeProperty('--nyx-custom-base');
+    } catch { /* The parent shell can still apply the palette when storage is blocked. */ }
+  }
+  addEventListener('storage', event => {
+    if (['nyx.theme','nyx.appearance','nyx.customThemeColor'].includes(event.key)) applyTheme();
+  });
+  addEventListener('message', event => {
+    if (event.source === parent && event.origin === location.origin && event.data?.type === 'nyx:theme-sync') applyTheme();
+  });
+  const icon = id => `<svg aria-hidden="true"><use href="#${id}"></use></svg>`;
+  function notice(message = "") { refs.notice.textContent = dropTube ? String(message).replace(/NyxTube/g, 'DropTube') : message; refs.notice.hidden = !message; }
+  async function json(url, signal) {
+    const response = await fetch(url, { credentials: "same-origin", headers: { Accept: "application/json" }, signal });
+    let payload = null;
+    try { payload = await response.json(); } catch {                      }
+    if (!response.ok) throw Object.assign(new Error(payload?.error || `Request failed (${response.status})`), {status:response.status});
+    return payload;
+  }
+  function duration(seconds) {
+    const total = Math.max(0, Math.floor(Number(seconds) || 0));
+    const hours = Math.floor(total / 3600), minutes = Math.floor(total % 3600 / 60), secs = total % 60;
+    return hours ? `${hours}:${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}` : `${minutes}:${String(secs).padStart(2, "0")}`;
+  }
+  function viewsLabel(value) {
+    const count = Number(value) || 0;
+    if (count >= 1e9) return `${(count / 1e9).toFixed(count >= 1e10 ? 0 : 1)}B views`;
+    if (count >= 1e6) return `${(count / 1e6).toFixed(count >= 1e7 ? 0 : 1)}M views`;
+    if (count >= 1e3) return `${(count / 1e3).toFixed(count >= 1e4 ? 0 : 1)}K views`;
+    return count ? `${count.toLocaleString()} views` : "YouTube";
+  }
+  function dateLabel(value) {
+    const date = new Date(value || "");
+    return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  }
+  const exactCount = value => value == null ? "Unavailable" : Math.max(0, Number(value) || 0).toLocaleString();
+  function renderProfile(profile = {}) {
+    clearTimeout(state.profileRetryTimer); state.profileRetryTimer = 0;
+    state.profileResolved = true;
+    const displayName = String(profile.displayName || "Profile").trim() || "Profile";
+    state.profile = { uid: String(profile.uid || ""), signedIn: Boolean(profile.signedIn), displayName, avatarUrl: String(profile.avatarUrl || "") };
+    refs.profileButton.title = state.profile.signedIn ? `Open ${displayName}'s profile` : "Sign in or create a profile";
+    refs.profileButton.setAttribute("aria-label", refs.profileButton.title);
+    const fallback = () => {
+      refs.profileAvatar.replaceChildren();
+      if (state.profile.signedIn) {
+        const initial = document.createElement("span"); initial.textContent = displayName.slice(0, 1).toUpperCase() || "N"; refs.profileAvatar.append(initial);
+      } else refs.profileAvatar.innerHTML = icon("icon-user");
+    };
+    if (!state.profile.avatarUrl) { fallback(); return; }
+    const image = document.createElement("img"); image.alt = ""; image.loading = "eager"; image.src = state.profile.avatarUrl;
+    image.addEventListener("error", fallback, { once: true }); refs.profileAvatar.replaceChildren(image);
+  }
+  function requestProfile() {
+    clearTimeout(state.profileRetryTimer);
+    state.profileResolved = false;
+    state.profileRequestId = `nyxtube-profile-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    parent.postMessage({ type: "nyx:nyxtube-profile-request", requestId: state.profileRequestId }, location.origin);
+    // The player can load before its parent shell has attached its message
+    // listener. Retry once so the profile control cannot be left permanently
+    // in its generic state after a fast tab switch.
+    state.profileRetryTimer = setTimeout(() => {
+      if (!state.profileResolved && state.profileRetryCount++ === 0) requestProfile();
+    }, 700);
+  }
+  function skeletons() {
+    refs.videoGrid.replaceChildren(...Array.from({ length: 8 }, () => {
+      const card = document.createElement("article");
+      card.className = "video-card skeleton";
+      card.innerHTML = '<div class="video-cover"></div><b></b><i></i>';
+      return card;
+    }));
+  }
+  function renderVideos(videos) {
+    state.videos = filterVideos(videos);
+    const catalog = new Map(state.catalog.map(video => [video.id, video]));
+    state.videos.forEach(video => { if (video?.id) catalog.set(video.id, video); });
+    state.catalog = [...catalog.values()].slice(-60);
+    refs.resultCount.textContent = `${state.videos.length} video${state.videos.length === 1 ? "" : "s"}`;
+    if (!state.videos.length) {
+      const empty = document.createElement("p");
+      empty.className = "empty-grid";
+      empty.textContent = "No playable videos were found.";
+      refs.videoGrid.replaceChildren(empty);
+      return;
+    }
+    refs.videoGrid.replaceChildren(...state.videos.map(video => {
+      const card = document.createElement("article"); card.className = "video-card";
+      const cover = document.createElement("button"); cover.className = "video-cover"; cover.type = "button";
+      cover.setAttribute("aria-label", `Play ${video.title || "video"}`);
+      const image = document.createElement("img"); image.alt = ""; image.loading = "lazy"; image.referrerPolicy = "no-referrer"; image.src = video.thumbnail || "";
+      image.addEventListener("error", () => image.remove());
+      const fallback = document.createElement("span"); fallback.className = "fallback"; fallback.innerHTML = icon("icon-play");
+      const stamp = document.createElement("span"); stamp.className = "duration"; stamp.textContent = duration(video.durationSeconds);
+      cover.append(image, fallback, stamp); cover.addEventListener("click", () => openWatch(video));
+      const copy = document.createElement("div"); copy.className = "card-copy";
+      const title = document.createElement("strong"); title.textContent = video.title || "Untitled video";
+      const meta = document.createElement("span"); meta.textContent = `${video.creator || "YouTube"} · ${viewsLabel(video.viewCount)}`;
+      copy.append(title, meta); card.append(cover, copy); return card;
+    }));
+  }
+  let feedRequestId = 0;
+  let feedRequestController = null;
+  async function loadFeed(query = "") {
+    const requestId = ++feedRequestId;
+    feedRequestController?.abort();
+    feedRequestController = new AbortController();
+    const { signal } = feedRequestController;
+    notice(); skeletons(); refs.resultCount.textContent = "Loading...";
+    refs.feedTitle.textContent = query ? `Results for “${query}”` : "Discover videos";
+    refs.videoGrid.setAttribute("aria-busy", "true");
+    try {
+      const endpoint = query ? `/api/nyxtube/search?q=${encodeURIComponent(query)}&limit=20` : "/api/nyxtube/feed?limit=20";
+      const payload = await json(endpoint, signal);
+      if (requestId === feedRequestId) renderVideos(payload?.videos);
+    } catch (error) {
+      if (signal.aborted || requestId !== feedRequestId) return;
+      renderVideos([]); notice(error.message || "Videos could not be loaded.");
+    } finally {
+      if (requestId === feedRequestId) refs.videoGrid.setAttribute("aria-busy", "false");
+    }
+  }
+
+  async function loadInitialView() {
+    const videoId = String(new URLSearchParams(location.search).get("video") || "").trim();
+    if (!/^[A-Za-z0-9_-]{11}$/.test(videoId)) return loadFeed();
+    const payload = await json(`/api/nyxtube/video?id=${encodeURIComponent(videoId)}`);
+    const video = Array.isArray(payload?.videos) ? payload.videos[0] : null;
+    if (!video?.id) throw new Error("That video could not be loaded in NyxTube.");
+    if (!allowedVideo(video)) { await loadFeed(); notice("This video is not available in DropTube."); return; }
+    state.catalog = [video];
+    openWatch(video);
+  }
+  function showView(name) {
+    if (dropTube && name === 'shorts') name = 'home';
+    state.view = name;
+    document.body.dataset.tubeView = name;
+    if(refs.shortMenu)refs.shortMenu.open=false;
+    Object.entries(views).forEach(([key, view]) => { view.hidden = key !== name; });
+    $$("[data-view-button]").forEach(button => button.classList.toggle("active", button.dataset.viewButton === (name === "watch" ? "home" : name)));
+    if (name !== "watch") stopWatch();
+    if (name !== "shorts") stopShorts();
+    scrollTo({ top: 0, behavior: name==='shorts' ? 'instant' : 'smooth' });
+  }
+
+  const directYoutubeApi = window.NyxTubePlayerCore.createDirectYoutubeApi({ optimisticState: true });
+
+  let iframeApi;
+  function youtubeApi() {
+    if (window.YT?.Player) return Promise.resolve(window.YT);
+    if (iframeApi) return iframeApi;
+    iframeApi = new Promise(resolve => {
+      const previous = window.onYouTubeIframeAPIReady;
+      let settled = false;
+      let script;
+      const finish = api => { if (settled) return; settled = true; clearTimeout(timer); resolve(api); };
+      const useDirectPlayer = () => { script?.remove(); finish(directYoutubeApi); };
+      const timer = setTimeout(useDirectPlayer, 5000);
+      window.onYouTubeIframeAPIReady = () => { previous?.(); finish(window.YT?.Player ? window.YT : directYoutubeApi); };
+      script = document.createElement("script"); script.src = "https://www.youtube.com/iframe_api"; script.async = true;
+      script.addEventListener("error", useDirectPlayer, { once: true });
+      document.head.append(script);
+    });
+    return iframeApi;
+  }
+  function mount(container, name) {
+    container.replaceChildren();
+    const element = document.createElement("div"); element.id = `${name}-${Date.now()}`; container.append(element); return element.id;
+  }
+  function options(videoId, short = false) {
+    return { width: "100%", height: "100%", videoId, host: "https://www.youtube-nocookie.com", playerVars: {
+      autoplay: 1, controls: 0, disablekb: 1, enablejsapi: 1, fs: 0, modestbranding: 1, playsinline: 1, rel: 0,
+      origin: location.origin, ...(short ? { mute: 1 } : {}),
+    } };
+  }
+  const ready = player => player && typeof player.getPlayerState === "function";
+  function updateToggle(button, playing) {
+    button.innerHTML = icon(playing ? "icon-pause" : "icon-play");
+    button.setAttribute("aria-label", playing ? "Pause" : "Play");
+  }
+  function closeWatchSettings() {
+    refs.watchSettingsMenu.hidden = true;
+    refs.watchSettings.setAttribute("aria-expanded", "false");
+  }
+  function configureWatchSettings(player, video) {
+    let rates = [];
+    try { rates = player.getAvailablePlaybackRates?.() || []; } catch { rates = []; }
+    rates = [...new Set(rates.map(Number).filter(rate => Number.isFinite(rate) && rate > 0))].sort((left, right) => left - right);
+    if (!rates.length) rates = [1];
+    refs.watchSpeed.replaceChildren(...rates.map(rate => {
+      const option = document.createElement("option"); option.value = String(rate); option.textContent = rate === 1 ? "Normal" : `${rate}x`; return option;
+    }));
+    let currentRate = 1;
+    try { currentRate = Number(player.getPlaybackRate?.()) || 1; } catch { currentRate = 1; }
+    refs.watchSpeed.value = rates.includes(currentRate) ? String(currentRate) : String(rates.includes(1) ? 1 : rates[0]);
+    try { refs.watchVolume.value = String(Math.max(0, Math.min(100, Number(player.getVolume?.() ?? 100)))); } catch { refs.watchVolume.value = "100"; }
+    refs.watchSettingsCaptions.disabled = !video?.captions;
+    refs.watchCaptions.disabled = !video?.captions; refs.watchCaptionOption.disabled = !video?.captions;
+    refs.watchQuality.replaceChildren(...(player.isNative ? player.qualities : ["auto"]).map(height => { const item=document.createElement("option"); item.value=height; item.textContent=height === "auto" ? "Auto" : `${height}p`; return item; }));
+    refs.watchQuality.disabled = !player.isNative; refs.watchQuality.value = player.isNative ? String(player.quality) : "auto";
+    refs.watchQuality.title = player.isNative ? "Playback quality" : "YouTube selects playback quality automatically";
+    updatePlayerSwitch(player.isNative);
+    $("[data-watch-settings-quality]").textContent = player.isNative ? `${player.quality}p` : "Auto";
+    refs.watchSettingsCaptions.title = video?.captions ? "" : "Captions are not available for this video";
+    refs.watchSettingsCaptions.value = state.watchCaptions && video?.captions ? "on" : "off";
+  }
+  function watchChannelUrl(video = state.watchVideo) {
+    const channelId = String(video?.channelId || "").trim();
+    return /^UC[A-Za-z0-9_-]{22}$/.test(channelId) ? `https://www.youtube.com/channel/${channelId}` : "";
+  }
+  function renderChannelVideoCards(videos) {
+    videos = filterVideos(videos);
+    refs.channelVideos.replaceChildren(...videos.map(video => {
+      const card = document.createElement("article"); card.className = "video-card";
+      const cover = document.createElement("button"); cover.className = "video-cover"; cover.type = "button";
+      cover.setAttribute("aria-label", `Play ${video.title || "video"}`);
+      const image = document.createElement("img"); image.alt = ""; image.loading = "lazy"; image.referrerPolicy = "no-referrer"; image.src = video.thumbnail || "";
+      image.addEventListener("error", () => image.remove());
+      const fallback = document.createElement("span"); fallback.className = "fallback"; fallback.innerHTML = icon("icon-play");
+      const stamp = document.createElement("span"); stamp.className = "duration"; stamp.textContent = duration(video.durationSeconds);
+      cover.append(image, fallback, stamp); cover.addEventListener("click", () => openWatch(video));
+      const copy = document.createElement("div"); copy.className = "card-copy";
+      const title = document.createElement("strong"); title.textContent = video.title || "Untitled video";
+      const meta = document.createElement("span"); meta.textContent = `${video.creator || "YouTube"} · ${viewsLabel(video.viewCount)}`;
+      copy.append(title, meta); card.append(cover, copy); return card;
+    }));
+  }
+  async function openWatchChannel() {
+    const channelId = String(state.watchVideo?.channelId || "").trim();
+    if (!/^UC[A-Za-z0-9_-]{22}$/.test(channelId)) return;
+    showView("channel");
+    refs.channelStatus.textContent = "Loading profile..."; refs.channelVideos.replaceChildren();
+    try {
+      const payload = await json(`/api/nyxtube/channel?id=${encodeURIComponent(channelId)}`);
+      if (state.view !== "channel" || String(state.watchVideo?.channelId || "") !== channelId) return;
+      const channel = payload?.channel || {};
+      refs.channelTitle.textContent = channel.title || state.watchVideo?.creator || "YouTube channel";
+      refs.channelHandle.textContent = channel.handle || "YouTube";
+      refs.channelDescription.textContent = channel.description || "This creator has not shared a channel description.";
+      refs.channelSubscribers.textContent = exactCount(channel.subscriberCount);
+      refs.channelVideos.textContent = exactCount(channel.videoCount);
+      const avatar = String(channel.avatarUrl || state.watchVideo?.channelAvatar || "").trim();
+      refs.channelAvatar.replaceChildren();
+      if (avatar) { const image = document.createElement("img"); image.alt = ""; image.src = avatar; image.referrerPolicy = "no-referrer"; image.addEventListener("error", () => { refs.channelAvatar.textContent = refs.channelTitle.textContent.slice(0, 1).toUpperCase(); }, { once: true }); refs.channelAvatar.append(image); }
+      else refs.channelAvatar.textContent = refs.channelTitle.textContent.slice(0, 1).toUpperCase();
+      const videos = filterVideos(payload?.videos);
+      refs.channelStatus.textContent = videos.length ? `${videos.length} recent videos` : "No public videos available";
+      renderChannelVideoCards(videos);
+    } catch (error) {
+      refs.channelStatus.textContent = error.message || "This channel could not be loaded right now.";
+    }
+  }
+  function renderWatchChannel(video) {
+    const creator = String(video?.creator || "YouTube").trim() || "YouTube";
+    const channelUrl = watchChannelUrl(video);
+    refs.watchCreator.textContent = creator;
+    refs.watchVideoMeta.textContent = [viewsLabel(video?.viewCount), dateLabel(video?.publishedAt)].filter(Boolean).join(" · ");
+    refs.watchCreator.disabled = !channelUrl;
+    refs.watchChannelMark.disabled = !channelUrl;
+    refs.watchCreator.title = channelUrl ? `Open ${creator}'s channel` : "Channel page unavailable";
+    refs.watchChannelMark.title = refs.watchCreator.title;
+    refs.watchCreator.setAttribute("aria-label", refs.watchCreator.title);
+    refs.watchChannelMark.setAttribute("aria-label", refs.watchCreator.title);
+    const fallback = () => {
+      refs.watchChannelMark.replaceChildren();
+      refs.watchChannelMark.textContent = creator.slice(0, 1).toUpperCase() || "Y";
+    };
+    const avatarUrl = String(video?.channelAvatar || "").trim();
+    if (!avatarUrl) { fallback(); return; }
+    const image = document.createElement("img");
+    image.alt = "";
+    image.loading = "eager";
+    image.referrerPolicy = "no-referrer";
+    image.src = avatarUrl;
+    image.addEventListener("error", fallback, { once: true });
+    refs.watchChannelMark.replaceChildren(image);
+  }
+  async function openWatch(video, { recoveryMessage = "" } = {}) {
+    if (!video?.id) return;
+    if (!allowedVideo(video)) { showView("home"); notice("This video is not available in DropTube."); return; }
+    if(state.watchVideo && state.watchVideo.id!==video.id)state.watchTrail.push(state.watchVideo);
+    if(state.watchTrail.length>50)state.watchTrail.shift();
+    stopWatch();
+    const requestGeneration = state.watchGeneration;
+    let metadataUnavailable = false;
+    state.watchVideo = video; showView("watch"); notice(recoveryMessage);
+    if (video.detailsPending) {
+      refs.watchTitle.textContent = video.title || "Loading video";
+      refs.watchDescription.textContent = "Loading video details...";
+      refs.watchLoading.hidden = false;
+      refs.watchLoading.querySelector("strong").textContent = "Loading video details...";
+      refs.watchViews.textContent = refs.watchLikes.textContent = refs.watchCommentsCount.textContent = "Loading...";
+      refs.watchComments.replaceChildren(); refs.watchTranscript.replaceChildren(); refs.watchRelated.replaceChildren();
+      try {
+        const payload = await json(`/api/nyxtube/video?id=${encodeURIComponent(video.id)}`);
+        if (state.view !== "watch" || state.watchGeneration !== requestGeneration) return;
+        const detail = payload?.videos?.[0];
+        if (!detail || detail.id !== video.id) throw new Error("That video is unavailable or restricted.");
+        if (!allowedVideo(detail)) { showView("home"); notice("This video is not available in DropTube."); return; }
+        video = detail;
+        state.catalog = state.catalog.map(item => item.id === detail.id ? detail : item);
+      } catch (error) {
+        if (state.view !== "watch" || state.watchGeneration !== requestGeneration) return;
+        if (state.invidiousEmbedOrigin && (error.status >= 500 || error instanceof TypeError)) {
+          metadataUnavailable = true; recoveryMessage = 'Video details could not load. Opening the Invidious player.';
+        } else {
+          refs.watchLoading.hidden = true; notice(error.message || "Video details could not be loaded.");
+          return;
+        }
+      }
+    }
+    finishWatchSpace({ cancel: true });
+    clearTimeout(state.watchRecoveryTimer); state.watchRecoveryTimer = 0;
+    state.watchVideo = video; showView("watch"); notice(recoveryMessage); closeWatchSettings();
+    refs.watchTitle.textContent = video.title || "Untitled video";
+    renderWatchChannel(video);
+    refs.watchDescription.textContent = String(video.description || "No description was provided for this video.");
+    refs.watchViews.textContent = exactCount(video.viewCount);
+    refs.watchLikes.textContent = exactCount(video.likeCount);
+    refs.watchCommentsCount.textContent = exactCount(video.commentCount);
+    refs.watchTabCommentsCount.textContent = video.commentCount ? `(${exactCount(video.commentCount)})` : "";
+    showWatchInfo("description");
+    refs.watchComments.replaceChildren(); refs.watchCommentsStatus.hidden = false; refs.watchCommentsStatus.textContent = "Loading comments...";
+    refs.watchTranscript.replaceChildren(); refs.watchTranscriptStatus.hidden = false; refs.watchTranscriptStatus.textContent = "Loading transcript...";
+    loadWatchCommunity(video);
+    renderRelated(video);
+    refs.watchSource.href = video.sourceUrl || `https://www.youtube.com/watch?v=${encodeURIComponent(video.id)}`;
+    state.watchCaptions = false; refs.watchCaptions.setAttribute("aria-pressed", "false"); refs.watchCaptionOption.querySelector("span").textContent = "Off";
+    refs.watchLoading.hidden = false; refs.watchCenterPlay.hidden = true; refs.watchProgress.value = "0";
+    refs.watchTime.textContent = `0:00 / ${duration(video.durationSeconds)}`;
+    createWatch(video,false,false,null,metadataUnavailable?"invidious":"").catch(error => { refs.watchLoading.hidden = true; notice(error.message || "The video player could not be started."); });
+  }
+  function updatePlayerSwitch(native, backup = false) {
+    refs.watchEngine.value = backup ? "invidious" : native ? "native" : "youtube";
+    refs.watchEngine.hidden = !state.nativeAvailable && !backup;
+    refs.watchBackup.setAttribute("aria-pressed", String(backup));
+    refs.watchEngine.textContent = native ? "Switch to embedded" : !state.nativeAvailable ? "Switch to YouTube" : (dropTube ? "Switch to DropTube" : "Switch to NyxTube");
+  }
+  async function createWatch(video, forceDirect = false, fallback = false, restore = null, playerOverride = "", embedOnly = false) {
+    finishWatchSpace({ cancel: true });
+    const generation = ++state.watchGeneration;
+    const backup = Boolean(state.invidiousEmbedOrigin && !forceDirect && (playerOverride === "invidious" || (!fallback && state.preferredPlayer === "invidious")));
+    const native = !backup && state.nativeAvailable && state.preferredPlayer === "native" && !forceDirect && !fallback;
+    updatePlayerSwitch(native, backup);
+    clearInterval(state.watchTimer); state.watchTimer = 0;
+    refs.watchStage.classList.toggle('invidious-player', backup);
+    refs.watchQuality.closest('label').hidden = backup;
+    refs.watchCaptionOption.hidden = backup;
+    $('[data-shortcut-help-open]').hidden = backup;
+    state.watchPlayer?.destroy?.(); state.watchPlayer = null;
+    refs.watchLoading.hidden = false; refs.watchLoading.querySelector("strong").textContent = native ? "Preparing video..." : "Loading video";
+    refs.watchQuality.disabled = true;
+    if (backup) {
+      if (!/^[A-Za-z0-9_-]{11}$/.test(video.id)) throw new Error('Choose a valid video.');
+      if(window.NyxInvidiousPlayer&&!embedOnly){
+        state.watchPlayer=window.NyxInvidiousPlayer(refs.watchPlayer,{id:video.id,restore:restore||{},
+          onLoading:loading=>{if(generation===state.watchGeneration)refs.watchLoading.hidden=!loading;},
+          onFailure:position=>{if(generation===state.watchGeneration&&state.view==='watch')void createWatch(video,false,true,position,'invidious',true);}
+        });
+        refs.watchCenterPlay.hidden=true;return;
+      }
+      const url = new URL('/embed/' + video.id, state.invidiousEmbedOrigin);
+      const params = {local:'true', autoplay:restore?.paused?'0':'1', quality:'dash', controls:'1',
+        continue:'0', hl:'en-US', start:String(Math.max(0, Number(restore?.time)||0)),
+        volume:String(restore?.muted?0:Math.max(0,Math.min(100,Number(restore?.volume??100)))),
+        speed:String(Math.max(0.25,Math.min(2,Number(restore?.rate)||1)))};
+      for (const [key,value] of Object.entries(params)) url.searchParams.set(key,value);
+      const frame = document.createElement('iframe'); frame.title = 'Invidious video player';
+      frame.src = url.href; frame.allow = 'autoplay; fullscreen; picture-in-picture'; frame.allowFullscreen = true;
+      frame.referrerPolicy = 'strict-origin-when-cross-origin';
+      frame.addEventListener('load', () => { if(generation===state.watchGeneration)refs.watchLoading.hidden=true; }, {once:true});
+      state.watchPlayer = {isInvidious:true, destroy:()=>frame.remove()};
+      refs.watchPlayer.replaceChildren(frame); refs.watchCenterPlay.hidden = true;
+      // Invidious has no public cross-origin control API. Keep its real controls
+      // reachable; do not simulate time, mute, pause or successful playback.
+      return;
+    }
+    const YT = native ? window.NyxNativePlayer : forceDirect ? directYoutubeApi : await youtubeApi();
+    if (generation !== state.watchGeneration) return;
+    if (state.view !== "watch" || state.watchVideo?.id !== video.id) return;
+    state.watchPlayer?.destroy?.();
+    const config = options(video.id); config.expectedDuration = video.durationSeconds; config.quality = restore?.quality; config.startTime = restore?.time;
+    config.events = {
+      onCaptionError: event => {if(generation!==state.watchGeneration)return;state.watchCaptions=false;setCaptions(event.target,false,refs.watchCaptions,refs.watchCaptionOption);refs.watchSettingsCaptions.value="off";notice(event.message);},
+      onBuffering: event => { if (generation !== state.watchGeneration) return; refs.watchLoading.hidden = !event.data; if(event.data){refs.watchLoading.querySelector("strong").textContent = "Loading video chunks...";refs.watchCenterPlay.hidden=true;}else refs.watchCenterPlay.hidden=event.target.getPlayerState()!==2; },
+      onReady: event => { if (generation !== state.watchGeneration) return; refs.watchLoading.hidden = event.target.isNative?event.target.video.readyState>=3:true; if (restore) { event.target.seekTo(restore.time); event.target.setVolume?.(restore.volume); event.target.setPlaybackRate?.(restore.rate); if(restore.muted)event.target.mute(); } configureWatchSettings(event.target, video); if(state.watchCaptions&&video.captions)setCaptions(event.target,true,refs.watchCaptions,refs.watchCaptionOption); if (!restore?.paused) event.target.playVideo(); else { event.target.pauseVideo(); refs.watchCenterPlay.hidden=false; } startWatchTimer(); },
+      onStateChange: event => {
+        if (generation !== state.watchGeneration) return;
+        const playing = event.data === YT.PlayerState.PLAYING, paused = event.data === YT.PlayerState.PAUSED;
+        if (playing) refs.watchLoading.hidden = true;
+        updateToggle(refs.watchToggle, playing); refs.watchCenterPlay.hidden = !paused || Boolean(event.target.buffering);
+      },
+      onError: event => {
+        if(generation !== state.watchGeneration || state.view !== "watch") return;
+        if(native) { notice(state.invidiousEmbedOrigin ? "Opening the Invidious player. Use the controls inside the video." : "Native playback is unavailable. Opening the YouTube player."); createWatch(video, false, true, {time:event.target.getCurrentTime()||restore?.time||0,volume:event.target.getVolume(),rate:event.target.getPlaybackRate(),muted:event.target.isMuted(),paused:event.target.getCurrentTime()>0?event.target.video.paused:(restore?.paused??false)}, state.invidiousEmbedOrigin ? "invidious" : "").catch(()=>notice("The video player could not start.")); }
+        else recoverWatch(video, Number(event?.data), YT === directYoutubeApi);
+      },
+    };
+    state.watchPlayer = new YT.Player(mount(refs.watchPlayer, "nyxtube-watch"), config);
+  }
+  function relatedVideos(selected, limit = 10) {
+    const seen = new Set();
+    return [...state.catalog, ...state.shorts]
+      .filter(video => allowedVideo(video) && video?.id && video.id !== selected.id && !state.failedVideoIds.has(video.id) && !seen.has(video.id) && seen.add(video.id))
+      .sort((left, right) => relatedScore(right, selected) - relatedScore(left, selected))
+      .slice(0, limit);
+  }
+  function showWatchInfo(name) {
+    $$('[data-watch-info-tab]').forEach(button => {
+      const active = button.dataset.watchInfoTab === name;
+      button.classList.toggle("active", active);
+      button.setAttribute("aria-selected", String(active));
+    });
+    $$('[data-watch-info-panel]').forEach(panel => { panel.hidden = panel.dataset.watchInfoPanel !== name; });
+  }
+  function renderWatchComments(payload = {}) {
+    const comments = Array.isArray(payload.comments) ? payload.comments : [];
+    refs.watchComments.replaceChildren(...comments.map(comment => {
+      const article = document.createElement("article"); article.className = "watch-comment";
+      const avatar = document.createElement("span"); avatar.className = "comment-avatar";
+      const fallback = () => { avatar.replaceChildren(); avatar.textContent = String(comment.author || "Y").trim().slice(0, 1).toUpperCase() || "Y"; };
+      if (comment.avatarUrl) {
+        const image = document.createElement("img"); image.alt = ""; image.loading = "lazy"; image.referrerPolicy = "no-referrer"; image.src = comment.avatarUrl;
+        image.addEventListener("error", fallback, { once: true }); avatar.append(image);
+      } else fallback();
+      const content = document.createElement("div"); content.className = "comment-content";
+      const header = document.createElement("div"); header.className = "comment-header";
+      const author = document.createElement("strong"); author.textContent = comment.author || "YouTube viewer";
+      const published = document.createElement("time"); published.textContent = dateLabel(comment.publishedAt); header.append(author, published);
+      const text = document.createElement("p"); text.textContent = String(comment.text || "");
+      const footer = document.createElement("small");
+      const details = [];
+      if (Number(comment.likeCount) > 0) details.push(`${exactCount(comment.likeCount)} like${Number(comment.likeCount) === 1 ? "" : "s"}`);
+      if (Number(comment.replyCount) > 0) details.push(`${exactCount(comment.replyCount)} repl${Number(comment.replyCount) === 1 ? "y" : "ies"}`);
+      footer.textContent = details.join(" \u00b7 "); footer.hidden = !details.length;
+      content.append(header, text, footer); article.append(avatar, content); return article;
+    }));
+    refs.watchCommentsStatus.hidden = Boolean(payload.available && comments.length);
+    refs.watchCommentsStatus.textContent = payload.available ? "No comments yet." : String(payload.message || "Comments are unavailable for this video.");
+  }
+  function renderWatchTranscript(payload = {}) {
+    const segments = Array.isArray(payload.segments) ? payload.segments : [];
+    refs.watchTranscript.replaceChildren(...segments.map(segment => {
+      const button = document.createElement("button"); button.type = "button"; button.className = "transcript-line";
+      const time = document.createElement("time"); time.textContent = duration(segment.startSeconds);
+      const text = document.createElement("span"); text.textContent = String(segment.text || ""); button.append(time, text);
+      button.addEventListener("click", () => { if (ready(state.watchPlayer)) state.watchPlayer.seekTo(Math.max(0, Number(segment.startSeconds) || 0), true); });
+      return button;
+    }));
+    refs.watchTranscriptStatus.hidden = false;
+    refs.watchTranscriptStatus.textContent = payload.available
+      ? `${String(payload.language || "Transcript")} \u00b7 ${exactCount(segments.length)} lines`
+      : String(payload.message || "A public transcript is unavailable for this video.");
+  }
+  async function loadWatchCommunity(video) {
+    const requestId = ++state.watchCommunityRequestId;
+    try {
+      const payload = await json(`/api/nyxtube/community?id=${encodeURIComponent(video.id)}`);
+      if (requestId !== state.watchCommunityRequestId || state.view !== "watch" || state.watchVideo?.id !== video.id) return;
+      renderWatchComments(payload.comments);
+      renderWatchTranscript(payload.transcript);
+    } catch (error) {
+      if (requestId !== state.watchCommunityRequestId || state.view !== "watch" || state.watchVideo?.id !== video.id) return;
+      renderWatchComments({ available: false, message: error.message || "Comments could not be loaded right now." });
+      renderWatchTranscript({ available: false, message: "The public transcript could not be loaded right now." });
+    }
+  }
+  function recoverWatch(video, code, directPlayer) {
+    if (state.view !== "watch" || state.watchVideo?.id !== video.id) return;
+    finishWatchSpace({ cancel: true });
+    refs.watchLoading.hidden = true;
+    if (state.invidiousEmbedOrigin && (code === 5 || code === 153)) {
+      notice('Opening the Invidious player. Use the controls inside the video.');
+      createWatch(video, false, true, null, 'invidious').catch(error => notice(error.message));
+      return;
+    }
+    if (!directPlayer && (code === 5 || code === 153)) {
+      notice("Retrying this video with the Chromebook-compatible player...");
+      createWatch(video, true).catch(error => notice(error.message || "The video player could not be restarted."));
+      return;
+    }
+    state.failedVideoIds.add(video.id);
+    const next = relatedVideos(video, 1)[0];
+    if (!next) {
+      notice("YouTube says this video is unavailable or restricted on this Chromebook. Choose another video.");
+      return;
+    }
+    const message = "That video is unavailable or restricted on this Chromebook. Loading another playable video...";
+    notice(message);
+    state.watchPlayer?.destroy?.(); state.watchPlayer = null; refs.watchPlayer.replaceChildren();
+    state.watchRecoveryTimer = setTimeout(() => openWatch(next, { recoveryMessage: message }), 500);
+  }
+  function relatedScore(candidate, selected) {
+    const sameCreator = String(candidate.creator || "").toLowerCase() === String(selected.creator || "").toLowerCase() ? 20 : 0;
+    const words = new Set(String(selected.title || "").toLowerCase().match(/[a-z0-9]{4,}/g) || []);
+    const overlap = (String(candidate.title || "").toLowerCase().match(/[a-z0-9]{4,}/g) || []).filter(word => words.has(word)).length;
+    return sameCreator + overlap;
+  }
+  function renderRelated(selected) {
+    const videos = relatedVideos(selected);
+    if (!videos.length) {
+      const empty = document.createElement("p"); empty.className = "related-empty"; empty.textContent = "More videos will appear here as you browse.";
+      refs.watchRelated.replaceChildren(empty); return;
+    }
+    refs.watchRelated.replaceChildren(...videos.map(video => {
+      const button = document.createElement("button"); button.type = "button"; button.className = "related-card";
+      const image = document.createElement("img"); image.alt = ""; image.loading = "lazy"; image.referrerPolicy = "no-referrer"; image.src = video.thumbnail || "";
+      image.addEventListener("error", () => image.remove());
+      const stamp = document.createElement("span"); stamp.className = "related-duration"; stamp.textContent = duration(video.durationSeconds);
+      const thumb = document.createElement("span"); thumb.className = "related-thumb"; thumb.append(image, stamp);
+      const copy = document.createElement("span"); copy.className = "related-copy";
+      const title = document.createElement("strong"); title.textContent = video.title || "Untitled video";
+      const meta = document.createElement("small"); meta.textContent = `${video.creator || "YouTube"} · ${viewsLabel(video.viewCount)}`;
+      copy.append(title, meta); button.append(thumb, copy); button.addEventListener("click", () => openWatch(video)); return button;
+    }));
+  }
+  let watchLastInteraction=Date.now();
+  function showWatchControls(){watchLastInteraction=Date.now();refs.watchStage.classList.remove('controls-idle');}
+  for(const event of ['pointermove','pointerdown','keydown','focusin'])refs.watchStage.addEventListener(event,showWatchControls);
+  function startWatchTimer() {
+    showWatchControls();
+    clearInterval(state.watchTimer);
+    state.watchTimer = setInterval(() => {
+      if (!ready(state.watchPlayer)) return;
+      const focused=refs.watchStage.contains(document.activeElement)&&document.activeElement!==refs.watchStage&&document.activeElement?.matches(':focus-visible');
+      const keep=state.watchPlayer.getPlayerState()!==1||state.watchPlayer.buffering||!refs.watchLoading.hidden||!refs.watchSettingsMenu.hidden||focused||refs.watchStage.querySelector('.watch-controls :active')||state.watchSpacePressed;
+      if(keep)showWatchControls();else refs.watchStage.classList.toggle('controls-idle',Date.now()-watchLastInteraction>=3000);
+      const current = Number(state.watchPlayer.getCurrentTime?.()) || 0;
+      const total = Number(state.watchPlayer.getDuration?.()) || Number(state.watchVideo?.durationSeconds) || 0;
+      refs.watchTime.textContent = `${duration(current)} / ${duration(total)}`;
+      refs.watchProgress.value = total ? String(Math.round(current / total * 1000)) : "0";
+    }, 250);
+  }
+  function stopWatch() {
+    refs.watchStage.classList.remove("mini-player", "invidious-player");
+    showWatchControls();
+    ++state.watchGeneration;
+    clearInterval(state.watchTimer); state.watchTimer = 0; clearTimeout(state.watchRecoveryTimer); state.watchRecoveryTimer = 0;
+    state.watchCommunityRequestId += 1;
+    finishWatchSpace({ cancel: true });
+    closeWatchSettings(); state.watchPlayer?.destroy?.(); state.watchPlayer = null; refs.watchPlayer.replaceChildren();
+  }
+  function toggleWatch() {
+    if (!ready(state.watchPlayer)) return;
+    state.watchPlayer.getPlayerState() === 1 ? state.watchPlayer.pauseVideo() : state.watchPlayer.playVideo();
+  }
+  function toggleWatchMute() {
+    if (!ready(state.watchPlayer)) return;
+    const muted = Boolean(state.watchPlayer.isMuted?.()); muted ? state.watchPlayer.unMute() : state.watchPlayer.mute();
+    refs.watchMute.innerHTML = icon(muted ? "icon-volume" : "icon-muted"); refs.watchMute.setAttribute("aria-label", muted ? "Mute" : "Unmute");
+  }
+  function seekWatchBy(seconds) {
+    if (!ready(state.watchPlayer)) return;
+    const current = Number(state.watchPlayer.getCurrentTime?.()) || 0;
+    const total = Number(state.watchPlayer.getDuration?.()) || Number(state.watchVideo?.durationSeconds) || 0;
+    state.watchPlayer.seekTo(Math.max(0, total ? Math.min(total, current + seconds) : current + seconds), true);
+  }
+  function beginWatchSpace(source = "keyboard") {
+    if (state.watchSpacePressed || !ready(state.watchPlayer)) return;
+    state.watchHoldSource = source;
+    state.watchSpacePressed = true;
+    state.watchSpaceHeld = false;
+    state.watchSpaceWasPlaying = state.watchPlayer.getPlayerState() === 1;
+    state.watchSpaceRateChanged = false;
+    state.watchSpaceTimer = setTimeout(() => {
+      state.watchSpaceTimer = 0;
+      if (!state.watchSpacePressed || state.view !== "watch" || !ready(state.watchPlayer)) return;
+      state.watchSpaceHeld = true;
+      try { state.watchSpacePreviousRate = Number(state.watchPlayer.getPlaybackRate?.()) || 1; } catch { state.watchSpacePreviousRate = 1; }
+      if (!state.watchSpaceWasPlaying) state.watchPlayer.playVideo();
+      try {
+        if (typeof state.watchPlayer.setPlaybackRate === "function") {
+          state.watchPlayer.setPlaybackRate(2);
+          state.watchSpaceRateChanged = true;
+          refs.watchSpeedIndicator.hidden = false;
+        }
+      } catch { state.watchSpaceRateChanged = false; }
+    }, 350);
+  }
+  function finishWatchSpace({ cancel = false } = {}) {
+    if (!state.watchSpacePressed && !state.watchSpaceTimer) return;
+    clearTimeout(state.watchSpaceTimer); state.watchSpaceTimer = 0;
+    const held = state.watchSpaceHeld;
+    state.watchSpacePressed = false;
+    state.watchSpaceHeld = false;
+    refs.watchSpeedIndicator.hidden = true;
+    if (held) {
+      if (state.watchSpaceRateChanged && ready(state.watchPlayer)) {
+        try { state.watchPlayer.setPlaybackRate?.(state.watchSpacePreviousRate); } catch {                                           }
+      }
+      if (!state.watchSpaceWasPlaying && ready(state.watchPlayer)) state.watchPlayer.pauseVideo();
+    } else if (!cancel && state.view === "watch") toggleWatch();
+    state.watchSpaceRateChanged = false;
+  }
+  function setCaptions(player, enabled, button, option) {
+    if (!ready(player)) return false;
+    if(player.isNative){void player.setCaptions(enabled);button.setAttribute("aria-pressed",String(enabled));if(option)option.querySelector("span").textContent=enabled?"On":"Off";return true;}
+    try { enabled ? player.loadModule?.("captions") : player.unloadModule?.("captions"); } catch { return false; }
+    button.setAttribute("aria-pressed", String(enabled));
+    if (option) option.querySelector("span").textContent = enabled ? "On" : "Off";
+    return true;
+  }
+  function changeWatchCaptions(enabled) {
+    const previous = state.watchCaptions;
+    state.watchCaptions = Boolean(enabled);
+    if (!setCaptions(state.watchPlayer, state.watchCaptions, refs.watchCaptions, refs.watchCaptionOption)) state.watchCaptions = previous;
+    refs.watchSettingsCaptions.value = state.watchCaptions ? "on" : "off";
+  }
+  function fullscreen(element) {
+    const request = element.requestFullscreen || element.webkitRequestFullscreen; if (request) request.call(element).catch?.(() => {});
+  }
+
+  let shortFeedPage=1, shortFeedHasMore=true, shortFeedPending=null, shortFeedRetryAt=0, shortFeedError='', shortNavigation=0;
+  let shortFeedCursor='', shortFeedQuery='', shortFeedTopic='discover', shortFeedGeneration=0, shortFeedController=null;
+  let shortFeedPrevious=null;
+  const shortPreferenceKey=`${document.documentElement.dataset.appShell === 'tutsi' ? 'tutsi' : 'nyx'}.shorts-preferences.v1`;
+  let hiddenShorts=new Set(), hiddenShortChannels=new Set(), likedShorts=new Map();
+  try {
+    const saved=JSON.parse(localStorage.getItem(shortPreferenceKey)||'{}');
+    hiddenShorts=new Set((Array.isArray(saved.videos)?saved.videos:[]).filter(id=>/^[A-Za-z0-9_-]{11}$/.test(id)).slice(-500));
+    hiddenShortChannels=new Set((Array.isArray(saved.channels)?saved.channels:[]).filter(id=>/^UC[A-Za-z0-9_-]{22}$/.test(id)).slice(-100));
+    likedShorts=new Map((Array.isArray(saved.likes)?saved.likes:[]).filter(item=>item&&/^[A-Za-z0-9_-]{11}$/.test(item.id)&&/^UC[A-Za-z0-9_-]{22}$/.test(item.channelId)).slice(-500).map(item=>[item.id,{id:item.id,channelId:item.channelId}]));
+  } catch { /* Preferences also work for this session when storage is unavailable. */ }
+  const wantedShort=video=>!hiddenShorts.has(video.id)&&!hiddenShortChannels.has(video.channelId);
+  function favoriteShortCreators() {
+    const scores=new Map();let order=0;
+    for(const video of likedShorts.values()){
+      if(!wantedShort(video))continue;
+      const value=scores.get(video.channelId)||{count:0,order:0};value.count++;value.order=++order;scores.set(video.channelId,value);
+    }
+    return [...scores].sort((a,b)=>b[1].count-a[1].count||b[1].order-a[1].order).slice(0,2).map(([id])=>id);
+  }
+  function renderShortHeart(video=state.shorts[state.shortIndex]) {
+    if(!refs.shortHeart)return;
+    const liked=Boolean(video&&likedShorts.has(video.id));
+    refs.shortHeart.disabled=!video?.channelId;
+    refs.shortHeart.setAttribute('aria-pressed',String(liked));refs.shortHeart.setAttribute('aria-label',liked?'Unlike this Short':'Like this Short');
+    refs.shortHeart.querySelector('span').textContent=liked?'Liked':'Like';
+  }
+  function refreshShortRecommendations() {
+    if(shortFeedQuery||shortFeedTopic!=='discover')return;
+    // Keep the current video playing; rebuild only the upcoming recommendations.
+    shortNavigation++;shortFeedGeneration++;shortFeedController?.abort();shortFeedPending=null;
+    state.shorts.splice(state.shortIndex+1);
+    seenShortIds.clear();for(const video of state.shorts)seenShortIds.add(video.id);
+    shortFeedPage=1;shortFeedCursor='';shortFeedHasMore=true;shortFeedRetryAt=0;shortFeedError='';
+    void refillShorts();
+  }
+  function saveShortPreferences(message) {
+    hiddenShorts=new Set([...hiddenShorts].slice(-500));hiddenShortChannels=new Set([...hiddenShortChannels].slice(-100));
+    likedShorts=new Map([...likedShorts].slice(-500));
+    try {
+      localStorage.setItem(shortPreferenceKey,JSON.stringify({videos:[...hiddenShorts],channels:[...hiddenShortChannels],likes:[...likedShorts.values()]}));
+      refs.shortPreferencesStatus.textContent=message+' Saved in this browser.';
+    } catch { refs.shortPreferencesStatus.textContent=message+' Saved for this session only.'; }
+  }
+  function resetShortFeed(query='',topic='discover') {
+    shortFeedGeneration++;shortFeedController?.abort();shortFeedPending=null;
+    if(!shortFeedPrevious&&state.shortPlayer&&state.shorts[state.shortIndex])shortFeedPrevious={videos:state.shorts,index:state.shortIndex,query:shortFeedQuery,topic:shortFeedTopic,page:shortFeedPage,cursor:shortFeedCursor,hasMore:shortFeedHasMore,seen:[...seenShortIds]};
+    if(!shortFeedPrevious)stopShorts();
+    state.shorts=[];state.shortIndex=0;seenShortIds.clear();
+    shortFeedPage=1;shortFeedCursor='';shortFeedHasMore=true;shortFeedRetryAt=0;shortFeedError='';
+    shortFeedQuery=query;shortFeedTopic=topic;
+    refs.shortSearchInput.value=query;
+    if(!shortFeedPrevious){refs.shortTitle.textContent='';refs.shortCreator.textContent='';}
+    refs.shortDislike.disabled=true;refs.shortHideChannel.disabled=true;renderShortHeart();
+    const descriptions={discover:'For you',science:'Science',nature:'Nature',gaming:'Gaming',sports:'Sports'};
+    refs.shortFeedLabel.textContent=query?`Results for “${query}”`:descriptions[topic];
+    $$('[data-short-topic]').forEach(button=>button.setAttribute('aria-pressed',String(!query&&button.dataset.shortTopic===topic)));
+    void loadShorts();
+  }
+  async function hideCurrentShort(channel=false) {
+    const video=state.shorts[state.shortIndex];if(!video||channel&&!video.channelId)return;
+    if(channel)hiddenShortChannels.add(video.channelId);else hiddenShorts.add(video.id);
+    if(channel){for(const [id,liked] of likedShorts)if(liked.channelId===video.channelId)likedShorts.delete(id);}else likedShorts.delete(video.id);
+    saveShortPreferences(channel?`Hidden ${video.creator||'this channel'}.`:'This video is hidden.');
+    stopShorts();
+    const before=state.shorts.slice(0,state.shortIndex).filter(wantedShort).length;
+    state.shorts=state.shorts.filter(wantedShort);state.shortIndex=Math.min(before,Math.max(0,state.shorts.length-1));
+    refreshShortRecommendations();
+    await loadShorts();
+  }
+  const seenShortIds=new Set();
+  function refillShorts(ahead=6) {
+    if(shortFeedPending)return shortFeedPending;
+    if(dropTube||!shortFeedHasMore||Date.now()<shortFeedRetryAt)return Promise.resolve();
+    const generation=shortFeedGeneration,controller=new AbortController();shortFeedController=controller;
+    const pending=(async()=>{
+      for(let attempts=0;attempts<3&&shortFeedHasMore&&state.view==='shorts'&&state.shorts.length-state.shortIndex-1<ahead;attempts++){
+        const params=new URLSearchParams({limit:'24',page:String(shortFeedPage),topic:shortFeedTopic});
+        if(shortFeedQuery)params.set('q',shortFeedQuery);
+        else if(shortFeedTopic==='discover'){const favorites=favoriteShortCreators();if(favorites.length)params.set('creators',favorites.join(','));}
+        if(shortFeedCursor)params.set('cursor',shortFeedCursor);
+        const payload=await json(`/api/nyxtube/shorts?${params}`,controller.signal);
+        if(generation!==shortFeedGeneration)return;
+        for(const video of payload?.videos||[]){
+          if(!/^[A-Za-z0-9_-]{11}$/.test(video?.id||'')||!video.isShort||seenShortIds.has(video.id))continue;
+          seenShortIds.add(video.id);if(wantedShort(video))state.shorts.push(video);
+        }
+        const next=payload?.nextPage;
+        const cursor=typeof payload?.nextCursor==='string'?payload.nextCursor:'';
+        shortFeedHasMore=Boolean(cursor&&cursor!==shortFeedCursor)||Number.isInteger(next)&&next>shortFeedPage&&next<=100;
+        shortFeedCursor=cursor;
+        if(Number.isInteger(next))shortFeedPage=next;
+        shortFeedError='';
+        // Keep recent back navigation while bounding long-session metadata.
+        const trim=Math.min(Math.max(0,state.shorts.length-240),Math.max(0,state.shortIndex-50));
+        if(trim){state.shorts.splice(0,trim);state.shortIndex-=trim;}
+      }
+    })().catch(error=>{if(generation===shortFeedGeneration&&error.name!=='AbortError'){shortFeedRetryAt=Date.now()+15000;shortFeedError=error.message||'More Shorts could not load.';}})
+      .finally(()=>{if(shortFeedPending===pending)shortFeedPending=null;});
+    shortFeedPending=pending;return pending;
+  }
+  async function loadShorts() {
+    if (dropTube) return;
+    const generation=shortFeedGeneration;
+    if(refs.shortMenu)refs.shortMenu.open=false;
+    if(refs.shortEmpty)refs.shortEmpty.hidden=true;
+    views.shorts.dataset.feedLoading='true';
+    notice(); refs.shortLoading.hidden = Boolean(shortFeedPrevious);
+    try {
+      if (!state.shorts.length) await refillShorts(1);
+      if(state.view!=='shorts'||generation!==shortFeedGeneration)return;
+      if (!state.shorts.length) {refs.shortDislike?.setAttribute('disabled','');refs.shortHideChannel?.setAttribute('disabled','');renderShortHeart();throw new Error(shortFeedError||"No matching Shorts. Try another search or topic, or reset your preferences.");}
+      if(shortFeedPrevious){stopShorts();shortFeedPrevious=null;}
+      state.failedShortIds.clear();shortRetries.clear();
+      await showShort(state.shortIndex);
+    } catch (error) {
+      if(generation!==shortFeedGeneration||state.view!=='shorts')return;
+      refs.shortLoading.hidden = true;
+      if(shortFeedPrevious){
+        const previous=shortFeedPrevious;shortFeedPrevious=null;
+        state.shorts=previous.videos;state.shortIndex=previous.index;shortFeedQuery=previous.query;shortFeedTopic=previous.topic;
+        shortFeedPage=previous.page;shortFeedCursor=previous.cursor;shortFeedHasMore=previous.hasMore;shortFeedRetryAt=0;
+        seenShortIds.clear();for(const id of previous.seen)seenShortIds.add(id);
+        renderShortHeart();refs.shortDislike.disabled=false;refs.shortHideChannel.disabled=!state.shorts[state.shortIndex]?.channelId;
+        notice(shortFeedError?'Search unavailable. Your current video is still playing.':'No matching Shorts.');
+      }else{
+        if(refs.shortEmpty){refs.shortEmpty.hidden=false;refs.shortEmptyTitle.textContent=shortFeedError?'Shorts could not load':'No Shorts found';}
+        notice(error.message || "Shorts could not be loaded.");
+      }
+    } finally {if(generation===shortFeedGeneration)delete views.shorts.dataset.feedLoading;}
+  }
+  let shortGeneration=0;
+  let shortLoadTimer=0;
+  const shortRetries=new Set();
+  function clearShortLoadTimer(){clearTimeout(shortLoadTimer);shortLoadTimer=0;}
+  function watchShortLoad(video,generation){
+    clearShortLoadTimer();
+    shortLoadTimer=setTimeout(()=>{
+      if(generation!==shortGeneration||state.view!=='shorts')return;
+      const entry=preparedShorts.get(video.id);
+      if(!shortRetries.has(video.id)){
+        shortRetries.add(video.id);
+        if(entry){entry.removed=true;entry.player?.destroy?.();entry.node?.remove();preparedShorts.delete(video.id);}
+        state.shortPlayer=null;
+        notice('This Short is taking longer to load. Retrying...');
+        void showShort(state.shortIndex);
+      }else recoverShort(video);
+    },12000);
+  }
+  const shortDetails=new Map();
+  function shortDetail(video){
+    if(!video.detailsPending)return Promise.resolve(video);
+    if(!shortDetails.has(video.id)){
+      if(shortDetails.size>=32)shortDetails.delete(shortDetails.keys().next().value);
+      const request=json(`/api/nyxtube/video?id=${encodeURIComponent(video.id)}`).then(payload=>{
+        const detail=payload?.videos?.[0];if(!detail||detail.id!==video.id||!detail.isShort)throw Error('Short unavailable');return detail;
+      }).catch(error=>{shortDetails.delete(video.id);throw error;});
+      shortDetails.set(video.id,request);
+    }
+    return shortDetails.get(video.id);
+  }
+  const preparedShorts=new Map();
+  let shortMountNumber=0;
+  function prepareShort(video){
+    if(preparedShorts.has(video.id))return preparedShorts.get(video.id);
+    const entry={id:video.id,player:null,node:null,ready:false,removed:false,failed:false};
+    preparedShorts.set(video.id,entry);
+    entry.promise=(async()=>{
+      const detail=await shortDetail(video),YT=await youtubeApi();
+      if(entry.removed||state.view!=='shorts')return;
+      entry.detail=detail;
+      const node=entry.node=document.createElement('div');node.id='nyxtube-prepared-short-'+(++shortMountNumber);const mountNode=document.createElement('div');mountNode.id=node.id+'-player';mountNode.style.cssText='width:100%;height:100%';node.append(mountNode);
+      node.style.cssText='position:absolute;inset:0;visibility:hidden;pointer-events:none';node.setAttribute('aria-hidden','true');refs.shortPlayer.append(node);
+      const config=options(video.id,true);config.playerVars.autoplay=0;config.expectedDuration=detail.durationSeconds;
+      config.events={
+        onReady:event=>{if(entry.removed)return;entry.ready=true;event.target.mute();if(state.shortPlayer===event.target){event.target.playVideo();startShortTimer();}},
+        onStateChange:event=>{if(entry.removed||state.shortPlayer!==event.target)return;
+          if(event.data===YT.PlayerState.PLAYING||event.data===YT.PlayerState.PAUSED){clearShortLoadTimer();refs.shortLoading.hidden=true;if(event.data===YT.PlayerState.PLAYING)notice();}
+          refs.shortCenterPlay.hidden=event.data!==YT.PlayerState.PAUSED;
+          if(event.data===YT.PlayerState.ENDED)void showShort(state.shortIndex+1);
+        },
+        onAutoplayBlocked:()=>{if(entry.removed||state.shortPlayer!==entry.player)return;clearShortLoadTimer();refs.shortLoading.hidden=true;refs.shortCenterPlay.hidden=false;},
+        onError:()=>{entry.failed=true;if(state.shortPlayer===entry.player)recoverShort(detail);}
+      };
+      entry.player=new YT.Player(mountNode.id,config);
+      return entry;
+    })().catch(()=>{entry.failed=true;if(state.shorts[state.shortIndex]?.id===entry.id&&state.view==='shorts')recoverShort(video);});
+    return entry;
+  }
+  function showInvidiousShort(video, generation, embedOnly = false, restore = null) {
+    clearShortLoadTimer(); clearInterval(state.shortTimer); state.shortTimer = 0;
+    for (const entry of preparedShorts.values()) { entry.removed=true; entry.player?.destroy?.(); entry.node?.remove(); }
+    preparedShorts.clear(); state.shortPlayer?.destroy?.();
+    refs.shortStage.classList.add('invidious-player');
+    if (!/^[A-Za-z0-9_-]{11}$/.test(video.id)) throw new Error('Choose a valid Short.');
+    if(window.NyxInvidiousPlayer&&!embedOnly){
+      state.shortPlayer=window.NyxInvidiousPlayer(refs.shortPlayer,{id:video.id,loop:true,
+        onLoading:loading=>{if(generation===shortGeneration&&state.view==='shorts')refs.shortLoading.hidden=!loading;},
+        onFailure:position=>{if(generation===shortGeneration&&state.view==='shorts')showInvidiousShort(video,generation,true,position);}
+      });
+      notice();return;
+    }
+    const url = new URL('/embed/'+video.id, state.invidiousEmbedOrigin);
+    url.search = new URLSearchParams({local:'true',autoplay:restore?.paused?'0':'1',quality:'dash',controls:'1',volume:String(restore?.muted===false?restore.volume:0),start:String(restore?.time||0),speed:String(restore?.rate||1),loop:'1',continue:'0',hl:'en-US'}).toString();
+    const frame=document.createElement('iframe');frame.title='Invidious Short player';frame.src=url.href;
+    frame.allow='autoplay; fullscreen; picture-in-picture';frame.allowFullscreen=true;frame.referrerPolicy='strict-origin-when-cross-origin';
+    frame.addEventListener('load',()=>{if(generation===shortGeneration&&state.view==='shorts')refs.shortLoading.hidden=true;},{once:true});
+    state.shortPlayer={isInvidious:true,destroy:()=>frame.remove()};
+    refs.shortPlayer.replaceChildren(frame);
+    notice();
+  }
+  async function showShort(index) {
+    if(!state.shorts.length)return;
+    const navigation=++shortNavigation;
+    if(index>=state.shorts.length){
+      const advance=index-state.shortIndex;
+      notice('Loading more Shorts...');await refillShorts(1);
+      if(navigation!==shortNavigation||state.view!=='shorts')return;
+      index=state.shortIndex+advance;
+      if(index>=state.shorts.length){notice(shortFeedError||'No more Shorts are available right now.');return;}
+    }
+    index=Math.max(0,index);
+    if(index===state.shortIndex&&state.shortPlayer)return;
+    const generation=++shortGeneration;
+    state.shortIndex=index;
+    const video=state.shorts[state.shortIndex];
+    if(refs.shortEmpty)refs.shortEmpty.hidden=true;
+    if(refs.shortMenu)refs.shortMenu.open=false;
+    renderShortHeart(video);
+    if(refs.shortDislike)refs.shortDislike.disabled=false;
+    if(refs.shortHideChannel){refs.shortHideChannel.disabled=!video.channelId;refs.shortHideChannel.title=video.creator?`Hide ${video.creator}`:'Hide channel';}
+    state.shortPlayer?.pauseVideo?.();if(state.shortPlayer?.isInvidious)state.shortPlayer.destroy();state.shortPlayer=null;
+    watchShortLoad(video,generation);
+    refs.shortTitle.textContent=video.title||'Untitled Short';refs.shortCreator.textContent=video.creator||'YouTube';
+    refs.shortLoading.hidden=false;refs.shortCenterPlay.hidden=true;refs.shortProgress.style.width='0';
+    void refillShorts();
+    if(state.invidiousEmbedOrigin){showInvidiousShort(video,generation);return;}
+    refs.shortStage.classList.remove('invidious-player');
+    for(const entry of preparedShorts.values())if(entry.node){entry.node.style.visibility='hidden';entry.node.style.pointerEvents='none';entry.node.setAttribute('aria-hidden','true');}
+    const keep=new Set(state.shorts.slice(state.shortIndex,state.shortIndex+4).map(item=>item.id));
+    for(const [id,entry] of preparedShorts)if(!keep.has(id)){entry.removed=true;entry.player?.destroy?.();entry.node?.remove();preparedShorts.delete(id);}
+    const entry=prepareShort(video);await entry.promise;
+    if(generation!==shortGeneration||state.view!=='shorts')return;
+    if(entry.failed||!entry.player)return recoverShort(video);
+    state.shortPlayer=entry.player;entry.node.style.visibility='visible';entry.node.style.pointerEvents='auto';entry.node.setAttribute('aria-hidden','false');
+    state.shortMuted=true;refs.shortMute.innerHTML=icon('icon-muted');
+    if(entry.ready){entry.player.mute();entry.player.playVideo();startShortTimer();}
+
+    for(const next of state.shorts.slice(state.shortIndex+1,state.shortIndex+4))prepareShort(next);
+  }
+  function recoverShort(video) {
+    if (state.view !== "shorts" || state.shorts[state.shortIndex]?.id !== video.id) return;
+    clearShortLoadTimer();state.failedShortIds.add(video.id);
+    const nextIndex = state.shorts.findIndex((candidate, index) => index !== state.shortIndex && candidate?.id && !state.failedShortIds.has(candidate.id));
+    if (nextIndex < 0) {
+      refs.shortLoading.hidden = true;
+      stopShorts();
+      notice("These Shorts could not start. Try again later or check your connection.");
+      return;
+    }
+    notice("This Short could not start. Trying another...");
+    showShort(nextIndex);
+  }
+  function startShortTimer() {
+    clearInterval(state.shortTimer);
+    state.shortTimer = setInterval(() => {
+      if (!ready(state.shortPlayer)) return;
+      const current = Number(state.shortPlayer.getCurrentTime?.()) || 0, total = Number(state.shortPlayer.getDuration?.()) || 0;
+      refs.shortProgress.style.width = total ? `${Math.min(100, current / total * 100)}%` : "0";
+    }, 250);
+  }
+  function stopShorts() {
+    if (dropTube) return;
+    shortFeedPrevious=null;
+    shortNavigation++;
+    finishShortHold(true);
+    shortGeneration++;clearShortLoadTimer();clearInterval(state.shortTimer);state.shortTimer=0;
+    for(const entry of preparedShorts.values()){entry.removed=true;entry.player?.destroy?.();entry.node?.remove();}
+    preparedShorts.clear();state.shortPlayer?.destroy?.();state.shortPlayer=null;refs.shortPlayer.replaceChildren();
+    refs.shortStage.classList.remove('invidious-player');
+  }
+  function toggleShort() {
+    if (!ready(state.shortPlayer)) return;
+    state.shortPlayer.getPlayerState() === 1 ? state.shortPlayer.pauseVideo() : state.shortPlayer.playVideo();
+  }
+  function toggleShortMute() {
+    if (!ready(state.shortPlayer)) return;
+    state.shortMuted = !state.shortMuted; state.shortMuted ? state.shortPlayer.mute() : state.shortPlayer.unMute();
+    refs.shortMute.innerHTML = icon(state.shortMuted ? "icon-muted" : "icon-volume");
+  }
+  const changeShort = delta => {finishShortHold(true);return state.shorts.length && showShort(state.shortIndex + delta)};
+  let shortHold=null, shortHoldClickUntil=0;
+  function beginShortHold(source){
+    if(shortHold||!ready(state.shortPlayer))return;
+    const player=state.shortPlayer;
+    shortHold={source,player,rate:player.getPlaybackRate?.()||1,paused:player.getPlayerState()!==1,held:false};
+    const hold=shortHold;
+    hold.timer=setTimeout(()=>{if(shortHold!==hold)return;hold.held=true;player.setPlaybackRate?.(2);player.playVideo?.();refs.shortStage.dataset.speedHold='true'},350);
+  }
+  function finishShortHold(cancel=false){
+    const hold=shortHold;if(!hold)return;shortHold=null;clearTimeout(hold.timer);delete refs.shortStage.dataset.speedHold;
+    if(hold.held){hold.player.setPlaybackRate?.(hold.rate);if(hold.paused)hold.player.pauseVideo?.();shortHoldClickUntil=performance.now()+500}
+    else if(!cancel&&hold.source==='keyboard')toggleShort();
+  }
+  function seekWatchTo(seconds) {
+    if(!ready(state.watchPlayer))return;
+    const total=Number(state.watchPlayer.getDuration?.())||0;
+    state.watchPlayer.seekTo(Math.max(0,Math.min(total,seconds)),true);
+  }
+  function chapterStep(direction){
+    const times=[...String(state.watchVideo?.description||'').matchAll(/(?:^|\n)\s*((?:\d+:)?\d{1,2}:\d{2})\s+/g)].map(m=>m[1].split(':').reduce((n,v)=>n*60+Number(v),0)).sort((a,b)=>a-b);
+    const now=state.watchPlayer?.getCurrentTime?.()||0;
+    const target=direction>0?times.find(t=>t>now+1):times.filter(t=>t<now-2).at(-1);
+    if(target!==undefined)seekWatchTo(target);
+  }
+  function watchNext(previous=false){
+    if(previous){const video=state.watchTrail.pop();if(video){state.watchVideo=null;void openWatch(video)}}
+    else {const video=relatedVideos(state.watchVideo||{},1)[0];if(video)void openWatch(video)}
+  }
+  function rateStep(direction){
+    const player=state.watchPlayer;if(!ready(player))return;
+    finishWatchSpace({cancel:true});
+    const rates=(player.getAvailablePlaybackRates?.()||[.25,.5,.75,1,1.25,1.5,1.75,2]).map(Number).sort((a,b)=>a-b);
+    const current=Number(player.getPlaybackRate?.())||1;
+    const next=direction>0?rates.find(r=>r>current+.01):rates.filter(r=>r<current-.01).at(-1);
+    if(next){player.setPlaybackRate?.(next);refs.watchSpeed.value=String(next)}
+  }
+  function showShortcutHelp(){
+    finishShortHold(true);
+    finishWatchSpace({cancel:true});
+    const dialog=$('[data-shortcut-help]');if(!dialog.open)dialog.showModal();
+  }
+  const shortcutBlocked = target => target instanceof Element && Boolean(target.closest("input,textarea,select,button,a,summary,[contenteditable]"));
+
+  function bind() {
+    addEventListener("message", event => {
+      if (event.origin !== location.origin || event.source !== parent || event.data?.type !== "nyx:nyxtube-profile" || event.data.requestId !== state.profileRequestId) return;
+      renderProfile(event.data.profile);
+    });
+    refs.profileButton.addEventListener("click", () => parent.postMessage({ type: "nyx:nyxtube-open-profile", uid: state.profile.uid }, location.origin));
+    refs.watchChannelMark.addEventListener("click", openWatchChannel); refs.watchCreator.addEventListener("click", openWatchChannel);
+    refs.channelBack.addEventListener("click", () => state.watchVideo && openWatch(state.watchVideo));
+    document.addEventListener("visibilitychange", () => { if (document.hidden) {finishWatchSpace({ cancel: true });finishShortHold(true)} else requestProfile(); });
+    addEventListener("blur", () => {finishWatchSpace({ cancel: true });finishShortHold(true)});
+    refs.searchForm.addEventListener("submit", event => { event.preventDefault(); const query = refs.searchInput.value.trim(); if (query) loadFeed(query); });
+    refs.shortSearchForm?.addEventListener('submit',event=>{event.preventDefault();const query=refs.shortSearchInput.value.trim();if(query.length>=2)resetShortFeed(query);});
+    refs.shortRetry?.addEventListener('click',()=>resetShortFeed(shortFeedQuery,shortFeedTopic));
+    document.addEventListener('pointerdown',event=>{if(refs.shortMenu?.open&&!refs.shortMenu.contains(event.target))refs.shortMenu.open=false;});
+    $$('[data-short-topic]').forEach(button=>button.addEventListener('click',()=>resetShortFeed('',button.dataset.shortTopic)));
+    refs.shortDislike?.addEventListener('click',()=>void hideCurrentShort());
+    refs.shortHideChannel?.addEventListener('click',()=>void hideCurrentShort(true));
+    refs.shortHeart?.addEventListener('click',()=>{
+      const video=state.shorts[state.shortIndex];if(!video?.channelId)return;
+      if(likedShorts.has(video.id)){likedShorts.delete(video.id);saveShortPreferences('Like removed. Your For you feed has been adjusted.');}
+      else{likedShorts.set(video.id,{id:video.id,channelId:video.channelId});saveShortPreferences(`Liked. For you will show more from ${video.creator||'this creator'}.`);}
+      renderShortHeart(video);refreshShortRecommendations();
+    });
+    refs.shortReset?.addEventListener('click',()=>{hiddenShorts.clear();hiddenShortChannels.clear();likedShorts.clear();saveShortPreferences('Likes and hidden videos/channels cleared.');resetShortFeed();});
+    $$("[data-topic]").forEach(button => button.addEventListener("click", () => { refs.searchInput.value = button.dataset.topic; loadFeed(button.dataset.topic); }));
+    $$("[data-view-button]").forEach(button => button.addEventListener("click", () => { showView(button.dataset.viewButton); if (state.view === "shorts") loadShorts(); }));
+    $("[data-back]").addEventListener("click", () => { if (state.view === "watch") showView("home"); else if (history.length > 1) history.back(); else location.href = "/"; });
+    refs.watchToggle.addEventListener("click", toggleWatch); refs.watchCenterPlay.addEventListener("click", toggleWatch); refs.watchMute.addEventListener("click", toggleWatchMute);
+    const switchPlayback = quality => {
+      if (!state.watchVideo) return;
+      finishWatchSpace({ cancel: true });
+      const player=state.watchPlayer;
+      const restore={quality, time:player?.getCurrentTime?.()||0,paused:player?.getPlayerState?.()===2,volume:player?.getVolume?.()??100,rate:player?.getPlaybackRate?.()||1,muted:player?.isMuted?.()||false};
+      createWatch(state.watchVideo,false,false,restore).catch(()=>notice("The video player could not start."));
+    };
+    refs.watchStage.addEventListener("pointerdown", event => {
+      if(event.button!==0 || !event.isPrimary || state.view!=="watch" || shortcutBlocked(event.target) || !event.target.closest('[data-watch-player],[data-watch-gesture]')) return;
+      if(state.watchSpacePressed)return;
+      event.preventDefault();
+      refs.watchStage.focus({preventScroll:true});
+      state.watchPointerId=event.pointerId;
+      refs.watchStage.setPointerCapture(event.pointerId);
+      beginWatchSpace("pointer");
+    });
+    const releasePointer=(event,cancel=false)=>{
+      if(event.pointerId!==state.watchPointerId)return;
+      state.watchPointerId=null;
+      if(state.watchHoldSource==="pointer")finishWatchSpace({cancel});
+      if(refs.watchStage.hasPointerCapture(event.pointerId))refs.watchStage.releasePointerCapture(event.pointerId);
+    };
+    refs.watchStage.addEventListener("pointerup",event=>releasePointer(event));
+    refs.watchStage.addEventListener("pointercancel",event=>releasePointer(event,true));
+    refs.watchStage.addEventListener("lostpointercapture",event=>releasePointer(event,true));
+    refs.watchQuality.addEventListener("change",()=>switchPlayback(Number(refs.watchQuality.value)));
+    refs.watchEngine.addEventListener("click",()=>{state.preferredPlayer=refs.watchEngine.value === "native" || !state.nativeAvailable ? "youtube" : "native";switchPlayback();});
+    refs.watchBackup.addEventListener("click",()=>{state.preferredPlayer="invidious";notice("Use the controls inside the video for playback, quality and fullscreen.");switchPlayback();});
+    refs.watchProgress.addEventListener("input", () => { if (ready(state.watchPlayer)) state.watchPlayer.seekTo((state.watchPlayer.getDuration?.() || 0) * Number(refs.watchProgress.value) / 1000, true); });
+    const watchCaptions = () => changeWatchCaptions(!state.watchCaptions);
+    refs.watchCaptions.addEventListener("click", watchCaptions); refs.watchCaptionOption.addEventListener("click", watchCaptions); refs.watchFullscreen.addEventListener("click", () => fullscreen(refs.watchStage));
+    refs.watchSettings.addEventListener("click", event => {
+      event.stopPropagation(); const opening = refs.watchSettingsMenu.hidden; closeWatchSettings();
+      if (opening) { refs.watchSettingsMenu.hidden = false; refs.watchSettings.setAttribute("aria-expanded", "true"); refs.watchSpeed.focus({ preventScroll: true }); }
+    });
+    refs.watchSettingsMenu.addEventListener("click", event => event.stopPropagation());
+    refs.watchSpeed.addEventListener("change", () => { try { state.watchPlayer?.setPlaybackRate?.(Number(refs.watchSpeed.value) || 1); } catch {                                   } });
+    refs.watchVolume.addEventListener("input", () => { try { state.watchPlayer?.setVolume?.(Number(refs.watchVolume.value) || 0); } catch {                                                   } });
+    refs.watchSettingsCaptions.addEventListener("change", () => changeWatchCaptions(refs.watchSettingsCaptions.value === "on"));
+    refs.watchRewind.addEventListener("click", () => seekWatchBy(-10)); refs.watchForward.addEventListener("click", () => seekWatchBy(10));
+    $$('[data-watch-info-tab]').forEach(button => button.addEventListener("click", () => showWatchInfo(button.dataset.watchInfoTab)));
+    document.addEventListener("click", closeWatchSettings);
+    let shortWheelTotal=0,shortWheelAt=0,shortNavigateAt=-Infinity,shortTouch=null,shortIgnoreClickUntil=0;
+    const gestureShort=delta=>{finishShortHold(true);const now=performance.now();if(now-shortNavigateAt<450)return;shortNavigateAt=now;void changeShort(delta);};
+    document.addEventListener('wheel',event=>{
+      if(state.view!=='shorts'||event.ctrlKey||event.target.closest?.('input,textarea,select,[contenteditable]')||Math.abs(event.deltaX)>Math.abs(event.deltaY))return;
+      event.preventDefault();
+      const now=performance.now();if(now-shortWheelAt>180||Math.sign(shortWheelTotal)!==Math.sign(event.deltaY))shortWheelTotal=0;
+      shortWheelAt=now;shortWheelTotal+=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?innerHeight:1);
+      if(Math.abs(shortWheelTotal)>=40){gestureShort(Math.sign(shortWheelTotal));shortWheelTotal=0;}
+    },{passive:false});
+    if (!dropTube) {
+    refs.shortStage.addEventListener('pointerdown',event=>{
+      if(event.isPrimary&&event.button===0&&!event.target.closest('button,a,input')){beginShortHold('pointer');refs.shortStage.setPointerCapture(event.pointerId)}
+      if(event.pointerType!=='touch'||event.target.closest('button,a,input'))return;
+      shortTouch={id:event.pointerId,x:event.clientX,y:event.clientY};refs.shortStage.setPointerCapture(event.pointerId);
+    });
+    refs.shortStage.addEventListener('pointerup',event=>{
+      finishShortHold();
+      if(!shortTouch||shortTouch.id!==event.pointerId)return;
+      const dx=event.clientX-shortTouch.x,dy=event.clientY-shortTouch.y;shortTouch=null;
+      if(Math.abs(dy)>=50&&Math.abs(dy)>Math.abs(dx)){shortIgnoreClickUntil=performance.now()+350;gestureShort(dy<0?1:-1);}
+    });
+    refs.shortStage.addEventListener('pointercancel',()=>{shortTouch=null;finishShortHold(true)});
+    refs.shortStage.addEventListener('lostpointercapture',()=>finishShortHold(true));
+    refs.shortStage.addEventListener('pointermove',event=>{if(shortTouch&&Math.abs(event.clientY-shortTouch.y)>15)finishShortHold(true)});
+    refs.shortCenterPlay.addEventListener("click", toggleShort); refs.shortStage.addEventListener("click", event => { if (performance.now()>=Math.max(shortIgnoreClickUntil,shortHoldClickUntil)&&!event.target.closest("button,a")) toggleShort(); });
+    refs.shortMute.addEventListener("click", toggleShortMute);
+    refs.shortCaptions.addEventListener("click", () => { state.shortCaptions = !state.shortCaptions; if (!setCaptions(state.shortPlayer, state.shortCaptions, refs.shortCaptions)) state.shortCaptions = !state.shortCaptions; });
+    refs.shortFullscreen.addEventListener("click", () => fullscreen(refs.shortStage));
+    $("[data-short-previous]").addEventListener("click", () => changeShort(-1)); $("[data-short-next]").addEventListener("click", () => changeShort(1));
+    }
+    $('[data-shortcut-help-close]').addEventListener('click',()=>{$('[data-shortcut-help]').close();refs.watchStage.focus()});
+    $('[data-shortcut-help-open]').addEventListener('click',showShortcutHelp);
+    refs.watchStage.addEventListener('dblclick',event=>{if(event.target.closest('[data-watch-gesture]')){finishWatchSpace({cancel:true});fullscreen(refs.watchStage)}});
+    document.addEventListener("keydown", event => {
+      if(event.key==='Escape'&&refs.shortMenu?.open){refs.shortMenu.open=false;refs.shortMenu.querySelector('summary').focus();return;}
+      if($('[data-shortcut-help]').open)return;
+      if(event.key==='?'&&!event.target.closest?.('input,textarea,select,[contenteditable]')){event.preventDefault();showShortcutHelp();return}
+      if(event.key==='/'&&!shortcutBlocked(event.target)){event.preventDefault();if(state.view==='shorts'&&refs.shortSearchInput)refs.shortSearchInput.focus();else{if(state.view!=='home')showView('home');refs.searchInput.focus();}return}
+      if(event.key==='Escape'&&refs.watchStage.classList.contains('mini-player')){refs.watchStage.classList.remove('mini-player');return}
+      if(state.view==='watch'&&!shortcutBlocked(event.target)&&(event.ctrlKey||event.altKey)&&['ArrowLeft','ArrowRight'].includes(event.code)){event.preventDefault();chapterStep(event.code==='ArrowRight'?1:-1);return}
+      if (event.key === "Escape" && !refs.watchSettingsMenu.hidden) { event.preventDefault(); closeWatchSettings(); refs.watchSettings.focus(); return; }
+      if (shortcutBlocked(event.target) || event.ctrlKey || event.metaKey || event.altKey) return;
+      if (state.view === "watch") {
+        if (state.watchPlayer?.isInvidious) return;
+        if (["Space", "KeyK", "KeyJ", "KeyL", "ArrowLeft", "ArrowRight", "KeyM", "KeyC", "KeyF", "ArrowUp", "ArrowDown", "Home", "End", "Comma", "Period", "KeyI", "KeyT", "MediaPlayPause", "MediaStop", "MediaTrackNext", "MediaTrackPrevious", ...Array.from({length:10},(_,i)=>"Digit"+i)].includes(event.code)) event.preventDefault();
+        if (event.code === "Space") { beginWatchSpace(); return; }
+        if (event.repeat && !["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","KeyJ","KeyL"].includes(event.code)) return;
+        if(event.shiftKey&&['KeyN','KeyP'].includes(event.code)){event.preventDefault();watchNext(event.code==='KeyP');return}
+        if(event.code==='MediaTrackNext')watchNext();
+        if(event.code==='MediaTrackPrevious')watchNext(true);
+        if(event.code==='MediaStop')state.watchPlayer?.pauseVideo?.();
+        if(event.code==='MediaPlayPause')toggleWatch();
+        if(event.code==='KeyI')refs.watchStage.classList.toggle('mini-player');
+        if(event.code==='KeyT')views.watch.classList.toggle('theater-mode');
+        if(event.code==='Home'||event.code==='Digit0')seekWatchTo(0);
+        if(event.code==='End')seekWatchTo((state.watchPlayer?.getDuration?.()||0)-.1);
+        if(/^Digit[1-9]$/.test(event.code))seekWatchTo((state.watchPlayer?.getDuration?.()||0)*Number(event.code.slice(-1))/10);
+        if(['ArrowUp','ArrowDown'].includes(event.code)&&ready(state.watchPlayer)){
+          const volume=Math.max(0,Math.min(100,(state.watchPlayer.getVolume?.()??100)+(event.code==='ArrowUp'?5:-5)));
+          state.watchPlayer.setVolume?.(volume);refs.watchVolume.value=String(volume);
+        }
+        if(event.key==='>'||event.key==='<')rateStep(event.key==='>'?1:-1);
+        else if(['Period','Comma'].includes(event.code)&&state.watchPlayer?.getPlayerState?.()===2)seekWatchBy((event.code==='Period'?1:-1)/(Number(state.watchVideo?.fps)||30));
+        if (event.code === "KeyK") toggleWatch();
+        if (event.code === "KeyJ") seekWatchBy(-10);
+        if (event.code === "KeyL") seekWatchBy(10);
+        if (event.code === "ArrowLeft") seekWatchBy(-5);
+        if (event.code === "ArrowRight") seekWatchBy(5);
+        if (event.code === "KeyM") toggleWatchMute();
+        if (event.code === "KeyC" && !refs.watchSettingsCaptions.disabled) changeWatchCaptions(!state.watchCaptions);
+        if (event.code === "KeyF") fullscreen(refs.watchStage);
+      } else if (state.view === "shorts") {
+        if (["Space", "KeyK", "KeyC", "ArrowUp", "ArrowDown", "KeyM", "KeyF"].includes(event.code)) event.preventDefault();
+        if(event.code==="Space"){beginShortHold("keyboard");return}
+        if (event.repeat) return;
+        if(event.code==="KeyC")refs.shortCaptions.click();
+        if (event.code === "KeyK") toggleShort(); if (event.code === "ArrowUp") changeShort(-1); if (event.code === "ArrowDown") changeShort(1);
+        if (event.code === "KeyM") toggleShortMute(); if (event.code === "KeyF") fullscreen(refs.shortStage);
+      }
+    });
+    document.addEventListener("keyup", event => {
+      if(event.code==="Space"&&shortHold?.source==="keyboard"){event.preventDefault();finishShortHold();return}
+      if (event.code !== "Space" || !state.watchSpacePressed || state.watchHoldSource !== "keyboard") return;
+      event.preventDefault();
+      finishWatchSpace();
+    });
+  }
+
+  if(dropTube)addEventListener('message',event=>{if(event.origin===location.origin&&event.source===parent&&event.data?.type==='drop:tube-pause'){if(state.watchPlayer?.isInvidious){stopWatch();notice('Press Invidious to reopen the video.');}else state.watchPlayer?.pauseVideo?.();}});
+  applyTheme(); bind(); skeletons(); requestProfile();
+  json("/api/nyxtube/status").then(status => {
+    if (!status?.configured) throw new Error("NyxTube is not configured yet.");
+    try {
+      const url = new URL(status.invidiousEmbedOrigin);
+      if(url.protocol==='https:'&&!url.username&&!url.password&&!url.port&&url.href===url.origin+'/')state.invidiousEmbedOrigin=url.origin;
+    } catch { /* A missing or invalid backup setting leaves the existing players available. */ }
+    refs.watchBackup.hidden = !state.invidiousEmbedOrigin;
+    state.nativeAvailable = status.nativeAvailable === true; refs.watchEngine.hidden = !state.nativeAvailable;
+    return loadInitialView();
+  }).catch(error => { renderVideos([]); notice(error.message || "NyxTube could not be started."); });
+})();

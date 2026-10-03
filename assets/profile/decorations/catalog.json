@@ -1,0 +1,252 @@
+[
+  {
+    "id": "astral-ring-alpha",
+    "label": "Starlight Mist",
+    "path": "/assets/profile/decorations/astral-ring-alpha.png",
+    "staticPath": "/assets/profile/decorations/astral-ring-alpha-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1432550258247995533/animated",
+    "bytes": 1880407,
+    "sourceLabel": "Astral Ring Alpha"
+  },
+  {
+    "id": "celestial-crown",
+    "label": "Ember Moon",
+    "path": "/assets/profile/decorations/celestial-crown.png",
+    "staticPath": "/assets/profile/decorations/celestial-crown-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1432550258147328050/animated",
+    "bytes": 1061732,
+    "sourceLabel": "Celestial Crown"
+  },
+  {
+    "id": "neon-vortex",
+    "label": "Aurora Wisps",
+    "path": "/assets/profile/decorations/neon-vortex.png",
+    "staticPath": "/assets/profile/decorations/neon-vortex-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1541454236456456232/animated",
+    "bytes": 269328,
+    "sourceLabel": "Neon Vortex"
+  },
+  {
+    "id": "solar-flare-ring",
+    "label": "White Roses & Butterfly",
+    "path": "/assets/profile/decorations/solar-flare-ring.png",
+    "staticPath": "/assets/profile/decorations/solar-flare-ring-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1462116613653401775/animated",
+    "bytes": 1699142,
+    "sourceLabel": "Solar Flare Ring"
+  },
+  {
+    "id": "void-ring",
+    "label": "Golden Moon",
+    "path": "/assets/profile/decorations/void-ring.png",
+    "staticPath": "/assets/profile/decorations/void-ring-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1432550258126229565/animated",
+    "bytes": 913643,
+    "sourceLabel": "Void Ring"
+  },
+  {
+    "id": "cybernetic-halo",
+    "label": "Flaming Skulls",
+    "path": "/assets/profile/decorations/cybernetic-halo.png",
+    "staticPath": "/assets/profile/decorations/cybernetic-halo-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1533913535149506670/animated",
+    "bytes": 1114765,
+    "sourceLabel": "Cybernetic Halo"
+  },
+  {
+    "id": "crimson-shield",
+    "label": "White Angel Wings",
+    "path": "/assets/profile/decorations/crimson-shield.png",
+    "staticPath": "/assets/profile/decorations/crimson-shield-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1462116613691281560/animated",
+    "bytes": 1268132,
+    "sourceLabel": "Crimson Shield"
+  },
+  {
+    "id": "quantum-ring",
+    "label": "Luminous Moth",
+    "path": "/assets/profile/decorations/quantum-ring.png",
+    "staticPath": "/assets/profile/decorations/quantum-ring-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1541454059670605845/animated",
+    "bytes": 1576231,
+    "sourceLabel": "Quantum Ring"
+  },
+  {
+    "id": "ethereal-aura",
+    "label": "Prismatic Eclipse",
+    "path": "/assets/profile/decorations/ethereal-aura.png",
+    "staticPath": "/assets/profile/decorations/ethereal-aura-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1531403489727746310/animated",
+    "bytes": 1696777,
+    "sourceLabel": "Ethereal Aura"
+  },
+  {
+    "id": "static-frost",
+    "label": "Moonlit Clouds",
+    "path": "/assets/profile/decorations/static-frost.png",
+    "staticPath": "/assets/profile/decorations/static-frost-still.png",
+    "animated": false,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1495805817792761976/static",
+    "bytes": 19824,
+    "sourceLabel": "Static Frost"
+  },
+  {
+    "id": "prismatic-glow",
+    "label": "Golden Star Crown",
+    "path": "/assets/profile/decorations/prismatic-glow.png",
+    "staticPath": "/assets/profile/decorations/prismatic-glow-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1531405732174626986/animated",
+    "bytes": 1415320,
+    "sourceLabel": "Prismatic Glow"
+  },
+  {
+    "id": "supernova-ring",
+    "label": "Ocean Glow",
+    "path": "/assets/profile/decorations/supernova-ring.png",
+    "staticPath": "/assets/profile/decorations/supernova-ring-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1533919242892607610/animated",
+    "bytes": 775188,
+    "sourceLabel": "Supernova Ring"
+  },
+  {
+    "id": "neon-pulse",
+    "label": "Crimson Butterfly",
+    "path": "/assets/profile/decorations/neon-pulse.png",
+    "staticPath": "/assets/profile/decorations/neon-pulse-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1436367668897775757/animated",
+    "bytes": 930497,
+    "sourceLabel": "Neon Pulse"
+  },
+  {
+    "id": "arcane-circle",
+    "label": "Moonlit Vines",
+    "path": "/assets/profile/decorations/arcane-circle.png",
+    "staticPath": "/assets/profile/decorations/arcane-circle-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1541453953760239616/animated",
+    "bytes": 1656844,
+    "sourceLabel": "Arcane Circle"
+  },
+  {
+    "id": "cosmic-dust",
+    "label": "Silver Orbits",
+    "path": "/assets/profile/decorations/cosmic-dust.png",
+    "staticPath": "/assets/profile/decorations/cosmic-dust-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1531406020851793950/animated",
+    "bytes": 1920395,
+    "sourceLabel": "Cosmic Dust"
+  },
+  {
+    "id": "stellar-ring",
+    "label": "Comic Anger",
+    "path": "/assets/profile/decorations/stellar-ring.png",
+    "staticPath": "/assets/profile/decorations/stellar-ring-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1144308439720394944/animated",
+    "bytes": 468914,
+    "sourceLabel": "Stellar Ring"
+  },
+  {
+    "id": "gilded-halo",
+    "label": "Blushing Cat Ears",
+    "path": "/assets/profile/decorations/gilded-halo.png",
+    "staticPath": "/assets/profile/decorations/gilded-halo-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1212569433839636530/animated",
+    "bytes": 356762,
+    "sourceLabel": "Gilded Halo"
+  },
+  {
+    "id": "plasma-ring",
+    "label": "Black Roses & Butterfly",
+    "path": "/assets/profile/decorations/plasma-ring.png",
+    "staticPath": "/assets/profile/decorations/plasma-ring-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1462116613645144185/animated",
+    "bytes": 1677664,
+    "sourceLabel": "Plasma Ring"
+  },
+  {
+    "id": "hyperdrive",
+    "label": "Phoenix Swirl",
+    "path": "/assets/profile/decorations/hyperdrive.png",
+    "staticPath": "/assets/profile/decorations/hyperdrive-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1533914517329678408/animated",
+    "bytes": 1029544,
+    "sourceLabel": "Hyperdrive"
+  },
+  {
+    "id": "infernal-ring",
+    "label": "Dark Angel Wings",
+    "path": "/assets/profile/decorations/infernal-ring.png",
+    "staticPath": "/assets/profile/decorations/infernal-ring-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1462116613682757888/animated",
+    "bytes": 1239357,
+    "sourceLabel": "Infernal Ring"
+  },
+  {
+    "id": "solar-ring",
+    "label": "Skeletal Embrace",
+    "path": "/assets/profile/decorations/solar-ring.png",
+    "staticPath": "/assets/profile/decorations/solar-ring-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1516559294819074088/animated",
+    "bytes": 707577,
+    "sourceLabel": "Solar Ring"
+  },
+  {
+    "id": "nebula-ring",
+    "label": "Black Thorn Ring",
+    "path": "/assets/profile/decorations/nebula-ring.png",
+    "staticPath": "/assets/profile/decorations/nebula-ring-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1481388474673139855/animated",
+    "bytes": 1262028,
+    "sourceLabel": "Nebula Ring"
+  },
+  {
+    "id": "prism-crown",
+    "label": "Cloud Halo",
+    "path": "/assets/profile/decorations/prism-crown.png",
+    "staticPath": "/assets/profile/decorations/prism-crown-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1538991167511994549/animated",
+    "bytes": 1336053,
+    "sourceLabel": "Prism Crown"
+  },
+  {
+    "id": "ember-ring",
+    "label": "Glowing Rose Wreath",
+    "path": "/assets/profile/decorations/ember-ring.png",
+    "staticPath": "/assets/profile/decorations/ember-ring-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1538990902306152558/animated",
+    "bytes": 1880700,
+    "sourceLabel": "Ember Ring"
+  },
+  {
+    "id": "vortex-crown",
+    "label": "Glowing Butterflies",
+    "path": "/assets/profile/decorations/vortex-crown.png",
+    "staticPath": "/assets/profile/decorations/vortex-crown-still.png",
+    "animated": true,
+    "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1538991362601656420/animated",
+    "bytes": 972375,
+    "sourceLabel": "Vortex Crown"
+  }
+]

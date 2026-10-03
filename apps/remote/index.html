@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Nyx</title><link rel="stylesheet" href="style.css"></head>
+<body><main>
+<section id="locked"><h1>Private workspace</h1><p id="accessState">Checking account…</p><a href="/">Return to Nyx</a></section>
+<section id="workspace" hidden>
+<header><div><small>NYX · PRIVATE</small><h1>Remote desktop</h1></div><a href="/">Back to Nyx</a></header>
+<div id="setup"><section class="panel"><h2>Your computers</h2><div id="devices"></div><button id="refresh">Refresh</button></section>
+<section class="panel"><h2>Add this computer</h2><p>Run the Windows helper, then enter its pairing code.</p><button id="download">Download Windows helper</button><form id="pair"><input id="code" aria-label="Pairing code" placeholder="XXXX-XXXX-XXXX" maxlength="14" autocomplete="off" required><button>Pair computer</button></form></section></div>
+<section id="session" hidden><div class="toolbar"><strong id="computerName"></strong><span id="sessionState">Connecting…</span><button id="secureAttention" hidden>Ctrl + Alt + Delete</button><button id="lockMouse">Lock mouse</button><button id="fullscreen">Fullscreen</button><button id="disconnect">Disconnect</button></div><div id="screen" tabindex="0" aria-label="Remote desktop. Click to focus keyboard controls."><img id="frame" alt="Remote desktop" draggable="false"></div><p class="hint">Click the desktop to control it. Lock mouse captures your pointer; Esc releases it. No audio or file transfer.</p></section>
+<p id="notice" role="status" aria-live="polite"></p><button id="cancelReconnect" hidden>Stop reconnecting</button>
+</section></main><script type="module" src="app.js"></script></body></html>

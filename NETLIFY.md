@@ -30,17 +30,17 @@ If `NYX_ALLOWED_ORIGINS` is empty or not defined, the Wisp currently accepts eve
 
 In **Netlify > Site configuration > Environment variables**, add `NYX_AI_API_KEY` or `OPENROUTER_API_KEY`. Do not put the key in the repository.
 
-## Link Generator accounts and daily limits
+## Link Generator accounts and hourly limits
 
 The Link Generator supports two access methods:
 
-- A verified Firebase email/password account can create up to five links per UTC day.
-- A Premium access code creates links without signing in and has no daily quota.
+- A verified Firebase email/password account can choose a batch size and create up to 100 links in each 60-minute account window.
+- A Premium access code creates links without signing in and uses the separately configurable Premium batch/cooldown policy.
 
 To enable free accounts:
 
 1. In Firebase Console, open **Authentication > Sign-in method** and enable **Email/Password**.
-2. Open **Firestore Database** and create a database. The server stores daily counters in the `nyxLinkGeneratorUsage` collection.
+2. Open **Firestore Database** and create a database. The server stores rolling hourly account and network counters in the `nyxLinkGeneratorUsage` collection.
 3. Open **Project settings > General** and copy the project's Web API key.
 4. Open **Project settings > Service accounts**, generate a private key, and keep the downloaded JSON private.
 5. In **Netlify > Project configuration > Environment variables**, add:

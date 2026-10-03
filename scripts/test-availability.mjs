@@ -1,0 +1,44 @@
+import {chromium} from 'playwright';
+import assert from 'node:assert/strict';
+const browser=await chromium.launch();
+try{
+  const page=await browser.newPage({viewport:{width:1366,height:900}});
+  await page.goto('http://localhost:8080/apps/partners/');
+  await page.clock.install();
+  await page.evaluate(()=>{
+    window.relayOK=true;window.custom=false;window.online=true;
+    Object.defineProperty(navigator,'onLine',{get:()=>window.online,configurable:true});
+    window.WebSocket=class{constructor(){setTimeout(()=>window.relayOK?this.onopen?.():this.onerror?.(),5)}close(){}};
+  });
+  await page.addScriptTag({path:'js/availability.js'});
+  await page.evaluate(()=>NyxAvailability.start(()=>({url:'wss://relay.test/wisp/',custom:window.custom})));
+  const warning=page.locator('#nyxAvailabilityWarning');
+  const message=warning.locator('span');
+  await page.evaluate(()=>NyxAvailability.recordHealth(false));
+  assert.equal(await warning.count(),0);
+  await page.clock.runFor(10001);
+  await page.evaluate(()=>{NyxAvailability.recordHealth(false);NyxAvailability.recordHealth(false)});
+  await warning.waitFor({state:'visible'});
+  assert.match(await message.innerText(),/VPS.*vdrtes/);
+  await page.screenshot({path:'.codex-artifacts/availability-desktop.png'});
+  await page.setViewportSize({width:390,height:844});
+  await page.screenshot({path:'.codex-artifacts/availability-mobile.png'});
+  assert(await warning.evaluate(el=>el.getBoundingClientRect().right<=innerWidth));
+  await page.evaluate(()=>NyxAvailability.recordHealth(true));
+  assert(await warning.isHidden());
+  await page.evaluate(()=>{window.relayOK=false});
+  await page.clock.runFor(60010);
+  assert.match(await message.innerText(),/connecting to Wisp/);
+  await page.evaluate(()=>{window.custom=true});
+  await page.clock.runFor(30000);
+  assert.match(await message.innerText(),/custom Wisp/);
+  await page.evaluate(()=>{window.relayOK=true});
+  await page.clock.runFor(30000);
+  assert(await warning.isHidden());
+  await page.evaluate(()=>{window.online=false;dispatchEvent(new Event('offline'))});
+  assert.match(await message.innerText(),/You are offline/);
+  assert.doesNotMatch(await message.innerText(),/vdrtes/);
+  await page.evaluate(()=>{window.online=true;dispatchEvent(new Event('online'))});
+  assert(await warning.isHidden());
+  console.log('PASS: transient failure suppression, sustained outage, recovery, default/custom relay failures, offline separation, responsive warning.');
+}finally{await browser.close()}

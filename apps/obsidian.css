@@ -1,0 +1,82 @@
+@import url('../css/obsidian-palette.css?v=20261001-halloween-v1');
+:root,html body {
+  --app-bg:var(--nyx-surface-bg);--app-panel:var(--nyx-surface-panel);--app-raised:var(--nyx-surface-raised);
+  --app-field:var(--nyx-surface-field);--app-text:var(--nyx-surface-text);--app-muted:var(--nyx-surface-muted);--app-line:var(--nyx-surface-line);
+  --accent:var(--app-text)!important;--accent-rgb:230,235,232!important;
+  --accent-soft:rgba(226,237,231,.06)!important;--theme-accent:var(--app-text)!important;
+  --theme-border:var(--app-line)!important;--theme-panel:var(--app-panel)!important;
+  --theme-text:var(--app-text)!important;--theme-muted:var(--app-muted)!important;
+  --bg:var(--app-bg)!important;--nt-bg:var(--app-bg)!important;--text:var(--app-text)!important;
+  --surface-raised:var(--app-raised)!important;--surface-hover:var(--app-raised)!important;--border:var(--app-line)!important;--border-strong:rgba(226,237,231,.23)!important;--accent-border:var(--app-muted)!important;
+  --surface:var(--app-panel)!important;--surface-strong:var(--app-raised)!important;
+  --surface-soft:var(--app-panel)!important;--field:var(--app-field)!important;
+  --line:var(--app-line)!important;--line-strong:rgba(226,237,231,.23)!important;
+  --muted:var(--app-muted)!important;--dim:var(--app-muted)!important;
+  --ai-bg:var(--app-bg)!important;--ai-bg-deep:var(--app-bg)!important;
+  --ai-surface:var(--app-panel)!important;--ai-surface-raised:var(--app-raised)!important;
+  --ai-surface-hover:var(--app-raised)!important;--ai-border:var(--app-line)!important;
+  --ai-text:var(--app-text)!important;--ai-text-soft:var(--app-text)!important;
+  --ai-muted:var(--app-muted)!important;--ai-muted-dark:var(--app-muted)!important;
+  --ai-accent:var(--app-text)!important;--ai-accent-bright:var(--app-text)!important;
+  --ai-theme-hover-border:#78897d!important;--ai-sidebar:224px;--ai-header:54px;
+  --studio-bg:var(--app-bg)!important;--studio-sidebar:var(--app-panel)!important;
+  --studio-surface:var(--app-panel)!important;--studio-surface-raised:var(--app-raised)!important;
+  --studio-field:var(--app-field)!important;--studio-editor:var(--app-bg)!important;
+  --studio-text:var(--app-text)!important;--studio-text-soft:var(--app-text)!important;
+  --studio-muted:var(--app-muted)!important;--studio-faint:var(--app-muted)!important;
+  --studio-line:var(--app-line)!important;--studio-accent:var(--app-text)!important;
+  --studio-accent-strong:var(--app-text)!important;--studio-button-text:var(--app-text)!important;
+  --studio-accent-soft:var(--app-raised)!important;--studio-accent-line:var(--app-line)!important;
+  color-scheme:dark;
+}
+html[data-nyx-appearance="light"],html[data-nyx-appearance="light"] body {
+  color-scheme:light;
+}
+html,html body {background:var(--app-bg)!important;color:var(--app-text);font-family:Inter,Arial,sans-serif}
+html body::before {background-image:none!important;box-shadow:none!important}
+html body :is(.utility-header,.topbar,.chat-topbar,.site-nav,.media-nav,.ai-header,.workspace-header) {background:var(--app-panel)!important;border-color:var(--app-line)!important;box-shadow:none!important;backdrop-filter:blur(18px)}
+html body :is(.utility-card,.panel,.card:not(:has(img)),.ai-sidebar,.assistant-panel,.file-panel,.sidebar,.tube-sidebar,.chat-sidebar) {background:var(--app-panel);border-color:var(--app-line);box-shadow:none}
+html body :is(button,.button,.btn,.primary,.secondary,.utility-button,.settings-action):not(.swatch):not([data-color]) {background-image:none!important;text-shadow:none;box-shadow:none;}
+html body :is(.primary,.button-primary,.btn-primary,.button-run,.button-ai,.ai-new-chat,.ai-send,.utility-primary) {background:var(--app-raised)!important;color:var(--app-text)!important;border:1px solid var(--app-line)!important;border-radius:7px!important;box-shadow:none!important}
+html body :is(input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(.search-field input):not(.searchbox input):not(.search-box input):not(.ai-history-search input),textarea:not([data-code-input]),select) {background-color:var(--app-field);color:var(--app-text);border-color:var(--app-line);box-shadow:none}
+html body :is(button,a,input,textarea,select):not(.search-field input):not(.searchbox input):not(.search-box input):not(.ai-history-search input):not(.message-composer textarea):not(.assistant-form textarea):focus-visible {outline:1px solid var(--app-muted);outline-offset:3px}
+html body :is(.message-composer,.assistant-form) textarea {border:0;border-radius:8px;outline:0;background:transparent;box-shadow:none}
+html body :is(.message-composer,.assistant-form):focus-within {border-color:var(--app-muted);box-shadow:0 0 0 2px color-mix(in srgb,var(--app-muted) 10%,transparent)}
+html body :is(.ai-app,.ai-workspace,.ai-composer,.ai-composer-shell) {background:transparent;box-shadow:none}
+.ai-sidebar {backdrop-filter:blur(22px);border-right:1px solid var(--app-line)}
+.ai-sidebar-close,.ai-sidebar-toggle {display:grid}
+.ai-clear{width:34px;min-width:34px;padding:0;justify-content:center;flex:none}
+.ai-clear>span{display:none}
+.ai-app:not(.is-sidebar-open) {grid-template-columns:0 minmax(0,1fr)}
+.ai-app:not(.is-sidebar-open) .ai-sidebar {visibility:hidden;overflow:hidden;pointer-events:none}
+.ai-sidebar-scrim {display:none!important}
+.ai-sidebar-brand-mark {width:27px;height:27px;background:url('/assets/icons/nyx-cat-moon-small.svg?v=3') center/contain no-repeat}
+.ai-sidebar-brand small,.ai-brand-copy>span {display:none}
+.ai-sidebar-brand strong {font-size:13px;font-weight:500}
+.ai-history-search {border-radius:7px;background:var(--app-field)}
+.ai-thread-button {border-radius:7px}
+.ai-depth {border:0;border-radius:0;background:transparent;padding:0;gap:12px}
+.ai-depth button {border-radius:0;border-bottom:1px solid transparent;font-size:10px}
+.ai-depth button.is-active {background:none;box-shadow:none;border-bottom-color:var(--app-text)}
+.ai-composer textarea {background:transparent!important}
+.ai-message {background:none!important}
+.utility-shell {max-width:1160px;padding-top:34px}
+.utility-header h1 {letter-spacing:-.035em;font-weight:500}
+.utility-card {border-radius:12px}
+.tube-shell,.nyxify-shell,.app-shell,.studio-shell {background:transparent}
+.tube-sidebar,.assistant-panel {backdrop-filter:blur(20px)}
+.workspace-header,.assistant-header {border-bottom:1px solid var(--app-line)}
+/* Media artwork, player overlays and code syntax colors retain their contrast. */
+
+/* Chat uses the same surfaces; member role colors retain their meaning. */
+:root,html body{--chat-bg:var(--app-bg);--chat-panel:var(--app-panel);--chat-panel-2:var(--app-field);--chat-panel-3:var(--app-raised);--chat-line:var(--app-line);--chat-line-soft:var(--app-line);--chat-text:var(--app-text);--chat-muted:var(--app-muted);--chat-faint:var(--app-muted);--chat-accent:var(--app-text);--chat-accent-2:var(--app-text)}
+html body .chat-app,html body .conversation{background:var(--app-bg)}
+html body .chat-app::before{display:none}
+html body :is(.channel-sidebar,.member-sidebar,.conversation-header,.current-user,.chat-guidelines,.message-composer,.dm-dialog,.channel-manager-dialog){background:var(--app-panel);border-color:var(--app-line)}
+html body :is(.primary-button,.send-button,.composer-send){background:var(--app-raised)!important;color:var(--app-text)!important;border-color:var(--app-line)!important;box-shadow:none!important}
+html body :is(.primary-button,.send-button,.composer-send):hover{background:var(--app-field)!important;filter:none}
+
+html body :is(.search-field,.searchbox,.search-box,.ai-history-search){background:var(--app-field);border-color:var(--app-line);border-radius:10px;box-shadow:none;transition:background-color 160ms,border-color 160ms}
+html body :is(.search-field,.searchbox,.search-box,.ai-history-search):hover{background:var(--app-raised);border-color:var(--app-muted)}
+html body :is(.search-field,.searchbox,.search-box,.ai-history-search):focus-within{background:var(--app-field);border-color:var(--app-muted);box-shadow:0 0 0 2px color-mix(in srgb,var(--app-muted) 14%,transparent)}
+html body :is(.search-field,.searchbox,.search-box,.ai-history-search) input{background:transparent;color:var(--app-text);border:0;outline:0;box-shadow:none;border-radius:0}

@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {parse} from 'acorn';
+import vm from 'node:vm';
+const source=readFileSync('apps/chat/app.js','utf8'),ast=parse(source,{ecmaVersion:'latest'}),functions=new Map();
+function visit(node){if(!node||typeof node!=='object')return;if(node.type==='FunctionDeclaration')functions.set(node.id.name,source.slice(node.start,node.end));for(const value of Object.values(node))if(Array.isArray(value))value.forEach(visit);else if(value&&typeof value==='object')visit(value);}visit(ast);
+let resolveFetch;const key='channel:general',state={me:{},active:{type:'channel',id:'general'},messages:new Map([[key,[{id:'old',createdAtMs:1}]]]),loaded:new Set(),hasMore:new Map(),latestActivity:{}};
+const context=vm.createContext({state,API:'/api/chat',AbortSignal,refs:{scroller:{scrollHeight:100,scrollTop:0,clientHeight:100}},document:{hidden:false},scopeKey:()=>key,fetchJson:()=>new Promise(r=>resolveFetch=r),renderMessages:()=>{},notifyRecoveredMentions:()=>{},requestAnimationFrame:fn=>fn(),markRead:()=>{},setConnection:()=>{}});
+vm.runInContext(functions.get('mergeMessages')+'\n'+functions.get('loadMessages'),context);
+const loading=vm.runInContext('loadMessages({poll:true,replace:true})',context);
+state.messages.get(key).push({id:'socket-arrival',createdAtMs:2},{id:'pending',pending:true,createdAtMs:3});resolveFetch({messages:[{id:'old',createdAtMs:1}]});await loading;assert.deepEqual(Array.from(state.messages.get(key),m=>m.id),['old','socket-arrival','pending']);
+let time=100000,fetches=0,snapshots=0;state.socketConnected=true;state.lastFallbackAt=0;state.revision=1;state.loaded.add(key);
+const recovery=vm.createContext({state,API:'/api/chat',UPDATE_FALLBACK_CONNECTED_MS:10000,Date:{now:()=>time},AbortSignal,scopeKey:()=>key,fetchJson:async()=>{fetches++;return {events:[],revision:2};},loadMessages:async()=>{snapshots++;}});
+vm.runInContext('let updatesInFlight=null;\n'+functions.get('refreshUpdates')+'\n'+functions.get('performRefreshUpdates'),recovery);
+const a=vm.runInContext('refreshUpdates()',recovery),b=vm.runInContext('refreshUpdates()',recovery);assert.equal(a,b);await a;assert.equal(fetches,1);assert.equal(snapshots,1);
+time+=9000;await vm.runInContext('refreshUpdates()',recovery);assert.equal(fetches,1);time+=1000;await vm.runInContext('refreshUpdates()',recovery);assert.equal(fetches,2);assert.equal(snapshots,2);
+console.log('PASS slow snapshots retain socket/pending messages; single-flight polling and ten-second connected-socket recovery');
+
+const notifications=[];const mentionContext=vm.createContext({state:{me:{uid:'me',handle:'@me'}},playChatPing:(...args)=>notifications.push(args)});
+vm.runInContext(['chatMentionHandles','mentionsMe','notifyRecoveredMentions'].map(name=>functions.get(name)).join('\n'),mentionContext);
+vm.runInContext("notifyRecoveredMentions({type:'channel',id:'general'},[{id:'old',createdAtMs:10}],[{id:'old',createdAtMs:10,text:'@me',author:{uid:'other'}},{id:'new',createdAtMs:11,text:'@me hello',author:{uid:'other',displayName:'Friend'}},{id:'self',createdAtMs:12,text:'@me',author:{uid:'me'}}]);",mentionContext);
+assert.equal(notifications.length,1);assert.equal(notifications[0][1],'mention');assert.equal(notifications[0][2].preview,'@me hello');
+console.log('PASS recovered mentions include sender/text without replaying existing or self messages');
+
+const server=readFileSync('server.js','utf8'),serverAst=parse(server,{ecmaVersion:'latest',sourceType:'module'});
+const serverFns=new Map(serverAst.body.filter(n=>n.type==='FunctionDeclaration').map(n=>[n.id.name,server.slice(n.start,n.end)]));
+const socketContext=vm.createContext({nyxChatRealtimeRevision:1,nyxChatMessagePayload:doc=>doc});
+vm.runInContext(['nyxChatMentionHandles','nyxChatEventMentionsIdentity','nyxChatSocketEventForViewer'].map(name=>serverFns.get(name)).join('\n'),socketContext);
+assert.equal(vm.runInContext("nyxChatSocketEventForViewer({kind:'message',lastMessageText:'@me hello',messageDocument:{text:'@me hello'}},{data:{uid:'me',identity:{handle:'@me'}}}).mentionsViewer",socketContext),true);
+console.log('PASS socket mention uses emitted lastMessageText field');

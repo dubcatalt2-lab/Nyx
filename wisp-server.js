@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { server as wisp } from "@mercuryworkshop/wisp-js/server";
+import { startWispurr } from "./lib/wispurr-relay.mjs";
 
 const port = Number.parseInt(process.env.PORT || "8080", 10);
 const configuredAllowedOrigins = String(process.env.NYX_ALLOWED_ORIGINS || "")
@@ -18,19 +18,9 @@ const allowedOrigins = [...new Set([...configuredAllowedOrigins, ...canonicalAll
 const presenceSessions = new Map();
 const presenceTtlMs = 45_000;
 
-wisp.options.allow_private_ips = false;
-wisp.options.allow_loopback_ips = false;
-wisp.options.allow_direct_ip = true;
-wisp.options.allow_udp_streams = false;
-wisp.options.port_whitelist = [80, 443];
-wisp.options.dns_method = "lookup";
-wisp.options.dns_result_order = "ipv4first";
-// wisp-js 0.4.1 stores streams in an object, but its per-host limiter tries
-// to iterate that object directly and crashes the process on the first stream.
-// Keep the working total limit below and leave the broken per-host path off.
-wisp.options.stream_limit_per_host = -1;
-wisp.options.stream_limit_total = 64;
-wisp.options.wisp_motd = "Nyx Railway Wisp";
+const wisp = await startWispurr({
+  onFailure: () => { console.error("Nyx relay worker stopped."); shutdown("worker", 1); }
+});
 
 function originAllowed(origin) {
   if (!allowedOrigins.length || allowedOrigins.includes("*")) return true;
@@ -118,7 +108,8 @@ const server = createServer((req, res) => {
       service: "nyx-wisp",
       online: prunePresence(),
       originsRestricted: allowedOrigins.length > 0,
-      dnsResultOrder: wisp.options.dns_result_order
+      dnsResultOrder: "ipv4first",
+      implementation: "wispurr"
     }));
     return;
   }
@@ -127,7 +118,9 @@ const server = createServer((req, res) => {
 });
 
 server.on("upgrade", (req, socket, head) => {
-  const url = new URL(req.url || "/", "http://localhost");
+  let url;
+  try { url = new URL(req.url || "/", "http://localhost"); }
+  catch { rejectUpgrade(socket, "400 Bad Request"); return; }
   if (url.pathname !== "/wisp/") {
     rejectUpgrade(socket, "404 Not Found");
     return;
@@ -136,22 +129,20 @@ server.on("upgrade", (req, socket, head) => {
     rejectUpgrade(socket);
     return;
   }
-  wisp.routeRequest(req, socket, head);
+  wisp.route(req, socket, head);
 });
 
-server.listen(port, "0.0.0.0", () => {
-  console.log(`Nyx Wisp listening on 0.0.0.0:${port}`);
-  console.log(`Outbound DNS result order: ${wisp.options.dns_result_order}`);
-  console.log(allowedOrigins.length ? `Allowed origins: ${allowedOrigins.join(", ")}` : "Warning: NYX_ALLOWED_ORIGINS is empty; all browser origins are currently allowed.");
-});
+server.listen(port, "0.0.0.0");
 
 let shuttingDown = false;
-function shutdown(signal) {
+function shutdown(signal, exitCode = 0) {
   if (shuttingDown) return;
   shuttingDown = true;
-  console.log(`${signal} received; closing Wisp server.`);
-  server.close(() => process.exit(0));
+  const workerStopped = wisp.stop();
+  server.close(() => Promise.resolve(workerStopped).then(() => process.exit(exitCode)));
   setTimeout(() => process.exit(1), 10_000).unref();
 }
+server.once("error", () => shutdown("listen", 1));
 process.once("SIGTERM", () => shutdown("SIGTERM"));
 process.once("SIGINT", () => shutdown("SIGINT"));
+if (process.channel) process.once("disconnect", () => shutdown("disconnect"));

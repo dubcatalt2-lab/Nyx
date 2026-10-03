@@ -1,0 +1,54 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import express from 'express';
+import {chromium} from 'playwright';
+const root=process.env.NYX_TEST_ASSET_ROOT||'.',app=express();app.use(express.static(root));
+const server=app.listen(0);await new Promise(r=>server.once('listening',r));
+const origin='http://localhost:'+server.address().port,browser=await chromium.launch();
+const sources=[{id:'aniembed',name:'AniEmbed',url:'https://aniembed.se/e/154587/1?lang=sub&autoplay=1&t=0'},{id:'rive',name:'Rive',url:'https://watch.rivestream.app/embed?type=tv&id=209867&season=1&episode=1'}];
+try{
+ const p=await browser.newPage();await p.clock.install();let external=0;
+ await p.addInitScript(()=>localStorage.setItem('nyx.movies.preferredSource','aniembed'));
+ await p.route('**/*',r=>{
+  const u=new URL(r.request().url());
+  if(u.hostname==='aniembed.se')external++;
+  if(u.origin!==origin)return r.abort();
+  if(u.pathname==='/apps/movies/proxy.mjs')return r.fulfill({contentType:'application/javascript',body:`export {inspectMovieProxy,styleMovieVideo,startMovieProxy,canStartMovieProxy} from './proxy-runtime.mjs';export async function launchMovieProxy(frame,url){(window.proxyTargets??=[]).push(url);frame.src='/fixture?target='+encodeURIComponent(url);}`});
+  if(u.pathname==='/apps/movies/proxy-runtime.mjs')return r.fulfill({contentType:'application/javascript',body:readFileSync(root+'/apps/movies/proxy.mjs','utf8')});
+  if(u.pathname==='/fixture')return r.fulfill({contentType:'text/html',body:'Loading fixture'});
+  if(u.pathname==='/api/movies/tv/209867/season/1/episode/1')return r.fulfill({json:{id:'209867/1/1',kind:'episode',title:'Frieren',tmdbSeriesId:209867,sources}});
+  if(u.pathname.startsWith('/api/movies/'))return r.fulfill({json:{results:[]}});
+  return r.continue();
+ });
+ let scenario=0;
+ const load=async()=>{await p.goto(origin+'/apps/movies/?scenario='+(++scenario)+'#watch=209867/1/1');await p.frameLocator('#player iframe').getByText('Loading fixture',{exact:true}).waitFor();};
+ await load();assert.equal(await p.locator('[data-provider=aniembed]').count(),1);
+ assert.deepEqual(await p.evaluate(()=>window.proxyTargets),[sources[0].url]);
+ assert.equal(await p.locator('#player iframe').getAttribute('sandbox'),'allow-scripts allow-same-origin allow-forms allow-presentation');
+ const frame=await (await p.locator('#player iframe').elementHandle()).contentFrame();
+ await frame.evaluate(()=>{const v=document.createElement('video');for(const [key,value] of Object.entries({videoWidth:1280,videoHeight:720,readyState:4,paused:false,duration:120}))Object.defineProperty(v,key,{get:()=>value});Object.defineProperty(v,'currentTime',{get:()=>performance.now()/1000});document.body.append(v);});
+ await p.clock.runFor(2200);
+ await p.waitForFunction(()=>document.querySelector('[data-provider=aniembed]').closest('li').dataset.state==='Playing');
+ assert(await p.locator('#watch-area').evaluate(e=>e.classList.contains('proxy-ready')),'Nyx video layout binds to the proxied video');
+ assert.equal(await p.locator('#toggle-play').isEnabled(),true);assert.equal(await p.locator('#seek').isEnabled(),true);
+ await p.clock.fastForward(46000);assert.equal((await p.evaluate(()=>window.proxyTargets)).length,1,'Measured playback cancels startup timeout');
+ await frame.evaluate(()=>document.body.textContent='No sources found');await p.clock.runFor(1200);
+ assert.equal((await p.evaluate(()=>window.proxyTargets)).at(-1),sources[1].url,'Failed provider advances through the proxy');
+ await load();await p.clock.fastForward(46000);await p.waitForFunction(()=>window.proxyTargets.length>1);
+ assert.equal((await p.evaluate(()=>window.proxyTargets)).at(-1),sources[1].url,'No-play timeout advances to another proxied source');
+ // A valid player may appear before its delayed playback starts. The startup
+ // timeout offers Reload; real playback must remove that stale overlay.
+ await load();await p.locator('[data-provider=rive]').click();
+ await p.waitForFunction(()=>window.proxyTargets.at(-1).includes('rivestream'));
+ const lateFrame=await (await p.locator('#player iframe').elementHandle()).contentFrame();
+ await lateFrame.waitForLoadState('domcontentloaded');
+ await lateFrame.evaluate(()=>{window.fixturePlaying=false;const v=document.createElement('video');for(const [key,value] of Object.entries({videoWidth:1280,videoHeight:720,readyState:4,duration:120}))Object.defineProperty(v,key,{get:()=>value});Object.defineProperty(v,'paused',{get:()=>!window.fixturePlaying});Object.defineProperty(v,'currentTime',{get:()=>window.fixturePlaying?performance.now()/1000:0});document.body.append(v);});
+ await p.clock.runFor(1200);await p.clock.fastForward(46000);
+ assert.equal(await p.locator('#retry-player').isVisible(),true,'Delayed player offers Reload');
+ await lateFrame.evaluate(()=>{window.fixturePlaying=true;});await p.clock.runFor(2200);
+ assert.equal(await p.locator('#retry-player').isVisible(),false,'Recovered playback clears Reload');
+ await p.evaluate(()=>{window.blocked=false;addEventListener('securitypolicyviolation',e=>{if(e.effectiveDirective==='frame-src')window.blocked=true;});const f=document.createElement('iframe');f.src='https://aniembed.se/e/154587/1?lang=sub&autoplay=1&t=0';document.body.append(f);});
+ await p.waitForFunction(()=>window.blocked);assert.equal(external,0,'Direct AniEmbed frames never reach the network');
+ await p.locator('#close-player').click({force:true});assert.equal(await p.locator('#player iframe').count(),0);
+ console.log('PASS AniEmbed proxy-only selection, Nyx layout/controls, sandbox, failed/no-play fallback, direct-frame CSP and cleanup');
+}finally{await browser.close();await new Promise(r=>server.close(r));}

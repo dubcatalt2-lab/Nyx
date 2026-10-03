@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {sourceWebsiteUrl} from '../apps/tutsi/navigation.mjs';
+import {riskyFile,protectTransport} from '../apps/tutsi/protections.mjs';
+const origin='https://drop.test',url='https://duckduckgo.com/?q=hello%20world&ia=web',envelope=origin+'/~/tm/a/b/'+encodeURIComponent(url);
+assert.equal(sourceWebsiteUrl(envelope+'?$rfp=origin&$io=https%3A%2F%2Fduckduckgo.com',origin),url);
+assert.equal(sourceWebsiteUrl(envelope+'?$rfp=origin&$io=https%3A%2F%2Fduckduckgo.com#part',origin),url+'#part');
+assert.equal(sourceWebsiteUrl(envelope+'?q=new&$io=https%3A%2F%2Fduckduckgo.com',origin),'https://duckduckgo.com/?q=new');
+assert.equal(sourceWebsiteUrl(origin+'/~/tm/a/b/'+encodeURIComponent('https://example.com/?q=$io'),origin),'https://example.com/?q=$io');
+for(const value of ['https://example.com','https://example.com/?q=program.exe','https://duckduckgo.com/?$io=https%3A%2F%2Fduckduckgo.com'])assert.equal(riskyFile(value),false,value);
+for(const value of ['https://example.com/program.exe?q=1','https://example.com/file%2Eexe','setup.exe'])assert.equal(riskyFile(value),true,value);
+const transport=protectTransport({request:async()=>({status:200,headers:[['content-type','text/html']],body:new Response('page').body}),connect:()=>[]},()=>({downloadBlock:true,adBlock:true}));
+assert.equal((await transport.request(new URL(url))).status,200);assert.equal((await transport.request(new URL('https://example.com/program.exe'))).status,403);
+console.log('PASS destination query fidelity, controller metadata exclusion, real file blocking and search/domain false positives');

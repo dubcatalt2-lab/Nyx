@@ -1205,10 +1205,10 @@
     const companies=[...new Map([{id:'openai/'},{id:'anthropic/'},...modelCatalog].map(item=>{const company=modelCompany(item);return [company.key,company]})).values()].sort((a,b)=>rank(a.key)-rank(b.key)||a.label.localeCompare(b.label));
     if(!companies.some(company=>company.key===modelCompanyFilter))modelCompanyFilter='';
     const tutsi=tutsiModelPicker();modelCompaniesHost.dataset.layout=tutsi?'tutsi':'nyx';
-    const button=company=>`<button type="button" data-model-company="${escapeHtml(company.key)}" title="${escapeHtml(company.label)}" aria-label="${escapeHtml(company.label)} models" aria-pressed="${modelCompanyFilter===company.key}">${modelCompanyIcon(company)}${tutsi?`<span class="ai-company-filter-label">${escapeHtml(company.label)}</span>`:''}</button>`;
-    if(tutsi){modelCompaniesHost.innerHTML=companies.map(button).join('');syncCompanyMotion();return;}
+    const button=(company,showLabel=tutsi)=>`<button type="button" data-model-company="${escapeHtml(company.key)}" title="${escapeHtml(company.label)}" aria-label="${escapeHtml(company.label)} models" aria-pressed="${modelCompanyFilter===company.key}">${modelCompanyIcon(company)}${showLabel?`<span class="ai-company-filter-label">${escapeHtml(company.label)}</span>`:''}</button>`;
+    if(tutsi){modelCompaniesHost.innerHTML=companies.map(company=>button(company)).join('');syncCompanyMotion();return;}
     const scrolling=companies.filter(company=>!['openai','anthropic'].includes(company.key));
-    modelCompaniesHost.innerHTML=[0,1].map(i=>`<div class="ai-company-column"><div class="ai-company-pinned">${button(companies.find(company=>company.key===(i?'anthropic':'openai')))}</div><div class="ai-company-rail" aria-label="${i?'Right':'Left'} company filters"><div class="ai-company-track">${scrolling.filter((_,index)=>index%2===i).map(button).join('')}</div></div></div>`).join('');
+    modelCompaniesHost.innerHTML=[0,1].map(i=>`<div class="ai-company-column"><div class="ai-company-pinned">${button(companies.find(company=>company.key===(i?'anthropic':'openai')),true)}</div><div class="ai-company-rail" aria-label="${i?'Right':'Left'} company filters"><div class="ai-company-track">${scrolling.filter((_,index)=>index%2===i).map(company=>button(company)).join('')}</div></div></div>`).join('');
     modelCompaniesHost.querySelectorAll('.ai-company-rail').forEach(rail=>{
       const copy=rail.firstElementChild.cloneNode(true);
       copy.setAttribute('aria-hidden','true');copy.dataset.loopCopy='';

@@ -9,7 +9,7 @@ function visit(n){if(!n||typeof n!=='object')return;if(n.type==='FunctionDeclara
 visit(parse(source,{ecmaVersion:'latest'}));
 for(const uid of ['other','3158eOj4ATMzkoC1PAm8H7TXc2R2']){
   const text=vm.runInNewContext(quick+';quickTiles()', {nyxGlobalApps:[],nyxFounderSignedInUser:{uid},esc:s=>s,globalAppIconMarkup:()=>''});
-  assert.equal(text.includes('>VMs<'),uid!=='other');
+  assert.equal(text.includes('>VMs<'),true);
 }
 const app=express();app.use('/app',express.static(process.env.NYX_TEST_STATIC_ROOT||'.'));
 app.get('/',(_req,res)=>res.send(`<div id="status"></div><main id="screen"></main><script type="module">
@@ -21,7 +21,14 @@ window.calls=[];window.dispose=loremDesktop({screen:document.querySelector('#scr
    if(scenario==='disposed')await new Promise(r=>setTimeout(r,100));
    return {vms:['existing','stopped'].includes(scenario)?[{id:'one',state:scenario==='stopped'?'stopped':'running',url:'https://loremgroup.org/vm/fixture/'}]:[],queued:scenario==='queued'};
  }
- if(path==='/lorem/create'||path==='/lorem/queue')return {status:'ready',vm:{url:'https://loremgroup.org/vm/fixture/'}};
+ if(path==='/lorem/create'||path==='/lorem/queue'){
+   if(['waiting','outage'].includes(scenario)){
+     if(scenario==='outage'&&path==='/lorem/queue'&&!window.retried){window.retried=true;throw Object.assign(Error('Temporary outage'),{status:503});}
+     return {status:'queued',position:3,reason:'capacity'};
+   }
+   if(scenario==='recovering')return {status:'recovering',message:'Provider confirmation pending.'};
+   return {status:'ready',vm:{url:'https://loremgroup.org/vm/fixture/'}};
+ }
  return {};
 }});
 if(scenario==='disposed')dispose();
@@ -46,6 +53,18 @@ try{
     await page.evaluate(()=>dispose());
   }
   assert.deepEqual(errors,[]);
-  console.log('PASS owner-only VMs tile, automatic create/reuse/start/queue, stale-response cleanup and provider-free UI');
+  for(const scenario of ['waiting','outage']){
+    await page.goto('http://127.0.0.1:'+server.address().port+'/?case='+scenario);
+    if(scenario==='outage'){
+      await page.getByText('Reconnecting to the queue. Your place is saved.',{exact:true}).first().waitFor();
+      await page.getByRole('heading',{name:'You’re #3 in line'}).waitFor({timeout:15000});
+    }else await page.getByRole('heading',{name:'You’re #3 in line'}).waitFor();
+    await page.getByRole('button',{name:'Leave queue'}).click();
+    await page.getByRole('heading',{name:'You left the queue'}).waitFor();
+    assert.equal(await page.locator('iframe').count(),0);
+    assert.equal((await page.evaluate(()=>window.calls)).filter(c=>c.path==='/lorem/cancel').length,1);
+    await page.evaluate(()=>dispose());
+  }
+  console.log('PASS public VMs tile, automatic create/reuse/start/queue, stale-response cleanup and provider-free UI');
 
 }finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

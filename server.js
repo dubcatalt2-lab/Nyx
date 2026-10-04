@@ -2570,10 +2570,8 @@ function nyxSharedAiAllowance(firebase) {
   }
   return allowance;
 }
-async function nyxSharedAiSession(scope) {
-  if (scope.sessionPromise) return scope.sessionPromise;
-  scope.sessionPromise = (async () => {
-    const {req,res} = scope;
+// Resolve role and subscription once for both enforcement and the balance view.
+async function nyxSharedAiActor(req,res) {
     let firebase, uid;
     if(req.nyxAiBilling)({firebase,uid}=req.nyxAiBilling);
     else {
@@ -2591,6 +2589,16 @@ async function nyxSharedAiSession(scope) {
       monthlyModelLimits:premiumModelLimits(admin.aiMonthlyModelLimits),trusted:admin.aiAccess==='trusted',blocked:admin.aiAccess==='restricted',
       apiVerified:Boolean(req.nyxAiBilling?.apiVerified),apiDailyRequests:req.nyxAiBilling?.dailyRequests,apiMinuteRequests:req.nyxAiBilling?.minuteRequests,apiMaxOutput:req.nyxAiBilling?.maxOutput,
       device:req.nyxAiBilling?.device||(req.path==='/api/v1/ai'?`key-owner:${uid}`:await allowance.device(req,res,req.nyxAiApp==='nook'?{cookieName:'nook_device',maxAge:31536000}:{})),network:nyxClientIp(req)};
+    return {firebase,allowance,actor};
+}
+function nyxAiErrorBody(error) {
+  return {error:error.status===401?'Sign in to use Nyx AI.':error.message||'AI is temporarily unavailable.',code:error.reason||(error.status===401?'authentication':error.status===403?'access_denied':'provider_failure'),...(error.retryAfter?{retryAfter:error.retryAfter}:{})};
+}
+async function nyxSharedAiSession(scope) {
+  if (scope.sessionPromise) return scope.sessionPromise;
+  scope.sessionPromise = (async () => {
+    const {req,res} = scope;
+    const {firebase,allowance,actor}=await nyxSharedAiActor(req,res);
     const session=await allowance.begin(actor);
     scope.allowance=allowance;scope.session=session;scope.firestore=firebase.firestore;
     if(scope.controller.signal.aborted){await allowance.finish(session);throw Object.assign(new Error('AI request cancelled.'),{status:499});}
@@ -2613,7 +2621,7 @@ async function nyxBudgetedAiFetch(provider,url,options) {
   }
   const reservation=await scope.allowance.reserve(session,provider,payload,catalogPrice);
   if(new URL(url).hostname==='openrouter.ai') {
-    if(!reservation.price)throw Object.assign(new Error('The owner needs to configure the shared AI dollar budget and model prices.'),{status:503,code:'ai_allowance'});
+    if(!reservation.price){await scope.allowance.settle(reservation,null,true);throw Object.assign(new Error('The owner needs to configure the shared AI dollar budget and model prices.'),{status:503,code:'ai_allowance',reason:'configuration'});}
     payload.provider=hasFullAiCatalog(session.actor)?{sort:'latency',require_parameters:true}:{sort:reservation.free?'latency':'price',require_parameters:true,max_price:{prompt:reservation.price.inputRate,completion:reservation.price.outputRate,request:reservation.price.fixed}};
     try {
       const key=String(new Headers(options.headers).get('authorization')||'').replace(/^Bearer\s+/i,'');
@@ -2622,6 +2630,7 @@ async function nyxBudgetedAiFetch(provider,url,options) {
   }
   const signal=options.signal?AbortSignal.any([options.signal,scope.controller.signal]):scope.controller.signal;
   try {
+    if(signal.aborted){await scope.allowance.settle(reservation,null,true);throw Object.assign(new Error('AI request cancelled before sending.'),{status:499});}
     scope.req.nyxApiSent=true;
     const response=await fetch(url,{...options,body:JSON.stringify(payload),signal});
     return aiBudgetResponse(response,async(usage,success,imageCount,answer,details)=>{
@@ -2632,12 +2641,12 @@ async function nyxBudgetedAiFetch(provider,url,options) {
         const prompt=typeof scope.req.body?.message==='string'?scope.req.body.message:typeof lastUser==='string'?lastUser:'';
         await recordAiExchange(scope.firestore,session.actor.uid,{model:payload.model,prompt,answer,usage,temporary:scope.req.body?.temporaryChat===true||scope.req.body?.historyNoticeVersion!==1}).catch(()=>console.warn('AI activity could not be saved.'));
       }
-    },payload.modalities?.includes("image")?8*1024*1024:undefined);
+    },payload.modalities?.includes("audio")?16*1024*1024:payload.modalities?.includes("image")?8*1024*1024:undefined);
   } catch(error) {await scope.allowance.settle(reservation,null).catch(()=>{});throw error;}
 }
 // Dedicated routes select product policy; request body/header claims do not.
 app.use((req,res,next)=>{
-  const appRoute=/^\/api\/(drop|nook|tutsi)-ai(?:\/models)?$/.exec(req.path);
+  const appRoute=/^\/api\/(drop|nook|tutsi)-ai(?:\/(?:models|usage|media(?:\/[A-Za-z0-9-]+(?:\/content)?)?))?$/.exec(req.path);
   if(appRoute&&['GET','POST'].includes(req.method)){
     req.nyxAiApp=appRoute[1];req.url=req.url.replace('/api/'+appRoute[1]+'-ai','/api/nyx-ai');
   }
@@ -2647,6 +2656,14 @@ app.use((req,res,next)=>{
     req.nookAccount=true;req.url=req.url.replace('/api/nook-account/register','/api/account/register');
   }
   next();
+});
+app.get('/api/nyx-ai/usage',async(req,res)=>{
+  res.set('Cache-Control','private, no-store');
+  if(!sameOriginRequest(req))return res.status(403).json({error:'Cross-origin AI requests are not allowed.',code:'access_denied'});
+  try {
+    const {actor,allowance}=await nyxSharedAiActor(req,res);
+    res.json(await allowance.usage(actor));
+  } catch(error) {res.status(error.status||503).json(nyxAiErrorBody(error));}
 });
 app.use(async(req,res,next)=>{
   if(req.method!=='POST'||!['/api/nyx-ai','/api/nyx-ai/media','/api/v1/ai'].includes(req.path))return next();
@@ -2666,12 +2683,15 @@ app.use(async(req,res,next)=>{
       next();
     } catch(error) {
       if(error.retryAfter)res.set('Retry-After',String(error.retryAfter));
-      if(!res.headersSent&&!res.destroyed)res.status(error.status||503).json({error:error.status===401?'Sign in to use shared Nyx AI.':error.message||'Shared AI is temporarily unavailable.'});
+      if(!res.headersSent&&!res.destroyed)res.status(error.status||503).json(nyxAiErrorBody(error));
     }
   });
 });
 
 async function nyxAiRateLimit(req, res, next) {
+  // Shared requests have already passed transactional account pacing/capacity.
+  // Personal-key and anonymous requests still use the local abuse limiter.
+  if(nyxAiBudgetContext.getStore()?.session)return next();
   const now = Date.now();
   const clientId = nyxAiClientId(req);
   // AI requests from the workspace include the signed-in account token even
@@ -2680,7 +2700,7 @@ async function nyxAiRateLimit(req, res, next) {
   // everybody else on a school or home connection.
   const entitlement = await nyxAiPremiumEntitlement(req);
   const unlimited=hasFullAiCatalog(entitlement);
-  const unlimitedDaily = Boolean(unlimited || hasAppAiAllowance(entitlement) || entitlement.premium || entitlement.owner || isFreeAiModel(req.body?.model));
+  const unlimitedDaily = Boolean(entitlement.uid);
   const usageId = entitlement.uid ? `account:${hasAppAiAllowance(entitlement)?entitlement.app+':':''}${entitlement.uid}` : `ip:${clientId}`;
   const usage = nyxAiUsage.get(usageId) || { minute: [], day: [], active: 0, seen: now };
   usage.minute = usage.minute.filter(time => now - time < 60_000);
@@ -2696,12 +2716,12 @@ async function nyxAiRateLimit(req, res, next) {
       ? Math.max(1, Math.ceil((60_000 - (now - usage.minute[0])) / 1000))
       : Math.max(1, Math.ceil((86_400_000 - (now - usage.day[0])) / 1000));
     res.setHeader("retry-after", retryAfter);
-    res.status(429).json({ error: "Nyx AI usage limit reached. Please try again later." });
+    res.status(429).json({ error: usage.minute.length >= nyxAiLimits.minute ? `Please wait ${retryAfter} seconds before sending another AI message.` : "Anonymous AI requests have reached the daily limit. Sign in to continue.", code: usage.minute.length >= nyxAiLimits.minute ? "cooldown" : "anonymous_request_limit", retryAfter });
     return;
   }
   if ((!unlimited && usage.active >= nyxAiLimits.perIpConcurrent) || nyxAiActiveRequests >= nyxAiLimits.globalConcurrent) {
     res.setHeader("retry-after", "10");
-    res.status(429).json({ error: "Nyx AI is busy. Please wait for another response to finish." });
+    res.status(429).json({ error: "Nyx AI is busy. Please wait for another response to finish.", code:"capacity", retryAfter:10 });
     return;
   }
   usage.minute.push(now);
@@ -3056,7 +3076,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     let data = generateAudio&&upstream.ok&&/text\/event-stream/i.test(upstream.headers.get("content-type")||"") ? await collectModelVoice(upstream,{format:providerPayload.audio.format}) : await upstream.json().catch(() => ({}));
     if (!upstream.ok || data?.error || data?.type === 'error') {
       const error=nyxAiProviderError(model,data,upstream.status,key,credential.personal);
-      res.status(error.status).json({error:error.message});
+      res.status(error.status).json(nyxAiErrorBody(error));
       return;
     }
     let text = nyxAiCompletionText(data);
@@ -3069,7 +3089,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
         const repairPayload={...providerPayload,messages:[...providerPayload.messages,{role:'user',content:'Your previous response was empty, truncated or not the required JSON object. Retry the original task as ONE tiny complete edit. Return summary and files as JSON only, under 400 tokens. Use a short exact search/replace, never reproduce an existing whole file.'}]};
         const repaired=await nyxAiProviderFetch(credential.provider,endpoint,{method:'POST',signal:controller.signal,headers:{'content-type':'application/json',authorization:`Bearer ${key}`},body:JSON.stringify(repairPayload)});
         const repairedData=await repaired.json().catch(()=>({}));
-        if(!repaired.ok||repairedData?.error||repairedData?.type==='error'){const error=nyxAiProviderError(model,repairedData,repaired.status,key,credential.personal);res.status(error.status).json({error:error.message});return;}
+        if(!repaired.ok||repairedData?.error||repairedData?.type==='error'){const error=nyxAiProviderError(model,repairedData,repaired.status,key,credential.personal);res.status(error.status).json(nyxAiErrorBody(error));return;}
         data=repairedData;text=nyxAiCompletionText(data);
         if(data?.choices?.[0]?.finish_reason==='length'||!valid(text)){res.status(502).json({error:'The model could not produce a complete edit after one repair attempt. Your files are unchanged. Try a smaller change or another model.'});return;}
       }
@@ -3094,9 +3114,9 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     if (!res.headersSent) {
       const timedOut = error?.name === "AbortError";
       if(error?.retryAfter)res.setHeader('Retry-After',String(error.retryAfter));
-      res.status(['ai_allowance','free_ai_provider'].includes(error?.code)?error.status:timedOut ? 504 : 502).json({ error: ['ai_allowance','free_ai_provider'].includes(error?.code)?error.message:timedOut ? "Nyx AI timed out. Please try again." : `Nyx AI request failed: ${error?.message || error}` });
+      res.status(['ai_allowance','free_ai_provider'].includes(error?.code)?error.status:timedOut ? 504 : 502).json({ ...nyxAiErrorBody(error), error: ['ai_allowance','free_ai_provider'].includes(error?.code)?error.message:timedOut ? "Nyx AI timed out. Please try again." : `Nyx AI request failed: ${error?.message || error}` });
     } else if (!res.writableEnded) {
-      res.write(`data: ${JSON.stringify({error:{message:['ai_allowance','free_ai_provider'].includes(error?.code)?error.message:error?.name==='AbortError'?'Nyx AI timed out. Please try again.':'Nyx AI could not finish this reply. Please try again.'}})}\n\n`);
+      res.write(`data: ${JSON.stringify({code:error.reason||'provider_failure',error:{message:['ai_allowance','free_ai_provider'].includes(error?.code)?error.message:error?.name==='AbortError'?'Nyx AI timed out. Please try again.':'Nyx AI could not finish this reply. Please try again.'}})}\n\n`);
       res.end();
     }
   } finally {
@@ -14093,7 +14113,7 @@ const remoteDesktop=createRemoteDesktop({firebase:linkGeneratorFirebase,download
 const nyxCloudDesktop=createNyxCloudDesktop({firebase:linkGeneratorFirebase});
 app.use('/api/nyxcloud/lorem',createLoremCloud({firebase:linkGeneratorFirebase}));
 app.use('/api/nyxcloud',nyxCloudDesktop.router);
-app.use((req,res,next)=>{let path;try{path=posix.normalize(decodeURIComponent(req.path).replaceAll('\\','/')).toLowerCase();}catch{return res.status(400).end();}if(path==='/apps/nyxcloud'||path.startsWith('/apps/nyxcloud/'))return nyxCloudDesktop.pageAccess(req,res,next);next();});
+// Hosted shell is public; desktop APIs authenticate each account. Local VNC stays owner-only.
 // Express string routes match an optional trailing slash; redirect only the bare path.
 app.get(/^\/apps\/nyxcloud$/,(_req,res)=>res.redirect(302,'/apps/nyxcloud/'));
 app.use('/api/private-remote',remoteDesktop.router);

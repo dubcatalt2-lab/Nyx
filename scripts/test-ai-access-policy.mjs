@@ -36,7 +36,7 @@ const denied=p=>assert.rejects(p,e=>e.code==='ai_allowance');
     await a.finish(s,true);f.advance();
   }
   assert.equal(f.db.records.get(key('member')).tokens,1000);
-  await denied(f.create().begin(f.actor));
+  await f.create().finish(await f.create().begin(f.actor));
   f.advance(86400000);const a=f.create();await a.finish(await a.begin(f.actor));
   assert.equal(f.db.records.get(key('member')).tokens,0,'UTC rollover resets tokens');
 }
@@ -47,9 +47,9 @@ const denied=p=>assert.rejects(p,e=>e.code==='ai_allowance');
     await a.settle(r,{input:600,output:400});await a.finish(s,true);f.advance();
   }
   assert.equal(f.db.records.get(key('member')).requests,5);
-  // Isolate the legacy daily-message guard from the newer four-day 7k pool.
+  // Daily statistics cannot override the current four-day allowance.
   f.db.records.get(key('member')).tokens=10000;
-  await denied(f.create().begin(f.actor));
+  await f.create().finish(await f.create().begin(f.actor));
 }
 {
   const f=fixture(),a=f.create();
@@ -59,8 +59,9 @@ const denied=p=>assert.rejects(p,e=>e.code==='ai_allowance');
   }
   f.db.records.get(key('member')).tokens=9500;
   const s=await a.begin(f.actor);
-  await assert.rejects(a.reserve(s,'shared',payload()),/extra message would exceed/);
-  assert.equal(f.db.records.get(key('member')).tokens,9500,'Rejected bonus must not reserve more tokens');
+  const extra=await a.reserve(s,'shared',payload());
+  await a.settle(extra,{input:10,output:10});
+  assert.equal(f.db.records.get(key('member')).tokens,9520,'Daily statistics do not impose an extra token ceiling');
   await a.finish(s);
 }
 {
@@ -69,7 +70,7 @@ const denied=p=>assert.rejects(p,e=>e.code==='ai_allowance');
   await a.settle(r,{input:9000,output:9000});assert.equal(f.db.records.get(key('member')).tokens,0,'Settlement remains idempotent');
   await a.finish(s);
 }
-console.log('PASS: public access independent of signup date, Premium eligibility, no role/trust bypass, 5 standard/10 maximum, bonus token reservations, unknown usage, refunds and rollover');
+console.log('PASS: public access independent of signup date, Premium eligibility, no role/trust bypass, removed daily caps, shared token reservations, unknown usage, refunds and rollover');
 
 {
   const db=memoryFirestore(),config=aiAllowanceConfig({});

@@ -1,3 +1,7 @@
+import {aiCatalogPrice} from '../lib/ai-owner-catalog.mjs';
+import {createAiDeadline} from '../lib/ai-deadline.mjs';
+import {configureFreeAiReasoning,isFreeAiModel} from '../lib/ai-free-models.mjs';
+import {aiConfigureChatWeb,aiWantsWeb,aiResponseMetadata} from '../lib/ai-web.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
@@ -8,7 +12,7 @@ const source=readFileSync('server.js','utf8'),ast=parse(source,{ecmaVersion:'lat
 const declaration=name=>{const n=ast.body.find(n=>n.type==='FunctionDeclaration'&&n.id.name===name);return source.slice(n.start,n.end);};
 const app=express();app.use(express.json({limit:'1mb'}));
 let imageGeneration=false,payload,calls=0,queue=[],supported=['temperature','response_format','reasoning'],answer={choices:[{message:{content:'{"summary":"Changed heading","files":[{"language":"html","edits":[{"search":"Old","replace":"New"}]}]}'},finish_reason:'stop'}]};
-const context=vm.createContext({app,aiOutputImages,process:{env:{}},URL,AbortController,setTimeout,clearTimeout,
+const context=vm.createContext({freeModelHealth:{failure:()=>null},aiCatalogPrice,createAiDeadline,configureFreeAiReasoning,isFreeAiModel,aiConfigureChatWeb,aiWantsWeb,aiResponseMetadata,app,aiOutputImages,process:{env:{}},URL,AbortController,setTimeout,clearTimeout,
  nyxAiErrorMessage:(data)=>data.error||'Provider unavailable',
  nyxAiRateLimit:(_req,_res,next)=>next(),nyxAiRequestCredential:()=>({key:'fixture',provider:{id:'shared'}}),
  nyxAiResolveModel:async()=>({id:'fixture-model',imageGeneration,supportedParameters:supported}),aiModelAllowed:()=>true,nyxAiPremiumEntitlement:async()=>({owner:true}),
@@ -16,7 +20,7 @@ const context=vm.createContext({app,aiOutputImages,process:{env:{}},URL,AbortCon
  nyxAiEndpoint:()=> 'https://openrouter.ai/api/v1/chat/completions',
  nyxAiProviderFetch:async(_provider,_url,options)=>{calls++;payload=JSON.parse(options.body);const next=queue.length?queue.shift():answer;return next instanceof Response?next:Response.json(next);}
 });
-vm.runInContext(['nyxAiApplySupportedParameters','nyxAiCompletionText','nyxAiLooksCorrupted'].map(declaration).join('\n'),context);
+vm.runInContext(['nyxAiErrorBody','nyxAiProviderError','nyxAiApplySupportedParameters','nyxAiCompletionText','nyxAiLooksCorrupted'].map(declaration).join('\n'),context);
 const start=source.indexOf('app.post("/api/nyx-ai",'),end=source.indexOf('\n// Nyx-issued API keys',start);
 vm.runInContext(source.slice(start,end),context);
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
@@ -24,7 +28,7 @@ const send=body=>fetch(`http://127.0.0.1:${server.address().port}/api/nyx-ai`,{m
 try{
  let r=await send({task:'code-edit'});assert.equal(r.status,200);assert.equal((await r.json()).finishReason,'stop');assert.equal(payload.max_tokens,2200);assert.deepEqual(payload.reasoning,{enabled:false});assert.deepEqual(payload.response_format,{type:'json_object'});assert.match(payload.messages[0].content,/JSON/);
  supported=[];await send({task:'code-edit'});assert.equal(payload.temperature,undefined);assert.equal(payload.reasoning,undefined);assert.equal(payload.response_format,undefined);
- supported=['temperature','reasoning','response_format'];await send({});assert.equal(payload.max_tokens,1200);assert.equal(payload.reasoning,undefined);assert.equal(payload.response_format,undefined);assert.match(payload.messages[0].content,/Markdown/);
+ supported=['temperature','reasoning','response_format'];await send({});assert.equal(payload.max_tokens,1200);assert.deepEqual(payload.reasoning,{effort:'low',exclude:false});assert.equal(payload.response_format,undefined);assert.match(payload.messages[0].content,/Markdown/);
  const before=calls;r=await send({task:'code-edit',messages:[{role:'user',content:'x'.repeat(24001)}]});assert.equal(r.status,413);assert.equal(calls,before);
  const good=answer;
  for(const bad of [{choices:[{message:{content:''},finish_reason:'length'}]},{choices:[{message:{content:'not JSON'},finish_reason:'stop'}]}]){

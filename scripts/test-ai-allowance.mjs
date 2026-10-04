@@ -69,7 +69,7 @@ async function run() {
     const f=fixture({NYX_AI_NEW_DAILY_REQUESTS:'1'}),a=f.allowance;
     for(let n=0;n<3;n++)await a.finish(await a.begin(f.actor(`device${n}`,{device:'same-browser'})),true);
     await a.finish(await a.begin(f.actor('device4',{device:'same-browser'})));
-    await rejected(a.begin(f.actor('device0')),/resets/);
+    await a.finish(await a.begin(f.actor('device0')),true); // Legacy daily message configuration no longer gates chat.
     f.advance(DAY);
     await a.finish(await a.begin(f.actor('device0',{device:'same-browser'})));
     for(let n=0;n<3;n++)await a.register('signup-device','school');
@@ -99,7 +99,7 @@ async function run() {
     const next=await a.begin(f.actor('new-day'));
     assert.equal(f.db.records.get('nyxAiAllowance/global').monthMoney,2543,'Daily reset must preserve monthly spend');
     f.db.records.get('nyxAiAllowance/global').monthMoney=999999;
-    await rejected(a.reserve(next,'shared',payload()),/spending allowance/);
+    await rejected(a.reserve(next,'shared',payload()),/spending budget/);
     await a.finish(next);
     f.advance(31*DAY);
     const newMonth=await a.begin(f.actor('new-month'));await a.reserve(newMonth,'shared',payload());
@@ -114,7 +114,7 @@ async function run() {
     const r=results.find(r=>r.status==='fulfilled').value;
     await a.settle(r,{input:1,output:1,cost:0.01});
     assert.equal(f.db.records.get('nyxAiAllowance/global').establishedMoney,706000,'Unexpected provider cost must stop further spend');
-    await rejected(a.reserve(y,'shared',payload()),/spending allowance/);
+    await rejected(a.reserve(y,'shared',payload()),/spending budget/);
   }
   {
     const f=fixture(),a=f.allowance,s=await a.begin(f.actor('limits'));

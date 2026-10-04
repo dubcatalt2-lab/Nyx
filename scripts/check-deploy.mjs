@@ -6,6 +6,7 @@ const requiredFiles = [
   "lib/nyxcloud-access.mjs",
   "lib/nyxcloud-desktop.mjs",
   "lib/nyxcloud-lorem.mjs",
+  "lib/nyxcloud-state.mjs",
   "apps/nyxcloud/index.html",
   "apps/nyxcloud/app.js",
   "apps/nyxcloud/lorem.js",

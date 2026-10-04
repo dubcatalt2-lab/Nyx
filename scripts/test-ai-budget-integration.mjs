@@ -43,6 +43,8 @@ const context=vm.createContext({isTutsiHostname:host=>host==='tutsi.test',isNook
 });
 vm.runInContext(source.slice(source.indexOf('const nyxAiBudgetContext ='),source.indexOf('async function nyxAiRateLimit')),context);
 vm.runInContext(['nyxAiKey','nyxAiEndpoint','nyxAiCatalogEndpoint','nyxAiSharedProvider','nyxAiGlobalProvider','nyxAiRequestCredential'].map(declaration).join('\n'),context);
+vm.runInContext(declaration('nyxAiRateLimit'),context);
+await vm.runInContext("nyxAiBudgetContext.run({session:{}},()=>nyxAiRateLimit({}, {}, ()=>true))",context).then(value=>assert.equal(value,true,'Shared requests must bypass duplicate local rate accounting'));
 vm.runInContext(declaration('nyxAiProviderFetch')+'\n'+declaration('authenticatedNyxCloudUser'),context);
 installDeveloperApi(app,{nook:createNookDeveloper({allowance:context.nyxSharedAiAllowance,catalog:actor=>context.nyxAiAvailableModels('',false,null,actor),configured:()=>true,send:(req,payload)=>context.nyxBudgetedAiFetch('shared','https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{authorization:'Bearer fixture-inference'},body:JSON.stringify(payload)})}),firebase:async()=>firebase,authenticate:context.authenticatedNyxUser,ownerUid:()=> 'owner',passwordHash:()=>'',sameOrigin:()=>true,device:async()=> 'browser',configured:()=>true,page:(_req,res)=>res.send('API'),send:async(req,payload)=>context.nyxBudgetedAiFetch('shared','https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{authorization:'Bearer fixture-inference'},body:JSON.stringify(payload)})});
 for(const path of ['/api/nyx-ai'])app.post(path,async(req,res)=>{
@@ -207,5 +209,19 @@ try {
     assert(account.money>0,'Unknown provider spending remains reserved');
   }
   console.log('PASS real middleware provider-error refunds across Nyx/Tutsi, Drop and Nook');
+  assert.equal((await fetch(origin+'/api/nyx-ai/usage')).status,401);
+  assert.equal((await fetch(origin+'/api/nyx-ai/usage',{headers:{authorization:'Bearer member','sec-fetch-site':'cross-site'}})).status,403);
+  const usageReply=await fetch(origin+'/api/nyx-ai/usage',{headers:{authorization:'Bearer member'}});
+  assert.match(usageReply.headers.get('cache-control'),/no-store/);
+  const memberUsage=await usageReply.json();assert.equal(memberUsage.tokens.limit,7000);assert.equal(memberUsage.tokens.used,12);assert.equal(memberUsage.tokens.pending,0);
+  db.records.set('nyxUserAdministration/member',{subscriptionStatus:'premium'});
+  const upgraded=await(await fetch(origin+'/api/tutsi-ai/usage',{headers:{authorization:'Bearer member'}})).json();
+  assert.equal(upgraded.tokens.limit,50000);assert.equal(upgraded.tokens.used,memberUsage.tokens.used);assert.equal(upgraded.resetAt,memberUsage.resetAt);
+  const nookUsage=await(await fetch(origin+'/api/nook-ai/usage',{headers:{authorization:'Bearer nook-route',cookie}})).json();
+  assert.equal(nookUsage.scope,'browser');assert.equal(nookUsage.tokens.limit,7000);
+  const dropUsage=await(await fetch(origin+'/api/drop-ai/usage',{headers:{authorization:'Bearer drop-route'}})).json();
+  assert.equal(dropUsage.scope,'expensive-models');assert.equal(dropUsage.tokens.limit,500);
+  const ownerUsage=await(await fetch(origin+'/api/nyx-ai/usage',{headers:{authorization:'Bearer '+fullCatalogUid}})).json();assert.equal(ownerUsage.unlimited,true);
+  console.log('PASS authenticated usage endpoints, shared Nyx/Tutsi balance, premium upgrade, Nook/Drop scopes and owner exemption');
   console.log('PASS: real AI middleware auth/origin, OpenRouter routing, UID catalog pricing, parallel capacity, slot release and unverified cloud authentication');
 }finally{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

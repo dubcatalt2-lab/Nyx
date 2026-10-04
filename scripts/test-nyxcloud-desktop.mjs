@@ -22,7 +22,8 @@ const server=app.listen(0,'127.0.0.1');server.on('upgrade',cloud.upgrade);await 
 const request=(path,method='GET',token='valid-owner',cookie,site=origin)=>fetch(origin+'/api/nyxcloud'+path,{method,headers:{authorization:'Bearer '+token,origin:site,...(cookie?{cookie}:{})}});
 try{
   for(const token of ['',nyxCloudOwnerUid,'other-owner','invalid'])assert.equal((await request('/access','GET',token)).status,404);
-  assert.equal((await fetch(origin+'/apps/nyxcloud/')).status,404);
+  assert.equal((await fetch(origin+'/apps/nyxcloud/')).status,200);
+  assert.equal((await request('/connect','POST','invalid')).status,404);
   assert.equal((await request('/session','POST','valid-owner',null,'https://evil.test')).status,404);
   const session=await request('/session','POST');assert.equal(session.status,200);const cookie=session.headers.get('set-cookie').split(';')[0];
   assert.equal((await fetch(origin+'/apps/nyxcloud/',{headers:{cookie},redirect:'manual'})).status,200);
@@ -34,6 +35,6 @@ try{
   await new Promise(resolve=>setTimeout(resolve,100));assert.equal(JSON.parse(frames[0].data).ready,true);assert(frames.some(f=>f.binary&&f.data.toString().startsWith('RFB ')));
   const echoed=once(ws,'message');ws.send(Buffer.from('test-input'));assert.equal((await echoed)[0].toString(),'test-input');
   const replay=new WebSocket(origin.replace('http:','ws:')+'/api/nyxcloud/socket',{origin,headers:{cookie}});await once(replay,'open');replay.send(JSON.stringify({ticket}));assert.equal((await once(replay,'close'))[0],4003);
-  revoked=true;assert.equal((await once(ws,'close'))[0],4003);assert.equal((await fetch(origin+'/apps/nyxcloud/',{headers:{cookie},redirect:'manual'})).status,404);assert(checks>5);
-  console.log('PASS NyxCloud exact-owner auth, page secrecy, cross-origin rejection, one-use tickets, VNC data/input, active revocation and private upstream.');
+  revoked=true;assert.equal((await once(ws,'close'))[0],4003);assert.equal((await request('/connect','POST','valid-owner',cookie)).status,404);assert(checks>5);
+  console.log('PASS NyxCloud exact-owner auth, public shell with private transport, cross-origin rejection, one-use tickets, VNC data/input, active revocation and private upstream.');
 }finally{cloud.close();for(const socket of tcp)socket.destroy();server.closeAllConnections();await Promise.all([new Promise(r=>server.close(r)),new Promise(r=>vnc.close(r))]);}

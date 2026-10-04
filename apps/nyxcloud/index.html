@@ -19,9 +19,12 @@
       <details class="session-menu">
         <summary aria-label="Desktop options" title="Desktop options"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></summary>
         <div class="menu-panel">
+          <span class="menu-label">DISPLAY</span>
+          <button id="display-scale" aria-pressed="true" title="Stretch the desktop to fill the available space">Fill screen: On</button>
           <span class="menu-label">SESSION</span>
           <button id="connect" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5m-4-4a8 8 0 0 1 13-3l2 3M4 16l2 3a8 8 0 0 0 13-3"/></svg>Reconnect</button>
           <button id="disconnect" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v9m-5-7a9 9 0 1 0 10 0"/></svg>Disconnect</button>
+          <button id="end-session" disabled>End session and free desktop</button>
         </div>
       </details>
     </div>

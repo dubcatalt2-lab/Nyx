@@ -20,7 +20,7 @@ const context=vm.createContext({app,process:{env:{}},URL,AbortController,setTime
  aiResponseMetadata:()=>({sources:[]}),nyxAiCompletionTokens:()=>0,
  nyxAiProviderFetch:async()=>{calls++;return response;}
 });
-vm.runInContext(['nyxAiApplySupportedParameters','nyxAiCompletionText','nyxAiLooksCorrupted','nyxAiErrorMessage','nyxAiProviderError','nyxAiStreamText','nyxAiWriteStreamChunk'].map(declaration).join('\n'),context);
+vm.runInContext(['nyxAiErrorBody','nyxAiApplySupportedParameters','nyxAiCompletionText','nyxAiLooksCorrupted','nyxAiErrorMessage','nyxAiProviderError','nyxAiStreamText','nyxAiWriteStreamChunk'].map(declaration).join('\n'),context);
 const start=source.indexOf('app.post("/api/nyx-ai",'),end=source.indexOf('\n// Nyx-issued API keys',start);
 vm.runInContext(source.slice(start,end),context);
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));

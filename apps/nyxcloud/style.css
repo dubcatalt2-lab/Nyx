@@ -25,6 +25,7 @@
 .boot-status{display:flex;align-items:center;justify-content:center;gap:9px;min-height:66px;margin:4px 0 22px}
 .boot-status-dot{width:5px;height:5px;background:#bc9df5;border-radius:50%;flex:none;box-shadow:0 0 10px #bc9df555}
 .boot-message{color:#a5a0b3;font-size:13px;line-height:1.6;margin:0;overflow-wrap:anywhere}
+.boot-session-note{color:#898494;font-size:12px;line-height:1.6;margin:20px 0 0}
 .boot-steps{display:flex;justify-content:space-between;gap:12px;padding:18px 20px;border:1px solid #ffffff0a;border-radius:13px;background:#ffffff02}
 .boot-step{display:flex;align-items:center;gap:9px;font-size:11px;color:#686577}
 .boot-step i{display:grid;place-items:center;width:21px;height:21px;border:1px solid #ffffff0d;border-radius:50%;font-size:9px;font-style:normal}

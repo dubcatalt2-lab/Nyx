@@ -1,3 +1,4 @@
+import {aiCatalogPrice} from '../lib/ai-owner-catalog.mjs';
 import {createAiDeadline} from '../lib/ai-deadline.mjs';
 import {configureFreeAiReasoning,isFreeAiModel} from '../lib/ai-free-models.mjs';
 import assert from 'node:assert/strict';
@@ -15,13 +16,13 @@ const route=ast.body.find(n=>n.expression?.callee?.property?.name==='post'&&n.ex
 const modelInfo={id:'deepseek/deepseek-v4.1-flash',supportedParameters:['tools','reasoning','temperature']};
 let payload,stream=true;
 const event={choices:[{delta:{content:'Try these cupcake recipes.',annotations:[{type:'url_citation',url_citation:{url:'https://recipes.example/cupcakes?a=1&b=2',title:'Cupcake recipes'}}],reasoning_details:[{type:'reasoning.summary',summary:'Compared recipe instructions and ingredient lists.'},{type:'reasoning.text',text:'RAW SECRET'},{type:'reasoning.encrypted',data:'ENCRYPTED'}]}}]};
-const context=vm.createContext({createAiDeadline,configureFreeAiReasoning,isFreeAiModel,URL,AbortController,setTimeout,clearTimeout,TextDecoder,process:{env:{}},aiConfigureChatWeb,aiResponseMetadata,aiWantsWeb,
+const context=vm.createContext({aiCatalogPrice,createAiDeadline,configureFreeAiReasoning,isFreeAiModel,URL,AbortController,setTimeout,clearTimeout,TextDecoder,process:{env:{}},aiConfigureChatWeb,aiResponseMetadata,aiWantsWeb,
  nyxAiRequestCredential:()=>({key:'fixture',provider:{id:'shared'}}),nyxAiResolveModel:async()=>modelInfo,aiModelAllowed:()=>true,nyxAiPremiumEntitlement:async()=>({owner:true}),
  nyxAiLimits:{promptChars:10000,contextChars:24000,timeoutMs:45000},nyxAiTextAttachmentPrompt:v=>v,nyxAiEndpoint:()=> 'https://openrouter.ai/api/v1/chat/completions',
  nyxAiApplySupportedParameters:()=>{},nyxAiLooksCorrupted:()=>false,aiOutputImages:()=>[],
  nyxAiProviderFetch:async(_provider,_url,options)=>{payload=JSON.parse(options.body);return stream?new Response('data: '+JSON.stringify(event)+'\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}}):Response.json({choices:[{message:event.choices[0].delta}]});}
 });
-for(const name of ['nyxAiStreamText','nyxAiWriteStreamChunk','nyxAiCompletionTokens','nyxAiCompletionText']){
+for(const name of ['nyxAiErrorBody','nyxAiStreamText','nyxAiWriteStreamChunk','nyxAiCompletionTokens','nyxAiCompletionText']){
  const n=ast.body.find(n=>n.type==='FunctionDeclaration'&&n.id.name===name);vm.runInContext(source.slice(n.start,n.end),context);
 }
 const handler=vm.runInContext('('+source.slice(route.start,route.end)+')',context);

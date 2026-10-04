@@ -125,7 +125,7 @@
           const configResponse=await fetch('/api/founder-profile/auth-config',{cache:'no-store'});
           const config=await configResponse.json();
           if(!config?.enabled||!config?.apiKey||!config?.projectId)return null;
-          const [{initializeApp,getApps},{getAuth,setPersistence,browserLocalPersistence}]=await Promise.all([
+          const [{initializeApp,getApps},{getAuth,setPersistence,browserLocalPersistence,onAuthStateChanged}]=await Promise.all([
             import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),
             import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')
           ]);
@@ -133,6 +133,7 @@
           const auth=getAuth(firebaseApp);
           try{await setPersistence(auth,browserLocalPersistence)}catch{}
           if(typeof auth.authStateReady==='function')await auth.authStateReady();
+          if(typeof onAuthStateChanged==='function')onAuthStateChanged(auth,()=>{void renderUsage();});
           return auth;
         }catch{return null}
       })();
@@ -151,8 +152,8 @@
   keyDialog?.addEventListener('close',()=>{document.getElementById('customKeyInput').value='';});
   document.getElementById('customKeyButton')?.addEventListener('click',()=>keyDialog.showModal());
   document.getElementById('customKeyClose')?.addEventListener('click',()=>keyDialog.close());
-  document.getElementById('customKeyRemove')?.addEventListener('click',()=>{customKey='';document.getElementById('customKeyInput').value='';keyDialog.close();renderProviders();void loadModels();});
-  document.getElementById('customKeyForm')?.addEventListener('submit',event=>{event.preventDefault();const field=document.getElementById('customKeyInput'),value=field.value.trim();if(!/^n_api_[A-Za-z0-9_-]{43}$/.test(value)&&!/^sk-or-[A-Za-z0-9_-]{20,}$/.test(value)){document.getElementById('customKeyError').textContent='Enter a valid Nyx or OpenRouter API key.';return;}customKey=value;field.value='';document.getElementById('customKeyError').textContent='';keyDialog.close();renderProviders();void loadModels();});
+  document.getElementById('customKeyRemove')?.addEventListener('click',()=>{customKey='';document.getElementById('customKeyInput').value='';keyDialog.close();renderProviders();void loadModels();void renderUsage();});
+  document.getElementById('customKeyForm')?.addEventListener('submit',event=>{event.preventDefault();const field=document.getElementById('customKeyInput'),value=field.value.trim();if(!/^n_api_[A-Za-z0-9_-]{43}$/.test(value)&&!/^sk-or-[A-Za-z0-9_-]{20,}$/.test(value)){document.getElementById('customKeyError').textContent='Enter a valid Nyx or OpenRouter API key.';return;}customKey=value;field.value='';document.getElementById('customKeyError').textContent='';keyDialog.close();renderProviders();void loadModels();void renderUsage();});
   function selectedProvider(){return 'shared'}
   function syncProviderControl(){providerSelect.disabled=true;providerSelect.title=customKey?(customKind()==='nyx'?'Nyx custom key':'OpenRouter custom key'):'Nyx shared';if(customKey)providerSelect.options[0].textContent=providerSelect.title;if(providerState)providerState.hidden=true;}
 
@@ -198,20 +199,49 @@
     }catch{return[]}
   }
 
-  function renderUsage(){
-    const items=storedUsage();
-    const cutoff=Date.now()-7*86_400_000;
-    const format=value=>new Intl.NumberFormat(undefined,{notation:value>=10_000?'compact':'standard',maximumFractionDigits:1}).format(value);
-    usageWeek.textContent=format(items.filter(item=>item.at>=cutoff).reduce((sum,item)=>sum+item.tokens,0));
-    usageAll.textContent=format(items.reduce((sum,item)=>sum+item.tokens,0));
-    usageRequests.textContent=format(items.length);
+  let usageVersion=0,usageController;
+  const usageStatus=document.createElement('p');
+  usageStatus.id='usageStatus';usageStatus.setAttribute('role','status');
+  usageStatus.style.cssText='font-size:12px;line-height:1.5;color:var(--ai-muted);margin:10px 0 0;overflow-wrap:anywhere';
+  usageWeek.closest('section').append(usageStatus);
+  async function renderUsage(){
+    const version=++usageVersion;
+    usageController?.abort();usageController=new AbortController();
+    const signal=usageController.signal;
+    const values=[usageWeek,usageAll,usageRequests];
+    ['Remaining','Used','Pending'].forEach((label,i)=>values[i].parentElement.querySelector('small').textContent=label);
+    values.forEach(node=>node.textContent='\u2014');
+    if(customKey){usageStatus.textContent=customKind()==='nyx'?'Custom key balance is available in your API account.':'Usage is billed to your own OpenRouter key.';return;}
+    usageStatus.textContent='Checking allowance...';
+    try{
+      const headers=await aiHeaders({accept:'application/json'});
+      if(version!==usageVersion)return;
+      const response=await fetch(tutsiModelPicker()?'/api/tutsi-ai/usage':'/api/nyx-ai/usage',{headers,signal,cache:'no-store'});
+      const data=await response.json();
+      if(version!==usageVersion)return;
+      if(!response.ok)throw new Error(response.status===401?'Sign in to see your allowance.':data.error||'Allowance unavailable.');
+      const tokens=data.tokens;
+      if(!tokens||!Number.isFinite(tokens.used)||!Number.isFinite(tokens.pending))throw new Error('Allowance unavailable.');
+      const format=n=>new Intl.NumberFormat().format(n);
+      usageWeek.textContent=data.unlimited?'Unlimited':format(tokens.remaining);
+      usageAll.textContent=format(tokens.used);usageRequests.textContent=format(tokens.pending);
+      const scope=data.scope==='browser'?'Shared browser':data.scope==='expensive-models'?'Expensive models':'Account';
+      const reset=data.resetAt?` Resets ${new Date(data.resetAt).toLocaleString()}.`:' Starts with your first request.';
+      usageStatus.textContent=data.unlimited?'Owner - no account token limit.':`${scope} - ${format(tokens.limit)} tokens / 4 days.${reset}`;
+      if(tokens.pending)usageStatus.textContent+=' Pending tokens are reserved for requests awaiting final usage.';
+      if(data.pendingCostsUsd>0)usageStatus.textContent+=` Provider costs awaiting confirmation: $${data.pendingCostsUsd.toFixed(4)}.`;
+      const cap=model.value==='anthropic/claude-haiku-4.5'?data.modelCaps?.haiku:/^~?anthropic\/claude-(opus|fable)/.test(model.value)?data.modelCaps?.claude:null;
+      if(cap&&cap.limit!==null)usageStatus.textContent+=` Claude: $${cap.remaining.toFixed(4)} of $${cap.limit.toFixed(2)} remaining.`;
+      if(!data.unlimited&&model.value==='anthropic/claude-opus-5.5'&&data.modelCaps?.opus55)usageStatus.textContent+=` Opus: ${format(data.modelCaps.opus55.remaining)} tokens remaining.`;
+      if(!data.unlimited&&model.value==='google/gemini-2.5-flash-image'&&data.modelCaps?.images)usageStatus.textContent+=` Images: ${data.modelCaps.images.remaining} remaining.`;
+      usageStatus.textContent+=' Counts input, conversation history and output tokens.';
+    }catch(error){if(version===usageVersion&&error.name!=='AbortError')usageStatus.textContent=error.message||'Allowance unavailable. Try again shortly.';}
   }
 
   function recordUsage(prompt,answer){
     const items=storedUsage();
     items.push({at:Date.now(),tokens:Math.max(1,Math.ceil((String(prompt||'').length+String(answer||'').length)/4))});
     try{localStorage.setItem(USAGE_KEY,JSON.stringify(items.slice(-1000)))}catch{}
-    renderUsage();
   }
 
   function applyWorkspaceTheme(theme=localStorage.getItem('nyx.theme')||'default'){
@@ -1557,7 +1587,7 @@
         response=await fetch(kind==='nyx'?'/api/v1/ai':'https://openrouter.ai/api/v1/chat/completions',{method:'POST',signal:activeController.signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+customKey},body:JSON.stringify({model:requestedModel,messages,max_tokens:generateImage?2200:512,stream:!generateImage&&kind!=='nyx',...(generateImage?{modalities:['text','image']}:{})})});
         if(kind==='nyx'&&response.ok){const result=await response.json();const content=result.choices?.[0]?.message?.content||'';response=new Response('data: '+JSON.stringify({model:result.model,choices:[{delta:{content},finish_reason:result.choices?.[0]?.finish_reason}]})+'\n\ndata: [DONE]\n\n',{headers:{'Content-Type':'text/event-stream'}});}
       }else{
-      response=await fetch(dedicatedMedia?'/api/nyx-ai/media':tutsiModelPicker()?'/api/tutsi-ai':'/api/nyx-ai',{
+      response=await fetch(dedicatedMedia?(tutsiModelPicker()?'/api/tutsi-ai/media':'/api/nyx-ai/media'):tutsiModelPicker()?'/api/tutsi-ai':'/api/nyx-ai',{
         method:'POST',
         signal:activeController.signal,
         headers:await aiHeaders({'content-type':'application/json'}),
@@ -1664,6 +1694,7 @@
       if(screenStream) screenStatus.textContent='A fresh frame is attached only when you send.';
       input.focus();
       scrollToBottom();
+      void renderUsage();
     }
   }
 
@@ -1671,9 +1702,11 @@
   addEventListener('message',event=>{
     if(event.origin!==location.origin) return;
     if(event.source===parent&&event.data?.type==='nyx:theme-sync') applyWorkspaceTheme(event.data.theme);
-    if(event.data?.type==='nyx:ai-profile') updateProfile(event.data.profile||{});
+    if(event.source===parent&&event.data?.type==='nyx:ai-profile'){updateProfile(event.data.profile||{});void renderUsage();}
   });
-  addEventListener('focus',requestProfile);
+  addEventListener('focus',()=>{requestProfile();void renderUsage();});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)void renderUsage();});
+  model.addEventListener('change',()=>void renderUsage());
   addEventListener('storage',event=>{
     if(['nyx.theme','nyx.customThemeColor'].includes(event.key)) applyWorkspaceTheme();
     if(event.key===THREADS_KEY){

@@ -2059,17 +2059,21 @@ shuffleBtn.addEventListener('click', () => {
 const repeatBtn = document.getElementById('repeatBtn');
 const repeatIcon = document.getElementById('repeatIcon');
 const repeatNext = { off: 'all', all: 'one', one: 'off' };
-repeatIcon.className = repeatmode === 'one' ? 'ic-repeat-one' : 'ic-repeat';
-repeatBtn.classList.toggle('on', repeatmode !== 'off');
-repeatBtn.setAttribute('aria-pressed', String(repeatmode !== 'off'));
-repeatBtn.title = `repeat: ${repeatmode === 'all' ? 'all' : repeatmode === 'one' ? 'this song' : 'off'}`;
-repeatBtn.addEventListener('click', () => {
-  repeatmode = repeatNext[repeatmode];
-  musicStorage.setItem('nyx_nyxify_repeat', repeatmode);
+function syncrepeatcontrol() {
+  const label = repeatmode === 'all' ? 'Queue' : repeatmode === 'one' ? 'Song' : 'Off';
+  const nextLabel = repeatmode === 'off' ? 'repeat the queue' : repeatmode === 'all' ? 'repeat this song' : 'turn repeat off';
   repeatIcon.className = repeatmode === 'one' ? 'ic-repeat-one' : 'ic-repeat';
   repeatBtn.classList.toggle('on', repeatmode !== 'off');
   repeatBtn.setAttribute('aria-pressed', String(repeatmode !== 'off'));
-  repeatBtn.title = `repeat: ${repeatmode === 'all' ? 'all' : repeatmode === 'one' ? 'this song' : 'off'}`;
+  repeatBtn.setAttribute('aria-label', 'Repeat: ' + label + '. Click to ' + nextLabel + '.');
+  repeatBtn.title = 'Repeat: ' + label + '. Click to ' + nextLabel + '.';
+}
+syncrepeatcontrol();
+repeatBtn.addEventListener('click', () => {
+  repeatmode = repeatNext[repeatmode];
+  musicStorage.setItem('nyx_nyxify_repeat', repeatmode);
+  syncrepeatcontrol();
+  schedulequeueprefetch();
 });
 
 playBtn.addEventListener('click', () => {

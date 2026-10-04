@@ -113,6 +113,9 @@ html.nyx-browser-shell-expected body:not(.browser-shell)>:is(#customBgImage,#nyx
 html.nyx-studyhub-starting,html.nyx-studyhub-starting body{overflow:hidden!important}
 #nyxStudyHubStartup{position:fixed;z-index:2147483647;inset:0;display:block;width:100vw;height:100dvh;border:0;background:#f2eee4;opacity:1;pointer-events:auto!important;transition:opacity .35s ease;isolation:isolate}
 #nyxStudyHubStartup.is-leaving{opacity:0;pointer-events:none}
+#nyxStudyHubBackground{position:fixed;inset:0;width:100%;height:100dvh;border:0;z-index:-1;pointer-events:none;visibility:hidden}
+#nyxPrivacyCover{position:fixed;inset:0;width:100vw;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;background:#fff;color:#fff}
+#nyxPrivacyCover::backdrop{background:#fff}
 html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!important;pointer-events:none!important}
 @media(prefers-reduced-motion:reduce){#nyxStudyHubStartup{transition:none}}
 </style>
@@ -132,7 +135,7 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
   let autoDismissTimer=0;
   let finished=false;
   const removeSplash=()=>{
-    splash?.remove();
+    if(splash){splash.id='nyxStudyHubBackground';splash.classList.remove('is-leaving');splash.inert=true;splash.tabIndex=-1;splash.setAttribute('aria-hidden','true');}
     root.classList.remove('nyx-studyhub-starting');
   };
   const finishSplash=(duration=350)=>{
@@ -155,6 +158,28 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
     clearTimeout(removeTimer);
     removeEventListener('message',onMessage);
   },{once:true});
+
+  // Manual privacy cover only; no developer-tools detection or content substitution.
+  const cover=document.createElement('dialog');
+  cover.id='nyxPrivacyCover';
+  cover.dataset.nyxOwnedOverlay='';
+  cover.setAttribute('aria-label','Privacy cover. Press Escape to return to Nyx.');
+  document.body.append(cover);
+  const toggleCover=event=>{
+    if(event.key!=='F12'||event.ctrlKey||event.metaKey||event.altKey||event.shiftKey||event.repeat)return;
+    event.preventDefault();event.stopImmediatePropagation();
+    if(cover.open)cover.close();else cover.showModal();
+  };
+  const boundDocuments=new WeakSet();
+  const bindDocument=doc=>{
+    if(boundDocuments.has(doc))return;
+    boundDocuments.add(doc);
+    doc.addEventListener('keydown',toggleCover,true);
+    const bindFrame=frame=>{try{if(frame.contentDocument)bindDocument(frame.contentDocument);}catch{}};
+    doc.addEventListener('load',event=>{if(event.target?.tagName==='IFRAME')bindFrame(event.target);},true);
+    doc.querySelectorAll('iframe').forEach(bindFrame);
+  };
+  bindDocument(document);
 })();
 </script>
 

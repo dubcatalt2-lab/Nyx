@@ -1885,10 +1885,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   const knownNyxOverlaySelector='.nyx-prompt-shade,.nyx-modal-shade,.nyx-download-safety-shade,.nyx-tos-gate,.nyx-release-notes-overlay,.setup-screen,.setup-panel,.lock-screen,.nyx-browser-tab-sidebar,.nyx-visual-dock,.browser-shell-settings-overlay,.nyx-dashboard-menu,.nyx-account-menu,.nyx-account-overlay,.nyx-user-profile-overlay,.nyx-profile-directory-overlay,.nyx-founder-editor-overlay,.nyx-owner-dashboard-overlay,.context-menu,[data-nyx-owned-overlay]';
   function isBrowserInjectedOverlay(node){
     if(!(node instanceof Element) || node===document.body || node===document.documentElement) return false;
-    if(node.matches('#desktop,.top-os,.window,.browser-window,.browser-body,.browser-home,#nyxStudyHubStartup,#nyxWaveBg,#setupLaunchScreen,.nyx-prompt-shade,.nyx-modal-shade')) return false;
+    if(node.matches('#desktop,.top-os,.window,.browser-window,.browser-body,.browser-home,#nyxStudyHubStartup,#nyxStudyHubBackground,#nyxPrivacyCover,#nyxWaveBg,#setupLaunchScreen,.nyx-prompt-shade,.nyx-modal-shade')) return false;
     if(node.closest(knownNyxOverlaySelector)) return false;
     const frames=node.matches('iframe') ? [node] : [...node.querySelectorAll('iframe')];
-    if(frames.some(frame=>!frame.matches('#nyxStudyHubStartup,#nyxWaveBg,.browser-body > iframe.view,iframe[title="nyx"]'))) return true;
+    if(frames.some(frame=>!frame.matches('#nyxStudyHubStartup,#nyxStudyHubBackground,#nyxPrivacyCover,#nyxWaveBg,.browser-body > iframe.view,iframe[title="nyx"]'))) return true;
     const resource=String(node.getAttribute('src') || node.getAttribute('href') || node.getAttribute('data-src') || '');
     if(resource && browserAdResourceSignature.test(resource)) return true;
     const text=String(node.innerText || node.textContent || '').replace(/\s+/g,' ').trim().slice(0,1200);
@@ -3666,7 +3666,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     else if(url.includes('/apps') || url==='nyx://apps') activeKey='apps';
     dock.querySelectorAll('[data-nyx-dock-item]').forEach(button=>{
       if(button.dataset.nyxDockItem==='vms'){
-        const allowed=nyxFounderSignedInUser?.uid==='3158eOj4ATMzkoC1PAm8H7TXc2R2';
+        const allowed=true;
         button.hidden=!allowed;button.style.display=allowed?'':'none';
       }
       const selected=button.dataset.nyxDockItem===activeKey;
@@ -5117,9 +5117,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   async function openNyxVmsApp(){
     try{
-      const token=await nyxGetFirebaseToken();if(!token)throw Error('Sign in with your owner account.');
-      const response=await fetch('/api/nyxcloud/session',{method:'POST',headers:{Authorization:'Bearer '+token},cache:'no-store'});
-      if(!response.ok)throw Error('VMs are available only to the owner account.');
+      // Sign-in and service availability are handled inside the app.
       const id=openBrowserShellTab('/apps/nyxcloud/?embedded=1',{forceMode:'iframe'});
       const tab=browserShellTabs.find(item=>item.id===id);if(tab)tab.title='VMs';
       renderBrowserShellTabs();
@@ -9971,7 +9969,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   function quickTiles(){
     const apps=nyxGlobalApps.filter(app=>app.id!=='nyx-vms'&&app.url.replace(/\/+$/,'')!=='/apps/nyxcloud');
-    if(nyxFounderSignedInUser?.uid==='3158eOj4ATMzkoC1PAm8H7TXc2R2')apps.push({id:'nyx-vms',icon:'nyx-vms',name:'VMs',url:'/apps/nyxcloud/'});
+    apps.push({id:'nyx-vms',icon:'nyx-vms',name:'VMs',url:'/apps/nyxcloud/'});
     return apps.map((app,i)=>`<button class="quick-tile" draggable="true" style="--tile-delay:${Math.min(i,18)*34}ms" data-global-app-id="${esc(app.id)}" data-domain="${esc(app.icon)}" data-app-url="${esc(app.url)}">${globalAppIconMarkup(app)}<span>${esc(app.name)}</span></button>`).join('');
   }
   function renderNyxGlobalApps(){

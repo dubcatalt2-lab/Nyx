@@ -1,0 +1,24 @@
+/* Single-link flow. Shared palette comes from link-tools.css. */
+body.simple-generator .generator-shell{width:min(600px,calc(100% - 32px))}
+.simple-generator .utility-header{margin-bottom:28px}.simple-generator .utility-nav{margin-left:auto}
+.simple-generator .utility-nav-item svg{width:16px;height:16px}.simple-generator .service-status{display:none}
+.simple-generator .generator-card{padding:28px}.simple-generator .wizard-progress{margin-bottom:30px}
+.simple-generator .wizard-step{min-height:270px}.simple-generator .wizard-step-heading h2{font-size:22px;margin:0;letter-spacing:-.035em;font-weight:600}
+.simple-generator .wizard-step-heading h2:focus{outline:none}.simple-generator .wizard-actions{margin-top:auto;padding-top:28px}
+.simple-generator .method-choices{margin:0 0 22px;padding:0}.simple-generator legend{font-size:12px;color:var(--muted);margin-bottom:9px}
+.simple-generator .method-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.simple-generator .method-options button{display:flex;align-items:center;gap:10px;min-height:54px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--field);color:var(--text);cursor:pointer;font:inherit;font-size:14px}
+.simple-generator .method-options button[aria-pressed="true"]{background:var(--surface-raised);border-color:var(--text)}
+.simple-generator .method-options button svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.simple-generator .method-options button small{margin-left:auto;color:var(--muted);font-size:11px}
+.simple-generator .name-field small,.simple-generator .simple-hint{display:block;margin-top:10px;font-size:12px;line-height:1.6;color:var(--muted)}
+.simple-generator input,.simple-generator select{min-height:46px}.simple-generator .primary-action,.simple-generator .secondary-action{min-height:44px}
+.simple-generator .simple-review{margin:4px 0 20px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.simple-generator .simple-review div{display:flex;justify-content:space-between;gap:20px;padding:16px;background:var(--field)}
+.simple-generator .simple-review div+div{border-top:1px solid var(--line)}.simple-generator dt{font-size:13px;color:var(--muted)}.simple-generator dd{margin:0;font-size:14px;overflow-wrap:anywhere;text-align:right}
+.simple-generator .bulk-link-box textarea{min-height:76px;white-space:normal;overflow-wrap:anywhere;resize:none;font-size:13px}
+.simple-generator .bulk-link-head strong{display:none}.simple-generator .bulk-link-actions{justify-content:stretch}.simple-generator .bulk-link-actions>*{flex:1;min-height:42px}
+.simple-generator [data-access-gate]{border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:24px}.simple-generator [data-access-gate] h2{font-size:19px}.simple-generator [data-access-gate]>p{color:var(--muted);font-size:13px}
+.simple-generator [hidden]{display:none!important}
+@media(max-width:600px){.simple-generator .generator-card{padding:20px}.simple-generator .utility-nav{order:initial;width:auto}.simple-generator .wizard-step{min-height:280px}}
+@media(prefers-reduced-motion:reduce){.simple-generator .wizard-step.active{animation:none}}

@@ -98,7 +98,7 @@ try {
     p2pFilterCheckRequests += 1;
     return routeJson(route, { vendors: { goguardian: { blocked: false } } });
   });
-  await page.goto(`${origin}/apps/link-generator/`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${origin}/apps/link-generator/bulk.html`, { waitUntil: 'domcontentloaded' });
   await page.locator('[data-access-code]').fill('test-premium-code');
   await page.locator('[data-wizard-step="0"] [data-wizard-next]').click();
   await page.locator('[data-label-input]').fill('study room');
@@ -111,7 +111,7 @@ try {
   await page.locator('[data-generate-button]').click();
   await page.locator('[data-result-card]:not([hidden])').waitFor({ state: 'visible' });
 
-  assert.equal(new URL(page.url()).pathname, '/apps/link-generator/', 'P2P redirected to the personal-token publisher');
+  assert.equal(new URL(page.url()).pathname, '/apps/link-generator/bulk.html', 'P2P redirected to the personal-token publisher');
   assert.equal(p2pBrowserRequest?.method, 'p2p', 'The browser did not request direct P2P publishing');
   assert.equal(p2pBrowserRequest?.amount, 2, 'The browser did not send the selected P2P amount');
   const links = (await page.locator('[data-result-url]').inputValue()).trim().split('\n');
@@ -255,7 +255,7 @@ try {
       links: Array.from({ length: regularRequest.amount }, (_, index) => ({ url: `https://cdn.jsdelivr.net/gh/dubcatalt2-lab/nyx-jsdelivr-links@main/regular-${index + 1}.svg` }))
     });
   });
-  await regularPage.goto(`${origin}/apps/link-generator/`, { waitUntil: 'domcontentloaded' });
+  await regularPage.goto(`${origin}/apps/link-generator/bulk.html`, { waitUntil: 'domcontentloaded' });
   await regularPage.locator('[data-account-status]', { hasText: '100 links per 60-minute window' }).waitFor();
   await regularPage.locator('[data-wizard-step="0"] [data-wizard-next]').click();
   await regularPage.locator('[data-premium-amount-field]').waitFor({ state: 'visible' });
@@ -308,7 +308,7 @@ try {
       links: Array.from({ length: 1000 }, (_, index) => ({ url: `https://cdn.jsdelivr.net/gh/dubcatalt2-lab/nyx-jsdelivr-links@main/bulk-${index + 1}.svg` }))
     });
   });
-  await thousandLinkPage.goto(`${origin}/apps/link-generator/`, { waitUntil: 'domcontentloaded' });
+  await thousandLinkPage.goto(`${origin}/apps/link-generator/bulk.html`, { waitUntil: 'domcontentloaded' });
   await thousandLinkPage.locator('[data-access-code]').fill('test-premium-code');
   await thousandLinkPage.locator('[data-wizard-step="0"] [data-wizard-next]').click();
   await thousandLinkPage.locator('[data-label-input]').fill('bulk filter check');

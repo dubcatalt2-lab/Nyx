@@ -210,6 +210,8 @@ const requiredFiles = [
   "lib/chat-voice-relay.mjs",
   "apps/utility-shell.css",
   "apps/link-generator/index.html",
+  "apps/link-generator/bulk.html",
+  "apps/link-generator/simple.css",
   "apps/link-generator/styles.css",
   "apps/link-tools.css",
   "apps/link-generator/app.js",

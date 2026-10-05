@@ -27,7 +27,7 @@ try {
       return route.fulfill({ contentType, body });
     } catch { return route.fulfill({ status: 404, body: '' }); }
   });
-  await page.goto('http://nyx.test/apps/link-generator/');
+  await page.goto('http://nyx.test/apps/link-generator/bulk.html');
   assert.equal(await page.locator('[data-bulk-generate]').count(), 0);
   assert.equal(await page.locator('script[src*="bulk-variants"]').count(), 0);
   for (const width of [1280, 390]) {
@@ -40,7 +40,7 @@ try {
   assert.equal(await page.locator('[data-label-input]').inputValue(), '34');
   assert.equal(await page.locator('[data-cdn-host]').inputValue(), 'gcore.jsdelivr.net');
   assert.equal(await page.locator('[data-premium-amount]').inputValue(), '10');
-  assert.equal(new URL(page.url()).pathname, '/apps/link-generator/');
+  assert.equal(new URL(page.url()).pathname, '/apps/link-generator/bulk.html');
   const filenames = ['34-learning-05fd049f1fe4cc7137a52fd41697f8f2.svg', '34-learning-29c2e1b79a4705f1a6dc9a9e1fc8f9c8.svg'];
   await page.route('**/api/link-generator', async route => {
     const payload = route.request().postDataJSON();

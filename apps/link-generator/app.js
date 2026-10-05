@@ -1,5 +1,7 @@
 (()=>{
   'use strict';
+  const singleLink=document.body.hasAttribute('data-single-link');
+  let authResolved=false, submitting=false, advancing=false;
   const LINK_CHECKER_API='/api/link-checker';
   const SESSION_KEY='nyx.linkGenerator.firebaseSession';
   const $=selector=>document.querySelector(selector);
@@ -57,14 +59,14 @@
     if(url.protocol==='https:'&&cdnHosts.has(url.hostname)&&url.pathname.startsWith('/gh/')) url.hostname=host;
     return url.href;
   }
-  const bulkJobs=import('./bulk-jobs.js?v=20260907-cdn-options-v2').then(module=>module.attachBulkJobs({
+  const bulkJobs=$('[data-bulk-job]') ? import('./bulk-jobs.js?v=20260907-cdn-options-v2').then(module=>module.attachBulkJobs({
     access:async()=>{
       if(!authSession?.idToken)throw new Error('Sign in to your account above before starting or resuming a large job.');
       const session=await currentAccountSession();
       const profile=await lookupAccount(session.idToken);
       return {uid:profile.uid,token:session.idToken,limit:accountHasPremium()?p2pPremiumBatchLimit:regularHourlyLimit,method:accountHasPremium()?'p2p':'managed'};
     }
-  }));
+  })) : Promise.resolve(null);
   // Unsupported storage is reported when a user requests a large job.
   bulkJobs.catch(()=>{});
 
@@ -86,10 +88,11 @@
   }
   function setLoading(loading,label=''){
     cdnSelect.disabled=loading;
-    $('[data-bulk-setup] button').disabled=loading;
+    const bulkButton=$('[data-bulk-setup] button');if(bulkButton)bulkButton.disabled=loading;
+    if(singleLink){[...refs.wizardNext,...refs.wizardBack,...document.querySelectorAll('[data-method-choice]'),refs.label,refs.filter].forEach(el=>el.disabled=loading);}
     refs.button.disabled=loading;
     const amount=selectedAmount();
-    refs.button.querySelector('span').textContent=loading ? (label || `Creating ${amount} link${amount===1?'':'s'}...`) : `Generate ${amount===1?'link':`${amount} links`}`;
+    refs.button.querySelector('span').textContent=loading ? (label || `Creating ${amount} link${amount===1?'':'s'}...`) : (singleLink?'Create link':`Generate ${amount===1?'link':`${amount} links`}`);
   }
   function setAuthBusy(busy){
     [refs.signIn,refs.createAccount,refs.refreshAccount,refs.signOut].forEach(button=>{button.disabled=busy});
@@ -105,7 +108,7 @@
   }
   function storeSession(session){
     authSession=session;
-    try{sessionStorage.setItem(SESSION_KEY,JSON.stringify(session))}catch{}
+    try{session?.viaHost ? sessionStorage.removeItem(SESSION_KEY) : sessionStorage.setItem(SESSION_KEY,JSON.stringify(session))}catch{}
     renderAccount();
     return session;
   }
@@ -170,9 +173,24 @@
     const result=await firebaseRequest('token','token',{grant_type:'refresh_token',refresh_token:authSession.refreshToken},true);
     return storeSession(sessionFromResponse(result,authSession));
   }
+  function requestHostToken(){
+    if(parent===window)return Promise.resolve('');
+    return new Promise(resolve=>{
+      const requestId='link-generator-'+crypto.randomUUID();
+      const finish=token=>{clearTimeout(timer);removeEventListener('message',receive);resolve(typeof token==='string'?token:'');};
+      const receive=event=>{if(event.source===parent&&event.origin===location.origin&&event.data?.type==='nyx:account-token-response'&&event.data.requestId===requestId)finish(event.data.token);};
+      const timer=setTimeout(()=>finish(''),4000);
+      addEventListener('message',receive);
+      parent.postMessage({type:'nyx:account-token-request',requestId},location.origin);
+    });
+  }
   async function currentAccountSession(){
     if(!authSession) throw new Error('Sign in to use the Link Generator.');
-    if(authSession.expiresAt-Date.now()<60_000) await refreshSession();
+    if(authSession.viaHost){
+      const token=await requestHostToken();
+      if(!token){clearSession();throw new Error('Sign in to Nyx again to continue.');}
+      authSession={...authSession,idToken:token};
+    }else if(authSession.expiresAt-Date.now()<60_000) await refreshSession();
     await refreshNyxAccess();
     return authSession;
   }
@@ -190,13 +208,17 @@
       : `Sign in to create up to ${regularHourlyLimit} links per hour.`;
     const accountButton=refs.modeButtons.find(button=>button.dataset.accessMode==='account');
     if(accountButton)accountButton.textContent=premium?'Premium account':'Account';
+    if(singleLink){
+      $('[data-access-gate]').hidden=!authResolved||signedIn;
+      if(signedIn)refs.accountStatus.textContent='Signed in'+(authSession.email?' as '+authSession.email:'')+'.';
+    }
     if(accessMode==='account')setPremiumLayout();
   }
   function setPremiumLayout(){
     const premium=premiumAccessActive();
     const p2p=refs.generationMethod.value==='p2p';
     const limit=amountLimit();
-    refs.amountField.hidden=selectedProvider()==='surge';
+    refs.amountField.hidden=singleLink||selectedProvider()==='surge';
     refs.detailsGrid.classList.add('premium');
     refs.amount.max=String(limit);
     if(Number.parseInt(refs.amount.value,10)>limit)refs.amount.value=String(limit);
@@ -219,6 +241,7 @@
     });
   }
   function selectedAmount(){
+    if(singleLink)return 1;
     const limit=amountLimit();
     const value=Number.parseInt(refs.amount.value,10);
     return Number.isInteger(value) ? Math.max(1,Math.min(limit,value)) : 1;
@@ -233,9 +256,10 @@
       : p2p
       ? `I understand P2P bulk-publishes ${amount===1?'one Nyx launcher':`${amount} Nyx launchers`} through Nyx's protected server publisher.`
       : `I understand this publishes ${amount===1?'one Nyx launcher':`${amount} Nyx launchers`} through a GitHub repository.`;
-    if(!refs.button.disabled) refs.button.querySelector('span').textContent=`Generate ${amount===1?'link':`${amount} links`}`;
+    if(!refs.button.disabled) refs.button.querySelector('span').textContent=singleLink?'Create link':`Generate ${amount===1?'link':`${amount} links`}`;
   }
   function updateGenerationMethod(){
+    document.querySelectorAll('[data-method-choice]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.methodChoice===refs.generationMethod.value)));
     const p2p=refs.generationMethod.value==='p2p';
     refs.generationMethodHint.textContent=p2p
       ? `P2P bulk-publishes up to ${p2pPremiumBatchLimit.toLocaleString()} Nyx links directly and keeps the GitHub credential on the Nyx server.`
@@ -260,6 +284,7 @@
       if(stepIndex===index) indicator.setAttribute('aria-current','step');
       else indicator.removeAttribute('aria-current');
     });
+    if(singleLink&&authResolved)requestAnimationFrame(()=>refs.wizardSteps[index].querySelector('h2')?.focus({preventScroll:true}));
     document.dispatchEvent(new CustomEvent('nyx-generator-step',{detail:index}));
     refs.wizardProgress.style.width=`${(index/(refs.wizardSteps.length-1))*100}%`;
   }
@@ -269,7 +294,7 @@
     refs.reviewLabel.textContent=refs.label.value.trim() || 'Automatic';
     refs.reviewFilter.textContent=refs.filter.options[refs.filter.selectedIndex]?.textContent || 'Not selected';
     refs.reviewOrigin.textContent=refs.origin.textContent || 'Official Nyx origin';
-    refs.reviewMethod.textContent=selectedProvider()==='surge'?'Nyx Surge publisher':refs.generationMethod.value==='p2p' ? 'P2P' : 'Nyx managed';
+    refs.reviewMethod.textContent=selectedProvider()==='surge'?'Nyx Surge publisher':refs.generationMethod.value==='p2p' ? 'P2P' : (singleLink?'Nyx':'Nyx managed');
     updateAmountCopy();
   }
   async function validateAccessStep(){
@@ -293,14 +318,25 @@
       }
     }
     if(!authConfig.enabled){showNotice('Free account access is not configured yet. Choose Premium users to continue.','error');return false}
-    if(!authSession?.idToken){showNotice('Sign in or create a free account before continuing.','error');refs.email.focus();return false}
+    if(!authSession?.idToken){if(singleLink)$('[data-access-gate]').hidden=false;showNotice('Sign in or create a free account before continuing.','error');refs.email.focus();return false}
     try{await currentAccountSession();renderAccount();return true}
     catch(error){showNotice(friendlyFirebaseError(error),'error');return false}
   }
   async function handleWizardNext(event){
+    if(advancing)return;
+    advancing=true;
     const nextButton=event?.currentTarget;
     if(nextButton) nextButton.disabled=true;
     try{
+    if(singleLink){
+      if(wizardStep===0){
+        if(!refs.label.value.trim()){showNotice('Give your link a name.','error');refs.label.focus();return;}
+        if(!await validateAccessStep())return;
+        showNotice('');updateReview();setWizardStep(1);return;
+      }
+      if(wizardStep===1){refs.confirm.checked=true;showNotice('');setWizardStep(2);return;}
+      return;
+    }
     if(wizardStep===0){
       if(!await validateAccessStep()) return;
       showNotice('');setWizardStep(1);return;
@@ -313,6 +349,7 @@
       showNotice('');updateReview();setWizardStep(2);
     }
     }finally{
+      advancing=false;
       if(nextButton) nextButton.disabled=false;
     }
   }
@@ -323,13 +360,17 @@
     const accountButton=refs.modeButtons.find(button=>button.dataset.accessMode==='account');
     accountButton.disabled=!authConfig.enabled;
     if(!authConfig.enabled) setAccessMode('administrator');
+    const hostToken=authConfig.enabled?await requestHostToken():'';
+    if(hostToken){
+      try{const [profile,access]=await Promise.all([lookupAccount(hostToken),lookupNyxAccess(hostToken)]);storeSession({...profile,...access,idToken:hostToken,viaHost:true});}catch{}
+    }
     if(authSession?.idToken){
       try{
-        if(authSession.expiresAt-Date.now()<60_000)await refreshSession();
+        if(!authSession.viaHost&&authSession.expiresAt-Date.now()<60_000)await refreshSession();
         await refreshNyxAccess();
       }catch{clearSession()}
     }
-    renderAccount();
+    authResolved=true;renderAccount();
   }
   async function handleSignIn(){
     const email=refs.email.value.trim(),password=refs.password.value;
@@ -375,7 +416,7 @@
       const filters=Array.isArray(response) ? response : response.vendors;
       if(!Array.isArray(filters) || !filters.length) throw new Error('No filters are currently available.');
       refs.filter.textContent='';
-      const prompt=document.createElement('option');prompt.value='';prompt.textContent='Choose a content filter';refs.filter.append(prompt);
+      const prompt=document.createElement('option');prompt.value='';prompt.textContent=singleLink?'Choose a blocker':'Choose a content filter';refs.filter.append(prompt);
       filters.forEach(item=>{const key=filterKey(item);if(!key)return;const option=document.createElement('option');option.value=key;option.textContent=filterLabel(item);refs.filter.append(option)});
       refs.filter.disabled=false;
     }catch(error){refs.filter.innerHTML='<option value="">Filter list unavailable</option>';refs.filter.disabled=true;showNotice(`Could not load the content filters: ${error.message}`,'error')}
@@ -385,7 +426,7 @@
     refs.open.dataset.ready=String(Boolean(ready));
     refs.open.classList.toggle('disabled',!ready);
     refs.open.setAttribute('aria-disabled',String(!ready));
-    refs.open.textContent=ready ? 'Open first' : 'Starting CDN...';
+    refs.open.textContent=ready ? (singleLink?'Open link':'Open first') : 'Starting CDN...';
     refs.open.dataset.readinessMessage=message || '';
   }
   async function checkCdnReadiness(url){
@@ -471,10 +512,10 @@
   }
 
   refs.modeButtons.forEach(button=>button.addEventListener('click',()=>setAccessMode(button.dataset.accessMode)));
-  $('[data-bulk-label]').addEventListener('input',()=>{
+  $('[data-bulk-label]')?.addEventListener('input',()=>{
     $('[data-bulk-filename]').textContent=`${$('[data-bulk-label]').value.toLowerCase()||'nyx'}-learning-[random 32-character code].svg`;
   });
-  $('[data-bulk-setup]').addEventListener('submit',async event=>{
+  $('[data-bulk-setup]')?.addEventListener('submit',async event=>{
     event.preventDefault();
     if(refs.button.disabled)return;
     const requested=Number($('[data-bulk-amount]').value);
@@ -508,13 +549,14 @@
     document.body.appendChild(link);link.click();link.remove();
     setTimeout(()=>URL.revokeObjectURL(url),1000);
   });
+  document.querySelectorAll('[data-method-choice]').forEach(button=>button.addEventListener('click',()=>{refs.generationMethod.value=button.dataset.methodChoice;refs.confirm.checked=false;updateGenerationMethod();}));
   refs.amount.addEventListener('input',updateAmountCopy);
   refs.generationMethod.addEventListener('change',updateGenerationMethod);
   providerSelect.addEventListener('change',updateProvider);
   refs.wizardNext.forEach(button=>button.addEventListener('click',handleWizardNext));
   refs.wizardBack.forEach(button=>button.addEventListener('click',()=>{showNotice('');setWizardStep(wizardStep-1,'back')}));
   refs.wizardRestart.addEventListener('click',()=>{
-    refs.label.value='';refs.filter.value='';refs.confirm.checked=false;refs.resultCard.hidden=true;showNotice('');setWizardStep(1,'back');
+    refs.label.value='';refs.filter.value='';refs.confirm.checked=false;refs.resultCard.hidden=true;showNotice('');setWizardStep(singleLink?0:1,'back');
   });
   refs.signIn.addEventListener('click',handleSignIn);
   refs.createAccount.addEventListener('click',handleCreateAccount);
@@ -522,10 +564,13 @@
   refs.signOut.addEventListener('click',clearSession);
   refs.form.addEventListener('submit',async event=>{
     event.preventDefault();
-    if(!refs.filter.value){showNotice('Choose a content filter before generating the link.','error');refs.filter.focus();return}
+    if(submitting)return;
+    if(singleLink&&wizardStep<2){await handleWizardNext();return;}
+    if(singleLink&&!refs.confirm.checked){showNotice('Confirm your link details first.','error');setWizardStep(1);return;}
+    if(!refs.filter.value){showNotice('Choose a blocker before creating the link.','error');refs.filter.focus();return}
     const selectedFilter=refs.filter.value;
     const selectedFilterName=refs.filter.options[refs.filter.selectedIndex]?.textContent || selectedFilter;
-    showNotice('');refs.resultCard.hidden=true;setLoading(true);
+    showNotice('');refs.resultCard.hidden=true;submitting=true;setLoading(true);
     try{
       const headers={Accept:'application/json','Content-Type':'application/json'};
       const method=refs.generationMethod.value==='p2p'?'p2p':'managed';
@@ -568,9 +613,10 @@
         : `${links.length} link${links.length===1?' was':'s were'} created with Premium access. ${cooldown?.accumulated || 0} of ${cooldown?.accumulatedLimit || premiumAccumulatedLimit} links accumulated before cooldown.`;
       if(result.partial) showNotice(result.warning || `${links.length} of ${result.requested} links were created.`,'error');
       else if(!cdnReady) showNotice(`${premiumResult ? `${premiumMessage} ` : ''}${refs.open.dataset.readinessMessage || 'The link was created, but the CDN is still provisioning it. Try Open first again shortly.'}`,'error');
+      else if(singleLink)showNotice(cooldown?.triggered ? `Link created. You can create another in ${cooldown.minutes || premiumCooldownMinutes} minutes.` : '');
       else showNotice(premiumResult ? premiumMessage : `${links.length} link${links.length===1?' was':'s were'} created. ${result.remaining} link${result.remaining===1?'':'s'} remaining in your current hourly window.`);
     }catch(error){showNotice(error.message,'error')}
-    finally{setLoading(false)}
+    finally{submitting=false;setLoading(false)}
   });
   refs.open.addEventListener('click',async event=>{
     if(refs.open.dataset.ready==='true') return;
@@ -580,7 +626,7 @@
     const ready=await waitForCdnReadiness(url,1);
     showNotice(ready ? 'The CDN link is ready. Select Open first again.' : (refs.open.dataset.readinessMessage || 'The CDN link is not ready yet.'),ready ? '' : 'error');
   });
-  refs.copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(refs.resultUrl.value);refs.copy.textContent='Copied all';setTimeout(()=>{refs.copy.textContent='Copy all'},1400)}catch{refs.resultUrl.select();document.execCommand('copy')}});
+  refs.copy.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(refs.resultUrl.value);refs.copy.textContent=singleLink?'Copied':'Copied all';setTimeout(()=>{refs.copy.textContent=singleLink?'Copy link':'Copy all'},1400)}catch{refs.resultUrl.select();document.execCommand('copy')}});
 
-  applyTheme();renderAccount();updateProvider();setWizardStep(0);Promise.all([loadStatus(),loadAuthConfig(),loadFilters()]);
+  applyTheme();renderAccount();updateProvider();setWizardStep(0);refs.wizardNext[0].disabled=true;Promise.all([loadStatus(),loadAuthConfig(),loadFilters()]).finally(()=>{refs.wizardNext[0].disabled=false;});
 })();

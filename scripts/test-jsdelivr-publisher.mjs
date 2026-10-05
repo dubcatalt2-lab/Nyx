@@ -124,7 +124,7 @@ try {
       premiumCooldown: { triggered: true, minutes: 10, accumulated: p2pRequest.amount, accumulatedLimit: 30 }
     }, 201);
   });
-  await handoffPage.goto(`${origin}/apps/link-generator/`, { waitUntil: 'domcontentloaded' });
+  await handoffPage.goto(`${origin}/apps/link-generator/bulk.html`, { waitUntil: 'domcontentloaded' });
   await handoffPage.locator('[data-access-code]').fill('test-premium-code');
   await handoffPage.locator('[data-wizard-step="0"] [data-wizard-next]').click();
   await handoffPage.locator('[data-wizard-step="1"]:not([hidden])').waitFor({ state: 'visible' });
@@ -141,7 +141,7 @@ try {
   await handoffPage.locator('[data-confirm]').check();
   await handoffPage.locator('[data-generate-button]').click();
   await handoffPage.locator('[data-result-card]:not([hidden])').waitFor({ state: 'visible' });
-  assert.equal(new URL(handoffPage.url()).pathname, '/apps/link-generator/', 'P2P redirected to the manual publisher instead of returning Nyx links');
+  assert.equal(new URL(handoffPage.url()).pathname, '/apps/link-generator/bulk.html', 'P2P redirected to the manual publisher instead of returning Nyx links');
   assert.equal(p2pRequest?.method, 'p2p', 'Link Generator did not send the P2P method');
   assert.equal(preparationPolls, 2, 'The generator must wait for preparation before showing links');
   assert.equal(p2pRequest?.amount, 1000, 'Link Generator did not send the requested P2P maximum');
@@ -159,7 +159,7 @@ try {
   await handoffPage.locator('[data-confirm]').check();
   await handoffPage.locator('[data-generate-button]').click();
   await handoffPage.locator('[data-notice].error').waitFor();
-  assert.equal(new URL(handoffPage.url()).pathname,'/apps/link-generator/');
+  assert.equal(new URL(handoffPage.url()).pathname,'/apps/link-generator/bulk.html');
   assert.match(await handoffPage.locator('[data-notice]').textContent(),/did not return any generated links/);
   assert.equal(await handoffPage.locator('#token').count(),0);
   await handoffPage.close();

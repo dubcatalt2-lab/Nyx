@@ -4,6 +4,9 @@ import { batchFiles, inspectBatchTree } from '../lib/link-generator-batch.mjs';
 import { BulkJob } from '../apps/link-generator/bulk-jobs.js';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
+import { staticPublisherFixture } from './static-publisher-fixture.mjs';
+import { validateStaticManifest } from '../apps/jsdelivr-publisher/static-publish.js';
+const fixture = await staticPublisherFixture();
 
 const id = '12345678-1234-1234-1234-123456789abc';
 const files = batchFiles('user', id, '34', 2);
@@ -74,6 +77,16 @@ const rateWorker = new BulkJob({ store: rateStore, now: () => waited, sleep: asy
 });
 await rateWorker.create({ total: 1, label: '34', host: 'cdn.jsdelivr.net' });
 await rateWorker.run(); assert.ok(waited >= 120000);
+const preparationStore = memoryStore(); let preparationPolls = 0, preparationTime = 0;
+const preparationWorker = new BulkJob({ store: preparationStore, now: () => preparationTime, sleep: async ms => { preparationTime += ms; },
+  access: async () => ({ uid: 'user', token: 'fixture', limit: 1, method: 'managed' }),
+  request: async () => ++preparationPolls <= 8
+    ? new Response(JSON.stringify({code:'STATIC_PACKAGE_PREPARING',error:'Preparing the static app'}), {status:429,headers:{'Retry-After':'10'}})
+    : new Response(JSON.stringify({links:['https://cdn.jsdelivr.net/gh/test/repo@main/a.svg']}))
+});
+await preparationWorker.create({total:1,label:'test',host:'cdn.jsdelivr.net'});
+assert.equal((await preparationWorker.run()).completed, 1, 'Preparation polling must not consume the failure retry allowance');
+assert.equal(preparationPolls, 9);
 console.log('100,000-link mocked job: batching, stable retry IDs, pause, account binding, cooldown, capacity and replay checks passed.');
 
 // Exercise the actual server publisher with a lost response AFTER the branch
@@ -84,7 +97,11 @@ let serverTime = 100000, writes = 0, committed = false, entries = [];
 const publish = runInNewContext(publisherSource + '\npublishNyxJsdelivrLinks;', {
   batchFiles, inspectBatchTree, nyxBulkPublishNextAt: 0,
   Date: { now: () => serverTime }, staticRoot: '.', join: (...parts) => parts.join('/'),
-  readFileSync: () => svg, githubRepositoryApiPath: value => value,
+  readFileSync: () => JSON.stringify(fixture.manifest), githubRepositoryApiPath: value => value,
+  nyxStaticPackageRoot: fixture.root, validateStaticManifest,
+  nyxStaticPreparation: { get: (_key, prepare) => prepare() },
+  staticLauncher: () => svg,
+  prepareStaticPackage: async () => ({path:'nyx-static',mode:'040000',type:'tree',sha:'package'}),
   nyxJsdelivrGithubJson: async (_config, path, options) => {
     if (!options) {
       if (path.endsWith('?recursive=1')) return { tree: committed ? entries : [] };
@@ -94,7 +111,7 @@ const publish = runInNewContext(publisherSource + '\npublishNyxJsdelivrLinks;', 
     }
     writes++;
     if (path.endsWith('/git/trees')) {
-      entries = JSON.parse(options.body).tree.map(item => ({ type: 'blob', path: item.path, sha, size: 6 }));
+      entries = JSON.parse(options.body).tree.filter(item => item.type === 'blob').map(item => ({ type: 'blob', path: item.path, sha, size: 6 }));
       return { sha: 'new-tree' };
     }
     if (path.endsWith('/git/commits')) return { sha: 'new-commit' };

@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { chromium } from 'playwright';
+import { fileURLToPath } from 'node:url';
+import { staticPublisherFixture } from './static-publisher-fixture.mjs';
+
+const fixture = await staticPublisherFixture();
 
 const port = 8213;
 const origin = `http://127.0.0.1:${port}`;
@@ -9,6 +13,9 @@ const server = spawn(process.execPath, ['server.js'], {
   env: {
     ...process.env,
     PORT: String(port),
+    WISP_URL: 'wss://relay.example.invalid/',
+    NYX_STATIC_PACKAGE_ROOT: fixture.root,
+    ...(process.env.NYX_TEST_BUILT === '1' ? { NYX_STATIC_ROOT: fileURLToPath(new URL('../dist/', import.meta.url)) } : {}),
     LINK_GENERATOR_ACCESS_CODE: 'test-premium-code',
     NYX_PUBLIC_ORIGIN: 'https://nyxlearning.org'
   },
@@ -53,6 +60,7 @@ async function installGithubMock(page, { failTree = false } = {}) {
     if (path.endsWith('/git/ref/heads/main') && method === 'GET') return json(route, { object: { sha: 'head-sha' } });
     if (path.endsWith('/git/commits/head-sha') && method === 'GET') return json(route, { tree: { sha: 'base-tree-sha' } });
     if (path.endsWith('/git/trees/base-tree-sha') && method === 'GET') return json(route, { truncated: false, tree: [{ path: 'existing-link-5.svg', type: 'blob' }] });
+    if (path.endsWith('/git/blobs') && method === 'POST') return json(route, { sha: 'binary-sha' }, 201);
     if (path.endsWith('/git/trees') && method === 'POST') {
       if (failTree) return json(route, { message: 'Resource not accessible by personal access token', documentation_url: 'https://docs.github.com/rest/git/trees#create-a-tree' }, 403);
       return json(route, { sha: 'new-tree-sha' }, 201);
@@ -80,6 +88,11 @@ async function fillPublisher(page, count = 3) {
 let browser;
 try {
   await waitForServer();
+  for(let attempt=0;attempt<2;attempt++){
+    const unavailable=await fetch(`${origin}/api/link-generator`,{method:'POST',headers:{'Content-Type':'application/json',Origin:origin},body:JSON.stringify({provider:'jsdelivr',method:'managed',accessCode:'test-premium-code',amount:1,label:'fixture'})});
+    assert.equal(unavailable.status,503);
+    assert.equal((await unavailable.json()).code,'publisher_not_configured');
+  }
   const appsResponse = await fetch(`${origin}/api/apps`);
   assert.equal(appsResponse.ok, true, 'The public app catalog did not load');
   const apps = await appsResponse.json();
@@ -90,10 +103,12 @@ try {
   const handoffPage = await browser.newPage({ viewport: { width: 1_280, height: 900 } });
   const handoffErrors = [];
   let p2pRequest = null;
+  let preparationPolls = 0;
   handoffPage.on('pageerror', error => handoffErrors.push(error.message));
   await handoffPage.route('**/api/link-checker/vendors', route => json(route, { vendors: [{ key: 'goguardian', label: 'GoGuardian' }] }));
   await handoffPage.route('**/api/link-checker/check', route => json(route, { vendors: { goguardian: { blocked: false } } }));
   await handoffPage.route('**/api/link-generator', route => {
+    if (!preparationPolls++) return route.fulfill({status:429,headers:{'Retry-After':'1'},json:{code:'STATIC_PACKAGE_PREPARING',error:'Preparing the static Nyx app.'}});
     p2pRequest = JSON.parse(route.request().postData() || '{}');
     return json(route, {
       authorized: true,
@@ -128,11 +143,25 @@ try {
   await handoffPage.locator('[data-result-card]:not([hidden])').waitFor({ state: 'visible' });
   assert.equal(new URL(handoffPage.url()).pathname, '/apps/link-generator/', 'P2P redirected to the manual publisher instead of returning Nyx links');
   assert.equal(p2pRequest?.method, 'p2p', 'Link Generator did not send the P2P method');
+  assert.equal(preparationPolls, 2, 'The generator must wait for preparation before showing links');
   assert.equal(p2pRequest?.amount, 1000, 'Link Generator did not send the requested P2P maximum');
   assert.equal(p2pRequest?.label, 'study room', 'Link Generator did not send the requested P2P label');
   assert.match(await handoffPage.locator('[data-result-url]').inputValue(), /p2p-test\.svg$/, 'P2P did not render the returned Nyx link');
   assert.equal(await handoffPage.locator('#token').count(), 0, 'P2P exposed the personal-token publisher form');
   assert.deepEqual(handoffErrors, [], `Direct P2P Link Generator browser errors: ${handoffErrors.join(' | ')}`);
+  // A stale server returning an empty authorized response must not redirect to a token form.
+  await handoffPage.route('**/api/link-generator',route=>json(route,{authorized:true,provider:'jsdelivr',requested:1,links:[]}));
+  await handoffPage.reload({waitUntil:'domcontentloaded'});
+  await handoffPage.locator('[data-access-code]').fill('test-premium-code');
+  await handoffPage.locator('[data-wizard-step="0"] [data-wizard-next]').click();
+  await handoffPage.locator('[data-filter-select]').selectOption('goguardian');
+  await handoffPage.locator('[data-wizard-step="1"] [data-wizard-next]').click();
+  await handoffPage.locator('[data-confirm]').check();
+  await handoffPage.locator('[data-generate-button]').click();
+  await handoffPage.locator('[data-notice].error').waitFor();
+  assert.equal(new URL(handoffPage.url()).pathname,'/apps/link-generator/');
+  assert.match(await handoffPage.locator('[data-notice]').textContent(),/did not return any generated links/);
+  assert.equal(await handoffPage.locator('#token').count(),0);
   await handoffPage.close();
 
   const cloakBridgePage = await browser.newPage({ viewport: { width: 1_280, height: 900 } });
@@ -181,6 +210,27 @@ try {
   assert.ok(mobileOverflow <= 1, `The publisher caused ${mobileOverflow}px of mobile overflow`);
   assert.deepEqual(pageErrors, [], `Publisher browser errors: ${pageErrors.join(' | ')}`);
   await page.close();
+
+  const presetPage = await browser.newPage();
+  const presetRequests = await installGithubMock(presetPage);
+  const presetErrors = [];
+  presetPage.on('pageerror', error => presetErrors.push(error.message));
+  await presetPage.goto(`${origin}/apps/jsdelivr-publisher/?preset=nyx&source=jsdelivr&count=2`);
+  await presetPage.locator('#token').fill('github_pat_test_secret');
+  await presetPage.locator('#repo').fill('dubcatalt2-lab/nyx-jsdelivr-links');
+  await presetPage.locator('#publishButton').click();
+  await presetPage.locator('#results:not([hidden])').waitFor();
+  const presetTree = JSON.parse(presetRequests.findLast(request => request.method === 'POST' && request.path.endsWith('/git/trees')).body);
+  assert.equal(presetTree.tree.filter(entry => entry.type === 'tree' && entry.path === 'nyx-static').length, 1);
+  assert.equal(presetTree.tree.filter(entry => entry.type === 'blob').length, 2);
+  for (const entry of presetTree.tree.filter(entry => entry.type === 'blob')) {
+    assert.match(entry.content, /nyx-static\/Nyx.svg/);
+    assert.doesNotMatch(entry.content, /<iframe|nyxlearning.org/);
+  }
+  assert.ok(presetRequests.some(request => request.path.endsWith('/git/blobs')));
+  assert.deepEqual(presetErrors, []);
+  assert.doesNotMatch(await presetPage.evaluate(() => JSON.stringify({...localStorage, ...sessionStorage})), /github_pat_test_secret/);
+  await presetPage.close();
 
   const errorPage = await browser.newPage({ viewport: { width: 1_280, height: 800 } });
   const errorPageErrors = [];

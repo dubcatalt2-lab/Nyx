@@ -88,6 +88,12 @@ export class BulkJob {
         continue;
       }
       if (!response.ok) {
+        if (response.status === 429 && payload.code === 'STATIC_PACKAGE_PREPARING') {
+          job.nextAt = this.now() + Math.max(10, Number(response.headers.get('Retry-After')) || 10) * 1000;
+          await this.store.save(job);
+          this.update(job, payload.error);
+          continue;
+        }
         if (response.status === 429 || response.status >= 500) {
           failures++;
           const retry = response.headers.get('Retry-After');

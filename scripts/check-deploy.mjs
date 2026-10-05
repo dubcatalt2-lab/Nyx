@@ -2,6 +2,11 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "apps/jsdelivr-publisher/static-publish.js",
+  "scripts/build-publisher-package.mjs",
+  "lib/static-package-preparation.mjs",
+  "lib/chat-social.mjs",
+  "apps/chat/social.js",
   "lib/app-traffic.mjs",
   "lib/nyxcloud-access.mjs",
   "lib/nyxcloud-desktop.mjs",
@@ -206,6 +211,7 @@ const requiredFiles = [
   "apps/utility-shell.css",
   "apps/link-generator/index.html",
   "apps/link-generator/styles.css",
+  "apps/link-tools.css",
   "apps/link-generator/app.js",
   "apps/link-generator/bulk-variants.js",
   "apps/code-studio/index.html",

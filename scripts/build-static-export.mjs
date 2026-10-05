@@ -9,6 +9,7 @@ import {rewriteFrontendReferences} from './build-frontend-assets.mjs';
 const root=process.cwd(),argument=name=>process.argv.find(value=>value.startsWith('--'+name+'='))?.slice(name.length+3);
 const base=argument('base')||'/',wisp=argument('wisp')||'wss://vps-a556737a.vps.ovh.us/resources/live/';
 const mini=process.argv.includes('--mini'),lite=mini||process.argv.includes('--lite');
+const publisher=process.argv.includes('--publisher');
 if(!/^\/(?:[a-zA-Z0-9@!._~/-]+\/)?$/.test(base)||base.includes('..')||base.startsWith('//'))throw Error('Use a hosting path such as / or /gh/USER/REPO@main/.');
 if(new URL(wisp).protocol!=='wss:')throw Error('The relay must use wss://.');
 const id=createHash('sha256').update(base+wisp+(mini?'mini':lite?'lite':'')).digest('hex').slice(0,10);
@@ -26,13 +27,16 @@ const boot=await minify(`globalThis.__NYX_STATIC_CONFIG__=${JSON.stringify({base
 await writeFile(path.join(output,bootName),rewriteRuntimeNames(boot.code));
 const injected=`<script src="${base+bootName}"></script>`;
 const currentAssets=new Set(Object.values(proxyAssetNames).map(value=>value.slice(1)));
+// Nyx imports these shared transports even when the Tutsi app is omitted.
+const sharedTransports=new Set(['/apps/tutsi/relay.mjs','/apps/tutsi/http-relay.mjs'].map(name=>proxyAssetNames[name].slice(1)));
 const deferredBackgrounds=new Set();
 if(mini)for(const file of await readdir(path.join(dist,'assets/backgrounds')))if((await stat(path.join(dist,'assets/backgrounds',file))).size>600000)deferredBackgrounds.add(file);
 const remoteGames=new Set(['Dragonxclient.html','EaglercraftL_1.9_v0_7_0_Offline_Signed.html','EaglercraftX 1.8.8(u29).html','EaglercraftZ_1.11.2.html','eaglercraft.1.5.2.html'].map(name=>'assets/ugs/minecraft/'+name));
-const skip=relative=>(/^(?:scramjet(?:-v1)?|studyjet(?:-v1)?|controller|epoxy|atlas|libcurl|textlib|baremux|uv)\//.test(relative)&&!currentAssets.has(relative))||/^(?:proxy-assets|frontend-assets)\.json$/.test(relative)||relative==='nyx-singlefile.html'||relative.startsWith('apps/tutsi/');
+const skip=relative=>(/^(?:scramjet(?:-v1)?|studyjet(?:-v1)?|controller|epoxy|atlas|libcurl|textlib|baremux|uv)\//.test(relative)&&!currentAssets.has(relative))||/^(?:proxy-assets|frontend-assets)\.json$/.test(relative)||relative==='nyx-singlefile.html'||(relative.startsWith('apps/tutsi/')&&!sharedTransports.has(relative));
 async function copy(dir=''){
   for(const item of await readdir(path.join(dist,dir),{withFileTypes:true})){
     const relative=path.posix.join(dir,item.name);if(skip(relative))continue;
+    if(publisher && relative.startsWith('apps/jsdelivr-publisher'))continue;
     if(mini&&((relative.startsWith('assets/ugs/')&&!item.isDirectory()&&!relative.endsWith('.json'))||(relative.startsWith('assets/backgrounds/')&&deferredBackgrounds.has(item.name))))continue;
     if(lite&&(remoteGames.has(relative)||relative==='assets/jumpscares'||(relative.startsWith('assets/profile/')&&!item.isDirectory()&&!relative.endsWith('.json'))))continue;
     if(item.isDirectory()){await mkdir(path.join(output,relative),{recursive:true});await copy(relative);continue;}
@@ -45,7 +49,7 @@ async function copy(dir=''){
         source=rewriteFrontendReferences(rewriteRuntimeNames(rewriteProxyReferences(source,'/script.js')),'/script.js',aliases);
       }
       if(relative==='assets/games/games.json'){
-        const catalog=JSON.parse(source);catalog.catalogs=catalog.catalogs.filter(item=>item.id==='local');catalog.fallbackCover='';
+        const catalog=JSON.parse(source);catalog.catalogs=catalog.catalogs.filter(item=>item.id==='local');catalog.fallbackCover='';catalog.includeUnillustrated=true;
         if(mini){const local=catalog.catalogs.find(item=>item.id==='local');local.player='https://vps-a556737a.vps.ovh.us/assets/ugs/play.html?game={path}';local.coversUrl='';}
         source=JSON.stringify(catalog);
       }

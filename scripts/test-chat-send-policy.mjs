@@ -5,6 +5,7 @@ import vm from 'node:vm';
 import {createRequire} from 'node:module';
 const nyxEmojiMartData=createRequire(import.meta.url)('@emoji-mart/data');
 import express from 'express';
+import {assertChatContact} from '../lib/chat-social.mjs';
 import {chatSendDecision} from '../lib/chat-send-policy.mjs';
 
 let time=100000;
@@ -30,7 +31,7 @@ const burstChecks=[];
 for(const [uid,role] of Object.entries(roles))records.set('nyxUserAdministration/'+uid,{role});
 records.set('nyxChatChannels/general',{name:'General',minimumRole:'member'});
 const app=express();app.use(express.json());let broadcasts=0;
-const context=vm.createContext({app,Date:class extends Date{static now(){return time;}},createHash,chatSendDecision,nyxEmojiMartData,
+const context=vm.createContext({app,assertChatContact,Date:class extends Date{static now(){return time;}},createHash,chatSendDecision,nyxEmojiMartData,
  sameOriginRequest:req=>req.get('sec-fetch-site')!=='cross-site',authenticatedNyxChatUser:async req=>{const uid=req.get('authorization');if(!roles[uid])throw Object.assign(Error('Sign in'),{status:401});return {firebase:{firestore:db},token:{uid}};},
  nyxRoleForUser:(_uid,admin)=>admin.role||'member',nyxChatCanModerate:role=>ranks[role]>=50,
  nyxChatIdentity:async(_firebase,token)=>({uid:token.uid,role:roles[token.uid],canModerate:ranks[roles[token.uid]]>=50,displayName:token.uid,handle:token.uid,avatarUrl:'',avatarDecoration:'none',profileEffect:'none',customRole:null,caffeine:false}),assertNyxChatCanSend:async()=>{},

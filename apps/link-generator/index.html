@@ -7,20 +7,21 @@
   <meta name="color-scheme" content="dark light">
   <title>Link Generator</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/icons/link-generator.svg">
-  <link rel="stylesheet" href="./styles.css?v=20260927-surge-tour-v15">
+  <link rel="stylesheet" href="./styles.css?v=20261004-static-package-v16">
 <link rel="stylesheet" href="/apps/obsidian.css?v=20260926-2">
+  <link rel="stylesheet" href="../link-tools.css?v=20261004">
 </head>
-<body class="utility-neutral">
+<body class="utility-neutral link-tool">
   <main class="utility-shell generator-shell">
     <header class="utility-header">
       <span class="brand-lockup" aria-label="Nyx utilities">
-        <span class="brand-mark" aria-hidden="true"><img src="../../assets/icons/nyx-app-192.png" alt=""></span>
+        <span class="brand-mark" aria-hidden="true"><img src="../../assets/icons/nyx-cat-moon-small.svg" alt=""></span>
         <span class="brand-copy"><strong>nyx</strong><span>utilities</span></span>
       </span>
       <div class="utility-nav" aria-label="Nyx utility pages">
         <a class="utility-nav-item" href="../link-checker/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a5 5 0 007.5.5l2-2a5 5 0 00-7-7l-1.1 1.1M14 10a5 5 0 00-7.5-.5l-2 2a5 5 0 007 7l1.1-1.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>Link Checker</span></a>
         <a class="utility-nav-item" href="../link-generator/" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M5.5 5.5l13 13M18.5 5.5l-13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Generator</span></a>
-        <a class="utility-nav-item" href="../jsdelivr-publisher/" aria-label="Jsdelivr Links"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14M5 12h14M5 18.5h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="m16 17 1.8 1.8L21 15.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Jsdelivr Links</span></a>
+        <a class="utility-nav-item" href="../jsdelivr-publisher/" aria-label="Personal publisher"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14M5 12h14M5 18.5h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="m16 17 1.8 1.8L21 15.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Personal publisher</span></a>
       </div>
       <span class="service-status" data-service-status><i aria-hidden="true"></i><span>Checking setup</span></span>
     </header>
@@ -101,7 +102,7 @@
                   <option value="surge" hidden disabled>Surge &middot; surge.sh</option><option value="jsdelivr" selected>jsDelivr files</option>
                   <option value="bunny" disabled>Bunny.net pull zones (checking setup…)</option>
                 </select>
-                <small data-provider-hint>Publish SVG files through GitHub and serve them on jsDelivr.</small>
+                <small data-provider-hint>Publish the static Nyx app through GitHub and open it from jsDelivr.</small>
               </label>
               <label>
                 <span>Link label</span>
@@ -154,7 +155,7 @@
             </dl>
             <label class="confirmation">
               <input data-confirm type="checkbox" required>
-              <span data-confirm-text>I understand this publishes a Nyx SVG through a GitHub repository.</span>
+              <span data-confirm-text>I understand this publishes the static Nyx app and launcher links to a public GitHub repository.</span>
             </label>
           </div>
           <div class="wizard-actions">
@@ -190,7 +191,7 @@
     <section class="bulk-variants-card surface" aria-labelledby="bulk-variants-title">
       <div class="section-bar bulk-variants-heading"><div><p class="eyebrow">Nyx links</p><h2 id="bulk-variants-title">Bulk jsDelivr links</h2></div></div>
       <p class="bulk-variants-intro">Create Nyx links with a different random filename ending for each link. Choose your label, amount, and CDN below.</p>
-      <div class="bulk-alias-destination"><span>Source SVG</span><a href="https://cdn.jsdelivr.net/gh/dubcatalt2-lab/nyx-jsdelivr-links@main/1-learning-005847b5039fb2c8f4515165e0d79a17.svg" target="_blank" rel="noopener noreferrer">View the jsDelivr source file</a></div>
+      <div class="bulk-alias-destination"><span>Included app</span><span>Nyx static package &middot; shared files, separate launcher links</span></div>
       <form class="bulk-variants-form" data-bulk-setup>
         <div class="bulk-variants-grid">
           <label><span>Filename label</span><input data-bulk-label value="34" maxlength="30" pattern="[a-zA-Z0-9-]+" required></label>
@@ -209,6 +210,6 @@
     </section>
   </main>
   <script src="./tutorial.js?v=20260927-v2"></script>
-  <script src="./app.js?v=20260927-surge-hidden-v13"></script>
+  <script src="./app.js?v=20261004-static-package-v14"></script>
 </body>
 </html>

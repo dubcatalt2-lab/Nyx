@@ -1,5 +1,12 @@
 export function loremDesktop({api,screen,status,connected,reconnect}){
-  let disposed=false,timer,renewTimer,displayTimer,resizeObserver,queueCancelled=false,opened=false;
+  let disposed=false,timer,renewTimer,displayTimer,countdownTimer,resizeObserver,queueCancelled=false,opened=false,openedUrl='',expiresAt=null,displayReady=false;
+  function countdown(){
+    if(disposed||!opened||!displayReady)return;
+    if(!expiresAt){status('Desktop open');return;}
+    const seconds=Math.max(0,Math.ceil((expiresAt-Date.now())/1000));
+    if(!seconds){opened=false;screen.replaceChildren(loading);loading.querySelector('h1').textContent='Session ended';progress('Your session is over. Reconnect to join the queue again.');retryButton.hidden=false;api('/lorem/queue').catch(()=>{});return;}
+    status('Desktop open · '+Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0')+' remaining');
+  }
   const layout=()=>{
     const frame=screen.querySelector('iframe');if(!frame||disposed)return;
     if(screen.dataset.scale==='fit'){frame.style.cssText='';return;}
@@ -23,39 +30,39 @@ export function loremDesktop({api,screen,status,connected,reconnect}){
     <h1>Booting your desktop</h1>
     <div class="boot-status"><span class="boot-status-dot" aria-hidden="true"></span><p class="boot-message" aria-live="polite"></p></div>
     <div class="boot-steps" aria-hidden="true"><span class="boot-step active"><i>1</i>Prepare</span><span class="boot-step"><i>2</i>Boot</span><span class="boot-step"><i>3</i>Display</span></div>
-    <p class="boot-session-note">Sessions last up to 60 minutes. Save downloaded files before leaving.</p>
+    <p class="boot-session-note">Save your files before the session timer ends.</p>
     <button class="boot-cancel boot-retry" hidden>Leave queue</button>
     <button class="boot-retry boot-reconnect" hidden>Reconnect</button>
   </section>`;
   const message=loading.querySelector('.boot-message'),indicator=loading.querySelector('.boot-orbit'),retryButton=loading.querySelector('.boot-reconnect'),cancelButton=loading.querySelector('.boot-cancel');
   cancelButton.onclick=async()=>{
     queueCancelled=true;clearTimeout(timer);cancelButton.disabled=true;
-    try{const result=await api('/lorem/cancel','POST');if(disposed)return;if(result.status==='ready'){open(result.vm);return;}cancelButton.hidden=true;loading.querySelector('h1').textContent='You left the queue';progress('Your place has been released.');retryButton.textContent='Join queue';retryButton.hidden=false;}
+    try{const result=await api('/lorem/cancel','POST');if(disposed)return;if(result.status==='ready'){open(result.vm,result.expiresAt);return;}cancelButton.hidden=true;loading.querySelector('h1').textContent='You left the queue';progress('Your place has been released.');retryButton.textContent='Join queue';retryButton.hidden=false;}
     catch(error){if(!disposed){queueCancelled=false;failed(error);}}
     finally{cancelButton.disabled=false;}
   };
   retryButton.onclick=()=>reconnect?.();screen.replaceChildren(loading);
   function progress(text,stage=0){if(disposed)return;message.textContent=text;status(text);loading.querySelectorAll('.boot-step').forEach((step,i)=>{step.classList.toggle('active',i===stage);step.classList.toggle('done',i<stage);});}
   function failed(error){if(disposed)return;indicator.hidden=true;loading.dataset.error='true';loading.querySelector('h1').textContent='Unable to open desktop';retryButton.hidden=!reconnect;progress(error.message||'The desktop could not start.');}
-  function open(vm){
+  function open(vm,deadline){
     if(disposed)return;
-    opened=true;cancelButton.hidden=true;loading.querySelector('h1').textContent='Opening your desktop';
+    opened=true;openedUrl=vm.url;expiresAt=Number(deadline)||null;displayReady=false;cancelButton.hidden=true;loading.querySelector('h1').textContent='Opening your desktop';
     const u=new URL(vm.url);if(u.origin!=='https://loremgroup.org'||u.username||u.password||u.search||u.hash||!/^\/vm\/[A-Za-z0-9_-]+\/$/.test(u.pathname))throw Error('Unsupported desktop URL.');
     const frame=document.createElement('iframe');frame.title='NyxCloud desktop';frame.src=u.href;frame.referrerPolicy='no-referrer';
     frame.allow='clipboard-read; clipboard-write; autoplay; fullscreen; display-capture; microphone; gamepad';
     frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-downloads allow-pointer-lock');frame.allowFullscreen=true;
-    frame.addEventListener('load',()=>{if(disposed)return;clearTimeout(displayTimer);loading.remove();status('Desktop open');connected();},{once:true});
+    frame.addEventListener('load',()=>{if(disposed)return;clearTimeout(displayTimer);loading.remove();displayReady=true;countdown();connected();},{once:true});
     screen.replaceChildren(frame,loading);resizeObserver?.disconnect();resizeObserver=new ResizeObserver(layout);resizeObserver.observe(screen);layout();progress('Opening your display...',2);
     displayTimer=setTimeout(()=>{if(!disposed)failed(Error('The display is taking longer than expected. You can reconnect.'));},45000);
   }
   async function poll(){
     try{
       const data=await api('/lorem/queue');if(disposed||queueCancelled)return;
-      if(data.status==='ready'){open(data.vm);return;}
+      if(data.status==='ready'){open(data.vm,data.expiresAt);return;}
       if(data.status==='recovering')throw Error(data.message);
       if(data.status!=='queued')throw Error('Your queue reservation ended. Use Reconnect to join again.');
       cancelButton.hidden=false;loading.querySelector('h1').textContent=data.position?'You’re #'+data.position+' in line':'Waiting for a desktop';
-      progress(data.reason==='service_unavailable'?'The service is reconnecting. Your place is saved.':data.providerPosition?'Waiting for provider capacity · provider position '+data.providerPosition:'Desktops are busy. Yours will open automatically.');
+      progress(data.reason==='isolated_desktop_pending'?'Waiting for a separate desktop. Your place is saved.':data.reason==='service_unavailable'?'The service is reconnecting. Your place is saved.':data.providerPosition?'Waiting for provider capacity · provider position '+data.providerPosition:'Desktops are busy. Yours will open automatically.');
       timer=setTimeout(poll,5000);
     }catch(error){
       if(disposed||queueCancelled)return;
@@ -70,7 +77,7 @@ export function loremDesktop({api,screen,status,connected,reconnect}){
       if(/stopped|exited/i.test(existing.state)){
         progress('Starting the virtual machine...',1);await api('/lorem/start/'+encodeURIComponent(existing.id),'POST');if(disposed)return;
       }
-      open(existing);return;
+      open(existing,data.expiresAt);return;
     }
     if(data.queued){await poll();return;}
     if(data.vms.length)throw Error('Your VM is not ready to connect. Use Reconnect to check again.');
@@ -78,12 +85,12 @@ export function loremDesktop({api,screen,status,connected,reconnect}){
     progress('Allocating your virtual machine...',1);
     let result;try{result=await api('/lorem/create','POST');}catch(error){if(error.status===409&&!disposed)return load(true);throw error;}
     if(disposed)return;
-    if(result.status==='ready')open(result.vm);else if(result.status==='queued')await poll();else throw Error('The VM service returned an unexpected response.');
+    if(result.status==='ready')open(result.vm,result.expiresAt);else if(result.status==='queued')await poll();else if(result.status==='recovering')throw Error(result.message);else throw Error('The VM service returned an unexpected response.');
   }
   let renewing=false;
   renewTimer=setInterval(async()=>{
     if(!opened||disposed||renewing)return;renewing=true;
-    try{const data=await api('/lorem/queue');if(disposed)return;if(data.status==='idle'){screen.replaceChildren(loading);opened=false;failed(Error('Your desktop session ended. Reconnect to start a new session.'));}}
+    try{const data=await api('/lorem/queue');if(disposed)return;if(data.status!=='ready'||data.vm?.url!==openedUrl){screen.replaceChildren(loading);opened=false;failed(Error(data.message||'Your desktop session ended. Reconnect to start a new session.'));}}
     catch(error){
     if(disposed)return;
     if([401,403,404].includes(error.status)){screen.replaceChildren();dispose();status('Sign in again to reconnect.');}
@@ -91,6 +98,7 @@ export function loremDesktop({api,screen,status,connected,reconnect}){
     }finally{renewing=false;}
   },30000);
   load().catch(failed);
-  function dispose(){disposed=true;resizeObserver?.disconnect();screen.removeEventListener('nyx:display-scale',layout);clearTimeout(timer);clearTimeout(displayTimer);clearInterval(renewTimer);}
+  countdownTimer=setInterval(countdown,1000);
+  function dispose(){disposed=true;resizeObserver?.disconnect();screen.removeEventListener('nyx:display-scale',layout);clearTimeout(timer);clearTimeout(displayTimer);clearInterval(renewTimer);clearInterval(countdownTimer);}
   return dispose;
 }

@@ -1,0 +1,35 @@
+/* Shared presentation for the two link tools; colors follow the host palette. */
+html body.link-tool{--muted-deep:var(--app-muted);--accent-faint:color-mix(in srgb,var(--app-text) 6%,transparent);font-family:Inter,Arial,sans-serif}
+.link-tool .utility-shell{width:min(960px,calc(100% - 48px));padding:24px 0 48px}
+html body.link-tool .utility-header{min-height:56px;margin-bottom:32px;padding:0 0 16px;background:transparent!important;border-bottom:1px solid var(--line);gap:12px}
+.link-tool .brand-copy strong{font-size:20px}.link-tool .brand-copy span{display:none}
+.link-tool .utility-nav{gap:4px}.link-tool .utility-nav-item{border-radius:8px;font-size:12px;padding:0 10px}
+.link-tool .utility-nav-item[aria-current="page"]{background:var(--surface-raised)}
+html body.link-tool :is(.service-status,.api-status){background:var(--surface);font-size:11px;border-color:var(--line)}
+.link-tool .utility-intro{justify-content:flex-start;position:relative;gap:14px;margin:0 0 26px;padding:4px 0}
+.link-tool .utility-intro h1{font-size:30px;font-weight:600;line-height:1.2;letter-spacing:-.04em}
+.link-tool .utility-intro p{text-transform:none;letter-spacing:0;font-size:13px;line-height:1.5;margin-top:5px}
+.link-tool .intro-mark{width:46px;height:46px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.link-tool .intro-mark svg,.link-tool .intro-mark img{width:26px;height:26px}
+.link-tool [data-tutorial-replay]{position:absolute;right:0;top:12px;padding:0 14px;font-size:12px}
+.link-tool .surface{border-radius:16px;background:var(--surface);border-color:var(--line);box-shadow:none}
+.link-tool :is(.generator-card,.publisher-card,.results-card,.bulk-variants-card){padding:26px}
+.link-tool :is(.form-panel,.account-access,.administrator-access,.bulk-variants-form){border:0;background:transparent;padding:12px 0}
+.link-tool .form-panel{padding:8px 0}.link-tool .account-access{padding-top:18px}
+.link-tool .access-tabs{background:var(--field);border-radius:10px}
+.link-tool .access-tabs button.active{background:var(--surface-raised)}
+.link-tool :is(input,select,textarea){border:1px solid var(--line);border-radius:9px;font-size:13px}
+html body.link-tool :is(input,select,textarea):focus{background:var(--field);border-color:var(--muted);box-shadow:none}
+.link-tool :is(label>span,.field-label){font-size:12px;color:var(--text)}
+.link-tool :is(.primary-action,.secondary-action,.quiet-action,.link-button){font-size:13px;border-radius:9px}
+.link-tool .primary-action{background:var(--surface-raised)}
+html body.link-tool :is(.utility-nav-item,.primary-action,.secondary-action,.quiet-action,.link-button):hover{background:var(--surface-raised);border-color:var(--muted)}
+html body.link-tool .notice{background:var(--field);font-size:13px;line-height:1.6}
+html body.link-tool .notice.error{color:var(--blocked);border-color:color-mix(in srgb,var(--blocked) 30%,transparent)}
+.link-tool .security-note{border-radius:10px;background:var(--field)}
+.link-tool .section-bar h2{font-size:18px}.link-tool .section-bar p{font-size:12px;line-height:1.6}
+.link-tool .wizard-step{min-height:340px}.link-tool .wizard-step-heading p:last-child{font-size:13px}
+.link-tool .wizard-progress li>span{box-shadow:0 0 0 6px var(--surface);background:var(--surface)}
+.link-tool .wizard-progress li.active>span{background:var(--surface-raised)}
+.link-tool .wizard-progress li.complete>span{background:var(--text);color:var(--bg)}
+@media(max-width:680px){.link-tool .utility-shell{width:calc(100% - 28px);padding-top:12px}.link-tool .utility-header{flex-wrap:wrap;margin-bottom:24px}.link-tool .utility-nav{order:3;width:100%;margin:0;flex-wrap:wrap}.link-tool .service-status{margin-left:auto}.link-tool .utility-intro h1{font-size:25px}.link-tool [data-tutorial-replay]{position:static;margin-top:12px}.link-tool :is(.generator-card,.publisher-card,.results-card,.bulk-variants-card){padding:18px}.link-tool .origin-badge{max-width:180px}.link-tool .section-bar{flex-wrap:wrap}}

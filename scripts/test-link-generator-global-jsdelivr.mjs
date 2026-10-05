@@ -1,9 +1,11 @@
+import { staticPublisherFixture } from './static-publisher-fixture.mjs';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { chromium } from 'playwright';
 import { linkGeneratorHourlyQuota } from '../lib/link-generator-quota.mjs';
 
+const fixture = await staticPublisherFixture();
 const githubPort = 8214;
 const nyxPort = 8215;
 const origin = `http://127.0.0.1:${nyxPort}`;
@@ -31,6 +33,8 @@ const github = createServer(async (request, response) => {
   if (request.method === 'GET' && request.url === '/repos/dubcatalt2-lab/nyx-jsdelivr-links/git/ref/heads/main') return sendJson(response, 200, { object: { sha: 'head-sha' } });
   if (request.method === 'GET' && request.url === '/repos/dubcatalt2-lab/nyx-jsdelivr-links/git/commits/head-sha') return sendJson(response, 200, { tree: { sha: 'base-tree-sha' } });
   if (request.method === 'GET' && request.url === '/repos/dubcatalt2-lab/nyx-jsdelivr-links/git/trees/base-tree-sha?recursive=1') return sendJson(response, 200, { truncated: false, tree: [{ path: 'existing.svg', type: 'blob' }] });
+  if (request.method === 'GET' && request.url === '/repos/dubcatalt2-lab/nyx-jsdelivr-links/git/trees/base-tree-sha') return sendJson(response, 200, { tree: [] });
+  if (request.method === 'POST' && request.url.endsWith('/git/blobs')) return sendJson(response, 201, {sha:'binary-sha'});
   if (request.method === 'POST' && request.url === '/repos/dubcatalt2-lab/nyx-jsdelivr-links/git/trees') return sendJson(response, 201, { sha: 'new-tree-sha' });
   if (request.method === 'POST' && request.url === '/repos/dubcatalt2-lab/nyx-jsdelivr-links/git/commits') return sendJson(response, 201, { sha: 'new-commit-sha' });
   if (request.method === 'PATCH' && request.url === '/repos/dubcatalt2-lab/nyx-jsdelivr-links/git/refs/heads/main') return sendJson(response, 200, { object: { sha: 'new-commit-sha' } });
@@ -44,7 +48,9 @@ const nyx = spawn(process.execPath, ['server.js'], {
   env: {
     ...process.env,
     PORT: String(nyxPort),
+    WISP_URL: 'wss://relay.example.invalid/',
     LINK_GENERATOR_ACCESS_CODE: 'test-premium-code',
+    NYX_STATIC_PACKAGE_ROOT: fixture.root,
     NYX_PUBLIC_ORIGIN: 'https://nyxlearning.org',
     NYX_JSDELIVR_GITHUB_TOKEN: 'github_pat_server_only_test',
     NYX_JSDELIVR_GITHUB_REPOSITORY: 'dubcatalt2-lab/nyx-jsdelivr-links',
@@ -117,12 +123,13 @@ try {
   assert.match(await page.locator('[data-filter-check-detail]').textContent(), /one representative check covered all 2 identical Nyx SVG links/i, 'The representative batch-check explanation was not shown');
   assert.deepEqual(pageErrors, [], `Link Generator browser errors: ${pageErrors.join(' | ')}`);
 
-  const treeRequest = githubRequests.find(request => request.method === 'POST' && request.url.endsWith('/git/trees'));
+  const treeRequest = githubRequests.findLast(request => request.method === 'POST' && request.url.endsWith('/git/trees'));
   assert.ok(treeRequest, 'The server did not create a Git tree');
-  assert.equal(githubRequests.some(request => request.method === 'GET' && request.url.includes('/git/trees/')), false, 'The global publisher scanned the existing repository tree');
+  assert.equal(githubRequests.some(request => request.method === 'GET' && request.url.includes('?recursive=1')), false, 'The global publisher scanned the existing repository tree');
   const tree = JSON.parse(treeRequest.body);
-  assert.equal(tree.tree.length, 2, 'The Git tree did not contain every requested Nyx SVG');
-  assert.ok(tree.tree.every(entry => entry.content.includes('src="https://nyxlearning.org/"')), 'The server did not publish the maintained Nyx SVG');
+  assert.equal(tree.tree.filter(entry => entry.type === 'blob').length, 2, 'The Git tree did not contain every requested Nyx SVG');
+  assert.ok(tree.tree.filter(entry => entry.type === 'blob').every(entry => entry.content.includes('nyx-static/Nyx.svg') && !entry.content.includes('<iframe')), 'The server did not publish static launchers');
+  assert.ok(tree.tree.some(entry => entry.path === 'nyx-static' && entry.type === 'tree'), 'Package missing from atomic commit');
   assert.ok(githubRequests.every(request => request.authorization === 'Bearer github_pat_server_only_test'), 'A server-side GitHub request omitted the configured token');
   const browserState = await page.evaluate(() => `${document.documentElement.innerHTML}\n${JSON.stringify({ ...localStorage, ...sessionStorage })}`);
   assert.doesNotMatch(browserState, /github_pat_server_only_test/, 'The global GitHub token reached the browser');
@@ -137,14 +144,14 @@ try {
   const oneLinkResult = await oneLinkResponse.json();
   assert.equal(oneLinkResult.created, 1, 'The exact one-link generation request did not create one result');
   assert.match(oneLinkResult.links?.[0]?.url || '', /one-link-test-learning-[a-f0-9]{32}\.svg$/, 'The exact one-link generation request returned an invalid URL');
-  const oneLinkTree = githubRequests.slice(oneLinkRequestStart).find(request => request.method === 'POST' && request.url.endsWith('/git/trees'));
-  assert.equal(JSON.parse(oneLinkTree?.body || '{}').tree?.length, 1, 'The exact one-link generation request did not publish one SVG');
+  const oneLinkTree = githubRequests.slice(oneLinkRequestStart).findLast(request => request.method === 'POST' && request.url.endsWith('/git/trees'));
+  assert.equal(JSON.parse(oneLinkTree?.body || '{}').tree?.filter(entry => entry.type === 'blob').length, 1, 'The exact one-link generation request did not publish one SVG');
 
   const shellContext = await browser.newContext({ viewport: { width: 1_280, height: 900 } });
   await shellContext.addInitScript(() => {
     if (window.top !== window) return;
     localStorage.setItem('nyx.setupComplete', 'true');
-    localStorage.setItem('nyx.releaseNotes.2026-08-31-new-nyx.seen', 'true');
+    localStorage.setItem('nyx.releaseNotes.2026-10-02-nyx-1.6.8.seen', '2026-10-02-nyx-1.6.8');
     localStorage.setItem('nyx.homeDesign', 'redesigned');
     localStorage.setItem('nyx.popupProtection', 'true');
     localStorage.setItem('nyx.browserShellMode', 'true');
@@ -277,8 +284,8 @@ try {
   const thousandLinkResult = await thousandLinkResponse.json();
   assert.equal(thousandLinkResult.method, 'p2p', 'The server did not report the P2P method');
   assert.equal(thousandLinkResult.created, 1000, 'The server did not create the complete 1,000-link P2P batch');
-  const thousandLinkTree = githubRequests.slice(thousandLinkRequestStart).find(request => request.method === 'POST' && request.url.endsWith('/git/trees'));
-  assert.equal(JSON.parse(thousandLinkTree?.body || '{}').tree?.length, 1000, 'The P2P Git tree did not contain 1,000 Nyx SVGs');
+  const thousandLinkTree = githubRequests.slice(thousandLinkRequestStart).findLast(request => request.method === 'POST' && request.url.endsWith('/git/trees'));
+  assert.equal(JSON.parse(thousandLinkTree?.body || '{}').tree?.filter(entry => entry.type === 'blob').length, 1000, 'The P2P Git tree did not contain 1,000 Nyx SVGs');
 
   const thousandLinkPage = await browser.newPage({ viewport: { width: 1_280, height: 900 } });
   let thousandLinkFilterChecks = 0;

@@ -1,3 +1,6 @@
+import {readChatRelationships, changeChatRelationship, assertChatContact} from './lib/chat-social.mjs';
+import { existsSync } from 'node:fs';
+import { StaticPackagePreparation } from './lib/static-package-preparation.mjs';
 import {storeMediaReservation,restoreMediaReservation} from './lib/ai-media-reservation.mjs';
 import {createAccountCloudPreferences} from './lib/account-cloud-preferences.mjs';
 import {createRemoteDesktop} from './lib/remote-desktop.mjs';
@@ -59,6 +62,7 @@ import { startWispurr } from "./lib/wispurr-relay.mjs";
 import { Server as SocketIOServer } from "socket.io";
 import { linkGeneratorHourlyQuota } from "./lib/link-generator-quota.mjs";
 import { batchFiles, inspectBatchTree } from "./lib/link-generator-batch.mjs";
+import { prepareStaticPackage, staticLauncher, validateStaticManifest } from "./apps/jsdelivr-publisher/static-publish.js";
 import { createTubeBackend } from "./lib/nyxtube-streaming.mjs";
 import { createTubeCatalog } from "./lib/nyxtube-catalog.mjs";
 import { invidiousEmbedOrigin } from "./lib/nyxtube-invidious.mjs";
@@ -926,6 +930,12 @@ app.use((req, res, next) => {
 
 const nyxBulkLinkTokenPattern = /^[A-Za-z0-9_-]{10,80}$/;
 const nyxBulkLinkSourcePath = join(staticRoot, "apps", "jsdelivr-publisher", "nyx-source.svg");
+const nyxStaticPackageRoot = resolve(process.env.NYX_STATIC_PACKAGE_ROOT || (
+  existsSync(join(staticRoot, 'apps/jsdelivr-publisher/static-package/manifest.json'))
+    ? join(staticRoot, 'apps/jsdelivr-publisher/static-package')
+    : join(__dirname, 'dist/apps/jsdelivr-publisher/static-package')
+));
+app.use('/apps/jsdelivr-publisher/static-package', express.static(nyxStaticPackageRoot, { fallthrough: false, index: false }));
 app.get("/l/:token", (req, res) => {
   if (!nyxBulkLinkTokenPattern.test(String(req.params.token || ""))) {
     res.status(404).type("text").send("Link not found.");
@@ -5040,12 +5050,22 @@ function nyxOwnerUserForViewer(user, viewerUid = "", ownerUid = founderProfileCo
   return { ...user, role: presentation.role, customRole: presentation.customRole };
 }
 
+function nyxChatChannelGroup(channel) {
+  if (["announcements", "chat", "info", "links"].includes(channel?.group)) return channel.group;
+  const label = `${channel?.id || ""} ${channel?.name || ""}`.toLowerCase();
+  if (/\b(announcements?|updates?|news)\b/.test(label)) return "announcements";
+  if (/\b(links?|resources?)\b/.test(label)) return "links";
+  if (/\b(info|information|rules?|welcome|faq|byod|bugs?|suggestions?|features?)\b/.test(label)) return "info";
+  return "chat";
+}
+
 function nyxChatChannelDefinition(value, fallback = null) {
   const source = value && typeof value === "object" ? value : {};
   const id = String(source.id || fallback?.id || "").trim().toLowerCase();
   if (!nyxChatChannelIdPattern.test(id)) return null;
   return {
     id,
+    group: nyxChatChannelGroup({ ...fallback, ...source, id }),
     name: founderProfileText(source.name, fallback?.name || "Channel", 32),
     description: founderProfileText(source.description, fallback?.description || "Nyx community channel.", 140),
     minimumRole: nyxRolePolicies[String(source.minimumRole || fallback?.minimumRole || "member").trim().toLowerCase()] ? String(source.minimumRole || fallback?.minimumRole || "member").trim().toLowerCase() : "member"
@@ -6917,6 +6937,7 @@ function nyxifyOctaveVideo(value, providerType) {
 
 const nyxJsdelivrGithubApiVersion = "2022-11-28";
 let nyxJsdelivrPublishQueue = Promise.resolve();
+const nyxStaticPreparation = new StaticPackagePreparation();
 let nyxBulkPublishNextAt = 0;
 
 class NyxJsdelivrGithubError extends Error {
@@ -7008,7 +7029,6 @@ function generatedJsdelivrFileName(label, generatedFiles) {
 async function publishNyxJsdelivrLinks(config, amount, label, batch = null) {
   if (batch) {
     if (Date.now() < nyxBulkPublishNextAt) throw Object.assign(new Error('Waiting before the next batch.'), { status: 429, retryAfter: Math.ceil((nyxBulkPublishNextAt - Date.now()) / 1000) });
-    nyxBulkPublishNextAt = Date.now() + 30_000;
     config = { ...config, bulkJob: true };
   }
   const repositoryPath = githubRepositoryApiPath(config.githubRepository);
@@ -7023,8 +7043,10 @@ async function publishNyxJsdelivrLinks(config, amount, label, batch = null) {
   const headCommit = await nyxJsdelivrGithubJson(config, `/repos/${repositoryPath}/git/commits/${encodeURIComponent(headSha)}`);
   const baseTreeSha = String(headCommit?.tree?.sha || "");
   if (!baseTreeSha) throw new Error("GitHub did not return the configured repository tree.");
-  const svg = readFileSync(join(staticRoot, "apps", "jsdelivr-publisher", "nyx-source.svg"), "utf8");
-  if (!svg.trim().startsWith("<?xml") && !svg.trim().startsWith("<svg")) throw new Error("The maintained Nyx SVG is invalid.");
+  let manifest;
+  try { manifest = validateStaticManifest(JSON.parse(readFileSync(join(nyxStaticPackageRoot, 'manifest.json'), 'utf8'))); }
+  catch { throw Object.assign(new Error('The static Nyx package is not ready. Rebuild the server before publishing links.'), { status: 503 }); }
+  const svg = staticLauncher();
   const files = batch ? batchFiles(batch.uid, batch.requestId, label, amount) : [];
   const generatedFiles = new Set();
   while (files.length < amount) {
@@ -7039,14 +7061,24 @@ async function publishNyxJsdelivrLinks(config, amount, label, batch = null) {
   }));
   if (batch) {
     const existingTree = await nyxJsdelivrGithubJson(config, '/repos/' + repositoryPath + '/git/trees/' + encodeURIComponent(baseTreeSha) + '?recursive=1');
-    if (inspectBatchTree(existingTree, files, svg)) return Object.assign(makeLinks(), { replayed: true });
+    if (inspectBatchTree(existingTree, files, svg, {
+      replacementPrefix: 'nyx-static/', replacementBytes: manifest.files.reduce((sum, file) => sum + file.bytes, 0), replacementFiles: manifest.files.length + 1
+    })) return Object.assign(makeLinks(), { replayed: true });
   }
+  const preparationKey = JSON.stringify([config.githubApiBase, config.githubRepository, branch, manifest.revision]);
+  const packageEntry = await nyxStaticPreparation.get(preparationKey, () => prepareStaticPackage({
+    api: (path, options) => nyxJsdelivrGithubJson(config, path, options),
+    repository: config.githubRepository, branch, headTree: baseTreeSha, manifest,
+    writeIntervalMs: 1100,
+    readBytes: path => readFileSync(join(nyxStaticPackageRoot, 'files', path))
+  }));
+  if (batch) nyxBulkPublishNextAt = Date.now() + 30_000;
   const tree = await nyxJsdelivrGithubJson(config, `/repos/${repositoryPath}/git/trees`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       base_tree: baseTreeSha,
-      tree: files.map(file => ({ path: file, mode: "100644", type: "blob", content: svg }))
+      tree: [packageEntry, ...files.map(file => ({ path: file, mode: "100644", type: "blob", content: svg }))]
     })
   });
   if (!tree?.sha) throw new Error("GitHub did not return the new repository tree.");
@@ -10858,16 +10890,19 @@ app.get("/api/chat/updates", async (req, res) => {
   try {
     const { firebase, token } = await authenticatedNyxChatUser(req, false);
     const since = Math.max(0, Number(req.query.since || 0));
-    const [identity, configuration] = await Promise.all([
+    const [identity, configuration, relationships] = await Promise.all([
       nyxChatIdentity(firebase, token),
-      loadNyxChatConfiguration(firebase)
+      loadNyxChatConfiguration(firebase),
+      readChatRelationships(firebase.firestore, token.uid)
     ]);
+    const quietAuthors = new Set(relationships.filter(value => value.blocked || value.ignored).map(value => value.uid));
     const clientIp = nyxClientIp(req);
     const visibleChannels = new Set(configuration.textChannels
       .filter(channel => nyxChatCanAccessChannel(identity.role, channel, clientIp))
       .map(channel => channel.id));
     const reset = Boolean(since && since < nyxChatRealtimeDroppedBeforeRevision);
     const events = (reset ? [] : nyxChatRealtimeEvents.filter(event => event.revision > since)).flatMap(event => {
+      if (event.kind === "message" && quietAuthors.has(event.lastMessageAuthorUid)) return [];
       if (event.scopeType === "channel" && !visibleChannels.has(event.scopeId)) return [];
       if (event.scopeType === "conversation" && !event.participants.includes(token.uid)) return [];
       if (event.kind === "caffeine" && event.participants.length && !event.participants.includes(token.uid)) return [];
@@ -11146,6 +11181,11 @@ app.post("/api/chat/channels", async (req, res) => {
       res.status(400).json({ error: "Choose a valid channel action." });
       return;
     }
+    const requestedGroup = req.body?.group;
+    if (kind === "text" && requestedGroup !== undefined && requestedGroup !== "" && !["announcements", "chat", "info", "links"].includes(requestedGroup)) {
+      res.status(400).json({ error: "Choose a valid channel section." });
+      return;
+    }
     const configuration = await loadNyxChatConfiguration(firebase, true);
     const textChannels = configuration.textChannels.map(channel => ({ ...channel }));
     const voiceChannels = configuration.voiceChannels.map(channel => ({ ...channel }));
@@ -11173,7 +11213,7 @@ app.post("/api/chat/channels", async (req, res) => {
       const base = name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32) || "channel";
       const used = new Set([...textChannels, ...voiceChannels].map(channel => channel.id));
       do changedId = `${base}-${randomBytes(3).toString("hex")}`.slice(0, 48); while (used.has(changedId));
-      channels.push({ id: changedId, name, description: description || (kind === "voice" ? "Nyx community voice channel." : "Nyx community channel."), minimumRole });
+      channels.push({ id: changedId, name, ...(kind === "text" ? { group: nyxChatChannelGroup({ id: changedId, name, group: requestedGroup }) } : {}), description: description || (kind === "voice" ? "Nyx community voice channel." : "Nyx community channel."), minimumRole });
     } else {
       const index = channels.findIndex(channel => channel.id === id);
       if (index < 0) {
@@ -11195,7 +11235,7 @@ app.post("/api/chat/channels", async (req, res) => {
           res.status(400).json({ error: "Enter a channel name." });
           return;
         }
-        channels[index] = { ...channels[index], name, description: description || channels[index].description, minimumRole };
+        channels[index] = { ...channels[index], name, description: description || channels[index].description, minimumRole, ...(kind === "text" ? { group: nyxChatChannelGroup({ id, name, group: requestedGroup === undefined ? channels[index].group : requestedGroup }) } : {}) };
       }
     }
     const next = { ...configuration, textChannels, voiceChannels };
@@ -11433,6 +11473,33 @@ app.post("/api/chat/voice/signal", async (req, res) => {
   }
 });
 
+app.get("/api/chat/relationships", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  try {
+    const {firebase, token} = await authenticatedNyxChatUser(req, false);
+    res.json({relationships: await readChatRelationships(firebase.firestore, token.uid)});
+  } catch (error) { res.status(error.status || 503).json({error: error.message || "Relationships are unavailable."}); }
+});
+
+app.post("/api/chat/relationships/:uid", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) return res.status(403).json({error: "Cross-origin requests are not allowed."});
+  try {
+    const {firebase, token} = await authenticatedNyxChatUser(req);
+    const targetUid = String(req.params.uid || "");
+    if (!/^[A-Za-z0-9_-]{8,128}$/.test(targetUid) || targetUid === token.uid) return res.status(400).json({error: "Choose another Nyx member."});
+    const action = String(req.body?.action || "");
+    let profiles = {};
+    if (["request", "block", "ignore"].includes(action)) {
+      const account = await firebase.auth.getUser(targetUid);
+      if (account.disabled) return res.status(404).json({error: "That member is unavailable."});
+      const [me, other] = await Promise.all([nyxChatIdentity(firebase, token), nyxChatIdentity(firebase, {uid: targetUid})]);
+      profiles = {me, other};
+    }
+    res.json({relationships: await changeChatRelationship(firebase.firestore, token.uid, targetUid, action, profiles)});
+  } catch (error) { res.status(error.code === "auth/user-not-found" ? 404 : error.status || 503).json({error: error.code === "auth/user-not-found" ? "That member was not found." : error.message || "The relationship could not be saved."}); }
+});
+
 app.post("/api/chat/conversations", async (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) {
@@ -11461,9 +11528,12 @@ app.post("/api/chat/conversations", async (req, res) => {
     ]);
     const id = nyxChatConversationId(token.uid, participantUid);
     const ref = firebase.firestore.collection("nyxChatConversations").doc(id);
-    const existing = await ref.get();
+    let existing;
     const now = Date.now();
-    await ref.set({
+    await firebase.firestore.runTransaction(async transaction => {
+    await assertChatContact(firebase.firestore, transaction, token.uid, participantUid);
+    existing = await transaction.get(ref);
+    transaction.set(ref, {
       participants: [token.uid, participantUid].sort(),
       participantProfiles: {
         [token.uid]: nyxChatConversationMember(me, token.uid, token.uid),
@@ -11474,6 +11544,7 @@ app.post("/api/chat/conversations", async (req, res) => {
       updatedAt: String(existing.data()?.updatedAt || new Date(now).toISOString()),
       updatedAtMs: Number(existing.data()?.updatedAtMs || now)
     }, { merge: true });
+    });
     const saved = await ref.get();
     const revision = recordNyxChatRealtimeEvent({ kind: "conversation", scopeType: "conversation", scopeId: id, participants: [token.uid, participantUid] });
     emitNyxChatSocketEvent({ kind: "conversation", scopeType: "conversation", scopeId: id, participants: [token.uid, participantUid], revision });
@@ -12006,6 +12077,7 @@ app.post("/api/chat/messages", async (req, res) => {
     let outcome;
     try {
       outcome=await firebase.firestore.runTransaction(async transaction => {
+        if (scope.private) await assertChatContact(firebase.firestore, transaction, token.uid, scope.participants.find(uid => uid !== token.uid));
         const currentMessage = await transaction.get(messageRef);
         if (currentMessage.exists) return {duplicate:true};
         const administration=await transaction.get(firebase.firestore.collection('nyxUserAdministration').doc(token.uid));
@@ -12257,6 +12329,7 @@ app.post("/api/chat/messages/:scope/:messageId/reactions", async (req, res) => {
     const messageRef = scope.messages.doc(messageId);
     let reactions = [];
     await firebase.firestore.runTransaction(async transaction => {
+      if (scope.private) await assertChatContact(firebase.firestore, transaction, token.uid, scope.participants.find(uid => uid !== token.uid));
       const snapshot = await transaction.get(messageRef);
       if (!snapshot.exists) {
         const error = new Error("Message not found.");
@@ -13969,8 +14042,8 @@ app.post("/api/link-generator", async (req, res) => {
     catch(error) { return res.status(400).json({error:error.message}); }
   }
   if (provider === "jsdelivr" || provider === "surge") {
-    if (method === "p2p" && !globalNyxJsdelivrConfigured(config)) {
-      res.status(503).json({ error: "P2P publishing is not configured on this Nyx server." });
+    if (provider === "jsdelivr" && !globalNyxJsdelivrConfigured(config)) {
+      res.status(503).json({ code: "publisher_not_configured", error: "Link publishing is not available on this server yet. Please try again later." });
       return;
     }
     let reservation = null;
@@ -14017,7 +14090,7 @@ app.post("/api/link-generator", async (req, res) => {
       if (publicUser && reservation) await releaseFreeLink(publicUser.firebase, reservation);
       if (premiumAccess && premiumReservation) await adjustPremiumGeneration(premiumFirebase, premiumReservation, 0);
       if (error.retryAfter) res.set("Retry-After", String(error.retryAfter));
-      res.status(error.status || 503).json({ error: error.message || "Link publication could not be completed." });
+      res.status(error.status || 503).json({ error: error.message || "Link publication could not be completed.", ...(error.code ? { code: error.code } : {}) });
     }
     return;
   }

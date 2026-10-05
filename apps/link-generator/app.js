@@ -31,6 +31,13 @@
   const cdnSelect=$('[data-cdn-host]');
   const providerSelect=$('[data-provider]');
   let resultProvider='jsdelivr';
+  let publisherStatus=null;
+  function updateServiceStatus(){
+    if(!publisherStatus)return;
+    const provider=selectedProvider();
+    const ready=provider==='bunny'?publisherStatus.bunnyAvailable:provider==='surge'?publisherStatus.surgeAvailable:publisherStatus.globalPublisherConfigured;
+    setStatus(Boolean(ready),ready?'Ready':'Unavailable');
+  }
   function selectedProvider(){return ['bunny','surge'].includes(providerSelect.value)?providerSelect.value:'jsdelivr'}
   function updateProvider(){
     const bunny=selectedProvider()==='bunny',surge=selectedProvider()==='surge';
@@ -39,9 +46,10 @@
     cdnSelect.closest('label').hidden=bunny||surge;
     $('[data-provider-hint]').textContent=surge ? 'Publish one new surge.sh site on the configured Surge account. The label gets a random suffix; existing sites are not replaced.' : bunny
       ? 'Create separate b-cdn.net hostnames pointing to Nyx. Bunny bandwidth charges and account limits apply; these still share the Nyx backend.'
-      : 'Publish SVG files and choose a delivery hostname.';
+      : 'Publish the static Nyx app and choose a delivery hostname.';
     refs.confirm.checked=false;
     updateGenerationMethod();
+    updateServiceStatus();
   }
   function selectedCdn(){return cdnHosts.has(cdnSelect.value)?cdnSelect.value:'cdn.jsdelivr.net'}
   function withCdnHost(value,host){
@@ -223,8 +231,8 @@
     refs.confirmText.textContent=selectedProvider()==='surge' ? 'I understand this publishes a public Nyx wrapper on the configured Surge account. Surge account limits apply.' : selectedProvider()==='bunny'
       ? `I understand this creates ${amount} Bunny pull zone${amount===1?'':'s'} on the configured Bunny account, with its bandwidth charges and limits.`
       : p2p
-      ? `I understand P2P bulk-publishes ${amount===1?'one Nyx SVG':`${amount} Nyx SVGs`} through Nyx's protected server publisher.`
-      : `I understand this publishes ${amount===1?'one Nyx SVG':`${amount} Nyx SVGs`} through a GitHub repository.`;
+      ? `I understand P2P bulk-publishes ${amount===1?'one Nyx launcher':`${amount} Nyx launchers`} through Nyx's protected server publisher.`
+      : `I understand this publishes ${amount===1?'one Nyx launcher':`${amount} Nyx launchers`} through a GitHub repository.`;
     if(!refs.button.disabled) refs.button.querySelector('span').textContent=`Generate ${amount===1?'link':`${amount} links`}`;
   }
   function updateGenerationMethod(){
@@ -457,7 +465,7 @@
       bunnyOption.disabled=!status.bunnyAvailable;
       bunnyOption.textContent=status.bunnyAvailable?'Bunny.net pull zones':'Bunny.net pull zones (server key not configured)';
       regularHourlyLimit=Math.max(1,Math.min(100,Number.parseInt(status.freeHourlyLimit,10) || 100));freeWindowMinutes=Math.max(1,Number.parseInt(status.freeWindowMinutes,10) || 60);premiumBatchLimit=Math.max(regularHourlyLimit,Math.min(10000,Number.parseInt(status.premiumBatchLimit,10) || regularHourlyLimit));p2pPremiumBatchLimit=Math.max(premiumBatchLimit,Math.min(10000,Number.parseInt(status.p2pPremiumBatchLimit,10) || 1000));premiumImmediateCooldownAt=Math.max(1,Number.parseInt(status.premiumImmediateCooldownAt,10) || 5);premiumAccumulatedLimit=Math.max(premiumImmediateCooldownAt,Number.parseInt(status.premiumAccumulatedLimit,10) || 30);premiumCooldownMinutes=Math.max(1,Number.parseInt(status.premiumCooldownMinutes,10) || 10);renderAccount();setPremiumLayout();
-      refs.origin.textContent=status.origin || 'Not configured';setStatus(status.available,status.available ? 'Ready' : 'Setup required');
+      refs.origin.textContent=status.origin || 'Not configured';publisherStatus=status;updateServiceStatus();
       if(!status.available) showNotice('The Nyx administrator still needs to finish the Link Generator server settings.','error');
     }catch(error){refs.origin.textContent='Unavailable';setStatus(false,'Unavailable');showNotice(`Could not check the generator: ${error.message}`,'error')}
   }
@@ -532,14 +540,21 @@
         body.accessCode=refs.accessCode.value;
         body.amount=selectedAmount();
       }
-      const result=await readJson(await fetch('/api/link-generator',{method:'POST',headers,body:JSON.stringify(body)}));
-      const links=(Array.isArray(result.links)?result.links:[]).map(item=>typeof item==='string'?item:item?.url).filter(Boolean).map(url=>withCdnHost(url,selectedCdn()));
-      if(result.provider==='jsdelivr' && result.authorized===true && !links.length){
-        if(method==='p2p') throw new Error('P2P publishing did not return any Nyx links. Ask the Nyx administrator to check the protected publisher.');
-        const params=new URLSearchParams({preset:'nyx',label:refs.label.value.trim(),filter:selectedFilter,count:String(result.requested || selectedAmount()),cdn:selectedCdn()});
-        location.href=`../jsdelivr-publisher/?${params.toString()}`;
-        return;
+      let result;
+      for (;;) {
+        const response=await fetch('/api/link-generator',{method:'POST',headers,body:JSON.stringify(body)});
+        if(response.status===429){
+          const status=await response.clone().json().catch(()=>({}));
+          if(status.code==='STATIC_PACKAGE_PREPARING'){
+            showNotice(status.error);
+            await new Promise(resolve=>setTimeout(resolve,Math.max(1,Math.min(60,Number(response.headers.get('Retry-After'))||10))*1000));
+            continue;
+          }
+        }
+        result=await readJson(response);
+        break;
       }
+      const links=(Array.isArray(result.links)?result.links:[]).map(item=>typeof item==='string'?item:item?.url).filter(Boolean).map(url=>withCdnHost(url,selectedCdn()));
       if(!links.length && result.url) links.push(withCdnHost(result.url,selectedCdn()));
       if(!links.length) throw new Error('The link provider did not return any generated links.');
       resultProvider=provider;

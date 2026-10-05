@@ -8,11 +8,12 @@
   <title>Nyx Chat</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/icons/chat.svg">
   <link rel="stylesheet" href="./styles.css?v=20260919-member-search-v42">
-  <link rel="stylesheet" href="./polish.css?v=20261002-chat-palette">
+
 <link rel="stylesheet" href="/css/avatar-decorations.css?v=20260916-decor-hover-v3">
 <link rel="stylesheet" href="/css/profile-effects.css?v=20260916-effects-hover-v4">
 <style>.voice-transport{display:grid;gap:6px;margin:8px 12px;color:inherit;font-size:12px}.voice-transport select{width:100%;min-width:0;border:1px solid #ffffff26;border-radius:10px;padding:8px;background:var(--panel,#24242c);color:inherit;font:inherit}.voice-transport small{font-size:11px;line-height:1.4;opacity:.75}</style>
 <link rel="stylesheet" href="/apps/obsidian.css?v=20260927-composers">
+  <link rel="stylesheet" href="./polish.css?v=20261004-chat-social">
 </head>
 <body>
   <svg class="chat-icon-sprite" aria-hidden="true">
@@ -59,7 +60,13 @@
 
     <div class="chat-layout">
       <aside class="channel-sidebar" data-channel-sidebar>
+        <nav class="chat-section-tabs" aria-label="Chat sections">
+          <button type="button" data-chat-section="chat" aria-pressed="true">Chat</button>
+          <button type="button" data-chat-section="dms" aria-pressed="false">DMs</button>
+          <button type="button" data-open-friends aria-label="Friends and requests"><svg><use href="#icon-users"/></svg><span data-request-count hidden></span></button>
+        </nav>
         <div class="chat-navigation-scroll" data-chat-navigation-scroll>
+          <section data-chat-channels>
           <div class="sidebar-heading">
             <span>Channels</span>
             <span class="sidebar-heading-actions"><button class="sidebar-add" type="button" data-manage-channels aria-label="Manage channels" title="Manage channels" hidden><svg><use href="#icon-settings"/></svg></button><button class="icon-button mobile-only" type="button" data-sidebar-close aria-label="Close channels"><svg><use href="#icon-close"/></svg></button></span>
@@ -77,11 +84,13 @@
               <button type="button" class="disconnect" data-voice-disconnect aria-label="Disconnect voice" title="Disconnect voice"><svg><use href="#icon-phone-off"/></svg></button>
             </div>
           </section>
+          </section><section data-chat-directs hidden>
           <div class="sidebar-heading direct-heading">
             <span>Direct Messages</span>
             <button class="sidebar-add" type="button" data-new-dm aria-label="Start a direct message"><svg><use href="#icon-plus"/></svg></button>
           </div>
           <nav class="direct-list" data-direct-list aria-label="Direct messages"></nav>
+          </section>
           <div class="chat-guidelines" data-chat-guidelines>
             <svg><use href="#icon-shield"/></svg>
             <p><strong>Keep Nyx welcoming.</strong><span>Do not share passwords, private details, or harmful content.</span></p>
@@ -162,7 +171,19 @@
     </figure>
   </dialog>
 
-  <dialog class="member-dialog" data-member-dialog>
+  <dialog class="friends-dialog" data-friends-dialog aria-labelledby="friends-title">
+    <header><h2 id="friends-title">Friends</h2><button type="button" class="icon-button" data-friends-close aria-label="Close friends"><svg><use href="#icon-close"/></svg></button></header>
+    <nav class="friends-tabs" aria-label="Relationships">
+      <button type="button" data-friend-filter="accepted" aria-pressed="true">All</button>
+      <button type="button" data-friend-filter="pending" aria-pressed="false">Requests</button>
+      <button type="button" data-friend-filter="blocked" aria-pressed="false">Blocked</button>
+      <button type="button" data-friend-filter="ignored" aria-pressed="false">Ignored</button>
+    </nav>
+    <p class="friends-error" data-friends-error role="status"></p>
+    <div class="friends-list" data-friends-list></div>
+    <button class="primary-button" type="button" data-find-friend>Find a member</button>
+  </dialog>
+  <dialog class="member-dialog" data-member-dialog aria-label="Member profile">
     <button class="icon-button dialog-close" type="button" data-member-dialog-close aria-label="Close profile"><svg><use href="#icon-close"/></svg></button>
     <div data-member-dialog-content></div>
   </dialog>
@@ -179,6 +200,7 @@
       <input type="hidden" data-channel-edit-id>
       <label><span>Channel name</span><input type="text" data-channel-name maxlength="32" required placeholder="New channel"></label>
       <label><span>Description</span><textarea data-channel-description-input maxlength="140" rows="2" placeholder="What is this channel for?"></textarea></label>
+      <label data-channel-group-field><span>Section</span><select data-channel-group-select><option value="">Automatic</option><option value="announcements">Announcements</option><option value="chat">Chat</option><option value="info">Info</option><option value="links">Links</option></select></label>
       <label><span>Who can access it</span><select data-channel-minimum-role><option value="member">Everyone</option><option value="contributor">Contributor and above</option><option value="tester">Tester and above</option><option value="support">Support and above</option><option value="moderator">Moderator and above</option><option value="developer">Developer and above</option><option value="manager">Manager and above</option><option value="admin">Admin and above</option><option value="co_owner">Co-owner and Owner</option><option value="owner">Owner only</option></select></label>
       <div><button type="button" class="btn-subtle" data-channel-edit-cancel hidden>Cancel edit</button><button type="submit" class="primary-button" data-channel-save>Add channel</button></div>
     </form>
@@ -221,6 +243,7 @@
   </dialog>
   <script src="./emoji-catalog.js?v=20260915-full-reaction-catalog-v37"></script>
   <script src="./voice-relay.js?v=20260923-voice-relay-v1"></script>
-  <script src="./app.js?v=20260923-voice-relay-v43"></script>
+  <script src="./social.js?v=20261004-social"></script>
+  <script src="./app.js?v=20261004-channel-sections"></script>
 </body>
 </html>

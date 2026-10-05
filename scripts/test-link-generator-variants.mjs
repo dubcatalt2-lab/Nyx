@@ -3,6 +3,8 @@ import { readFile } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
 import { chromium } from 'playwright';
 import { BulkJob } from '../apps/link-generator/bulk-jobs.js';
+import { staticPublisherFixture } from './static-publisher-fixture.mjs';
+const fixture = await staticPublisherFixture();
 const hosts = ['cdn.jsdelivr.net', 'gcore.jsdelivr.net', 'fastly.jsdelivr.net', 'quantil.jsdelivr.net', 'originfastly.jsdelivr.net', 'testingcf.jsdelivr.net', 'jsdelivr.b-cdn.net', 'esm.sh', 'raw.esm.sh'];
 
 // Intercept every request; tests never publish to GitHub.
@@ -12,11 +14,10 @@ try {
   let sourceRequests = 0;
   await page.route('**/*', async route => {
     const url = new URL(route.request().url());
-    if (url.hostname === 'cdn.jsdelivr.net') {
-      assert.equal(url.pathname, '/gh/dubcatalt2-lab/nyx-jsdelivr-links@main/1-learning-005847b5039fb2c8f4515165e0d79a17.svg');
+    if (url.pathname === '/apps/jsdelivr-publisher/static-package/manifest.json') {
       assert.equal(route.request().headers().authorization, undefined);
       sourceRequests++;
-      return route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg"><title>Source fixture</title></svg>' });
+      return route.fulfill({ contentType: 'application/json', body: JSON.stringify(fixture.manifest) });
     }
     if (url.hostname !== 'nyx.test' || url.pathname.startsWith('/api/')) return route.fulfill({ status: 503, body: '{}' });
     const pathname = url.pathname.endsWith('/') ? url.pathname + 'index.html' : url.pathname;
@@ -71,10 +72,10 @@ try {
   assert.equal(download.suggestedFilename(), 'nyx-jsdelivr-links.txt');
   assert.match(await readFile(await download.path(), 'utf8'), /https:\/\/raw\.esm\.sh\/gh\//);
   await page.goto('http://nyx.test/apps/jsdelivr-publisher/?preset=nyx&source=jsdelivr&count=10&cdn=gcore.jsdelivr.net');
-  await page.waitForFunction(() => typeof presetSvg !== 'undefined' && presetSvg.includes('Source fixture'));
+  await page.waitForFunction(() => typeof presetSvg !== 'undefined' && presetSvg.includes('nyx-static/Nyx.svg'));
   assert.equal(sourceRequests, 1);
   assert.equal(await page.locator('#count').inputValue(), '10');
-  assert.equal(await page.locator('#fileDisplay').textContent(), 'Selected jsDelivr SVG');
+  assert.equal(await page.locator('#fileDisplay').textContent(), 'Nyx static app included');
   assert.equal(await page.evaluate(() => selectedProvider), 'gcore');
   const result = await page.evaluate(async () => {
     const calls = [];

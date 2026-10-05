@@ -441,11 +441,10 @@ try{
   assert.equal(await existingMessage.getAttribute('data-render-identity'),'retained','An unchanged message was rebuilt during a realtime-style send');
   await activeChatFrame.waitForSelector('.member-button');
   await activeChatFrame.locator('.member-button').filter({hasText:'Chat Member'}).click();
-  await page.waitForSelector('.nyx-profile-directory-overlay.show',{timeout:5_000});
-  await page.waitForTimeout(200);
-  assert.equal(await page.locator('.nyx-profile-directory-overlay.show').count(),1,'Chat profile was removed after opening');
-  await page.waitForSelector('.nyx-profile-directory-view-head',{timeout:10_000});
-  assert.match(await page.locator('.nyx-profile-directory-view-head').textContent(),/Chat Member/);
+  await activeChatFrame.locator('[data-member-dialog][open] .member-card-title').waitFor();
+  assert.match(await activeChatFrame.locator('[data-member-dialog]').textContent(),/Chat Member/);
+  assert.equal(await page.locator('.nyx-profile-directory-overlay.show').count(),0,'Chat should open its compact card without the profile directory');
+
 
   await page.evaluate(()=>{
     sessionStorage.setItem('nyx.test.releaseNotesFresh','true');

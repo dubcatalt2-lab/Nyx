@@ -1,4 +1,5 @@
 import {buildFrontendAssets} from './build-frontend-assets.mjs';
+import {buildPublisherPackage} from './build-publisher-package.mjs';
 import {formatPublishedHtml} from './format-published-html.mjs';
 import { spawn, spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
@@ -472,6 +473,7 @@ async function main() {
   await buildProxyAssets(output);
   await buildFrontendAssets(output,repositoryFiles().filter(isStaticSource),learningPage());
   await writeNetlifyFiles();
+  await buildPublisherPackage(root, output);
   console.log(`${vpsBuild ? "VPS" : "Netlify"} build ready in ${output}`);
   console.log(`Wisp endpoint: ${wispUrl}`);
   if (skippedLargeFiles.length) {

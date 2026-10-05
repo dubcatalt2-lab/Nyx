@@ -19,9 +19,10 @@ window.calls=[];window.dispose=loremDesktop({screen:document.querySelector('#scr
  calls.push({path,method});
  if(path==='/lorem/vms'){
    if(scenario==='disposed')await new Promise(r=>setTimeout(r,100));
-   return {vms:['existing','stopped'].includes(scenario)?[{id:'one',state:scenario==='stopped'?'stopped':'running',url:'https://loremgroup.org/vm/fixture/'}]:[],queued:scenario==='queued'};
+   return {vms:['existing','stopped','timed','revoked'].includes(scenario)?[{id:'one',state:scenario==='stopped'?'stopped':'running',url:'https://loremgroup.org/vm/fixture/'}]:[],queued:scenario==='queued',expiresAt:scenario==='timed'?Date.now()+2000:null};
  }
- if(path==='/lorem/create'||path==='/lorem/queue'){
+  if(path==='/lorem/create'||path==='/lorem/queue'){
+   if(scenario==='revoked')return {status:'recovering',message:'This desktop assignment could not be verified.'};
    if(['waiting','outage'].includes(scenario)){
      if(scenario==='outage'&&path==='/lorem/queue'&&!window.retried){window.retried=true;throw Object.assign(Error('Temporary outage'),{status:503});}
      return {status:'queued',position:3,reason:'capacity'};
@@ -65,6 +66,16 @@ try{
     assert.equal((await page.evaluate(()=>window.calls)).filter(c=>c.path==='/lorem/cancel').length,1);
     await page.evaluate(()=>dispose());
   }
-  console.log('PASS public VMs tile, automatic create/reuse/start/queue, stale-response cleanup and provider-free UI');
+  await page.clock.install();
+  await page.goto('http://127.0.0.1:'+server.address().port+'/?case=timed');
+  await page.locator('iframe').waitFor();
+  await page.clock.runFor(3100);
+  assert.equal(await page.locator('iframe').count(),0);
+  await page.getByRole('heading',{name:'Session ended',exact:true}).waitFor();
+  await page.goto('http://127.0.0.1:'+server.address().port+'/?case=revoked');
+  await page.locator('iframe').waitFor();await page.clock.runFor(30100);
+  assert.equal(await page.locator('iframe').count(),0);
+  await page.getByText('This desktop assignment could not be verified.',{exact:true}).first().waitFor();
+  console.log('PASS public VMs tile, automatic create/reuse/start/queue, stale-response cleanup, countdown expiry and revoked-assignment viewer removal');
 
 }finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

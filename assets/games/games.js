@@ -830,12 +830,17 @@ function makeCard(game) {
   return card;
 }
 
+// Lightweight exports omit artwork; that must not empty their default library.
+function includeUnillustratedGames() {
+  return dropGames || state.manifest?.includeUnillustrated === true;
+}
+
 function visibleGames() {
   const query = elements.search.value.trim().toLowerCase();
   const games = state.games.filter(game =>
     (state.activeLibrary === 'misc'
       ? !game.hasIcon
-      : (game.hasIcon || query || dropGames) && (state.activeLibrary === 'all' || gameSources(game).some(source => source.source === state.activeLibrary)))
+      : (game.hasIcon || query || includeUnillustratedGames()) && (state.activeLibrary === 'all' || gameSources(game).some(source => source.source === state.activeLibrary)))
       && (!query || game.title.toLowerCase().includes(query))
   );
   return games.sort((a, b) => elements.sort.value === 'za'
@@ -862,9 +867,9 @@ function render() {
 }
 
 function libraryGameCount(libraryId) {
-  if (libraryId === 'all') return state.games.filter(game => game.hasIcon || dropGames).length;
+  if (libraryId === 'all') return state.games.filter(game => game.hasIcon || includeUnillustratedGames()).length;
   if (libraryId === 'misc') return state.games.filter(game => !game.hasIcon).length;
-  return state.games.filter(game => (game.hasIcon || dropGames) && gameSources(game).some(source => source.source === libraryId)).length;
+  return state.games.filter(game => (game.hasIcon || includeUnillustratedGames()) && gameSources(game).some(source => source.source === libraryId)).length;
 }
 
 function renderLibraryTabs() {

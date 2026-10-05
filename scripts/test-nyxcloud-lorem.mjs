@@ -1,6 +1,6 @@
 ﻿import assert from 'node:assert/strict';
 import express from 'express';
-import {mkdtemp,readFile,unlink,rmdir} from 'node:fs/promises';
+import {mkdtemp,readFile,writeFile,unlink,rmdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {createLoremCloud,desktopUrl} from '../lib/nyxcloud-lorem.mjs';
@@ -40,6 +40,7 @@ const json=async(path,method='GET',token='alice')=>{const r=await req(path,metho
 const tick=()=>clock+=5100;
 const close=async()=>{server.closeAllConnections();await new Promise(r=>server.close(r));};
 try{
+ await writeFile(file,JSON.stringify({version:1,migrated:true,entries:[{uid:nyxCloudOwnerUid,status:'ready',vm:{id:'legacy',state:'exited',url:'https://loremgroup.org/vm/owner-private/'},legacy:true,lastSeen:clock,readyAt:clock}],syncedAt:0}));
  await start();
  assert.equal((await req('/vms','GET','')).status,401);
  assert.equal((await req('/vms','GET','anon')).status,401);

@@ -7,5 +7,24 @@
   const style=document.createElement('style');
   style.textContent=`[data-nyx-dock-item="ai"],[data-nyx-dock-item="music"],[data-nyx-dock-item="movies"],[data-nyx-dock-item="chat"],#nyxAccountButton,[data-nyx-profile-slot],[data-settings-category-button="accounts"],[data-settings-category-button="proxy"],[data-global-app-id="nyx-ai"],[data-global-app-id="nyx-chat"],[data-global-app-id="nyxify"],[data-global-app-id="movies"],[data-global-app-id="youtube"],[data-global-app-id="link-checker"],[data-global-app-id="link-generator"],[data-global-app-id="jsdelivr-publisher"],[data-global-app-id="nyx-api-keys"],[data-nyx-presence],.nyx-home-presence,#nyxPresenceIndicator,[data-ai-toggle],[data-ai-send],[data-switch="nyx.httpBridge"]{display:none!important}`;
   document.head.append(style);
-  style.textContent+='[data-game-view="cloud"],[data-nyx-latency-bubble]{display:none!important}';
+  style.textContent+='[data-game-view="cloud"],[data-nyx-latency-bubble],[data-nyx-dock-item="youtube"],[data-nyx-dock-item="vms"],[data-global-app-id="nyx-vms"]{display:none!important}';
+  // Internal srcdoc tabs don't execute the static HTML bootstrap. Apply the
+  // same available-feature presentation inside those app-picker documents.
+  const watched=new WeakSet();
+  const attach=frame=>{
+    if(watched.has(frame))return;
+    watched.add(frame);
+    const apply=()=>{try{
+      const child=frame.contentDocument;
+      if(!child?.head||child.querySelector('style[data-nyx-static-features]'))return;
+      const copy=child.createElement('style');copy.dataset.nyxStaticFeatures='';copy.textContent=style.textContent;child.head.append(copy);
+    }catch{}};
+    frame.addEventListener('load',apply);apply();
+  };
+  new MutationObserver(records=>{for(const record of records)for(const node of record.addedNodes){
+    if(node.nodeType!==1)continue;
+    if(node.matches('iframe'))attach(node);
+    node.querySelectorAll('iframe').forEach(attach);
+  }}).observe(document.documentElement,{childList:true,subtree:true});
+  document.querySelectorAll('iframe').forEach(attach);
 })();

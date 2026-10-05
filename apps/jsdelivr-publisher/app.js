@@ -48,6 +48,8 @@ let selectedProvider = 'jsdelivr';
 let publishedResult = null;
 let publishing = false;
 let presetSvg = '';
+let presetPackage = null;
+let staticPublisher = null;
 const presetParameters = new URLSearchParams(location.search);
 const presetCdn = { 'cdn.jsdelivr.net': 'jsdelivr', 'gcore.jsdelivr.net': 'gcore', 'fastly.jsdelivr.net': 'fastly', 'quantil.jsdelivr.net': 'quantil', 'originfastly.jsdelivr.net': 'originfastly', 'testingcf.jsdelivr.net': 'testingcf', 'jsdelivr.b-cdn.net': 'bunnycdn', 'esm.sh': 'esm', 'raw.esm.sh': 'rawesm' }[presetParameters.get('cdn')];
 if (presetCdn) selectedProvider = presetCdn;
@@ -126,30 +128,29 @@ function initializePreset() {
   countInput.value = String(requestedCount);
   fileInput.required = false;
   fileField.dataset.preset = 'nyx';
-  fileDisplay.textContent = 'Nyx site SVG included';
-  fileHint.textContent = 'The official Nyx site package is ready. Choose a file only if you want to replace it.';
+  fileDisplay.textContent = 'Nyx static app included';
+  fileHint.textContent = 'Publishes the static app once per repository, with a launcher for each link. Accounts, AI, chat and server media require the full Nyx backend.';
   document.getElementById('publisher-title').textContent = 'Publish Nyx links';
   if (presetMethod === 'p2p') {
     modeInput.value = 'auto';
     document.getElementById('page-title').textContent = 'P2P Publisher';
     document.getElementById('publisher-title').textContent = 'Publish P2P Nyx links';
   }
-  const source = presetParameters.get('source') === 'jsdelivr'
-    ? 'https://cdn.jsdelivr.net/gh/dubcatalt2-lab/nyx-jsdelivr-links@main/1-learning-005847b5039fb2c8f4515165e0d79a17.svg'
-    : './nyx-source.svg';
-  if (presetParameters.get('source') === 'jsdelivr') {
-    fileDisplay.textContent = 'Selected jsDelivr SVG';
-    fileHint.textContent = 'Copies of the selected jsDelivr SVG will be published as new files in your repository.';
-  }
-  presetPromise = fetch(source, { cache: 'no-store', credentials: 'omit' })
-    .then(response => {
-      if (!response.ok) throw new Error(`Nyx SVG returned ${response.status}.`);
-      return response.text();
+  presetPromise = Promise.all([
+    import('./static-publish.js'),
+    fetch('./static-package/manifest.json', { cache: 'no-store', credentials: 'omit' }).then(response => {
+      if (!response.ok) throw new Error(`Static package returned ${response.status}.`);
+      return response.json();
     })
-    .then(svg => { presetSvg = svg; })
+  ])
+    .then(([publisher, manifest]) => {
+      staticPublisher = publisher;
+      presetPackage = publisher.validateStaticManifest(manifest);
+      presetSvg = publisher.staticLauncher();
+    })
     .catch(error => {
       presetSvg = '';
-      setMessage(`The included Nyx SVG could not be loaded: ${error.message}`, 'error');
+      setMessage(`The static Nyx package could not be loaded: ${error.message}`, 'error');
     });
 }
 
@@ -228,6 +229,7 @@ async function loadRepository(fullName, token) {
   const svgs = new Set();
   let maxNumber = 0;
   files.forEach(file => {
+    if (file.startsWith('nyx-static/')) return;
     if (!/\.svg$/i.test(file)) return;
     svgs.add(file.toLowerCase());
     const match = file.match(/-(\d+)\.svg$/i);
@@ -271,19 +273,32 @@ function splitTreeBatches(fileNames, svg) {
   return batches;
 }
 
-async function publishTree(repository, fileNames, svg, token, onProgress) {
+async function publishTree(repository, fileNames, svg, token, onProgress, staticPackage = null) {
   const path = repositoryApiPath(repository.fullName);
   const head = await getGitHead(repository, token);
+  const packageEntry = staticPackage ? await staticPublisher.prepareStaticPackage({
+    api: (path, options) => githubJson(path, token, options),
+    repository: repository.fullName, branch: repository.branch, headTree: head.treeSha, manifest: staticPackage,
+    writeIntervalMs: 1100,
+    readBytes: async path => {
+      const response = await fetch('./static-package/files/' + path.split('/').map(encodeURIComponent).join('/'), { credentials: 'omit', cache: 'no-store' });
+      if (!response.ok) throw Error('A static Nyx asset could not be loaded. Please retry.');
+      return response.arrayBuffer();
+    },
+    onProgress: (done, total) => setMessage(`Preparing the static app: ${done} of ${total} files`)
+  }) : null;
   let treeSha = head.treeSha;
   let completed = 0;
-  for (const treeEntries of splitTreeBatches(fileNames, svg)) {
+  const batches = splitTreeBatches(fileNames, svg);
+  if (packageEntry) batches[0].push(packageEntry);
+  for (const treeEntries of batches) {
     const tree = await githubJson(`/repos/${path}/git/trees`, token, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ base_tree: treeSha, tree: treeEntries })
     });
     treeSha = tree.sha;
-    completed += treeEntries.length;
+    completed += treeEntries.filter(entry => entry.type === 'blob').length;
     onProgress?.(completed);
   }
   const commit = await githubJson(`/repos/${path}/git/commits`, token, {
@@ -333,7 +348,7 @@ async function findAutomaticRepository(owner, prefix, start, token) {
   throw new Error('No automatic repository slot is available.');
 }
 
-async function publishSvgs({ token, mode, repo, svg, mainWords, sideWords, count }) {
+async function publishSvgs({ token, mode, repo, svg, mainWords, sideWords, count, staticPackage = null }) {
   const user = await githubJson('/user', token);
   const owner = String(user.login || '').trim();
   if (!owner) throw new Error('GitHub did not return an account for this token.');
@@ -346,7 +361,7 @@ async function publishSvgs({ token, mode, repo, svg, mainWords, sideWords, count
     if (!repository) throw new Error(`Repository not found or not accessible: ${repo}`);
     if (repository.free < count) throw new Error(`${repository.fullName} has room for ${repository.free} more SVG files. Use automatic repositories or choose a smaller count.`);
     const files = generateFileNames(repository, count, mainWords, sideWords);
-    await publishTree(repository, files, svg, token, done => setProgress(completed + done, count, `Publishing ${completed + done} of ${count}…`));
+    await publishTree(repository, files, svg, token, done => setProgress(completed + done, count, `Publishing ${completed + done} of ${count}…`), staticPackage);
     completed += files.length;
     repoResults.push({ repo: repository.fullName, branch: repository.branch, files });
     files.forEach(file => links.push({ repo: repository.fullName, branch: repository.branch, file }));
@@ -358,7 +373,7 @@ async function publishSvgs({ token, mode, repo, svg, mainWords, sideWords, count
       automaticIndex = automatic.nextIndex;
       const amount = Math.min(count - completed, automatic.repository.free);
       const files = generateFileNames(automatic.repository, amount, mainWords, sideWords);
-      await publishTree(automatic.repository, files, svg, token, done => setProgress(completed + done, count, `Publishing ${completed + done} of ${count}…`));
+      await publishTree(automatic.repository, files, svg, token, done => setProgress(completed + done, count, `Publishing ${completed + done} of ${count}…`), staticPackage);
       completed += files.length;
       repoResults.push({ repo: automatic.repository.fullName, branch: automatic.repository.branch, files });
       files.forEach(file => links.push({ repo: automatic.repository.fullName, branch: automatic.repository.branch, file }));
@@ -470,7 +485,7 @@ modeInput.addEventListener('change', () => {
 
 fileInput.addEventListener('change', () => {
   const file = fileInput.files?.[0];
-  fileDisplay.textContent = file ? `${file.name} · ${(file.size / 1024).toFixed(1)} KB` : (presetName === 'nyx' ? 'Nyx site SVG included' : 'Choose a self-contained SVG file');
+  fileDisplay.textContent = file ? `${file.name} · ${(file.size / 1024).toFixed(1)} KB` : (presetName === 'nyx' ? 'Nyx static app included' : 'Choose a self-contained SVG file');
 });
 
 form.addEventListener('submit', async event => {
@@ -506,7 +521,7 @@ form.addEventListener('submit', async event => {
   progressBar.style.width = '2%';
   results.hidden = true;
   try {
-    publishedResult = await publishSvgs({ token, mode, repo, svg, mainWords, sideWords, count });
+    publishedResult = await publishSvgs({ token, mode, repo, svg, mainWords, sideWords, count, staticPackage: file ? null : presetPackage });
     setProgress(count, count);
     setMessage(`Published ${publishedResult.publishedCount.toLocaleString()} SVG links.`, 'success');
     renderResults();

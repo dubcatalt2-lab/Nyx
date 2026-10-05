@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';
 const s=readFileSync('apps/chat/app.js','utf8'),a=s.indexOf('  function playChatPing('),b=s.indexOf('\n',a),sent=[];
-const context=vm.createContext({state:{notifiedDm:new Set()},window:{parent:{postMessage:(data,origin)=>sent.push({data,origin})}},location:{origin:'https://nyx.test'}});
+const context=vm.createContext({social:{muted:uid=>uid==='ignored-user'},state:{notifiedDm:new Set()},window:{parent:{postMessage:(data,origin)=>sent.push({data,origin})}},location:{origin:'https://nyx.test'}});
 vm.runInContext(s.slice(a,b),context);
 context.playChatPing('mention-1','mention',{sender:'Alex',preview:'@you hello <script>'});
 context.playChatPing('mention-1','mention',{sender:'Alex',preview:'duplicate'});
@@ -11,3 +11,5 @@ console.log('PASS mention forwarding, bounded text, same-origin target and dupli
 
 context.playChatPing('race','chat');context.playChatPing('race','mention',{preview:'@you hello'});context.playChatPing('race','mention');assert.equal(sent.filter(item=>item.data.notificationId.startsWith('race')).length,2);assert.equal(sent.at(-1).data.kind,'mention');
 console.log('PASS ordinary ping can upgrade to one mention toast');
+
+const previousCount=sent.length; context.playChatPing('ignored','mention',{uid:'ignored-user',preview:'hidden'}); assert.equal(sent.length,previousCount); console.log('PASS ignored senders cannot emit mention toasts');

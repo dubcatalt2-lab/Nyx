@@ -79,9 +79,36 @@ if(base!=='/'){
   await writeFile(path.join(output,'hosting.json'),JSON.stringify({base,configured:false}));
 }
 await writeFile(path.join(output,'runtime-config.js'),`globalThis.__NYX_RUNTIME_CONFIG__=Object.freeze(${JSON.stringify({wispUrl:wisp,wispUrls:[wisp],presenceUrl:'',publicOrigin:''})});`);
-const worker=`const base=${JSON.stringify(base)};self.addEventListener('install',e=>e.waitUntil(self.skipWaiting()));self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));self.addEventListener('fetch',event=>{const u=new URL(event.request.url);if(u.origin!==self.location.origin||!u.pathname.startsWith(base)||u.pathname.startsWith(base+'~/'))return;if(event.request.mode==='navigate'){event.respondWith((async()=>{if(u.pathname.endsWith('/'))u.pathname+='index.html';const response=await fetch(u.href);if(!response.ok)return response;const headers=new Headers(response.headers);headers.delete('content-disposition');headers.delete('content-length');headers.set('content-type',u.pathname.endsWith('.svg')?'image/svg+xml':'text/html; charset=utf-8');headers.set('cross-origin-opener-policy','same-origin');headers.set('cross-origin-embedder-policy','require-corp');return new Response(response.body,{status:response.status,headers});})());}});`;
+// The CDN caches branch URLs for a week in browsers. Version Arcade resources
+// with their built content so existing packages cannot reuse a stale catalog or
+// renderer after a package update.
+const arcadeRevision=createHash('sha256').update(await readFile(path.join(output,'assets/games/games.js'))).update(await readFile(path.join(output,'assets/games/games.json'))).digest('hex').slice(0,20);
+const worker=`const base=${JSON.stringify(base)},arcadeRevision=${JSON.stringify(arcadeRevision)};
+self.addEventListener('install',e=>e.waitUntil(self.skipWaiting()));
+self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));
+self.addEventListener('fetch',event=>{
+  const u=new URL(event.request.url);
+  if(event.request.method!=='GET'||u.origin!==self.location.origin||!u.pathname.startsWith(base)||u.pathname.startsWith(base+'~/'))return;
+  const relative=u.pathname.replace(base,'');
+  if((relative.startsWith('assets/games/')&&/\\.(?:js|json)$/.test(relative))||relative==='assets/ugs/games.json'){
+    u.searchParams.set('nyxv',arcadeRevision);
+    event.respondWith(fetch(new Request(u.href,event.request),{cache:'no-cache'}));
+    return;
+  }
+  if(event.request.mode==='navigate')event.respondWith((async()=>{
+    if(u.pathname.endsWith('/'))u.pathname+='index.html';
+    const response=await fetch(u.href,{cache:'no-cache'});
+    if(!response.ok)return response;
+    const headers=new Headers(response.headers);
+    headers.delete('content-disposition');headers.delete('content-length');
+    headers.set('content-type',u.pathname.endsWith('.svg')?'image/svg+xml':'text/html; charset=utf-8');
+    headers.set('cross-origin-opener-policy','same-origin');headers.set('cross-origin-embedder-policy','require-corp');
+    return new Response(response.body,{status:response.status,headers});
+  })());
+});`;
+
 const workerName='library-worker.js';await writeFile(path.join(output,workerName),(await minify(worker,{mangle:true,compress:true})).code);
-const svgBoot=`(async()=>{if(!['http:','https:'].includes(location.protocol)||location.origin==='null')throw Error('Extract the mini ZIP and run Start-Nyx-Mini.cmd, then open localhost. A downloaded SVG cannot start the proxy.');if(!isSecureContext||!navigator.serviceWorker)throw Error('Open the complete package on HTTPS or localhost.');await navigator.serviceWorker.register(new URL('${workerName}',location.href),{scope:${JSON.stringify(base)}});await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('The worker did not take control. Reload to retry.')),15000);navigator.serviceWorker.addEventListener('controllerchange',()=>{clearTimeout(timer);resolve()},{once:true})});location.replace(new URL('index.html',location.href).href)})().catch(e=>document.getElementById('status').textContent=e.message);`;
+const svgBoot=`(async()=>{if(!['http:','https:'].includes(location.protocol)||location.origin==='null')throw Error('Extract the mini ZIP and run Start-Nyx-Mini.cmd, then open localhost. A downloaded SVG cannot start the proxy.');if(!isSecureContext||!navigator.serviceWorker)throw Error('Open the complete package on HTTPS or localhost.');await navigator.serviceWorker.register(new URL('${workerName}',location.href),{scope:${JSON.stringify(base)},updateViaCache:'none'});await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('The worker did not take control. Reload to retry.')),15000);navigator.serviceWorker.addEventListener('controllerchange',()=>{clearTimeout(timer);resolve()},{once:true})});location.replace(new URL('index.html',location.href).href)})().catch(e=>document.getElementById('status').textContent=e.message);`;
 await writeFile(path.join(output,'Nyx.svg'),`<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><foreignObject width="100%" height="100%"><body xmlns="http://www.w3.org/1999/xhtml" style="margin:0;background:#080b09;color:#e3e9e5;font:15px system-ui;min-height:100vh;display:grid;place-content:center;text-align:center"><h1 style="letter-spacing:8px;font-weight:500">NYX</h1><p id="status">Opening your workspace…</p></body></foreignObject><script><![CDATA[${svgBoot}]]></script></svg>`);
 await mkdir(path.join(output,'licenses'),{recursive:true});
 for(const [name,folder] of [['engine','@mercuryworkshop/scramjet'],['controller','@mercuryworkshop/scramjet-controller'],['transport','@mercuryworkshop/libcurl-transport']]){for(const file of ['LICENSE','LICENSE.md','LICENSE.txt'])try{await cp(path.join(root,'node_modules',folder,file),path.join(output,'licenses',name+'.txt'));break;}catch{}}

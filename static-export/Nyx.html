@@ -28,7 +28,8 @@
       }
       const base = new URL('.', location.href);
       await navigator.serviceWorker.register(new URL('library-worker.js', base), {
-        scope: base.pathname
+        scope: base.pathname,
+        updateViaCache: 'none'
       });
       await navigator.serviceWorker.ready;
       if (!navigator.serviceWorker.controller) {

@@ -27,10 +27,25 @@ const entry = await prepareStaticPackage({
 });
 const published = objects.get(entry.sha);
 const base = '/gh/test/repo@main/nyx-static/';
+const gameScriptUrl=[...published.get('assets/games/index.html').toString().matchAll(/<script[^>]+src="([^"]+)/g)].map(m=>m[1]).find(url=>url.includes('/assets/games/')&&url.includes('.js'));
+assert(gameScriptUrl,'Arcade renderer script missing');
 const failures = [];
 const mime = { '.html': 'text/plain', '.svg': 'image/svg+xml', '.js': 'application/javascript', '.mjs': 'application/javascript', '.css': 'text/css', '.json': 'application/json', '.wasm': 'application/wasm', '.png': 'image/png', '.jpg': 'image/jpeg', '.woff2': 'font/woff2', '.ttf': 'font/ttf' };
+let legacyCatalog=true;
+const versionedArcadeRequests=[];
 const server = createServer((request, response) => {
-  const path = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
+  const url=new URL(request.url,'http://localhost');
+  const path = decodeURIComponent(url.pathname);
+  if(path==='/cache-fixture') { response.writeHead(200,{'Content-Type':'text/html'});response.end('<html><body>Cache fixture</body></html>');return; }
+  if(url.searchParams.has('nyxv'))versionedArcadeRequests.push(path);
+  if(path===base+'assets/games/games.json'&&legacyCatalog){
+    const old=JSON.parse(published.get('assets/games/games.json').toString());delete old.includeUnillustrated;
+    response.writeHead(200,{'Content-Type':'application/json','Cache-Control':'public, max-age=604800'});response.end(JSON.stringify(old));return;
+  }
+  if(legacyCatalog&&path===new URL(gameScriptUrl,'http://localhost').pathname){
+    const old=published.get(path.slice(base.length)).toString().replaceAll('includeUnillustrated','legacyMissingCatalogFlag');
+    response.writeHead(200,{'Content-Type':'application/javascript','Cache-Control':'public, max-age=604800'});response.end(old);return;
+  }
   const content = path === '/gh/test/repo@main/link.svg' ? Buffer.from(staticLauncher()) : path.startsWith(base) ? published.get(path.slice(base.length)) : null;
   if (!content) { failures.push(path); response.writeHead(404); response.end(); return; }
   response.writeHead(200, { 'Content-Type': mime[extname(path)] || 'application/octet-stream' });
@@ -43,13 +58,24 @@ try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.route('**/*', route => new URL(route.request().url()).origin === origin ? route.continue() : route.fulfill({ status: 503, body: '' }));
+  // Keep real HTTP caching enabled; block upstream traffic through CDP instead.
+  const cdp=await page.context().newCDPSession(page);
+  await cdp.send('Network.enable');
+  await cdp.send('Network.setBlockedURLs',{urls:['https://*']});
   await page.addInitScript(() => {
     localStorage.setItem('nyx.setupComplete', 'true');
     localStorage.setItem('nyx.browserShellMode', 'true');
     localStorage.setItem('nyx.tosAcceptedVersion', '2026-07-30');
     localStorage.setItem('nyx.releaseNotes.2026-10-02-nyx-1.6.8.seen', '2026-10-02-nyx-1.6.8');
   });
+  await page.goto(origin+'/cache-fixture');
+  await cdp.send('Network.setCacheDisabled',{cacheDisabled:false});
+  assert.equal(await page.evaluate(async url=>(await fetch(url).then(r=>r.json())).includeUnillustrated,origin+base+'assets/games/games.json'),undefined);
+  assert.equal(await page.evaluate(async url=>(await fetch(url).then(r=>r.text())).includes('includeUnillustrated'),origin+gameScriptUrl),false);
+  legacyCatalog=false;
+  assert.equal(await page.evaluate(async url=>(await fetch(url).then(r=>r.text())).includes('includeUnillustrated'),origin+gameScriptUrl),false);
+  // The unversioned URL is still stale in this existing browser profile.
+  assert.equal(await page.evaluate(async url=>(await fetch(url).then(r=>r.json())).includeUnillustrated,origin+base+'assets/games/games.json'),undefined);
   await page.goto(origin + '/gh/test/repo@main/link.svg', { waitUntil: 'domcontentloaded' });
   await page.waitForURL(origin + base + 'index.html');
   await page.waitForFunction(() => !document.querySelector('#nyxStudyHubStartup') && !document.body.classList.contains('nyx-loading-active'));
@@ -70,6 +96,8 @@ try {
   const games = page.frameLocator('iframe.view.active');
   await games.locator('#catalogProgress.done').waitFor({ state: 'attached' });
   const allCount = Number((await games.locator('[data-library="all"] .library-tab-count').innerText()).replaceAll(',', ''));
+  assert(versionedArcadeRequests.some(path=>path.endsWith('/games.json')), 'Catalog must refresh despite the old browser cache');
+  assert(versionedArcadeRequests.some(path=>path.endsWith('.js')), 'Game renderer must use the current package revision');
   assert(allCount > 1000, `Static All games must include the packaged catalog even without cover art; got ${allCount}`);
   assert.equal(await games.locator('.game-card').count(), 30);
   assert.equal(await games.locator('#emptyState').isVisible(), false);

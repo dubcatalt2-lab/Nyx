@@ -32,3 +32,13 @@ html.cloud-session-active,html.cloud-session-active body{height:100%;min-height:
 html.cloud-session-active main,html.cloud-session-active .topbar{display:none}
 .player-layer{grid-template-rows:58px minmax(0,1fr)}
 .player-layer iframe{min-height:0;min-width:0}
+
+.luna-entry{display:flex;align-items:center;gap:14px;width:100%;margin:24px 0 0;padding:16px 20px;text-align:left;border:1px solid var(--line);border-radius:16px;background:var(--app-panel,var(--panel));color:var(--text)}
+.luna-entry:hover{background:var(--app-raised,var(--panel-2))}.luna-entry:focus-visible{outline:2px solid var(--text);outline-offset:3px}
+.luna-entry svg{width:24px;height:24px;flex:none}.luna-entry svg:last-child{width:18px;margin-left:auto}.luna-entry strong,.luna-entry small{display:block}.luna-entry strong{font-size:16px}.luna-entry small{margin-top:4px;font-size:12px;color:var(--muted)}
+.luna-player{position:fixed;inset:0;width:100%;height:100%;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;background:var(--bg);color:var(--text)}
+.luna-player[open]{display:grid;grid-template-rows:auto minmax(0,1fr)}.luna-player::backdrop{background:#000}
+.luna-player header{display:flex;align-items:center;gap:16px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--app-panel,var(--panel))}.luna-player header>span{font-size:12px;color:var(--muted);min-width:0}.luna-player nav{display:flex;gap:6px;margin-left:auto;flex:none}
+.luna-player nav button,.luna-player nav a{display:grid;place-items:center;width:36px;height:36px;border:1px solid var(--line);border-radius:10px;background:var(--app-field,var(--panel-2));color:var(--text)}.luna-player nav svg{width:18px;height:18px}
+.luna-player [data-luna-host]{min-height:0}.luna-player iframe{display:block;width:100%;height:100%;border:0;background:#161227}
+@media(max-width:520px){.luna-player header{gap:10px;padding:8px}.luna-player header>span{font-size:11px}.luna-entry{margin-top:12px}}

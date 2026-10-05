@@ -61,12 +61,12 @@ export function loremDesktop({api,screen,status,connected,reconnect}){
       if(data.status==='ready'){open(data.vm,data.expiresAt);return;}
       if(data.status==='recovering')throw Error(data.message);
       if(data.status!=='queued')throw Error('Your queue reservation ended. Use Reconnect to join again.');
-      cancelButton.hidden=false;loading.querySelector('h1').textContent=data.position?'You’re #'+data.position+' in line':'Waiting for a desktop';
+      cancelButton.hidden=false;loading.querySelector('h1').textContent=data.reason==='service_unavailable'?'Desktop service unavailable':data.position?'You’re #'+data.position+' in line':'Waiting for a desktop';
       progress(data.reason==='isolated_desktop_pending'?'Waiting for a separate desktop. Your place is saved.':data.reason==='service_unavailable'?'The service is reconnecting. Your place is saved.':data.providerPosition?'Waiting for provider capacity · provider position '+data.providerPosition:'Desktops are busy. Yours will open automatically.');
       timer=setTimeout(poll,5000);
     }catch(error){
       if(disposed||queueCancelled)return;
-      if(error.status>=500||error.name==='TypeError'||error.name==='TimeoutError'){progress('Reconnecting to the queue. Your place is saved.');timer=setTimeout(poll,10000);}
+      if(error.status>=500||error.name==='TypeError'||error.name==='TimeoutError'){loading.querySelector('h1').textContent='Reconnecting to desktop service';progress('Reconnecting to the queue. Your place is saved.');timer=setTimeout(poll,10000);}
       else failed(error);
     }
   }

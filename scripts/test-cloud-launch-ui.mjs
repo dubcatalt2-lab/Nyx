@@ -8,7 +8,7 @@ const browser=await chromium.launch();try{
  if(path==='/api/cloud-gaming/sessions'){launches++;return r.fulfill({status:429,headers:{'Retry-After':'2'},json:{error:'Please wait before starting another session.'}})}
  const data=path.endsWith('/auth-config')?{enabled:true,projectId:'fixture',apiKey:'fixture'}:path.endsWith('/status')?{configured:true}:path.endsWith('/catalog')?{games:[{key:'fixture',name:'Fixture',tags:[]}]}:{session:null};return r.fulfill({json:data});
  });
- await page.goto('http://localhost:9091/apps/cloud-gaming/');const play=page.getByRole('button',{name:'Play',exact:true});await play.click();
+ await page.goto('http://localhost:9091/apps/cloud-gaming/?provider=stratus');const play=page.getByRole('button',{name:'Play',exact:true});await play.click();
  await page.getByText(/Please wait 2 seconds/).waitFor();assert(await play.isDisabled());assert.equal(launches,1);
  await page.getByText('You can try launching a game again.').waitFor();assert(await play.isEnabled());assert.equal(launches,1,'No automatic launch retry');
  console.log('Cloud Gaming Retry-After countdown, disabled launches and retry expiry passed with fixtures.');

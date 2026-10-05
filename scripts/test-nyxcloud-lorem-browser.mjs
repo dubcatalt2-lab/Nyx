@@ -23,9 +23,9 @@ window.calls=[];window.dispose=loremDesktop({screen:document.querySelector('#scr
  }
   if(path==='/lorem/create'||path==='/lorem/queue'){
    if(scenario==='revoked')return {status:'recovering',message:'This desktop assignment could not be verified.'};
-   if(['waiting','outage'].includes(scenario)){
+   if(['waiting','outage','service-error'].includes(scenario)){
      if(scenario==='outage'&&path==='/lorem/queue'&&!window.retried){window.retried=true;throw Object.assign(Error('Temporary outage'),{status:503});}
-     return {status:'queued',position:3,reason:'capacity'};
+     return {status:'queued',position:3,reason:scenario==='service-error'&&!window.serviceRecovered?'service_unavailable':'capacity'};
    }
    if(scenario==='recovering')return {status:'recovering',message:'Provider confirmation pending.'};
    return {status:'ready',vm:{url:'https://loremgroup.org/vm/fixture/'}};
@@ -54,11 +54,15 @@ try{
     await page.evaluate(()=>dispose());
   }
   assert.deepEqual(errors,[]);
-  for(const scenario of ['waiting','outage']){
+  for(const scenario of ['waiting','outage','service-error']){
     await page.goto('http://127.0.0.1:'+server.address().port+'/?case='+scenario);
     if(scenario==='outage'){
       await page.getByText('Reconnecting to the queue. Your place is saved.',{exact:true}).first().waitFor();
       await page.getByRole('heading',{name:'You’re #3 in line'}).waitFor({timeout:15000});
+    }else if(scenario==='service-error'){
+      await page.getByRole('heading',{name:'Desktop service unavailable'}).waitFor();
+      await page.evaluate(()=>{window.serviceRecovered=true;});
+      await page.getByRole('heading',{name:'You’re #3 in line'}).waitFor({timeout:10000});
     }else await page.getByRole('heading',{name:'You’re #3 in line'}).waitFor();
     await page.getByRole('button',{name:'Leave queue'}).click();
     await page.getByRole('heading',{name:'You left the queue'}).waitFor();

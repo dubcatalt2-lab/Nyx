@@ -849,8 +849,8 @@ button:disabled{cursor:not-allowed}
 @keyframes ai-spin{to{transform:rotate(360deg)}}
 @keyframes ai-menu-in{from{opacity:0;transform:translateY(-5px) scale(.985)}to{opacity:1;transform:none}}
 
-/* Give scaled Chromebook viewports the full conversation width instead of
-   keeping a desktop sidebar beside model and attachment controls. */
+
+
 
 .ai-sources{margin-top:22px;padding-top:16px;border-top:1px solid var(--ai-border)}
 .ai-sources h3{margin:0 0 10px;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ai-muted)}

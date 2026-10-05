@@ -1,17 +1,19 @@
 import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath} from './game-cdn.js';
 
     export function prepareGameDocument(html,path,sourceUrl){
-      // This archived Getaway page lost the opening tag of its ad stylesheet,
-      // leaving CSS as visible text that pushes the game below the viewport.
+      html=String(html).replaceAll('unityGameInstance.SendMessage(', 'unityGameInstance?.SendMessage(');
+      if(path==='C/clcolormatch.html'||path==='31.html')html=html.replace('loadResources(InitUnitySection);','InitUnitySection();');
+
+
       if(['338.html','G/clgetawayshootout.html'].includes(path))html=String(html)
         .replace(/(#sidebarad1,\s*#sidebarad2\s*\{[\s\S]*?<\/style>)/, '<style>$1')
         .replace(/<script>\s*(?:gadgets\.util\.runOnLoadHandlers\(\)|window\.google\.csi\.tickDl\(\));?\s*<\/script>/g,'');
       if(path==='116.html')html=String(html).replaceAll('/bike.loader.js','/bike1.loader.js');
       if(path==='823-fix2.html')html=String(html).replaceAll('.rrayBuffer()', '.arrayBuffer()').replace('EJS_color = "#0064ff";a','EJS_color = "#0064ff";');
       if(path==='273.html')html=String(html).replaceAll('https://rawcdn.githack.com/genizy/assets/main/blockpost/', 'https://cdn.jsdelivr.net/gh/taskmaster773/google-class@c7a14eb2fe78c6a9cbe495d84aa3768fa9a38005/blockpost/');
-      // A broken placeholder in this archived Flash wrapper hides its valid movie.
+
       if(path==='D/cldoom3pack.html')html=String(html).replace('src="idc about this one"', 'src="https://cdn.jsdelivr.net/gh/Stinkalistic/UGS@main/SWFs/470460_DoomGame.swf"');
-      // Archived Cloudflare Rocket Loader types are inert outside their host.
+
       if(/type=["'][a-f0-9]+-(?:module|text\/javascript)["']/i.test(html))html=String(html)
         .replace(/(type=["'])[a-f0-9]+-(module|text\/javascript)(["'])/gi,'$1$2$3')
         .replace(/<script\b[^>]*src=["'][^"']*\/rocket-loader\.min\.js["'][^>]*>\s*<\/script>/gi,'');
@@ -19,25 +21,27 @@ import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath} from './ga
       const baseUrl=rawBase.slice(0,rawBase.lastIndexOf('/') + 1);
       const repoRoot=sourceUrl && new URL(sourceUrl).origin===location.origin ? location.origin+'/' : 'https://raw.githubusercontent.com/freebuisness/html/main/';
       const proxyUrl=url=>gameResourceUrl(url, undefined, location.origin);
-      const adProtection=`<script src="${location.origin}/assets/games/game-runtime-compat.js"><\/script><script src="${location.origin}/assets/games/game-health.js"><\/script><script src="${location.origin}/assets/games/game-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;
+      const adProtection=`<script src="${location.origin}/assets/vendor/game-storage.js"><\/script><script src="${location.origin}/assets/games/game-runtime-compat.js"><\/script><script src="${location.origin}/assets/games/game-health.js"><\/script><script src="${location.origin}/assets/games/game-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;
       const sourceHtml=String(html || '')
+        .replace(/<script\b[^>]*src=["']\/assets\/js\.js["'][^>]*>[\s\S]*?<\/script>/gi,'')
+        .replace(/<link\b[^>]*href=["']\/assets\/css\.css["'][^>]*>/gi,'')
         .replace(/<link\b[^>]*href=["']https:\/\/cdn\.jsdelivr\.net\/gh\/AndreajnRcm4\/b398dl2h74v@[^"']+\/style\.css["'][^>]*>/gi,'')
         .replace(
         /https?:\/\/cdn\.jsdelivr\.net\/gh\/genizy\/fnaf@[^/"'<>\s]+/gi,
         'https://cdn.jsdelivr.net/gh/bubblfan/fnaf@latest'
       )
-        // This folder was deleted upstream. Retain its last public revision.
+
         .replace(/\/axo323lotl-bit\/elitecomposite@main\/2048-merge-run\//g,'/axo323lotl-bit/elitecomposite@dee1ce45905c0d8f3524c4468074671762e48e9c/2048-merge-run/')
         .replace(/\/giorgirick2-gif\/game-webports-onawebsite@master\/yandere-simulator\//g,'/giorgirick2-gif/game-webports-onawebsite@main/yandere-simulator/')
         .replace(/((?:wasmCodeUrl|wasmFrameworkUrl)\s*:\s*["'])(YandereSim\.wasm\.(?:code|framework)\.unityweb)/g,'$1Build/$2')
-        // Old GN Math pages sometimes include a cloaking helper from the
-        // deleted gn-math/storage repository. It is unrelated to the game,
-        // but its 404 used to abort otherwise healthy Unity builds.
+
+
+
         .replace(
           /<script\b[^>]*src=["'][^"']*(?:(?:\.\.\/)+storage\/js\/cloak(?:i)?\.js|(?:raw\.githubusercontent\.com|cdn\.jsdelivr\.net\/gh)\/gn-math\/storage[^"']*cloak(?:i)?\.js)[^"']*["'][^>]*>\s*<\/script>/gi,
           ''
         );
-      const originalBase=(sourceHtml.match(/<base\b[^>]*href=["']([^"']+)/i)?.[1] || baseUrl).trim();
+      const originalBase=(sourceHtml.match(/<base\b[^>]*href\s*=\s*["']([^"']+)/i)?.[1] || baseUrl).trim();
       const baseHref=normalizeGameCdnUrl(originalBase)?.href || originalBase;
       const toProxy=(raw,base=baseHref)=>{
         try{

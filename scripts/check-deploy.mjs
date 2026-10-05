@@ -2,6 +2,12 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "scripts/build-vps.mjs",
+  "scripts/build-public-modules.mjs",
+  "scripts/build-game-storage.mjs",
+  "scripts/game-storage-entry.mjs",
+  "lib/public-assets.mjs",
+  "services/domain-pages/public-assets.mjs",
   "apps/jsdelivr-publisher/static-publish.js",
   "scripts/build-publisher-package.mjs",
   "lib/static-package-preparation.mjs",
@@ -314,6 +320,11 @@ if (missing.length) {
 }
 
 const packageJson = JSON.parse(await readFile("package.json", "utf8"));
+if(packageJson.scripts['build:vps']!=='node scripts/build-vps.mjs'||packageJson.scripts['build:netlify']||packageJson.dependencies?.['serverless-http'])throw Error('Obsolete deployment configuration');
+for(const file of ['netlify.toml','netlify/functions/api.mjs','scripts/build-netlify.mjs']){
+  let exists=false;try{await access(file);exists=true;}catch(error){if(error.code!=='ENOENT')throw error;}
+  if(exists)throw Error('Obsolete deployment file: '+file);
+}
 for (const dependency of ["express", "firebase-admin", "wispurr", "mp4box", "hls.js", "@novnc/novnc"]) {
   if (!packageJson.dependencies?.[dependency]) {
     console.error(`Deployment dependency is missing: ${dependency}`);

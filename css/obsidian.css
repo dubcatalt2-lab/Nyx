@@ -33,9 +33,10 @@ html body.browser-shell {
   background:var(--obsidian-bg)!important;color:var(--obsidian-text);
 }
 body.browser-shell.nyx-browser-chrome-visible {--nyx-chrome-height:86px}
-body.browser-shell::before {background:var(--obsidian-bg);filter:blur(6px);transform:scale(1.12);inset:0}
-html body.browser-shell.custom-bg-active .custom-bg-image {display:block!important;filter:blur(6px) brightness(.48) saturate(.65);transform:scale(1.12);z-index:1}
-body.browser-shell :is(#nyxBeamsBg,#nyxLineWavesBg,.nyx-wave-bg,#defaultVantaBg,#rubyVantaBg,#emeraldVantaBg,#sakuraVantaBg,#whiteVantaBg) {filter:blur(6px) brightness(.55) saturate(.65);transform:scale(1.12)}
+body.browser-shell::before {background:var(--obsidian-bg);filter:blur(1px);transform:scale(1.02);inset:0}
+body.browser-shell:not(.browser-content-active)::after {background:linear-gradient(145deg,rgba(8,10,14,.24),rgba(4,6,10,.4));box-shadow:inset 0 1px 0 rgba(255,255,255,.025)}
+html body.browser-shell.custom-bg-active .custom-bg-image {display:block!important;filter:blur(1px) brightness(.48) saturate(.65);transform:scale(1.02);z-index:1}
+body.browser-shell :is(#nyxBeamsBg,#nyxLineWavesBg,.nyx-wave-bg,#defaultVantaBg,#rubyVantaBg,#emeraldVantaBg,#sakuraVantaBg,#whiteVantaBg) {filter:blur(1px) brightness(.55) saturate(.65);transform:scale(1.02)}
 html[data-nyx-appearance="light"] body.browser-shell::before {opacity:.12}
 html[data-nyx-appearance="light"] body.browser-shell :is(#nyxBeamsBg,#nyxLineWavesBg,#customBgImage,#defaultVantaBg,#rubyVantaBg,#emeraldVantaBg,#sakuraVantaBg,#whiteVantaBg) {opacity:.14}
 html[data-nyx-beam-wallpaper="obsidian"] body:not(.custom-bg-active)::before {
@@ -45,13 +46,10 @@ html[data-nyx-beam-wallpaper^="photo-leaves-"] { --nyx-photo-wallpaper:url("../a
 html[data-nyx-beam-wallpaper^="photo-moonlight-"] { --nyx-photo-wallpaper:url("../assets/backgrounds/moonlight.jpg") }
 html[data-nyx-beam-wallpaper^="photo-rain-"] { --nyx-photo-wallpaper:url("../assets/backgrounds/rain.jpg") }
 html[data-nyx-beam-wallpaper^="photo-halloween-"] { --nyx-photo-wallpaper:url("../assets/backgrounds/halloween.jpg") }
-html[data-nyx-beam-wallpaper^="photo-"] body:not(.custom-bg-active)::before {background:#000 var(--nyx-photo-wallpaper) center/cover no-repeat;filter:blur(6px) brightness(.55) saturate(.65)}
-html[data-nyx-beam-wallpaper$="-deep"] body:not(.custom-bg-active)::before {filter:blur(10px) brightness(.35) saturate(.5)}
-html[data-nyx-beam-wallpaper$="-mono"] body:not(.custom-bg-active)::before {filter:blur(6px) brightness(.5) grayscale(1)}
+html[data-nyx-beam-wallpaper^="photo-"] body:not(.custom-bg-active)::before {background:#000 var(--nyx-photo-wallpaper) center/cover no-repeat;filter:blur(1px) brightness(.55) saturate(.65)}
+html[data-nyx-beam-wallpaper$="-deep"] body:not(.custom-bg-active)::before {filter:blur(3px) brightness(.35) saturate(.5)}
+html[data-nyx-beam-wallpaper$="-mono"] body:not(.custom-bg-active)::before {filter:blur(1px) brightness(.5) grayscale(1)}
 
-html:is([data-nyx-beam-wallpaper^="photo-leaves-"],[data-nyx-beam-wallpaper^="photo-moonlight-"]) body:not(.custom-bg-active)::before {filter:blur(4px) brightness(.55) saturate(.65)}
-html:is([data-nyx-beam-wallpaper^="photo-leaves-"],[data-nyx-beam-wallpaper^="photo-moonlight-"])[data-nyx-beam-wallpaper$="-deep"] body:not(.custom-bg-active)::before {filter:blur(10px) brightness(.35) saturate(.5)}
-html:is([data-nyx-beam-wallpaper^="photo-leaves-"],[data-nyx-beam-wallpaper^="photo-moonlight-"])[data-nyx-beam-wallpaper$="-mono"] body:not(.custom-bg-active)::before {filter:blur(4px) brightness(.5) grayscale(1)}
 html[data-nyx-appearance="light"][data-nyx-beam-wallpaper^="photo-"] body::before {opacity:.14}
 html[data-nyx-beam-wallpaper="obsidian"] :is(#nyxBeamsBg,#nyxWaveBg,#nyxLineWavesBg,#defaultVantaBg){display:none!important}
 html[data-nyx-beam-wallpaper] #nyxWaveBg {display:none!important}
@@ -250,7 +248,7 @@ html body.browser-shell .nyx-settings-control :is(.nyx-wallpaper-card,.nyx-color
 .nyx-wallpaper-card .nyx-photo-preview.mono{filter:blur(2px) grayscale(1) brightness(.6)}
 .nyx-wallpaper-back{margin-bottom:16px}
 
-/* Halloween changes color only; existing glass, geometry and blue text selection remain. */
+
 html[data-nyx-theme="halloween"] .nyx-visual-dock [data-nyx-dock-item].active,
 html[data-nyx-theme="halloween"] body.browser-shell .browser-shell-settings-panel .nyx-settings-nav button.active {
   color:var(--nyx-surface-accent)!important;

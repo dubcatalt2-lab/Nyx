@@ -1,3 +1,4 @@
+import {learningAsset,legacyLearningAsset} from './public-assets.mjs';
 import {readFile} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 import {learningPage} from './pages.mjs';
@@ -5,7 +6,6 @@ import {textbookHtml} from './textbook.mjs';
 import {normalizeDomain} from './server.mjs';
 
 const defaults=[];
-const assets=new Set(['learning.css','learning.mjs','curriculum.mjs','secondary.mjs','textbook.css']);
 const problem=(message,status=400)=>Object.assign(new Error(message),{status});
 export function installStudyReady(app,{owner,db,sameOrigin,verifyDns,targetIps,audit=async()=>{},staticRoot,pdfPath=process.env.STUDYREADY_PDF_PATH||'/var/lib/nyx/studyready/textbook.pdf'}){
  let cached,expires=0,pending,version=0,book;
@@ -52,7 +52,7 @@ export function installStudyReady(app,{owner,db,sameOrigin,verifyDns,targetIps,a
    if(path==='/studyready'||path==='/studyready/')return secure(res).type('html').send(learningPage({title:String(req.query.title||'StudyReady').slice(0,80)}));
    if(path==='/textbook'){book??=textbookHtml();return secure(res).type('html').send(book);}
    if(path==='/textbook.pdf')return secure(res).type('application/pdf').sendFile(resolve(pdfPath),{dotfiles:'allow'},error=>{if(error&&!res.headersSent)res.status(404).type('text').send('The PDF is unavailable. Read the book at /textbook.');});
-   if(path.startsWith('/learning/')){const name=path.slice('/learning/'.length);if(!assets.has(name))return res.status(404).end();const content=await readFile(new URL('./'+name,import.meta.url),'utf8');return secure(res).type(name.endsWith('.css')?'text/css':'text/javascript').send(content);}
+   if(path.startsWith('/learning/')){const name=path.slice('/learning/'.length);const legacy=legacyLearningAsset(name);if(legacy)return res.redirect(307,'/learning/'+legacy+(req.url.includes('?')?req.url.slice(req.url.indexOf('?')):''));const content=await learningAsset(name);if(content===null)return res.status(404).end();return secure(res).type(name.endsWith('.css')?'text/css':'text/javascript').send(content);}
    if(!['/','/robots.txt'].includes(path))return next();
    // These hosts retain their existing Tutsi shell and crawler policy.
    if(['tutsi.nyxlearning.org','childsupport.donateyourboat.us','turn.nyxlearning.org'].includes(req.hostname))return next();

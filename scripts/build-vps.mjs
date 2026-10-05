@@ -1,3 +1,5 @@
+import {buildGameStorage} from './build-game-storage.mjs';
+import {buildPublicModules} from './build-public-modules.mjs';
 import {buildFrontendAssets} from './build-frontend-assets.mjs';
 import {buildPublisherPackage} from './build-publisher-package.mjs';
 import {formatPublishedHtml} from './format-published-html.mjs';
@@ -19,8 +21,6 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
 const output = join(root, "dist");
 const require = createRequire(import.meta.url);
-const vpsBuild = process.env.NYX_BUILD_TARGET === "vps";
-const maxStaticFileBytes = vpsBuild ? Number.POSITIVE_INFINITY : 10_000_000;
 const rootFiles = new Set([
   "index.html",
   "about-nyx.html",
@@ -43,7 +43,6 @@ const rootFiles = new Set([
 ]);
 const staticPrefixes = ["apps/", "assets/", "css/", "js/"];
 const blockedExtensions = /\.(?:7z|avi|mkv|mov|mp4|rar|webm|zip)$/i;
-const skippedLargeFiles = [];
 const remotelyHostedUgsGames = new Set([
   "minecraft/Dragonxclient.html",
   "minecraft/EaglercraftL_1.9_v0_7_0_Offline_Signed.html",
@@ -54,8 +53,8 @@ const remotelyHostedUgsGames = new Set([
 
 function normalizeWispUrl(value) {
   const raw = String(value || "").trim();
-  if (vpsBuild && !raw) return "";
-  const url = new URL(raw || "wss://nyx-temporary-production.up.railway.app/wisp/");
+  if (!raw) return "";
+  const url = new URL(raw);
   if (url.protocol === "https:") url.protocol = "wss:";
   if (url.protocol === "http:") url.protocol = "ws:";
   if (!new Set(["ws:", "wss:"]).has(url.protocol)) throw new Error("WISP_URL must use ws:// or wss://");
@@ -93,10 +92,6 @@ async function copyRepositoryStaticFiles() {
       continue;
     }
     if (!info.isFile()) continue;
-    if (info.size > maxStaticFileBytes) {
-      skippedLargeFiles.push(relative);
-      continue;
-    }
     const destination = join(output, ...relative.split("/"));
     await mkdir(dirname(destination), { recursive: true });
     await cp(source, destination);
@@ -210,7 +205,7 @@ async function configureUv(wispUrl) {
     /bare:\s*[\s\S]*?,\s*encodeUrl:/,
     `bare: ${bareValue},\n  encodeUrl:`
   );
-  if (configured === source) throw new Error("Could not set the Netlify Wisp URL in uv.config.js");
+  if (configured === source) throw new Error("Could not set the VPS Wisp URL in uv.config.js");
   await writeFile(path, configured);
 }
 
@@ -274,7 +269,7 @@ function runtimeFormatOptions() {
     ascii_only: true,
     beautify: true,
     indent_level: 2,
-    comments: false,
+    comments: /@license|@preserve|copyright|^!/i,
     semicolons: true
   };
 }
@@ -422,7 +417,7 @@ async function minifyFirstPartyMarkupAndStyles() {
   console.log(`Production-minified ${transformedFiles} first-party HTML/CSS files (${reduction}% smaller; comments removed)`);
 }
 
-async function writeNetlifyFiles() {
+async function writeNotFoundPage() {
   await writeFile(join(output, "404.html"), "<!doctype html><meta charset=\"utf-8\"><title>Not found</title><p>Not found</p>\n");
 }
 
@@ -461,6 +456,8 @@ async function main() {
   for(const name of ['learning.css','learning.mjs','curriculum.mjs','secondary.mjs'])
     await cp(join(root,'services/domain-pages',name),join(studyDir,name));
   await copyEruda();
+  await cp(join(root,'THIRD_PARTY_NOTICES.md'),join(output,'assets/vendor/nyx-third-party-notices.txt'));
+  await buildGameStorage(root,output);
   await copyKatex();
   await copyRemoteViewer();
   await copyProxyRuntimes();
@@ -471,15 +468,12 @@ async function main() {
   await versionStylesheets();
   await minifyFirstPartyMarkupAndStyles();
   await buildProxyAssets(output);
-  await buildFrontendAssets(output,repositoryFiles().filter(isStaticSource),learningPage());
-  await writeNetlifyFiles();
+  const modules = await buildPublicModules(output);
+  await buildFrontendAssets(output,repositoryFiles().filter(isStaticSource).map(file => (modules['/'+file] || '/'+file).slice(1)),learningPage());
+  await writeNotFoundPage();
   await buildPublisherPackage(root, output);
-  console.log(`${vpsBuild ? "VPS" : "Netlify"} build ready in ${output}`);
+  console.log(`VPS build ready in ${output}`);
   console.log(`Wisp endpoint: ${wispUrl}`);
-  if (skippedLargeFiles.length) {
-    console.warn(`Skipped ${skippedLargeFiles.length} static files over Netlify's 10 MB recommendation:`);
-    for (const path of skippedLargeFiles) console.warn(`  - ${path}`);
-  }
 }
 
 await main();

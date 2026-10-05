@@ -724,8 +724,8 @@ html body.browser-shell .browser-bookmark-panel[hidden],
 html body.browser-shell:not(.menu-open) .browser-mode-menu{
   pointer-events:none!important;
 }
-/* Keep shortcut feedback quick. Blur/filter changes are intentionally not
-   interpolated because they trigger an expensive repaint on every frame. */
+
+
 
 html body.browser-shell #browserModeMenu,
 html body.browser-shell.menu-open #browserModeMenu{

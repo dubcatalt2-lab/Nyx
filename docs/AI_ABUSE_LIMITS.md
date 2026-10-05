@@ -114,7 +114,7 @@ Official references: [OpenRouter model catalog](https://openrouter.ai/api/v1/mod
 
 ## Verification
 
-`npm run test:ai-allowance` runs isolated transactional and HTTP middleware tests without paid API calls or live Firebase writes. `node scripts/test-account-signup.mjs` exercises desktop/mobile signup and unverified cloud sync with Firebase fixtures. These do not establish live OpenRouter key validity, production Firestore contention, or provider billing behavior. Full deployment validation also requires `npm run build:netlify` and `npm run check:deploy`.
+`npm run test:ai-allowance` runs isolated transactional and HTTP middleware tests without paid API calls or live Firebase writes. `node scripts/test-account-signup.mjs` exercises desktop/mobile signup and unverified cloud sync with Firebase fixtures. These do not establish live OpenRouter key validity, production Firestore contention, or provider billing behavior. Full deployment validation also requires `npm run build:vps` and `npm run check:deploy`.
 
 ## Provider retirement (2026-09-10)
 

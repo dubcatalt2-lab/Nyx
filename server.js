@@ -1,3 +1,4 @@
+import {publicAssetBoundary} from './lib/public-assets.mjs';
 import {readChatRelationships, changeChatRelationship, assertChatContact} from './lib/chat-social.mjs';
 import { existsSync } from 'node:fs';
 import { StaticPackagePreparation } from './lib/static-package-preparation.mjs';
@@ -70,8 +71,8 @@ import { createInvidiousPlayback } from './lib/nyxtube-invidious-playback.mjs';
 import { tubeStreamingRoutes } from "./lib/nyxtube-routes.mjs";
 import { createMetingBackend } from "./lib/nyxify-meting.mjs";
 
-// Using the process root keeps this file compatible with Netlify's CommonJS
-// function bundle while preserving normal `node server.js` behavior.
+
+
 const __dirname = resolve(process.env.NYX_PROJECT_ROOT || process.cwd());
 const staticRoot = resolve(process.env.NYX_STATIC_ROOT || __dirname);
 const require = createRequire(join(__dirname, "package.json"));
@@ -194,9 +195,9 @@ const nyxifyArtworkTypes = new Set(["image/avif", "image/gif", "image/jpeg", "im
 const nyxifyAudioTypes = new Set(["application/octet-stream", "audio/aac", "audio/flac", "audio/mp4", "audio/mpeg", "audio/ogg", "audio/wav", "audio/webm"]);
 const nyxifyArtworkByteLimit = 5 * 1024 * 1024;
 const nyxifyJsonByteLimit = 2 * 1024 * 1024;
-// Octave discovers public YouTube music results through Invidious/Piped and
-// plays the selected video through the official iframe player. Keep this list
-// fixed and server-side so requests cannot be turned into an SSRF primitive.
+
+
+
 const nyxifyOctaveSearchProviders = Object.freeze([
   Object.freeze({ type: "invidious", origin: "https://invidious.flokinet.to" }),
   Object.freeze({ type: "invidious", origin: "https://yewtu.be" }),
@@ -242,8 +243,8 @@ let nyxChatRealtimeDroppedBeforeRevision = 0;
 let nyxChatSocketServer = null;
 const nyxChatVoiceSessionIdPattern = /^[A-Za-z0-9_-]{16,128}$/;
 const nyxChatVoiceSignalTypes = new Set(["offer", "answer", "candidate"]);
-// Explicit leave requests end active calls. This long timeout only removes
-// abandoned in-memory presence after a browser or device disappears abruptly.
+
+
 const nyxChatVoiceStaleMs = 24 * 60 * 60_000;
 const nyxChatVoiceSignalTtlMs = 60_000;
 const nyxChatVoiceRoomLimit = 8;
@@ -298,8 +299,8 @@ const nyxChatAttachmentEncodedLimit = 11_500_000;
 const nyxChatAttachmentChunkLimit = 450_000;
 const nyxChatAttachmentChunkCountLimit = 32;
 const nyxChatAttachmentUploadTtlMs = 60 * 60_000;
-// Historical streamed Owner uploads remain readable, but all new uploads are
-// constrained by the same 8 MB per-file and per-message limit.
+
+
 const nyxChatOwnerAttachmentFileLimit = 1024 * 1024 * 1024;
 const nyxChatOwnerAttachmentChunkLimit = 4 * 1024 * 1024;
 const nyxChatOwnerAttachmentChunkCountLimit = 256;
@@ -839,11 +840,11 @@ function nyxShouldServeDecoy(req) {
   return destination === "document" || !accept || accept.includes("text/html") || accept.includes("*/*");
 }
 
-// Identified AI crawlers are not an authorization boundary: user agents can be spoofed.
+
 const nyxAiCrawlerPattern = /(?:claudebot|claude-user|claude-searchbot|anthropic-ai|gptbot|chatgpt-user|oai-searchbot|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|applebot-extended|cohere-ai|cohere-training-data-crawler)/i;
 app.use((req, res, next) => {
   if (!nyxAiCrawlerPattern.test(String(req.get("user-agent") || ""))) return next();
-  // Keep policy discovery and operational health available, not application data.
+
   if (/^\/(?:robots\.txt|healthz)\/?$/i.test(req.path)) return next();
   res.vary("User-Agent");
   res.set({ "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow, noarchive, nosnippet" });
@@ -1413,9 +1414,9 @@ function patchedScramjetControllerAsset(name) {
   if (name === "controller.sw.js") {
     const clientsOriginal = 'sendSetCookie:async({cookies:e,options:r})=>{let o=await self.clients.matchAll()';
     const clientsPatched = 'sendSetCookie:async({cookies:e,options:r})=>{let o=await self.clients.matchAll({type:"window",includeUncontrolled:!0})';
-    // The owner lives outside the proxy SW scope. Include the shell so it can
-    // acknowledge cookies before the destination frame finishes initializing.
-    // Existing controller-id checks keep private cookie jars separate.
+
+
+
     if (!source.includes(clientsOriginal)) throw new Error('Scramjet cookie client discovery signature changed');
     source = source.replace(clientsOriginal, clientsPatched);
     const original = '$controller$setCookie:{cookies:e,options:r,id:o}';
@@ -1441,8 +1442,8 @@ function patchedScramjetRuntime() {
   const original = 'if(u.origin===new i.xP(e.rawUrl).origin)throw new i.$D("attempted to fetch from same origin - this means the site has obtained a reference to the real origin, aborting");';
   const patched = 'if(u.origin===new i.xP(e.rawUrl).origin&&u.pathname.startsWith(t.context.prefix.pathname))u=new i.xP((0,n.v2)(u,t.context));else if(u.origin===new i.xP(e.rawUrl).origin)throw new i.$D("attempted to fetch from same origin - this means the site has obtained a reference to the real origin, aborting");';
   const historyOriginal = 'apply(t){let r=e.box.histories.get(t.this),s=(0,n.Qf)(t.args[2]);';
-  // The URL is optional and nullable. Stringifying it first turns ordinary
-  // state-only updates into /undefined or /null and corrupts frame history.
+
+
   const historyPatched = 'apply(t){if(t.args.length<3||null==t.args[2])return t.call();let r=e.box.histories.get(t.this),s=(0,n.Qf)(t.args[2]);';
   if (!source.includes(historyOriginal)) throw new Error('Scramjet history signature changed');
   return (source.includes(original) ? source.replace(original, patched) : source)
@@ -1958,6 +1959,7 @@ function safeGnMathProxyUrl(value) {
 function gameProxyError(res, error, label) {
   if (res.destroyed) return;
   if (res.headersSent) { res.destroy(); return; }
+  if (error?.status === 503) res.setHeader('Retry-After', '3');
   res.status(error?.status || 502).type('text/plain').send(`${label}: ${error?.message || 'upstream unavailable'}`);
 }
 function validateGameProxy(url, result) {
@@ -1976,8 +1978,8 @@ function isHtmlProxyPayload(url, result) {
 
 function gnMathProxyCandidates(url) {
   const candidates = [url];
-  // The original mirror mixed filename casing; its replacement lowercased files.
-  // Try the requested path first so files that retain their casing still work.
+
+
   if(url.hostname==='cdn.jsdelivr.net' && /^\/gh\/web-ports\/fear-and-hunger-2@[^/]+\//i.test(url.pathname)) {
     const lower=new URL(url);
     lower.pathname=lower.pathname.replace(/^(\/gh\/web-ports\/fear-and-hunger-2@[^/]+\/)(.*)$/i,(_all,root,path)=>root+path.toLowerCase());
@@ -2008,8 +2010,8 @@ function gnMathProxyCandidates(url) {
 }
 
 function gnMathResourceContentType(url, upstreamType) {
-  // fetch has already decoded HTTP gzip/Brotli responses. Unity still keeps
-  // .br/.gz in the filename, so MIME must come from the underlying asset.
+
+
   const pathname = String(url?.pathname || "").toLowerCase().replace(/\.(?:br|gz)$/, '');
   if (/\.(?:js|mjs|cjs)$/.test(pathname)) return "application/javascript; charset=utf-8";
   if (/\.json$/.test(pathname)) return "application/json; charset=utf-8";
@@ -2034,9 +2036,9 @@ function rewriteGnMathJsonAssets(url, result) {
       if (/^(?:data|blob|javascript|about):/i.test(value)) return value;
       const asset = new URL(value, url);
       return safeGnMathProxyUrl(asset)
-        // Unity prepends the JSON file's directory to these values. Keeping
-        // this relative avoids the double-slash path that an absolute value
-        // would create (//gn-math-proxy), which Netlify treats as the SPA.
+
+
+
         ? `gn-math-proxy?url=${encodeURIComponent(asset.href)}`
         : value;
     };
@@ -2075,7 +2077,7 @@ app.get(/^\/gn-math-resource\//, async (req, res) => {
   try {
     await gameProxy.send(req, res, {
       candidates: gnMathProxyCandidates(target), validate: validateGameProxy, contentType: gnMathResourceContentType,
-      // Match repairs against the requested resource, even on an alternate mirror.
+
       transform: (_candidate, _type, prefix) => gameResourceEdit(target, prefix)
     });
   } catch (error) { gameProxyError(res, error, 'Game resource error'); }
@@ -2148,7 +2150,7 @@ async function handleGmsGamesProxy(req, res) {
   }
   try {
     await gameProxy.send(req, res, {
-      candidates: [url],
+      candidates: [url], contentType: gnMathResourceContentType,
       transform: (candidate, type) => /text\/css/i.test(type) || /\.css$/i.test(candidate.pathname)
         ? body => rewriteGmsCssUrls(body, candidate.href) : null
     });
@@ -2580,7 +2582,7 @@ function nyxSharedAiAllowance(firebase) {
   }
   return allowance;
 }
-// Resolve role and subscription once for both enforcement and the balance view.
+
 async function nyxSharedAiActor(req,res) {
     let firebase, uid;
     if(req.nyxAiBilling)({firebase,uid}=req.nyxAiBilling);
@@ -2654,7 +2656,7 @@ async function nyxBudgetedAiFetch(provider,url,options) {
     },payload.modalities?.includes("audio")?16*1024*1024:payload.modalities?.includes("image")?8*1024*1024:undefined);
   } catch(error) {await scope.allowance.settle(reservation,null).catch(()=>{});throw error;}
 }
-// Dedicated routes select product policy; request body/header claims do not.
+
 app.use((req,res,next)=>{
   const appRoute=/^\/api\/(drop|nook|tutsi)-ai(?:\/(?:models|usage|media(?:\/[A-Za-z0-9-]+(?:\/content)?)?))?$/.exec(req.path);
   if(appRoute&&['GET','POST'].includes(req.method)){
@@ -2699,15 +2701,15 @@ app.use(async(req,res,next)=>{
 });
 
 async function nyxAiRateLimit(req, res, next) {
-  // Shared requests have already passed transactional account pacing/capacity.
-  // Personal-key and anonymous requests still use the local abuse limiter.
+
+
   if(nyxAiBudgetContext.getStore()?.session)return next();
   const now = Date.now();
   const clientId = nyxAiClientId(req);
-  // AI requests from the workspace include the signed-in account token even
-  // when the user supplies a personal provider key. Keep anonymous traffic
-  // IP-scoped, but do not make a Premium member share a daily AI ceiling with
-  // everybody else on a school or home connection.
+
+
+
+
   const entitlement = await nyxAiPremiumEntitlement(req);
   const unlimited=hasFullAiCatalog(entitlement);
   const unlimitedDaily = Boolean(entitlement.uid);
@@ -2925,7 +2927,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       ? Math.max(configuredMaxTokens, 2200)
       : configuredMaxTokens;
   if(generateImage)maxTokens=2200;
-  if(codeEdit)maxTokens=2200; // Existing shared allowance still caps/reserves this output.
+  if(codeEdit)maxTokens=2200;
   if(computerAgent)maxTokens=2200;
   let opusReservation = null;
   let opusReservationSettled = false;
@@ -3094,8 +3096,8 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
     if(codeEdit){
       const valid=value=>{try{const parsed=JSON.parse(value.slice(value.indexOf('{'),value.lastIndexOf('}')+1));return typeof parsed.summary==='string'&&Array.isArray(parsed.files)&&parsed.files.length<=8;}catch{return false;}};
       if(data?.choices?.[0]?.finish_reason==='length'||!valid(text)){
-        // One budgeted repair in this accepted request. The same model, slot,
-        // allowance, spending reservation and overall timeout still apply.
+
+
         const repairPayload={...providerPayload,messages:[...providerPayload.messages,{role:'user',content:'Your previous response was empty, truncated or not the required JSON object. Retry the original task as ONE tiny complete edit. Return summary and files as JSON only, under 400 tokens. Use a short exact search/replace, never reproduce an existing whole file.'}]};
         const repaired=await nyxAiProviderFetch(credential.provider,endpoint,{method:'POST',signal:controller.signal,headers:{'content-type':'application/json',authorization:`Bearer ${key}`},body:JSON.stringify(repairPayload)});
         const repairedData=await repaired.json().catch(()=>({}));
@@ -3136,9 +3138,9 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   }
 });
 
-// Nyx-issued API keys are proxy credentials, not provider credentials. The
-// Groq key stays in the server environment; Firestore stores only a digest of
-// each generated Nyx key and all browser access goes through these routes.
+
+
+
 const nyxApiKeyCollection = "nyxApiKeys";
 const nyxApiKeyUsageCollection = "nyxApiKeyUsage";
 const nyxApiKeyTokenUsageCollection = "nyxApiKeyTokenUsage";
@@ -3152,7 +3154,7 @@ function nyxApiKeyInteger(name, fallback, minimum, maximum) {
 }
 
 function nyxGroqConfig() {
-  // Retired gateway: existing user key records remain available for revocation.
+
   return {configured:false,apiKey:'',models:[],defaultModel:'',maxTokens:800,dailyRequests:100,minuteRequests:10,regularDailyTokens:2000};
 }
 
@@ -3278,12 +3280,12 @@ async function nyxApiKeyAuthenticate(req) {
 function nyxGroqChatModelId(value) {
   const id = String(value || "").trim();
   if (!/^[A-Za-z0-9._:/-]{2,120}$/.test(id)) return false;
-  // `/models` covers every Groq modality. Nyx AI uses Chat Completions, so
-  // never offer speech, transcription, or safety-only models in its picker.
+
+
   if (/(?:^|[-_/])(?:whisper|orpheus|prompt-guard)(?:[-_/]|$)|safeguard/i.test(id)) return false;
-  // These are advertised by the current project catalog but the configured
-  // Groq credential rejects them for Chat Completions (or returns a retired
-  // model). Do not offer a model that Nyx has already verified cannot chat.
+
+
+
   return !/^(?:allam-2-7b|groq\/compound(?:-mini)?|(?:meta-llama\/)?llama-3\.3-70b-versatile)$/i.test(id);
 }
 
@@ -3295,7 +3297,7 @@ async function nyxApiKeyOwnerEntitlement(firebase, uid) {
     const subscriptionStatus = normalizeSubscriptionStatus(data.subscriptionStatus || data.subscription?.status);
     return { modelRules:data.aiModelRules||[], premium: hasPremiumSubscription(subscriptionStatus), owner: nyxRoleForUser(uid, data) === "owner" };
   } catch {
-    // Fail closed: an entitlement lookup failure must not grant unlimited use.
+
     return { premium: false, owner: false };
   }
 }
@@ -3498,8 +3500,8 @@ installDeveloperApi(app, {
   page: (req,res) => res.sendFile(join(staticRoot,'apps/api-keys/index.html'))
 });
 
-// Shared Groq is selected only by a same-origin Nyx AI client. The browser
-// receives model IDs and responses, never the provider credential.
+
+
 async function nyxAiGroqWorkspaceMessages(req) {
   const sourceMessages = Array.isArray(req.body?.messages) ? req.body.messages.map(item => ({ ...item })) : [];
   const requestText = String(req.body?.message || "").trim();
@@ -3524,9 +3526,9 @@ async function nyxAiGroqWorkspaceMessages(req) {
   return sourceMessages;
 }
 
-// The Nyx AI workspace accepts a user's Nyx key in its existing personal-key
-// control. It reaches the same server-only Groq gateway as external clients;
-// the browser never receives the provider credential.
+
+
+
 
 app.use((req, res, next) => {
   const referer = String(req.get("referer") || "");
@@ -3641,8 +3643,8 @@ function recordLocalPresence(sessionId, accountUid = "", startupName = "", now =
 function onlinePresenceSnapshot(now = Date.now()) {
   pruneLocalPresence(now);
   const members = new Set();
-  // Accounts use the dashboard's six-minute activity window; guests use the
-  // existing 45-second presence window. Reuse known activity without DB polling.
+
+
   const addAccount = (uid, at) => { if (uid && at > 0 && now - at <= signedInOnlineWindowMs) members.add(uid); };
   for (const [uid, at] of signedInPresence) addAccount(uid, at);
   for (const cache of ownerDashboardSnapshotCaches.values())
@@ -4629,9 +4631,9 @@ function nyxPublicCustomRole(role) {
   return role ? { id: role.id, label: role.label, color: role.color, baseRole: role.baseRole, rank: role.rank, permissions: [...role.permissions] } : null;
 }
 
-// Keep private role IDs explicit: privacy must follow the persisted role ID,
-// not its editable display label. `tide-stressed` is the live Tide role while
-// `tide` remains supported for older installations.
+
+
+
 const nyxPrivateCustomRoleIds = new Set(["tide", "tide-stressed"]);
 
 function nyxPrivateCustomRole(role) {
@@ -5841,7 +5843,7 @@ function attachNyxChatSocketServer(server) {
       if (socket.data.voiceAudioBusy) return acknowledge({ ok: false, status: 429, error: "Wait for the current voice exchange." });
       socket.data.voiceAudioBusy = true;
       try {
-        // Short authorization lease, including temporary bans. Do not query account storage per audio frame.
+
         if (!socket.data.voiceAudioAuthorizedAt || Date.now() - socket.data.voiceAudioAuthorizedAt > 5000) {
           const { firebase, token } = await authorizeNyxChatSocket(socket, socket.data.token);
           if (await nyxChatActiveTemporaryBan(firebase, token.uid)) throw Object.assign(new Error("Voice access is unavailable."), { status: 403 });
@@ -7162,8 +7164,8 @@ async function nyxifyOctaveSearch(query) {
       if (videos.length) return videos;
     } catch {}
   }
-  // Public instances are volatile. The existing official YouTube lookup is a
-  // last-resort discovery path; playback still uses Octave's iframe engine.
+
+
   return nyxifyYouTubeSearch(query, 12);
 }
 
@@ -7618,9 +7620,9 @@ nyxCloudGamingKeepaliveTimer.unref?.();
 const nyxCloudGamingCleanupTimer = setInterval(() => {
   const now = Date.now();
   for (const [id, session] of nyxCloudGamingSessions) {
-    // Browser timers can be heavily throttled in a background tab, especially
-    // on Chromebooks. An active provider session stays alive from the VPS and
-    // is governed by its actual session limit, not browser-tab activity.
+
+
+
     const stale = session.state !== "active"
       && now - Number(session.lastSeenAtMs || session.createdAtMs || 0) > 5 * 60_000;
     const activeDeadline = Number(session.startedAtMs || 0) + (Number(session.maxSeconds || 1_140) + 120) * 1_000;
@@ -8712,8 +8714,8 @@ app.post("/api/link-checker/page-scan", async (req, res) => {
       }
     }
   };
-  // The Nocturne account is shared by every Nyx member. Keep premium page
-  // scans deliberately small so one page cannot exhaust that account's quota.
+
+
   await Promise.all(Array.from({ length: Math.min(2, targets.length) }, worker));
   if (!results.some((result) => result?.report)) {
     const first = results[0] || {};
@@ -13015,8 +13017,8 @@ app.get("/api/owner-dashboard", async (req, res) => {
       premiumSubscribers: accountUsers.filter(user => premiumStatuses.has(user.subscriptionStatus)).length,
       monthlyRevenueCents: accountUsers.reduce((total, user) => total + (premiumStatuses.has(user.subscriptionStatus) ? user.monthlyRevenueCents : 0), 0)
     };
-    // Record the exact Online now value returned to the owner as well as the
-    // background samples, so a visible dashboard count cannot miss its peak.
+
+
     appTraffic.recordOnline(metrics.onlineUsers);
     const search = String(req.query.search || "").trim().toLowerCase().slice(0, 120);
     const role = String(req.query.role || "all").trim().toLowerCase();
@@ -13633,8 +13635,8 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
       const password=req.body?.password;
       if(typeof password!=='string'||password.length<8||password.length>256)return res.status(400).json({error:'Use a password between 8 and 256 characters.'});
       try{
-        // Updating a Firebase password invalidates refresh tokens automatically.
-        // UID-based updates also work for Nyx's username-only authentication aliases.
+
+
         await firebase.auth.updateUser(uid,{password});
       }catch(error){
         const invalid=String(error?.code||'').startsWith('auth/invalid-password')||error?.code==='auth/password-does-not-meet-requirements';
@@ -14184,10 +14186,16 @@ app.get("/download/nyx-singlefile.html", (_req, res) => {
 
 const remoteDesktop=createRemoteDesktop({firebase:linkGeneratorFirebase,download:()=>companionZip(__dirname,{remote:true})});
 const nyxCloudDesktop=createNyxCloudDesktop({firebase:linkGeneratorFirebase});
-app.use('/api/nyxcloud/lorem',createLoremCloud({firebase:linkGeneratorFirebase}));
+app.use('/api/nyxcloud/lorem',createLoremCloud({firebase:linkGeneratorFirebase,queueTier:async uid=>{
+  const firebase=await linkGeneratorFirebase();
+  const record=await firebase.firestore.collection('nyxUserAdministration').doc(uid).get();
+  const account=record.data()||{};
+  if(nyxRoleForUser(uid,account)==='owner')return 'owner';
+  return hasPremiumSubscription(account.subscriptionStatus||account.subscription?.status)?'premium':'regular';
+}}));
 app.use('/api/nyxcloud',nyxCloudDesktop.router);
-// Hosted shell is public; desktop APIs authenticate each account. Local VNC stays owner-only.
-// Express string routes match an optional trailing slash; redirect only the bare path.
+
+
 app.get(/^\/apps\/nyxcloud$/,(_req,res)=>res.redirect(302,'/apps/nyxcloud/'));
 app.use('/api/private-remote',remoteDesktop.router);
 app.use((req,res,next)=>{let path;try{path=posix.normalize(decodeURIComponent(req.path).replaceAll('\\','/')).toLowerCase();}catch{return res.status(400).end();}if(path==='/apps/remote'||path.startsWith('/apps/remote/'))return remoteDesktop.pageAccess(req,res,next);next();});
@@ -14217,9 +14225,9 @@ app.use((error, req, res, next) => {
   res.status(tooLarge ? 413 : 400).json({ error: tooLarge ? "That upload chunk is too large." : "The API request could not be processed." });
 });
 
-// Scramjet v1 and v2 both ship with a "$scramjet" IndexedDB name, but their
-// schemas are incompatible. Serve v1 with a private name so switching engines
-// cannot corrupt either controller's storage.
+
+
+
 const scramjetV1Bundle = readFileSync(join(scramjetV1Path, "scramjet.all.js"), "utf8")
   .replaceAll('"$scramjet"', '"$nyx_scramjet_v1_v4"');
 app.get("/scramjet-v1/scramjet.all.js", (_req, res) => {
@@ -14239,6 +14247,7 @@ app.get("/", async (req, res, next) => {
   res.set("Cache-Control", "no-cache");
   res.sendFile(join(staticRoot, "apps", "tutsi", "index.html"));
 });
+app.use(publicAssetBoundary(staticRoot));
 app.use(express.static(staticRoot));
 app.use("/assets/vendor/katex/", express.static(katexPath));
 app.use('/assets/vendor/novnc/',express.static(dirname(dirname(require.resolve('@novnc/novnc')))));

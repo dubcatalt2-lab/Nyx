@@ -89,7 +89,7 @@
           if(!current())return;
           if(gameSurfaceReady(doc)){reportLaunched();return;}
           if(missing){fail(`A required game file failed to load: ${missing}`);return;}
-          // Large games can still be downloading after the first document load.
+
           if(performance.now()-started>90000){fail('This game startup timed out.');return;}
           setTimeout(check,650);
         };
@@ -99,9 +99,12 @@
     frame.addEventListener('load',monitorGame);
     const path=safePath(rawPath);
     if(!path) fail('Invalid game path.');
+    else if(['1/cl1v1doubleimprettysureitsexactlythesameidk.html','1/cl1v1lolifnoaboutblank.html','1/cl1v1lolnoaboutblank.html','1/cl1v1maybeidk.html'].includes(path)){
+      location.replace('/assets/ugs/play.html?game=1%2Fcl1v1lol.html');
+    }
     else if(path==='S/clsmashkarts.html'||path==='B/clbitplanes.html'){
-      // The archived Bit Planes bundle lacks its SVG assets; use the complete
-      // maintained edition already present in the GN catalog.
+
+
       location.replace('/assets/gn-math/play.html?game='+(path==='B/clbitplanes.html'?'330.html':'370-f.html'));
     }
     else if(path==='A/clasmallworldcup.html'){

@@ -44,8 +44,8 @@ html body.browser-shell .browser-mode-menu{border:0!important;border-radius:0!im
 
 .nyx-user-profile-card{background:var(--nyx-user-accent-primary,#5865f2)!important;border:0!important;color:#fff!important;box-shadow:none!important}.nyx-user-profile-banner{background:var(--nyx-user-banner-color,var(--nyx-user-accent-secondary,#8ea1ff))!important}.nyx-user-profile-heading p,.nyx-user-profile-bio,.nyx-user-profile-meta{color:rgba(255,255,255,.88)!important}.nyx-user-profile-avatar{border-color:rgba(255,255,255,.92)!important;background:var(--nyx-user-accent-secondary,#8ea1ff)!important}.nyx-user-status{border-color:var(--nyx-user-accent-primary,#5865f2)!important}.nyx-user-profile-meta{border-color:rgba(255,255,255,.2)!important}.nyx-user-profile-effect-glow{box-shadow:0 0 24px color-mix(in srgb,var(--nyx-user-accent-secondary,#8ea1ff) 70%,transparent)!important}.nyx-user-profile-effect-aurora .nyx-user-profile-effect{display:none!important}
 
-/* This file loads after the imported theme sheets.  Keep the custom palette
-   authoritative for the remaining shell controls those sheets define later. */
+
+
 
 .nyx-user-profile-dialog{width:min(1160px,calc(100vw - 40px));grid-template-columns:minmax(330px,.82fr) minmax(0,1.18fr);gap:38px;padding:34px 36px;background:#111a2b!important}
 .nyx-user-profile-form{display:block;min-width:0}
@@ -105,8 +105,8 @@ body.browser-shell .nyx-home-presence .nyx-profile-slot{position:absolute;top:50
 body.browser-shell .nyx-home-presence .nyx-profile-slot .nyx-account-button{width:30px!important;height:30px!important;min-width:30px!important;border-color:transparent!important;background:#0b1122!important;box-shadow:0 0 14px rgba(49,101,198,.24)}
 body.browser-shell .nyx-profile-slot .nyx-account-button:hover{border-color:var(--theme-accent,#8fb8ff)!important;transform:none!important}
 
-/* The home avatar opens a compact, Discord-style account card. This menu
-   deliberately owns its palette so every Nyx theme keeps the controls legible. */
+
+
 html[data-nyx-theme] body .nyx-account-menu{
  --profile-surface:color-mix(in srgb,var(--nyx-account-primary,#5865f2) 18%,#1b1c20);
  position:fixed;z-index:2147482999;isolation:isolate;box-sizing:border-box;max-height:calc(100dvh - 24px);overflow-x:hidden;overflow-y:auto;padding:0 12px 12px;border:1px solid #ffffff24!important;border-radius:12px!important;background:linear-gradient(180deg,var(--profile-surface),color-mix(in srgb,var(--nyx-account-secondary,#8ea1ff) 18%,#1b1c20))!important;color:#f2f3f5!important;color-scheme:dark;backdrop-filter:none!important;box-shadow:0 12px 32px #0007!important;scrollbar-width:thin;opacity:0;transform:translateY(4px);transition:opacity .14s ease,transform .14s ease;font-family:"gg sans","Segoe UI",sans-serif;text-shadow:none!important;
@@ -273,11 +273,11 @@ html[data-nyx-theme] body.browser-shell{
   color:var(--nyx-home-text)!important;
 }
 
-/* The dashboard is imported before several navy-only polish files. This late
-   layer keeps every settings surface and control on the active palette. */
 
-/* Account and founder editor chrome follows the site theme. The Discord-style
-   user profile settings surface defines its own neutral palette below. */
+
+
+
+
 html[data-nyx-theme] body.browser-shell .nyx-profile-direct-popover{
   background:linear-gradient(155deg,var(--nyx-panel-surface),var(--nyx-home-panel))!important;
   border-color:var(--nyx-home-line)!important;
@@ -327,15 +327,15 @@ html[data-nyx-theme] body.browser-shell .nyx-account-button-default span::after{
   background:var(--nyx-home-wordmark)!important;
 }
 
-/* Native dropdown menus and form affordances are otherwise rendered with a
-   browser-default navy/gray palette even when the surrounding control is themed. */
+
+
 html body.browser-shell ::selection{
   background:#3390ff;
   color:#fff;
 }
 
-/* High-specificity legacy hover rules used ID-weighted :is() selectors. Keep
-   their interaction geometry, but replace their fixed navy paint. */
+
+
 html[data-nyx-theme] body.browser-shell .nyx-home-copyright{
   color:var(--nyx-home-muted)!important;
   -webkit-text-fill-color:var(--nyx-home-muted)!important;
@@ -751,9 +751,9 @@ html[data-nyx-theme] body .nyx-profile-direct-popover :is(select,textarea,input[
   background:#1e1f22!important;
 }
 
-/* Final browser overflow-menu shape contract.
-   This must stay after interface-scale.css, which previously restored the
-   rounded panel and rounded item outlines. */
+
+
+
 html[data-nyx-theme] body.browser-shell .top-os.top-os #browserModeMenu.browser-mode-menu,
 html[data-nyx-theme] body.browser-shell.menu-open .top-os.top-os #browserModeMenu.browser-mode-menu{
   border:0!important;
@@ -1172,8 +1172,8 @@ html[data-nyx-theme] body .nyx-discord-settings-close{
   right:20px!important;
 }
 
-/* Profile effects and accents are shared by the full card, compact account
-   menu, Credits card, and the custom-effect editor. */
+
+
 html[data-nyx-theme] body .nyx-account-menu>*:not(.nyx-account-menu-profile-effect){
   position:relative;
   z-index:1;
@@ -1344,7 +1344,7 @@ html[data-nyx-theme] body.browser-shell .nyx-account-button-rich .nyx-account-bu
   box-sizing:content-box!important;
   border:2px solid color-mix(in srgb,var(--theme-panel,#172338) 90%,#07090d)!important;
 }
-/* Keep the small presence badge outside the avatar without clipping it. */
+
 html[data-nyx-theme] body.browser-shell .nyx-account-button-rich .nyx-account-button-copy{
   display:grid!important;
   min-width:0;
@@ -1830,9 +1830,9 @@ html[data-nyx-theme] body .nyx-user-profile-avatar>.nyx-user-status{
   border-color:#202225!important;
 }
 
-/* Profile presentation is deliberately exempt from the browser chrome's
-   blanket text/background reset. Keep every saved name effect visible on all
-   three profile surfaces, and restore Glow after the accent surface pass. */
+
+
+
 html[data-nyx-theme] body.browser-shell .nyx-styled-display-name.nyx-name-effect-solid{
   color:var(--nyx-name-color-primary,#fff)!important;
   -webkit-text-fill-color:var(--nyx-name-color-primary,#fff)!important;
@@ -1897,8 +1897,8 @@ html[data-nyx-theme] body .nyx-user-profile-card.nyx-user-profile-effect-glow{
     inset 0 0 28px color-mix(in srgb,var(--nyx-user-accent-primary,#5865f2) 30%,transparent)!important;
 }
 
-/* The profile editor's Main Profile control is a real account/profile
-   switcher. It stays inside the rail and protects unsaved edits. */
+
+
 html[data-nyx-theme] body .nyx-profile-rail-header{
   overflow:visible!important;
 }
@@ -2653,8 +2653,8 @@ html[data-nyx-theme="custom"] body.browser-shell.theme-custom{
   --ai-line:var(--nyx-custom-line)!important;
   --ai-muted:var(--nyx-custom-muted)!important;
 }
-/* Some older chrome rules deliberately use ID-weighted :is() selectors.
-   Match that specificity so a custom palette remains authoritative. */
+
+
 @media(prefers-reduced-motion:reduce){
   .nyx-styled-display-name{animation:none!important}
 }
@@ -2662,8 +2662,8 @@ html[data-nyx-theme="custom"] body.browser-shell.theme-custom{
 html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default{
   --nyx-title-theme-color:var(--nyx-custom-bright)!important;
 }
-/* The default home sheet also assigns text colors directly. Keep its visual
-   structure, but let every home label inherit the selected custom palette. */
+
+
 html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default .browser-window.browser-home-page :is(
   .nyx-home-title,
   .nyx-home-presence,
@@ -2869,9 +2869,9 @@ html[data-nyx-theme] body .nyx-profile-directory-card-host .nyx-user-profile-abo
 .nyx-user-profile-effect-blooming-roses .nyx-user-profile-effect,
 .nyx-founder-effect-blooming-roses .nyx-founder-profile-effect{
   display:block!important;
-  /* The artwork itself is transparent away from the left and bottom edges.
-     Keep it above the opaque profile body so the frame is not swallowed by
-     that body's stacking context. */
+
+
+
   z-index:6!important;
   inset:0!important;
   overflow:hidden!important;
@@ -2984,10 +2984,10 @@ html[data-nyx-theme] body .nyx-profile-directory-card-host .nyx-user-profile-abo
   .nyx-rose-bloom{transform:translate(-50%,-50%) scale(1) rotate(var(--nyx-rose-turn))!important}
 }
 
-/* These two cosmetics are deliberately lightweight. Let them replay when a
-   profile is mounted even with Lag Reducer enabled, while the reduced-motion
-   rules above continue to provide a still completed frame when requested by
-   the operating system. */
+
+
+
+
 @media(prefers-reduced-motion:no-preference){
   body.lag-reducer .nyx-user-profile-effect-blooming-roses .nyx-user-profile-effect,
   body.lag-reducer .nyx-founder-effect-blooming-roses .nyx-founder-profile-effect{
@@ -3005,9 +3005,9 @@ html[data-nyx-theme] body .nyx-profile-directory-card-host .nyx-user-profile-abo
   }
 }
 
-/* A few monochrome source assets are black with transparent backgrounds.
-   Give only those marks an off-white plate so they remain legible without
-   tinting the rest of the branded Apps grid. */
+
+
+
 html[data-nyx-theme] body.browser-shell .apps-launch-grid .quick-tile:is(
   [data-domain="geforcenow"],
   [data-domain="x.com"]
@@ -3085,8 +3085,8 @@ html[data-nyx-theme] body.browser-shell:not(.three-d-backgrounds):not(.custom-bg
   --nyx-dot-color:#202633!important;
 }
 
-/* Composite fields use one rounded glass surface. Keep their raw text fields
-   transparent so the broad theme rules cannot paint a square blur inside. */
+
+
 html[data-nyx-theme] body.browser-shell .lion-ai-form{
   overflow:hidden;
   border-radius:22px!important;

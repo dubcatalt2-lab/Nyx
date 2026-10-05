@@ -1,4 +1,4 @@
-// 100 ms, 16 kHz mono PCM. Average input samples to downsample without a growing buffer.
+
 class VoiceCapture extends AudioWorkletProcessor {
   constructor() { super(); this.frame = new Int16Array(1600); this.index = 0; this.phase = 0; this.sum = 0; this.count = 0; }
   process(inputs) {

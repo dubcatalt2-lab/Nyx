@@ -8,8 +8,8 @@
   style.textContent=`[data-nyx-dock-item="ai"],[data-nyx-dock-item="music"],[data-nyx-dock-item="movies"],[data-nyx-dock-item="chat"],#nyxAccountButton,[data-nyx-profile-slot],[data-settings-category-button="accounts"],[data-settings-category-button="proxy"],[data-global-app-id="nyx-ai"],[data-global-app-id="nyx-chat"],[data-global-app-id="nyxify"],[data-global-app-id="movies"],[data-global-app-id="youtube"],[data-global-app-id="link-checker"],[data-global-app-id="link-generator"],[data-global-app-id="jsdelivr-publisher"],[data-global-app-id="nyx-api-keys"],[data-nyx-presence],.nyx-home-presence,#nyxPresenceIndicator,[data-ai-toggle],[data-ai-send],[data-switch="nyx.httpBridge"]{display:none!important}`;
   document.head.append(style);
   style.textContent+='[data-game-view="cloud"],[data-nyx-latency-bubble],[data-nyx-dock-item="youtube"],[data-nyx-dock-item="vms"],[data-global-app-id="nyx-vms"]{display:none!important}';
-  // Internal srcdoc tabs don't execute the static HTML bootstrap. Apply the
-  // same available-feature presentation inside those app-picker documents.
+
+
   const watched=new WeakSet();
   const attach=frame=>{
     if(watched.has(frame))return;

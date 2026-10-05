@@ -8,6 +8,7 @@ import { prepareStaticPackage, staticLauncher } from '../apps/jsdelivr-publisher
 // Materialize the exact Git objects the publisher sends, with no GitHub writes.
 const root = process.env.NYX_TEST_PACKAGE_ROOT || 'dist/apps/jsdelivr-publisher/static-package';
 const manifest = JSON.parse(await readFile(join(root, 'manifest.json'), 'utf8'));
+assert(!manifest.files.some(file=>file.path.endsWith('.mjs')),'Public package must not include .mjs assets');
 const objects = new Map();
 let sequence = 0;
 const entry = await prepareStaticPackage({
@@ -84,6 +85,10 @@ try {
   assert.equal(await page.evaluate(() => !!navigator.serviceWorker.controller), true);
   assert.equal(await page.evaluate(() => crossOriginIsolated), true);
   assert.equal(await page.locator('iframe[src^="https://nyxlearning.org"]').count(), 0);
+  const legacyModule=Object.keys(JSON.parse(published.get('public-modules.json').toString()).aliases).find(name=>name.endsWith('/header-utils.mjs'));
+  assert(legacyModule,'Legacy shared module mapping is missing');
+  const exports=await page.evaluate(async url=>Object.keys(await import(url)),origin+base+legacyModule);
+  assert(exports.length,'Legacy module must execute through the static worker');
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.locator('[data-nyx-dock-item="apps"]').waitFor({ state: 'visible' });
   await page.waitForFunction(() => !document.querySelector('#nyxStudyHubStartup') && !document.body.classList.contains('nyx-loading-active'));

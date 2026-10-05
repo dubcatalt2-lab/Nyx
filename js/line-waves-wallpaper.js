@@ -10,9 +10,9 @@
   const vertexShader=`
 attribute vec2 position;
 void main(){gl_Position=vec4(position,0.0,1.0);}`;
-  // This fragment shader preserves the Line Waves field, displacement, ridge,
-  // edge fade, and colour-cycle math from the React Bits component. OGL's
-  // small wrapper is replaced with WebGL calls so Nyx can remain dependency-free.
+
+
+
   const fragmentShader=`
 precision highp float;
 uniform float uTime;uniform vec3 uResolution;uniform float uSpeed;uniform float uInnerLines;uniform float uOuterLines;uniform float uWarpIntensity;uniform float uRotation;uniform float uEdgeFadeWidth;uniform float uColorCycleSpeed;uniform float uBrightness;uniform vec3 uColor1;uniform vec3 uColor2;uniform vec3 uColor3;uniform vec2 uMouse;uniform float uMouseInfluence;uniform bool uEnableMouse;uniform float uLightMode;
@@ -75,8 +75,8 @@ void main(){vec2 coords=gl_FragCoord.xy/uResolution.xy;coords=coords*2.0-1.0;coo
     new MutationObserver(syncVisibility).observe(document.documentElement,{attributes:true,attributeFilter:['data-nyx-beam-wallpaper','data-nyx-theme']});
     new MutationObserver(syncVisibility).observe(document.body,{attributes:true,attributeFilter:['class']});
     addEventListener('resize',()=>{if(shouldShow()){renderer?.draw(performance.now());}},{passive:true});
-    // The source component is mouse-reactive. Listen at window level so the
-    // full-screen canvas can remain pointer-events:none and never block Nyx.
+
+
     addEventListener('pointermove',event=>{if(shouldShow())renderer?.setPointer(event.clientX,event.clientY);},{passive:true});
     addEventListener('blur',()=>renderer?.resetPointer(),{passive:true});
     document.addEventListener('visibilitychange',syncVisibility);reducedMotion.addEventListener?.('change',syncVisibility);canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();renderer?.stop();});canvas.addEventListener('webglcontextrestored',()=>{renderer?.dispose();renderer=null;syncVisibility();});syncVisibility();

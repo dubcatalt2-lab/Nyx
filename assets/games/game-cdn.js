@@ -1,12 +1,12 @@
-// Keep the upstream directory in the proxy path: modules, CSS, workers and
-// Unity manifests resolve relative resources against their own request URL.
+
+
 export const gameCdnHosts = new Set(['cdn.jsdelivr.net', 'raw.githubusercontent.com', 'rawcdn.githack.com', 'raw.githack.com']);
 
 export function repairGameResourcePath(pathname) {
-  // Verified replacement repositories retain these archived files and commits.
+
   pathname=pathname.replace(/\/genizy\/google-class(?=@|\/)/g,'/taskmaster773/google-class')
     .replace(/\/gh\/genizy\/ovo-3-dimension@[^/]+\//g,'/gh/bubblfan/ovo-3-dimension@102179bf4242fd237c46c555ba154c2f325d351c/');
-  // This mirror lowercased RPG Maker data and plugin files, but not all references.
+
   return pathname.replace(/(\/web-ports\/fear-and-hunger-2@[^/]+\/(?:js\/plugins|data)\/)([^/]+\.(?:js|json))$/i,(_all,root,file)=>root+file.toLowerCase());
 }
 

@@ -66,9 +66,9 @@ html body :is(.ai-app,.ai-workspace,.ai-composer,.ai-composer-shell) {background
 .tube-shell,.nyxify-shell,.app-shell,.studio-shell {background:transparent}
 .tube-sidebar,.assistant-panel {backdrop-filter:blur(20px)}
 .workspace-header,.assistant-header {border-bottom:1px solid var(--app-line)}
-/* Media artwork, player overlays and code syntax colors retain their contrast. */
 
-/* Chat uses the same surfaces; member role colors retain their meaning. */
+
+
 :root,html body{--chat-bg:var(--app-bg);--chat-panel:var(--app-panel);--chat-panel-2:var(--app-field);--chat-panel-3:var(--app-raised);--chat-line:var(--app-line);--chat-line-soft:var(--app-line);--chat-text:var(--app-text);--chat-muted:var(--app-muted);--chat-faint:var(--app-muted);--chat-accent:var(--app-text);--chat-accent-2:var(--app-text)}
 html body .chat-app,html body .conversation{background:var(--app-bg)}
 html body .chat-app::before{display:none}

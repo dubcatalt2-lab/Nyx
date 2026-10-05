@@ -1,5 +1,5 @@
-// The shared renderer escapes input HTML, restricts links, and disables trusted
-// KaTeX commands. User messages and editor source remain literal text.
+
+
 export function renderReply(node,text) {
   if(window.NyxMarkdown)node.innerHTML=window.NyxMarkdown.render(text);
   else node.textContent=text;

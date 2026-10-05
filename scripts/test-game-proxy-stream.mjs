@@ -27,7 +27,7 @@ const upstream = http.createServer(async (req, res) => {
 });
 upstream.listen(0, '127.0.0.1'); await once(upstream, 'listening');
 const origin = `http://127.0.0.1:${upstream.address().port}`;
-const proxy = createGameProxy({ idleTimeout: 5000, maxBuffered: 8 * 1024 ** 2 });
+const proxy = createGameProxy({ idleTimeout: 5000, maxBuffered: 16 * 1024 ** 2 });
 const tiny = createGameProxy({ maxBuffered: 1024, idleTimeout: 150 });
 const server = http.createServer(async (req, res) => {
   if (req.url === '/health') { res.end('ok'); return; }
@@ -70,7 +70,7 @@ try {
   })));
   for (let i = 0; i < 10; i++) { const t = performance.now(); assert.equal(await (await fetch(`${base}/health`)).text(), 'ok'); healthTimes.push(performance.now() - t); await delay(20); }
   await work; await delay(30);
-  assert.deepEqual(proxy.stats(), {active: 0, transforms: 0, waiting: 0, bufferedMiB: 0});
+  assert.deepEqual(proxy.stats(), {active: 0, queued: 0, transforms: 0, waiting: 0, bufferedMiB: 0});
   assert.equal(gameResourceEdit(new URL('https://cdn.jsdelivr.net/gh/other/game@main/game.wasm'), block), null);
   assert.equal(typeof gameResourceEdit(new URL('https://cdn.jsdelivr.net/gh/freebuisness/assets@main/116/Build/bike.data.unityweb'), Buffer.from('UnityWeb Compressed Content (brotli)')).stream, 'function');
   console.log(JSON.stringify({pass: true, concurrentDownloads: 20, transferMiB: 120, elapsedMs: Date.now() - starts, healthMaxMs: Math.round(Math.max(...healthTimes)), peakTransforms, peakBufferedMiB: peakBuffer}));

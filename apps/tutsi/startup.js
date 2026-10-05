@@ -38,10 +38,10 @@ window.tutsiStartupReady = new Promise(resolve => {
     attach();
     if (!timer) timer = setTimeout(finish, 4000);
   };
-  // Bind as soon as the lesson document exists, before slow assets finish loading.
+
   const watch = setInterval(attach, 25);
   attach();
-  // A failed or stalled lesson request must never trap the user.
+
   const fallback = setTimeout(finish, 8000);
   frame?.addEventListener('load', start, {once:true});
   frame?.addEventListener('error', start, {once:true});

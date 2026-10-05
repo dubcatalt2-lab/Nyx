@@ -1,11 +1,11 @@
-/* Same-origin compatibility audio. One bounded exchange at a time, no recording. */
+
 window.NyxVoiceRelay = class {
   constructor({ stream, audioContext, exchange, accept, muted, deafened, status, denied }) {
     Object.assign(this, { stream, audioContext, exchange, accept, muted, deafened, status, denied });
     this.pending = []; this.sequence = 0; this.playheads = new Map(); this.sources = new Set(); this.closed = false;
   }
   async start() {
-    // Reuse the context unlocked by the Join gesture, including on mobile browsers.
+
     this.context = this.audioContext || new (window.AudioContext || window.webkitAudioContext)();
     this.gain = this.context.createGain(); this.gain.connect(this.context.destination);
     await this.context.resume();
@@ -57,7 +57,7 @@ window.NyxVoiceRelay = class {
     for (let i = 0; i < 1600; i++) samples[i] = view.getInt16(i * 2, true) / 32768;
     const now = this.context.currentTime;
     const at = Math.max(now + .04, previous?.at || 0);
-    if (at > now + .5) return; // Drop excess latency instead of replaying stale speech.
+    if (at > now + .5) return;
     const source = this.context.createBufferSource(); source.buffer = buffer; source.connect(this.gain);
     this.sources.add(source); source.onended = () => { this.sources.delete(source); source.disconnect(); };
     source.start(at); this.playheads.set(key, { seq: frame.seq, at: at + .1 });

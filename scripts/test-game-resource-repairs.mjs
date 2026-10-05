@@ -9,7 +9,13 @@ const url=new URL('https://cdn.jsdelivr.net/gh/bubbls/fnf-mods@main/rev-mixed/Ps
 assert.throws(()=>vm.runInNewContext(compiled,{location:{protocol:'about:',href:'about:srcdoc'}}));
 for(const protocol of ['about:','https:']){const context={location:{protocol,href:protocol==='about:'?'about:srcdoc':'https://original.test/game'},document:{baseURI:'https://assets.test/game/'}};vm.runInNewContext(repairGameResource(url,Buffer.from(compiled)).toString(),context);assert.equal(context.result,protocol==='about:'?'assets.test':'original.test');}
 const input=Buffer.from(compiled);assert.equal(repairGameResource(new URL('https://cdn.jsdelivr.net/gh/unrelated/game@main/runtime.js'),input),input);
+for(const path of ['bubbls/fnf-mods@main/alternated/PsychEngine.js','waycrosspublicmedia/fnf/qt/QT.js']){
+ const context={location:{protocol:'about:',href:'about:srcdoc'},document:{baseURI:'https://assets.test/game/'}};
+ vm.runInNewContext(repairGameResource(new URL('https://cdn.jsdelivr.net/gh/'+path),input).toString(),context);
+ assert.equal(context.result,'assets.test');
+}
 globalThis.location={origin:'https://fixture.test'};
+assert(prepareGameDocument('<base href = "https://cdn.jsdelivr.net/gh/test/repo@main/game/"><script src="engine.js"></script>','768.html').includes('/gn-math-resource/https/cdn.jsdelivr.net/gh/test/repo@main/game/engine.js'));
 const html=prepareGameDocument('<html><head></head><body><script>async function load(){const response={arrayBuffer:async()=>new ArrayBuffer(8)};var EJS_color;await response.rrayBuffer();EJS_color = "#0064ff";a;return true;}</script></body></html>','823-fix2.html');
 delete globalThis.location;
 const repairedScript=[...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].find(m=>m[1].includes('async function load'))[1];

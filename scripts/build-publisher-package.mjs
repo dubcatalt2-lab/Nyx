@@ -17,7 +17,7 @@ export async function buildPublisherPackage(root, dist) {
       const source = join(directory, item.name);
       if (item.isDirectory()) { await copy(source); continue; }
       const path = relative(output, source).replaceAll('\\', '/');
-      if (['serve-mini.mjs', 'Start-Nyx-Mini.cmd', 'configure-host.mjs', 'hosting.json', 'START-HERE.txt'].includes(path)) continue;
+      if (['serve-mini.js', 'Start-Nyx-Mini.cmd', 'configure-host.js', 'hosting.json', 'START-HERE.txt'].includes(path)) continue;
       const bytes = await readFile(source);
       const encoding = /\.(?:html|svg|js|mjs|css|json|txt|webmanifest|xml)$/i.test(path) ? 'utf8' : 'base64';
       const file = join(target, 'files', path);

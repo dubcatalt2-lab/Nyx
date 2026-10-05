@@ -811,9 +811,9 @@ h1 {
   background: var(--page-deep);
 }
 
-/* A smaller iframe viewport lowers the canvas/WebGL resolution, then scales
-   the result back to the stage. Pointer coordinates remain mapped by the
-   browser while the game has substantially fewer pixels to render. */
+
+
+
 body.game-performance-active .player-stage { overflow: hidden; }
 
 body.game-performance-active .player iframe {

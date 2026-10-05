@@ -14,7 +14,7 @@ body.movie-overlay,body.movie-playing{overflow:hidden}
 
 #sources-panel{scrollbar-width:none;position:absolute;z-index:5;top:50%;left:50%;transform:translate(-50%,-50%);width:min(390px,calc(100% - 32px));max-height:calc(100dvh - 210px);overflow:auto;padding:22px;background:#111317f5;border:1px solid #ffffff20;border-radius:18px;box-shadow:0 24px 80px #000a}.sources-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.sources-heading h2{font-size:20px}.sources-heading button{background:transparent;color:white;border:0;padding:6px}#sources-panel>p{font-size:13px;line-height:1.6;color:#a9aeb8;margin:8px 0 16px}#source-list{list-style:none;padding:0;margin:0;display:grid;gap:8px}#source-list button{display:flex;align-items:center;gap:14px;width:100%;text-align:left;color:#eceef3;background:#ffffff04;border:1px solid transparent;padding:13px;border-radius:10px}#source-list button:hover{background:#ffffff10}#source-list button[aria-current="true"]{border-color:#ffffff35;background:#ffffff09}#source-list strong,#source-list small{display:block}#source-list small{font-size:12px;color:#a4aab4;margin-top:5px;font-weight:400}.source-mark{width:22px;height:22px;border:2px solid #ffffff24;border-radius:50%;flex:none}#source-list li[data-state="Checking"] .source-mark,#source-list li[data-state="Loading video"] .source-mark{border-top-color:#fff;animation:spin .9s linear infinite}#source-list li[data-state="Playing"] .source-mark{border-color:#93c9aa;background:#93c9aa40}#source-list li[data-state="Unavailable"] .source-mark:after{content:"";display:block;height:2px;background:#8a8e96;margin:8px 4px}#choose-source{font-size:12px}#sources-panel:not([hidden])~.watch-feedback{top:auto;bottom:126px}
 
-/* Adapted from React Bits Accordion Gallery, David Haz. REACT_BITS_LICENSE.txt. */
+
 .featured{position:relative;margin:24px 0 38px;isolation:isolate}
 .accordion-gallery{display:flex;gap:10px;width:100%;height:510px;perspective:1400px;perspective-origin:50% 50%}
 .ag-panel{position:relative;flex:var(--ag-grow,1) 1 0;min-width:0;min-height:0;overflow:hidden;border-radius:16px;background:#101216;transform:none;transform-origin:top left;box-shadow:0 10px 30px -18px #000c}
@@ -39,7 +39,7 @@ button.icon-control,a.icon-control,#watch.icon-control,#featured-open.icon-contr
 
 #movie-backdrop{position:fixed;inset:0;z-index:0;pointer-events:none;background:#07090b}#movie-backdrop img{position:absolute;width:100%;height:100%;object-fit:cover;object-position:center top}#movie-backdrop:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#02040799,transparent 80%),linear-gradient(0deg,#050709f5 2%,#05070980 35%,#05070920 85%)}body.movie-backdrop-active main{background:transparent}body.movie-backdrop-active #nyxBeamsBg,body.movie-backdrop-active #nyxLineWavesBg{visibility:hidden}
 
-/* Provider documents stay hidden until their video is attached to Nyx controls. */
+
 #watch-area.proxy-playback .player iframe{visibility:hidden;pointer-events:none}#watch-area.proxy-ready .player iframe{visibility:visible}#start-proxy{width:64px;height:64px;display:inline-grid;place-items:center;border-radius:50%;background:#edf0f6;color:#101217}#start-proxy[hidden]{display:none}.playback-row button:disabled{opacity:.4;cursor:default}
 
 #proxy-loading{width:40px;height:40px;margin:12px auto}#proxy-loading[hidden]{display:none}

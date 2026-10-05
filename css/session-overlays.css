@@ -8,7 +8,7 @@
 .nyx-release-notes header{display:flex;justify-content:space-between;align-items:start;gap:20px;padding:26px 26px 16px}
 .nyx-release-notes header span{font-size:10px;color:var(--obsidian-muted);letter-spacing:.1em;text-transform:uppercase}
 .nyx-release-notes h1{margin:7px 0 0;font-size:30px;letter-spacing:-.035em}
-/* The browser shell sets all descendants to weight 400; release headings retain emphasis. */
+
 body.browser-shell .nyx-release-notes h1{font-weight:700!important}
 .nyx-release-notes h1:focus{outline:none}
 .nyx-release-notes header button{width:30px;height:30px;flex:none;font-size:23px;padding:0}

@@ -397,9 +397,9 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-preview-pane .nyx-use
   max-height:none!important;
 }
 
-/* The live editor uses the same compact menu markup as the account dropdown.
-   The preview only neutralizes fixed positioning so that shared presentation
-   rules remain the single source of truth. */
+
+
+
 html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-preview-pane .nyx-editor-menu-preview{
   position:relative!important;
   inset:auto!important;

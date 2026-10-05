@@ -1,4 +1,4 @@
-// Only diagnostic categories leave this page; no screenshots, URLs, saves or user content.
+
 (() => {
  const script=document.currentScript,provider=script?.dataset.provider;
  if(provider){

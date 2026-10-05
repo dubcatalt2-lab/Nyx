@@ -148,7 +148,7 @@
 .nyx-owner-table-loading i,.nyx-owner-activity-loading i,.nyx-owner-drawer-loading i{background:linear-gradient(90deg,#090a0e,#14151b,#090a0e);background-size:220% 100%}
 .nyx-owner-dashboard-overlay ::-webkit-scrollbar{width:8px;height:8px}.nyx-owner-dashboard-overlay ::-webkit-scrollbar-thumb{border:2px solid transparent;border-radius:8px;background:#353640;background-clip:padding-box}
 
-/* The browser shell has intentionally strong global button rules. */
+
 body.browser-shell .nyx-owner-dashboard-overlay :is(button,input,select,textarea){
   -webkit-backdrop-filter:none!important;
   backdrop-filter:none!important;
@@ -163,7 +163,7 @@ body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-detail-actions button
 body.browser-shell .nyx-owner-dashboard-overlay :is(.nyx-owner-header-actions [data-owner-refresh],.nyx-owner-detail-actions button,.nyx-owner-confirm button[type=submit]) :is(span,strong,b,small){color:#08080a!important;-webkit-text-fill-color:#08080a!important}
 body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-action-grid button{background:#090a0e!important}body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-action-grid button.danger{background:rgba(255,125,145,.07)!important;color:#ffabb8!important}
 
-/* Custom roles stay isolated from global browser-theme form and button rules. */
+
 .nyx-owner-custom-role-section{container-type:inline-size}.nyx-owner-custom-role-item{border-color:var(--owner-line);background:#07080b}.nyx-owner-custom-role-item.editing{border-color:#5a5567}
 .nyx-owner-custom-role-editor{border-top-color:var(--owner-line);background:#090a0e}.nyx-owner-custom-role-permission-editor{border-color:var(--owner-line);background:#050609}.nyx-owner-custom-role-permissions label{border-color:var(--owner-line);background:#090a0e}
 .nyx-owner-custom-role-editor>.nyx-owner-custom-role-field{display:grid;min-width:0;align-content:end;gap:5px;color:var(--owner-muted)!important;font-size:9px;font-weight:700;line-height:1.25}
@@ -191,7 +191,7 @@ body.browser-shell .nyx-owner-dashboard-overlay .nyx-owner-global-app-form .nyx-
 @container (max-width:520px){.nyx-owner-global-app-form{grid-template-columns:minmax(0,1fr)}.nyx-owner-global-app-list article{grid-template-columns:30px minmax(0,1fr)}.nyx-owner-global-app-list button{grid-column:2;justify-self:start}}
 @media(prefers-reduced-motion:reduce){.nyx-owner-dashboard-overlay *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
 
-/* Dashboard sections keep operational tools separate from the live overview. */
+
 .nyx-owner-dashboard-overlay.owner-organized::before{display:none}
 .owner-organized .nyx-owner-dashboard{gap:26px;max-width:none;width:100%;margin:0 auto;padding:28px 36px}
 .owner-organized .nyx-owner-header{padding-bottom:18px}

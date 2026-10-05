@@ -2750,7 +2750,7 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
   color:#fce7f3;
 }
 
-/* Keep the startup activity indicator moving even when Lag Reducer is enabled. */
+
 body.lag-reducer .setup-launch-screen.show .nyx-loading-spinner{
   animation:nyxLoadingSpinner .72s linear infinite!important;
   transition:none!important;
@@ -2759,7 +2759,7 @@ body.lag-reducer .setup-launch-screen.show .nyx-loading-spinner{
   body.lag-reducer .setup-launch-screen.show .nyx-loading-spinner{animation:none!important}
 }
 
-/* Blur the wallpaper in the host document; child frames cannot sample it. */
+
 iframe[src*="/apps/code-studio/"] {
   -webkit-backdrop-filter: blur(48px) saturate(.65);
   backdrop-filter: blur(48px) saturate(.65);

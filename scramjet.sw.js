@@ -97,8 +97,8 @@ const nyxBlockedRequestHosts = [
 
 function nyxHostBlocked(hostname) {
   const host = String(hostname || "").toLowerCase();
-  // This is the site's consent manager, not an advertising payload. Blocking
-  // it also prevents pages from completing their cookie-consent startup.
+
+
   if (host === "cmp.inmobi.com" || host.endsWith(".cmp.inmobi.com")) return false;
   return nyxBlockedRequestHosts.some(blocked => host === blocked || host.endsWith(`.${blocked}`));
 }

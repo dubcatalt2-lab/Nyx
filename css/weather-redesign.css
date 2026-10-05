@@ -61,8 +61,8 @@ html body:is(body,#nyx-weather-specificity) .weather-panel{
   scrollbar-width:thin;
   scrollbar-color:var(--weather-line) transparent;
 }
-/* Each weather trigger owns its edge. The address-bar icon drops the report
-   below the browser chrome; the homepage summary lifts it from the footer. */
+
+
 html body:is(body,#nyx-weather-specificity) .weather-panel.weather-anchor-top{
   top:calc((var(--nyx-interface-bar,79px) + 14px) / var(--nyx-interface-scale,.8))!important;
   bottom:auto!important;
@@ -407,8 +407,8 @@ html body:is(body,#nyx-weather-specificity) .weather-panel-title{font-size:12px!
 html body:is(body,#nyx-weather-specificity) .weather-head-actions{gap:6px!important}
 html body:is(body,#nyx-weather-specificity) .weather-icon-btn{width:34px!important;height:34px!important}
 
-/* Weather conditions use local vector symbols instead of operating-system
-   emoji fonts, which keeps every WMO state visible on Windows and ChromeOS. */
+
+
 html body .nyx-weather-symbol{
   display:block!important;
   width:1em!important;

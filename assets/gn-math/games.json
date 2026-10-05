@@ -2892,7 +2892,7 @@
     },
     {
       "id": "266",
-      "path": "266-a.html",
+      "path": "266.html",
       "title": "Speed Stars",
       "author": "Luke Doukakis",
       "authorLink": "https://store.steampowered.com/app/1482700/Speed_Stars/",
@@ -2900,7 +2900,7 @@
         "port"
       ],
       "cover": "/gn-math-asset?repo=covers&path=266.png",
-      "rawUrl": "https://raw.githubusercontent.com/freebuisness/html/main/266-a.html",
+      "rawUrl": "https://raw.githubusercontent.com/freebuisness/html/main/266.html",
       "coverFallback": "https://raw.githubusercontent.com/freebuisness/covers/main/266.png"
     },
     {

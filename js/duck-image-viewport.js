@@ -59,8 +59,8 @@ globalThis.NyxDuckImageViewport = function(t, browserShellSourceUrl){
         try{source=new URL(currentSource())}catch{return}
         if(source.searchParams.get('ia')!=='images' && source.searchParams.get('iax')!=='images') return;
         const height=view.innerHeight, width=view.innerWidth;
-        // Layout repair can move a lazy image into view after the site's scroll
-        // handler has run. Start nearby thumbnails without moving the viewport.
+
+
         for(const image of doc.images){
           if(image.closest('header,nav,aside,[role="dialog"],[class*="modal" i],[class*="anomaly" i]'))continue;
           const box=image.getBoundingClientRect();
@@ -109,8 +109,8 @@ globalThis.NyxDuckImageViewport = function(t, browserShellSourceUrl){
         });
       };
       const restoreDuckDuckGoSearchLayout=()=>{
-        // DuckDuckGo changes between Images and All without reloading the document.
-        // Every image-only layout override must therefore be undone explicitly.
+
+
         doc.querySelectorAll('[data-nyx-duck-mainline-hidden="true"]').forEach(mainline=>{
           ['display','min-height','height','margin','padding'].forEach(property=>mainline.style.removeProperty(property));
           delete mainline.dataset.nyxDuckMainlineHidden;

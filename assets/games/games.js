@@ -83,7 +83,7 @@ const CATALOG_FETCH_TIMEOUT = 8_000;
 const CATALOG_FETCH_ATTEMPTS = 2;
 const LUMIN_OPERATION_TIMEOUT = 9_000;
 
-// The shared catalog also powers Tutsi and Drop; only Nyx gets this presentation.
+
 let arcadeFeatured;
 let arcadeRandom;
 let arcadeFeaturedSignature = '';
@@ -131,7 +131,7 @@ if (nyxArcade) {
 function renderArcadeFeatures(games) {
   if (!arcadeFeatured) return;
   arcadeRandom.disabled = games.length === 0;
-  // Keep search and filtered collections focused on their results.
+
   arcadeFeatured.hidden = Boolean(elements.search.value.trim()) || state.activeLibrary !== 'all' || state.page !== 1;
   if (arcadeFeatured.hidden) return;
   const picks = ['Slope', 'Retro Bowl', 'Geometry Dash'].map(title =>
@@ -357,7 +357,7 @@ function syncHostTheme() {
     ].map(value => value.trim()).find(value => value && CSS.supports('color', value));
     if (accent) document.documentElement.style.setProperty('--accent', accent);
   } catch {
-    // Games remains usable when opened outside the same-origin Nyx shell.
+
   }
 }
 
@@ -666,8 +666,8 @@ async function adaptCatalog(catalog) {
       const thumbnail = ugsThumbnailName(path);
       if (knownCovers.has(thumbnail)) covers.push(`/assets/ugs/thumbs/${encodeURIComponent(thumbnail)}`);
     } else if (catalog.format === 'gn') {
-      // Prefer Nyx's same-origin asset route. Managed Chromebook networks often
-      // block raw GitHub/CDN hosts even though the Nyx origin itself is allowed.
+
+
       covers.push(item.cover, directCover(item.coverFallback), directCover(item.cover));
     } else if (catalog.format === 'gms') {
       if (item.type === 'gba' && item.romId && catalog.gbaPlayer) {
@@ -765,8 +765,8 @@ function makeCover(game) {
 
   const image = document.createElement('img');
   image.alt = '';
-  // Each page contains only 30 cards. Eager loading avoids Chromium's
-  // unreliable native lazy-image heuristics inside Nyx's embedded scroller.
+
+
   image.loading = 'eager';
   image.decoding = 'async';
   image.referrerPolicy = 'no-referrer';
@@ -830,7 +830,7 @@ function makeCard(game) {
   return card;
 }
 
-// Lightweight exports omit artwork; that must not empty their default library.
+
 function includeUnillustratedGames() {
   return dropGames || state.manifest?.includeUnillustrated === true;
 }
@@ -918,7 +918,7 @@ function updateGameQuery(key) {
     else url.searchParams.delete('game');
     history.replaceState(null, '', url);
   } catch {
-    // The catalog still works if history is unavailable inside an embedded page.
+
   }
 }
 
@@ -1236,8 +1236,8 @@ async function loadLibrary() {
     if (pending > 0) elements.count.textContent += ` · ${pending} ${pending === 1 ? 'library' : 'libraries'} loading`;
     if (completed === catalogs.length && failed.length) elements.count.textContent += ` · ${failed.length} unavailable`;
     elements.progress.classList.toggle('done', state.games.length > 0 || completed === catalogs.length);
-    // render() owns the empty-results state. Only suppress it during the first
-    // catalog load; a successful publish must not reveal it beneath real games.
+
+
     if (state.games.length === 0 && completed < catalogs.length) elements.empty.hidden = true;
 
     if (!requestedOpened && requested && state.gamesByKey.has(requested)) {
@@ -1323,9 +1323,9 @@ elements.frame.addEventListener('load', () => {
     managedRunner = sameOrigin && /^\/assets\/(?:ugs|gn-math|gms-games|reds-misc)\/play\.html$/i.test(parsed.pathname);
     if (sameOrigin && parsed.pathname === '/assets/games/remote-play.html') managedRunner = true;
   } catch {}
-  // Nyx's runner pages own their detailed loading/error state. Reveal them as
-  // soon as the runner document is available instead of requiring a custom
-  // ready message that a short or DOM-only game may never emit.
+
+
+
   if (!sameOrigin || managedRunner) setTimeout(finishGameLaunch, 900);
 });
 elements.frame.addEventListener('error', () => tryNextGameSource('The current source could not be opened.'));

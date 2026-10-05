@@ -67,7 +67,7 @@
       return {uid:profile.uid,token:session.idToken,limit:accountHasPremium()?p2pPremiumBatchLimit:regularHourlyLimit,method:accountHasPremium()?'p2p':'managed'};
     }
   })) : Promise.resolve(null);
-  // Unsupported storage is reported when a user requests a large job.
+
   bulkJobs.catch(()=>{});
 
   function applyTheme(){

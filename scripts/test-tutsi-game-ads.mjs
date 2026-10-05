@@ -1,10 +1,12 @@
-﻿import assert from 'node:assert/strict';
+import {parse} from 'acorn';
+import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {readFile} from 'node:fs/promises';
 import {installGameAdProtection} from '../apps/tutsi/game-ad-runtime.mjs';
 import {isAdUrl} from '../apps/tutsi/protections.mjs';
 const original=(await readFile(new URL('../assets/games/game-ad-protection.js',import.meta.url),'utf8')).trim();
-assert.equal(installGameAdProtection.toString().slice(installGameAdProtection.toString().indexOf('{')+1,-1).replace(/\r/g,'').trim(),original.slice('(() => {'.length,-'})();'.length).replace(/\r/g,'').trim());
+const executable=source=>JSON.stringify(parse(source,{ecmaVersion:'latest',allowReturnOutsideFunction:true}),(key,value)=>['start','end','raw'].includes(key)?undefined:value);
+assert.equal(executable(installGameAdProtection.toString().slice(installGameAdProtection.toString().indexOf('{')+1,-1)),executable(original.slice('(() => {'.length,-'})();'.length)));
 assert(isAdUrl('https://cdn.playwire.com/sdk.js'));
 assert(isAdUrl('https://example.com/poki-sdk.js'));
 assert(!isAdUrl('https://playwire.com.example.org/game.js'));
@@ -12,6 +14,10 @@ assert(!isAdUrl('https://example.org/game.js?next=doubleclick.net'));
 const browser=await chromium.launch();
 try {
  const page=await browser.newPage();
+ await page.route('**/apps/tutsi/*.mjs',async route=>{
+   const name=new URL(route.request().url()).pathname.split('/').pop();
+   await route.fulfill({contentType:'text/javascript',body:await readFile(new URL('../apps/tutsi/'+name,import.meta.url))});
+ });
  await page.route('**/fixture-ad/**',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><body><canvas id="game"></canvas></body>'}));
  await page.goto((process.env.NYX_TEST_BASE_URL || 'http://localhost:9091')+'/fixture-ad/host');
  const result=await page.evaluate(async()=>{

@@ -21,7 +21,7 @@ html body .chat-app::before{
   background:var(--chat-wallpaper,url('/assets/backgrounds/moonlight.jpg')) center/cover no-repeat;
   filter:blur(8px) grayscale(.7);opacity:.16;
 }
-/* A light frost on translucent panels leaves the wallpaper visible. */
+
 html body :is(.channel-sidebar,.member-sidebar,.conversation-header,.current-user,.chat-guidelines,.message-composer,.chat-topbar){
   background:color-mix(in srgb,var(--app-panel) 70%,transparent)!important;
   border-color:color-mix(in srgb,var(--app-text) 10%,transparent);
@@ -106,7 +106,7 @@ html body{--profile-glass:color-mix(in srgb,var(--app-panel) 90%,transparent)}
 ::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{border:2px solid transparent;border-radius:8px;background:#353640;background-clip:padding-box}
 @media(prefers-reduced-motion:reduce){.member-dialog,.friends-dialog{animation:none}}
 
-/* Conversation navigation and profiles */
+
 .chat-section-tabs{display:flex;align-items:stretch;flex-shrink:0;height:54px;padding:0 12px;border-bottom:1px solid var(--chat-line-soft);gap:4px}
 .chat-section-tabs button{position:relative;flex:1;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--chat-muted);font-size:14px;font-weight:650;cursor:pointer}
 .chat-section-tabs button[aria-pressed="true"]{border-bottom-color:var(--chat-text);color:var(--chat-text)}
@@ -165,7 +165,7 @@ button:focus-visible,[role="button"]:focus-visible{outline:2px solid var(--chat-
 @keyframes chat-card-enter{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){.member-dialog[open],.friends-dialog[open]{animation:none}}
 
-/* Section headings stay legible over the glass without adding another panel. */
+
 .channel-group{min-width:0;margin:0 0 14px}
 .channel-group h3{margin:0;padding:0}
 .channel-group-toggle{display:flex;align-items:center;gap:6px;width:100%;padding:8px 6px;border:0;border-radius:6px;background:transparent;color:var(--chat-muted);font:600 11px/1.4 Inter,Arial,sans-serif;text-align:left;cursor:pointer}

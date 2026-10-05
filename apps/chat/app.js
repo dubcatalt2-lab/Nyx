@@ -18,8 +18,8 @@
   const escapeRegExp=value=>String(value).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
   let commandPrefix=normalizeCommandPrefix(localStorage.getItem(COMMAND_PREFIX_STORAGE_KEY));
   const REACTIONS=['👍','❤️','😂','😮','😢','🔥','🎉','👀'];
-  // Discord-style names and aliases for the built-in Unicode emoji picker. Keep this
-  // local and deterministic: custom server emoji are not part of Nyx Chat yet.
+
+
   const FALLBACK_EMOJI_SHORTCODES=Object.freeze({
     grinning:'\u{1F600}',grin:'\u{1F601}',joy:'\u{1F602}',smiley:'\u{1F603}',smile:'\u{1F604}',sweat_smile:'\u{1F605}',laugh:'\u{1F606}',laughing:'\u{1F606}',satisfied:'\u{1F606}',sweat:'\u{1F605}',rofl:'\u{1F923}',rolling_on_the_floor_laughing:'\u{1F923}',wink:'\u{1F609}',blush:'\u{1F60A}',yum:'\u{1F60B}',sunglasses:'\u{1F60E}',heart_eyes:'\u{1F60D}',kissing_heart:'\u{1F618}',kissing:'\u{1F617}',thinking:'\u{1F914}',neutral_face:'\u{1F610}',expressionless:'\u{1F611}',unamused:'\u{1F612}',pensive:'\u{1F614}',confused:'\u{1F615}',upside_down:'\u{1F643}',upside_down_face:'\u{1F643}',money_mouth:'\u{1F911}',flushed:'\u{1F633}',frowning:'\u{1F626}',anguished:'\u{1F627}',fearful:'\u{1F628}',cold_face:'\u{1F976}',cold_sweat:'\u{1F630}',cry:'\u{1F622}',sob:'\u{1F62D}',scream:'\u{1F631}',angry:'\u{1F620}',rage:'\u{1F621}',smiling_imp:'\u{1F608}',imp:'\u{1F47F}',skull:'\u{1F480}',skull_crossbones:'\u2620\uFE0F',skull_and_crossbones:'\u2620\uFE0F',clown:'\u{1F921}',poop:'\u{1F4A9}',hankey:'\u{1F4A9}',shit:'\u{1F4A9}',ghost:'\u{1F47B}',alien:'\u{1F47D}',robot:'\u{1F916}',wave:'\u{1F44B}',raised_hand:'\u270B',ok_hand:'\u{1F44C}',v:'\u270C\uFE0F',crossed_fingers:'\u{1F91E}',handshake:'\u{1F91D}',pray:'\u{1F64F}',point_up:'\u261D\uFE0F',point_up_2:'\u{1F446}',point_down:'\u{1F447}',point_left:'\u{1F448}',point_right:'\u{1F449}',clap:'\u{1F44F}',muscle:'\u{1F4AA}',thumbsup:'\u{1F44D}',thumbs_up:'\u{1F44D}',plus_one:'\u{1F44D}',thumbsdown:'\u{1F44E}',thumbs_down:'\u{1F44E}',minus_one:'\u{1F44E}',heart:'\u2764\uFE0F',red_heart:'\u2764\uFE0F',orange_heart:'\u{1F9E1}',yellow_heart:'\u{1F49B}',green_heart:'\u{1F49A}',blue_heart:'\u{1F499}',purple_heart:'\u{1F49C}',black_heart:'\u{1F5A4}',white_heart:'\u{1F90D}',broken_heart:'\u{1F494}',two_hearts:'\u{1F495}',sparkling_heart:'\u{1F496}',heartbeat:'\u{1F493}',fire:'\u{1F525}',boom:'\u{1F4A5}',collision:'\u{1F4A5}',eyes:'\u{1F440}',eye:'\u{1F441}\uFE0F',100:'\u{1F4AF}',hundred:'\u{1F4AF}',sparkles:'\u2728',star:'\u2B50',star2:'\u{1F31F}',zap:'\u26A1',warning:'\u26A0\uFE0F',white_check_mark:'\u2705',check:'\u2705',x:'\u274C',x_mark:'\u274C',question:'\u2753',grey_question:'\u2754',exclamation:'\u2757',grey_exclamation:'\u2755',tada:'\u{1F389}',confetti_ball:'\u{1F38A}',gift:'\u{1F381}',balloon:'\u{1F388}',rocket:'\u{1F680}',airplane:'\u2708\uFE0F',car:'\u{1F697}',house:'\u{1F3E0}',computer:'\u{1F4BB}',iphone:'\u{1F4F1}',bulb:'\u{1F4A1}',book:'\u{1F4D6}',books:'\u{1F4DA}',memo:'\u{1F4DD}',pencil2:'\u270F\uFE0F',lock:'\u{1F512}',unlock:'\u{1F513}',key:'\u{1F511}',link:'\u{1F517}',paperclip:'\u{1F4CE}',mag:'\u{1F50D}',trophy:'\u{1F3C6}',medal:'\u{1F3C5}',soccer:'\u26BD',basketball:'\u{1F3C0}',football:'\u{1F3C8}',video_game:'\u{1F3AE}',game_die:'\u{1F3B2}',headphones:'\u{1F3A7}',musical_note:'\u{1F3B5}',notes:'\u{1F3B6}',microphone:'\u{1F399}\uFE0F',camera:'\u{1F4F7}',tv:'\u{1F4FA}',coffee:'\u2615',pizza:'\u{1F355}',hamburger:'\u{1F354}',cake:'\u{1F370}',cookie:'\u{1F36A}',dog:'\u{1F436}',cat:'\u{1F431}',mouse:'\u{1F42D}',fox:'\u{1F98A}',panda_face:'\u{1F43C}',monkey:'\u{1F412}',banana:'\u{1F34C}',apple:'\u{1F34E}',cherries:'\u{1F352}',earth_americas:'\u{1F30E}',sunny:'\u2600\uFE0F',cloud:'\u2601\uFE0F',rainbow:'\u{1F308}',snowflake:'\u2744\uFE0F',moon:'\u{1F314}',crescent_moon:'\u{1F319}'
   });
@@ -292,8 +292,8 @@
   async function exchangeVoiceAudioFrames(frames,sessionId){
     if(sessionId!==state.voiceSessionId)throw new Error('Voice session ended.');
     const value={sessionId,transport:state.voiceTransport,frames};
-    // Never enqueue audio in Socket.IO while disconnected. A lost acknowledgement may be
-    // retried over HTTP; server sequence numbers prevent duplicate delivery.
+
+
     if(voiceTransportChoice()!=='http'&&Date.now()>state.voiceHttpUntil&&state.socketConnected&&state.socket?.io?.engine?.transport?.name==='websocket'){
       try{
         const result=await new Promise((resolve,reject)=>state.socket.timeout(1200).emit('nyx:voice:audio',value,(error,response)=>{
@@ -397,7 +397,7 @@
         const polite=String(state.me?.uid||'').localeCompare(participant.uid)>0;
         entry.ignoreOffer=collision&&!polite;
         if(entry.ignoreOffer)return;
-        // The polite peer rolls back its local offer before accepting a competing offer.
+
         if(collision)await entry.connection.setLocalDescription({type:'rollback'});
         await entry.connection.setRemoteDescription(signal.description);
         while(entry.pendingCandidates.length)await entry.connection.addIceCandidate(entry.pendingCandidates.shift());

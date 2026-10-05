@@ -25,6 +25,10 @@ try{
   assert.match(json.dataUrl,/^gn-math-proxy\?url=/);
   const css=await(await originalFetch(base+'/gms-games-proxy?url='+encodeURIComponent('https://raw.githubusercontent.com/isaacduh123/reds-exploit-corner/main/misc/style.css'))).text();
   assert.match(css,/gms-games-proxy\?url=/);
+  for(const [extension,mime] of [['js?version=1',/javascript/],['mjs',/javascript/],['css',/text\/css/],['wasm',/application\/wasm/],['json',/application\/json/]]){
+    const response=await originalFetch(base+'/gms-games-proxy?url='+encodeURIComponent('https://raw.githubusercontent.com/isaacduh123/reds-exploit-corner/main/misc/game/asset.'+extension));
+    assert.equal(response.status,200);assert.match(response.headers.get('content-type'),mime);await response.body.cancel();
+  }
   const image=await originalFetch(base+'/gn-math-asset?repo=covers&path=1.png');assert.equal(image.headers.get('cache-control'),'public, max-age=3600');assert.equal(await image.text(),'fixture');
   assert.equal((await originalFetch(base+'/gn-math-proxy?url=http://localhost/private')).status,400);
   console.log('PASS real Express routes: streamed binary, loader repair, MIME, JSON/CSS rewriting, cover cache and denied upstream host');

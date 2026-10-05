@@ -16,8 +16,8 @@ if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notm
 $node = Join-Path $env:ProgramFiles 'nodejs\node.exe'
 if (-not (Test-Path -LiteralPath $node)) { throw 'Install Node.js 22 or 24 for all users first.' }
 New-Item -ItemType Directory -Force -Path $destination,$state | Out-Null
-# The background task runs as SYSTEM, so neither its code nor configuration may
-# be writable by ordinary Windows users.
+
+
 foreach ($directory in @($destination,$state)) {
  $acl = New-Object Security.AccessControl.DirectorySecurity
  $acl.SetAccessRuleProtection($true,$false)
@@ -48,8 +48,8 @@ foreach ($name in @('pairing.txt','status.txt')) {
  $acl.AddAccessRule((New-Object Security.AccessControl.FileSystemAccessRule($identity.User,'Read','Allow')))
  Set-Acl -LiteralPath $path -AclObject $acl
 }
-# No LAN/public listener access or firewall exception. Installation begins with
-# incoming RFB disabled, then checks confinement before enabling the service.
+
+
 $arguments = @('/i',('"'+$InstallerPath+'"'),'/quiet','/norestart','ADDLOCAL=Server','SERVER_REGISTER_AS_SERVICE=1','SERVER_ADD_FIREWALL_EXCEPTION=0','SERVER_ALLOW_SAS=1','SET_ACCEPTHTTPCONNECTIONS=1','VALUE_OF_ACCEPTHTTPCONNECTIONS=0','SET_ACCEPTRFBCONNECTIONS=1','VALUE_OF_ACCEPTRFBCONNECTIONS=0','SET_ALLOWLOOPBACK=1','VALUE_OF_ALLOWLOOPBACK=1','SET_LOOPBACKONLY=1','VALUE_OF_LOOPBACKONLY=1','SET_USEVNCAUTHENTICATION=1','VALUE_OF_USEVNCAUTHENTICATION=1','SET_PASSWORD=1',('VALUE_OF_PASSWORD='+$password),'SET_USECONTROLAUTHENTICATION=1','VALUE_OF_USECONTROLAUTHENTICATION=1','SET_CONTROLPASSWORD=1',('VALUE_OF_CONTROLPASSWORD='+$password))
 $process = Start-Process -FilePath msiexec.exe -ArgumentList $arguments -WindowStyle Hidden -Wait -PassThru
 if ($process.ExitCode -notin @(0,3010)) { throw ('TightVNC installation failed: '+$process.ExitCode) }
@@ -72,7 +72,7 @@ $trigger.Delay = 'PT20S'
 $taskPrincipal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1)
 Register-ScheduledTask -TaskName 'Nyx Remote Service Bridge' -Action $action -Trigger $trigger -Principal $taskPrincipal -Settings $settings -Description 'Owner-only Nyx connection to loopback TightVNC; starts before Windows sign-in.' -Force | Out-Null
-# Supersede the old sign-in-only helper without removing its saved files.
+
 $oldTask = Get-ScheduledTask -TaskName 'Nyx Remote Desktop' -ErrorAction SilentlyContinue
 if ($oldTask) { Stop-ScheduledTask -TaskName 'Nyx Remote Desktop'; Disable-ScheduledTask -TaskName 'Nyx Remote Desktop' | Out-Null }
 Start-ScheduledTask -TaskName 'Nyx Remote Service Bridge'

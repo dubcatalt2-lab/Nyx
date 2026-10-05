@@ -1,4 +1,4 @@
-/* Account relationships and public profile cards, shared by embedded/standalone Chat. */
+
 window.createNyxChatSocial = function createNyxChatSocial({request, me, members, avatar, name, badge, startDm, changed, closeDrawers}) {
   const dialog = document.querySelector('[data-member-dialog]');
   const content = document.querySelector('[data-member-dialog-content]');
@@ -102,7 +102,7 @@ window.createNyxChatSocial = function createNyxChatSocial({request, me, members,
   }
   function renderProfile(member) {
     content.replaceChildren(); content.className = '';
-    // Preserve the existing cosmetic overlay, including animated profile effects.
+
     if (/^fx-[a-z0-9-]+$/.test(member.profileEffect || '')) {
       content.className = 'nyx-user-profile-effect-' + member.profileEffect;
       const artwork = node('i', 'nyx-user-profile-effect'); artwork.setAttribute('aria-hidden', 'true'); content.append(artwork);

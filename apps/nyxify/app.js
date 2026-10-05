@@ -1,5 +1,5 @@
-// Full/blocked browser storage must not prevent playback. Failed writes remain
-// available for this page session; existing persisted data is never cleared.
+
+
 const volatileMusicSettings = new Map();
 const musicStorage = {
   getItem(key) {
@@ -1850,7 +1850,7 @@ async function startmetingtrack(track, request, resumeAt = 0) {
       catch (error) {
         if (request !== octaverequest || curtrack !== track) return;
         if (error.name === 'NotAllowedError') { nativeWantPlay = false; musicstatus('Full song ready — press play.'); }
-        // Media errors are handled by the audio error event, not by two competing retries.
+
         else if (error.name !== 'AbortError' && !audio.error) musicstatus('Unable to start audio. Press play to retry.');
       }
     } else musicstatus('Full song ready — press play.');

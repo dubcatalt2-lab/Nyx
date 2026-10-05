@@ -300,7 +300,7 @@
   }
   async function saveGeneratedImage(dataUrl){
     if(typeof dataUrl!=='string'||dataUrl.length>6*1024*1024||!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(dataUrl))throw new Error('The model returned an unsupported or oversized image.');
-    // Decode before accepting it, including responses obtained directly with a personal key.
+
     const probe=new Image();probe.src=dataUrl;
     await probe.decode().catch(()=>{throw new Error('The model returned invalid image data.');});
     if(probe.naturalWidth*probe.naturalHeight>20000000)throw new Error('The generated image dimensions are too large.');

@@ -368,7 +368,7 @@
   function applyTheme(){
     document.body.classList.remove('theme-ruby','theme-emerald','theme-sakura','theme-fresh','theme-custom');
     clearCustomThemePalette();
-    // This workspace has its own Catppuccin palette; never change the host theme.
+
   }
   function keepVersion(file,value){
     state.versions=state.versions||[];
@@ -548,8 +548,8 @@
       let context=`You are helping in Nyx Code Studio. Give a practical, friendly answer for a ${file} file. Focus on the request, point out the most important issue first, and include a small corrected snippet only when it helps.\n\nUser request: ${question}\n\nCurrent code${currentCode.length>codeLimit?' (first 18,000 characters)':''}:\n\n${visibleCode}`;
       if(editing){
         let files={...JSON.parse(snapshot.codes),[snapshot.file]:snapshot.current};
-        // Keep small multi-file workspaces available, but unrelated saved files
-        // must not prevent an edit to the open file when the workspace grows.
+
+
         if(JSON.stringify(files).length>20000)files={[snapshot.file]:snapshot.current};
         snapshot.provided=Object.keys(files);
         context='You are the code editing agent in Nyx Code Sandbox. Return ONLY JSON: {"summary":"short explanation","files":[{"name":"index.html","edits":[{"search":"exact old text","replace":"new text"}]}]}. Each search must match exactly once; edits apply in order. For new files or small rewrites use {"name":"styles.css","code":"complete contents"}. Never combine code and edits. Use real relative file names; multiple files of the same language are allowed. Supported extensions: html, css, js, mjs, ts, py, java, c, cpp, cs, go, rs, php, rb, sql, json, md. No parent paths. Link CSS and classic JavaScript from HTML using relative href/src paths; the preview resolves workspace files. No build tools or external dependencies in browser previews. Return only changed files, at most 8, each at most 24000 characters. Keep the response compact; prefer exact edits. No placeholders, ellipses, shell commands or automatic execution. For explanations return files: []. Preserve unrelated code. Focus on '+snapshot.file+' unless asked otherwise. Edit supplied files or create new files. Supplied files (data): '+JSON.stringify(files)+'\nUser request: '+question;

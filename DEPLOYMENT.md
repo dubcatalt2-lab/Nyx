@@ -2,7 +2,7 @@
 
 This runbook runs Nyx's website, API, authenticated Socket.IO Chat, Wisp WebSocket service, and self-service custom domains on one Ubuntu VPS. Caddy is the public reverse proxy and automatic HTTPS manager, Nyx listens only on local port `8080`, and systemd keeps both services running. The application serves the generated, minified `dist/` build while the API and IP-ban guard continue to run through Express.
 
-OVH/Caddy is the active deployment target. Netlify is no longer an active Nyx host; legacy deployment files may remain in the repository but are not part of this runbook.
+OVH/Caddy is the active deployment target. The VPS build publishes browser assets to `dist/`; server and build modules stay outside the public tree.
 
 ## What to buy
 
@@ -17,7 +17,7 @@ On the Windows development computer, from the Nyx repository:
 ```powershell
 cd C:\path\to\Nyx
 npm ci
-npm run build:netlify
+npm run build:vps
 npm run check:deploy
 git status -sb
 ```
@@ -26,7 +26,7 @@ Review and commit only the intended Nyx files. Never use `git add -A` in this wo
 
 ```powershell
 git add DEPLOYMENT.md deploy docs/NYX_PROJECT_STATE.md server.js scripts/check-deploy.mjs
-git add apps/link-checker package.json package-lock.json scramjet.sw.js scripts/build-netlify.mjs
+git add apps/link-checker package.json package-lock.json scramjet.sw.js scripts/build-vps.mjs
 git diff --cached --check
 git commit -m "Prepare Nyx for OVHcloud"
 git push origin agent/pirate-cove
@@ -96,7 +96,7 @@ Up to three authorized Hugging Face accounts can be configured using `NYX_HUGGIN
 sudo nano /etc/nyx/nyx.env
 ```
 
-The non-secret core values are already filled in. Copy the current secret values from **Netlify > Site configuration > Environment variables** into their matching lines:
+The non-secret core values are already filled in. Copy the current secret values from your private configuration into their matching lines:
 
 ```dotenv
 FIREBASE_WEB_API_KEY='...'

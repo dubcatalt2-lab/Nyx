@@ -26,6 +26,7 @@ try {
       return JSON.stringify(mode==='large'?{...info,formats:info.formats.map(f=>({...f,height:f.height?480:undefined,filesize:600*1024**2}))}:info);
     },fetch:async(url,options)=>{mediaCalls++;if(mediaCalls===2)throw new TypeError('Transient connection reset');if(mediaCalls===3)return new Response(new ReadableStream({start(controller){controller.enqueue(bytes.video.subarray(0,100));setTimeout(()=>controller.error(new Error('Interrupted range')),10);}}),{status:206,headers:{'Content-Type':'video/mp4','Content-Range':`bytes 0-999/${bytes.video.length}`}});if(mediaCalls===1)return new Response(null,{status:302,headers:{Location:'https://r2.googlevideo.com/video'}});assert.equal(options.redirect,'manual');assert.ok(!JSON.stringify(options.headers).includes('PRIVATE'));const data=bytes[url.endsWith('audio')?'audio':'video'];const range=/bytes=(\d+)-(\d+)/.exec(options.headers.Range||'');const start=range?Number(range[1]):0,end=range?Math.min(Number(range[2]),start+999,data.length-1):data.length-1;return new Response(data.subarray(start,end+1),{status:range?206:200,headers:{'Content-Type':url.endsWith('audio')?'audio/mp4':'video/mp4',...(range?{'Content-Range':`bytes ${start}-${end}/${data.length}`}:{})}});}};
   backend=createTubeBackend(options);
+  assert.equal((await backend.status()).cacheLimitBytes,7*1024**3);
   assert.equal((await backend.status()).state,'unchecked');
   assert.throws(()=>publicMediaUrl('https://googlevideo.com.evil.test/media'));
   assert.throws(()=>publicMediaUrl('http://r1.googlevideo.com/media'));

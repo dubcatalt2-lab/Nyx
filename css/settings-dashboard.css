@@ -456,7 +456,7 @@ html body.browser-shell .settings-preset[data-preset="nyx"] .quick-icon{
 html body.browser-shell .quick-tile[data-preset="nyx"]:hover .quick-icon,
 html body.browser-shell .settings-preset[data-preset="nyx"]:hover .quick-icon{transform:scale(1.05)!important}
 
-/* Keep wallpaper controls usable when the settings sidebar cannot fit. */
+
 @media (max-width: 900px) {
   html body.browser-shell.browser-shell .browser-shell-settings-panel .settings-app.nyx-settings-dashboard {
     grid-template-columns: minmax(0, 1fr)!important;

@@ -232,7 +232,7 @@
         .catch(error=>fail(`Could not load GBA game: ${error?.message || error || 'Network error'}`));
     }
     if(!gbaId&&gamePath==='misc/geometry-dash/index.html'){
-      // The archived Scratch project was deleted; use the maintained edition.
+
       location.replace('/assets/gn-math/play.html?game=785-upd3.html');
     }else if(!gbaId&&gamePath==='misc/smashkarts/index.html'){
       location.replace('/assets/gn-math/play.html?game=370-f.html');

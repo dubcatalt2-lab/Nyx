@@ -1,3 +1,4 @@
+import {learningAsset,legacyLearningAsset} from './public-assets.mjs';
 import {createServer} from 'node:http';
 import {readFile,mkdir,writeFile,rename} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
@@ -6,7 +7,6 @@ import {domainToASCII,pathToFileURL} from 'node:url';
 import {learningPage,style} from './pages.mjs';
 import {textbookHtml} from './textbook.mjs';
 let bookHtml;
-const learningAssets=new Set(['learning.css','learning.mjs','curriculum.mjs','secondary.mjs','textbook.css']);
 
 const blocked=new Set(['nyxlearning.org','www.nyxlearning.org','tutsi.nyxlearning.org','turn.nyxlearning.org','childsupport.donateyourboat.us']);
 export function normalizeDomain(value,{allowPrimary=false}={}){
@@ -31,7 +31,7 @@ export async function createDomainPages({dataDir=process.env.DOMAIN_PAGES_DATA_D
   if(!['GET','HEAD'].includes(req.method))return false;
   if(pathname==='/textbook'){bookHtml??=textbookHtml();send(res,200,bookHtml,'text/html');return true;}
   if(pathname==='/textbook.pdf'){try{const pdf=await readFile(join(dataDir,'textbook.pdf'));res.writeHead(200,{'Content-Type':'application/pdf','Content-Disposition':'inline; filename="StudyReady-Mathematics.pdf"','X-Content-Type-Options':'nosniff','Cache-Control':'no-store'});res.end(req.method==='HEAD'?undefined:pdf);}catch(error){send(res,error.code==='ENOENT'?404:500,'PDF is not available yet. Open /textbook to read or print the book.','text/plain');}return true;}
-  if(pathname.startsWith('/learning/')){const name=pathname.slice('/learning/'.length);if(learningAssets.has(name)){send(res,200,await readFile(new URL('./'+name,import.meta.url),'utf8'),name.endsWith('.css')?'text/css':'text/javascript');return true;}}
+  if(pathname.startsWith('/learning/')){const name=pathname.slice('/learning/'.length),legacy=legacyLearningAsset(name);if(legacy){res.writeHead(307,{Location:'/learning/'+legacy});res.end();return true;}const content=await learningAsset(name);if(content!==null){send(res,200,content,name.endsWith('.css')?'text/css':'text/javascript');return true;}}
   return false;
  }
  const admin=createServer(async(req,res)=>{

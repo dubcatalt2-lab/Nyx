@@ -8,8 +8,8 @@
   const HISTORY_LIMIT=500;
   const FREEDNS_PAGE_SIZE=25;
   const FREEDNS_FULL_SAVE_BATCH=100;
-  // Full-scan results are served by the shared Nocturne account. Two parallel
-  // pages keep imports responsive without repeatedly tripping its quota.
+
+
   const FREEDNS_FULL_IMPORT_CONCURRENCY=2;
   const FREEDNS_BULK_ACCESS_TTL_MS=5*60_000;
   const FREEDNS_CACHE_TTL_MS=8*60*60_000;

@@ -106,8 +106,8 @@
 })();
 </script>
 <style>
-/* Do not paint the legacy Windows desktop while Browser mode is restoring.
-   The startup cover remains visible until the browser shell is mounted. */
+
+
 html.nyx-browser-shell-expected body:not(.browser-shell)>:is(#customBgImage,#nyxWaveBg,#defaultVantaBg,#rubyVantaBg,#whiteVantaBg,#emeraldVantaBg,#sakuraVantaBg,#visualEffects,.top-os,#desktop,#weatherRestore,.dock){visibility:hidden!important}
 html.nyx-studyhub-starting,html.nyx-studyhub-starting body{overflow:hidden!important}
 #nyxStudyHubStartup{position:fixed;z-index:2147483647;inset:0;display:block;width:100vw;height:100dvh;border:0;background:#f2eee4;opacity:1;pointer-events:auto!important;transition:opacity .35s ease;isolation:isolate}
@@ -159,7 +159,7 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
     removeEventListener('message',onMessage);
   },{once:true});
 
-  // Manual privacy cover only; no developer-tools detection or content substitution.
+
   const cover=document.createElement('dialog');
   cover.id='nyxPrivacyCover';
   cover.dataset.nyxOwnedOverlay='';

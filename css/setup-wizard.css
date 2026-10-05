@@ -556,9 +556,9 @@ html body #setupScreen .setup-actions [data-skip-setup]:hover{
   }
 }
 
-/* Keep Fern's first-run experience inside the same earthy palette. The old
-   Fresh theme applied teal text and white controls with broad !important
-   selectors, so these scoped rules intentionally win only for this preview. */
+
+
+
 
 html body #setupScreen[data-preview-theme="fresh"] .setup-panel{
   border-color:var(--setup-line)!important;

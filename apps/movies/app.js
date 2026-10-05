@@ -115,7 +115,7 @@ function feature(movies){
  if(!featuredMovies.length){const fallback=movies.find(movie=>!/^coyote\s+vs\.?\s+acme$/i.test(movie.title));if(fallback)featuredMovies=[fallback];}
  $('featured').hidden=!featuredMovies.length||!!query||page!==1;
  $('gallery-controls').hidden=featuredMovies.length<2;
- // React Bits Accordion Gallery adapted to DOM/CSS. See REACT_BITS_LICENSE.txt.
+
  const copy=document.querySelector('.featured-copy');$('featured').append(copy);
  $('accordion-gallery').replaceChildren(...featuredMovies.map((movie,index)=>{
   const panel=document.createElement('article');panel.className='ag-panel';panel.dataset.index=String(index);
@@ -174,14 +174,14 @@ function originalSourcesFor(movie){
 function sourcesFor(movie){
  const existing=originalSourcesFor(movie);
  const type=movie.kind==='episode'?'tv':'movie';
- // Extra episode providers require server-validated canonical coordinates.
+
  const extra=movie.kind==='tv'?[]:movie.kind==='episode'
   ?additionalSources(type,movie.tmdbSeriesId,movie.sourceSeason,movie.sourceEpisode)
   :additionalSources(type,movie.id);
  return [...extra,...existing].map(source=>source.url?{...source,proxy:true}:source);
 }
 let providerStates={},currentProvider='',watchGeneration=0;
-// Measurements stay in this tab and apply only to this exact movie/episode.
+
 const sourceHistory=new Map();
 const sourceKey=movie=>(movie.kind||'movie')+':'+movie.id;
 function sourceEvidence(movie,id){const entry=sourceHistory.get(sourceKey(movie))?.[id];return entry&&Date.now()-entry.updated<30*60*1000?entry:{};}
@@ -290,7 +290,7 @@ async function watch(preferred){
     playerTimer=setTimeout(unavailable,30000);
     try{const recover=recoverNext;recoverNext=false;await launchMovieProxy(frame,source.url,controller.signal,{recover});if(!active()){frame.remove();return;}}
     catch{if(active())unavailable();return;}
-    // Inspect only the active proxied frame. Loading is not playback evidence.
+
     const poll=setInterval(()=>{
      if(!active())return;
      const sample=inspectMovieProxy(frame);

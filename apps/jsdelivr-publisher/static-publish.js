@@ -1,4 +1,4 @@
-// Shared by the managed publisher and the browser's personal-token publisher.
+
 export const staticBaseToken = '/__NYX_STATIC_BASE__/';
 export const staticFolder = 'nyx-static';
 const encoder = new TextEncoder();
@@ -50,7 +50,7 @@ async function blobSha(content) {
   return digest('SHA-1', all);
 }
 
-// Returns a subtree for the eventual atomic commit. It never updates a branch.
+
 export async function prepareStaticPackage({ api, repository, branch, headTree, manifest, readBytes, onProgress, writeIntervalMs = 0 }) {
   validateStaticManifest(manifest);
   if (!/^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/.test(repository) || !branch || branch.length > 200) throw Error('Invalid static package repository.');

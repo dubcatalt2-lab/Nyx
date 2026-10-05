@@ -1,4 +1,4 @@
-/* Shared presentation for the two link tools; colors follow the host palette. */
+
 html body.link-tool{--muted-deep:var(--app-muted);--accent-faint:color-mix(in srgb,var(--app-text) 6%,transparent);font-family:Inter,Arial,sans-serif}
 .link-tool .utility-shell{width:min(960px,calc(100% - 48px));padding:24px 0 48px}
 html body.link-tool .utility-header{min-height:56px;margin-bottom:32px;padding:0 0 16px;background:transparent!important;border-bottom:1px solid var(--line);gap:12px}

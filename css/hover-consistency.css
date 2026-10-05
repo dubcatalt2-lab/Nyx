@@ -3,17 +3,17 @@ html body{
   --nyx-hover-border:color-mix(in srgb,var(--nyx-home-wordmark,var(--theme-strong,#a9bddf)) 34%,transparent);
 }
 
-/* The ID option inside :is() intentionally wins over legacy theme !important rules. */
 
-/* New tabs finish their entrance once without hover interrupting/restarting it. */
 
-/* Active chrome tabs previously replayed a scale animation every time hover
-   ended. Keep settled tabs at their final geometry; hover changes color only. */
 
-/* Shortcut icons are absolutely centered with translateX(-50%). Do not let the
-   global hover reset remove that centering transform. */
 
-/* Preserve structural centering while removing hover rotation and scaling. */
+
+
+
+
+
+
+
 html body:is(body,#nyx-hover-specificity) .menu-btn:hover::before{
   transform:translate(-50%,-50%)!important;
 }
@@ -33,14 +33,14 @@ html body:is(body,#nyx-hover-specificity) .window-controls [data-close]:hover::a
   transform:translate(-50%,-50%) rotate(-45deg)!important;
 }
 
-/* Shortcut tiles contain their own round hover surface. Keep the outer tile and
-   inner button transparent so they cannot stack into a square block. */
 
-/* Chrome icons use full-button pseudo-elements. Keep that structural box fixed
-   so entering hover cannot pull the glyph half a button up and left. */
 
-/* Settings navigation has a deliberate selected-row fill. The generic hover
-   surface must not replace it or make an active row flash between two colors. */
+
+
+
+
+
+
 
 html body.browser-shell:is(body,#nyx-hover-specificity) .browser-mode-menu button:hover{
   transform:none!important;
@@ -53,8 +53,8 @@ html body.browser-shell:is(body,#nyx-hover-specificity) .browser-mode-menu butto
   -webkit-backdrop-filter:blur(18px) saturate(1.08)!important;
 }
 
-/* Settings cards are permanent glass. Hover must not darken them or alter
-   their geometry; only controls inside the cards receive hover feedback. */
+
+
 html body:is(body,#nyx-hover-specificity) .settings-window .settings-card,html body:is(body,#nyx-hover-specificity) .settings-window .settings-card:hover{
   transform:none!important;
   animation:none!important;
@@ -64,6 +64,3 @@ html body:is(body,#nyx-hover-specificity) .settings-window .settings-card,html b
   backdrop-filter:blur(16px) saturate(1.08)!important;
   -webkit-backdrop-filter:blur(16px) saturate(1.08)!important;
 }
-
-/* GeForce Now and Study now use the stable in-flow glyph element. Suppress
-   their older generated icon so each shortcut renders exactly once. */

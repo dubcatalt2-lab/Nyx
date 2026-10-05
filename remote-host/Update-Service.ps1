@@ -9,7 +9,7 @@ $node = Join-Path $env:ProgramFiles 'nodejs\node.exe'
 if (-not (Test-Path -LiteralPath $target)) { throw 'The installed Nyx bridge was not found. Nothing changed.' }
 $old = [IO.File]::ReadAllText($target)
 $new = [IO.File]::ReadAllText($source)
-# Keep the transport selected on this PC, including the existing ngrok option.
+
 $pattern = "new WebSocket\('([^']+)'\)"
 $match = [regex]::Match($old,$pattern)
 if (-not $match.Success) { throw 'Unrecognized installed bridge. Nothing changed.' }

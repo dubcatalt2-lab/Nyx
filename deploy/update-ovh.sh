@@ -55,11 +55,11 @@ if [[ ! -f ${STRATUS_ENV_FILE} ]]; then
 fi
 bash "${SCRIPT_DIR}/install-ytdlp.sh"
 bash "${SCRIPT_DIR}/configure-memory.sh"
-# Nyx vision runs on the VPS CPU. Skip onnxruntime-node's optional CUDA payload;
-# extracting those unused GPU libraries can exhaust this host during a clean install.
+
+
 runuser -u "${APP_OWNER}" -- env ONNXRUNTIME_NODE_INSTALL=skip npm ci
 runuser -u "${APP_OWNER}" -- npm ci --prefix services/stratus --omit=dev --ignore-scripts
-runuser -u "${APP_OWNER}" -- env -u WISP_URL NYX_BUILD_TARGET=vps NYX_PUBLIC_ORIGIN="https://${DOMAIN}" npm run build:netlify
+runuser -u "${APP_OWNER}" -- env -u WISP_URL NYX_PUBLIC_ORIGIN="https://${DOMAIN}" npm run build:vps
 runuser -u "${APP_OWNER}" -- npm run check:deploy
 runuser -u "${APP_OWNER}" -- env ONNXRUNTIME_NODE_INSTALL=skip npm prune --omit=dev --package-lock=false
 chgrp -R nyx "${APP_DIR}"

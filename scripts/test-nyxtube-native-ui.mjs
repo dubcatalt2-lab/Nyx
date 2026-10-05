@@ -32,7 +32,7 @@ try {
   app.get('/owner-test',(_req,res)=>res.send('<link rel="stylesheet" href="/css/owner-dashboard.css"><link rel="stylesheet" href="/css/owner-dashboard-polish.css"><script src="/js/owner-dashboard.js"></script>'));
   app.use('/api/owner-dashboard',(req,res)=>{
     if(req.path==='/nyxtube/check'){checks++;ownerState='working';}
-    if(req.path.startsWith('/nyxtube'))return res.json({enabled:true,state:ownerState,lastSuccess:'2026-09-08T12:00:00Z',cacheLimitBytes:5*1024**3,cacheBytes:1024,activeJobs:0});
+    if(req.path.startsWith('/nyxtube'))return res.json({enabled:true,state:ownerState,lastSuccess:'2026-09-08T12:00:00Z',cacheLimitBytes:7*1024**3,cacheBytes:1024,activeJobs:0});
     return res.json({access:{role:ownerRole,founder:ownerRole==='owner',permissions:[]},users:[],metrics:{},pagination:{total:0,page:1,pages:1},recentActivity:[]});
   });
   app.use(express.static(process.env.NYX_TEST_STATIC_ROOT||process.cwd()));server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base=`http://127.0.0.1:${server.address().port}`;

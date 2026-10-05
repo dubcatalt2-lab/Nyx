@@ -1,8 +1,8 @@
 (function(){
   'use strict';
 
-  // Framework-free port of React Bits Beams:
-  // https://reactbits.dev/backgrounds/beams
+
+
   // Copyright (c) 2026 David Haz. See THIRD_PARTY_NOTICES.md.
   const presets=Object.freeze({
     obsidian:{label:'Obsidian',summary:'Quiet dark fabric',lightColor:'#718478'},
@@ -14,9 +14,9 @@
     ember:{label:'Ember',summary:'Warm amber light',lightColor:'#ffad73'},
     lineWaves:{label:'Waves',summary:'Flowing contour lines',lightColor:'#9ec8ff'}
   });
-  // Match the React Bits showcase configuration. Keeping the source geometry
-  // proportions is important: oversized, overlapping planes expose their
-  // independently displaced edges as the stepped bands seen in the regression.
+
+
+
   const defaults=Object.freeze({beamWidth:3,beamHeight:30,beamNumber:20,lightColor:'#ffffff',speed:2,noiseIntensity:1.75,scale:.2,rotation:30});
 
   const coherentNoise=`
@@ -214,8 +214,8 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
       this.lastFrame=0;
       this.frame=0;
       this.running=false;
-      // The full-screen shader already adds soft noise, so multisample
-      // antialiasing only increases GPU work without a visible benefit.
+
+
       this.renderer=new this.THREE.WebGLRenderer({canvas,antialias:preview,alpha:false,powerPreference:'high-performance',preserveDrawingBuffer:preview});
       this.renderer.setClearColor(0x000000,1);
       this.renderer.outputEncoding=this.THREE.sRGBEncoding;
@@ -223,9 +223,9 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
       this.renderer.toneMappingExposure=1;
       this.scene=new this.THREE.Scene();
       this.scene.background=new this.THREE.Color(0x000000);
-      // Match the 30°/20-unit React Bits framing with an orthographic
-      // projection. Its independently flexing strips keep their shared screen
-      // edge instead of drifting apart and exposing animated cracks.
+
+
+
       this.camera=new this.THREE.OrthographicCamera(-1,1,1,-1,.1,1000);
       this.camera.position.set(0,0,20);
       this.group=new this.THREE.Group();
@@ -257,10 +257,10 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
       const rect=this.canvas.getBoundingClientRect();
       const width=Math.max(1,Math.round(rect.width || this.canvas.width || 1));
       const height=Math.max(1,Math.round(rect.height || this.canvas.height || 1));
-      // A full-screen physically lit shader becomes fill-rate bound on wide
-      // and high-resolution displays. Keep a fixed pixel budget and upscale
-      // the deliberately noisy image; motion stays at full speed while the
-      // GPU shades far fewer pixels on 1440p-class screens.
+
+
+
+
       const pixelBudget=1400000;
       const renderScale=Math.max(.58,Math.min(1,Math.sqrt(pixelBudget/(width*height))));
       this.renderScale=renderScale;

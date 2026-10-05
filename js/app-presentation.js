@@ -1,9 +1,9 @@
-// First-party app documents only: finish initial scripts and sibling theming
-// before exposing the layout. No dependency on fonts, images or API responses.
+
+
 (() => {
   const root=document.documentElement;
-  // Identify the actual owning shell before any shared application scripts run.
-  // Account and application data stay shared; presentation belongs to this frame.
+
+
   try {
     if(window.parent!==window && parent.location.origin===location.origin &&
        (window.frameElement?.dataset.appShell==='tutsi'||parent.document.documentElement.dataset.appShell==='tutsi')) {
@@ -20,7 +20,7 @@
   root.dataset.appPresentation='pending';
   let timer;
   const reveal=()=>{clearTimeout(timer);delete root.dataset.appPresentation;style.remove();};
-  // A broken stylesheet or script must not hide the app indefinitely.
+
   timer=setTimeout(reveal,8000);
   const ready=()=>{
     try {window.frameElement?.dispatchEvent(new Event('nyx:app-dom-ready'));} catch {}

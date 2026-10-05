@@ -396,8 +396,8 @@
     const preferences=cloud?.preferences&&typeof cloud.preferences==='object'?cloud.preferences:{};
     let pendingAppearance={};try{pendingAppearance=JSON.parse(localStorage.getItem('nyx.cloud.appearance.pending.'+user.uid)||'{}');}catch{}
     const hasImage=typeof preferences['nyx.customBgData']==='string';
-    // Import an existing browser wallpaper once. Never copy another account's
-    // wallpaper into a fresh account when users switch on a shared computer.
+
+
     const editedWallpaper=beforeWallpaper!==[localStorage.getItem('nyx.customBgData'),localStorage.getItem('nyx.customBgUrl')].join('|');
     const migrateImage=editedWallpaper||!hasImage&&(!marker||marker===user.uid)&&!!(localStorage.getItem('nyx.customBgData')||localStorage.getItem('nyx.customBgUrl'));
     if(marker&&marker!==user.uid){
@@ -1931,11 +1931,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   const browserAdResourceSignature=/(?:^|[./_-])(?:adinplay|adpushup|adservice|adserver|adnxs|adsrvr|adsterra|adtrafficquality|advertising|amazon-adsystem|clickadu|criteo|doubleclick|exoclick|gamedistribution|gamemonetize|googleadservices|googlesyndication|hilltopads|imasdk|intergi|mgid|monetag|onclickads|openx|outbrain|pagead|playwire|poki-master-loader|poki-sdk|popads|popcash|propellerads|pubmatic|r9x|revcontent|rubiconproject|taboola|trafficjunky|venatus)(?:[./?&=_-]|$)/i;
   const browserAdElementSelector='iframe[src*="adinplay"],iframe[src*="adtrafficquality"],iframe[src*="doubleclick"],iframe[src*="googlesyndication"],iframe[src*="googleadservices"],iframe[src*="adservice"],iframe[src*="adnxs"],iframe[src*="playwire"],iframe[src*="r9x.in"],iframe[src*="taboola"],iframe[src*="outbrain"],iframe[src*="ads.emulatorjs.org"],iframe[src*="/ad-campaigns/"],script[src*="adinplay"],script[src*="doubleclick"],script[src*="googlesyndication"],script[src*="googleadservices"],script[src*="adservice"],script[src*="adtrafficquality"],script[src*="gamedistribution"],script[src*="gamemonetize"],script[src*="imasdk"],script[src*="playwire"],script[src*="poki-master-loader"],script[src*="poki-sdk"],script[src*="r9x.in"],script[src*="/ads.js"],.adsbygoogle,[data-ad-client],[data-ad-slot],[id^="google_ads"],[id*="google_ads"],[id^="ad-container"],[class~="ad-container"],[class~="ad-banner"],[class~="ad-wrapper"],[class~="ad-overlay"],[class~="advertisement"],[aria-label="Advertisement"]';
   const browserInjectedAdSignature=/(?:reminder\s*\(\s*\d+\s*\)[\s\S]{0,180}download\s+pending)|(?:download\s+pending[\s\S]{0,180}finish\s+it\s+now)|(?:finish\s+it\s+now[\s\S]{0,180}(?:close|continue))|(?:\[\s*\d+\s*\]\s*update\s*:\s*opera\s+browser[\s\S]{0,180}install)|(?:install\s+(?:opera\s+browser|browser\s+update|extension)[\s\S]{0,180}(?:install\s+for\s+free|continue|download))|(?:sponsored\s+(?:download|update)[\s\S]{0,120}(?:install|continue))/i;
-  // Shell-owned surfaces can meet the same size/z-index heuristics as an
-  // escaped ad. In particular, the expanded 240px dock crosses the 12% area
-  // threshold around common 100% desktop viewport sizes. Keep owned chrome
-  // out of the quarantine so a child mutation cannot cause its parent rail to
-  // be deleted and immediately recreated in a loop.
+
+
+
+
+
   const knownNyxOverlaySelector='.nyx-prompt-shade,.nyx-modal-shade,.nyx-download-safety-shade,.nyx-tos-gate,.nyx-release-notes-overlay,.setup-screen,.setup-panel,.lock-screen,.nyx-browser-tab-sidebar,.nyx-visual-dock,.browser-shell-settings-overlay,.nyx-dashboard-menu,.nyx-account-menu,.nyx-account-overlay,.nyx-user-profile-overlay,.nyx-profile-directory-overlay,.nyx-founder-editor-overlay,.nyx-owner-dashboard-overlay,.context-menu,[data-nyx-owned-overlay]';
   function isBrowserInjectedOverlay(node){
     if(!(node instanceof Element) || node===document.body || node===document.documentElement) return false;
@@ -2431,15 +2431,15 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function currentNyxBeamWallpaper(){
     const presets=nyxBeamWallpaperPresets();
     let value=store.text('nyx.beamWallpaper','frost');
-    // Cloud preferences can restore the old theme default after local migration.
-    // Explicit wallpaper selections use custom-wallpaper and remain untouched.
+
+
     if(['frost','arctic'].includes(value)
       && store.text('nyx.beamTheme','')!=='custom-wallpaper'
       && ['default','midnight'].includes(normalizeNyxTheme(store.text('nyx.theme','default')))){
       value='obsidian';
       store.setText('nyx.beamWallpaper',value);
     }
-    // Upgrade Halloween's original automatic Ember background, keeping manual choices.
+
     if(value==='ember' && store.text('nyx.beamTheme','')==='halloween'
       && normalizeNyxTheme(store.text('nyx.theme','default'))==='halloween'){
       value='photo-halloween-soft';
@@ -3622,7 +3622,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const dock=document.querySelector('[data-nyx-visual-dock]');
     if(!dock) return;
     dock.hidden=false;dock.inert=false;dock.removeAttribute('aria-hidden');
-    // Layout belongs to obsidian.css. Clear measurements from older sessions.
+
     dock.removeAttribute('style');
     document.querySelectorAll('#desktop>.window.maximized').forEach(win=>{
       ['left','right','width','max-width','box-sizing'].forEach(key=>win.style.removeProperty(key));
@@ -3642,8 +3642,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       ensureNyxVisualDock();
       return;
     }
-    // The rail is a body-owned shell surface. Embedded pages must not be able
-    // to leave it hidden or stranded in a frame teardown container.
+
+
     if(dock.parentElement!==document.body) document.body.appendChild(dock);
     dock.hidden=false;
     dock.inert=false;
@@ -3681,9 +3681,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     clearTimeout(nyxVisualDockRecoveryTimer);
     clearTimeout(nyxVisualDockRecoveryFollowupTimer);
     nyxVisualDockRecoveryTimer=setTimeout(restoreNyxVisualDock,0);
-    // A paired browser frame can finish its own close animation after the
-    // shell close returns. Re-check after that bounded teardown has settled;
-    // this is deliberately not a permanent polling loop.
+
+
+
     nyxVisualDockRecoveryFollowupTimer=setTimeout(restoreNyxVisualDock,420);
   }
   function watchNyxVisualDock(){
@@ -4024,9 +4024,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(!next) return true;
     try{
       const parsed=new URL(next,location.href);
-      // Scramjet can briefly emit this synthetic route after it has already
-      // rendered a valid search page.  It is not a page the user navigated
-      // to, so keep the trusted URL that initiated the load instead.
+
+
+
       if(!browserShellIsTransientProxyPath(parsed.pathname)) return false;
       const prior=new URL(browserShellSourceUrl(expected) || expected,location.href);
       return /^https?:$/i.test(prior.protocol)
@@ -4933,7 +4933,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       active=browserShellTabs[0];
       browserShellActiveTab=active.id;
     }
-    // Keep tabs reachable on blank pages, including a final remaining New Tab.
+
     const chromeVisible=browserShellTabs.length>1 || Boolean(active?.url) || active?.title!=='Home';
     document.body.classList.toggle('nyx-browser-chrome-visible',chromeVisible);
     syncNyxRecentSearches();
@@ -5028,9 +5028,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   function openBrowserShellTab(url='',options={}){
     closeWeatherForWindowOpen();
-    // Settings is rendered as a full-shell surface rather than inside a browser
-    // frame. Tear it down before every new tab transition so it cannot remain
-    // stacked over the newly active app/page.
+
+
+
     closeBrowserShellSettings();
     const id='shell-'+Date.now()+Math.random().toString(16).slice(2);
     const normalized=url ? normalize(url) : '';
@@ -5171,7 +5171,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   async function openNyxVmsApp(){
     try{
-      // Sign-in and service availability are handled inside the app.
+
       const id=openBrowserShellTab('/apps/nyxcloud/?embedded=1',{forceMode:'iframe'});
       const tab=browserShellTabs.find(item=>item.id===id);if(tab)tab.title='VMs';
       renderBrowserShellTabs();
@@ -5329,8 +5329,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const source=main?.querySelector('.settings-section.active');
     if(!app || !main || !source) return;
 
-    // The browser settings overlay is assembled separately from the setup
-    // screen. Keep its proxy selector in sync with the supported engines.
+
+
     const browserModeSelect=source.querySelector('[data-browser-mode-select]');
 
     if(browserModeSelect){
@@ -5678,9 +5678,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const nextIndex=browserShellTabs.findIndex(tab=>tab.id===id);
       if(nextIndex<0) return;
       const shellTab=browserShellTabs[nextIndex];
-      // Browser-frame cleanup is best-effort. It must not be able to abort the
-      // shell close, otherwise the browser and persistent sidebar fall out of
-      // sync after a problematic embedded page.
+
+
+
       if(shellTab?.browserTabId && activeBrowser?.closeTab){
         try{activeBrowser.closeTab(shellTab.browserTabId)}catch(error){console.warn('Nyx: embedded tab cleanup failed during shell close',error)}
       }
@@ -5722,10 +5722,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       renderBrowserShellTabs();
     }finally{
-      // Closing a shell tab must never be allowed to tear down the persistent
-      // navigation rail. A nested frame can close its paired browser tab while
-      // the shell is reconciling, so restore the shell host from its saved
-      // preference before refreshing the rail.
+
+
+
+
       if(!document.body.classList.contains('browser-shell')){
         document.body.classList.add('browser-shell');
       }
@@ -5787,9 +5787,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       return;
     }
     ensureBrowserShellHome();
-    // Navigation may replace the maximized window after the rail state was
-    // calculated. Queue a second, viewport-based pass once that DOM work
-    // settles (including browser zoom changes in Chromium).
+
+
+
     scheduleNyxVisualDockViewportRepair();
     const proxyInternal=/^(?:\/service\/|\/~\/sj\/|\/scramjet\/service\/|nyx:\/\/)/i.test(raw);
     const looksLikeUrl=/^(?:[a-z][a-z0-9+.-]*:|[\w.-]+\.[a-z]{2,}(?:\/|$)|\/|\.\/|\.\.\/|assets\/)/i.test(raw);
@@ -6113,8 +6113,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const source=store.text(NYX_PERFORMANCE_TIER_SOURCE_KEY,'').toLowerCase();
     if(nyxPerformanceTiers.has(tier) && (source==='auto'||source==='explicit')) return tier;
     const lowEnd=(navigator.deviceMemory && navigator.deviceMemory<=4) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency<=4);
-    // Older Nyx builds forced Lag Reducer on at boot. It is not an intentional
-    // user choice to migrate, otherwise normal desktops permanently lose motion.
+
+
     tier=store.get('nyx.performanceLite',false) ? 'medium' : lowEnd ? 'medium' : 'high';
     store.setText(NYX_PERFORMANCE_TIER_KEY,tier);
     store.setText(NYX_PERFORMANCE_TIER_SOURCE_KEY,'auto');
@@ -6498,9 +6498,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
   }
   function syncThemeVantaBackgrounds(){
-    /* Each active theme owns exactly one optional 3D scene.  The layers are
-       mutually exclusive via their `shouldShow…` guards, so theme changes
-       replace a scene instead of stacking canvases. */
+
+
+
     syncDefaultVantaBackground();
     syncRubyVantaBackground();
     syncWhiteVantaBackground();
@@ -7159,7 +7159,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const prefix=event.scopeType==='conversation'?'dm':'message';
         showNyxMention(`${prefix}:${event.scopeId}:${event.createdAtMs}:mention`,{preview:event.lastMessageText});
       }
-    }catch{/* The next poll retries; never interrupt navigation for notifications. */}
+    }catch{ }
     finally{nyxMentionPollBusy=false;}
   }
   setInterval(()=>void pollNyxMentions(),5000);
@@ -7331,9 +7331,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
 
       await runStep(83,'Loading shortcuts',()=>{
         installHomeShortcutAnimationObserver();
-        // Do not restyle the entire interface in response to a few slow
-        // frames. The user-controlled Lag Reducer remains available, while
-        // normal mode keeps stable, predictable motion.
+
+
+
         initDesktopSplash();
       },400);
 
@@ -7505,7 +7505,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(mode==='iframe') return {managed:false,engine:'iframe',url:target};
     throw new Error('Nyx game proxy is unavailable.');
   };
-  // Movies explicitly requests a proxy. Never fall back to a direct provider URL.
+
   window.nyxLaunchMovieFrame=async(frame,url,{signal,recover=false}={})=>{
     const {movieSourceUrl}=await import('/apps/movies/providers.mjs?v=20260915-aniembed-v1');
     if(!movieSourceUrl(url))throw new Error('Unsupported movie provider.');
@@ -7679,9 +7679,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           if(worker?.state!=='activated') return false;
           try{
             const actual=new URL(worker.scriptURL);
-            // Query tags only invalidate this worker's cache. Keep the active
-            // version usable while its replacement installs; never accept a
-            // different runtime path or origin.
+
+
+
             return actual.origin===expected.origin && actual.pathname===expected.pathname;
           }catch{return false}
         };
@@ -8047,8 +8047,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(endpoint){const close=client.close?.bind(client);client.close=()=>{endpoint.close();close?.();};}
       return client;
     };
-    // libcurl.js has a single onload callback. Concurrent cold initializations
-    // can overwrite it and strand the earlier caller until its timeout.
+
+
     const pending={key,promise:null};
     scramjetTransportPending=pending;
     pending.promise=(async()=>{
@@ -8155,8 +8155,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       try{controller.cookieSyncChannel?.close?.()}catch{}
       try{controller.port?.close?.()}catch{}
     }
-    // A controller can reject before assigning an instance. Always clear the
-    // tracked startup promise so the next search can recover without reloading.
+
+
     tab.privateScramjetController=null;
     tab.privateScramjetControllerPromise=null;
     tab.scramjetFrame=null;
@@ -8391,8 +8391,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const structureCount=Number(doc.documentElement?.childElementCount || 0)+Number(body?.childElementCount || 0);
       const title=String(doc.title || '').trim();
       const hasVisibleStructure=!!doc.querySelector('main,button,a,input,[role],[data-testid],svg,img,canvas,video,audio');
-      // Hidden scripts/templates often contain error messages on healthy sites.
-      // Only a visible error document is evidence of a failed navigation.
+
+
       const hasErrorText=/^(?:Error:\s*)?(?:scramjet did not start|scramjet route missed|ultraviolet did not start|error processing your request|internal server error|internal service worker error|Reconnecting (?:Scramjet|Studyjet)|request failed with error code\s*(?:35|52|56|60)|ssl connect error|ssl peer certificate|failure when receiving data from the peer|localhost refused to connect)\b/i.test(visibleText);
       const blank=!hasVisibleStructure && text.length<12 && structureCount<4;
       return {reachable:true,blank,hasErrorText,text,visibleText,title,htmlLength:structureCount,readyState:doc.readyState};
@@ -8507,8 +8507,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     };
     const check=()=>{
       if(!current()) return;
-      // A rendered SPA can temporarily clear its UI after consent or a route
-      // change. Only recover a document that has never rendered successfully.
+
+
       let document=null;
       try{document=t.frame.contentDocument}catch{}
       if(document && t.scramjetHealthyDocument===document) return;
@@ -8677,8 +8677,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(!node || typeof node!=='object') return;
       const attrs=node.attribs;
       if(attrs && typeof attrs==='object'){
-        // Proxied resources are rewritten, so an origin site's original SRI
-        // digest no longer matches. Chromium otherwise blocks valid CSS/JS.
+
+
         delete attrs.integrity;
         delete attrs['scramjet-attr-integrity'];
       }
@@ -8781,8 +8781,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(navigator.serviceWorker){
       await unregisterProxyScope('/~/sj-v1/');
     }
-    // v1 has a private database, so its recovery must never remove v2's
-    // "$scramjet" database.
+
+
     scramjetV1Controller?.db?.close?.();
     await deleteIndexedDb('$nyx_scramjet_v1_v4');
   }
@@ -8919,9 +8919,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const Controller=api?.ScramjetController;
     if(!Controller) throw new Error('Scramjet v1 controller API did not load');
     const controller=new Controller(scramjetV1Config());
-    // v1's worker opens the database without an upgrade callback. Initialize
-    // the controller first so it creates every required object store before
-    // the worker is allowed to touch the fresh database.
+
+
+
     scramjetV1Controller=controller;
     await controller.init();
     return controller;
@@ -8961,8 +8961,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const transport=await createScramjetTransport();
       step='registering Scramjet service worker';
       const registration=await navigator.serviceWorker.register(scramjetServiceWorkerUrl,{scope:'/~/sj/',updateViaCache:'none'});
-      // register() already checks for updates. A second blocking update can
-      // delay an otherwise usable active worker on production connections.
+
+
       step='activating Scramjet service worker';
       const serviceworker=await waitForServiceWorkerScript(registration,scramjetServiceWorkerUrl);
       if(!serviceworker) throw new Error('Scramjet service worker did not activate');
@@ -9910,8 +9910,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         pointerInside=inside;
         if(inside) requestFrame();
       };
-      // Keep pointer work local to the title canvas. A window-level listener
-      // forced a layout read on every pointer event anywhere in Nyx.
+
+
       title.addEventListener('pointermove',movePointer,{passive:true});
       title.addEventListener('pointerdown',movePointer,{passive:true});
       title.addEventListener('pointerleave',()=>{
@@ -10696,8 +10696,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       setTimeout(()=>{
         if(!state.tabs.includes(t) || t.scramjetRejectedLocationKey!==recoveryKey) return;
         if(t.frame!==frame || t.navigationIntent!==navigationIntent || t.sourceUrl!==recoverySource) return;
-        // A rejected history notification can arrive while a real navigation
-        // succeeds. Never replace that new document with the previous page.
+
+
         try{
           const actual=browserShellSourceUrl(frame.contentWindow.location.href);
           if(!browserShellRejectFrameLocation(actual,recoverySource)) return;
@@ -10740,8 +10740,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
               if(!sameDocument) recoverRejectedScramjetLocation(t,source,previousSource);
               return;
             }
-            // History API/hash changes belong to the already running app.
-            // Update chrome only; never rearm startup recovery for its route.
+
+
             if(sameDocument) t.scramjetHealthyDocument=frame.contentDocument;
             t.scramjetRejectedLocationKey='';
             t.previousNavigationDocument=null;
@@ -10769,9 +10769,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           setTimeout(()=>syncLoadedTabIcon(t),260);
         };
         frame.addEventListener('load',()=>setTimeout(()=>syncLocation(),40));
-        // Controller 0.0.14 has no urlchange event. Native same-document
-        // navigation also emits no iframe load, so observe without wrapping
-        // the site's History methods or intercepting its channel links.
+
+
+
         let observedDocument=null,observedHref='';
         const locationTimer=setInterval(()=>{
           if(t.frame!==frame || !frame.isConnected || !state.tabs.includes(t)){
@@ -10888,10 +10888,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       };
       const isDownloadUrl=value=>{
         const rawHref=String(value || '').trim();
-        // Verification challenges and web workers commonly use blob/data
-        // URLs and script paths. Only an explicit `download` attribute (see
-        // isDownloadLink) or a high-confidence binary/archive extension
-        // should enter Nyx's download-safety flow.
+
+
+
+
         if(/^(?:blob|data):/i.test(rawHref)) return false;
         const href=rawHref.split(/[?#]/)[0].toLowerCase();
         return /\.(apk|appx|bat|bin|cmd|com|crx|deb|dmg|exe|iso|jar|msi|pkg|scr|wsf|zip|7z|rar)$/i.test(href);
@@ -11016,7 +11016,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           const trapLink=event=>{
             const link=event.target?.closest?.('a[href]');
             if(!link) return;
-            // Only curated invites on the actual first-party Partners page may bypass popup protection.
+
             const partnerInvites=['https://discord.gg/65Bgrbewc7','https://discord.gg/fRe5F3RBQQ','https://discord.gg/CTX942hxX','https://discord.gg/wC9DrfXvr','https://discord.gg/RkGgbJRVP7','https://discord.gg/uncensor','https://dsc.gg/ghostub','https://discord.gg/FHmEqPgMVe','https://discord.gg/w7J5auDhNm','https://discord.gg/3fbJG2emb6','https://discord.gg/uqPH78ZV7X'];
             if(link.hasAttribute('data-nyx-partner-invite') && partnerInvites.includes(link.href)
               && doc.location.origin===location.origin && /^\/apps\/partners\/(?:index\.html)?$/.test(doc.location.pathname)
@@ -11330,7 +11330,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         }catch{}
       },true);
       const handoffFrameInput=()=>{
-        // The embedded page needs unmodified WASD, arrows, Tab, and number keys.
+
         releaseNyxKeyboardLock();
         hideBrowserSuggestions();
         clearBrowserShellUrlSelection();
@@ -11438,9 +11438,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           const tabSource=browserShellSourceUrl(tab.sourceUrl||tab.url||'') || tab.sourceUrl || tab.url || tab.frame?.getAttribute('src') || '';
           tabPath=new URL(tabSource,location.href).pathname;
         }catch{}
-        // Realtime calls and Nyxify music are expected to continue while
-        // another Nyx tab is selected. The iframe stays mounted; only its
-        // visibility changes, so preserve its active media element as well.
+
+
+
         if(['/apps/chat/','/apps/chat/index.html','/apps/nyxify/','/apps/nyxify/index.html'].includes(tabPath)) return;
         try{
           const doc=tab.frame?.contentDocument;
@@ -11533,10 +11533,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       t.frame.addEventListener('error',()=>{
         if(current()) setBrowserTabSecurityState(t,'insecure');
       },{once:true});
-      // A no-cors HEAD probe resolves after a valid HTTPS handshake without
-      // exposing response data. Certificate failures reject before HTTP, so
-      // the indicator can leave its yellow pending state even in a proxied
-      // frame whose document is not directly inspectable.
+
+
+
+
       const controller=typeof AbortController==='function' ? new AbortController() : null;
       let probeTimedOut=false;
       const probeTimer=setTimeout(()=>{
@@ -11650,8 +11650,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
     function watchProxyLoad(t,sourceUrl,expectedEngine){
       if(!sourceUrl || !expectedEngine) return;
-      // Fixed engine modes must preserve the real proxy response. Recovery is
-      // allowed to rotate transports or engines only when Auto was selected.
+
+
       if(normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE))!=='auto') return;
       if(t.fallbackSource!==sourceUrl){
         t.fallbackSource=sourceUrl;
@@ -11662,8 +11662,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const watchStartedAt=Date.now();
       let loaded=false;
       let settled=false;
-      // SPA history changes can precede the controller's URL notification.
-      // Never let an old startup timer replace the route now in the frame.
+
+
       const current=()=>!settled && t.loadWatchToken===token && state.tabs.includes(t)
         && browserFrameStillAtSource(t,sourceUrl);
       const settle=()=>{
@@ -12114,8 +12114,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         setTimeout(revealLoadedFrame,2500);
         void waitForTabResultPaint(t,isSearchNavigation ? 12000 : 8000).then(painted=>{
           if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent || !browserFrameStillAtSource(t,url)) return;
-          // Result selectors are a readiness hint, not proof of a failed load.
-          // Preserve slow results, challenges and real documents already shown.
+
+
           if(isSearchNavigation && !painted && inspectFrameHealth(t).blank) loadSelectedSearchFallback(t,url,'search results did not finish loading');
         });
         if(spotifyChromeOsCompatibility) startSpotifyChromeOsFrameCompatibility(t);
@@ -12382,11 +12382,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         }
         return;
       }
-      // Proxy frames keep internal bootstrap entries that are not pages the
-      // user visited and can resolve to /unidentified or /undefined. Nyx's
-      // canonical tab history is authoritative for every engine; once it is
-      // exhausted, Back/Forward must be a no-op instead of entering the
-      // iframe's private transport history.
+
+
+
+
+
       return;
     }
     function closeTabById(tabId,keepBlank=true){
@@ -14114,8 +14114,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     nyxTerminalWrite(output,`Unknown command: ${command}. Type "help" for the command list.`,'error');
   }
   function openDeveloperConsole(){
-    // Developer Console is intentionally the full Eruda tab. Keep this as a
-    // single route so it cannot fall back to the old Nyx terminal window.
+
+
     return openBrowserShellInternalTab('developer');
   }
   openApps = function(){
@@ -16812,7 +16812,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     applyAutoHieroglyphPreference();
   }
   async function bootTutsiProfiles(){
-    // Reuse the existing editor without starting the Nyx shell, presence or cloud preferences.
+
     const status=document.getElementById('profile-status');
     let busy=false;
     let opened=false;

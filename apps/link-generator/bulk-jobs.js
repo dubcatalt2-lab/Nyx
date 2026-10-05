@@ -65,8 +65,8 @@ export class BulkJob {
       const user = await this.access();
       if (user.uid !== job.uid) throw new Error('Sign in to the account that started this job.');
       if (this.paused) break;
-      // Save the exact batch identity BEFORE sending it. An uncertain response
-      // resumes the same atomic publication rather than inventing new filenames.
+
+
       if (!job.pending) {
         job.pending = { id: this.uuid(), amount: Math.min(user.limit, 1000, job.total - job.completed), method: user.method };
         await this.store.save(job);
@@ -112,7 +112,7 @@ export class BulkJob {
       });
       if (links.length !== job.pending.amount || new Set(links).size !== links.length) throw new Error('The batch result was incomplete. Resume to check the same batch.');
       const batch = { id: job.pending.id, links };
-      // One IndexedDB transaction commits links and their progress together.
+
       const next = { ...job, batches: [...job.batches, batch.id], completed: job.completed + links.length, pending: null,
         nextAt: Math.max(this.now() + 30_000, Number(payload.premiumCooldown?.cooldownUntil) || 0) };
       await this.store.save(next, batch);

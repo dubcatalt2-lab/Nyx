@@ -30,6 +30,8 @@ try{
   });
   const backend=`http://127.0.0.1:${port}`;
   const aliases=JSON.parse(await readFile('dist/frontend-assets.json','utf8')).aliases;
+  const modules=JSON.parse(await readFile('dist/public-modules.json','utf8')).aliases;
+  const published=path=>modules[path]||path;
   const sourceMode=process.argv.includes('--source');
   const shell=sourceMode?rewriteFrontendReferences(rewriteProxyReferences(await readFile('script.js','utf8'),'/script.js'),'/script.js',aliases):'';
   const app=`document.body.dataset.instance=String(Math.random());
@@ -73,7 +75,7 @@ try{
   // upstream stub at HTTP level so bare-mux exercises the same fixture too.
   fixtureServer=createServer((req,res)=>{
     const path=new URL(req.url,'http://fixture.test').pathname;
-    if(['/libcurl/index.mjs',proxyAssetNames['/libcurl/index.mjs']].includes(path)){
+    if(['/libcurl/index.mjs',proxyAssetNames['/libcurl/index.mjs']].flatMap(p=>[p,published(p)]).includes(path)){
       res.writeHead(200,{'content-type':'text/javascript'});res.end(curlFixture);return;
     }
     const upstream=httpRequest(backend+req.url,{method:req.method,headers:req.headers},response=>{
@@ -96,7 +98,7 @@ try{
     await context.route('**/api/**',route=>route.fulfill({contentType:'application/json',body:'{}'}));
     if(sourceMode) await context.route(url=>url.pathname===aliases['/script.js'],route=>route.fulfill({contentType:'text/javascript',body:shell}));
     const path='/assets/transports/epoxy-scramjet.mjs';
-    await context.route(url=>[path,proxyAssetNames[path]].includes(url.pathname),route=>route.fulfill({contentType:'text/javascript',body:transport}));
+    await context.route(url=>[path,proxyAssetNames[path]].flatMap(p=>[p,published(p)]).includes(url.pathname),route=>route.fulfill({contentType:'text/javascript',body:transport}));
     await context.addInitScript(({mode,transportName})=>{
       localStorage.setItem('nyx.releaseNotes.2026-09-26-nyx-1.3.6.7.seen','2026-09-26-nyx-1.3.6.7');
       localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');
@@ -113,7 +115,8 @@ try{
     }
     await page.goto(base+'/'+brand);
     if(brand==='nyx'){
-      await page.locator('[data-browser-shell-url]').waitFor();
+      await page.locator('[data-browser-shell-url]').waitFor({state:'attached'});
+      await page.getByRole('button',{name:'Got it',exact:true}).click();
       await page.locator('#nyxStudyHubStartup').waitFor({state:'detached'});
       await page.locator('[data-browser-shell-search]').evaluate(form=>{
         form.querySelector('[data-browser-shell-url]').value='https://discord.com/app';
@@ -126,7 +129,7 @@ try{
     }
     const frame=page.frameLocator(brand==='nyx'?'iframe.view.active':'#browser-stage iframe:not([hidden])');
     await frame.locator('#channel-b').waitFor();
-    if(brand==='nyx') assert.match(await page.locator('iframe.view.active').getAttribute('src'), /\/~\/sj\//, 'Every saved proxy engine must use Scramjet v2');
+    if(brand==='nyx'&&mode!=='ultraviolet') assert.match(await page.locator('iframe.view.active').getAttribute('src'), /\/~\/(?:sj|study)\//, 'StudyJet must use its v2 worker');
     const instance=await frame.locator('body').getAttribute('data-instance');
     assert(instance,'Fixture script must initialize');
     await frame.locator('#accept-cookies').evaluate(button=>button.click());

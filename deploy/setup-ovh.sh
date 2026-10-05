@@ -64,7 +64,7 @@ bash "${SCRIPT_DIR}/configure-memory.sh"
 cd "${APP_DIR}"
 runuser -u "${APP_OWNER}" -- npm ci
 runuser -u "${APP_OWNER}" -- npm ci --prefix services/stratus --omit=dev --ignore-scripts
-runuser -u "${APP_OWNER}" -- env -u WISP_URL NYX_BUILD_TARGET=vps NYX_PUBLIC_ORIGIN="https://${DOMAIN}" npm run build:netlify
+runuser -u "${APP_OWNER}" -- env -u WISP_URL NYX_PUBLIC_ORIGIN="https://${DOMAIN}" npm run build:vps
 runuser -u "${APP_OWNER}" -- npm run check:deploy
 runuser -u "${APP_OWNER}" -- npm prune --omit=dev --package-lock=false
 chgrp -R nyx "${APP_DIR}"

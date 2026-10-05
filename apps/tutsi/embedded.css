@@ -3,7 +3,7 @@ html[data-tutsi-app] {
   --tutsi-panel: var(--surface);
   --tutsi-line: var(--border);
   --tutsi-radius: 16px;
-  /* Resolve shared app aliases here too: descendant variables can inherit them. */
+
   --app-bg: var(--bg);
   --app-panel: var(--surface);
   --app-field: var(--field);
@@ -20,7 +20,7 @@ html[data-tutsi-app] :is(button, a, .game-card, .video-card, .card) {
     opacity 240ms ease;
 }
 html[data-tutsi-app] body {
-  /* Shared apps consume these tokens even with Nyx's stylesheet excluded. */
+
   --app-bg: var(--bg);
   --app-panel: var(--surface);
   --app-field: var(--field);
@@ -156,7 +156,7 @@ html[data-tutsi-app="ai"] .ai-model-trigger {
 html[data-tutsi-app="ai"] .ai-provider-select {
   font-size: 10px;
 }
-/* Reply avatars contain the actual model mark; app branding belongs to chrome. */
+
 html[data-tutsi-app="ai"] .ai-message-assistant .ai-message-avatar {
   background: transparent;
   border: 0;
@@ -165,7 +165,7 @@ html[data-tutsi-app="ai"] .ai-message-assistant .ai-message-avatar {
 html[data-tutsi-app="ai"] .ai-company-logo:not(.ai-company-logo-color) {
   background-color: var(--ai-text);
 }
-/* Tutsi's model directory: named companies beside a readable single-column list. */
+
 html[data-tutsi-app="ai"] .ai-model-menu {
   width: min(880px, calc(100vw - 32px));
   height: min(720px, calc(100dvh - 48px));
@@ -774,8 +774,8 @@ html[data-tutsi-app="code"]
   border-color: var(--border) !important;
 }
 
-/* Embedded YouTube already supplies its own central Play button. Keep the
-   Tutsi button for native video and Shorts where the frame cannot take clicks. */
+
+
 html[data-tutsi-app="youtube"]
   .watch-player:has(.player-mount iframe)
   > .center-play {
@@ -846,7 +846,7 @@ html[data-tutsi-app="cloud"] :is(button,input,select){background:var(--field)!im
 html[data-tutsi-app="cloud"] #tutsi-local-games{color:var(--accent);white-space:nowrap;font-size:16px}
 html[data-tutsi-app="cloud"] .catalog-heading{flex-wrap:wrap}
 
-/* The Games library owns scrolling for its embedded cloud catalog. */
+
 html[data-tutsi-app="games"] .cloud-games-view{background:var(--bg);border:0;border-radius:0;overflow:visible}
 html[data-tutsi-app="games"] .cloud-games-view iframe{background:var(--bg);min-height:0}
 html[data-tutsi-app="cloud"].games-embedded,html[data-tutsi-app="cloud"].games-embedded body{min-height:0!important;overflow:hidden}

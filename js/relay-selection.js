@@ -1,4 +1,4 @@
-/* Sequential relay selection. Only configured endpoints can be remembered. */
+
 (()=>{
   let signature='', selected='', pending=null, generation=0;
   const key='nyx.lastWorkingRelay';
@@ -14,8 +14,8 @@
       timer=setTimeout(()=>finish(false),10000);
       try{
         socket=new WebSocket(url);socket.binaryType='arraybuffer';
-        // WISP sends an initial CONTINUE packet for stream zero. An HTTP
-        // upgrade alone also succeeds on endpoints that are not WISP relays.
+
+
         socket.onmessage=event=>{
           if(!(event.data instanceof ArrayBuffer))return;
           const bytes=new Uint8Array(event.data);

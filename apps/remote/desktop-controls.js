@@ -1,4 +1,4 @@
-// Adapter for pinned noVNC 1.7.0. Keep coordinate and pointer-lock tests when upgrading.
+
 export function enhanceDesktop(rfb, screen, releaseCapture) {
   const canvas=rfb._canvas, display=rfb._display;
   const originalX=display.absX.bind(display), originalY=display.absY.bind(display);

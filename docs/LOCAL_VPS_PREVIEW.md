@@ -1,6 +1,6 @@
 # Local preview with VPS services
 
-Run `npm run build:netlify` first, then `node scripts/preview-vps.mjs` from the repository root. Open http://localhost:9091/tutsi. Port 9091 must be free. Press Ctrl+C to stop the preview and SSH tunnel.
+Run `npm run build:vps` first, then `node scripts/preview-vps.mjs` from the repository root. Open http://localhost:9091/tutsi. Port 9091 must be free. Press Ctrl+C to stop the preview and SSH tunnel.
 
 This serves the local build and forwards API requests and WebSocket connections through SSH to the existing VPS application. VPS environment variables stay on the VPS. Existing SSH access to `ubuntu@15.204.93.166` is required. No credentials are written to the frontend or downloaded.
 

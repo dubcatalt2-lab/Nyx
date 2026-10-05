@@ -1,5 +1,5 @@
-// Let game engines own their canvas dimensions. Pulling the canvas out of flow
-// collapses wrappers that Phaser uses to measure its available drawing area.
+
+
 (() => {
   const style=document.createElement('style');
   style.textContent='html,body{width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:#05070d}canvas,object,embed,ruffle-player,ruffle-object{max-width:100%;max-height:100%}';

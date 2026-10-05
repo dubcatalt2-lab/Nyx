@@ -43,8 +43,8 @@ html body.browser-shell.theme-fresh{
   color-scheme:dark!important;
 }
 
-/* Preserve custom user backgrounds. All built-in themes otherwise share the
-   exact Default canvas and dot pattern. */
+
+
 
 html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh){
   --weather-accent:var(--nyx-home-wordmark);
@@ -69,21 +69,21 @@ html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser
   border-color:var(--nyx-chrome-bright)!important;
 }
 
-/* Runtime theme switching follows one rule: palette changes, geometry does not.
-   The data attribute is the canonical theme state; classes remain for older
-   component selectors while every built-in theme now has exactly one class. */
+
+
+
 html[data-nyx-theme] body.browser-shell{
   transition:background-color .18s ease,border-color .18s ease,color .18s ease!important;
 }
 
-/* One icon implementation for every palette. Older theme files used a mix of
-   glyphs and masks, which made Default's arrows look like missing images. */
 
-/* Fern's legacy file has unusually specific control selectors. This final
-   canonical state keeps it from changing the shared control geometry. */
 
-/* Canonical browser chrome. Theme files may supply colors, never geometry or
-   motion, so switching a palette cannot resize tabs or toolbar controls. */
+
+
+
+
+
+
 
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .browser-shell-settings-overlay.browser-shell-settings-overlay .browser-shell-settings-close{
   border-color:transparent!important;
@@ -94,8 +94,8 @@ html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-
   transform:none!important;
 }
 
-/* Retire the original purple theme aliases. A few legacy pseudo-elements still
-   read these names, so point them at the active palette as well. */
+
+
 html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell{
   --theme-strong:var(--nyx-home-text)!important;
   --theme-a:var(--nyx-chrome-accent)!important;
@@ -114,9 +114,9 @@ html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"] bod
   border-color:var(--nyx-home-line)!important;
 }
 
-/* Keep the compact homepage utilities inside Fern's muted green palette.
-   Fresh's legacy teal text rules have higher specificity than their base
-   utility styles, so this theme-scoped rule deliberately resolves that clash. */
+
+
+
 
 html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
   body.theme-fresh:is(body,#nyx-fern-text-specificity){
@@ -131,9 +131,9 @@ html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
   --fresh-electric-glow:rgba(166,201,156,.18)!important;
 }
 
-/* Weather has an older, standalone Fresh treatment with direct teal values.
-   Scope an explicit Fern palette to the report so its text, SVG controls, and
-   forecast emphasis cannot fall back to that treatment in desktop mode. */
+
+
+
 html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
   body.theme-fresh:is(body,#nyx-fern-weather-specificity) .weather-panel,html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
   body.theme-fresh:is(body,#nyx-fern-weather-specificity) .weather-restore{
@@ -199,10 +199,10 @@ html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
   box-shadow:none!important;
 }
 
-/* The browser home's standard canvas is opaque. Reveal the active Vanta
-   scene behind it only while the user has 3D backgrounds enabled. */
-/* The unified canvas and its dot field are the 2D fallback.  They must not
-   paint over an enabled Vanta scene, regardless of the active theme. */
+
+
+
+
 
 html[data-nyx-theme="custom"] body.theme-custom{
   --nyx-dot-color:var(--nyx-custom-dot)!important;

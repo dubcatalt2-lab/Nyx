@@ -1,4 +1,4 @@
-/* A single public profile is a card, rather than the account directory. */
+
 html body .nyx-profile-directory-overlay.profile-card-only{--profile-surface:color-mix(in srgb,var(--nyx-surface-panel,#101114) 92%,transparent);padding:16px;background:#0008;backdrop-filter:blur(3px)}
 html body .profile-card-only .nyx-profile-directory{position:relative;display:block;width:min(440px,100%);height:auto;max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #303237;border-radius:18px;background:var(--profile-surface);color:#f0f1f3;backdrop-filter:blur(10px);box-shadow:0 24px 80px #0005,inset 0 1px #ffffff0c}
 html body .profile-card-only .nyx-profile-directory-header{position:absolute;top:10px;right:10px;z-index:8;padding:0;border:0;background:none}
@@ -34,7 +34,7 @@ html body :is(.nyx-profile-contact-actions,.nyx-profile-message) svg{width:18px;
 html body .nyx-profile-contact-actions button{display:grid;place-items:center;width:36px;height:36px;padding:8px}
 html body .profile-card-only .nyx-profile-message{display:flex;align-items:center;justify-content:center;gap:8px}
 
-/* Profile editor: one scrollable form beside the actual public card. */
+
 html[data-nyx-theme] body .nyx-user-profile-overlay.nyx-profile-drawer.nyx-profile-organized {
   --editor-surface:color-mix(in srgb,var(--nyx-surface-panel,#121416) 92%,transparent);
   --editor-control:#0c0e10;

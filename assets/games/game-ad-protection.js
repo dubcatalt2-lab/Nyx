@@ -58,8 +58,8 @@
   const stubbedSdkScripts = new WeakSet();
   const completedSdkScripts = new WeakSet();
   function rememberSdk(node,value) {
-    // These SDKs have working local shims below. Loaders must still receive
-    // their asynchronous completion callback before they start the engine.
+
+
     if(node?.tagName==='SCRIPT' && /(?:\/poki-sdk(?:-core[^/]*)?\.js|\/sdk\.poki\.com\/)/i.test(String(value)))stubbedSdkScripts.add(node);
   }
 

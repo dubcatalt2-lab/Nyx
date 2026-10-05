@@ -15,20 +15,20 @@ LOCAL WINDOWS:
   Node.js is required; no npm installation is needed. Open the printed URL
   or http://localhost:8765/ in your browser. Keep the terminal open.
   Ctrl+C stops the local server.
-  On other systems run: node serve-mini.mjs, then open the printed URL.
+  On other systems run: node serve-mini.js, then open the printed URL.
   No hosting-path configuration is needed for the local server.
 
 Install Node.js for the one-time hosting-path setup, then open a terminal in
-this extracted folder. No npm dependencies are needed for configure-host.mjs.
+this extracted folder. No npm dependencies are needed for configure-host.js.
 
 SURGE (or another normal HTTPS host):
-  node configure-host.mjs /
+  node configure-host.js /
   npx surge . your-name.surge.sh
   Open https://your-name.surge.sh/nyx-singlefile-mini.html
   Publish the contents of this folder, not its parent.
 
 JSDELIVR:
-  node configure-host.mjs /gh/YOUR-USER/YOUR-REPO@main/static/
+  node configure-host.js /gh/YOUR-USER/YOUR-REPO@main/static/
   Upload all this folder's files into static/ in that public GitHub repository.
   Open https://cdn.jsdelivr.net/gh/YOUR-USER/YOUR-REPO@main/static/Nyx.svg
   Keep the whole repository below jsDelivr's default 150 MB package limit.

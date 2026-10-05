@@ -55,7 +55,7 @@
       const custom = localStorage.getItem('nyx.customThemeColor');
       if (theme === 'custom' && /^#[a-f0-9]{6}$/i.test(custom || '')) root.style.setProperty('--nyx-custom-base', custom);
       else root.style.removeProperty('--nyx-custom-base');
-    } catch { /* The parent shell can still apply the palette when storage is blocked. */ }
+    } catch {   }
   }
   addEventListener('storage', event => {
     if (['nyx.theme','nyx.appearance','nyx.customThemeColor'].includes(event.key)) applyTheme();
@@ -111,9 +111,9 @@
     state.profileResolved = false;
     state.profileRequestId = `nyxtube-profile-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     parent.postMessage({ type: "nyx:nyxtube-profile-request", requestId: state.profileRequestId }, location.origin);
-    // The player can load before its parent shell has attached its message
-    // listener. Retry once so the profile control cannot be left permanently
-    // in its generic state after a fast tab switch.
+
+
+
     state.profileRetryTimer = setTimeout(() => {
       if (!state.profileResolved && state.profileRetryCount++ === 0) requestProfile();
     }, 700);
@@ -426,8 +426,8 @@
       frame.addEventListener('load', () => { if(generation===state.watchGeneration)refs.watchLoading.hidden=true; }, {once:true});
       state.watchPlayer = {isInvidious:true, destroy:()=>frame.remove()};
       refs.watchPlayer.replaceChildren(frame); refs.watchCenterPlay.hidden = true;
-      // Invidious has no public cross-origin control API. Keep its real controls
-      // reachable; do not simulate time, mute, pause or successful playback.
+
+
       return;
     }
     const YT = native ? window.NyxNativePlayer : forceDirect ? directYoutubeApi : await youtubeApi();
@@ -675,7 +675,7 @@
     hiddenShorts=new Set((Array.isArray(saved.videos)?saved.videos:[]).filter(id=>/^[A-Za-z0-9_-]{11}$/.test(id)).slice(-500));
     hiddenShortChannels=new Set((Array.isArray(saved.channels)?saved.channels:[]).filter(id=>/^UC[A-Za-z0-9_-]{22}$/.test(id)).slice(-100));
     likedShorts=new Map((Array.isArray(saved.likes)?saved.likes:[]).filter(item=>item&&/^[A-Za-z0-9_-]{11}$/.test(item.id)&&/^UC[A-Za-z0-9_-]{22}$/.test(item.channelId)).slice(-500).map(item=>[item.id,{id:item.id,channelId:item.channelId}]));
-  } catch { /* Preferences also work for this session when storage is unavailable. */ }
+  } catch {   }
   const wantedShort=video=>!hiddenShorts.has(video.id)&&!hiddenShortChannels.has(video.channelId);
   function favoriteShortCreators() {
     const scores=new Map();let order=0;
@@ -694,7 +694,7 @@
   }
   function refreshShortRecommendations() {
     if(shortFeedQuery||shortFeedTopic!=='discover')return;
-    // Keep the current video playing; rebuild only the upcoming recommendations.
+
     shortNavigation++;shortFeedGeneration++;shortFeedController?.abort();shortFeedPending=null;
     state.shorts.splice(state.shortIndex+1);
     seenShortIds.clear();for(const video of state.shorts)seenShortIds.add(video.id);
@@ -758,7 +758,7 @@
         shortFeedCursor=cursor;
         if(Number.isInteger(next))shortFeedPage=next;
         shortFeedError='';
-        // Keep recent back navigation while bounding long-session metadata.
+
         const trim=Math.min(Math.max(0,state.shorts.length-240),Math.max(0,state.shortIndex-50));
         if(trim){state.shorts.splice(0,trim);state.shortIndex-=trim;}
       }
@@ -1164,7 +1164,7 @@
     try {
       const url = new URL(status.invidiousEmbedOrigin);
       if(url.protocol==='https:'&&!url.username&&!url.password&&!url.port&&url.href===url.origin+'/')state.invidiousEmbedOrigin=url.origin;
-    } catch { /* A missing or invalid backup setting leaves the existing players available. */ }
+    } catch {   }
     refs.watchBackup.hidden = !state.invidiousEmbedOrigin;
     state.nativeAvailable = status.nativeAvailable === true; refs.watchEngine.hidden = !state.nativeAvailable;
     return loadInitialView();

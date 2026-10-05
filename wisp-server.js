@@ -9,8 +9,7 @@ const configuredAllowedOrigins = String(process.env.NYX_ALLOWED_ORIGINS || "")
 const canonicalAllowedOrigins = [
   process.env.NYX_PUBLIC_ORIGIN,
   "https://nyxlearning.org",
-  "https://www.nyxlearning.org",
-  "https://nyxlearning.netlify.app"
+  "https://www.nyxlearning.org"
 ]
   .map(value => String(value || "").trim().replace(/\/$/, ""))
   .filter(Boolean);

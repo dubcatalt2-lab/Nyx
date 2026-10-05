@@ -4,7 +4,7 @@
   100%{transform:translateY(-2px) scale(1.035);filter:brightness(1.05)}
 }
 
-/* High-specificity normalization prevents older theme rules from changing hover timing. */
+
 
 html body:is(.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
   #setupLaunchScreen.show .nyx-title-shimmer{

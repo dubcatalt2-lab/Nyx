@@ -254,8 +254,8 @@
       const index = Math.round(position);
       const point = visiblePoints[index];
       selectedAt = point.at;
-      // Keep the readout on a real recorded minute, but follow the plotted line
-      // continuously instead of jumping the cursor between minute samples.
+
+
       if (index !== inspectedIndex) {
         inspectedIndex = index;
         slider.value = index;
@@ -283,7 +283,7 @@
 
     function render() {
       plotWidth = Math.max(300, chart.clientWidth);
-      // Fit recorded history to the chart; retain gaps within that history.
+
       const firstMeasured = data.points.findIndex(point => point.requests !== null);
       const points = visiblePoints = firstMeasured < 0 ? data.points : data.points.slice(firstMeasured);
       const totals = data.totals, peak = data.peak;
@@ -499,8 +499,8 @@
       return payload;
     }
 
-    // A role alone must never reveal remote desktop. The capability endpoint
-    // verifies the exact Firebase UID independently of dashboard permissions.
+
+
     api('/api/private-remote/access').then(data=>{
       if(!data.enabled||!overlay.isConnected)return;
       const button=document.createElement('button');button.type='button';button.textContent='Remote desktop';

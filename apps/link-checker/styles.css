@@ -127,6 +127,6 @@ body.theme-ruby{--accent:#fb7185;--accent-soft:rgba(251,113,133,.12)}body.theme-
 body.theme-fresh{color-scheme:light;--bg:#f6f8fb;--sidebar:#fff;--card:#fff;--card-soft:#f4f7fa;--border:#dce3ec;--text:#172033;--muted:#637085;--accent:#2563eb;--accent-soft:rgba(37,99,235,.1);--shadow:0 12px 34px rgba(40,55,78,.08)}
 body.theme-fresh .usage-track{background:#e5eaf1}
 .lc-sidebar-shade{display:none}
-/* ChromeOS commonly exposes about 1024-1093 CSS pixels after display scaling.
-   Collapse the navigation before it competes with filters and scan tables. */
+
+
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}

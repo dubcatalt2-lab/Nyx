@@ -52,6 +52,17 @@ try{
  const savedLate=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/account/cloud-preferences'&&r.request().method()==='PUT'&&r.request().postDataJSON().preferences['nyx.customThemeColor']==='#8844ee');
  await page.evaluate(()=>localStorage.setItem('nyx.customThemeColor','#8844ee'));release();holdRead=null;
  await savedLate;assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.customThemeColor')),'#8844ee');assert.equal(preferences['nyx.customThemeColor'],'#8844ee');
+ preferences={...preferences,'nyx.theme':'halloween'};
+ holdRead=new Promise(resolve=>release=resolve);
+ const restoring=page.waitForRequest(r=>new URL(r.url()).pathname==='/api/account/cloud-preferences'&&r.method()==='GET');
+ await page.reload();await restoring;
+ await page.waitForFunction(()=>document.body?.classList.contains('browser-shell')&&!document.body.classList.contains('nyx-loading-active'));
+ await page.locator('[data-nyx-dock-item="settings"]').click();
+ assert.equal(await page.locator('[data-nyx-theme-card][aria-pressed="true"]').getAttribute('data-nyx-theme-card'),'custom');
+ release();holdRead=null;
+ await page.waitForFunction(()=>document.documentElement.dataset.nyxTheme==='halloween');
+ assert.equal(await page.locator('.browser-shell-settings-overlay [data-theme-value]').inputValue(),'halloween');
+ assert.equal(await page.locator('[data-nyx-theme-card][aria-pressed="true"]').getAttribute('data-nyx-theme-card'),'halloween','open settings follow restored account theme');
  await page.screenshot({path:'.codex-artifacts/wallpaper-account-built.png'});
  assert.deepEqual(errors,[]);
  console.log('PASS UI: account wallpaper restore/reset, sidebar YouTube, custom theme survives failed save/reopen and late cloud read without default-theme overlap');

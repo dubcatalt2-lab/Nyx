@@ -291,8 +291,13 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
       const delta=this.lastFrame ? Math.min(.1,(timestamp-this.lastFrame)/1000) : 0;
       this.lastFrame=timestamp;
       this.time+=.1*delta;
-      this.renderOnce();
-      this.frame=requestAnimationFrame(this.tick);
+      try{
+        this.renderOnce();
+        this.frame=requestAnimationFrame(this.tick);
+      }catch(error){
+        this.stop();
+        failRenderer(error);
+      }
     };
     start(){
       if(this.running) return;
@@ -316,22 +321,31 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
 
   let canvas=null;
   let instance=null;
+  let rendererFailed=false;
   let selected='frost';
   let options={...defaults};
   const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
+
+  function failRenderer(error){
+    const failed=instance;
+    instance=null;
+    rendererFailed=true;
+    try{failed?.dispose()}catch{}
+    if(canvas) canvas.dataset.renderer='fallback';
+    console.warn('Nyx Beams renderer unavailable',error);
+  }
 
   function shouldAnimate(){
     if(!instance || !canvas || canvas.hidden || document.hidden || reducedMotion.matches) return false;
     return !document.body?.classList.contains('lag-reducer');
   }
   function ensureInstance(){
-    if(instance || !canvas || !window.THREE) return instance;
+    if(instance || rendererFailed || !canvas || !window.THREE) return instance;
     try{
       instance=new BeamsRenderer(canvas,options);
       canvas.dataset.renderer='react-bits';
     }catch(error){
-      canvas.dataset.renderer='fallback';
-      console.warn('Nyx Beams renderer unavailable',error);
+      failRenderer(error);
     }
     return instance;
   }
@@ -344,18 +358,22 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
     const hidden=!body || lineWaves || body.classList.contains('custom-bg-active') || body.classList.contains('three-d-backgrounds') || externalContent;
     canvas.hidden=hidden;
     if(hidden){instance?.stop(); return}
-    const renderer=ensureInstance();
-    renderer?.resize();
-    renderer?.renderOnce();
-    if(shouldAnimate()) renderer?.start();
-    else renderer?.stop();
+    try{
+      const renderer=ensureInstance();
+      renderer?.resize();
+      renderer?.renderOnce();
+      if(shouldAnimate()) renderer?.start();
+      else renderer?.stop();
+    }catch(error){failRenderer(error)}
   }
   function apply(name='frost',nextOptions={}){
     selected=presets[name] ? name : 'frost';
     options={...defaults,...options,lightColor:presets[selected].lightColor,...nextOptions};
     canvas=document.getElementById('nyxBeamsBg') || canvas;
     if(canvas){canvas.dataset.preset=selected;canvas.dataset.lightColor=options.lightColor;}
-    if(instance) instance.update(options);
+    if(instance && name!=='obsidian' && name!=='lineWaves' && !name.startsWith('photo-')){
+      try{instance.update(options)}catch(error){failRenderer(error)}
+    }
     syncVisibility();
   }
   function renderPreview(target,name){
@@ -388,15 +406,18 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
     apply(localStorage.getItem('nyx.beamWallpaper') || 'frost');
     new MutationObserver(syncVisibility).observe(document.body,{attributes:true,attributeFilter:['class']});
     const resizeObserver=new ResizeObserver(()=>{
-      if(!canvas.hidden){instance?.resize();instance?.renderOnce()}
+      if(!canvas.hidden){
+        try{instance?.resize();instance?.renderOnce()}catch(error){failRenderer(error)}
+      }
     });
     resizeObserver.observe(canvas);
     document.addEventListener('visibilitychange',()=>document.hidden ? instance?.stop() : syncVisibility());
     reducedMotion.addEventListener?.('change',syncVisibility);
     canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();instance?.stop()});
     canvas.addEventListener('webglcontextrestored',()=>{
-      instance?.dispose();
+      try{instance?.dispose()}catch{}
       instance=null;
+      rendererFailed=false;
       syncVisibility();
     });
   }

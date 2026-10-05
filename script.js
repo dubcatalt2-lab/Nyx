@@ -5398,7 +5398,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       if(title==='theme'){
         const select=controls.querySelector('[data-theme-value]');
-        const current=normalizeNyxTheme(select?.value || store.text('nyx.theme','default'));
+        const current=normalizeNyxTheme(store.text('nyx.theme','default'));
+        if(select) select.value=current;
         const customColor=nyxThemeHex(store.text('nyx.customThemeColor',nyxCustomThemeDefaults.base));
         const themes=[
           ['default','Default','Pure black with neutral glass',['#000000','#151515','#333333']],
@@ -6582,6 +6583,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     applyNyxLogoTheme(theme);
     ensureFreshThemeOptions();
     qsa('[data-theme-value]').forEach(el=>{el.value=theme});
+    qsa('[data-nyx-theme-card]').forEach(card=>{
+      const selected=card.dataset.nyxThemeCard===theme;
+      card.classList.toggle('selected',selected);
+      card.setAttribute('aria-pressed',String(selected));
+    });
     syncInternalThemeFrames(theme);
     syncThemeVantaBackgrounds();
     window.dispatchEvent(new CustomEvent('nyx:themechange',{detail:{theme}}));

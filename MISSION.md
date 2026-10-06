@@ -1,8 +1,8 @@
 # Move Nyx to one OVHcloud VPS
 
-This runbook runs Nyx's website, API, authenticated Socket.IO Chat, Wisp WebSocket service, and self-service custom domains on one Ubuntu VPS. Caddy is the public reverse proxy and automatic HTTPS manager, Nyx listens only on local port `8080`, and systemd keeps both services running. The application serves the generated, minified `dist/` build while the API and IP-ban guard continue to run through Express.
+This runbook runs Nyx's website, API, authenticated Socket.IO Chat, Wisp WebSocket service, and self-service custom domains on one Ubuntu VPS. Caddy is the public reverse proxy and automatic HTTPS manager, Nyx listens only on local port `8080`, and systemd keeps both services running. The application serves a complete generated, minified build while the API and IP-ban guard continue to run through Express.
 
-OVH/Caddy is the active deployment target. The VPS build publishes browser assets to `dist/`; server and build modules stay outside the public tree.
+OVH/Caddy is the active deployment target. Local builds publish browser assets to `dist/`; VPS updates use separate release directories. Server and build modules stay outside the public tree.
 
 ## What to buy
 
@@ -253,7 +253,9 @@ cd /var/www/nyx
 sudo bash mission/update-ovh.sh
 ```
 
-The updater performs a fast-forward-only pull, reinstalls the locked dependencies, rebuilds and validates `dist/`, removes build-only packages, restarts Nyx, and checks local health. It stops instead of deploying when the pull or validation fails.
+The updater performs a fast-forward-only pull, reinstalls the locked dependencies, and builds a new `.nyx-releases/release-*/site` directory. It checks the build and every browser module mapping before changing `NYX_STATIC_ROOT` in the protected server environment file and restarting Nyx. The running server continues serving its previous complete assets throughout the build. A failed health check restores the previous static root. Three recent completed releases and the active/previous roots are retained; unrelated directories are preserved. Build or validation failures leave the live assets untouched.
+
+Local `npm run build:vps` still writes `dist/`. `NYX_BUILD_OUTPUT` can select a new `.nyx-releases/release-*/site` directory for staging; an existing release cannot be rebuilt. Use the updater for production changes instead of rebuilding a directory currently served by Nyx.
 
 Useful commands:
 

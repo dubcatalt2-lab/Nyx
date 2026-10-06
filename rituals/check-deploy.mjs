@@ -4,6 +4,8 @@ import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
   "lib/source-layout.mjs",
+  "lib/build-output.mjs",
+  "deploy/static-release.mjs",
   "lib/ad-free-keys.mjs",
   "js/publisher-config.js",
   "lib/ad-free-keys.mjs",

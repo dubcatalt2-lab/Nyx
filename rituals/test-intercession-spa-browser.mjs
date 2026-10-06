@@ -16,7 +16,8 @@ import {rewriteFrontendReferences} from './build-frontend-assets.mjs';
 // backend serves real proxy workers, rewriting and the current frontend build.
 const temp=await mkdtemp(join(tmpdir(),'nyx-spa-'));
 const staticRoot=join(temp,'site');
-await symlink(resolve('dist'),staticRoot,process.platform==='win32'?'junction':'dir');
+const builtRoot=resolve(process.env.NYX_BUILD_OUTPUT || 'dist');
+await symlink(builtRoot,staticRoot,process.platform==='win32'?'junction':'dir');
 const env=Object.fromEntries(Object.entries(process.env).filter(([key])=>/^(path|systemroot|windir|temp|tmp|home|userprofile|localappdata)$/i.test(key)));
 const child=fork(new URL('../shepherd.js',import.meta.url),[],{
   env:{...env,PORT:'0',WISP_URL:'wss://example.com/wisp/',NYX_STATIC_ROOT:staticRoot,NYX_YOUTUBE_NATIVE_ENABLED:'0'},silent:true
@@ -30,8 +31,8 @@ try{
     child.on('message',message=>{if(message.type==='nyx:listening'){clearTimeout(timeout);resolve(message.port);}});
   });
   const backend=`http://127.0.0.1:${port}`;
-  const aliases=JSON.parse(await readFile(sourceFile('dist/frontend-assets.json'),'utf8')).aliases;
-  const modules=JSON.parse(await readFile(sourceFile('dist/public-modules.json'),'utf8')).aliases;
+  const aliases=JSON.parse(await readFile(join(builtRoot,'frontend-assets.json'),'utf8')).aliases;
+  const modules=JSON.parse(await readFile(join(builtRoot,'public-modules.json'),'utf8')).aliases;
   const published=path=>modules[path]||path;
   const sourceMode=process.argv.includes('--source');
   const shell=sourceMode?rewriteFrontendReferences(rewriteProxyReferences(await readFile(sourceFile('script.js'),'utf8'),'/script.js'),'/script.js',aliases):'';

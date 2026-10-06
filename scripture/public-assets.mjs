@@ -23,7 +23,7 @@ export function publicAssetBoundary(root) {
     if (privateSourcePath(req.path)) return res.status(404).end();
     let path;
     try { path = decodeURIComponent(req.path); } catch { return res.status(400).end(); }
-    if (Object.hasOwn(aliases, path)) return res.redirect(307, aliases[path] + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''));
+    if (Object.hasOwn(aliases, path)) return res.set('Cache-Control', 'no-store').redirect(307, aliases[path] + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : ''));
     if (published && path.endsWith('.mjs')) return res.status(404).end();
     next();
   };

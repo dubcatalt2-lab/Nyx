@@ -83,6 +83,7 @@ ministries/stratus/.runtime/
 playwright-report/
 test-results/
 .tmp-edge-proxy-matrix/
+.nyx-releases/
 nyx
 nyx-backupfolder.html/
 video-frames/

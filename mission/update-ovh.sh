@@ -59,8 +59,13 @@ bash "${SCRIPT_DIR}/configure-memory.sh"
 
 runuser -u "${APP_OWNER}" -- env ONNXRUNTIME_NODE_INSTALL=skip npm ci
 runuser -u "${APP_OWNER}" -- npm ci --prefix ministries/stratus --omit=dev --ignore-scripts
-runuser -u "${APP_OWNER}" -- env -u WISP_URL NYX_PUBLIC_ORIGIN="https://${DOMAIN}" npm run build:vps
+install -d -m 0750 -o "${APP_OWNER}" -g nyx "${APP_DIR}/.nyx-releases"
+STATIC_RELEASE=$(runuser -u "${APP_OWNER}" -- mktemp -d "${APP_DIR}/.nyx-releases/release-$(date -u +%Y%m%dT%H%M%S)-XXXXXX")
+STATIC_BUILD="${STATIC_RELEASE}/site"
+PREVIOUS_STATIC_ROOT=$(node mission/static-release.mjs current "${APP_DIR}" "${ENV_FILE}")
+runuser -u "${APP_OWNER}" -- env -u WISP_URL NYX_BUILD_OUTPUT="${STATIC_BUILD}" NYX_PUBLIC_ORIGIN="https://${DOMAIN}" npm run build:vps
 runuser -u "${APP_OWNER}" -- npm run check:deploy
+runuser -u "${APP_OWNER}" -- env NYX_BUILD_OUTPUT="${STATIC_BUILD}" node rituals/test-public-modules.mjs
 runuser -u "${APP_OWNER}" -- env ONNXRUNTIME_NODE_INSTALL=skip npm prune --omit=dev --package-lock=false
 chgrp -R nyx "${APP_DIR}"
 chmod -R g+rX "${APP_DIR}"
@@ -81,7 +86,13 @@ if stratus_is_configured; then
 else
   systemctl disable --now nyx-stratus >/dev/null 2>&1 || true
 fi
-systemctl restart nyx
+node mission/static-release.mjs activate "${APP_DIR}" "${ENV_FILE}" "${STATIC_BUILD}"
+if ! systemctl restart nyx || ! curl --fail --silent --show-error --retry 15 --retry-delay 1 --retry-connrefused --max-time 5 http://127.0.0.1:8080/healthz >/dev/null; then
+  node mission/static-release.mjs rollback "${APP_DIR}" "${ENV_FILE}" "${PREVIOUS_STATIC_ROOT}"
+  systemctl restart nyx
+  echo "Nyx health check failed; restored the previous static release."
+  exit 1
+fi
 bash mission/install-health-watchdog.sh
 if [[ -x mission/setup-turn.sh || -f mission/setup-turn.sh ]]; then
   bash mission/setup-turn.sh
@@ -100,3 +111,4 @@ if stratus_is_configured; then
   curl --fail --show-error http://127.0.0.1:3001/cloud/v1/healthz >/dev/null
 fi
 echo "Nyx updated successfully."
+node mission/static-release.mjs prune "${APP_DIR}" "${ENV_FILE}" "${STATIC_BUILD}" "${PREVIOUS_STATIC_ROOT}"

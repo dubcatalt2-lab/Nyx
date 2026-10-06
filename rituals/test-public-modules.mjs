@@ -16,7 +16,7 @@ const rewritten=rewritePublicModules(references,'/a/entry.js',collision);
 assert(!rewritten.includes('.mjs'));
 assert(rewritten.includes('?v=1'));
 assert.equal(rewritePublicModules('"/b/index.mjs.map"','/entry.js',collision),'"/b/index.mjs.map"');
-const root=resolve('dist'),files=await publicFiles(root);
+const root=resolve(process.env.NYX_BUILD_OUTPUT || 'dist'),files=await publicFiles(root);
 assert(!files.some(file=>file.endsWith('.mjs')),'Build must not publish .mjs');
 assert(!files.some(file=>privateSourcePath('/'+file)),'Build must exclude private paths');
 const aliases=JSON.parse(await readFile(sourceFile(root+'/public-modules.json'),'utf8')).aliases;
@@ -47,6 +47,7 @@ try{
  for(const [legacy,target] of Object.entries(aliases)){
   const redirect=await fetch(base+legacy+'?v=1',{redirect:'manual'});
   assert.equal(redirect.status,307);assert.equal(redirect.headers.get('location'),target+'?v=1');
+  assert.equal(redirect.headers.get('cache-control'),'no-store');
   const response=await fetch(base+target);assert.equal(response.status,200);assert.match(response.headers.get('content-type'),/javascript/);await response.body.cancel();
  }
  for(const path of ['/shepherd.js','/fellowship-server.js','/rituals/build-vps.mjs','/mission/setup-ovh.sh','/ministry/audit-apps-cdp.mjs','/server.js','/lib/ai-media.mjs','/scripts/build-vps.mjs','/package.json','/.env','/%6cib/ai-media.mjs','/deploy/setup-ovh.sh','/ministries/domain-pages/pages.mjs','/unknown.mjs'])assert.equal((await fetch(base+path)).status,404,path);

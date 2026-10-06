@@ -16,11 +16,12 @@ import CleanCSS from "clean-css";
 import { minify as minifyHtml } from "html-minifier-terser";
 import { minify } from "terser";
 import {learningPage} from '../ministries/domain-pages/pages.mjs';
+import {buildOutputPath} from '../scripture/build-output.mjs';
 import { buildProxyAssets } from "./build-intercession-assets.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
-const output = join(root, "dist");
+const output = buildOutputPath(root);
 const require = createRequire(import.meta.url);
 const rootFiles = new Set([
   "index.html",
@@ -429,6 +430,7 @@ async function versionStylesheets() {
 
 async function main() {
   const wispUrl = normalizeWispUrl(process.env.WISP_URL);
+  if (output !== join(root, 'dist') && existsSync(output)) throw new Error('Staged build output already exists; use a new release directory.');
   await rm(output, { recursive: true, force: true });
   await mkdir(output, { recursive: true });
   await copyRepositoryStaticFiles();
@@ -454,6 +456,7 @@ async function main() {
   await buildFrontendAssets(output,repositoryFiles().filter(isStaticSource).map(file => (modules['/'+file] || '/'+file).slice(1)),learningPage());
   await writeNotFoundPage();
   await buildPublisherPackage(root, output);
+  if (output !== join(root, 'dist')) await writeFile(join(dirname(output), 'ready.json'), JSON.stringify({format:'nyx-static-release', version:1, builtAt:new Date().toISOString()}));
   console.log(`VPS build ready in ${output}`);
   console.log(`Wisp endpoint: ${wispUrl}`);
 }

@@ -20,7 +20,7 @@ function nyxScramjetRouteMissHtml() {
 <main>
   <h1>Reconnecting Scramjet</h1>
   <p>Nyx is reconnecting this tab to the proxy service worker.</p>
-  <button type="button" onclick="location.reload()">Retry now</button>
+  <button type="button" data-nyx-repair onclick="if(parent===window){location.reload()}else{window.nyxRepairing=true;parent.postMessage({type:'nyx:repair-connection'},parent.location.origin)}">Repair connection</button>
 </main>
 <script>
   (() => {
@@ -28,7 +28,7 @@ function nyxScramjetRouteMissHtml() {
     const attempts=Number(sessionStorage.getItem(key)||0);
     if(attempts<2){
       sessionStorage.setItem(key,String(attempts+1));
-      setTimeout(()=>location.reload(),900);
+      setTimeout(()=>{if(!window.nyxRepairing)location.reload()},900);
     }else{
       sessionStorage.removeItem(key);
     }

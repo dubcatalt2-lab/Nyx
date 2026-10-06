@@ -5583,7 +5583,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const customWisp=storedCustomWispUrl();
       const wispBlock=document.createElement('section');
       wispBlock.className='settings-block nyx-wisp-setting';
-      wispBlock.innerHTML=`<h2>Wisp U3L</h2><p>Use a custom Wisp relay for Nyx proxy transports. Only use a relay you trust because it carries your proxied traffic.</p><div class="settings-form-row"><input class="settings-input" data-browser-wisp-url type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(customWisp)}" placeholder="${esc(defaultWispUrl())}" aria-label="Custom Wisp U3L"></div><p class="settings-hint" data-browser-wisp-status>${customWisp ? `Custom relay: ${esc(customWisp)}` : `Default relay: ${esc(defaultWispUrl())}`}</p><div class="settings-actions"><button class="settings-action" data-browser-wisp-save type="button">Save Wisp U3L</button><button class="settings-action" data-browser-wisp-reset type="button">Use default</button></div>`;
+      wispBlock.innerHTML=`<h2>Wisp U3L</h2><p>Use a custom Wisp relay for Nyx proxy transports. Only use a relay you trust because it carries your proxied traffic.</p><div class="settings-form-row"><input class="settings-input" data-browser-wisp-url type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(customWisp)}" placeholder="${esc(defaultWispUrl())}" aria-label="Custom Wisp U3L"></div><p class="settings-hint" data-browser-wisp-status>${customWisp ? `Custom relay: ${esc(customWisp)}` : `Default relay: ${esc(defaultWispUrl())}`}</p><div class="settings-actions"><button class="settings-action" data-browser-wisp-save type="button">Save Wisp U3L</button><button class="settings-action" data-browser-wisp-reset type="button">Use default</button><button class="settings-action" data-browser-connection-repair type="button">Repair connection</button></div>`;
       transportBlock.after(wispBlock);
       const transferBlock=document.createElement('section');
       transferBlock.className='settings-block nyx-data-transfer-setting';
@@ -7666,8 +7666,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function proxyFailureHtml(message,engine='Nyx',{allowDirect=false,heading=''}={}){
     const safe=String(message || 'Refresh this page once so the updated service worker can take over, then search again.').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const safeHeading=String(heading || `${engine || 'Nyx'} did not start`).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const repairAction='<button type="button" data-nyx-repair onclick="parent.postMessage({type:\'nyx:repair-connection\'},parent.location.origin)">Repair connection</button><small>Your account and saved settings stay in place.</small>';
     const directAction=allowDirect?'<button type="button" onclick="parent.postMessage({type:\'nyx:proxy-direct-fallback\'},\'*\')">Try direct mode</button><small>Direct mode works only when the site allows embedding.</small>':'';
-    return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font-family:Outfit,Arial,sans-serif;background:#101318;color:#f5f7fb;display:grid;place-items:center;min-height:100vh}main{box-sizing:border-box;width:min(560px,100%);padding:28px;text-align:center}h1{font-size:20px;margin:0 0 10px}p{margin:0;color:#c8ced8;line-height:1.45}button{min-height:42px;margin:18px 0 0;padding:0 18px;border:1px solid #6379a0;border-radius:12px;background:#1a2841;color:#f5f7fb;font:700 14px Outfit,Arial,sans-serif;cursor:pointer}small{display:block;margin-top:9px;color:#98a6bb;line-height:1.4}@media(max-width:480px) and (max-height:520px){main{padding:18px}h1{font-size:18px}p{font-size:13px}button{width:100%}}</style><main><h1>${safeHeading}</h1><p>${safe}</p>${directAction}</main>`;
+    return `<!doctype html><meta charset="utf-8"><meta name="nyx-connection-error" content="1"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font-family:Outfit,Arial,sans-serif;background:#101318;color:#f5f7fb;display:grid;place-items:center;min-height:100vh}main{box-sizing:border-box;width:min(560px,100%);padding:28px;text-align:center}h1{font-size:20px;margin:0 0 10px}p{margin:0;color:#c8ced8;line-height:1.45}button{min-height:42px;margin:18px 0 0;padding:0 18px;border:1px solid #6379a0;border-radius:12px;background:#1a2841;color:#f5f7fb;font:700 14px Outfit,Arial,sans-serif;cursor:pointer}small{display:block;margin-top:9px;color:#98a6bb;line-height:1.4}@media(max-width:480px) and (max-height:520px){main{padding:18px}h1{font-size:18px}p{font-size:13px}button{width:100%}}</style><main><h1>${safeHeading}</h1><p>${safe}</p>${repairAction}${directAction}</main>`;
   }
   function loadScript(src){
     return new Promise((resolve,reject)=>{
@@ -8225,6 +8226,27 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         throw new Error('The browsing session could not reconnect. Try again.');
       }
     }
+  }
+  let browserConnectionRepair=null;
+  function repairBrowserConnection(){
+    if(browserConnectionRepair)return browserConnectionRepair;
+    browserConnectionRepair=(async()=>{
+      if(!navigator.serviceWorker)throw new Error('This browser cannot create a browsing connection.');
+      await scramjetInstallPromise;
+      await scramjetTransportPending?.promise.catch(()=>null);
+      scramjetInstallPromise=null;
+      scramjetTransport?.close?.();
+      scramjetTransport=null;
+      scramjetTransportPending=null;
+      scramjetTransportKey='';
+      await unregisterProxyScope('/~/sj/');
+      if(!await installScramjet())throw new Error(scramjetInstallError || 'The browsing connection is unavailable.');
+      await ensureScramjetWorkerConnection(null,true);
+      for(const tab of activeBrowser?.tabs || []){
+        if(tab.privateScramjetController)await ensureScramjetWorkerConnection(tab.privateScramjetController,true);
+      }
+    })().finally(()=>{browserConnectionRepair=null});
+    return browserConnectionRepair;
   }
   async function loadScramjetRuntimeGuardSource(){
     if(scramjetRuntimeGuardSource) return scramjetRuntimeGuardSource;
@@ -12387,7 +12409,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const nyxTubeSourcePath=path=>['/apps/nyxtube','/apps/nyxtube/','/apps/nyxtube/index.html'].includes(path);
     const nyxAccountClientSourcePath=path=>nyxChatSourcePath(path)||['/apps/link-generator','/apps/link-generator/','/apps/link-generator/index.html','/apps/link-generator/bulk.html','/ai.html','/assets/games','/assets/games/','/assets/games/index.html','/apps/link-checker','/apps/link-checker/','/apps/link-checker/index.html','/apps/cloud-gaming','/apps/cloud-gaming/','/apps/cloud-gaming/index.html','/api','/api/','/apps/api-keys','/apps/api-keys/','/apps/api-keys/index.html','/apps/code-studio','/apps/code-studio/','/apps/code-studio/index.html','/apps/code-tutorials','/apps/code-tutorials/','/apps/code-tutorials/index.html'].includes(path);
     const messageHandler=e=>{
-      if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:nyxtube-profile-request','nyx:nyxtube-open-profile','nyx:account-token-request','nyx:account-open-signin','nyx:chat-open-profile','nyx:chat-notification','nyx:subscription-refresh','nyx:proxy-direct-fallback','nyx:cloud-game-load','nyx:cloud-game-save','nyx:close-tab','nyx:go-home'].includes(e.data?.type)) return;
+      if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:nyxtube-profile-request','nyx:nyxtube-open-profile','nyx:account-token-request','nyx:account-open-signin','nyx:chat-open-profile','nyx:chat-notification','nyx:subscription-refresh','nyx:repair-connection','nyx:proxy-direct-fallback','nyx:cloud-game-load','nyx:cloud-game-save','nyx:close-tab','nyx:go-home'].includes(e.data?.type)) return;
       if(['nyx:cloud-game-load','nyx:cloud-game-save'].includes(e.data.type)){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
@@ -12515,6 +12537,39 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       if(e.data.type==='nyx:ai-open-profile'){
         void openNyxUserProfile();
+        return;
+      }
+      if(e.data.type==='nyx:repair-connection'){
+        if(e.origin!==location.origin)return;
+        const tab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);
+        if(!tab || tab.connectionRepairPending)return;
+        let repairButton;
+        try{
+          const doc=tab.frame.contentDocument;
+          if(!doc?.querySelector('meta[name="nyx-route-miss"],meta[name="nyx-connection-error"]'))return;
+          repairButton=doc.querySelector('[data-nyx-repair]');
+          if(!repairButton)return;
+        }catch{return}
+        const source=tab.sourceUrl;
+        const intent=tab.navigationIntent;
+        if(!/^https?:\/\//i.test(source || ''))return;
+        tab.connectionRepairPending=true;
+        repairButton.disabled=true;
+        repairButton.textContent='Repairing...';
+        tab.transportWatchToken='';
+        tab.loadWatchToken='';
+        void repairBrowserConnection().then(()=>{
+          if(!state.tabs.includes(tab) || tab.navigationIntent!==intent || tab.sourceUrl!==source)return;
+          tab.workerRouteRecovery='';
+          tab.scramjetStartupRetries=0;
+          loadScramjetTab(tab,source,false);
+        }).catch(()=>{
+          toast('Connection repair could not finish. Check your browser extensions or try again.');
+        }).finally(()=>{
+          tab.connectionRepairPending=false;
+          repairButton.disabled=false;
+          repairButton.textContent='Repair connection';
+        });
         return;
       }
       if(e.data.type==='nyx:proxy-direct-fallback'){
@@ -14166,7 +14221,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
             <option value="wisp">Wisp</option>
             <option value="libcurlRaw">Libcurl</option>
           </select>
-          <button data-save-browser>Save Browser Settings</button>
+          <button data-save-browser>Save Browser Settings</button><button class="settings-action" data-browser-connection-repair type="button">Repair connection</button>
         </section>
         <section class="settings-card">
           <h2>Change S3ARC4 Engine</h2>
@@ -15422,6 +15477,22 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         e.preventDefault();
         saveBrowserShellSettings(browserSettingsSave.closest('.browser-shell-settings-overlay'));
         toast('Browser settings saved');
+        return;
+      }
+      const connectionRepair=e.target.closest?.('[data-browser-connection-repair]');
+      if(connectionRepair){
+        e.preventDefault();
+        if(connectionRepair.disabled)return;
+        connectionRepair.disabled=true;
+        connectionRepair.textContent='Repairing...';
+        void repairBrowserConnection().then(()=>{
+          toast('Connection refreshed. Try your search again.');
+        }).catch(()=>{
+          toast('Connection repair could not finish. Check your browser extensions or try again.');
+        }).finally(()=>{
+          connectionRepair.disabled=false;
+          connectionRepair.textContent='Repair connection';
+        });
         return;
       }
       const wispSave=e.target.closest?.('[data-browser-wisp-save]');

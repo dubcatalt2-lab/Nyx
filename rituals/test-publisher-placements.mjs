@@ -101,7 +101,7 @@ try {
   await first.waitForFunction(()=>document.querySelectorAll('.nyx-home-sponsor[data-ready]').length===2);
   await first.screenshot({path:'.codex-artifacts/publisher-home-preview.png'});
   const sideBounds=await first.locator('.nyx-home-sponsor iframe').evaluateAll(frames=>frames.map(f=>({width:f.getBoundingClientRect().width,height:f.getBoundingClientRect().height,sandbox:f.getAttribute('sandbox')})));
-  assert.ok(sideBounds.every(f=>Math.abs(f.width-80)<1&&Math.abs(f.height-300)<1&&f.sandbox.includes('allow-same-origin')));
+  assert.ok(sideBounds.every(f=>Math.abs(f.width-64)<1&&Math.abs(f.height-240)<1&&f.sandbox.includes('allow-same-origin')));
   await first.getByRole('button',{name:'Close left advertisement',exact:true}).click();
   assert.equal(await first.locator('.nyx-home-sponsor iframe').count(),1);
   await first.setViewportSize({width:800,height:900});

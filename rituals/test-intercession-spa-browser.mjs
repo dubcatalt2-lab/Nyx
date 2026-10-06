@@ -93,7 +93,7 @@ try{
     ['nyx','scramjet-v1',0,'libcurlRaw']
   ]){
     if(process.argv.includes('--handshake') && !(brand==='nyx'&&mode==='scramjet'&&transportName==='libcurlRaw'))continue;
-    if(process.argv.includes('--worker-loss') && !(brand==='nyx'&&mode==='scramjet'&&transportName==='epoxy'&&delay===0))continue;
+    if((process.argv.includes('--worker-loss')||process.argv.includes('--repair')) && !(brand==='nyx'&&mode==='scramjet'&&transportName==='epoxy'&&delay===0))continue;
     if(process.argv.includes('--presentation') && !(brand==='nyx'&&delay===3000))continue;
     if(process.argv.includes('--legacy') && !['scramjet-v1','ultraviolet'].includes(mode))continue;
     const context=await browser.newContext();
@@ -133,6 +133,30 @@ try{
     }
     const frame=page.frameLocator(brand==='nyx'?'iframe.view.active':'#browser-stage iframe:not([hidden])');
     await frame.locator('#channel-b').waitFor();
+    if(process.argv.includes('--repair')){
+      await frame.locator('#accept-cookies').evaluate(button=>button.click());
+      await page.evaluate(async()=>{
+        window.fixtureWorker=(await navigator.serviceWorker.getRegistration('/~/study/')).active;
+        localStorage.setItem('nyx.theme','halloween');
+        localStorage.setItem('nyx.fixture-account','preserved');
+      });
+      await frame.locator('body').evaluate(()=>parent.postMessage({type:'nyx:repair-connection'},'*'));
+      await page.waitForTimeout(300);
+      assert(await page.evaluate(async()=>window.fixtureWorker===(await navigator.serviceWorker.getRegistration('/~/study/')).active),'A normal proxied page cannot request a repair');
+      const fallback=await context.request.get(backend+'/~/study/missing/session/https%3A%2F%2Fexample.com');
+      const repairHtml=(await fallback.text()).replace('nyx-route-miss','nyx-connection-error');
+      await page.locator('iframe.view.active').evaluate((iframe,html)=>{iframe.removeAttribute('src');iframe.srcdoc=html},repairHtml);
+      await frame.getByRole('button',{name:'Repair connection',exact:true}).click();
+      await frame.locator('#channel-b').waitFor({timeout:30000});
+      assert(await page.evaluate(async()=>window.fixtureWorker!==(await navigator.serviceWorker.getRegistration('/~/study/')).active),'Repair replaces the old worker connection');
+      assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.theme')),'halloween');
+      assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.fixture-account')),'preserved');
+      assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.httpBridge')),'false');
+      assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.transport')),'epoxy');
+      assert.match(await frame.locator('body').evaluate(()=>document.cookie),/consent=yes/,'Private browsing cookies survive connection repair');
+      console.log('PASS explicit connection repair: new worker, working search, retained preferences and tab cookies; unsolicited page repair ignored.');
+      await context.close();continue;
+    }
     if(process.argv.includes('--worker-loss')){
       await page.evaluate(async()=>{
         for(const registration of await navigator.serviceWorker.getRegistrations())await registration.unregister();

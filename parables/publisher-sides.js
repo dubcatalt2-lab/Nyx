@@ -10,7 +10,7 @@ export function startHomeSponsors() {
   let expired = false;
   const dismissed = new Set();
   const style = document.createElement('style');
-  style.textContent = '.nyx-home-sponsor{position:absolute;top:50%;transform:translateY(-50%);width:80px;z-index:3;color:var(--obsidian-muted,#aaa);font:10px/1.4 system-ui;text-align:center}.nyx-home-sponsor[data-side="left"]{left:24px}.nyx-home-sponsor[data-side="right"]{right:24px}.nyx-home-sponsor>span{display:block;margin-bottom:8px}.nyx-home-sponsor .nyx-home-creative{width:80px;height:300px;overflow:hidden}.nyx-home-sponsor iframe{transform:scale(.5);transform-origin:top left;display:block;width:160px;height:600px;border:0;background:transparent}.nyx-home-sponsor:not([data-ready]){visibility:hidden}.nyx-home-sponsor[hidden]{display:none!important}';
+  style.textContent = '.nyx-home-sponsor{position:absolute;bottom:24px;width:64px;z-index:3;color:var(--obsidian-muted,#aaa);font:10px/1.4 system-ui;text-align:center}.nyx-home-sponsor[data-side="left"]{left:24px}.nyx-home-sponsor[data-side="right"]{right:24px}.nyx-home-sponsor>span{display:block;margin-bottom:8px}.nyx-home-sponsor .nyx-home-creative{width:64px;height:240px;overflow:hidden}.nyx-home-sponsor iframe{transform:scale(.4);transform-origin:top left;display:block;width:160px;height:600px;border:0;background:transparent}.nyx-home-sponsor:not([data-ready]){visibility:hidden}.nyx-home-sponsor[hidden]{display:none!important}';
   document.head.append(style);
   style.textContent += '.nyx-home-sponsor header{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:4px;font-size:8px}.nyx-home-sponsor button{display:grid;place-items:center;flex:none;width:24px;height:24px;border:1px solid #ffffff30;border-radius:6px;background:#151515;color:#eee;cursor:pointer}.nyx-home-sponsor button svg{width:12px;height:12px}';
   style.textContent += '.nyx-adkid-sponsors{position:fixed;inset:100px 0 0 76px;z-index:1100;pointer-events:none}.nyx-adkid-sponsors .nyx-home-sponsor{pointer-events:auto}';
@@ -54,7 +54,8 @@ export function startHomeSponsors() {
         host.setAttribute('aria-label', 'Sponsored placement');
         const header = document.createElement('header');
         const label = document.createElement('span');
-        label.textContent = 'Advertisement';
+        label.textContent = 'Ad';
+        label.setAttribute('aria-label', 'Advertisement');
         const close = document.createElement('button');
         close.type = 'button';
         close.setAttribute('aria-label',`Close ${index ? 'right' : 'left'} advertisement`);

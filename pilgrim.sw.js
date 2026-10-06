@@ -9,6 +9,7 @@ self.addEventListener("install", event => {
 function nyxScramjetRouteMissHtml() {
   return `<!doctype html>
 <meta charset="utf-8">
+<meta name="nyx-route-miss" content="1">
 <style>
   body{margin:0;min-height:100vh;display:grid;place-items:center;background:#101318;color:#f5f7fb;font:15px/1.45 system-ui,sans-serif}
   main{max-width:560px;padding:28px;text-align:center}

@@ -8202,16 +8202,29 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(event.persisted) return;
     activeBrowser?.tabs?.forEach?.(tab=>destroyProxyPrivacySession(tab));
   });
-  async function reconnectScramjetController(controller,serviceworker,transport){
+  async function reconnectScramjetController(controller,serviceworker,transport,force=false){
     if(!controller || !serviceworker) return false;
     controller.setTransport?.(transport);
-    if(controller.serviceWorkerController===serviceworker) return true;
+    if(controller.serviceWorkerController===serviceworker && !force) return true;
     if(typeof controller.setupMessagePort!=='function') return false;
     controller.serviceWorkerController=serviceworker;
     controller.guardServiceWorkerRevive=false;
     controller.setupMessagePort();
     await new Promise(resolve=>setTimeout(resolve,120));
     return true;
+  }
+  async function ensureScramjetWorkerConnection(controller,force=false){
+    let registration=await navigator.serviceWorker.getRegistration('/~/sj/');
+    if(!registration || registration.scope!==new URL('/~/sj/',location.href).href){
+      registration=await navigator.serviceWorker.register(scramjetServiceWorkerUrl,{scope:'/~/sj/',updateViaCache:'none'});
+    }
+    const worker=await waitForServiceWorkerScript(registration,scramjetServiceWorkerUrl);
+    if(!worker) throw new Error('The browsing connection could not be restored. Try again.');
+    for(const current of new Set([scramjetController,controller])){
+      if(current && !await reconnectScramjetController(current,worker,scramjetController.transport,force)){
+        throw new Error('The browsing session could not reconnect. Try again.');
+      }
+    }
   }
   async function loadScramjetRuntimeGuardSource(){
     if(scramjetRuntimeGuardSource) return scramjetRuntimeGuardSource;
@@ -8419,12 +8432,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const visibleText=String(body?.innerText || '').trim().slice(0,5000);
       const structureCount=Number(doc.documentElement?.childElementCount || 0)+Number(body?.childElementCount || 0);
       const title=String(doc.title || '').trim();
+      const routeMiss=!!doc.querySelector('meta[name="nyx-route-miss"]');
       const hasVisibleStructure=!!doc.querySelector('main,button,a,input,[role],[data-testid],svg,img,canvas,video,audio');
 
 
       const hasErrorText=/^(?:Error:\s*)?(?:scramjet did not start|scramjet route missed|error processing your request|internal server error|internal service worker error|Reconnecting (?:Scramjet|Studyjet)|request failed with error code\s*(?:35|52|56|60)|ssl connect error|ssl peer certificate|failure when receiving data from the peer|localhost refused to connect)\b/i.test(visibleText);
       const blank=!hasVisibleStructure && text.length<12 && structureCount<4;
-      return {reachable:true,blank,hasErrorText,text,visibleText,title,htmlLength:structureCount,readyState:doc.readyState};
+      return {reachable:true,blank,hasErrorText:hasErrorText||routeMiss,routeMiss,text,visibleText,title,htmlLength:structureCount,readyState:doc.readyState};
     }catch(error){
       return {reachable:false,blank:false,error:String(error?.message || error),text:'',title:'',readyState:''};
     }
@@ -11537,6 +11551,20 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         let text='';
         const health=inspectFrameHealth(t);
         text=health.visibleText || '';
+        if(health.routeMiss && expectedEngine==='scramjet'){
+          const navigationIntent=t.navigationIntent;
+          const recoveryKey=String(navigationIntent || '')+':'+sourceUrl;
+          if(t.workerRouteRecovery===recoveryKey) return;
+          t.workerRouteRecovery=recoveryKey;
+          t.transportWatchToken='';
+          t.loadWatchToken='';
+          void ensureScramjetWorkerConnection(t.privateScramjetController,true).then(()=>{
+            if(state.tabs.includes(t) && t.navigationIntent===navigationIntent && browserFrameStillAtSource(t,sourceUrl)) loadScramjetTab(t,sourceUrl,false);
+          }).catch(()=>{
+            if(state.tabs.includes(t) && t.navigationIntent===navigationIntent) loadSelectedSearchFallback(t,sourceUrl,'The browsing connection could not be restored.');
+          });
+          return;
+        }
         if(!health.hasErrorText || !serviceWorkerTransportErrorText(text)) return;
         const certificateFailure=tlsCertificateErrorText(text);
         setBrowserTabSecurityState(t,certificateFailure ? 'insecure' : 'unknown');
@@ -11908,6 +11936,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           t.frame.srcdoc=proxyFailureHtml(scramjetInstallError,'Scramjet',{allowDirect:true});
           return;
         }
+        await ensureScramjetWorkerConnection(t.privateScramjetController);
+        if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
         if(t.privateScramjetController && t.privateScramjetController.transport !== scramjetController.transport){
           t.privateScramjetController.setTransport(scramjetController.transport);
         }

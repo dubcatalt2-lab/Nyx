@@ -93,6 +93,7 @@ try{
     ['nyx','scramjet-v1',0,'libcurlRaw']
   ]){
     if(process.argv.includes('--handshake') && !(brand==='nyx'&&mode==='scramjet'&&transportName==='libcurlRaw'))continue;
+    if(process.argv.includes('--worker-loss') && !(brand==='nyx'&&mode==='scramjet'&&transportName==='epoxy'&&delay===0))continue;
     if(process.argv.includes('--presentation') && !(brand==='nyx'&&delay===3000))continue;
     if(process.argv.includes('--legacy') && !['scramjet-v1','ultraviolet'].includes(mode))continue;
     const context=await browser.newContext();
@@ -132,6 +133,40 @@ try{
     }
     const frame=page.frameLocator(brand==='nyx'?'iframe.view.active':'#browser-stage iframe:not([hidden])');
     await frame.locator('#channel-b').waitFor();
+    if(process.argv.includes('--worker-loss')){
+      await page.evaluate(async()=>{
+        for(const registration of await navigator.serviceWorker.getRegistrations())await registration.unregister();
+      });
+      await page.locator('[data-browser-shell-search]').evaluate(form=>{
+        form.querySelector('[data-browser-shell-url]').value='https://duckduckgo.com/?q=worker-recovery';
+        form.requestSubmit();
+      });
+      await page.waitForTimeout(3000);
+      await frame.locator('#channel-b').waitFor({timeout:20000});
+      await page.evaluate(()=>{
+        const get=navigator.serviceWorker.getRegistration.bind(navigator.serviceWorker);
+        let loseOnce=true;
+        navigator.serviceWorker.getRegistration=async(...args)=>{
+          const registration=await get(...args);
+          if(loseOnce && registration){loseOnce=false;await registration.unregister();}
+          return registration;
+        };
+      });
+      await page.locator('[data-browser-shell-search]').evaluate(form=>{
+        form.querySelector('[data-browser-shell-url]').value='https://duckduckgo.com/?q=worker-race';
+        form.requestSubmit();
+      });
+      await page.waitForTimeout(3000);
+      await frame.locator('#channel-b').waitFor({timeout:20000});
+      const routeMiss=await context.request.get(backend+'/~/study/missing/session/https%3A%2F%2Fexample.com');
+      assert.equal(routeMiss.status(),200,'CDNs must not replace the reconnection document with their generic 502 page');
+      assert.equal(routeMiss.headers()['cache-control'],'no-store');
+      assert.match(await routeMiss.text(),/name="nyx-route-miss"/);
+      assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.httpBridge')),'false');
+      assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.transport')),'epoxy');
+      console.log('PASS worker registration loss and mid-navigation race: search reconnects, CDN-safe no-store fallback, relay preferences preserved.');
+      await context.close();continue;
+    }
     if(process.argv.includes('--handshake')){
       assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.httpBridge')),'false');
       assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.transport')),'libcurlRaw');

@@ -14239,8 +14239,9 @@ app.use("/epoxy/", express.static(epoxyPath));
 app.use("/libcurl/", express.static(libcurlPath));
 
 app.use(["/~/sj/", "/~/study/", "/~/study-v1/"], (_req, res) => {
-  res.status(502).type("html").send(`<!doctype html>
+  res.set("Cache-Control", "no-store").status(200).type("html").send(`<!doctype html>
 <meta charset="utf-8">
+<meta name="nyx-route-miss" content="1">
 <style>
   body{margin:0;min-height:100vh;display:grid;place-items:center;background:#101318;color:#f5f7fb;font:15px/1.45 Raleway,Arial,sans-serif}
   main{max-width:560px;padding:28px;text-align:center}

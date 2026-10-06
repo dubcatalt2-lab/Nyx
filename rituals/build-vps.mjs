@@ -1,0 +1,461 @@
+import {sourceFile,publicSourcePath,publicSourceText} from '../scripture/source-layout.mjs';
+import {buildGameStorage} from './build-game-storage.mjs';
+import {buildPublicModules} from './build-public-modules.mjs';
+import {buildFrontendAssets} from './build-frontend-assets.mjs';
+import {buildPublisherPackage} from './build-publisher-package.mjs';
+import {formatPublishedHtml} from './format-published-html.mjs';
+import { spawn, spawnSync } from "node:child_process";
+import { createRequire } from "node:module";
+import { createHash } from "node:crypto";
+import { existsSync } from "node:fs";
+import { cp, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { parse } from "acorn";
+import CleanCSS from "clean-css";
+import { minify as minifyHtml } from "html-minifier-terser";
+import { minify } from "terser";
+import {learningPage} from '../ministries/domain-pages/pages.mjs';
+import { buildProxyAssets } from "./build-intercession-assets.mjs";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const root = resolve(here, "..");
+const output = join(root, "dist");
+const require = createRequire(import.meta.url);
+const rootFiles = new Set([
+  "index.html",
+  "about-nyx.html",
+  "ai.html",
+  "nyx-singlefile.html",
+  "app.webmanifest",
+  "robots.txt",
+  "tutsi-runtime.sw.js",
+  "sitemap.xml",
+  "script.js",
+  "startup.js",
+  "startup-studyhub.html",
+  "student-resources.html",
+  "styles.css",
+  "scramjet.sw.js",
+  "scramjet-v1.sw.js"
+]);
+const staticPrefixes = ["apps/", "assets/", "css/", "js/"];
+const blockedExtensions = /\.(?:7z|avi|mkv|mov|mp4|rar|webm|zip)$/i;
+const remotelyHostedUgsGames = new Set([
+  "minecraft/Dragonxclient.html",
+  "minecraft/EaglercraftL_1.9_v0_7_0_Offline_Signed.html",
+  "minecraft/EaglercraftX 1.8.8(u29).html",
+  "minecraft/EaglercraftZ_1.11.2.html",
+  "minecraft/eaglercraft.1.5.2.html"
+]);
+
+function normalizeWispUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const url = new URL(raw);
+  if (url.protocol === "https:") url.protocol = "wss:";
+  if (url.protocol === "http:") url.protocol = "ws:";
+  if (!new Set(["ws:", "wss:"]).has(url.protocol)) throw new Error("WISP_URL must use ws:// or wss://");
+  if (!url.pathname || url.pathname === "/") url.pathname = "/wisp/";
+  if (!url.pathname.endsWith("/")) url.pathname += "/";
+  url.username = "";
+  url.password = "";
+  url.hash = "";
+  return url.href;
+}
+
+function repositoryFiles() {
+  const result = spawnSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], {
+    cwd: root,
+    encoding: "buffer"
+  });
+  if (result.status !== 0) throw new Error(`Unable to list repository files: ${result.stderr?.toString() || "git failed"}`);
+  return result.stdout.toString("utf8").split("\0").filter(Boolean)
+    .map(path => path.replaceAll("\\", "/"))
+    .filter(path => existsSync(sourceFile(join(root, path))))
+    .map(publicSourcePath).filter((path,index,all)=>all.indexOf(path)===index);
+}
+
+function isStaticSource(path) {
+  return rootFiles.has(path) || staticPrefixes.some(prefix => path.startsWith(prefix));
+}
+
+async function copyRepositoryStaticFiles() {
+  for (const relative of repositoryFiles()) {
+    if (!isStaticSource(relative) || blockedExtensions.test(relative)) continue;
+    const source = join(root, ...relative.split("/"));
+    let info;
+    try {
+      info = await stat(sourceFile(source));
+    } catch {
+      continue;
+    }
+    if (!info.isFile()) continue;
+    const destination = join(output, ...relative.split("/"));
+    await mkdir(dirname(destination), { recursive: true });
+    if (/\.(?:js|mjs|html|css)$/.test(relative) && !relative.startsWith('assets/ugs/') && !relative.startsWith('assets/vendor/')) await writeFile(destination,publicSourceText(await readFile(sourceFile(source),'utf8')));
+    else await cp(sourceFile(source), destination);
+  }
+}
+
+async function copyProxyRuntimes() {
+  const { baremuxPath } = require("@mercuryworkshop/bare-mux/node");
+  const { scramjetPath } = require("@mercuryworkshop/scramjet/path");
+  const { scramjetPath: scramjetV1Path } = require("@mercuryworkshop/scramjet-v1/path");
+  const controller = dirname(require.resolve("@mercuryworkshop/scramjet-controller"));
+  const epoxy = join(dirname(require.resolve("@mercuryworkshop/epoxy-transport")), "..", "dist");
+  const libcurl = dirname(require.resolve("@mercuryworkshop/libcurl-transport"));
+  for (const [source, destination] of [
+    [baremuxPath, "baremux"],
+    [scramjetPath, "scramjet"],
+    [scramjetV1Path, "scramjet-v1"],
+    [controller, "controller"],
+    [epoxy, "epoxy"],
+    [libcurl, "libcurl"]
+  ]) {
+    await cp(sourceFile(source), join(output, destination), { recursive: true, force: true });
+  }
+}
+
+async function copyEruda() {
+  const source = require.resolve("eruda");
+  const destination = join(output, "assets", "vendor", "eruda.min.js");
+  await mkdir(dirname(destination), { recursive: true });
+  await cp(sourceFile(source), destination, { force: true });
+  await cp(sourceFile(require.resolve("hls.js/dist/hls.min.js")), join(output, "assets", "vendor", "hls.min.js"));
+  await cp(sourceFile(join(dirname(require.resolve("hls.js/package.json")), "LICENSE")), join(output, "assets", "vendor", "hls.LICENSE.txt"));
+}
+
+async function waitForLocalServer(child) {
+  return new Promise((resolveReady, reject) => {
+    let log = "";
+    const timer = setTimeout(() => reject(new Error(`Timed out starting the build server.\n${log}`)), 20_000);
+    child.on("message", message => {
+      if (message?.type !== "nyx:listening" || !Number.isInteger(message.port)) return;
+      clearTimeout(timer);
+      resolveReady(message.port);
+    });
+    child.stdout.on("data", chunk => {
+      log += chunk.toString();
+    });
+    child.stderr.on("data", chunk => { log += chunk.toString(); });
+    child.once("exit", code => {
+      clearTimeout(timer);
+      reject(new Error(`Build server exited with code ${code}.\n${log}`));
+    });
+  });
+}
+
+async function writePatchedRuntimes(wispUrl) {
+  // Runtime generation needs Express routes, not a second relay worker.
+  // Bind only to loopback and keep an existing development server running.
+  const runtimeServer = `
+    import { createServer } from "node:http";
+    import { app } from ${JSON.stringify(pathToFileURL(sourceFile(join(root, "server.js"))).href)};
+    const server = createServer(app);
+    server.listen(0, "127.0.0.1", () => {
+      process.send({ type: "nyx:listening", port: server.address().port });
+    });
+    const stop = () => {
+      server.close(() => process.exit(0));
+      setTimeout(() => process.exit(0), 1000).unref();
+    };
+    process.once("disconnect", stop);
+    process.once("SIGTERM", stop);
+  `;
+  const child = spawn(process.execPath, ["--input-type=module", "--eval", runtimeServer], {
+    cwd: root,
+    env: { ...process.env, PORT: "0", WISP_URL: wispUrl },
+    stdio: ["ignore", "pipe", "pipe", "ipc"]
+  });
+  try {
+    const port = await waitForLocalServer(child);
+    const routes = new Map([
+      ["/runtime-config.js", "runtime-config.js"],
+      ["/baremux/index.mjs", "baremux/index.mjs"],
+      ["/scramjet/scramjet.js", "scramjet/scramjet.js"],
+      ["/controller/controller.api.js", "controller/controller.api.js"],
+      ["/controller/controller.inject.js", "controller/controller.inject.js"],
+      ["/controller/controller.sw.js", "controller/controller.sw.js"],
+      ["/nyx-scramjet-runtime-guard.js", "nyx-scramjet-runtime-guard.js"]
+    ]);
+    for (const [route, destination] of routes) {
+      const response = await fetch(`http://127.0.0.1:${port}${route}`, { signal: AbortSignal.timeout(15_000) });
+      if (!response.ok) throw new Error(`${route} returned ${response.status}`);
+      const target = join(output, ...destination.split("/"));
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, Buffer.from(await response.arrayBuffer()));
+    }
+  } finally {
+    child.kill("SIGTERM");
+  }
+}
+
+
+async function removeUnavailableUgsEntries() {
+  const catalogPath = join(output, "assets", "ugs", "games.json");
+  let games;
+  try {
+    games = JSON.parse(await readFile(sourceFile(catalogPath), "utf8"));
+  } catch {
+    return;
+  }
+  const available = [];
+  for (const game of games) {
+    const gamePath = String(game?.path || "").replaceAll("\\", "/");
+    if (!gamePath || gamePath.includes("..")) continue;
+    if (remotelyHostedUgsGames.has(gamePath)) {
+      available.push(game);
+      continue;
+    }
+    try {
+      const info = await stat(sourceFile(join(output, "assets", "ugs", ...gamePath.split("/"))));
+      if (info.isFile()) available.push(game);
+    } catch {}
+  }
+  await writeFile(catalogPath, JSON.stringify(available));
+  console.log(`UGS catalog: ${available.length}/${games.length} deployable games`);
+}
+
+async function copyKatex() {
+  const source = join(dirname(require.resolve("katex/package.json")), "dist");
+  const destination = join(output, "assets", "vendor", "katex");
+  await mkdir(dirname(destination), { recursive: true });
+  await cp(sourceFile(source), destination, { recursive: true, force: true });
+}
+
+async function copyRemoteViewer() {
+  const source=dirname(dirname(require.resolve('@novnc/novnc')));
+  const destination=join(output,'assets','vendor','novnc');
+  await mkdir(destination,{recursive:true});
+  for(const name of ['core','vendor','docs','AUTHORS'])await cp(sourceFile(join(source,name)),join(destination,name),{recursive:true});
+}
+
+function runtimeMangleOptions(topLevel) {
+  return {
+    toplevel: topLevel,
+    safari10: true
+  };
+}
+
+function runtimeCompressOptions() {
+  return {
+    passes: 2,
+    drop_debugger: true,
+    keep_fargs: true,
+    unsafe: false
+  };
+}
+
+function runtimeFormatOptions() {
+  return {
+    ascii_only: true,
+    beautify: true,
+    indent_level: 2,
+    comments: /@license|@preserve|copyright|^!/i,
+    semicolons: true
+  };
+}
+
+async function minifyEmbeddedScramjetGuards(source, nameCache) {
+  const names = new Set([
+    "scramjetSpotifyChromeOsGuardSource",
+    "scramjetMinimalRuntimeGuardSource",
+    "scramjetHelperRuntimeGuardSource"
+  ]);
+  const program = parse(source, { ecmaVersion: "latest", sourceType: "script" });
+  const replacements = [];
+  const visit = async node => {
+    if (!node || typeof node !== "object") return;
+    if (
+      node.type === "VariableDeclarator" &&
+      names.has(node.id?.name) &&
+      node.init?.type === "TemplateLiteral" &&
+      node.init.expressions.length === 0
+    ) {
+      const result = await minify(node.init.quasis[0].value.cooked, {
+        compress: runtimeCompressOptions(),
+        mangle: runtimeMangleOptions(false),
+        format: runtimeFormatOptions(),
+        nameCache
+      });
+      if (!result.code) throw new Error(`Could not minify embedded guard ${node.id.name}`);
+      replacements.push({ start: node.init.start, end: node.init.end, code: JSON.stringify(result.code) });
+      names.delete(node.id.name);
+      return;
+    }
+    for (const value of Object.values(node)) {
+      if (Array.isArray(value)) {
+        for (const child of value) await visit(child);
+      } else if (value && typeof value === "object" && typeof value.type === "string") {
+        await visit(value);
+      }
+    }
+  };
+  await visit(program);
+  if (names.size) throw new Error(`Could not locate embedded Scramjet guards: ${[...names].join(", ")}`);
+  let transformed = source;
+  replacements.sort((a, b) => b.start - a.start).forEach(replacement => {
+    transformed = `${transformed.slice(0, replacement.start)}${replacement.code}${transformed.slice(replacement.end)}`;
+  });
+  return transformed;
+}
+
+async function minifyFirstPartyBrowserRuntimes() {
+  const generatedRuntimes = ["runtime-config.js", "nyx-scramjet-runtime-guard.js"];
+  const trackedRuntimes = repositoryFiles().filter(relative => (
+    /\.(js|mjs)$/.test(relative) &&
+    isStaticSource(relative) &&
+    !relative.startsWith("assets/ugs/") &&
+    !relative.startsWith("assets/vendor/")
+  ));
+  const targets = [...new Set([...trackedRuntimes, ...generatedRuntimes])]
+    .sort()
+    .map(path => ({ path, topLevel: true }));
+  const nameCache = {};
+  let sourceBytes = 0;
+  let outputBytes = 0;
+  let transformedFiles = 0;
+  for (const target of targets) {
+    const path = join(output, ...target.path.split("/"));
+    let source;
+    try {
+      source = await readFile(sourceFile(path), "utf8");
+    } catch {
+      continue;
+    }
+    sourceBytes += Buffer.byteLength(source);
+    if (target.path === "script.js") source = await minifyEmbeddedScramjetGuards(source, nameCache);
+    const result = await minify(source, {
+      module: target.path.endsWith(".mjs"),
+      compress: runtimeCompressOptions(),
+      mangle: runtimeMangleOptions(target.topLevel),
+      format: runtimeFormatOptions(),
+      nameCache
+    });
+    if (!result.code) throw new Error(`Could not minify ${target.path}`);
+    if (/sourceMappingURL/i.test(result.code)) throw new Error(`Source map reference survived in ${target.path}`);
+    await writeFile(path, `${result.code}\n`);
+    outputBytes += Buffer.byteLength(result.code) + 1;
+    transformedFiles += 1;
+  }
+  const reduction = sourceBytes ? Math.round((1 - outputBytes / sourceBytes) * 100) : 0;
+  if (transformedFiles !== targets.length) throw new Error(`Obfuscation coverage failed: ${transformedFiles}/${targets.length} runtimes transformed`);
+  console.log(`Production-obfuscated all ${transformedFiles} first-party browser runtime files (${reduction}% smaller; no source maps)`);
+}
+
+function isFirstPartyMarkupOrStyle(relative) {
+  if (!isStaticSource(relative) || relative.startsWith("assets/ugs/") || relative.startsWith("assets/vendor/")) return false;
+  return /\.(?:html|css)$/i.test(relative);
+}
+
+async function minifyFirstPartyMarkupAndStyles() {
+  const files = repositoryFiles().filter(isFirstPartyMarkupOrStyle);
+  let sourceBytes = 0;
+  let outputBytes = 0;
+  let transformedFiles = 0;
+  for (const relative of files) {
+    const path = join(output, ...relative.split("/"));
+    let source;
+    try {
+      source = await readFile(sourceFile(path), "utf8");
+    } catch {
+      throw new Error(`First-party HTML/CSS asset is missing from the production build: ${relative}`);
+    }
+    sourceBytes += Buffer.byteLength(source);
+    let transformed;
+    if (relative.endsWith(".css")) {
+      // CleanCSS treats a UTF-8 BOM before @import as part of a selector and
+      // silently discards both the import and the first rule after it.
+      const result = new CleanCSS({ inline: ["none"], level: 2, rebase: false, format: 'beautify' }).minify(source.replace(/^\uFEFF/, ""));
+      if (result.errors.length) throw new Error(`Could not minify ${relative}: ${result.errors.join("; ")}`);
+      transformed = result.styles;
+    } else {
+      transformed = formatPublishedHtml(await minifyHtml(source, {
+        collapseWhitespace: true,
+        conservativeCollapse: true,
+        maxLineLength: 120,
+        minifyCSS: { level: 2, format: 'beautify' },
+        minifyJS: {
+          compress: runtimeCompressOptions(),
+          // Inline handlers can reference globals across script tags. Rename
+          // local bindings only; retain public names and property contracts.
+          mangle: { toplevel: false, eval: false, properties: false },
+          keep_fnames: true,
+          keep_classnames: true,
+          format: runtimeFormatOptions()
+        },
+        removeComments: true,
+        removeRedundantAttributes: true,
+        removeScriptTypeAttributes: true,
+        removeStyleLinkTypeAttributes: true,
+        useShortDoctype: true
+      }));
+    }
+    await writeFile(path, `${transformed}\n`);
+    outputBytes += Buffer.byteLength(transformed) + 1;
+    transformedFiles += 1;
+  }
+  const reduction = sourceBytes ? Math.round((1 - outputBytes / sourceBytes) * 100) : 0;
+  console.log(`Production-minified ${transformedFiles} first-party HTML/CSS files (${reduction}% smaller; comments removed)`);
+}
+
+async function writeNotFoundPage() {
+  await writeFile(join(output, "404.html"), "<!doctype html><meta charset=\"utf-8\"><title>Not found</title><p>Not found</p>\n");
+}
+
+async function versionStylesheets() {
+  const files = repositoryFiles().filter(isStaticSource).sort();
+  const hash = createHash("sha256");
+  for (const path of files.filter(path => path.endsWith(".css"))) {
+    hash.update(path).update(await readFile(sourceFile(join(root, path))));
+  }
+  const revision = hash.digest("hex").slice(0, 16);
+  for (const path of files.filter(path => /\.(?:html|css)$/.test(path))) {
+    const target = join(output, path);
+    if (!existsSync(sourceFile(target))) continue;
+    const source = await readFile(sourceFile(target), "utf8");
+    const updated = source.replace(/(["'])([^"'\s<>]+\.css(?:\?[^"'\s<>]*)?)\1/g, (match, quote, url) => {
+      if (/^(?:[a-z]+:|\/\/)/i.test(url)) return match;
+      const pathname = url.split("?")[0];
+      const local = resolve(url.startsWith("/") ? output : dirname(target), url.startsWith("/") ? "." + pathname : pathname);
+      if (!local.startsWith(output) || !existsSync(sourceFile(local))) return match;
+      return quote + pathname + "?rev=" + revision + quote;
+    });
+    if (updated !== source) await writeFile(target, updated);
+  }
+  console.log(`Stylesheet cache revision: ${revision}`);
+}
+
+async function main() {
+  const wispUrl = normalizeWispUrl(process.env.WISP_URL);
+  await rm(output, { recursive: true, force: true });
+  await mkdir(output, { recursive: true });
+  await copyRepositoryStaticFiles();
+
+  const studyDir=join(output,'apps/tutsi/studyready');
+  await mkdir(studyDir,{recursive:true});
+  await writeFile(join(studyDir,'index.html'),learningPage().replaceAll('/learning/','/apps/tutsi/studyready/'));
+  for(const name of ['learning.css','learning.mjs','curriculum.mjs','secondary.mjs'])
+    await cp(sourceFile(join(root,'ministries/domain-pages',name)),join(studyDir,name));
+  await copyEruda();
+  await cp(sourceFile(join(root,'THIRD_PARTY_NOTICES.md')),join(output,'assets/vendor/nyx-third-party-notices.txt'));
+  await buildGameStorage(root,output);
+  await copyKatex();
+  await copyRemoteViewer();
+  await copyProxyRuntimes();
+  await writePatchedRuntimes(wispUrl);
+  await removeUnavailableUgsEntries();
+  await minifyFirstPartyBrowserRuntimes();
+  await versionStylesheets();
+  await minifyFirstPartyMarkupAndStyles();
+  await buildProxyAssets(output);
+  const modules = await buildPublicModules(output);
+  await buildFrontendAssets(output,repositoryFiles().filter(isStaticSource).map(file => (modules['/'+file] || '/'+file).slice(1)),learningPage());
+  await writeNotFoundPage();
+  await buildPublisherPackage(root, output);
+  console.log(`VPS build ready in ${output}`);
+  console.log(`Wisp endpoint: ${wispUrl}`);
+}
+
+await main();

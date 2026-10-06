@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import express from 'express';
+import {createServer} from 'node:http';
+import {resolve} from 'node:path';
+import {chromium} from 'playwright';
+import {createRemoteDesktop,remoteOwnerUid} from '../scripture/remote-desktop.mjs';
+import {createRemoteEntry} from "../mission/remote-entry.mjs";
+const remote=createRemoteDesktop({firebase:async()=>({auth:{verifyIdToken:async token=>({uid:token==='owner'?remoteOwnerUid:'other'})},firestore:{collection:()=>({where:()=>({get:async()=>({docs:[]})})})}}),download:async()=>Buffer.from('test')});
+const app=express();app.use('/api/private-remote',remote.router);
+app.get('/api/founder-profile/auth-config',(_req,res)=>res.json({enabled:true,apiKey:'fixture',projectId:'fixture'}));
+app.use('/apps/remote',remote.pageAccess,express.static(resolve(process.env.REMOTE_TEST_DIST?'dist/apps/remote':'apps/remote')));
+const upstream=createServer(app);upstream.on('upgrade',remote.upgrade);await new Promise(r=>upstream.listen(0,'127.0.0.1',r));
+const entry=createRemoteEntry({upstreamPort:upstream.address().port,...(process.env.REMOTE_TEST_DIST?{root:resolve('dist/apps/remote-entry')}:{})});await new Promise(r=>entry.listen(0,'127.0.0.1',r));
+const base='http://127.0.0.1:'+entry.address().port;
+const browser=await chromium.launch({channel:'msedge',headless:true});
+try{
+ for(const path of ['/apps/remote/index.html','/api/private-remote/devices','/api/private-remote/access','/api/nook-developer/me','/.env'])assert.equal((await fetch(base+path)).status,404,path);
+ await new Promise((resolve,reject)=>{const ws=new WebSocket(base.replace('http:','ws:')+'/api/private-remote/socket');const timer=setTimeout(()=>{ws.close();reject(Error('WebSocket deadline'));},8000);ws.onopen=()=>ws.send(JSON.stringify({type:'viewer',ticket:'invalid'}));ws.onerror=reject;ws.onclose=e=>{clearTimeout(timer);try{assert.equal(e.code,4003);resolve();}catch(error){reject(error);}};});
+ const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.route('https://www.gstatic.com/firebasejs/**/firebase-app.js',r=>r.fulfill({contentType:'text/javascript',body:'export const getApps=()=>[];export const initializeApp=()=>({});'}));
+ await page.route('https://www.gstatic.com/firebasejs/**/firebase-auth.js',r=>r.fulfill({contentType:'text/javascript',body:`const make=value=>value?{email:value+'@example.test',getIdToken:async()=>value}:null;const auth={currentUser:make(localStorage.getItem('fixture-user'))};let changed=()=>{};export const getAuth=()=>auth;export const browserLocalPersistence={};export const setPersistence=async()=>{};export const onAuthStateChanged=(a,f)=>{changed=f;f(a.currentUser)};export const signInWithEmailAndPassword=async(a,email)=>{const name=email.split('@')[0];localStorage.setItem('fixture-user',name);a.currentUser=make(name);changed(a.currentUser)};export const signOut=async a=>{localStorage.removeItem('fixture-user');a.currentUser=null;changed(null)};`}));
+ await page.goto(base);await page.locator('#email').fill('member@example.test');await page.locator('#password').fill('fixture');await page.locator('#submit').click();
+ await page.waitForFunction(()=>document.querySelector('#status').textContent.includes('does not have access'));
+ assert.equal(await page.locator('#password').inputValue(),'');
+ await page.locator('#signOut').click();await page.locator('#email').fill('owner@example.test');await page.locator('#password').fill('fixture');await page.locator('#submit').click();
+ await page.waitForURL('**/apps/remote/index.html');await page.locator('#workspace').waitFor();
+ assert.match(await page.locator('#devices').innerText(),/No paired computers/);
+ assert.deepEqual(errors,[]);
+ console.log('Standalone ngrok entry: member denied, owner login/session cookie/viewer access passed; protected pages/API remain private; WebSocket rejects invalid ticket.');
+}finally{await browser.close();remote.close();entry.closeAllConnections();upstream.closeAllConnections();await Promise.all([new Promise(r=>entry.close(r)),new Promise(r=>upstream.close(r))]);}

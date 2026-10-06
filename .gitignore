@@ -48,7 +48,7 @@ build/Release
 
 # Dependency directories
 node_modules/
-services/stratus/.runtime/
+ministries/stratus/.runtime/
 
 # Optional npm cache directory
 .npm
@@ -86,6 +86,28 @@ test-results/
 nyx
 nyx-backupfolder.html/
 video-frames/
+relics/ugs/
+!relics/ugs/
+relics/ugs/*
+!relics/ugs/play.html
+relics/music/
+relics/docs/
+relics/backgrounds/*
+!relics/backgrounds/obsidian-fabric.svg
+!relics/backgrounds/nyx-blue-light-trails.jpg
+!relics/backgrounds/animated-blue-wave.html
+!relics/backgrounds/pirate-cove.gif
+!relics/backgrounds/halloween.jpg
+*.mp4
+*.webm
+*.mov
+*.avi
+*.mkv
+*.zip
+*.7z
+*.rar
+
+# Existing server media remains private during source-layout migration.
 assets/ugs/
 !assets/ugs/
 assets/ugs/*
@@ -98,11 +120,3 @@ assets/backgrounds/*
 !assets/backgrounds/animated-blue-wave.html
 !assets/backgrounds/pirate-cove.gif
 !assets/backgrounds/halloween.jpg
-*.mp4
-*.webm
-*.mov
-*.avi
-*.mkv
-*.zip
-*.7z
-*.rar

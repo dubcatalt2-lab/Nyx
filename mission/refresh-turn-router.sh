@@ -10,6 +10,7 @@ trap 'rm -f -- "$router_tmp"' EXIT
 sed "s|__NYX_TURN_DOMAIN__|${relay_domain}|g" "$router_root/sanctuary-turn.cfg.template" > "$router_tmp"
 haproxy -c -f "$router_tmp"
 install -o root -g root -m 0644 "$router_tmp" /etc/haproxy/haproxy.cfg
-install -o root -g root -m 0755 "$router_root/renew-turn-certificate.sh" /etc/letsencrypt/renewal-hooks/mission/nyx-turn-certificate
+install -d -o root -g root -m 0755 /etc/letsencrypt/renewal-hooks/deploy
+install -o root -g root -m 0755 "$router_root/renew-turn-certificate.sh" /etc/letsencrypt/renewal-hooks/deploy/nyx-turn-certificate
 systemctl enable haproxy
 systemctl reload-or-restart haproxy

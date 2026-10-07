@@ -4,21 +4,26 @@
     .replace(/\bgames\b/gi,'G@M3Z')
     .replace(/[A-Za-z]/g,letter=>substitutions[letter.toLowerCase()] || letter.toUpperCase())
     .replace(/[A-Z0-9]/g,letter=>String.fromCodePoint(letter<='9' ? 0x1d7e2+letter.charCodeAt(0)-48 : 0x1d5a0+letter.charCodeAt(0)-65));
-  const names=/^(?:home|games|music|youtube|nyxtube|nyxify|ai|a1|nyx a1|chat|nyx chat|vms|apps|discord|settings|account|movies|nyx movies|cloud gaming|link generator|link checker|jsdelivr publisher|code sandbox|api keys|nyx api keys|nyx premium|caffeine|arcade|game library|all games|miscellaneous)$/i;
-  const labels='[data-nyx-dock-item] > span,.home-shortcut-open > span,.workspace-home-label,.nyx-discord-link > span,[data-nyx-display-label]';
-  const headings='h1,h2,h3,nav a,nav button,header strong';
+  const names=/^(?:(?:nyx|tutsi|drop)\s+)?(?:home|games|music|youtube|nyxtube|nyxify(?:\/built in music)?|ai|a1|duck ai|duck a1|chat|vms|apps|discord|settings|account|movies|more movie sites|tiktok|animex|cloud gaming|link generator|bulk link generator|link checker|jsdelivr publisher|code sandbox|code studio|api(?: keys)?|premium|caffeine|arcade|game library|all games|miscellaneous)$/i;
+  const labels='[data-nyx-dock-item] > span,.home-shortcut-open > span,.workspace-home-label,.nyx-discord-link > span,.quick-tile > span:not(.quick-icon),#all-apps button > span,[data-nyx-display-label]';
+  const headings='h1,h2,h3,nav a,nav button,header strong,.nyxify-brand strong,.lc-brand strong,.utility-nav-item > span,.brand,.brand-title';
   const installed=new WeakSet();
   function install(doc){
-    if(!doc?.body || installed.has(doc)) return;
+    if(!doc?.body || installed.has(doc) || doc.__nyxDisplayLabelsInstalled) return;
     installed.add(doc);
+    doc.__nyxDisplayLabelsInstalled=true;
     function format(element){
-      if(element.children.length || element.closest('input,textarea,[contenteditable="true"],.nyx-styled-display-name')) return;
-      const text=element.textContent.trim();
+      if(element.closest('input,textarea,pre,code,[contenteditable="true"],.nyx-styled-display-name,.message,.message-content,.chat-message,[data-message-id]')) return;
+      const nodes=[...element.childNodes].filter(node=>node.nodeType===3);
+      const text=nodes.map(node=>node.textContent).join('').trim();
       if(!text || (!element.matches(labels) && !names.test(text))) return;
       const next=nyxDisplayName(text);
-      if(next===element.textContent) return;
+      if(next===text) return;
       if(!element.hasAttribute('aria-label')) element.setAttribute('aria-label',text);
-      element.textContent=next;
+      const content=nodes.find(node=>node.textContent.trim());
+      if(!content)return;
+      content.textContent=next;
+      for(const node of nodes)if(node!==content&&node.textContent.trim())node.textContent='';
     }
     function scan(node){
       const element=node.nodeType===1 ? node : node.parentElement;

@@ -5349,7 +5349,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const effect=esc(store.text('nyx.visualEffect','none'));
     const effectSpeed=esc(store.text('nyx.visualEffectSpeed','1.1'));
     const effectAmount=esc(store.text('nyx.visualEffectAmount','16'));
-    return `<section class="settings-app settings-single-pane workspace-only-settings"><main class="settings-main"><h1>Workspace Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="deltamath" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="deltamath" ${currentPreset==='deltamath'?'selected':''}>DeltaMath</option><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original tab redirect U3L"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Auto Cloak</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>S3ARC4 Engine</h2><select class="settings-select" data-workspace-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>DuckDuckGo</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Proxy Engine</h2><select class="settings-select" data-workspace-mode-select><option value="auto" ${workspaceMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${workspaceMode==='scramjet'?'selected':''}>Scrapmmy</option></select></section><section class="settings-block"><h2>HTTP bridge</h2><p>Recommended for devices or networks that block WebSockets. Turn off to use direct WebSocket connections. Applies to the default relay; custom relays keep their saved choice. Reload website tabs after changing.</p><div class="settings-row"><span>Use HTTP bridge</span><button class="settings-action ${store.get('nyx.httpBridge',true)?'on':''}" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-workspace-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Eppy over Relay</option><option value="wisp" ${transport==='wisp'?'selected':''}>Relay endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Libby over Relay</option></select><div class="settings-actions"><button class="settings-action" data-workspace-settings-save type="button">Save Workspace Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
+    return `<section class="settings-app settings-single-pane workspace-only-settings"><main class="settings-main"><h1>Workspace Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="deltamath" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="deltamath" ${currentPreset==='deltamath'?'selected':''}>DeltaMath</option><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original tab redirect U3L"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Auto Cloak</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>S3ARC4 Engine</h2><select class="settings-select" data-workspace-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>DuckDuckGo</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Learning engine</h2><select class="settings-select" data-workspace-mode-select><option value="auto" ${workspaceMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${workspaceMode==='scramjet'?'selected':''}>Learning engine</option></select></section><section class="settings-block"><h2>Compatibility mode</h2><p>Use the alternate connection when a network cannot open sites. Turn off for the standard connection. Reload website tabs after changing. Custom connections keep their saved choice.</p><div class="settings-row"><span>Use Compatibility mode</span><button class="settings-action ${store.get('nyx.httpBridge',true)?'on':''}" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div></section><section class="settings-block"><h2>Connection method</h2><select class="settings-select" data-workspace-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Atlas connection</option><option value="wisp" ${transport==='wisp'?'selected':''}>Relay endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Textbook connection</option></select><div class="settings-actions"><button class="settings-action" data-workspace-settings-save type="button">Save Workspace Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
   }
   function workspaceShellPresetTiles(){
     return `<button class="quick-tile" data-preset="deltamath" type="button"><img class="quick-icon" alt="" src="${favicons.deltamath}"><span>DeltaMath tab</span></button><button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${nyxTabFavicon}"><span>ռʏӼ tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
@@ -5388,7 +5388,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(workspaceModeSelect){
       const workspaceModeLabels={
         auto:'Auto',
-        scramjet:'Scramjet v2',
+        scramjet:'Learning engine',
 
       };
       [...workspaceModeSelect.options].forEach(option=>{
@@ -5410,7 +5410,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       ['appearance','Appearance',settingsIcons.customize,'Make Nyx feel like yours.',['theme','homepage','sidebar','custom theme','effects','wallpapers','line waves','performance']],
       ['workspace','Workspace',settingsIcons.browsing,'Manage tabs, search, and browsing controls.',['tab cloak','preset cloak','cloaking','tab design']],
       ['privacy','Privacy',settingsIcons.privacy,'Keep your browsing surface private and protected.',['private tabs','popup protection']],
-      ['proxy','Proxy',settingsIcons.browsing,'Choose how Nyx reaches the web.',['proxy engine','http bridge','transport','wisp url']],
+      ['connections','Connections',settingsIcons.browsing,'Choose how Nyx reaches the web.',['learning engine','compatibility mode','connection method','relay address']],
       ['accounts','Accounts',settingsIcons.account,'Manage your identity, cloud saves, and staff tools.',['account','cloud saves','owner dashboard','founder profile']],
       ['data','Data',settingsIcons.advanced,'Move, download, or reset local Nyx data.',['data transfer','clear cache']],
       ['advanced','Advanced',settingsIcons.advanced,'Configure power-user workspace controls.',['panic key','font']],
@@ -5600,14 +5600,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const legacyLibcurlOption=transportSelect?.querySelector('option[value="libcurl"]');
     if(legacyLibcurlOption){
       legacyLibcurlOption.value='libcurlRaw';
-      legacyLibcurlOption.textContent='Libcurl';
+      legacyLibcurlOption.textContent='Textbook';
     }
     if(transportSelect && !transportSelect.querySelector('option[value="auto"]')){
       transportSelect.prepend(new Option('Auto (recommended)','auto'));
       transportSelect.value=normalizeWorkspaceTransportName(store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT));
     }
     if(transportSelect){
-      const transportLabels={epoxy:'Epoxy',wisp:'Wisp',libcurl:'Libcurl',libcurlRaw:'Libcurl',auto:'Auto'};
+      const transportLabels={epoxy:'Atlas',wisp:'Relay',libcurl:'Textbook',libcurlRaw:'Textbook',auto:'Auto'};
       [...transportSelect.options].forEach(option=>{
         if(transportLabels[option.value]) option.textContent=transportLabels[option.value];
       });
@@ -5617,7 +5617,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const customWisp=storedCustomWispUrl();
       const wispBlock=document.createElement('section');
       wispBlock.className='settings-block nyx-wisp-setting';
-      wispBlock.innerHTML=`<h2>Wisp U3L</h2><p>Use a custom Wisp relay for Nyx proxy transports. Only use a relay you trust because it carries your proxied traffic.</p><div class="settings-form-row"><input class="settings-input" data-workspace-wisp-url type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(customWisp)}" placeholder="${esc(defaultWispUrl())}" aria-label="Custom Wisp U3L"></div><p class="settings-hint" data-workspace-wisp-status>${customWisp ? `Custom relay: ${esc(customWisp)}` : `Default relay: ${esc(defaultWispUrl())}`}</p><div class="settings-actions"><button class="settings-action" data-workspace-wisp-save type="button">Save Wisp U3L</button><button class="settings-action" data-workspace-wisp-reset type="button">Use default</button><button class="settings-action" data-workspace-connection-repair type="button">Repair connection</button></div>`;
+      wispBlock.innerHTML=`<h2>Relay address</h2><p>Use a custom connection relay for Nyx connections. Only use a relay you trust because it carries your website traffic.</p><div class="settings-form-row"><input class="settings-input" data-workspace-wisp-url type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(customWisp)}" placeholder="${esc(defaultWispUrl())}" aria-label="Custom Relay address"></div><p class="settings-hint" data-workspace-wisp-status>${customWisp ? `Custom relay: ${esc(customWisp)}` : `Default relay: ${esc(defaultWispUrl())}`}</p><div class="settings-actions"><button class="settings-action" data-workspace-wisp-save type="button">Save Relay address</button><button class="settings-action" data-workspace-wisp-reset type="button">Use default</button><button class="settings-action" data-workspace-connection-repair type="button">Repair connection</button></div>`;
       transportBlock.after(wispBlock);
       const transferBlock=document.createElement('section');
       transferBlock.className='settings-block nyx-data-transfer-setting';
@@ -5696,7 +5696,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       cloudSaveBlock.innerHTML='<h2>Cloud Saves</h2><p data-nyx-cloud-save-status>Sign in to sync supported game progress and Nyx preferences.</p>';
       const resetBlock=document.createElement('section');
       resetBlock.className='settings-block';
-      resetBlock.innerHTML=`<h2>Clear Cache</h2><p>Removes cookies, cache files, saved settings, proxy storage, and service workers, then reloads nyx like a fresh install.</p><div class="settings-actions"><button class="settings-action danger-action" data-clear-nyx-cache type="button">Clear Cache and Reset</button></div>`;
+      resetBlock.innerHTML=`<h2>Clear Cache</h2><p>Removes cookies, cache files, saved settings, connection storage, and service workers, then reloads nyx like a fresh install.</p><div class="settings-actions"><button class="settings-action danger-action" data-clear-nyx-cache type="button">Clear Cache and Reset</button></div>`;
       effectBlock.before(privacyBlock);
       effectBlock.before(homepageBlock);
 
@@ -7331,7 +7331,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           }catch{return false}
         });
       }],
-      ['Checking proxy updates',async()=>doubleCheck(async()=>{
+      ['Checking connection updates',async()=>doubleCheck(async()=>{
         if(typeof preflightStateCurrent==='function') return preflightStateCurrent();
         return typeof connectionStateVersion==='string' && typeof studyjetStateVersion==='string';
       })],
@@ -7516,7 +7516,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const target=connectionTargetUrl(url);
     if(!target) return '';
     const ready=await installStudyjet();
-    if(!ready) throw new Error('Nyx game proxy is unavailable.');
+    if(!ready) throw new Error('The game connection is unavailable.');
     return studyjetUrl(target);
   };
   const nyxManagedGameFrames=new WeakMap();
@@ -7603,7 +7603,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
     }
     if(mode==='iframe') return {managed:false,engine:'iframe',url:target};
-    throw new Error('Nyx game proxy is unavailable.');
+    throw new Error('The game connection is unavailable.');
   };
 
   window.nyxLaunchMovieFrame=async(frame,url,{signal,recover=false}={})=>{
@@ -7802,11 +7802,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const raw=String(value || '').trim();
     if(!raw) return '';
     let endpoint;
-    try{endpoint=new URL(raw)}catch{throw new Error('Enter a complete ws:// or wss:// Wisp URL.')}
-    if(endpoint.protocol!=='ws:' && endpoint.protocol!=='wss:') throw new Error('A Wisp URL must start with ws:// or wss://.');
-    if(endpoint.username || endpoint.password) throw new Error('Wisp URLs cannot contain a username or password.');
-    if(endpoint.hash) throw new Error('Wisp URLs cannot contain a # fragment.');
-    if(location.protocol==='https:' && endpoint.protocol!=='wss:') throw new Error('Secure Nyx pages require a wss:// Wisp URL.');
+    try{endpoint=new URL(raw)}catch{throw new Error('Enter a complete ws:// or wss:// Relay address.')}
+    if(endpoint.protocol!=='ws:' && endpoint.protocol!=='wss:') throw new Error('A Relay address must start with ws:// or wss://.');
+    if(endpoint.username || endpoint.password) throw new Error('Relay addresses cannot contain a username or password.');
+    if(endpoint.hash) throw new Error('Relay addresses cannot contain a # fragment.');
+    if(location.protocol==='https:' && endpoint.protocol!=='wss:') throw new Error('Secure Nyx pages require a wss:// Relay address.');
     return endpoint.href;
   }
   function defaultWispUrl(){
@@ -7864,14 +7864,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     let next='';
     try{next=reset ? '' : normalizeWispUrl(input?.value || '')}catch(error){
       input?.focus();
-      toast(error?.message || "Enter a valid Wisp U3L.");
+      toast(error?.message || "Enter a valid Relay address.");
       return false;
     }
     store.setText('nyx.wispUrl',next);
     if(input) input.value=next;
     if(status) status.textContent=next ? `Custom relay: ${next}` : `Default relay: ${defaultWispUrl()}`;
     resetWorkspaceConnectionRuntime();
-    toast(next ? "Custom Wisp U3L saved" : "Default Wisp U3L restored");
+    toast(next ? "Custom Relay address saved" : "Default Relay address restored");
     return true;
   }
   const NYX_PORTABLE_BACKUP_FORMAT='nyx-portable-backup';
@@ -8210,7 +8210,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function createStudyjetController(serviceworker,transport){
     const api=window.$scramjetController;
     const Controller=api?.Controller;
-    if(!Controller) throw new Error('Scramjet controller API did not load');
+    if(!Controller) throw new Error('Learning controller did not load');
     api.assertRuntimeScramjetVersion?.();
     return new Controller({
       serviceworker,
@@ -8221,7 +8221,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   async function createPrivateStudyjetController(){
     const base=studyjetController;
-    if(!base?.serviceWorkerController || !base?.transport) throw new Error('Scramjet private session is unavailable');
+    if(!base?.serviceWorkerController || !base?.transport) throw new Error('Private learning session is unavailable');
     const controller=createStudyjetController(base.serviceWorkerController,base.transport);
     const {trackConnectionController,waitForConnectionController}=await import('/js/intercession-startup.mjs');
     controller.nyxStopWorkerTracking=trackConnectionController(controller);
@@ -8314,7 +8314,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   async function loadStudyjetRuntimeGuardSource(){
     if(studyjetRuntimeGuardSource) return studyjetRuntimeGuardSource;
     const response=await fetch('/nyx-scramjet-runtime-guard.js',{cache:'no-store'});
-    if(!response.ok) throw new Error('Could not load Scramjet runtime guard');
+    if(!response.ok) throw new Error('Could not load Learning runtime guard');
     studyjetRuntimeGuardSource=await response.text();
     return studyjetRuntimeGuardSource;
   }
@@ -8521,7 +8521,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const hasVisibleStructure=!!doc.querySelector('main,button,a,input,[role],[data-testid],svg,img,canvas,video,audio');
 
 
-      const hasErrorText=/^(?:Error:\s*)?(?:scramjet did not start|scramjet route missed|error processing your request|internal server error|internal service worker error|Reconnecting (?:Scramjet|Studyjet)|request failed with error code\s*(?:35|52|56|60)|ssl connect error|ssl peer certificate|failure when receiving data from the peer|localhost refused to connect)\b/i.test(visibleText);
+      const hasErrorText=/^(?:Error:\s*)?(?:(?:scramjet|learning engine) did not start|scramjet route missed|error processing your request|internal server error|internal service worker error|Reconnecting (?:Scramjet|Studyjet|Learning engine)|request failed with error code\s*(?:35|52|56|60)|ssl connect error|ssl peer certificate|failure when receiving data from the peer|localhost refused to connect)\b/i.test(visibleText);
       const blank=!hasVisibleStructure && text.length<12 && structureCount<4;
       return {reachable:true,blank,hasErrorText:hasErrorText||routeMiss,routeMiss,text,visibleText,title,htmlLength:structureCount,readyState:doc.readyState};
     }catch(error){
@@ -8933,7 +8933,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   async function initializeStudyjetV1Controller(){
     const api=window.$scramjetLoadController?.();
     const Controller=api?.ScramjetController;
-    if(!Controller) throw new Error('Scramjet v1 controller API did not load');
+    if(!Controller) throw new Error('Classic learning engine controller API did not load');
     const controller=new Controller(studyjetV1Config());
 
 
@@ -8945,7 +8945,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   async function sendStudyjetV1Config(controller,serviceworker){
     const db=controller?.db || await controller?.openIDB?.();
     const config=await db?.get?.('config','config');
-    if(!config) throw new Error('Scramjet v1 configuration did not initialize');
+    if(!config) throw new Error('Classic learning engine configuration did not initialize');
     serviceworker.postMessage({scramjet$type:'loadConfig',config});
   }
   function installStudyjetV1(){
@@ -8953,36 +8953,36 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
 }
   function installStudyjet(){
     if(studyjetInstallPromise) return studyjetInstallPromise;
-    let step='starting Scramjet';
+    let step="starting Learning engine";
     studyjetInstallPromise=(async()=>{
       step='checking workspace support';
       if(location.protocol==='file:'){
-        studyjetInstallError='Scramjet needs Nyx to be opened from its website, not as a local file.';
+        studyjetInstallError="Learning engine needs Nyx to be opened from its website, not as a local file.";
         return false;
       }
       if(!('serviceWorker' in navigator)){
-        studyjetInstallError='This workspace does not support the Service Workers Scramjet needs. Some watch workspaces do not provide that feature.';
+        studyjetInstallError="This workspace does not support the Service Workers Learning engine needs. Some watch workspaces do not provide that feature.";
         return false;
       }
-      step='resetting stale Scramjet state';
+      step="resetting stale Learning engine state";
       await ensureFreshConnectionState();
       await ensureFreshStudyjetState();
-      step='loading Scramjet assets';
+      step="loading Learning engine assets";
       const {loadConnectionScript,waitForConnectionController,trackConnectionController}=await import('/js/intercession-startup.mjs');
       await loadConnectionScript('/scramjet/scramjet.js?v=20260905-optional-history-url-v1',()=>Boolean(window.$scramjet));
       await loadConnectionScript('/controller/controller.api.js',()=>Boolean(window.$scramjetController));
-      step='loading Scramjet runtime guard';
+      step='loading Learning runtime guard';
       await loadStudyjetRuntimeGuardSource();
-      step='starting Scramjet relay';
+      step="starting Learning engine relay";
       const transport=await createStudyjetTransport();
-      step='registering Scramjet service worker';
+      step='registering Learning service worker';
       const registration=await navigator.serviceWorker.register(studyjetServiceWorkerUrl,{scope:'/~/sj/',updateViaCache:'none'});
 
 
-      step='activating Scramjet service worker';
+      step='activating Learning service worker';
       const serviceworker=await waitForServiceWorkerScript(registration,studyjetServiceWorkerUrl);
-      if(!serviceworker) throw new Error('Scramjet service worker did not activate');
-      step='initializing Scramjet controller';
+      if(!serviceworker) throw new Error('Learning service worker did not activate');
+      step="initializing Learning engine controller";
       try{
         if(!studyjetController) studyjetController=createStudyjetController(serviceworker,transport);
         else if(!await reconnectStudyjetController(studyjetController,serviceworker,transport)){
@@ -8992,12 +8992,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         await waitForConnectionController(studyjetController);
       }catch(initError){
         if(!isStudyjetIdbShapeError(initError)) throw initError;
-        step='repairing Scramjet storage';
+        step="repairing Learning engine storage";
         await repairStudyjetStorage();
         const repairedRegistration=await navigator.serviceWorker.register(studyjetServiceWorkerUrl,{scope:'/~/sj/',updateViaCache:'none'});
         const repairedServiceworker=await waitForServiceWorkerScript(repairedRegistration,studyjetServiceWorkerUrl);
-        if(!repairedServiceworker) throw new Error('Scramjet service worker did not activate after storage repair');
-        step='initializing Scramjet controller after storage repair';
+        if(!repairedServiceworker) throw new Error('Learning service worker did not activate after storage repair');
+        step="initializing Learning engine controller after storage repair";
         studyjetController?.nyxStopWorkerTracking?.();
         studyjetController=createStudyjetController(repairedServiceworker,transport);
         studyjetController.nyxStopWorkerTracking=trackConnectionController(studyjetController);
@@ -11624,7 +11624,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         loadStudyjetTab(t,sourceUrl,false);
         return true;
       }
-      return loadSelectedSearchFallback(t,sourceUrl,reason || 'Scramjet retries exhausted');
+      return loadSelectedSearchFallback(t,sourceUrl,reason || "Learning engine retries exhausted");
 }
     function watchFrameTransportErrors(t,sourceUrl,expectedEngine){
       if(!t?.frame || !sourceUrl || !expectedEngine) return;
@@ -11804,7 +11804,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
             handled=true;
           }else if(workspaceMode==='auto'){
             if(canAutoTransport) setWorkspaceTransportOverride('epoxy');
-            loadSelectedSearchFallback(t,sourceUrl,'Scramjet relays exhausted');
+            loadSelectedSearchFallback(t,sourceUrl,"Learning engine relays exhausted");
             handled=true;
           }
         }
@@ -12018,7 +12018,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           t.actualEngine='scramjet-failed';
           setFrameSandbox(t,true);
           clearFrameDocument(t);
-          t.frame.srcdoc=connectionFailureHtml(studyjetInstallError,'Scramjet',{allowDirect:true});
+          t.frame.srcdoc=connectionFailureHtml(studyjetInstallError,"Learning engine",{allowDirect:true});
           return;
         }
         await ensureStudyjetWorkerConnection(t.privateScramjetController);
@@ -12043,7 +12043,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
                 controller.nyxStopWorkerTracking?.();
                 try{controller.cookieSyncChannel?.close?.()}catch{}
                 try{controller.port?.close?.()}catch{}
-                throw new Error('Scramjet private session was superseded');
+                throw new Error('Private learning session was superseded');
               }
               t.privateScramjetController=controller;
               return controller;
@@ -12166,7 +12166,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         t.actualEngine='scramjet-failed';
         setFrameSandbox(t,true);
         clearFrameDocument(t);
-        t.frame.srcdoc=connectionFailureHtml('The private tab session could not start. Reload Nyx and try again.','Scramjet',{allowDirect:true});
+        t.frame.srcdoc=connectionFailureHtml('The private tab session could not start. Reload Nyx and try again.',"Learning engine",{allowDirect:true});
       });
     }
     function waitForTabResultPaint(t,timeout=4200){
@@ -12230,7 +12230,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         };
         const poll=setInterval(()=>{
           const srcdoc=String(t.frame?.getAttribute?.('srcdoc') || '');
-          if(srcdoc && /Scramjet did not start|Ultraviolet did not start|Page Not Found|error/i.test(srcdoc)) finish(false);
+          if(srcdoc && /(?:Scramjet|Learning engine) did not start|Ultraviolet did not start|Page Not Found|error/i.test(srcdoc)) finish(false);
           if(hasMeaningfulContent()) finish(true);
         },420);
         const timer=setTimeout(()=>finish(false),timeout);
@@ -14226,7 +14226,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         </section>
         <section class="settings-card">
           <h2>Clear Cache</h2>
-          <p>Removes cookies, cache files, saved settings, proxy storage, and service workers, then reloads nyx like a fresh install.</p>
+          <p>Removes cookies, cache files, saved settings, connection storage, and service workers, then reloads nyx like a fresh install.</p>
           <button data-clear-nyx-cache type="button">Clear Cache and Reset</button>
         </section>
         <section class="settings-card">
@@ -14268,25 +14268,25 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       <h1 class="settings-section-title">Workspace Settings</h1>
       <div class="settings-grid">
         <section class="settings-card">
-          <h2>Change Proxy</h2>
+          <h2>Connections</h2>
           <p>Choose the workspace engine Nyx uses for external sites.
-StudyJet opens web resources inside your workspace. Use Repair connection if a tab cannot connect.
-Auto uses Scramjet with Libcurl by default and can recover with another relay if the connection fails.</p>
+The learning engine opens web resources inside your workspace. Use Repair connection if a tab cannot connect.
+Auto uses the learning engine with Textbook by default and can recover with another relay if the connection fails.</p>
           <select id="settingWorkspaceMode">
             <option value="auto">Auto</option>
-            <option value="scramjet">Use Scramjet v2</option>
+            <option value="scramjet">Use Learning engine</option>
 
           </select>
         </section>
         <section class="settings-card">
-          <h2>Transport</h2>
-          <div class="settings-row"><span>HTTP bridge</span><button class="settings-action" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div><p>Recommended for devices or networks that block WebSockets. Turn off for direct WebSocket connections. Reload website tabs after changing. Custom relays keep their saved choice.</p>
-          <p class="hint">Choose the installed network transport.</p>
+          <h2>Connection method</h2>
+          <div class="settings-row"><span>Compatibility mode</span><button class="settings-action" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div><p>Use the alternate connection when a network cannot open sites. Turn off for the standard connection. Reload website tabs after changing. Custom connections keep their saved choice.</p>
+          <p class="hint">Choose an installed connection method.</p>
           <select id="settingTransport">
             <option value="auto">Auto (recommended)</option>
-            <option value="epoxy">Epoxy</option>
-            <option value="wisp">Wisp</option>
-            <option value="libcurlRaw">Libcurl</option>
+            <option value="epoxy">Atlas</option>
+            <option value="wisp">Relay</option>
+            <option value="libcurlRaw">Textbook</option>
           </select>
           <button data-save-workspace>Save Workspace Settings</button><button class="settings-action" data-workspace-connection-repair type="button">Repair connection</button>
         </section>

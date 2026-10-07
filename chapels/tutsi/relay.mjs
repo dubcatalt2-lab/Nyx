@@ -72,7 +72,7 @@ export class RelayTransport {
         return;
       }
       this.onStatus({state:'unavailable',url:''});
-      throw new Error('No configured Wisp relay is reachable from this device. Try again or change the relay in Settings.');
+      throw new Error('No configured connection relay is reachable from this device. Try again or change the relay in Settings.');
     })();
     try{return await this.switching}finally{this.switching=null}
   }

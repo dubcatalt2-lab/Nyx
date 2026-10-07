@@ -386,7 +386,7 @@ $("relay").addEventListener("change", () => {
     settings.relay = value;
     applySettings();
   } catch {
-    toast("Enter a valid secure Wisp URL, such as wss://host/wisp/.");
+    toast("Enter a valid secure relay address, such as wss://host/resources/live/.");
     $("relay").value = settings.relay;
   }
 });
@@ -438,7 +438,7 @@ window.nyxLaunchGameFrame=async(frame,url,{signal}={})=>{
 };
 window.nyxLaunchMovieFrame=async(frame,url,{signal,recover=false}={})=>{
   const {movieSourceUrl}=await import('/chapels/movies/providers.mjs');
-  if(!movieSourceUrl(url)||frame?.ownerDocument?.location?.pathname!=='/apps/movies/'||frame.getAttribute('sandbox')!=='allow-scripts allow-same-origin allow-forms allow-presentation')throw Error('Invalid movie proxy request.');
+  if(!movieSourceUrl(url)||frame?.ownerDocument?.location?.pathname!=='/apps/movies/'||frame.getAttribute('sandbox')!=='allow-scripts allow-same-origin allow-forms allow-presentation')throw Error('Invalid movie connection request.');
   if(recover)closeWorkspace(frame);
   await window.nyxLaunchGameFrame(frame,url,{signal});
 };

@@ -13,8 +13,8 @@
     const message=offline ? 'You are offline. Check your internet connection.' : hostDown
       ? 'Nyx VPS is unreachable and may be down. Report to vdrtes on Discord immediately!'
       : relayDown ? (getRelay?.().custom
-        ? 'Having trouble connecting to your custom Wisp relay. Retrying automatically...'
-        : 'Having trouble connecting to Wisp. Retrying automatically...') : '';
+        ? 'Having trouble connecting to your custom connection relay. Retrying automatically...'
+        : 'Having trouble connecting to the connection service. Retrying automatically...') : '';
     if(!message||dismissed.has(currentIssue)){if(banner) banner.hidden=true;return}
     if(!banner){
       banner=document.createElement('div');banner.id='nyxAvailabilityWarning';

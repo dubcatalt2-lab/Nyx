@@ -13,7 +13,7 @@
     installed.add(doc);
     doc.__nyxDisplayLabelsInstalled=true;
     function format(element){
-      if(element.closest('input,textarea,pre,code,[contenteditable="true"],.nyx-styled-display-name,.message,.message-content,.chat-message,[data-message-id]')) return;
+      if(element.closest('input,textarea,pre,code,[contenteditable="true"],.nyx-styled-display-name,.message,.message-content,.chat-message,.ai-message,.ai-message-content,.ai-thread-list,[data-message-id]')) return;
       const nodes=[...element.childNodes].filter(node=>node.nodeType===3);
       const text=nodes.map(node=>node.textContent).join('').trim();
       if(!text || (!element.matches(labels) && !names.test(text))) return;

@@ -804,7 +804,7 @@
     section.append(heading,links);content.appendChild(section);
   }
 
-  const aiBrand=()=>document.documentElement.dataset.tutsiApp==='ai'?'Tutsi AI':'Nyx AI';
+  const aiBrand=()=>{const name=document.documentElement.dataset.tutsiApp==='ai'?'Tutsi AI':'Nyx AI';return window.nyxDisplayName?.(name)||name;};
   const aiStatusText=value=>String(value||'').replace(/\bNyx AI\b/g,aiBrand());
 
   function setMessageContent(message,text,{error=false,thinking=false}={}){
@@ -1226,7 +1226,7 @@
     message._modelId=item?.id||clean;
     message._modelName=item?.label||String(name||clean||'Assistant').slice(0,200);
     message.querySelector('.ai-message-meta strong').textContent=message._modelName;
-    message.querySelector('.ai-message-avatar').innerHTML=message._modelId?modelIcon({id:message._modelId,company:'Assistant'}):'<span class="ai-company-initial" aria-hidden="true">AI</span>';
+    message.querySelector('.ai-message-avatar').innerHTML=message._modelId?modelIcon({id:message._modelId,company:'Assistant'}):'<span class="ai-company-initial" aria-hidden="true">@&#x1d7e3;</span>';
   }
   const tutsiModelPicker=()=>document.documentElement.dataset.appShell==='tutsi'||document.documentElement.dataset.tutsiApp==='ai';
   function renderModelCompanies(){

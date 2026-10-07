@@ -7,7 +7,7 @@ app.use(express.static('dist'));
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
 const base=process.env.NYX_TEST_ORIGIN||'http://127.0.0.1:'+server.address().port;
 const browser=await chromium.launch({channel:'msedge',headless:true});
-const apps=['link-checker','link-generator','jsdelivr-publisher','api-keys','code-studio','nyxtube','chat','nyxify','agents','movies','nyxcloud','cloud-gaming','tutsi','drop'];
+const apps=['ai.html','link-checker','link-generator','jsdelivr-publisher','api-keys','code-studio','nyxtube','chat','nyxify','agents','movies','nyxcloud','cloud-gaming','tutsi','drop'];
 const failures=[];
 try{
  for(const width of [1365,390]){
@@ -39,8 +39,19 @@ try{
   assert(tileCount>=16,'Full default app catalog must be audited');
   for(const name of apps){
    errors.length=0;
-   await page.goto(base+'/apps/'+name+'/');
+   await page.goto(base+(name==='ai.html'?'/ai.html':'/apps/'+name+'/'));
+   if(name==='ai.html'){
+    await page.waitForFunction(()=>document.querySelector('.ai-sidebar-brand strong')?.textContent.normalize('NFKC')==='NYX @1');
+    assert.equal((await page.title()).normalize('NFKC'),'NYX @1');
+    assert.equal(await page.locator('#input').getAttribute('placeholder'),'Message your model...');
+    await page.locator('#input').fill('Nyx AI Games');
+    assert.equal(await page.locator('#input').inputValue(),'Nyx AI Games');
+    await page.locator('#conversation').evaluate(el=>el.innerHTML='<article class="ai-message"><div class="ai-message-content"><h2>Nyx AI</h2></div></article>');
+    await page.waitForTimeout(50);
+    assert.equal(await page.locator('.ai-message-content h2').textContent(),'Nyx AI');
+   }
    await page.waitForFunction(()=>typeof nyxDisplayName==='function');
+   if(name==='code-studio')await page.waitForFunction(()=>document.querySelector('.eyebrow[data-nyx-display-label]')?.textContent.normalize('NFKC')==='NYX @1');
    await page.waitForTimeout(400);
    const state=await page.evaluate(()=>({text:document.body.innerText.slice(0,180),installed:document.__nyxDisplayLabelsInstalled,controls:document.querySelectorAll('button,input,a,select').length}));
    if(!state.installed||!state.controls||errors.length)failures.push({name,width,state,errors:[...errors]});

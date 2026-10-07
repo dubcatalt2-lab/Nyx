@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="color-scheme" content="dark">
-  <title>Nyx AI</title>
+  <title>𝖭𝖸𝖷 @𝟣</title>
   <link rel="icon" type="image/svg+xml" href="/assets/icons/nyx-cat-moon-small.svg?v=3" data-nyx-logo>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,7 +17,8 @@
   <script src="/js/ai-markdown.js?v=20260914-premium-luna-v2" defer></script>
 <script src="/js/ai-screen-chat.js?v=20260919-screen-chat-v1" defer></script>
 <script src="/js/ai-model-search.js?v=20260927-v2" defer></script>
-<script src="/js/ai-workspace.js?v=20261003-pinned-labels-v16" defer></script>
+<script src="/js/display-names.js?v=20261007-labels-v3" defer></script>
+<script src="/js/ai-workspace.js?v=20261007-labels-v17" defer></script>
 <link rel="stylesheet" href="/apps/obsidian.css?v=20261001-halloween-v3">
 </head>
 <body>
@@ -26,7 +27,7 @@
       <header class="ai-sidebar-header">
         <div class="ai-sidebar-brand">
           <span class="ai-sidebar-brand-mark" data-nyx-logo aria-hidden="true"></span>
-          <span><strong>Nyx AI</strong></span>
+          <span><strong data-nyx-display-label>Nyx AI</strong></span>
         </div>
         <button class="ai-sidebar-close" id="sidebarClose" type="button" aria-label="Close conversation sidebar">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></svg>
@@ -66,7 +67,7 @@
         </div>
         <div class="ai-sidebar-model-summary"><span>Model</span><strong id="sidebarModelName">Loading…</strong></div>
         <section class="ai-usage" aria-labelledby="aiUsageTitle">
-          <h2 id="aiUsageTitle">Your AI allowance</h2>
+          <h2 id="aiUsageTitle">Your model allowance</h2>
           <div><span><strong id="usageWeek">&mdash;</strong><small>Remaining</small></span><span><strong id="usageAll">&mdash;</strong><small>Used</small></span><span><strong id="usageRequests">&mdash;</strong><small>Pending</small></span></div>
         </section>
         </div></details>
@@ -149,7 +150,7 @@
             </button>
           </div>
           <label class="sr-only" for="input">Message Nyx AI</label>
-          <textarea id="input" rows="1" maxlength="4000" placeholder="Message Nyx AI..." aria-label="Message Nyx AI"></textarea>
+          <textarea id="input" rows="1" maxlength="4000" placeholder="Message your model..." aria-label="Message Nyx AI"></textarea>
           <div class="ai-composer-footer">
             <button class="ai-attach" id="attachImage" type="button" title="Attach an image" aria-label="Attach an image" aria-controls="imageInput">
               <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M13 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-8"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 5-5 4 4 3-3 6 6M19 2v6M16 5h6"/></svg>
@@ -165,7 +166,7 @@
             </button>
           </div>
           </form>
-          <p class="ai-disclaimer">AI can make mistakes. Shared text chats are saved for the site owner to review (up to 50 recent exchanges). Temporary chats keep usage totals only. Images and attachments are not included in this history.</p>
+          <p class="ai-disclaimer">Responses can contain mistakes. Shared text chats are saved for the site owner to review (up to 50 recent exchanges). Temporary chats keep usage totals only. Images and attachments are not included in this history.</p>
         </div>
       </footer>
     </section>

@@ -41,8 +41,8 @@ try{
    errors.length=0;
    await page.goto(base+(name==='ai.html'?'/ai.html':'/apps/'+name+'/'));
    if(name==='ai.html'){
-    await page.waitForFunction(()=>document.querySelector('.ai-sidebar-brand strong')?.textContent.normalize('NFKC')==='NYX @1');
-    assert.equal((await page.title()).normalize('NFKC'),'NYX @1');
+    await page.waitForFunction(()=>document.querySelector('.ai-sidebar-brand strong')?.textContent.normalize('NFKC')==='NYX A1');
+    assert.equal((await page.title()).normalize('NFKC'),'NYX A1');
     assert.equal(await page.locator('#input').getAttribute('placeholder'),'Message your model...');
     await page.locator('#input').fill('Nyx AI Games');
     assert.equal(await page.locator('#input').inputValue(),'Nyx AI Games');
@@ -51,7 +51,7 @@ try{
     assert.equal(await page.locator('.ai-message-content h2').textContent(),'Nyx AI');
    }
    await page.waitForFunction(()=>typeof nyxDisplayName==='function');
-   if(name==='code-studio')await page.waitForFunction(()=>document.querySelector('.eyebrow[data-nyx-display-label]')?.textContent.normalize('NFKC')==='NYX @1');
+   if(name==='code-studio')await page.waitForFunction(()=>document.querySelector('.eyebrow[data-nyx-display-label]')?.textContent.normalize('NFKC')==='NYX A1');
    await page.waitForTimeout(400);
    const state=await page.evaluate(()=>({text:document.body.innerText.slice(0,180),installed:document.__nyxDisplayLabelsInstalled,controls:document.querySelectorAll('button,input,a,select').length}));
    if(!state.installed||!state.controls||errors.length)failures.push({name,width,state,errors:[...errors]});

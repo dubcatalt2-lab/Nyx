@@ -3,7 +3,8 @@
   globalThis.nyxDisplayName = value => String(value ?? '').normalize('NFKC')
     .replace(/\bgames\b/gi,'G@M3Z')
     .replace(/[A-Za-z]/g,letter=>substitutions[letter.toLowerCase()] || letter.toUpperCase())
-    .replace(/[A-Z0-9]/g,letter=>String.fromCodePoint(letter<='9' ? 0x1d7e2+letter.charCodeAt(0)-48 : 0x1d5a0+letter.charCodeAt(0)-65));
+    .replace(/[A-Z0-9]/g,letter=>String.fromCodePoint(letter<='9' ? 0x1d7e2+letter.charCodeAt(0)-48 : 0x1d5a0+letter.charCodeAt(0)-65))
+    .replace(/(^|\s)@\u{1d7e3}(?=$|\s)/gu,(_,space)=>space+'A1');
   const names=/^(?:(?:nyx|tutsi|drop)\s+)?(?:home|games|music|youtube|nyxtube|nyxify(?:\/built in music)?|ai|a1|duck ai|duck a1|chat|vms|apps|discord|settings|account|movies|more movie sites|tiktok|animex|cloud gaming|link generator|bulk link generator|link checker|jsdelivr publisher|code sandbox|code studio|api(?: keys)?|premium|caffeine|arcade|game library|all games|miscellaneous)$/i;
   const labels='[data-nyx-dock-item] > span,.home-shortcut-open > span,.workspace-home-label,.nyx-discord-link > span,.quick-tile > span:not(.quick-icon),#all-apps button > span,[data-nyx-display-label]';
   const headings='h1,h2,h3,nav a,nav button,header strong,.nyxify-brand strong,.lc-brand strong,.utility-nav-item > span,.brand,.brand-title';

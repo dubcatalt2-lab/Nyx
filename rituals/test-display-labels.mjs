@@ -20,5 +20,8 @@ try {
  assert.equal(await page.locator('#icon-title svg path').count(),1);
  assert.equal(await page.locator('.message h2').textContent(),'Games');
  assert.equal(await page.locator('pre h2').textContent(),'Music');
+ assert.equal(await page.evaluate(()=>nyxDisplayName('AI')),'A1');
+ assert.equal(await page.evaluate(()=>nyxDisplayName('A1')),'A1');
+ assert.equal(await page.evaluate(()=>nyxDisplayName('Nyx AI').normalize('NFKC')),'NYX A1');
  console.log('PASS dynamic/icon labels, idempotence, accessible names, editable text, messages, code and profile preservation.');
 } finally {await browser.close()}

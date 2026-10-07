@@ -76,10 +76,11 @@ export async function buildFrontendAssets(output,files,lessonHtml) {
     await writeFile(join(output,loader.slice(1)),formatPublishedJs((await minify(boot,{mangle:{toplevel:true,nth_identifier:opaqueIdentifiers('entry:'+path)},compress:false,format:{beautify:true,indent_level:2}})).code));
     const destination=path==='index.html'?'study.html':path;
     entryDocuments[destination]=Buffer.from(original).toString('base64');
-    const shell=`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Learning Commons</title></head><body><script src="${loader}"></script></body></html>`;
+    const identity=path==='index.html'?'<title>DeltaMath</title><link rel="icon" type="image/png" href="./assets/icons/deltamath.png?v=1">':'<title>Learning Commons</title>';
+    const shell=`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${identity}</head><body><script src="${loader}"></script></body></html>`;
     await writeFile(join(output,destination),formatPublishedHtml(shell));
   }
-  const cover=lessonHtml.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'').replaceAll('/learning/','/apps/tutsi/studyready/').replace('</head>','<meta http-equiv="refresh" content="1;url=study.html"></head>').replace('</body>','<p><a href="study.html">Continue to your workspace</a></p></body>');
+  const cover=lessonHtml.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'').replace(/<title>[^<]*<\/title>/,'<title>DeltaMath</title>').replaceAll('/learning/','/apps/tutsi/studyready/').replace('</head>','<link rel="icon" type="image/png" href="./assets/icons/deltamath.png?v=1"><meta http-equiv="refresh" content="1;url=study.html"></head>').replace('</body>','<p><a href="study.html">Continue to your workspace</a></p></body>');
   await writeFile(join(output,'index.html'),formatPublishedHtml(cover));
   const mappings=JSON.parse(await readFile(join(output,'public-modules.json'),'utf8'));
   for(const [from,to]of Object.entries(mappings.aliases)){

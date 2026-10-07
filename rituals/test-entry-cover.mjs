@@ -6,6 +6,8 @@ import {chromium} from 'playwright';
 const cover=await readFile('dist/index.html','utf8');
 assert.match(cover,/<meta http-equiv="refresh" content="1;url=study.html">/);
 assert(!/<script\b/i.test(cover),'The cover must navigate without JavaScript');
+assert.match(cover,/<title>DeltaMath<\/title>/);
+assert.match(cover,/assets\/icons\/deltamath\.png/);
 const source=await readFile('study.html','utf8');
 assert(!source.includes('id="nyxStudyHubStartup"'),'No second startup cover');
 const manifest=JSON.parse(await readFile('dist/frontend-assets.json','utf8'));
@@ -22,32 +24,54 @@ try{
   const withoutJs=await workspace.newContext({javaScriptEnabled:false});
   const first=await withoutJs.newPage();await first.goto(base);await first.waitForURL(base+'/study.html');
   await withoutJs.close();
-  for(const [width,savedTitle] of [[1365,'StudyHub \u2014 Where Education Is Achievable'],[390,'StudyHub \u2014 Where Education Is Achievable'],[1365,'My personal notes']]){
+  for(const [width,savedTitle,savedIcon=''] of [[1365,''],[1365,'StudyHub \u2014 Where Education Is Achievable'],[390,'Learning Commons \u2014 Where Education Is Achievable'],[1365,'My personal notes'],[390,'Learning Commons \u2014 Where Education Is Achievable','data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg"/%3E']]){
     const context=await workspace.newContext({viewport:{width,height:900}}),page=await context.newPage(),errors=[],documents=[];
     page.on('pageerror',error=>errors.push(error.message));
     page.on('request',request=>{if(request.isNavigationRequest()&&request.frame()===page.mainFrame())documents.push(new URL(request.url()).pathname);});
     await context.route(/^https:\/\//,route=>route.abort());
-    await context.addInitScript(savedTitle=>{
+    await context.addInitScript(({savedTitle,savedIcon})=>{
       if(window!==window.top)return;
       localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');
-      if(!localStorage.getItem('nyx.fixture.saved')){localStorage.setItem('nyx.tabTitle',savedTitle);localStorage.setItem('nyx.tabIdentityVersion','studyhub-v3');localStorage.setItem('nyx.b\u0072owserBookmarks','[{"url":"https://example.com/","title":"Saved"}]');localStorage.setItem('nyx.b\u0072owserBackground','lofiPurple');}
+      if(!localStorage.getItem('nyx.fixture.saved')){localStorage.setItem('nyx.tabTitle',savedTitle);localStorage.setItem('nyx.tabFavicon',savedIcon);localStorage.setItem('nyx.tabIdentityVersion','learning-commons-v4');localStorage.setItem('nyx.b\u0072owserBookmarks','[{"url":"https://example.com/","title":"Saved"}]');localStorage.setItem('nyx.b\u0072owserBackground','lofiPurple');}
       localStorage.setItem('nyx.fixture.saved','unchanged');
-    },savedTitle);
+    },{savedTitle,savedIcon});
     await page.goto(base);
     await page.waitForURL(base+'/study.html');
     await page.locator('[data-nyx-dock-item="home"]').waitFor({state:'visible'});
     assert.deepEqual(documents,['/','/study.html']);
-    const expectedTitle=savedTitle.startsWith('StudyHub')?'Learning Commons \u2014 Where Education Is Achievable':savedTitle;
+    const migrated=!savedIcon&&(!savedTitle||/^(StudyHub|Learning Commons)/.test(savedTitle));
+    const expectedTitle=migrated?'DeltaMath':savedTitle;
     await page.waitForFunction(title=>document.title===title,expectedTitle);
+    if(migrated){
+      assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.logo')),'deltamath');
+      assert.match(await page.locator('#appFavicon').getAttribute('href'),/assets\/icons\/deltamath\.png/);
+      assert.equal((await context.request.get(base+'/assets/icons/deltamath.png')).status(),200);
+    }
+    if(savedIcon)assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.tabFavicon')),savedIcon);
     assert.equal(await page.evaluate(()=>document.body.classList.contains('workspace-shell')),true);
     assert.equal(await page.locator('.workspace-home').count(),1);
     assert.equal(await page.locator('#nyxStudyHubStartup,#nyxStudyHubBackground').count(),0);
     assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.fixture.saved')),'unchanged');
     assert.equal(await page.locator('.nyx-home-sponsor iframe,.nyx-social-sponsor iframe').count(),0);
     await page.reload();await page.locator('[data-nyx-dock-item="home"]').waitFor({state:'visible'});
+    await page.waitForFunction(title=>document.title===title,expectedTitle);
     assert.deepEqual(documents,['/','/study.html','/study.html']);
     assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.workspaceBookmarks')),'[{"url":"https://example.com/","title":"Saved"}]');
     assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.b\u0072owserBookmarks')),null);
+    if(!savedTitle){
+      await page.waitForFunction(()=>!document.body.classList.contains('nyx-loading-active'));
+      await page.getByRole('button',{name:'Got it',exact:true}).click({timeout:2200}).catch(()=>{});
+      await page.locator('[data-nyx-dock-item="settings"]').click();
+      const settings=page.locator('.workspace-shell-settings-overlay');
+      await settings.locator('[data-settings-category-button="workspace"]').click();
+      assert.equal(await settings.locator('[data-preset-select]').inputValue(),'deltamath');
+      await settings.locator('[data-preset-select]').selectOption('google');
+      await page.waitForFunction(()=>document.title==='Google');
+      await settings.getByRole('button',{name:'Reset',exact:true}).click();
+      await page.waitForFunction(()=>document.title==='DeltaMath');
+      assert.equal(await settings.locator('[data-preset-select]').inputValue(),'deltamath');
+      assert.match(await page.locator('#appFavicon').getAttribute('href'),/deltamath\.png/);
+    }
     assert.deepEqual(errors,[]);
     console.log(`PASS ${width}px: HTML-only redirect, one cover, study entry/reload, saved settings/title migration (${savedTitle}), production ads disabled.`);
     await context.close();

@@ -21,6 +21,7 @@ export function publisherBaseMode() {
   try {
     const shell = window.parent === window ? window : window.parent;
     if (shell.__NYX_RUNTIME_CONFIG__?.publisherAdsEnabled === false) return 'off';
+    if (shell.__NYX_RUNTIME_CONFIG__?.publisherAdsAdkidOnly && shell.__nyxPublisherMode !== 'adkid') return 'off';
     return shell.__nyxPublisherMode || (shell.document.body?.classList.contains('workspace-shell') ? 'pending' : 'standard');
   } catch { return 'off'; }
 }
@@ -30,8 +31,9 @@ export function publisherMode() {
   try {
     const shell = window.parent === window ? window : window.parent;
     if (shell.__nyxAdcoinsFreeUntil > Date.now()) return 'off';
-    if (mode === 'standard') {
+    if (mode === 'standard' || mode === 'adkid') {
       if (shell !== window || document.hidden || document.body?.classList.contains('nyx-loading-active')) return 'off';
+      if (!window.__nyxPublisherHome?.()) return 'off';
       const homes = document.querySelectorAll('.workspace-window.workspace-blank .workspace-home.nyx-minimal-home:not(.hidden)');
       if (![...homes].some(home => home.getClientRects().length && getComputedStyle(home).visibility === 'visible')) return 'off';
     }

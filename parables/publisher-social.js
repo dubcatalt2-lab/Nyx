@@ -18,6 +18,7 @@ export function startSocialSponsor() {
     attempted = true;
     host = document.createElement('aside');
     host.className = 'nyx-social-sponsor';
+    host.setAttribute('data-nyx-owned-overlay', '');
     host.setAttribute('aria-label', 'Sponsored placement');
     host.innerHTML = '<header><span>Advertisement</span><button type="button" aria-label="Close advertisement"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M6 18 18 6"/></svg></button></header>';
     host.querySelector('button').addEventListener('click', () => {dismissed = true;clear();});
@@ -29,8 +30,9 @@ export function startSocialSponsor() {
     creative.className = 'nyx-social-creative';
     creative.append(placement.element);
     host.append(creative);
-    document.body.append(host);
+    (document.getElementById('app') || document.body).append(host);
   }
+  new MutationObserver(update).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class','data-active-tab']});
   window.addEventListener('nyx:publisher-change', update);
   document.addEventListener('visibilitychange', update);
   update();

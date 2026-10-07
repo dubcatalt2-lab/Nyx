@@ -1,3 +1,4 @@
+import {learningRoutes} from './parables/learning-routes.js';
 import {sourceFile} from './scripture/source-layout.mjs';
 import {adFreeStatus, installAdFreeRoutes} from './scripture/ad-free-keys.mjs';
 import {publicAssetBoundary} from './scripture/public-assets.mjs';
@@ -3679,6 +3680,8 @@ app.get("/runtime-config.js", (_req, res) => {
   res.type("application/javascript").send(
     `globalThis.__NYX_RUNTIME_CONFIG__=Object.freeze(${JSON.stringify({
       publisherAdsEnabled,
+      publisherAdsAdkidOnly,
+      learningRoutesEnabled: true,
       wispUrl: externalWispUrl,
       wispUrls: [...new Set(String(process.env.NYX_WISP_RELAYS || "").split(",").map(normalizePublicWispUrl).filter(Boolean))],
       presenceUrl: publicOrigin ? `${publicOrigin}/api/presence` : "",
@@ -4626,8 +4629,9 @@ function nyxVisibleCustomRoles(roles, viewerUid = "", ownerUid = founderProfileC
 }
 
 const publisherAdsEnabled = process.env.NYX_ADS_ENABLED === "true";
+const publisherAdsAdkidOnly = process.env.NYX_ADS_ADKID_ONLY === "true";
 function nyxPublisherMode(role, subscriptionStatus, administration = {}) {
-  if (!publisherAdsEnabled) return "off";
+  if (!publisherAdsEnabled || (publisherAdsAdkidOnly && role !== "adkid")) return "off";
   return adFreeStatus(administration).active || hasPremiumSubscription(subscriptionStatus) || nyxRolePolicy(role).rank >= nyxRolePolicy("moderator").rank ? "off" : role === "adkid" ? "adkid" : "standard";
 }
 
@@ -9645,6 +9649,7 @@ app.get("/api/account/cloud-games/:gameId", async (req, res) => {
     const data = snapshot.data() || {};
     res.json({
       gameKey,
+      accountUid: token.uid,
       storage: String(data.gameKey || "") === gameKey ? normalizeNyxCloudStorage(data.storage) : {},
       updatedAt: Number(data.updatedAt || 0)
     });
@@ -9661,6 +9666,7 @@ app.put("/api/account/cloud-games/:gameId", async (req, res) => {
   }
   try {
     const { firebase, token } = await authenticatedNyxCloudUser(req);
+    if (req.body?.accountUid && req.body.accountUid !== token.uid) throw nyxCloudSaveError("Your account changed. Reopen the game to sync.", 409);
     const gameKey = nyxCloudGameKey(req.params.gameId);
     const storage = normalizeNyxCloudStorage(req.body?.storage);
     const removed = normalizeNyxCloudRemovedKeys(req.body?.removed);
@@ -14221,6 +14227,10 @@ app.get("/", async (req, res, next) => {
   } catch { return res.status(503).set("Retry-After", "30").send("Website temporarily unavailable. Please retry shortly."); }
   res.set("Cache-Control", "no-cache");
   res.sendFile(sourceFile(join(staticRoot, "apps", "tutsi", "index.html")), { dotfiles: 'allow' });
+});
+app.get(Object.keys(learningRoutes), (req,res)=>{
+  if(req.path.endsWith('/')) return res.redirect(308,req.path.slice(0,-1)+(req.url.includes('?')?req.url.slice(req.url.indexOf('?')):''));
+  res.set('Cache-Control','no-store').sendFile(sourceFile(join(staticRoot,'study.html')), {dotfiles:'allow'});
 });
 app.get('/study.html', (_req,res)=>res.set('Cache-Control','no-store').sendFile(sourceFile(join(staticRoot,'study.html')), {dotfiles:'allow'}));
 app.use(publicAssetBoundary(staticRoot));

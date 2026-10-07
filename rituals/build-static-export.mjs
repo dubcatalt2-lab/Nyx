@@ -58,7 +58,7 @@ async function copy(dir=''){
         source=rewriteFrontendReferences(rewritePublicModules(rewriteRuntimeNames(rewriteProxyReferences(source,'/script.js')),'/script.js',moduleAliases),'/script.js',aliases);
       }
       if(relative==='assets/games/games.json'){
-        const catalog=JSON.parse(source);catalog.catalogs=catalog.catalogs.filter(item=>item.id==='local');catalog.fallbackCover='';catalog.includeUnillustrated=true;
+        const catalog=JSON.parse(source);catalog.catalogs=catalog.catalogs.filter(item=>item.id==='local'||item.id==='bundled');catalog.fallbackCover='';catalog.includeUnillustrated=true;
         if(mini){const local=catalog.catalogs.find(item=>item.id==='local');local.player='https://vps-a556737a.vps.ovh.us/assets/ugs/play.html?game={path}';local.coversUrl='';}
         source=JSON.stringify(catalog);
       }

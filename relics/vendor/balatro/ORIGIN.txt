@@ -1,0 +1,6 @@
+Balatro by LocalThunk.
+
+Web build source: https://55gms.com/g
+Source snapshot: https://github.com/55gms/55GMS/tree/bb70bf5a9358e6df23ffc4d720fd8d34726ce659/static/misc/balatro
+
+Nyx integration removes the host site's global script, remote base URL and ad callback. Game data and existing runtime notices are retained. The adapter notifies Nyx when ready; the runtime exposes a deduplicated FS.syncfs save bridge so autosaves do not dispatch page-unload events into the engine. Game assets load from this directory and saves use local IndexedDB. This attribution does not transfer ownership of the game or its runtime.

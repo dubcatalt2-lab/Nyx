@@ -1102,6 +1102,7 @@ addEventListener("message", async (event) => {
           ...(save
             ? {
                 body: JSON.stringify({
+                  accountUid: data.accountUid,
                   storage: data.storage,
                   removed: data.removed,
                 }),

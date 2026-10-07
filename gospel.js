@@ -499,8 +499,8 @@
     const data=await nyxCloudRequest(`/api/account/cloud-games/${encodeURIComponent(String(gameKey||''))}`);
     return data?.storage&&typeof data.storage==='object'?data.storage:{};
   }
-  async function saveNyxCloudGameSave(gameKey,storage={},removed=[]){
-    return nyxCloudRequest(`/api/account/cloud-games/${encodeURIComponent(String(gameKey||''))}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storage,removed})});
+  async function saveNyxCloudGameSave(gameKey,storage={},removed=[],accountUid=""){
+    return nyxCloudRequest(`/api/account/cloud-games/${encodeURIComponent(String(gameKey||''))}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({storage,removed,accountUid})});
   }
   window.NyxCloudSave={loadGame:loadNyxCloudGameSave,saveGame:saveNyxCloudGameSave};
   function nyxFriendlyFirebaseError(error,fallback='Your account request could not be completed.'){
@@ -663,7 +663,7 @@
     menu.style.cssText+=nyxProfileEffectVars(profile);
     const ownerControls=nyxOwnerDashboardAccess?`<div class="nyx-account-menu-group nyx-account-menu-owner"><button type="button" role="menuitem" data-nyx-account-menu-action="owner-dashboard">${nyxAccountMenuIcon('dashboard')}<span>Owner Dashboard</span>${nyxAccountMenuIcon('chevron')}</button></div>`:'';
     menu.innerHTML=`<i class="nyx-user-profile-effect nyx-account-menu-profile-effect" aria-hidden="true">${nyxProfileEffectArtwork(profile)}</i><div class="nyx-account-menu-banner">${banner}</div><div class="nyx-account-menu-profile"><div class="nyx-account-menu-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i></div><span class="nyx-account-menu-status"><span>${esc(profile.customStatus||statusLabel)}</span></span><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p class="nyx-account-menu-handle">${esc(profile.handle)}</p><p class="nyx-account-menu-bio">${esc(profile.bio||'')}</p></div>${ownerControls}<div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="edit">${nyxAccountMenuIcon('edit')}<span>Edit Profile</span></button><button type="button" role="menuitem" data-nyx-account-menu-action="profiles">${nyxAccountMenuIcon('people')}<span>Community profiles</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="status"><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-hidden="true"></i><span>${esc(statusLabel)}</span>${nyxAccountMenuIcon('chevron')}</button></div><div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="switch">${nyxAccountMenuIcon('switch')}<span>Switch Accounts</span>${nyxAccountMenuIcon('chevron')}</button><button type="button" role="menuitem" data-nyx-account-menu-action="ad-free">${nyxAccountMenuIcon('id')}<span>Ad-free access</span></button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="copy-id">${nyxAccountMenuIcon('id')}<span>Copy User ID</span></button></div>`;
-    document.body.appendChild(menu);
+    (document.getElementById('app') || document.body).appendChild(menu);
     syncNyxAccountButtonAvatar(menu.querySelector('.nyx-account-menu-avatar'),profile);
     const bannerHost=menu.querySelector('.nyx-account-menu-banner');
     const bannerImage=bannerHost?.querySelector(':scope > img');
@@ -700,7 +700,7 @@
       field.value=uid;
       field.setAttribute('readonly','');
       field.style.cssText='position:fixed;left:-9999px;top:0';
-      document.body.appendChild(field);
+      (document.getElementById('app') || document.body).appendChild(field);
       field.select();
       try{copied=document.execCommand('copy')}catch{}
       field.remove();
@@ -741,7 +741,7 @@
         <main class="nyx-profile-directory-view" data-profile-directory-view><div class="nyx-profile-directory-empty"><span>${nyxAccountMenuIcon('people')}</span><h3>Select a profile</h3><p>Choose someone to view their public Nyx profile.</p></div></main>
       </div>
     </section>`;
-    document.body.appendChild(overlay);
+    (document.getElementById('app') || document.body).appendChild(overlay);
     syncNyxVisualDockState();
     requestAnimationFrame(()=>overlay.classList.add('show'));
     const resultsHost=overlay.querySelector('[data-profile-directory-results]');
@@ -1002,7 +1002,7 @@
     const overlay=document.createElement('div');
     overlay.className='nyx-account-overlay';
     overlay.innerHTML='<section class="nyx-account-dialog" role="dialog" aria-modal="true" aria-labelledby="nyxAccountTitle"><button class="nyx-founder-editor-close" data-close-nyx-account type="button" aria-label="Close">×</button><div class="nyx-account-mark" aria-hidden="true"><span>☾</span></div><p id="nyxAccountTitle" class="nyx-account-title">Log in or register to continue</p><div class="nyx-account-tabs" role="tablist" aria-label="Account action"><button class="nyx-account-tab active" data-nyx-account-tab="signin" type="button" role="tab" aria-selected="true">Log in</button><button class="nyx-account-tab" data-nyx-account-tab="register" type="button" role="tab" aria-selected="false">Register</button></div><form><label data-nyx-account-identifier-label><span>Username or email</span><input name="username" autocomplete="username" minlength="3" maxlength="254" placeholder="username or email" required></label><label data-nyx-account-email hidden><span>Recovery email <small>Optional</small></span><input name="email" type="email" autocomplete="email" maxlength="254" placeholder="you@example.com"></label><label>Password<input name="password" type="password" autocomplete="current-password" minlength="8" placeholder="your password" required></label><section class="nyx-account-status-notice" data-nyx-account-status hidden aria-live="assertive"><strong></strong><p></p></section><p class="nyx-founder-editor-error" aria-live="polite"></p><button class="nyx-account-submit" type="submit">Log in</button><button class="nyx-account-forgot" data-nyx-forgot-password type="button">Forgot password?</button></form><p class="nyx-account-footer">Log in with your username or recovery email.</p></section>';
-    document.body.appendChild(overlay);
+    (document.getElementById('app') || document.body).appendChild(overlay);
     let mode=options.mode==='register'?'register':'signin';
     const form=overlay.querySelector('form');
     const submit=form.querySelector('[type="submit"]');
@@ -1309,7 +1309,7 @@
           </div>
         </main>
     </section>`;
-    document.body.appendChild(overlay);
+    (document.getElementById('app') || document.body).appendChild(overlay);
     requestAnimationFrame(()=>overlay.classList.add('show'));
     const close=()=>{
       if(overlay.classList.contains('is-closing')) return;
@@ -1806,7 +1806,7 @@
     const overlay=document.createElement('div');
     overlay.className='nyx-founder-editor-overlay';
     overlay.innerHTML=`<section class="nyx-founder-editor" role="dialog" aria-modal="true" aria-labelledby="nyxFounderEditorTitle"><header><div><p class="utility-kicker">About Nyx</p><h2 id="nyxFounderEditorTitle">Customize Founder Profile</h2><p>Publishing as your signed-in founder account.</p></div><button type="button" class="nyx-founder-editor-close" data-close-founder-editor aria-label="Close">×</button></header><form class="nyx-founder-editor-form"><div class="nyx-founder-editor-grid"><label>Display name<input name="displayName" maxlength="48" required value="${esc(profile.displayName)}"></label><label>Handle<input name="handle" maxlength="40" required value="${esc(profile.handle)}"></label><label>Profile subtitle<input name="role" maxlength="64" required value="${esc(profile.role)}"></label><label>Status<select name="status"><option value="online" ${profile.status==='online'?'selected':''}>Online</option><option value="idle" ${profile.status==='idle'?'selected':''}>Idle</option><option value="dnd" ${profile.status==='dnd'?'selected':''}>Do not disturb</option><option value="offline" ${profile.status==='offline'?'selected':''}>Offline</option></select></label><label class="nyx-founder-editor-wide">Bio<textarea name="bio" maxlength="500" rows="4" required>${esc(profile.bio)}</textarea></label><label>Avatar U3L<input name="avatarUrl" type="url" value="${esc(profile.avatarUrl)}"></label><label>Banner U3L <small>Optional</small><input name="bannerUrl" type="url" value="${esc(profile.bannerUrl)}"></label><label>Accent color<input name="accent" type="color" value="${esc(profile.accent)}"></label><label>Roles <small>Comma-separated; access remains tied to your Firebase account ID.</small><input name="roles" maxlength="280" value="${esc(profile.roles.join(', '))}"></label><label>Badges <small>Comma-separated</small><input name="badges" maxlength="280" value="${esc(profile.badges.join(', '))}"></label><label>Profile link label <small>Optional</small><input name="linkLabel" maxlength="40" value="${esc(profile.linkLabel)}"></label><label>Profile link U3L <small>Optional</small><input name="linkUrl" type="url" value="${esc(profile.linkUrl)}"></label></div><footer><p class="nyx-founder-editor-error" aria-live="polite"></p><div><button type="button" class="settings-action" data-close-founder-editor>Cancel</button><button type="submit" class="settings-action on">Publish profile</button></div></footer></form></section>`;
-    document.body.appendChild(overlay);
+    (document.getElementById('app') || document.body).appendChild(overlay);
     const close=()=>overlay.remove();
     overlay.addEventListener('click',event=>{if(event.target===overlay||event.target.closest('[data-close-founder-editor]')) close()});
     overlay.addEventListener('keydown',event=>{if(event.key==='Escape') close()});
@@ -1978,7 +1978,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   const knownNyxOverlaySelector='.nyx-prompt-shade,.nyx-modal-shade,.nyx-download-safety-shade,.nyx-tos-gate,.nyx-release-notes-overlay,.setup-screen,.setup-panel,.lock-screen,.nyx-workspace-tab-sidebar,.nyx-visual-dock,.workspace-shell-settings-overlay,.nyx-dashboard-menu,.nyx-account-menu,.nyx-account-overlay,.nyx-user-profile-overlay,.nyx-profile-directory-overlay,.nyx-founder-editor-overlay,.nyx-owner-dashboard-overlay,.context-menu,[data-nyx-owned-overlay]';
   function isWorkspaceAttachedOverlay(node){
     if(!(node instanceof Element) || node===document.body || node===document.documentElement) return false;
-    if(node.matches('#desktop,.top-os,.window,.workspace-window,.workspace-body,.workspace-home,#nyxStudyHubStartup,#nyxStudyHubBackground,#nyxPrivacyCover,#nyxWaveBg,#setupLaunchScreen,.nyx-prompt-shade,.nyx-modal-shade')) return false;
+    if(node.matches('#app,#desktop,.top-os,.window,.workspace-window,.workspace-body,.workspace-home,#nyxStudyHubStartup,#nyxStudyHubBackground,#nyxPrivacyCover,#nyxWaveBg,#setupLaunchScreen,.nyx-prompt-shade,.nyx-modal-shade')) return false;
     if(node.closest(knownNyxOverlaySelector)) return false;
     const frames=node.matches('iframe') ? [node] : [...node.querySelectorAll('iframe')];
     if(frames.some(frame=>!frame.matches('#nyxStudyHubStartup,#nyxStudyHubBackground,#nyxPrivacyCover,#nyxWaveBg,.workspace-body > iframe.view,iframe[title="nyx"]'))) return true;
@@ -2005,7 +2005,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     for(let depth=0;root?.parentElement && depth<8;depth+=1){
       const parent=root.parentElement;
       if(parent===document.body || parent===document.documentElement) break;
-      if(parent.matches('#desktop,.top-os,.window,.workspace-window,.workspace-body,.workspace-home')) break;
+      if(parent.matches('#app,#desktop,.top-os,.window,.workspace-window,.workspace-body,.workspace-home')) break;
       root=parent;
       if(isWorkspaceAttachedOverlay(root)) candidate=root;
     }
@@ -2014,7 +2014,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function cleanupWorkspaceAttachedAds(root=document){
     const candidates=[];
     if(root instanceof Element) candidates.push(root);
-    root.querySelectorAll?.('body > *, #desktop > *, .workspace-window > *')?.forEach(node=>candidates.push(node));
+    root.querySelectorAll?.('body > *, #app > *, #desktop > *, .workspace-window > *')?.forEach(node=>candidates.push(node));
     const removed=new Set();
     for(const candidate of candidates){
       const overlay=workspaceAttachedOverlayRoot(candidate);
@@ -2064,7 +2064,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const shade=document.createElement('div');
     shade.className='nyx-prompt-shade';
     shade.innerHTML=`<div class="nyx-prompt" role="dialog" aria-modal="true"><div class="nyx-prompt-title">${esc(location.hostname || 'nyx')} says</div><div class="nyx-prompt-message">${esc(message)}</div><input class="nyx-prompt-input" autocomplete="off" spellcheck="false"><div class="nyx-prompt-actions"><button class="nyx-prompt-ok" type="button">OK</button><button class="nyx-prompt-cancel" type="button">Cancel</button></div></div>`;
-    document.body.appendChild(shade);
+    (document.getElementById('app') || document.body).appendChild(shade);
     const ok=shade.querySelector('.nyx-prompt-ok');
     const input=shade.querySelector('.nyx-prompt-input');
     input?.focus();
@@ -2121,7 +2121,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           ${blocked?'':`<button class="settings-action on" data-nyx-download-continue type="button">Download anyway</button>`}
         </footer>
       </section>`;
-      document.body.appendChild(shade);
+      (document.getElementById('app') || document.body).appendChild(shade);
       const finish=allowed=>{shade.remove();resolve(allowed)};
       shade.querySelector('[data-nyx-download-cancel]')?.addEventListener('click',()=>finish(false));
       shade.querySelector('[data-nyx-download-continue]')?.addEventListener('click',()=>finish(true));
@@ -2180,7 +2180,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     link.download=String(filename || '').trim();
     link.rel='noopener';
     link.hidden=true;
-    document.body.appendChild(link);
+    (document.getElementById('app') || document.body).appendChild(link);
     link.click();
     setTimeout(()=>link.remove(),0);
     return true;
@@ -2419,7 +2419,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const overlay=document.createElement('div');
     overlay.className='nyx-jumpscare';
     overlay.innerHTML=`<img alt="" src="${sixtySevenJumpscareSrc}?t=${Date.now()}">`;
-    document.body.appendChild(overlay);
+    (document.getElementById('app') || document.body).appendChild(overlay);
     const close=()=>overlay.remove();
     overlay.addEventListener('click',close,{once:true});
     setTimeout(close,3600);
@@ -3683,7 +3683,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
 
 
-    if(dock.parentElement!==document.body) document.body.appendChild(dock);
+    if(dock.parentElement!==(document.getElementById('app') || document.body)) (document.getElementById('app') || document.body).appendChild(dock);
     dock.hidden=false;
     dock.inert=false;
     dock.removeAttribute('aria-hidden');
@@ -3729,7 +3729,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(nyxVisualDockRecoveryObserver || !document.body) return;
     nyxVisualDockRecoveryObserver=new MutationObserver(()=>{
       const dock=document.querySelector('[data-nyx-visual-dock]');
-      if(!dock || (document.body.classList.contains('workspace-shell') && dock.parentElement!==document.body)) scheduleNyxVisualDockRecovery();
+      if(!dock || (document.body.classList.contains('workspace-shell') && dock.parentElement!==(document.getElementById('app') || document.body))) scheduleNyxVisualDockRecovery();
     });
     nyxVisualDockRecoveryObserver.observe(document.body,{childList:true,attributes:true,attributeFilter:['class']});
     addEventListener('pageshow',deferNyxVisualDockRecovery);
@@ -3840,7 +3840,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         <button type="button" data-nyx-dock-item="apps" data-app-url="nyx://apps" aria-label="Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="7" height="7" rx="1"/><rect x="3" y="16" width="7" height="6" rx="1"/><rect x="12" y="14" width="7" height="8" rx="1"/><rect x="14" y="2" width="7" height="7" rx="1"/></svg><span>Apps</span></button>
       </nav>
       <div class="nyx-rail-footer"><a class="nyx-rail-discord" data-nyx-trusted-external="discord" data-nyx-dock-item="discord" href="https://discord.com/invite/cAdjYAJs3u" target="_blank" rel="noopener noreferrer" aria-label="Join the Nyx Discord server (opens in a new tab)" title="Join our Discord"><i class="nyx-rail-discord-icon" aria-hidden="true"></i><span>Discord</span></a><button type="button" data-nyx-dock-item="settings" data-open="settings" aria-label="Settings">${nyxDashboardIcon('settings')}<span>Settings</span></button><div class="nyx-visual-dock-profile" data-nyx-profile-slot></div></div>`;
-      document.body.appendChild(dock);
+      (document.getElementById('app') || document.body).appendChild(dock);
       watchNyxVisualDock();
       if(navigator.getBattery){
         navigator.getBattery().then(battery=>{
@@ -3850,7 +3850,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         }).catch(()=>{});
       }
     }
-    if(dock.parentElement!==document.body) document.body.appendChild(dock);
+    if(dock.parentElement!==(document.getElementById('app') || document.body)) (document.getElementById('app') || document.body).appendChild(dock);
     dock.hidden=nyxSidebarHidden;
     dock.inert=nyxSidebarHidden;
     if(nyxSidebarHidden)dock.setAttribute('aria-hidden','true');else dock.removeAttribute('aria-hidden');
@@ -4140,6 +4140,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   function workspaceShellDisplayValue(url){
     if(!url) return '';
+    const lesson=window.NyxLearningRoutes?.learningRouteForApp(url,location.origin);
+    if(lesson && window.__NYX_RUNTIME_CONFIG__?.learningRoutesEnabled) return location.origin+lesson;
     try{
       const parsed=new URL(workspaceShellSourceUrl(url),location.href);
       if(parsed.origin===location.origin && parsed.pathname==='/search') return parsed.searchParams.get('q') || '';
@@ -4165,6 +4167,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     ensureWorkspaceShellHome();
     return workspaceShellTabs.find(tab=>tab.id===workspaceShellActiveTab) || workspaceShellTabs[0];
   }
+  window.__nyxPublisherHome=()=>{
+    const tab=workspaceShellTabs.find(item=>item.id===workspaceShellActiveTab);
+    if(!tab || tab.url || tab.title!=='Home') return null;
+    return [...document.querySelectorAll('.workspace-window.workspace-blank .workspace-home.nyx-minimal-home:not(.hidden)')].find(home=>home.getClientRects().length && getComputedStyle(home).visibility==='visible') || null;
+  };
   function currentWorkspaceShellUrl(){
     const tab=activeWorkspaceShellTab();
     return normalize(workspaceShellSourceUrl(tab?.url) || document.querySelector('[data-workspace-shell-url]')?.value || '');
@@ -4184,7 +4191,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       box.id='workspaceSuggestions';
       box.className='workspace-search-suggestions';
       box.setAttribute('role','listbox');
-      document.body.appendChild(box);
+      (document.getElementById('app') || document.body).appendChild(box);
     }
     if(input){
       const anchor=input.closest?.('[data-workspace-blank-search]') || input;
@@ -4399,7 +4406,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     helper.value=cleanText;
     helper.setAttribute('readonly','');
     helper.style.cssText='position:fixed;left:-9999px;top:0;opacity:0';
-    document.body.appendChild(helper);
+    (document.getElementById('app') || document.body).appendChild(helper);
     helper.select();
     let copied=false;
     try{copied=Boolean(document.execCommand?.('copy'))}catch{}
@@ -4424,7 +4431,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     menu.setAttribute('role','menu');
     menu.setAttribute('aria-label','Link actions');
     menu.innerHTML='<button type="button" role="menuitem" data-nyx-copy-clean-link>Copy link</button><button type="button" role="menuitem" data-nyx-open-clean-link>Open link in new tab</button>';
-    document.body.appendChild(menu);
+    (document.getElementById('app') || document.body).appendChild(menu);
     const bounds=menu.getBoundingClientRect();
     menu.style.left=`${Math.max(8,Math.min(Number(x || 0),innerWidth-bounds.width-8))}px`;
     menu.style.top=`${Math.max(8,Math.min(Number(y || 0),innerHeight-bounds.height-8))}px`;
@@ -4789,7 +4796,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       openWorkspaceShellTab();
       document.querySelector('[data-workspace-shell-url]')?.focus();
     });
-    document.body.appendChild(sidebar);
+    (document.getElementById('app') || document.body).appendChild(sidebar);
     return sidebar;
   }
   function normalizeWorkspaceTabDesign(value){
@@ -4939,6 +4946,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       ? '<svg viewBox="0 0 24 24"><rect x="6" y="10" width="12" height="9" rx="2"></rect><path d="M15 10V7a3 3 0 0 0-5.8-1"></path></svg>'
       : '<svg viewBox="0 0 24 24"><rect x="6" y="10" width="12" height="9" rx="2"></rect><path d="M9 10V7a3 3 0 0 1 6 0v3"></path></svg>';
   }
+  function syncLearningAddress(value){
+    if(window!==window.top || !window.__NYX_RUNTIME_CONFIG__?.learningRoutesEnabled || window.__nyxLearningEntry) return;
+    const routes=window.NyxLearningRoutes;
+    if(!routes || !['/',('/study'+'.html'),'/nyx',...Object.keys(routes.learningRoutes)].includes(location.pathname)) return;
+    const route=routes.learningRouteForApp(value,location.origin) || ('/study'+'.html');
+    if(location.pathname+location.search+location.hash!==route) history.replaceState(history.state,'',route);
+  }
   let nyxLastNavigation='';
   function renderWorkspaceShellTabs(){
     if(!document.body.classList.contains('workspace-shell')) return;
@@ -4973,10 +4987,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const chromeVisible=workspaceShellTabs.length>1 || Boolean(active?.url) || active?.title!=='Home';
     document.body.classList.toggle('nyx-workspace-chrome-visible',chromeVisible);
     syncNyxRecentSearches();
+    syncLearningAddress(active?.url || '');
     const activeShowsContent=Boolean(active?.url);
     const navigationKey=active.id+'|'+(active.url||'');
     if(nyxLastNavigation!==navigationKey){
       nyxLastNavigation=navigationKey;
+      window.__nyxPublisherNavigation=navigationKey;
+      window.dispatchEvent(new Event('nyx:publisher-change'));
       if(activeShowsContent){store.set('nyx.sidebarExpanded',false);applyNyxSidebarExpansion()}
     }
     applyNyxAppearance();
@@ -5578,7 +5595,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const overlay=document.createElement('div');
     overlay.className='workspace-shell-settings-overlay';
     overlay.innerHTML=`<main class="workspace-shell-settings-panel" aria-label="Settings">${workspaceShellSettingsMarkup(workspaceShellPresetTiles())}</main>`;
-    document.body.appendChild(overlay);
+    (document.getElementById('app') || document.body).appendChild(overlay);
     const transportSelect=overlay.querySelector('[data-workspace-transport]');
     const legacyLibcurlOption=transportSelect?.querySelector('option[value="libcurl"]');
     if(legacyLibcurlOption){
@@ -6776,7 +6793,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       $('customBgImage')?.removeAttribute('src');
     }
     applyBackgroundValue(value);
-    document.documentElement.style.setProperty('--bg-enhanced-render',normalizeBgValue(value));
+    setBackgroundProperty('--bg-enhanced-render',normalizeBgValue(value));
     document.documentElement.style.setProperty('--workspace-bg-render',normalizeBgValue(currentWorkspaceBackgroundValue()));
     syncBackgroundPreview(value);
     updateWeatherContrast(value);
@@ -6786,7 +6803,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     document.documentElement.style.setProperty('--bg-brightness','1');
     document.documentElement.style.setProperty('--bg-contrast','1');
     document.documentElement.style.setProperty('--bg-saturate','1');
-    document.documentElement.style.setProperty('--bg-bright-mask','linear-gradient(transparent,transparent)');
+    setBackgroundProperty('--bg-bright-mask','linear-gradient(transparent,transparent)');
     setQualityStatus('');
     qsa('[data-bg-enhancer]').forEach(el=>el.classList.toggle('on',enhance));
     const engine=store.text('nyx.engine','duckduckgo');
@@ -6897,11 +6914,32 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function setQualityStatus(text=''){
     qsa('[data-bg-quality-status]').forEach(el=>{el.textContent=text});
   }
+  function compactBackgroundSource(source, slot){
+    const registry=compactBackgroundSource.registry ||= new Map();
+    const previous=registry.get(slot);
+    if(previous?.source===source) return previous.url;
+    let url=source;
+    if(/^data:image\/[^;,]+;base64,/i.test(source)){
+      try{
+        const split=source.indexOf(',');
+        const binary=atob(source.slice(split+1));
+        url=URL.createObjectURL(new Blob([Uint8Array.from(binary,char=>char.charCodeAt(0))],{type:source.slice(5,source.indexOf(';'))}));
+      }catch{}
+    }
+    registry.set(slot,{source,url});
+    if(previous && previous.url!==previous.source) setTimeout(()=>URL.revokeObjectURL(previous.url),1000);
+    return url;
+  }
+  function setBackgroundProperty(name,value){
+    const source=bgSrc(value);
+    const compact=compactBackgroundSource(source || '',name);
+    document.documentElement.style.setProperty(name,source && compact!==source ? `url("${compact}")` : value);
+  }
   function setCustomBackgroundLayer(src, enhancedSrc=''){
     const img=$('customBgImage');
     if(!img) return Promise.resolve(null);
     const layerRun=++customBgLayerRun;
-    const next=enhancedSrc || src || '';
+    const next=compactBackgroundSource(enhancedSrc || src || '', 'customBgImage');
     if(!next){
       document.body.classList.remove('custom-bg-active');
       img.removeAttribute('src');
@@ -6912,8 +6950,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       loadImageWithFallback(img,next,(loadedSrc,loadedImg)=>{
       if(layerRun!==customBgLayerRun){resolve(null); return}
       const loadedCss=`url("${loadedSrc.replaceAll('"','%22')}")`;
-      document.documentElement.style.setProperty('--bg-render',loadedCss);
-      document.documentElement.style.setProperty('--bg-enhanced-render',loadedCss);
+      setBackgroundProperty('--bg-render',loadedCss);
+      setBackgroundProperty('--bg-enhanced-render',loadedCss);
       document.body.classList.add('custom-bg-active');
       syncThemeVantaBackgrounds();
       resolve({src:loadedSrc,width:loadedImg.naturalWidth,height:loadedImg.naturalHeight});
@@ -7052,8 +7090,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   function applyBackgroundValue(value, allowFallback=true){
     const cssValue=normalizeBgValue(value || bgPresets.dragon);
-    document.documentElement.style.setProperty('--bg', cssValue);
-    document.documentElement.style.setProperty('--bg-render', cssValue);
+    setBackgroundProperty('--bg', cssValue);
+    setBackgroundProperty('--bg-render', cssValue);
     const src=bgSrc(cssValue);
     if(!src || src.startsWith('data:') || src.startsWith('blob:')) return;
     if(store.text('nyx.customBgUrl','') || store.text('nyx.customBgData','') || store.text('nyx.customBg','')) return;
@@ -7076,17 +7114,17 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const src=bgSrc(cssValue);
     setQualityStatus('Quality Boost preparing image...');
     if(!src || cssValue.startsWith('linear-gradient')){
-      document.documentElement.style.setProperty('--bg-render',cssValue);
-      document.documentElement.style.setProperty('--bg-enhanced-render',cssValue);
-      document.documentElement.style.setProperty('--bg-bright-mask','linear-gradient(transparent,transparent)');
+      setBackgroundProperty('--bg-render',cssValue);
+      setBackgroundProperty('--bg-enhanced-render',cssValue);
+      setBackgroundProperty('--bg-bright-mask','linear-gradient(transparent,transparent)');
       setCustomBackgroundLayer('');
       setQualityStatus('');
       return;
     }
     const isGif=/\.gif(?:[?#].*)?$/i.test(src) || /^data:image\/gif/i.test(src);
     if(isGif){
-      document.documentElement.style.setProperty('--bg-render',cssValue);
-      document.documentElement.style.setProperty('--bg-enhanced-render',cssValue);
+      setBackgroundProperty('--bg-render',cssValue);
+      setBackgroundProperty('--bg-enhanced-render',cssValue);
       setQualityStatus('Quality Boost active: animated GIF preserved');
     }else{
       renderEnhancedImage(src,(enhancedSrc,status)=>{
@@ -7094,7 +7132,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         setQualityStatus(status);
         if(enhancedSrc){
           const boosted=`url("${enhancedSrc}")`;
-          document.documentElement.style.setProperty('--bg-enhanced-render',boosted);
+          setBackgroundProperty('--bg-enhanced-render',boosted);
           syncBackgroundPreview(boosted);
           if(store.text('nyx.customBgUrl','') || store.text('nyx.customBgData','')) setCustomBackgroundLayer(src,enhancedSrc);
         }
@@ -7150,13 +7188,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           brightMask=`url("${maskCanvas.toDataURL('image/png')}")`;
         }
       if(run===enhancedBackgroundRun && store.get('nyx.backgroundEnhancer',false)){
-        document.documentElement.style.setProperty('--bg-render',cssValue);
-        document.documentElement.style.setProperty('--bg-bright-mask',brightMask);
+        setBackgroundProperty('--bg-render',cssValue);
+        setBackgroundProperty('--bg-bright-mask',brightMask);
       }
     }catch{
-      document.documentElement.style.setProperty('--bg-render',cssValue);
-      document.documentElement.style.setProperty('--bg-enhanced-render',cssValue);
-      document.documentElement.style.setProperty('--bg-bright-mask','linear-gradient(transparent,transparent)');
+      setBackgroundProperty('--bg-render',cssValue);
+      setBackgroundProperty('--bg-enhanced-render',cssValue);
+      setBackgroundProperty('--bg-bright-mask','linear-gradient(transparent,transparent)');
     }
   };
   img.onerror=()=>{
@@ -7165,9 +7203,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       img.src=maskCandidates[maskIndex];
       return;
     }
-    document.documentElement.style.setProperty('--bg-render',cssValue);
-    document.documentElement.style.setProperty('--bg-enhanced-render',cssValue);
-    document.documentElement.style.setProperty('--bg-bright-mask','linear-gradient(transparent,transparent)');
+    setBackgroundProperty('--bg-render',cssValue);
+    setBackgroundProperty('--bg-enhanced-render',cssValue);
+    setBackgroundProperty('--bg-bright-mask','linear-gradient(transparent,transparent)');
   };
     img.src=maskCandidates[maskIndex] || src;
   }
@@ -7383,6 +7421,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
 
       await runStep(96,'Finishing startup',()=>{
         finishNyxOpenStartup();
+        if(window.__nyxLearningEntry){
+          const entry=window.__nyxLearningEntry; window.__nyxLearningEntry='';
+          openWorkspaceShellAppTab(entry);
+        }
         applyVisualEffectSetting();
         document.body.classList.remove('runtime-lag-guard');
         if(shouldShowStartupCustomization()){
@@ -7402,6 +7444,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
 
   function normalize(v){
     const input=String(v||'').trim(); if(!input)return '';
+    const lesson=/^(?:https?:|\/)/i.test(input) ? window.NyxLearningRoutes?.appForLearningRoute(input,location.origin) : '';
+    if(lesson) return lesson.startsWith('nyx:') ? lesson : new URL(lesson,location.origin).href;
     const raw=/^apps\//i.test(input) ? `/${input}` : input;
     if(shouldTriggerSixtySevenJumpscare(raw)){
       showSixtySevenJumpscare();
@@ -7879,7 +7923,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const date=new Date().toISOString().slice(0,10);
     link.href=url;
     link.download=`nyx-data-${date}.json`;
-    document.body.appendChild(link);
+    (document.getElementById('app') || document.body).appendChild(link);
     link.click();
     link.remove();
     setTimeout(()=>URL.revokeObjectURL(url),1000);
@@ -10265,7 +10309,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       overlay.className='nyx-preflight';
       const preflightTitle=kind==='startup-diagnostics' ? 'Startup Diagnostics' : kind==='startup' ? 'Starting nyx' : kind==='apps' ? 'Opening Apps' : kind==='search' ? "Checking S3ARC4" : 'Checking Workspace';
       overlay.innerHTML=`<section class="nyx-preflight-card" role="status" aria-live="polite"><h2 class="nyx-preflight-title">${esc(preflightTitle)}</h2><ul class="nyx-preflight-list">${tasks.map((task,index)=>`<li class="nyx-preflight-item" data-preflight-step="${index}"><span class="nyx-preflight-dot">&bull;</span><span>${esc(task.label)}</span></li>`).join('')}</ul><div class="nyx-preflight-bar"><div class="nyx-preflight-fill"></div></div></section>`;
-      document.body.appendChild(overlay);
+      (document.getElementById('app') || document.body).appendChild(overlay);
       requestAnimationFrame(()=>overlay.classList.add('show'));
       const started=Date.now();
       const fill=overlay.querySelector('.nyx-preflight-fill');
@@ -12439,9 +12483,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         if(!requestId||!gameKey)return;
         void (async()=>{
           try{
+            await initializeFounderOwnerAccess();
+            const accountUid=nyxFounderSignedInUser?.uid||'';
+            if(e.data.accountUid&&e.data.accountUid!==accountUid)throw new Error('Your account changed. Reopen the game to sync.');
             const payload=e.data.type==='nyx:cloud-game-load'
-              ? {storage:await loadNyxCloudGameSave(gameKey)}
-              : await saveNyxCloudGameSave(gameKey,e.data.storage,e.data.removed);
+              ? {storage:await loadNyxCloudGameSave(gameKey),accountUid}
+              : await saveNyxCloudGameSave(gameKey,e.data.storage,e.data.removed,e.data.accountUid);
+            if(nyxFounderSignedInUser?.uid!==accountUid)throw new Error("Your account changed. Reopen the game to sync.");
             e.source?.postMessage({type:'nyx:cloud-game-result',requestId,...payload},location.origin);
           }catch(error){
             e.source?.postMessage({type:'nyx:cloud-game-result',requestId,error:String(error?.message||'Cloud saves are unavailable.')},location.origin);
@@ -14486,7 +14534,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     const gate=document.createElement('div');
     gate.className='nyx-tos-gate';
     gate.innerHTML=`<section class="nyx-tos-dialog" role="dialog" aria-modal="true" aria-labelledby="nyxTosGateTitle" aria-describedby="nyxTosGateIntro"><header class="nyx-tos-gate-header"><span class="nyx-tos-gate-logo" aria-hidden="true"></span><div><span>Before you continue</span><h1 id="nyxTosGateTitle" tabindex="-1">Nyx Terms of Service</h1></div></header><div class="nyx-tos-scroll" data-nyx-tos-scroll>${nyxTermsPageMarkup('nyx-tos-document')}<div class="nyx-tos-declined" hidden><span aria-hidden="true">ⓘ</span><h2 tabindex="-1">Terms declined</h2><p>You cannot use Nyx without accepting the Terms of Service. You can review the terms again or leave Nyx.</p></div></div><footer class="nyx-tos-actions"><p id="nyxTosGateIntro">By selecting Agree, you confirm that you have read and accept these Terms.</p><div><button class="nyx-tos-disagree" data-nyx-tos-disagree type="button">Disagree</button><button class="nyx-tos-agree" data-nyx-tos-agree type="button">Agree</button></div></footer></section>`;
-    document.body.appendChild(gate);
+    (document.getElementById('app') || document.body).appendChild(gate);
     document.body.classList.add('nyx-tos-active');
     const agree=gate.querySelector('[data-nyx-tos-agree]');
     const disagree=gate.querySelector('[data-nyx-tos-disagree]');
@@ -14587,7 +14635,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       if(event.target===overlay || event.target.closest('[data-nyx-release-notes-close]')) close();
     });
     overlay.addEventListener('keydown',event=>{if(event.key==='Escape') close()});
-    document.body.appendChild(overlay);
+    (document.getElementById('app') || document.body).appendChild(overlay);
     requestAnimationFrame(()=>overlay.classList.add('show'));
     setTimeout(()=>overlay.querySelector('#nyxReleaseNotesTitle')?.focus(),80);
     return 'shown';
@@ -14924,7 +14972,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     document.body.innerHTML='';
     document.body.style.margin='0';
     document.body.style.overflow='hidden';
-    document.body.appendChild(iframe);
+    (document.getElementById('app') || document.body).appendChild(iframe);
     return true;
   }
   function launchCurrentTabBlob(useAnchor=false){

@@ -5,7 +5,7 @@
   awayCover.id='nyxAwayCover';awayCover.dataset.nyxOwnedOverlay='';awayCover.hidden=true;awayCover.inert=true;
   awayCover.setAttribute('aria-hidden','true');awayCover.setAttribute('popover','manual');
   const awayImage=document.createElement('img');awayImage.src='/assets/backgrounds/study-away-cover.png';awayImage.alt='';awayImage.draggable=false;
-  awayCover.append(awayImage);document.body.append(awayCover);
+  awayCover.append(awayImage);(document.getElementById('app') || document.body).append(awayCover);
   let windowAway=false,blurTimer,focusTimer;
   function syncAwayCover(){
     if(blanked)return;
@@ -85,7 +85,7 @@
       button.querySelector('span').textContent=entry.label;
       button.addEventListener('click',()=>{closeMenu();previousFocus?.focus?.();entry.run();});menu.append(button);
     }
-    document.body.append(menu);
+    (document.getElementById('app') || document.body).append(menu);
     const bounds=menu.getBoundingClientRect();
     let x=event.clientX,y=event.clientY,view=doc.defaultView;
     try{while(view&&view!==window){const frame=view.frameElement;if(!frame)break;const rect=frame.getBoundingClientRect();x+=rect.left;y+=rect.top;view=view.parent;}}catch{}

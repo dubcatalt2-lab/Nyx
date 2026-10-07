@@ -1,4 +1,5 @@
 import "../../parables/display-names.js";
+import {createGameCloudSave} from "./game-cloud-save.js";
 import {createGameSponsors} from "../../parables/publisher-placements.js";
 
 const dropGames = document.body.classList.contains('drop-games');
@@ -67,6 +68,7 @@ const state = {
 
 const GAME_LIBRARIES = Object.freeze([
   { id: 'all', label: 'All games', shortLabel: 'All', description: 'Every available game' },
+  { id: 'bundled', label: 'Nyx Games', shortLabel: 'Nyx', description: 'Games hosted with Nyx' },
   { id: 'lumin', label: 'LuminSDK', shortLabel: 'Lumin', description: 'Games delivered through LuminSDK' },
   { id: 'gn', label: 'GN Math', shortLabel: 'GN', description: 'The GN Math collection' },
   { id: 'gms', label: 'GMS', shortLabel: 'GMS', description: 'The GMS collection' },
@@ -78,7 +80,16 @@ const GAME_LIBRARIES = Object.freeze([
 
 const cloudGameRequests = new Map();
 let cloudGameRequestId = 0;
-let activeGameStorageBaseline = {};
+let activeGameCloudSave = null;
+let pendingGameCloudSave = Promise.resolve();
+let cloudGameOpenSequence = 0;
+const cloudSaveStatus = document.createElement("span");
+cloudSaveStatus.className = "game-cloud-save-status";
+cloudSaveStatus.setAttribute("role", "status");
+const cloudSaveHeading = document.createElement("div");
+cloudSaveHeading.className = "player-title-group";
+elements.playerTitle.before(cloudSaveHeading);
+cloudSaveHeading.append(elements.playerTitle, cloudSaveStatus);
 const cloudAuthRelays = new Map();
 const luminCoverUrls = new Map();
 let luminSdkPromise = null;
@@ -293,23 +304,6 @@ for (const button of elements.viewButtons) {
 
 setGameView(location.hash.toLowerCase() === '#cloud' ? 'cloud' : 'all', false);
 
-function cloudStorageSnapshot() {
-  const snapshot = {};
-  let total = 0;
-  try {
-    for (let index = 0; index < localStorage.length && Object.keys(snapshot).length < 64; index += 1) {
-      const key = localStorage.key(index);
-      if (!key || /^(?:nyx\.|drop\.|nook\.|tutsi\.|firebase:)/.test(key) || /[\u0000-\u001f]/.test(key)) continue;
-      const value = localStorage.getItem(key);
-      if (typeof value !== 'string' || new TextEncoder().encode(value).length > 24_000) continue;
-      total += new TextEncoder().encode(key).length + new TextEncoder().encode(value).length;
-      if (total > 280_000) break;
-      snapshot[key] = value;
-    }
-  } catch {}
-  return snapshot;
-}
-
 function requestCloudGameSave(type, payload = {}) {
   if (parent === window) return Promise.resolve({});
   const requestId = `game-${Date.now().toString(36)}-${(++cloudGameRequestId).toString(36)}`;
@@ -321,30 +315,6 @@ function requestCloudGameSave(type, payload = {}) {
     cloudGameRequests.set(requestId, { resolve, reject, timer });
     parent.postMessage({ type, requestId, ...payload }, location.origin);
   });
-}
-
-async function restoreCloudGameStorage(game) {
-  if (!game?.key) return {};
-  try {
-    const result = await requestCloudGameSave('nyx:cloud-game-load', { gameKey: game.key });
-    const storage = result?.storage && typeof result.storage === 'object' ? result.storage : {};
-    Object.entries(storage).forEach(([key, value]) => {
-      if (typeof key === 'string' && typeof value === 'string' && !/^(?:nyx\.|drop\.|nook\.|tutsi\.|firebase:)/.test(key)) localStorage.setItem(key, value);
-    });
-  } catch {}
-  return cloudStorageSnapshot();
-}
-
-function saveCloudGameStorage(game, baseline = {}) {
-  if (!game?.key) return;
-  const current = cloudStorageSnapshot();
-  const storage = {};
-  Object.entries(current).forEach(([key, value]) => {
-    if (baseline[key] !== value) storage[key] = value;
-  });
-  const removed = Object.keys(baseline).filter(key => !(key in current));
-  if (!Object.keys(storage).length && !removed.length) return;
-  void requestCloudGameSave('nyx:cloud-game-save', { gameKey: game.key, storage, removed }).catch(() => {});
 }
 
 function syncHostTheme() {
@@ -1065,6 +1035,7 @@ function gameSources(game = state.activeGame) {
 
 function gameProviderLabel(source, index) {
   const labels = {
+    bundled: 'Nyx Games',
     local: dropGames ? 'Archive' : 'Nyx Archive',
     gn: 'GN Math',
     gms: 'GMS',
@@ -1200,8 +1171,18 @@ async function openGame(game, updateHistory = true, preferredSource = '') {
   elements.player.hidden = false;
   syncGamePerformanceMode();
   startGamePerformanceMonitor();
-  activeGameStorageBaseline = await restoreCloudGameStorage(game);
-  if (state.activeGame !== game) return;
+  const openSequence = ++cloudGameOpenSequence;
+  const previousSave = activeGameCloudSave;
+  activeGameCloudSave = null;
+  if (previousSave) pendingGameCloudSave = previousSave.stop();
+  await pendingGameCloudSave;
+  if (state.activeGame !== game || openSequence !== cloudGameOpenSequence) return;
+  const save = createGameCloudSave({gameKey: game.key, request: requestCloudGameSave,
+    current: () => activeGameCloudSave === save && state.activeGame === game,
+    status: text => { cloudSaveStatus.textContent = text; cloudSaveStatus.title = text; }, frame: elements.frame});
+  activeGameCloudSave = save;
+  try { await save.start(); } catch (error) { if (state.activeGame === game) cloudSaveStatus.textContent = 'Cloud save unavailable: ' + error.message; }
+  if (state.activeGame !== game || activeGameCloudSave !== save) return;
   launchGameSource(state.activeSourceIndex);
   elements.close.focus();
   if (updateHistory) updateGameQuery(game.key);
@@ -1209,8 +1190,9 @@ async function openGame(game, updateHistory = true, preferredSource = '') {
 }
 
 function closeGame() {
-  saveCloudGameStorage(state.activeGame, activeGameStorageBaseline);
-  activeGameStorageBaseline = {};
+  cloudGameOpenSequence++;
+  if (activeGameCloudSave) pendingGameCloudSave = activeGameCloudSave.stop();
+  activeGameCloudSave = null;
   clearSourceTimer();
   state.sourceAttempt += 1;
   state.activeGame = null;
@@ -1364,7 +1346,7 @@ window.addEventListener('message', event => {
     document.body.classList.toggle('cloud-session-active', event.data.active === true);
     return;
   }
-  if (event.origin === location.origin && event.data?.type === 'nyx:cloud-game-result') {
+  if (event.origin === location.origin && event.source === parent && event.data?.type === 'nyx:cloud-game-result') {
     const request = cloudGameRequests.get(String(event.data.requestId || ''));
     if (request) {
       clearTimeout(request.timer);
@@ -1382,7 +1364,7 @@ window.addEventListener('message', event => {
 elements.cloudFrame.addEventListener('load', () => {
   document.body.classList.remove('cloud-session-active');
 });
-addEventListener('pagehide', () => saveCloudGameStorage(state.activeGame, activeGameStorageBaseline), { passive: true });
+addEventListener('pagehide', () => void activeGameCloudSave?.flush(), { passive: true });
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape' && !elements.player.hidden && !document.fullscreenElement) closeGame();
 });

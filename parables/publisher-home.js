@@ -14,31 +14,15 @@ function visibleHome(target) {
   return home;
 }
 
-function visibleSurface(target, frame) {
-  if (publisherMode() !== 'adkid') return frame ? null : visibleHome(target);
-  if (document.hidden || !document.body.classList.contains('workspace-shell') || document.body.classList.contains('nyx-loading-active')) return null;
-  const surface = frame || target;
-  if (!surface?.isConnected || !surface.getClientRects().length || getComputedStyle(surface).visibility !== 'visible') return null;
-  if (frame && !firstPartyApp(frame)) return null;
-  return surface;
-}
-
-function firstPartyApp(frame) {
-  try {
-    const url = new URL(frame.contentWindow.location.href);
-    return frame.matches('iframe.view') && url.origin === location.origin &&
-      (/^\/apps\/(?!sponsor\/)/.test(url.pathname) || /^\/assets\/games\/(?:index\.html)?$/.test(url.pathname));
-  } catch {return false;}
-}
-
 if (publisherConfig.homeLink && publisherHostAllowed() && navigator.locks) {
-  function handleClick(event, frame) {
+  function handleClick(event) {
     if (!event.isTrusted || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     if (event.target?.closest?.('a,button,textarea,select,[contenteditable="true"],.nyx-home-sponsor,.nyx-social-sponsor')) return;
-    const home = visibleSurface(event.target, frame);
-    if (!home) return;
+    const home = visibleHome(event.target);
+    if (!home || window.__nyxPublisherHome?.() !== home || !popupPolicy()) return;
+    const navigation=window.__nyxPublisherNavigation;
     void navigator.locks.request(lockName, {ifAvailable: true}, lock => {
-      if (!lock || visibleSurface(event.target, frame) !== home || !navigator.userActivation?.isActive) return;
+      if (!lock || navigation !== window.__nyxPublisherNavigation || window.__nyxPublisherHome?.() !== home || visibleHome(event.target) !== home || !navigator.userActivation?.isActive) return;
       try {
         const policy = popupPolicy();
         if (!policy) return;
@@ -71,18 +55,7 @@ if (publisherConfig.homeLink && publisherHostAllowed() && navigator.locks) {
     }).catch(() => {});
   }
   document.addEventListener('click', event => handleClick(event), {capture: true});
-  const attached = new WeakSet();
-  function attach(frame) {
-    if (!firstPartyApp(frame)) return;
-    const doc = frame.contentDocument;
-    if (!doc || attached.has(doc)) return;
-    attached.add(doc);
-    doc.addEventListener('click', event => handleClick(event, frame), {capture: true});
-  }
-  document.addEventListener('load', event => {
-    if (event.target?.matches?.('iframe.view')) attach(event.target);
-  }, {capture: true});
-  document.querySelectorAll('iframe.view').forEach(attach);
+
 }
 
 startAdcoins();

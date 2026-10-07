@@ -1,0 +1,11 @@
+{
+  "games": [
+    {
+      "id": "balatro",
+      "title": "Balatro",
+      "author": "LocalThunk",
+      "path": "balatro",
+      "cover": "/assets/vendor/balatro/img.webp"
+    }
+  ]
+}

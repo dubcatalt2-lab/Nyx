@@ -3,6 +3,13 @@
   "fallbackCover": "/game-cover?title={title}",
   "catalogs": [
     {
+      "id": "bundled",
+      "format": "gms",
+      "url": "/assets/games/bundled.json",
+      "player": "/assets/vendor/{path}/index.html",
+      "priority": 60
+    },
+    {
       "id": "local",
       "format": "ugs",
       "url": "/assets/ugs/games.json",

@@ -5,7 +5,6 @@ export function startHomeSponsors() {
   if (!publisherHostAllowed() || publisherConfig.homeBanners.length !== 2) return;
   const states = new Map();
   let scheduled = false;
-  let rail;
   let deadline = 0;
   let expired = false;
   const dismissed = new Set();
@@ -13,7 +12,7 @@ export function startHomeSponsors() {
   style.textContent = '.nyx-home-sponsor{position:absolute;bottom:24px;width:64px;z-index:3;color:var(--obsidian-muted,#aaa);font:10px/1.4 system-ui;text-align:center}.nyx-home-sponsor[data-side="left"]{left:24px}.nyx-home-sponsor[data-side="right"]{right:24px}.nyx-home-sponsor>span{display:block;margin-bottom:8px}.nyx-home-sponsor .nyx-home-creative{width:64px;height:240px;overflow:hidden}.nyx-home-sponsor iframe{transform:scale(.4);transform-origin:top left;display:block;width:160px;height:600px;border:0;background:transparent}.nyx-home-sponsor:not([data-ready]){visibility:hidden}.nyx-home-sponsor[hidden]{display:none!important}';
   document.head.append(style);
   style.textContent += '.nyx-home-sponsor header{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:4px;font-size:8px}.nyx-home-sponsor button{display:grid;place-items:center;flex:none;width:24px;height:24px;border:1px solid #ffffff30;border-radius:6px;background:#151515;color:#eee;cursor:pointer}.nyx-home-sponsor button svg{width:12px;height:12px}';
-  style.textContent += '.nyx-adkid-sponsors{position:fixed;inset:100px 0 0 76px;z-index:1100;pointer-events:none}.nyx-adkid-sponsors .nyx-home-sponsor{pointer-events:auto}';
+
   function clear(state) {
     for (const slot of state.slots) {slot.frame.destroy();slot.host.remove();}
     state.slots = [];
@@ -23,26 +22,16 @@ export function startHomeSponsors() {
     if (deadline && Date.now() >= deadline) expired = true;
     const mode = publisherMode();
     const eligible = !expired && !['off', 'pending'].includes(mode);
-    if (mode === 'adkid' && !rail) {
-      rail = document.createElement('div');
-      rail.className = 'nyx-adkid-sponsors';
-      document.body.append(rail);
-    } else if (mode !== 'adkid' && rail) {rail.remove();rail = null;}
     const homes = [...document.querySelectorAll('.workspace-home.nyx-minimal-home')];
-    if (rail) {
-      const shell = document.querySelector('.workspace-window');
-      if (shell) rail.style.left = Math.max(0, shell.getBoundingClientRect().left) + 'px';
-      homes.push(rail);
-    }
     for (const home of homes) {
       if (!states.has(home)) states.set(home, {slots: [], attempted: false});
       const state = states.get(home);
       const rect = home.getBoundingClientRect();
-      const available = eligible && (mode !== 'adkid' || home === rail);
+      const available = eligible && window.__nyxPublisherHome?.() === home;
       const visible = available && !document.hidden && !home.classList.contains('hidden') &&
-        (home === rail || home.closest('.workspace-window.workspace-blank')) && rect.width >= 900 && rect.height >= 520 &&
+        home.closest('.workspace-window.workspace-blank') && rect.width >= 900 && rect.height >= 520 &&
         getComputedStyle(home).visibility !== 'hidden' && !document.body.classList.contains('nyx-loading-active');
-      if (!available) {clear(state);state.attempted = false;continue;}
+      if (!visible) {clear(state);state.attempted = false;continue;}
       for (const slot of state.slots) slot.host.hidden = !visible || slot.failed;
       if (!visible || state.attempted) continue;
       state.attempted = true;
@@ -50,6 +39,7 @@ export function startHomeSponsors() {
         if (dismissed.has(index)) return;
         const host = document.createElement('aside');
         host.className = 'nyx-home-sponsor';
+        host.setAttribute('data-nyx-owned-overlay', '');
         host.dataset.side = index ? 'right' : 'left';
         host.setAttribute('aria-label', 'Sponsored placement');
         const header = document.createElement('header');
@@ -89,7 +79,7 @@ export function startHomeSponsors() {
   function schedule() {
     if (scheduled) return;
     scheduled = true;
-    requestAnimationFrame(update);
+    queueMicrotask(update);
   }
   new MutationObserver(schedule).observe(document.body, {childList: true, subtree: true, attributes: true, attributeFilter: ['class']});
   window.addEventListener('resize', schedule);

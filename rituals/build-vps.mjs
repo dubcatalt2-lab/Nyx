@@ -260,7 +260,7 @@ function runtimeFormatOptions() {
   };
 }
 
-async function minifyEmbeddedScramjetGuards(source, nameCache) {
+async function minifyEmbeddedScramjetGuards(source) {
   const names = new Set([
     "studyjetSpotifyChromeOsGuardSource",
     "studyjetMinimalRuntimeGuardSource",
@@ -279,8 +279,7 @@ async function minifyEmbeddedScramjetGuards(source, nameCache) {
       const result = await minify(node.init.quasis[0].value.cooked, {
         compress: runtimeCompressOptions(),
         mangle: runtimeMangleOptions(false),
-        format: runtimeFormatOptions(),
-        nameCache
+        format: runtimeFormatOptions()
       });
       if (!result.code) throw new Error(`Could not minify embedded guard ${node.id.name}`);
       replacements.push({ start: node.init.start, end: node.init.end, code: JSON.stringify(result.code) });
@@ -315,7 +314,6 @@ async function minifyFirstPartyWorkspaceRuntimes() {
   const targets = [...new Set([...trackedRuntimes, ...generatedRuntimes])]
     .sort()
     .map(path => ({ path, topLevel: true }));
-  const nameCache = {};
   let sourceBytes = 0;
   let outputBytes = 0;
   let transformedFiles = 0;
@@ -328,13 +326,14 @@ async function minifyFirstPartyWorkspaceRuntimes() {
       continue;
     }
     sourceBytes += Buffer.byteLength(source);
-    if (target.path === "script.js") source = await minifyEmbeddedScramjetGuards(source, nameCache);
+    if (target.path === "script.js") source = await minifyEmbeddedScramjetGuards(source);
+    const program = parse(source, { ecmaVersion: "latest", sourceType: "module", allowReturnOutsideFunction: true });
+    const isModule = target.path.endsWith(".mjs") || program.body.some(node => /^(Import|Export)/.test(node.type));
     const result = await minify(source, {
-      module: target.path.endsWith(".mjs"),
+      module: isModule,
       compress: runtimeCompressOptions(),
-      mangle: runtimeMangleOptions(target.topLevel,target.path),
-      format: runtimeFormatOptions(),
-      nameCache
+      mangle: runtimeMangleOptions(isModule,target.path),
+      format: runtimeFormatOptions()
     });
     if (!result.code) throw new Error(`Could not minify ${target.path}`);
     if (/sourceMappingURL/i.test(result.code)) throw new Error(`Source map reference survived in ${target.path}`);

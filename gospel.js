@@ -7366,8 +7366,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         ]);
       },480);
 
-      await runStep(67,'Starting workspace',async()=>{
-        await requestNyxKeyboardLock();
+      await runStep(67,'Starting workspace',()=>{
+        void requestNyxKeyboardLock().catch(error=>console.warn('Keyboard shortcuts unavailable',error));
         tick();
       },430);
 

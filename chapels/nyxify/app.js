@@ -441,6 +441,7 @@ function makeclickable(el, label, fn) {
   el.tabIndex = 0;
   if (label) el.setAttribute('aria-label', label);
   el.addEventListener('keydown', e => {
+    if (e.target !== el) return;
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       e.stopPropagation();
@@ -833,6 +834,7 @@ function rendermain() {
 }
 
 crumbEl.addEventListener('click', () => {
+  ++reqid;
   if (playlistAddTargetId) {
     const playlistId = playlistAddTargetId;
     playlistAddTargetId = '';
@@ -845,6 +847,7 @@ crumbEl.addEventListener('click', () => {
 
 document.querySelectorAll('.filter').forEach(btn => {
   btn.addEventListener('click', () => {
+    ++reqid;
     playlistAddTargetId = '';
     detail = null;
     activePlaylistId = '';
@@ -1206,6 +1209,7 @@ function openplaylistdialog(track = null) {
 function openplaylist(id) {
   const playlist = playlists.find(item => item.id === id);
   if (!playlist) return;
+  ++reqid;
   activePlaylistId = id;
   playlistAddTargetId = '';
   detail = null;
@@ -1300,6 +1304,7 @@ function renderplaylistview() {
 function startplaylistadd(id) {
   const playlist = playlists.find(item => item.id === id);
   if (!playlist) return;
+  ++reqid;
   playlistAddTargetId = id;
   activePlaylistId = '';
   detail = null;
@@ -1557,16 +1562,20 @@ document.getElementById('searchForm').addEventListener('submit', async e => {
   e.preventDefault();
   const q = searchInput.value.trim();
   if (!q) return;
+  const myreq = ++reqid;
+  query = q;
+  results = [];
+  detail = null;
+  activePlaylistId = '';
   showloading();
   try {
     const data = await nyxifyjson(`/api/nyxify/search?q=${encodeURIComponent(q)}`);
-    query = q;
-    results = data.data || [];
-    detail = null;
-    activePlaylistId = '';
+    if (myreq !== reqid) return;
+    results = Array.isArray(data.data) ? data.data : [];
     setfilter('home');
     rendermain();
   } catch (err) {
+    if (myreq !== reqid) return;
     if (playlistAddTargetId) {
       query = q;
       results = [];

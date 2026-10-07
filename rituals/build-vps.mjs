@@ -2,6 +2,7 @@ import {sourceFile,publicSourcePath,publicSourceText} from '../scripture/source-
 import {buildGameStorage} from './build-game-storage.mjs';
 import {buildPublicModules} from './build-public-modules.mjs';
 import {buildFrontendAssets} from './build-frontend-assets.mjs';
+import {opaqueIdentifiers,scrambleBrowserOutput} from './build-browser-scramble.mjs';
 import {buildPublisherPackage} from './build-publisher-package.mjs';
 import {formatPublishedHtml} from './format-published-html.mjs';
 import { spawn, spawnSync } from "node:child_process";
@@ -232,10 +233,11 @@ async function copyRemoteViewer() {
   for(const name of ['core','vendor','docs','AUTHORS'])await cp(sourceFile(join(source,name)),join(destination,name),{recursive:true});
 }
 
-function runtimeMangleOptions(topLevel) {
+function runtimeMangleOptions(topLevel,seed='embedded') {
   return {
     toplevel: topLevel,
-    safari10: true
+    safari10: true,
+    nth_identifier: opaqueIdentifiers(seed)
   };
 }
 
@@ -330,7 +332,7 @@ async function minifyFirstPartyBrowserRuntimes() {
     const result = await minify(source, {
       module: target.path.endsWith(".mjs"),
       compress: runtimeCompressOptions(),
-      mangle: runtimeMangleOptions(target.topLevel),
+      mangle: runtimeMangleOptions(target.topLevel,target.path),
       format: runtimeFormatOptions(),
       nameCache
     });
@@ -342,7 +344,7 @@ async function minifyFirstPartyBrowserRuntimes() {
   }
   const reduction = sourceBytes ? Math.round((1 - outputBytes / sourceBytes) * 100) : 0;
   if (transformedFiles !== targets.length) throw new Error(`Obfuscation coverage failed: ${transformedFiles}/${targets.length} runtimes transformed`);
-  console.log(`Production-obfuscated all ${transformedFiles} first-party browser runtime files (${reduction}% smaller; no source maps)`);
+  console.log(`Production-obfuscated all ${transformedFiles} first-party browser runtime files (${Math.abs(reduction)}% ${reduction>=0?'smaller':'larger'}; no source maps)`);
 }
 
 function isFirstPartyMarkupOrStyle(relative) {
@@ -381,7 +383,7 @@ async function minifyFirstPartyMarkupAndStyles() {
           compress: runtimeCompressOptions(),
           // Inline handlers can reference globals across script tags. Rename
           // local bindings only; retain public names and property contracts.
-          mangle: { toplevel: false, eval: false, properties: false },
+          mangle: { toplevel: false, eval: false, properties: false, nth_identifier: opaqueIdentifiers(relative) },
           keep_fnames: true,
           keep_classnames: true,
           format: runtimeFormatOptions()
@@ -456,6 +458,7 @@ async function main() {
   await buildFrontendAssets(output,repositoryFiles().filter(isStaticSource).map(file => (modules['/'+file] || '/'+file).slice(1)),learningPage());
   await writeNotFoundPage();
   await buildPublisherPackage(root, output);
+  await scrambleBrowserOutput(output);
   if (output !== join(root, 'dist')) await writeFile(join(dirname(output), 'ready.json'), JSON.stringify({format:'nyx-static-release', version:1, builtAt:new Date().toISOString()}));
   console.log(`VPS build ready in ${output}`);
   console.log(`Wisp endpoint: ${wispUrl}`);

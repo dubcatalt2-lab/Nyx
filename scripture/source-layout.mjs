@@ -3,6 +3,7 @@ import {dirname,resolve,relative,sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 export const sourceLayout=Object.freeze({
+"index.html":"study.html",
 "apps":"chapels",
 "lib":"scripture",
 "services":"ministries",
@@ -17,7 +18,7 @@ export const sourceLayout=Object.freeze({
 "SOURCE_LAYOUT.md":"CANON.md",
   "app.webmanifest": "covenant.webmanifest",
   "assets": "relics",
-  "baremux": "communion",
+  "baremux": "barebooks",
   "css": "vestments",
   "deploy": "mission",
   "epoxy": "incense",

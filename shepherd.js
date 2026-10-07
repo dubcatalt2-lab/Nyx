@@ -860,7 +860,7 @@ app.get("/student-resources.html", (req, res) => {
     "Cache-Control": "private, no-store, no-cache, must-revalidate",
     "X-Robots-Tag": "noindex, nofollow, noarchive, nosnippet"
   });
-  res.sendFile(sourceFile(join(staticRoot, "student-resources.html")));
+  res.sendFile(sourceFile(join(staticRoot, "student-resources.html")), { dotfiles: 'allow' });
 });
 
 function nyxSearchSuggestionAllowed(req, now = Date.now()) {
@@ -3462,7 +3462,7 @@ installDeveloperApi(app, {
     method:'POST', headers:{Authorization:`Bearer ${nyxAiKey()}`, 'Content-Type':'application/json'},body:JSON.stringify(payload)
   }),
   configured: () => Boolean(nyxAiKey()),
-  page: (req,res) => res.sendFile(sourceFile(join(staticRoot,'apps/api-keys/index.html')))
+  page: (req,res) => res.sendFile(sourceFile(join(staticRoot,'apps/api-keys/index.html')), { dotfiles: 'allow' })
 });
 
 
@@ -8031,11 +8031,11 @@ app.get("/api/nyxtube/community", async (req, res) => {
 
 
 app.get(["/apps/nyxtube", "/apps/nyxtube/"], (_req, res) => {
-  res.sendFile(sourceFile(join(staticRoot, "apps", "nyxtube", "index.html")));
+  res.sendFile(sourceFile(join(staticRoot, "apps", "nyxtube", "index.html")), { dotfiles: 'allow' });
 });
 
 app.get(["/apps/nyxify", "/apps/nyxify/"], (_req, res) => {
-  res.sendFile(sourceFile(join(staticRoot, "apps", "nyxify", "index.html")));
+  res.sendFile(sourceFile(join(staticRoot, "apps", "nyxify", "index.html")), { dotfiles: 'allow' });
 });
 
 const movieCatalog = createMovieCatalog();
@@ -8043,7 +8043,7 @@ installMovieImages(app);
 installMovieApi(app, { catalog: movieCatalog, clientId: nyxClientIp });
 installMoviePlayback(app, { clientId: nyxClientIp, validateMovie: id => movieCatalog.details(id) });
 app.get(/^\/apps\/movies$/, (_req, res) => res.redirect(302, "/apps/movies/"));
-app.get("/apps/movies/", (_req, res) => { res.set("Content-Security-Policy", "frame-src 'self' https://nhdapi.com https://supaplay.fun https://ani.megaplay.su https://watch.rivestream.app https://framextv.tech https://plyr.animex.one; object-src 'none'"); res.sendFile(sourceFile(join(staticRoot, "apps", "movies", "index.html"))); });
+app.get("/apps/movies/", (_req, res) => { res.set("Content-Security-Policy", "frame-src 'self' https://nhdapi.com https://supaplay.fun https://ani.megaplay.su https://watch.rivestream.app https://framextv.tech https://plyr.animex.one; object-src 'none'"); res.sendFile(sourceFile(join(staticRoot, "apps", "movies", "index.html")), { dotfiles: 'allow' }); });
 
 function linkGeneratorRateState(clientId, now = Date.now()) {
   for (const [key, state] of linkGeneratorAttempts) {
@@ -8511,10 +8511,10 @@ app.post("/api/custom-hostnames", async (req, res) => {
 });
 
 app.get("/tutsi/connect-domain", (_req, res) => {
-  res.sendFile(sourceFile(join(staticRoot, "apps", "tutsi", "connect-domain.html")));
+  res.sendFile(sourceFile(join(staticRoot, "apps", "tutsi", "connect-domain.html")), { dotfiles: 'allow' });
 });
 app.get("/connect-domain", (_req, res) => {
-  res.sendFile(sourceFile(join(staticRoot, "apps", "connect-domain", "index.html")));
+  res.sendFile(sourceFile(join(staticRoot, "apps", "connect-domain", "index.html")), { dotfiles: 'allow' });
 });
 
 app.post("/api/link-checker/full-scan/start", async (req, res) => {
@@ -14212,7 +14212,7 @@ app.get("/scramjet-v1/scramjet.all.js", (_req, res) => {
 });
 app.get(["/tutsi", "/tutsi/"], (_req, res) => {
   res.set("Cache-Control", "no-cache");
-  res.sendFile(sourceFile(join(staticRoot, "apps", "tutsi", "index.html")));
+  res.sendFile(sourceFile(join(staticRoot, "apps", "tutsi", "index.html")), { dotfiles: 'allow' });
 });
 
 app.get("/", async (req, res, next) => {
@@ -14220,8 +14220,9 @@ app.get("/", async (req, res, next) => {
     if (await customHostnameSite(req.hostname) !== "tutsi") return next();
   } catch { return res.status(503).set("Retry-After", "30").send("Website temporarily unavailable. Please retry shortly."); }
   res.set("Cache-Control", "no-cache");
-  res.sendFile(sourceFile(join(staticRoot, "apps", "tutsi", "index.html")));
+  res.sendFile(sourceFile(join(staticRoot, "apps", "tutsi", "index.html")), { dotfiles: 'allow' });
 });
+app.get('/study.html', (_req,res)=>res.set('Cache-Control','no-store').sendFile(sourceFile(join(staticRoot,'study.html')), {dotfiles:'allow'}));
 app.use(publicAssetBoundary(staticRoot));
 if(staticRoot===__dirname)app.use((req,res,next)=>{
   const file=sourceFile(join(staticRoot,decodeURIComponent(req.path)));
@@ -14286,7 +14287,7 @@ app.use((req, res, next) => {
 });
 
 app.use((_req, res) => {
-  res.sendFile(sourceFile(join(staticRoot, "index.html")));
+  res.sendFile(sourceFile(join(staticRoot, "index.html")), { dotfiles: 'allow' });
 });
 
 export { app, attachNyxChatSocketServer, externalWispUrl, normalizePublicWispUrl, nyxActiveGuestUsers, nyxActorCanReviewSearchHistory, nyxChatCanAccessChannel, nyxChatIsSchoolRestrictedChannel, nyxClientIp, nyxRolePresentation, nyxVisibleCustomRoles, nyxifyArtistMatches, nyxifyDurationMatches, nyxifyFullTrackCompare, nyxifyMultilingualTopMatch, nyxifyOfficialArtistScore, nyxifyTrackTitleMatches, recordLocalPresence };

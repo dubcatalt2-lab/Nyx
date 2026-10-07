@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 import { staticBaseToken, validateStaticManifest } from '../chapels/jsdelivr-publisher/static-publish.js';
 
 export async function buildPublisherPackage(root, dist) {
-  const result = spawnSync(process.execPath, ['rituals/build-static-export.mjs', '--mini', '--publisher', `--base=${staticBaseToken}`], {
+  const result = spawnSync(process.execPath, ['rituals/build-static-export.mjs', '--mini', '--publisher', `--base=${staticBaseToken}`,`--input=${dist}`], {
     cwd: root, encoding: 'utf8', maxBuffer: 4_000_000
   });
   if (result.status !== 0) throw Error(`Static publisher package failed: ${result.stderr || result.stdout}`);

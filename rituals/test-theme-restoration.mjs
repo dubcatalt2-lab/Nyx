@@ -10,7 +10,7 @@ const base='http://127.0.0.1:'+server.address().port;
 const browser=await chromium.launch({channel:'msedge',headless:true});
 try{
  const page=await browser.newPage();const errors=[];page.on('pageerror',error=>errors.push(error.message));
- await page.addInitScript(()=>{localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');});
+ await page.addInitScript(()=>{if(window!==window.top)return;localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');});
  async function ready(){
   await page.goto(base,{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>document.body?.classList.contains('browser-shell')&&!document.body.classList.contains('nyx-loading-active'));

@@ -1,6 +1,7 @@
 import {sourceFile} from '../scripture/source-layout.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {pathToFileURL} from 'node:url';
 import {parse} from 'acorn';
 
 const source=readFileSync(sourceFile('script.js'),'utf8');let create='',normalize='',defaultTransport='';
@@ -16,9 +17,9 @@ const fakeModule='data:text/javascript,'+encodeURIComponent(`export default clas
   ready=false;constructor(options){this.options=options;globalThis.__nyxTransportInitTest.created++;}
   async init(){const state=globalThis.__nyxTransportInitTest;state.entered();await state.gate;this.ready=true;}
 }`);
-create=create.replace("'/assets/transports/libcurl-scramjet.mjs'",JSON.stringify(fakeModule));
-const relayModule='data:text/javascript,'+encodeURIComponent("import {RelayTransport as Base} from "+JSON.stringify(new URL('../apps/tutsi/relay.mjs',import.meta.url).href)+";export class RelayTransport extends Base {constructor(options){super({...options,probe:async()=>true,online:()=>true});}}");
-create=create.replace("'/apps/tutsi/relay.mjs'",JSON.stringify(relayModule));
+create=create.replace("'/assets/transports/libcurl-pilgrim.mjs'",JSON.stringify(fakeModule));
+const relayModule='data:text/javascript,'+encodeURIComponent("import {RelayTransport as Base} from "+JSON.stringify(pathToFileURL(sourceFile(new URL('../apps/tutsi/relay.mjs',import.meta.url))).href)+";export class RelayTransport extends Base {constructor(options){super({...options,probe:async()=>true,online:()=>true});}}");
+create=create.replace("'/chapels/tutsi/relay.mjs'",JSON.stringify(relayModule));
 const normalizeName=new Function('DEFAULT_BROWSER_TRANSPORT',`${normalize};return normalizeBrowserTransportName;`)(defaultTransport);
 assert.equal(defaultTransport,'libcurlRaw');
 const make=new Function('selectWispRelay','normalizeBrowserTransportName','store','wispUrl','setTimeout',`

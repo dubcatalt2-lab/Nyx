@@ -99,6 +99,7 @@ relics/backgrounds/*
 !relics/backgrounds/animated-blue-wave.html
 !relics/backgrounds/pirate-cove.gif
 !relics/backgrounds/halloween.jpg
+!relics/backgrounds/study-away-cover.png
 *.mp4
 *.webm
 *.mov
@@ -121,3 +122,4 @@ assets/backgrounds/*
 !assets/backgrounds/animated-blue-wave.html
 !assets/backgrounds/pirate-cove.gif
 !assets/backgrounds/halloween.jpg
+!assets/backgrounds/study-away-cover.png

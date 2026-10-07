@@ -8162,12 +8162,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const base=scramjetController;
     if(!base?.serviceWorkerController || !base?.transport) throw new Error('Scramjet private session is unavailable');
     const controller=createScramjetController(base.serviceWorkerController,base.transport);
-    const {trackProxyController}=await import('/js/intercession-startup.mjs');
+    const {trackProxyController,waitForProxyController}=await import('/js/intercession-startup.mjs');
     controller.nyxStopWorkerTracking=trackProxyController(controller);
-    try{await Promise.race([
-      controller.wait(),
-      new Promise((_,reject)=>setTimeout(()=>reject(new Error('Scramjet private session timed out')),5000))
-    ]);}catch(error){controller.nyxStopWorkerTracking();throw error;}
+    try{await waitForProxyController(controller,5000);}catch(error){
+      controller.nyxStopWorkerTracking();
+      try{controller.cookieSyncChannel?.close?.()}catch{}
+      try{controller.port?.close?.()}catch{}
+      throw error;
+    }
     controller.loadSavedCookies=async()=>{};
     controller.persistCookies=async()=>{};
     controller.cookieSyncDirty=false;
@@ -11977,6 +11979,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
             const startup=createPrivateScramjetController();
             const tracked=startup.then(controller=>{
               if(t.privateScramjetControllerPromise!==tracked){
+                controller.nyxStopWorkerTracking?.();
                 try{controller.cookieSyncChannel?.close?.()}catch{}
                 try{controller.port?.close?.()}catch{}
                 throw new Error('Scramjet private session was superseded');
@@ -11991,7 +11994,6 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           }
           const privateController=await t.privateScramjetControllerPromise;
           if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent){
-            destroyProxyPrivacySession(t);
             return;
           }
           setFrameSandbox(t,true);

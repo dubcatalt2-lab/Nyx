@@ -11,6 +11,8 @@ for(const [from,to] of Object.entries({...sourceLayout,...sourceFileLayout})){
  assert.equal(resolve(sourceFile(from)),resolve(to),from);
 }
 assert.equal(publicSourcePath('chapels/movies/intercession.mjs'),'apps/movies/proxy.mjs');
+assert.equal(publicSourcePath('study.html'),'index.html');
+assert.equal(publicSourcePath('barebooks/index.mjs'),'baremux/index.mjs');
 assert.equal(publicSourcePath('relics/transports/incense-pilgrim.mjs'),'assets/transports/epoxy-scramjet.mjs');
 assert.equal(publicSourceText('import("/chapels/tutsi/intercession.mjs")'),'import("/apps/tutsi/proxy.mjs")');
 for(const name of ['scripture','ministries','hermitage','deacon','lectionary','scrolls'])assert(privateSourcePath('/'+name+'/anything.js'));

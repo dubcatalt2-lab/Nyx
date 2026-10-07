@@ -1,4 +1,5 @@
 import {learningAsset,legacyLearningAsset} from './public-assets.mjs';
+import {sourceFile} from '../../scripture/source-layout.mjs';
 import {readFile} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 import {learningPage} from './pages.mjs';
@@ -45,7 +46,7 @@ export function installStudyReady(app,{owner,db,sameOrigin,verifyDns,targetIps,a
   res.set('Cache-Control','no-store');if(!sameOrigin(req))return res.status(403).json({error:'Cross-origin requests are not allowed.'});
   try{await owner(req);const hostname=normalizeDomain(req.params.hostname,{allowPrimary:true});if(!(await domains()).some(row=>row.hostname===hostname))throw problem('Add this domain first.',404);const ips=await verifyDns(hostname),targets=targetIps();res.json({hostname,resolvedIps:ips,matches:ips.some(ip=>targets.includes(ip)),targetIps:targets});}catch(error){res.status(error.status||503).json({error:error.status?error.message:'DNS could not be checked. Try again later.'});}
  });
- app.get(['/nyx','/nyx/'],(req,res)=>{if(req.path.endsWith('/'))return res.redirect(302,'/nyx'+(req.url.includes('?')?req.url.slice(req.url.indexOf('?')):''));res.set('Cache-Control','no-store').sendFile(join(staticRoot,'index.html'),{dotfiles:'allow'});});
+ app.get(['/nyx','/nyx/'],(req,res)=>{if(req.path.endsWith('/'))return res.redirect(302,'/nyx'+(req.url.includes('?')?req.url.slice(req.url.indexOf('?')):''));res.set('Cache-Control','no-store').sendFile(sourceFile(join(staticRoot,'study.html')),{dotfiles:'allow'});});
  app.use(async(req,res,next)=>{
   const path=req.path;if(!['GET','HEAD'].includes(req.method))return next();
   try{

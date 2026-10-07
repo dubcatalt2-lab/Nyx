@@ -109,79 +109,14 @@
 
 
 html.nyx-browser-shell-expected body:not(.browser-shell)>:is(#customBgImage,#nyxWaveBg,#defaultVantaBg,#rubyVantaBg,#whiteVantaBg,#emeraldVantaBg,#sakuraVantaBg,#visualEffects,.top-os,#desktop,#weatherRestore,.dock){visibility:hidden!important}
-html.nyx-studyhub-starting,html.nyx-studyhub-starting body{overflow:hidden!important}
-#nyxStudyHubStartup{position:fixed;z-index:2147483647;inset:0;display:block;width:100vw;height:100dvh;border:0;background:#f2eee4;opacity:1;pointer-events:auto!important;transition:opacity .35s ease;isolation:isolate}
-#nyxStudyHubStartup.is-leaving{opacity:0;pointer-events:none}
-#nyxStudyHubBackground{position:fixed;inset:0;width:100%;height:100dvh;border:0;z-index:-1;pointer-events:none;visibility:hidden}
-#nyxPrivacyCover{position:fixed;inset:0;width:100vw;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;background:#fff;color:#fff}
-#nyxPrivacyCover::backdrop{background:#fff}
-html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!important;pointer-events:none!important}
-@media(prefers-reduced-motion:reduce){#nyxStudyHubStartup{transition:none}}
 </style>
-<script>document.documentElement.classList.add('nyx-studyhub-starting')</script>
 <link rel="stylesheet" href="css/obsidian.css?v=20261001-wallpaper-upload-v6">
   <link rel="stylesheet" href="css/profile-editor-layout.css?v=20261004-profile-layout">
 <link rel="stylesheet" href="css/session-overlays.css?v=20261002-update-v1.6.8">
+<link rel="stylesheet" href="/css/document-controls.css">
+<script src="/js/document-controls.js" defer></script>
 </head>
 <body>
-
-  <iframe id="nyxStudyHubStartup" src="startup-studyhub.html?v=20260730-math-lessons-v9" title="StudyHub startup math question" tabindex="0" referrerpolicy="no-referrer"></iframe>
-<script>
-(() => {
-  const splash=document.getElementById('nyxStudyHubStartup');
-  const root=document.documentElement;
-  const shownAt=performance.now();
-  let removeTimer=0;
-  let autoDismissTimer=0;
-  let finished=false;
-  const removeSplash=()=>{
-    if(splash){splash.id='nyxStudyHubBackground';splash.classList.remove('is-leaving');splash.inert=true;splash.tabIndex=-1;splash.setAttribute('aria-hidden','true');}
-    root.classList.remove('nyx-studyhub-starting');
-  };
-  const finishSplash=(duration=350)=>{
-    if(finished)return;
-    finished=true;
-    clearTimeout(autoDismissTimer);
-    clearTimeout(removeTimer);
-    splash?.classList.add('is-leaving');
-    removeTimer=setTimeout(removeSplash,duration);
-  };
-  const onMessage=event=>{
-    if(event.source!==splash?.contentWindow||event.data?.type!=='nyx-studyhub')return;
-    if(event.data.action==='interactive-ready')return;
-    if(event.data.action==='math-passed'&&performance.now()-shownAt>=3500)finishSplash(350);
-  };
-  autoDismissTimer=setTimeout(()=>finishSplash(350),3500);
-  addEventListener('message',onMessage);
-  addEventListener('pagehide',()=>{
-    clearTimeout(autoDismissTimer);
-    clearTimeout(removeTimer);
-    removeEventListener('message',onMessage);
-  },{once:true});
-
-
-  const cover=document.createElement('dialog');
-  cover.id='nyxPrivacyCover';
-  cover.dataset.nyxOwnedOverlay='';
-  cover.setAttribute('aria-label','Privacy cover. Press Escape to return to Nyx.');
-  document.body.append(cover);
-  const toggleCover=event=>{
-    if(event.key!=='F12'||event.ctrlKey||event.metaKey||event.altKey||event.shiftKey||event.repeat)return;
-    event.preventDefault();event.stopImmediatePropagation();
-    if(cover.open)cover.close();else cover.showModal();
-  };
-  const boundDocuments=new WeakSet();
-  const bindDocument=doc=>{
-    if(boundDocuments.has(doc))return;
-    boundDocuments.add(doc);
-    doc.addEventListener('keydown',toggleCover,true);
-    const bindFrame=frame=>{try{if(frame.contentDocument)bindDocument(frame.contentDocument);}catch{}};
-    doc.addEventListener('load',event=>{if(event.target?.tagName==='IFRAME')bindFrame(event.target);},true);
-    doc.querySelectorAll('iframe').forEach(bindFrame);
-  };
-  bindDocument(document);
-})();
-</script>
 
 <img id="customBgImage" class="custom-bg-image" alt="" referrerpolicy="no-referrer">
 <canvas id="nyxBeamsBg" aria-hidden="true"></canvas>
@@ -487,7 +422,7 @@ html.nyx-studyhub-starting #setupLaunchScreen{display:none!important;opacity:0!i
 <script src="js/availability.js?v=20260913-relay-selection-v3"></script>
 <script src="/js/duck-image-viewport.js"></script>
 <script src="js/display-names.js"></script>
-<script src="script.js?v=20261005-connection-repair-v320"></script>
-<script type="module" src="js/publisher-home.js?v=20261005-7"></script>
+<script src="script.js?v=20261005-home-only-ads-v321"></script>
+<script type="module" src="js/publisher-home.js?v=20261005-8"></script>
 </body>
 </html>

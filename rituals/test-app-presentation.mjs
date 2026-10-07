@@ -58,16 +58,22 @@ try {
   }
   const context=await browser.newContext({viewport:{width:390,height:844}});
   try {
+    const aiHtml=await (await fetch(base+'/ai.html')).text();
+    const aiScript=[...aiHtml.matchAll(/<script\b[^>]*\bsrc="([^"]+)"[^>]*>/g)].at(-1)?.[1];
+    assert(aiScript,'Built AI entry script must exist');
+    const aiScriptUrl=new URL(aiScript.replaceAll('&amp;','&'),base).href;
     await context.route('**/api/**',r=>r.fulfill({contentType:'application/json',body:'{}'}));
     let release,requested;
     const held=new Promise(r=>release=r),seen=new Promise(r=>requested=r);
     await context.route('**/*',async route=>{
       const url=route.request().url();
-      if(url.includes('20260922-model-picker-v8')&&route.request().resourceType()==='script'){requested();await held;}
+      if(url===aiScriptUrl&&route.request().resourceType()==='script'){requested();await held;}
       await route.fallback();
     });
     const page=await context.newPage();
-    await page.goto(base+'/ai.html',{waitUntil:'commit'});await seen;
+    await page.goto(base+'/ai.html',{waitUntil:'commit'});
+    let timer;
+    try{await Promise.race([seen,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Built AI entry script not requested')),20000);})]);}finally{clearTimeout(timer);}
     await page.locator('body').waitFor({state:'attached'});
     assert.equal(await page.locator('body').evaluate(n=>getComputedStyle(n).visibility),'hidden');
     release();

@@ -65,6 +65,7 @@ try {
   await cdp.send('Network.enable');
   await cdp.send('Network.setBlockedURLs',{urls:['https://*']});
   await page.addInitScript(() => {
+    if(window!==window.top)return;
     localStorage.setItem('nyx.setupComplete', 'true');
     localStorage.setItem('nyx.browserShellMode', 'true');
     localStorage.setItem('nyx.tosAcceptedVersion', '2026-07-30');
@@ -83,9 +84,16 @@ try {
   await page.waitForFunction(() => !document.querySelector('#nyxStudyHubStartup') && document.body && !document.body.classList.contains('nyx-loading-active'));
   await page.locator('[data-nyx-dock-item="apps"]').waitFor({ state: 'visible' });
   assert.equal(await page.evaluate(() => globalThis.__NYX_STATIC_CONFIG__.base), base);
+  assert.equal(await page.evaluate(() => globalThis.__NYX_RUNTIME_CONFIG__.publisherAdsEnabled), false);
   assert.equal(await page.evaluate(() => !!navigator.serviceWorker.controller), true);
   assert.equal(await page.evaluate(() => crossOriginIsolated), true);
   assert.equal(await page.locator('iframe[src^="https://nyxlearning.org"]').count(), 0);
+  await page.waitForFunction(()=>document.querySelector('#nyxAwayCover img')?.naturalWidth>0);
+  assert(new URL(await page.locator('#nyxAwayCover img').getAttribute('src'),page.url()).pathname.startsWith(base),'Static away cover must use the published package base');
+  await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));});
+  assert.equal(await page.locator('#nyxAwayCover').isVisible(),true);
+  await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});
+  assert.equal(await page.locator('#nyxAwayCover').isVisible(),false);
   const legacyModule=Object.keys(JSON.parse(published.get('public-modules.json').toString()).aliases).find(name=>name.endsWith('/header-utils.mjs'));
   assert(legacyModule,'Legacy shared module mapping is missing');
   const exports=await page.evaluate(async url=>Object.keys(await import(url)),origin+base+legacyModule);
@@ -124,6 +132,12 @@ try {
   assert.deepEqual(failures.filter(path => /\.(?:js|mjs|css|wasm|html)$/.test(path)), []);
   await mkdir('.codex-artifacts', { recursive: true });
   await page.screenshot({ path: '.codex-artifacts/static-publisher-desktop.png' });
+  await page.goto(origin+base+'index.html');
+  await page.waitForURL(origin+base+'study.html');
+  await page.locator('[data-nyx-dock-item="home"]').waitFor({state:'visible'});
+  assert.equal(await page.locator('#nyxStudyHubStartup,#nyxStudyHubBackground').count(),0);
+  assert.deepEqual(failures.filter(path=>/\.(?:js|mjs|css|wasm|html)$/.test(path)),[],'The static cover must include its stylesheet and redirect to the rebased app');
+  assert.deepEqual(errors,[]);
   console.log(`PASS actual static package: ${manifest.files.length} assets verified and published through mocked Git, launcher redirect, worker startup, HTML MIME correction, isolated app shell and reload.`);
 } finally {
   await browser.close();

@@ -3,6 +3,9 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "js/document-controls.js",
+  "css/document-controls.css",
+  "assets/backgrounds/study-away-cover.png",
   "lib/source-layout.mjs",
   "lib/build-output.mjs",
   "deploy/static-release.mjs",

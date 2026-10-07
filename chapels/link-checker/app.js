@@ -207,12 +207,12 @@
     if(!freednsBulkAuthPromise)freednsBulkAuthPromise=(async()=>{
       const config=await fetchJson('/api/founder-profile/auth-config',{cache:'no-store'});
       if(!config?.enabled)throw new Error('Nyx account sign-in is not configured.');
-      const [{initializeApp,getApps},{getAuth,setPersistence,browserLocalPersistence}]=await Promise.all([
+      const [{initializeApp,getApps},{getAuth,setPersistence,browserLocalPersistence:workspaceLocalPersistence}]=await Promise.all([
         import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),
         import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')
       ]);
       const app=getApps().find(item=>item.name==='nyx-founder-owner')||initializeApp({apiKey:config.apiKey,authDomain:`${config.projectId}.firebaseapp.com`,projectId:config.projectId},'nyx-founder-owner');
-      const auth=getAuth(app);try{await setPersistence(auth,browserLocalPersistence)}catch{}
+      const auth=getAuth(app);try{await setPersistence(auth,workspaceLocalPersistence)}catch{}
       if(typeof auth.authStateReady==='function')await auth.authStateReady();
       return auth;
     })();
@@ -594,7 +594,7 @@
         if(page<totalPages)await freednsDelay(175,signal);
       }
       freednsCache={domains:[...collected.values()],totalPages,totalDomains,lastScrapedAt:new Date().toISOString(),complete:true};
-      const saved=saveFreednsCache();renderFreedns();showNotice(saved?`FreeDNS scrape complete: ${freednsCache.domains.length.toLocaleString()} domains cached on this device.`:'The scrape completed, but this browser could not save the registry cache.',saved?'':'error',!saved);
+      const saved=saveFreednsCache();renderFreedns();showNotice(saved?`FreeDNS scrape complete: ${freednsCache.domains.length.toLocaleString()} domains cached on this device.`:'The scrape completed, but this workspace could not save the registry cache.',saved?'':'error',!saved);
     }catch(error){
       if(collected.size){freednsCache={domains:[...collected.values()],totalPages,totalDomains,lastScrapedAt:new Date().toISOString(),complete:false};saveFreednsCache();renderFreedns();}
       if(error.name==='AbortError')showNotice(`FreeDNS scrape stopped after ${completedPages.toLocaleString()} pages. The partial cache was saved.`);
@@ -694,7 +694,7 @@
         for(const entry of Array.isArray(payload.domains)?payload.domains:[]){
           if(!wanted.has(entry.domain)||!entry.vendors||!Object.keys(entry.vendors).length)continue;
           storeFreednsVerdict(reportFromProvider(entry),entry.domain);wanted.delete(entry.domain);imported+=1;unsaved+=1;
-          if(unsaved>=FREEDNS_FULL_SAVE_BATCH&&!flush()){storageFailed=true;throw new Error('This browser could not save more verdicts.');}
+          if(unsaved>=FREEDNS_FULL_SAVE_BATCH&&!flush()){storageFailed=true;throw new Error('This workspace could not save more verdicts.');}
         }
         setFreednsFullProgress(already+imported,total);$('[data-freedns-progress-detail]').textContent=`${label}: page ${page.toLocaleString()} of ${totalPages.toLocaleString()} · ${(already+imported).toLocaleString()} ready.`;
       };
@@ -708,7 +708,7 @@
     let error=null;
     try{
       await importProviderResults();
-      if(!flush())throw new Error('This browser could not save more verdicts.');
+      if(!flush())throw new Error('This workspace could not save more verdicts.');
       if(wanted.size){
         let status=await bulkFetch('/full-scan/start',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});let observedRunning=status.running===true;let idlePolls=0;updateRemoteProgress(status);
         while(!signal.aborted){
@@ -723,7 +723,7 @@
       if(!flush())storageFailed=true;
       freednsDoubleCheckRemaining=!storageFailed&&!error&&!signal.aborted?wanted.size:0;
       freednsFullScanning=false;freednsChecking.clear();renderWorkspace();
-      if(storageFailed)showNotice(`The full scan stopped because this browser could not save more verdicts. ${persistedTotal.toLocaleString()} domain results remain saved.`,'error',true);
+      if(storageFailed)showNotice(`The full scan stopped because this workspace could not save more verdicts. ${persistedTotal.toLocaleString()} domain results remain saved.`,'error',true);
       else if(error)showNotice(`The full scan could not finish: ${error.message}`,'error',true);
       else if(signal.aborted)showNotice('Nyx stopped watching the full scan. The Nocturne server job may continue; click Check all domains to reconnect and import its results.');
       else if(wanted.size)showNotice(`The server scan finished and imported ${imported.toLocaleString()} new domains. ${wanted.size.toLocaleString()} ${wanted.size===1?'domain still needs':'domains still need'} results; use Double check to retry only ${wanted.size===1?'that domain':'those domains'}.`,'error',true);

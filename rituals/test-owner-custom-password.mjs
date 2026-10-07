@@ -33,9 +33,9 @@ try{
  fail=true;const r=await send();assert.equal(r.status,400);assert(!JSON.stringify(await r.json()).includes('Sensitive'));assert.equal(audits.length,3);
  console.log('PASS actual owner password route: owner identity enforcement, origin/auth, length/type validation, email-less/unverified aliases, sanitized errors, secret-free response/audit');
 }finally{server.closeAllConnections();await new Promise(r=>server.close(r));}
-const browser=await chromium.launch({headless:true});
+const workspace=await chromium.launch({headless:true});
 try{
- const page=await browser.newPage();await page.setContent('<div id="confirm"></div>');
+ const page=await workspace.newPage();await page.setContent('<div id="confirm"></div>');
  const ui=readFileSync(sourceFile('js/owner-dashboard.js'),'utf8'),start=ui.indexOf('    function requestCustomPassword('),end=ui.indexOf('    function showResetLink(',start);
  await page.evaluate(code=>{const confirmHost=document.querySelector('#confirm'),esc=text=>String(text).replace(/[<>&"]/g,'');eval(code+';window.openPassword=()=>{window.result="pending";requestCustomPassword({displayName:"Member"}).then(value=>window.result=value);};');},ui.slice(start,end));
  await page.evaluate(()=>window.openPassword());assert.equal(await page.locator('input[type=password]').count(),2);
@@ -43,4 +43,4 @@ try{
  await page.locator('[name=confirmPassword]').fill(secret);await page.locator('[type=submit]').click();assert.equal(await page.evaluate(()=>window.result),secret);assert.equal(await page.locator('input').count(),0);
  await page.evaluate(()=>window.openPassword());await page.locator('[name=newPassword]').fill(secret);await page.locator('[data-owner-confirm-cancel]').click();assert.equal(await page.evaluate(()=>window.result),null);assert.equal(await page.locator('input').count(),0);
  console.log('PASS actual custom password dialog: masked fields, confirmation mismatch, submit/cancel and field cleanup');
-}finally{await browser.close();}
+}finally{await workspace.close();}

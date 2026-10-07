@@ -40,11 +40,11 @@ const cases = [
   }
 ];
 
-const browser = await chromium.launch({ headless: true });
+const workspace = await chromium.launch({ headless: true });
 try {
   for (const viewport of [{ width: 1280, height: 900 }, { width: 390, height: 760 }]) {
     for (const testCase of cases) {
-      const page = await browser.newPage({ viewport });
+      const page = await workspace.newPage({ viewport });
       const pageErrors = [];
       page.on("pageerror", error => pageErrors.push(error.message));
       await page.route("**/api/**", route => route.fulfill({
@@ -89,11 +89,11 @@ try {
       await page.waitForTimeout(220);
       const hoverBackground = await page.locator(testCase.hover).evaluate(node => getComputedStyle(node).backgroundColor);
       assert(isNeutralCool(hoverBackground), `${testCase.name} hover state is not neutral cool glass`);
-      assert(pageErrors.length === 0, `${testCase.name} browser errors: ${pageErrors.join(" | ")}`);
+      assert(pageErrors.length === 0, `${testCase.name} workspace errors: ${pageErrors.join(" | ")}`);
       await page.close();
     }
   }
   console.log("Utility theme test: API Keys, Link Generator, and JSDelivr Publisher use transparent canvases with neutral cool glass surfaces, borders, hover states, and responsive layouts.");
 } finally {
-  await browser.close();
+  await workspace.close();
 }

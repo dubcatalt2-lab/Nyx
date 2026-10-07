@@ -24,7 +24,7 @@ const waitForServer=async()=>{
 };
 
 const profile={
-  displayName:'Account Test',handle:'@account-test',bio:'Browser regression profile',
+  displayName:'Account Test',handle:'@account-test',bio:'Workspace regression profile',
   avatarUrl:'',bannerUrl:'',accentPrimary:'#5865f2',accentSecondary:'#8ea1ff',
   bannerColor:'#8ea1ff',displayNameFont:'gg-sans',displayNameEffect:'solid',
   displayNameColorPrimary:'#ffffff',displayNameColorSecondary:'#8ea1ff',
@@ -46,17 +46,17 @@ const firebaseAuthModule=`
   export async function signInWithCustomToken(){return {user:auth.currentUser}}
 `;
 
-let browser;
+let workspace;
 let postedChatMessage=null;
 try{
   await waitForServer();
-  browser=await chromium.launch({headless:true});
-  const page=await browser.newPage({viewport:{width:1280,height:800}});
+  workspace=await chromium.launch({headless:true});
+  const page=await workspace.newPage({viewport:{width:1280,height:800}});
   const pageErrors=[];
   page.on('pageerror',error=>pageErrors.push(error.message));
   await page.addInitScript(()=>{
     localStorage.setItem('nyx.setupComplete','true');
-    localStorage.setItem('nyx.browserShellMode','true');
+    localStorage.setItem('nyx.workspaceShellMode','true');
     if(!sessionStorage.getItem('nyx.test.originalMigration')){
       localStorage.setItem('nyx.homeDesign','original');
       sessionStorage.setItem('nyx.test.originalMigration','true');
@@ -182,7 +182,7 @@ try{
   await page.waitForSelector('#nyxBeamsBg[data-preset="frost"]');
 
   await page.locator('[data-nyx-dock-item="apps"]').click();
-  const appsFrame=page.frameLocator('.browser-window iframe.active');
+  const appsFrame=page.frameLocator('.workspace-window iframe.active');
   const coloredIcons=appsFrame.locator('[data-global-app-id="crunchyroll"] .quick-icon,[data-global-app-id="newgrounds"] .quick-icon,[data-global-app-id="kick"] .quick-icon,[data-global-app-id="itch"] .quick-icon');
   await coloredIcons.first().waitFor({state:'attached'});
   assert.equal(await coloredIcons.count(),4,'Expected all four dark-background icon replacements');
@@ -211,12 +211,12 @@ try{
   await page.waitForTimeout(500);
 
   const externalPathUrl='https://example.com/pokemon';
-  const homeSearch=page.locator('.browser-window.browser-home-page [data-browser-blank-input]:visible');
+  const homeSearch=page.locator('.workspace-window.workspace-home-page [data-workspace-blank-input]:visible');
   await page.waitForTimeout(4500);
   await homeSearch.fill(externalPathUrl);
   await homeSearch.press('Enter');
-  await page.waitForFunction(()=>[...document.querySelectorAll('.browser-window iframe.view')].some(frame=>String(frame.getAttribute('src') || '').includes('/~/sj/')));
-  await page.waitForFunction(()=>[...document.querySelectorAll('.browser-window iframe.view')].some(frame=>{
+  await page.waitForFunction(()=>[...document.querySelectorAll('.workspace-window iframe.view')].some(frame=>String(frame.getAttribute('src') || '').includes('/~/sj/')));
+  await page.waitForFunction(()=>[...document.querySelectorAll('.workspace-window iframe.view')].some(frame=>{
     try{return String(frame.getAttribute('src') || '').includes('/~/sj/') && !!frame.contentDocument?.documentElement}catch{return false}
   }));
   await page.evaluate(()=>{
@@ -224,12 +224,12 @@ try{
       configurable:true,
       value:{writeText:async value=>{globalThis.__nyxCopiedLink=String(value)}}
     });
-    const frame=[...document.querySelectorAll('.browser-window iframe.view')].find(node=>String(node.getAttribute('src') || '').includes('/~/sj/'));
+    const frame=[...document.querySelectorAll('.workspace-window iframe.view')].find(node=>String(node.getAttribute('src') || '').includes('/~/sj/'));
     frame.dispatchEvent(new Event('load'));
   });
   await page.waitForTimeout(300);
   await page.evaluate(()=>{
-    const frame=[...document.querySelectorAll('.browser-window iframe.view')].find(node=>String(node.getAttribute('src') || '').includes('/~/sj/'));
+    const frame=[...document.querySelectorAll('.workspace-window iframe.view')].find(node=>String(node.getAttribute('src') || '').includes('/~/sj/'));
     frame.dispatchEvent(new Event('load'));
     const link=frame.contentDocument.createElement('a');
     link.textContent='Cineby test link';
@@ -237,31 +237,31 @@ try{
     frame.contentDocument.documentElement.appendChild(link);
     link.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:24,clientY:24}));
   });
-  await page.locator('.nyx-browser-link-menu').waitFor();
+  await page.locator('.nyx-workspace-link-menu').waitFor();
   await page.locator('[data-nyx-copy-clean-link]').click();
   assert.equal(await page.evaluate(()=>globalThis.__nyxCopiedLink),'https://cineby.at/','Right-click Copy link exposed a Scramjet URL');
   await page.evaluate(()=>{
-    const frame=[...document.querySelectorAll('.browser-window iframe.view')].find(node=>String(node.getAttribute('src') || '').includes('/~/sj/'));
+    const frame=[...document.querySelectorAll('.workspace-window iframe.view')].find(node=>String(node.getAttribute('src') || '').includes('/~/sj/'));
     frame.src='/4poekf=4watepo/w4geriaerjmgotbg';
   });
-  await page.waitForFunction(()=>[...document.querySelectorAll('.browser-window iframe.view')].some(frame=>{
+  await page.waitForFunction(()=>[...document.querySelectorAll('.workspace-window iframe.view')].some(frame=>{
     try{return frame.contentWindow.location.pathname==='/4poekf=4watepo/w4geriaerjmgotbg'}catch{return false}
   }));
   await page.evaluate(()=>{
-    const frame=[...document.querySelectorAll('.browser-window iframe.view')].find(node=>{
+    const frame=[...document.querySelectorAll('.workspace-window iframe.view')].find(node=>{
       try{return node.contentWindow.location.pathname==='/4poekf=4watepo/w4geriaerjmgotbg'}catch{return false}
     });
     frame.dispatchEvent(new Event('load'));
   });
   await page.waitForTimeout(100);
-  assert.equal(await page.locator('.browser-window .urlbar').inputValue(),externalPathUrl,'Proxy path replaced the real legacy address');
-  assert.equal(await page.locator('[data-browser-shell-url]').inputValue(),externalPathUrl,'Proxy path replaced the real shell address');
+  assert.equal(await page.locator('.workspace-window .urlbar').inputValue(),externalPathUrl,'Proxy path replaced the real legacy address');
+  assert.equal(await page.locator('[data-workspace-shell-url]').inputValue(),externalPathUrl,'Proxy path replaced the real shell address');
   await page.locator('[data-nyx-dock-item="home"]').click();
   await page.waitForSelector('.nyx-minimal-home');
 
-  const containedBrowserFrame=page.locator('.browser-window iframe.view').first();
-  await containedBrowserFrame.evaluate(frame=>{
-    frame.dataset.nyxBrowserContained='true';
+  const containedWorkspaceFrame=page.locator('.workspace-window iframe.view').first();
+  await containedWorkspaceFrame.evaluate(frame=>{
+    frame.dataset.nyxWorkspaceContained='true';
   });
   await page.locator('#nyxAccountButton').click();
   await page.locator('[data-nyx-account-menu-action="owner-dashboard"]').click();
@@ -270,8 +270,8 @@ try{
   assert.equal(await page.locator('.nyx-owner-dashboard-overlay').count(),1,'Owner Dashboard was removed after opening');
   await page.locator('[data-owner-close]').click();
   await page.waitForSelector('.nyx-owner-dashboard-overlay',{state:'detached'});
-  await containedBrowserFrame.evaluate(frame=>{
-    delete frame.dataset.nyxBrowserContained;
+  await containedWorkspaceFrame.evaluate(frame=>{
+    delete frame.dataset.nyxWorkspaceContained;
   });
 
   await page.locator('#nyxAccountButton').click();
@@ -293,20 +293,20 @@ try{
   await page.locator('[data-close-nyx-account]').click();
 
   await page.locator('[data-nyx-dock-item="settings"]').click();
-  await page.waitForSelector('.browser-shell-settings-overlay');
+  await page.waitForSelector('.workspace-shell-settings-overlay');
   assert.equal(await page.locator('[data-home-design-value],.nyx-home-design-setting,.nyx-tab-design-setting').count(),0,'Retired layout controls remain in Settings');
   assert.equal(await page.locator('.nyx-minimal-top-actions,.nyx-home-tabs-toggle,.nyx-latency-bubble').count(),0,'Retired toolbar is still created');
   await page.waitForTimeout(200);
-  assert.equal(await page.locator('.browser-shell-settings-overlay').count(),1,'Homepage Settings was removed after opening');
+  assert.equal(await page.locator('.workspace-shell-settings-overlay').count(),1,'Homepage Settings was removed after opening');
   await page.locator('[data-nyx-dock-item="links"]').click();
-  await page.waitForSelector('.browser-shell-settings-overlay',{state:'detached'});
-  await page.waitForFunction(()=>document.querySelector('.nyx-browser-tab-row.active strong')?.textContent?.trim()==='Link Generator');
-  assert.equal(await page.locator('.browser-shell-settings-overlay').count(),0,'Settings remained stacked over a newly opened app tab');
+  await page.waitForSelector('.workspace-shell-settings-overlay',{state:'detached'});
+  await page.waitForFunction(()=>document.querySelector('.nyx-workspace-tab-row.active strong')?.textContent?.trim()==='Link Generator');
+  assert.equal(await page.locator('.workspace-shell-settings-overlay').count(),0,'Settings remained stacked over a newly opened app tab');
   await page.locator('[data-nyx-dock-item="home"]').click();
-  await page.locator('[data-browser-shell-settings]').evaluate(button=>button.click());
-  await page.waitForSelector('.browser-shell-settings-overlay');
+  await page.locator('[data-workspace-shell-settings]').evaluate(button=>button.click());
+  await page.waitForSelector('.workspace-shell-settings-overlay');
   await page.waitForTimeout(200);
-  assert.equal(await page.locator('.browser-shell-settings-overlay').count(),1,'Toolbar Settings was removed after opening');
+  assert.equal(await page.locator('.workspace-shell-settings-overlay').count(),1,'Toolbar Settings was removed after opening');
   await page.locator('[data-settings-category-button="data"]').click();
   await page.waitForSelector('[data-settings-category="data"].active');
   await page.evaluate(()=>{
@@ -343,32 +343,32 @@ try{
   await page.setViewportSize({width:1280,height:800});
   await page.locator('[data-settings-category-button="proxy"]').click();
   await page.waitForSelector('[data-settings-category="proxy"].active');
-  const wispInput=page.locator('[data-browser-wisp-url]');
+  const wispInput=page.locator('[data-workspace-wisp-url]');
   await wispInput.waitFor();
   assert.equal(await wispInput.isVisible(),true,'Wisp URL control was not visible in Proxy settings');
   await wispInput.fill('wss://relay.example.test/custom-wisp');
-  await page.locator('[data-browser-wisp-save]').click();
+  await page.locator('[data-workspace-wisp-save]').click();
   assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.wispUrl')),'wss://relay.example.test/custom-wisp','Custom Wisp URL was not persisted');
-  assert.match(await page.locator('[data-browser-wisp-status]').textContent(),/Custom relay: wss:\/\/relay\.example\.test\/custom-wisp/,'Custom Wisp URL was not selected at runtime');
+  assert.match(await page.locator('[data-workspace-wisp-status]').textContent(),/Custom relay: wss:\/\/relay\.example\.test\/custom-wisp/,'Custom Wisp URL was not selected at runtime');
   await wispInput.fill('https://relay.example.test/wisp');
-  await page.locator('[data-browser-wisp-save]').click();
+  await page.locator('[data-workspace-wisp-save]').click();
   assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.wispUrl')),'wss://relay.example.test/custom-wisp','Invalid Wisp protocol replaced the saved relay');
-  await page.locator('[data-browser-wisp-reset]').click();
+  await page.locator('[data-workspace-wisp-reset]').click();
   assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.wispUrl')),'','Reset did not restore the default Wisp relay');
-  assert.match(await page.locator('[data-browser-wisp-status]').textContent(),/^Default relay: wss?:\/\//,'Default Wisp relay status was not restored');
-  await page.locator('.brand-mini [data-browser-shell-new-tab]').evaluate(button=>button.click());
-  await page.waitForSelector('.browser-shell-settings-overlay',{state:'detached'});
-  assert.equal(await page.locator('.nyx-browser-tab-row.active strong').textContent(),'New Tab','New tab created from Settings did not become the active blank tab');
-  assert.equal(await page.locator('[data-browser-shell-url]').inputValue(),'','New tab created from Settings inherited its internal URL');
-  assert.equal(await page.locator('.browser-window.browser-home-page .nyx-minimal-home:visible').count(),1,'New tab created from Settings did not show the Nyx homepage');
+  assert.match(await page.locator('[data-workspace-wisp-status]').textContent(),/^Default relay: wss?:\/\//,'Default Wisp relay status was not restored');
+  await page.locator('.brand-mini [data-workspace-shell-new-tab]').evaluate(button=>button.click());
+  await page.waitForSelector('.workspace-shell-settings-overlay',{state:'detached'});
+  assert.equal(await page.locator('.nyx-workspace-tab-row.active strong').textContent(),'New Tab','New tab created from Settings did not become the active blank tab');
+  assert.equal(await page.locator('[data-workspace-shell-url]').inputValue(),'','New tab created from Settings inherited its internal URL');
+  assert.equal(await page.locator('.workspace-window.workspace-home-page .nyx-minimal-home:visible').count(),1,'New tab created from Settings did not show the Nyx homepage');
   await page.locator('[data-nyx-dock-item="home"]').click();
-  const tabLifecycleHomeSearch=page.locator('.browser-window.browser-home-page [data-browser-blank-input]');
+  const tabLifecycleHomeSearch=page.locator('.workspace-window.workspace-home-page [data-workspace-blank-input]');
   await tabLifecycleHomeSearch.fill('stale tab search');
-  await page.locator('.brand-mini [data-browser-shell-new-tab]').evaluate(button=>button.click());
-  assert.equal(await page.locator('.browser-window.browser-home-page [data-browser-blank-input]').inputValue(),'','A new blank tab inherited the previous tab search text');
-  await page.locator('.nyx-browser-tab-row.active [data-browser-shell-close-tab]').evaluate(button=>button.click());
-  assert.equal(await page.locator('.browser-window.browser-home-page [data-browser-blank-input]').inputValue(),'','Closing a blank tab restored stale homepage search text');
-  assert.equal(await page.locator('[data-browser-shell-url]').inputValue(),'','Closing a blank tab restored stale address text');
+  await page.locator('.brand-mini [data-workspace-shell-new-tab]').evaluate(button=>button.click());
+  assert.equal(await page.locator('.workspace-window.workspace-home-page [data-workspace-blank-input]').inputValue(),'','A new blank tab inherited the previous tab search text');
+  await page.locator('.nyx-workspace-tab-row.active [data-workspace-shell-close-tab]').evaluate(button=>button.click());
+  assert.equal(await page.locator('.workspace-window.workspace-home-page [data-workspace-blank-input]').inputValue(),'','Closing a blank tab restored stale homepage search text');
+  assert.equal(await page.locator('[data-workspace-shell-url]').inputValue(),'','Closing a blank tab restored stale address text');
   if(await page.evaluate(()=>document.documentElement.dataset.nyxSidebarWidth!=='expanded')){
     await page.locator('[data-nyx-dock-expand]').click();
   }
@@ -378,12 +378,12 @@ try{
   assert.match(await dockDate.textContent(),/\b20\d{2}\b/,'Expanded rail date did not include the year');
   assert.equal(await dockDate.evaluate(date=>date.scrollWidth<=date.clientWidth),true,'Expanded rail date was clipped');
   if(!await page.evaluate(()=>document.body.classList.contains('nyx-tab-sidebar-open'))){
-    await page.locator('[data-browser-shell-tabs-toggle]').first().evaluate(button=>button.click());
+    await page.locator('[data-workspace-shell-tabs-toggle]').first().evaluate(button=>button.click());
   }
   assert.equal(await page.evaluate(()=>document.body.classList.contains('nyx-tab-sidebar-open')),true,'Tab sidebar did not open for close-button regression');
   for(let closeCycle=0;closeCycle<5;closeCycle+=1){
-    await page.locator('#nyxBrowserTabSidebar [data-browser-shell-new-tab]').evaluate(button=>button.click());
-    const activeClose=page.locator('#nyxBrowserTabSidebar .nyx-browser-tab-row.active [data-browser-shell-close-tab]');
+    await page.locator('#nyxWorkspaceTabSidebar [data-workspace-shell-new-tab]').evaluate(button=>button.click());
+    const activeClose=page.locator('#nyxWorkspaceTabSidebar .nyx-workspace-tab-row.active [data-workspace-shell-close-tab]');
     await activeClose.waitFor();
     assert.equal(await activeClose.evaluate(button=>button.tagName),'BUTTON','Tab close control was not a native button');
     await activeClose.evaluate(button=>button.click());
@@ -393,7 +393,7 @@ try{
       if(!dock) return {
         connected:false,
         bodyClass:document.body.className,
-        shellPreference:localStorage.getItem('nyx.browserShellMode'),
+        shellPreference:localStorage.getItem('nyx.workspaceShellMode'),
         homeDesign:localStorage.getItem('nyx.homeDesign'),
         chrome:document.querySelector('.top-os')?.textContent?.slice(0,80) || ''
       };
@@ -459,9 +459,9 @@ try{
   await page.waitForTimeout(1400);
   assert.equal(await page.locator('.nyx-release-notes-overlay').count(),0,'Release notes appeared again after acknowledgement');
 
-  assert.deepEqual(pageErrors,[],`Browser errors: ${pageErrors.join(' | ')}`);
-  console.log('Homepage constellation, browser URL privacy, colored app icons, account controls, and embedded Chat profile regression passed.');
+  assert.deepEqual(pageErrors,[],`Workspace errors: ${pageErrors.join(' | ')}`);
+  console.log('Homepage constellation, workspace URL privacy, colored app icons, account controls, and embedded Chat profile regression passed.');
 }finally{
-  await browser?.close().catch(()=>{});
+  await workspace?.close().catch(()=>{});
   if(server.exitCode===null)server.kill();
 }

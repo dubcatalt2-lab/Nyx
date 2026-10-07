@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {readFile} from 'node:fs/promises';
 import {prepareGameDocument} from "../relics/games/game-document.js";
-const browser=await chromium.launch();
+const workspace=await chromium.launch();
 try {
- const page=await browser.newPage({viewport:{width:1100,height:700}}),requests=[];
+ const page=await workspace.newPage({viewport:{width:1100,height:700}}),requests=[];
  await page.route('https://fixture.test/**',async route=>{
    const url=new URL(route.request().url());requests.push(url.pathname);
    if(url.pathname.startsWith('/assets/games/'))return route.fulfill({contentType:'text/javascript',body:await readFile(sourceFile('.'+url.pathname))});
@@ -37,4 +37,4 @@ try {
  assert.equal(await frame.evaluate(()=>ytgame.game.loadData()),'','Standalone playable save loading must resolve without a YouTube parent');
  assert.equal(await frame.evaluate(()=>typeof ytgame.SDK_VERSION),'string','Unity must receive a string when reading the standalone SDK version');
  console.log('PASS canvas layout, collapsed-wrapper recovery, dynamic CDN repair, SDK completion and opaque sandbox');
-}finally{await browser.close();}
+}finally{await workspace.close();}

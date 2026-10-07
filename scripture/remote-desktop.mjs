@@ -207,7 +207,7 @@ export function createRemoteDesktop({firebase,download,now=Date.now,heartbeatInt
     }catch{res.status(404).send('Not found');}
   };
   return {router,pageAccess,upgrade(req,socket,head){
-    // Browser clients must be same-origin. Native host clients omit Origin.
+    // Workspace clients must be same-origin. Native host clients omit Origin.
     if(req.headers.origin){try{if(new URL(req.headers.origin).host!==req.headers.host)throw Error();}catch{socket.destroy();return;}}
     if(wss.clients.size>=30){socket.destroy();return;}
     wss.handleUpgrade(req,socket,head,ws=>wss.emit('connection',ws));

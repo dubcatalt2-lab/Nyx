@@ -17,15 +17,15 @@ const staticRoot = join(folder, 'site');
 await symlink(resolve(process.env.NYX_TEST_ASSET_ROOT || '.'), staticRoot, process.platform === 'win32' ? 'junction' : 'dir');
 const origin = process.env.NYX_TEST_BASE_URL || 'http://127.0.0.1:8198';
 const server = process.env.NYX_TEST_BASE_URL ? null : spawn(process.execPath, ['shepherd.js'], { env: { ...process.env, PORT: '8198', NYX_STATIC_ROOT: staticRoot }, stdio: 'ignore' });
-let browser;
+let workspace;
 const tracks = [1, 2].map(id => ({ id: String(id), title: `Music fixture ${id}`, artist: 'Nyx test', duration: 125, catalog: 'deezer', cover: '', album: 'Test album' }));
 try {
   for (let i = 0; i < 100; i++) { try { if ((await fetch(origin + '/healthz')).ok) break; } catch {} await new Promise(r => setTimeout(r, 150)); }
   const removedPreview = await fetch(origin + '/api/nyxify/stream/1', { headers: { Origin: origin } });
   assert.equal(removedPreview.status, 410, 'Legacy clients must not receive preview clips');
-  browser = await chromium.launch();
+  workspace = await chromium.launch();
   for (const width of [1280, 390]) {
-    const page = await browser.newPage({ viewport: { width, height: 850 } });
+    const page = await workspace.newPage({ viewport: { width, height: 850 } });
     await page.addInitScript(() => {
       localStorage.setItem('nyx_nyxify_volume', 'invalid');
       localStorage.setItem('nyx_nyxify_history', '{}');
@@ -140,8 +140,8 @@ try {
     assert.deepEqual(errors, [], 'corrupt/full storage does not crash playback or controls');
     await page.close();
 
-    // A browser-side hung lookup is bounded, rather than spinning forever.
-    const hung = await browser.newPage({ viewport: { width, height: 850 } });
+    // A workspace-side hung lookup is bounded, rather than spinning forever.
+    const hung = await workspace.newPage({ viewport: { width, height: 850 } });
     await hung.clock.install();
     await hung.route('**/api/**', async route => {
       const path = new URL(route.request().url()).pathname;
@@ -162,7 +162,7 @@ try {
     assert.equal(await hung.locator('audio').getAttribute('src'), null);
     await hung.close();
 
-    const offline = await browser.newPage({ viewport: { width, height: 850 } });
+    const offline = await workspace.newPage({ viewport: { width, height: 850 } });
     await offline.clock.install();
     let offlineLookups = 0;
     await offline.route('**/api/**', async route => {
@@ -197,7 +197,7 @@ try {
     await offline.close();
 
     // A fresh page rejects a missing match and stops without requesting preview audio.
-    const failed = await browser.newPage({ viewport: { width, height: 850 } });
+    const failed = await workspace.newPage({ viewport: { width, height: 850 } });
     const restrictedErrors = [];
     failed.on('pageerror', e => restrictedErrors.push(e.message));
     await failed.addInitScript(() => {
@@ -233,4 +233,4 @@ try {
     assert.deepEqual(restrictedErrors, [], 'blocked storage does not crash the app');
     console.log(`PASS ${width}px: playback/seeking, busy retry, audio renewal, pending pause, autoplay denial, lookup timeout, rapid switching, layout and no-preview failures.`);
   }
-} finally { await browser?.close(); server?.kill(); await rm(folder, { recursive: true, force: true }); }
+} finally { await workspace?.close(); server?.kill(); await rm(folder, { recursive: true, force: true }); }

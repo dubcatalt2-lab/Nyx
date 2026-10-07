@@ -15,9 +15,9 @@ import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {proxyAssetNames} from './build-intercession-assets.mjs';
 const base=process.env.NYX_TEST_BASE_URL||'http://localhost:9192';
-const browser=await chromium.launch({channel:'msedge'});
+const workspace=await chromium.launch({channel:'msedge'});
 try{for(const brand of (process.env.NYX_TEST_BRANDS||'nyx,tutsi').split(',')){
- const context=await browser.newContext();
+ const context=await workspace.newContext();
  await context.route('**/api/**',r=>r.fulfill({json:{}}));
  await context.route('**/api/tutsi-relay/sessions',r=>r.fulfill({json:{token:'fixture'}}));
  await context.route('**/api/tutsi-relay/receive',r=>r.fulfill({contentType:'application/octet-stream',body:Buffer.from([9,0,0,0,3,0,0,0,0,10,0,0,0])}));
@@ -26,10 +26,10 @@ try{for(const brand of (process.env.NYX_TEST_BRANDS||'nyx,tutsi').split(',')){
  await context.route(url=>paths.some(p=>url.pathname===p||url.pathname===proxyAssetNames[p]),r=>r.fulfill({contentType:'text/javascript',body:`export default class {ready=true;async init(){}close(){}connect(){return [()=>{},()=>{}]}async request(raw){const u=new URL(String(raw));if(u.href.includes('slow'))await new Promise(r=>setTimeout(r,3000));const text=['duckduckgo.com','www.google.com','www.bing.com'].includes(u.hostname)?'<h1>Search results</h1><article id="search" class="b_algo" data-testid="result"><a id="result" target="_blank" href="https://example.com/destination">Open result</a></article>':'<h1>'+u.pathname+'</h1>';return {status:200,statusText:'OK',headers:[['content-type','text/html']],body:new Response('<!doctype html><html><head><title>Fixture</title></head><body>'+text+'</body></html>').body};}}` }));
  await context.addInitScript(engine=>{localStorage.setItem('nyx.engine',engine);localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.releaseNotes.2026-09-26-nyx-1.3.6.7.seen','2026-09-26-nyx-1.3.6.7');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('tutsi.customize.seen','1');localStorage.setItem('tutsi.settings.v1',JSON.stringify({engine,transport:'libcurl',httpBridge:true,closePrevention:false}));},process.env.NYX_TEST_ENGINE||'duckduckgo');
  const page=await context.newPage();page.on('pageerror',e=>console.log('PAGEERROR',e.message));await page.goto(base+(brand==='tutsi'?'/tutsi':'/'));await page.waitForTimeout(8500);
- const input=()=>brand==='nyx'?page.locator('[data-browser-shell-url]:visible').first():page.locator('#address');
- const activeFrame=()=>brand==='nyx'?page.locator('.browser-body iframe.view.active'):page.locator('#browser-stage iframe:not([hidden])');
- const submit=async value=>{const box=brand==='tutsi'&&await page.locator('#query').isVisible()?page.locator('#query'):brand==='nyx'&&await page.locator('[data-browser-blank-input]:visible').count()?page.locator('[data-browser-blank-input]:visible').first():input();await box.fill(value);if(brand==='nyx'&&await activeFrame().count()){await activeFrame().evaluate(f=>f.dispatchEvent(new Event('load')));await page.waitForTimeout(150);assert.equal(await box.inputValue(),value,'page completion must preserve typed search');}await box.press('Enter');};
- const heading=async text=>{const locator=page.frameLocator(brand==='nyx'?'.browser-body iframe.view.active':'#browser-stage iframe:not([hidden])');try{await locator.getByRole('heading',{name:text,exact:true}).waitFor({timeout:30000});}catch(e){console.log('FAIL STATE',await page.evaluate(()=>[...document.querySelectorAll('iframe.view,#browser-stage iframe')].map(f=>({src:f.src,text:f.contentDocument?.body?.innerText?.slice(0,1000)}))));throw e;}return locator;};
+ const input=()=>brand==='nyx'?page.locator('[data-workspace-shell-url]:visible').first():page.locator('#address');
+ const activeFrame=()=>brand==='nyx'?page.locator('.workspace-body iframe.view.active'):page.locator('#workspace-stage iframe:not([hidden])');
+ const submit=async value=>{const box=brand==='tutsi'&&await page.locator('#query').isVisible()?page.locator('#query'):brand==='nyx'&&await page.locator('[data-workspace-blank-input]:visible').count()?page.locator('[data-workspace-blank-input]:visible').first():input();await box.fill(value);if(brand==='nyx'&&await activeFrame().count()){await activeFrame().evaluate(f=>f.dispatchEvent(new Event('load')));await page.waitForTimeout(150);assert.equal(await box.inputValue(),value,'page completion must preserve typed search');}await box.press('Enter');};
+ const heading=async text=>{const locator=page.frameLocator(brand==='nyx'?'.workspace-body iframe.view.active':'#workspace-stage iframe:not([hidden])');try{await locator.getByRole('heading',{name:text,exact:true}).waitFor({timeout:30000});}catch(e){console.log('FAIL STATE',await page.evaluate(()=>[...document.querySelectorAll('iframe.view,#workspace-stage iframe')].map(f=>({src:f.src,text:f.contentDocument?.body?.innerText?.slice(0,1000)}))));throw e;}return locator;};
  await submit('https://example.com/old');await heading('/old');await page.waitForTimeout(6000);
  await activeFrame().evaluate(f=>f.contentDocument.body.dataset.preserved='yes');
  generation++;
@@ -54,8 +54,8 @@ try{for(const brand of (process.env.NYX_TEST_BRANDS||'nyx,tutsi').split(',')){
  if(brand==='nyx'){await submit('/assets/games/');await heading('Games fixture');}
  else {await page.evaluate(()=>location.hash='games');await page.frameLocator('#app-view iframe').getByRole('heading',{name:'Games fixture'}).waitFor();await page.keyboard.press('Alt+h');}
  await submit('test search');const frame=await heading('Search results');
- const frameCount=page.frames().length;const tabs=await page.locator(brand==='nyx'?'.browser-tabs .browser-tab':'#browser-tabs [role=tab]').count();
+ const frameCount=page.frames().length;const tabs=await page.locator(brand==='nyx'?'.workspace-tabs .workspace-tab':'#workspace-tabs [role=tab]').count();
  await frame.locator('#result').click();await heading('/destination');
- assert.equal(page.frames().length,frameCount);assert.equal(await page.locator(brand==='nyx'?'.browser-tabs .browser-tab':'#browser-tabs [role=tab]').count(),tabs);assert.equal(context.pages().length,1);
+ assert.equal(page.frames().length,frameCount);assert.equal(await page.locator(brand==='nyx'?'.workspace-tabs .workspace-tab':'#workspace-tabs [role=tab]').count(),tabs);assert.equal(context.pages().length,1);
  console.log(brand+': pending address, app-to-search and same-frame result click passed');await context.close();
-}}finally{await browser.close();server.close();}
+}}finally{await workspace.close();server.close();}

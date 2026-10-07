@@ -9,15 +9,15 @@ const sourcePredicate=host.match(/const nyxAccountClientSourcePath=([^;]+);/)[1]
 const validPath=new Function('nyxChatSourcePath','return '+sourcePredicate)(()=>false);
 assert.ok(validPath('/api'));assert.ok(validPath('/apps/api-keys/index.html'));assert.ok(!validPath('/untrusted'));
 const bridge=host.slice(host.indexOf("      if(e.data.type==='nyx:account-open-signin'){"),host.indexOf("      if(e.data.type==='nyx:account-token-request'){"));
-const handle=new Function('e','location','state','nyxAccountClientSourcePath','browserMessageSourcePath','openNyxAccountAccess',bridge);
+const handle=new Function('e','location','state','nyxAccountClientSourcePath','workspaceMessageSourcePath','openNyxAccountAccess',bridge);
 let opened=0;const source={},state={tabs:[{frame:{contentWindow:source},path:'/api'}]};
 const send=(origin,from=source)=>handle({origin,source:from,data:{type:'nyx:account-open-signin'}},{origin:'http://nyx.test'},state,validPath,t=>t.path,()=>opened++);
 send('http://evil.test');send('http://nyx.test',{});assert.equal(opened,0);
 send('http://nyx.test');assert.equal(opened,1);
-const browser=await chromium.launch({headless:true});
+const workspace=await chromium.launch({headless:true});
 try {
   for(const width of [1280,1024]) {
-    const page=await browser.newPage({viewport:{width,height:950},reducedMotion:'reduce'}),errors=[];
+    const page=await workspace.newPage({viewport:{width,height:950},reducedMotion:'reduce'}),errors=[];
     page.on('pageerror',e=>errors.push(e.message));
     let owner=false,verified=false,unlocked=false,key=null,balance=1000,premium=false;
     const answer='Rainbows form **in water droplets**.\n\n1. First step\n2. Second step\n\n$34 \\times 3 = 102$\n\n```js\n'+ 'x'.repeat(400)+'\n```\n\n<img src=x onerror=alert(1)>\n\n'+('Long response paragraph. '.repeat(15)+'\n\n').repeat(30)+'Last paragraph.';
@@ -104,4 +104,4 @@ try {
     await page.screenshot({path:`.codex-artifacts/developer-nyx-theme-${width}.png`});await page.close();
   }
   console.log('PASS: API account-only access, one-time reveal, playground completion, usage metrics, owner unlock/limits/relock, desktop layout');
-}finally{await browser.close();}
+}finally{await workspace.close();}

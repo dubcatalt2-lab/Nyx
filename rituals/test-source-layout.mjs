@@ -20,7 +20,7 @@ assert(privateSourcePath('/fellowship-gateway.mjs'));
 const router=await readFile('mission/refresh-turn-router.sh','utf8');
 assert(router.includes('/etc/letsencrypt/renewal-hooks/deploy/nyx-turn-certificate'),'Certbot discovers hooks only in its standard deploy directory');
 assert(!router.includes('/etc/letsencrypt/renewal-hooks/mission/'));
-const files=execFileSync('git',['ls-files','-z'],{encoding:'utf8'}).split('\0').filter(Boolean);
+const files=execFileSync('git',['ls-files','-z','--cached','--others','--exclude-standard'],{encoding:'utf8'}).split('\0').filter(Boolean);
 let imports=0;
 for(const file of files.filter(file=>/\.(?:js|mjs)$/.test(file)&&!/^(?:relics|pilgrim|communion|incense|lectionary|ministries\/stratus\/upstream)\//.test(file))){
  let source;try{source=await readFile(file,'utf8')}catch{continue}

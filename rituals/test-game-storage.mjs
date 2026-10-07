@@ -4,9 +4,9 @@ import {readFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
 
 const bundle=await readFile(sourceFile('dist/assets/vendor/game-storage.js'),'utf8');
-const browser=await chromium.launch();
+const workspace=await chromium.launch();
 try{
- const page=await browser.newPage();
+ const page=await workspace.newPage();
  await page.route('http://fixture.test/**',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><body></body>'}));
  await page.goto('http://fixture.test/');
  const native=await page.evaluate(async bundle=>{
@@ -36,4 +36,4 @@ try{
  }),bundle);
  assert.deepEqual(result,{origin:'null',level:7,isolated:true});
  console.log('PASS opaque game storage transactions and parent isolation; native persistent storage unchanged');
-}finally{await browser.close();}
+}finally{await workspace.close();}

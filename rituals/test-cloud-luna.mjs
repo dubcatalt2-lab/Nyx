@@ -6,10 +6,10 @@ const app = express();
 app.use(express.static(process.env.NYX_TEST_STATIC_ROOT || '.'));
 const server = app.listen(0, '127.0.0.1');
 await new Promise(resolve => server.once('listening', resolve));
-const browser = await chromium.launch({channel: 'msedge', headless: true});
+const workspace = await chromium.launch({channel: 'msedge', headless: true});
 try {
   for (const width of [1440, 390]) {
-    const page = await browser.newPage({viewport: {width, height: 850}});
+    const page = await workspace.newPage({viewport: {width, height: 850}});
     const errors = [];
     let lunaRequests = 0;
     let launches = 0;
@@ -56,6 +56,6 @@ try {
   }
   console.log('PASS Luna default, deferred Stratus authentication/session restore, explicit Stratus link, desktop/mobile sizing, close/reopen and Escape cleanup');
 } finally {
-  await browser.close();
+  await workspace.close();
   await new Promise(resolve => server.close(resolve));
 }

@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {parse} from 'acorn';
 const source=readFileSync(sourceFile('script.js'),'utf8');
-const names=new Set(['normalizeBrowserModeName','installScramjetV1','fallbackProxyEngine']);
+const names=new Set(['normalizeWorkspaceModeName','installStudyjetV1','fallbackConnectionEngine']);
 const functions=[];
 function visit(node){
  if(!node||typeof node!=='object')return;
@@ -13,19 +13,19 @@ function visit(node){
 }
 visit(parse(source,{ecmaVersion:'latest'}));
 let configured='auto';const calls=[];
-const api=vm.runInNewContext(functions.join('\n')+';({normalizeBrowserModeName,installScramjetV1,fallbackProxyEngine})',{
+const api=vm.runInNewContext(functions.join('\n')+';({normalizeWorkspaceModeName,installStudyjetV1,fallbackConnectionEngine})',{
  atob,
- store:{text:()=>configured},DEFAULT_BROWSER_MODE:'scramjet',
- loadScramjetTab:()=>calls.push('scramjet'),loadTab:()=>calls.push('iframe'),
+ store:{text:()=>configured},DEFAULT_WORKSPACE_MODE:'scramjet',
+ loadStudyjetTab:()=>calls.push('scramjet'),loadTab:()=>calls.push('iframe'),
  loadSelectedSearchFallback:()=>{calls.push('failure');return true;}
 });
-for(const mode of ['scramjet-v1','sjv1','scram-v1'])assert.equal(api.normalizeBrowserModeName(mode),'scramjet');
-for(const mode of ['ultraviolet','uv','ultra','"ultraviolet"','stemconnect','stem-connect'])assert.equal(api.normalizeBrowserModeName(mode),'scramjet');
-for(const mode of ['auto','iframe','scramjet'])assert.equal(api.normalizeBrowserModeName(mode),mode);
-assert.equal(await api.installScramjetV1(),false);
+for(const mode of ['scramjet-v1','sjv1','scram-v1'])assert.equal(api.normalizeWorkspaceModeName(mode),'scramjet');
+for(const mode of ['ultraviolet','uv','ultra','"ultraviolet"','stemconnect','stem-connect'])assert.equal(api.normalizeWorkspaceModeName(mode),'scramjet');
+for(const mode of ['auto','iframe','scramjet'])assert.equal(api.normalizeWorkspaceModeName(mode),mode);
+assert.equal(await api.installStudyjetV1(),false);
 for(configured of ['auto','scramjet','ultraviolet','scramjet-v1']){
- calls.length=0;api.fallbackProxyEngine({},'https://example.com/','scramjet');assert.deepEqual(calls,['failure']);
- calls.length=0;api.fallbackProxyEngine({},'https://example.com/','ultraviolet');assert.deepEqual(calls,['scramjet']);
+ calls.length=0;api.fallbackConnectionEngine({},'https://example.com/','scramjet');assert.deepEqual(calls,['failure']);
+ calls.length=0;api.fallbackConnectionEngine({},'https://example.com/','ultraviolet');assert.deepEqual(calls,['scramjet']);
 }
 for(const text of [source,readFileSync(sourceFile('index.html'),'utf8')]){
  assert.doesNotMatch(text,/<option value="ultraviolet"[^>]*>U1TR4V10L\$T<\/option>/);

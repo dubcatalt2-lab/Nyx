@@ -7,7 +7,7 @@ import {minify} from 'terser';
 import {rewriteProxyReferences,proxyAssetNames} from './build-intercession-assets.mjs';
 import {rewriteRuntimeNames} from './build-runtime-names.mjs';
 import {rewriteFrontendReferences} from './build-frontend-assets.mjs';
-import {scrambleBrowserOutput,scrambleInlineScripts,transformBrowserStrings,opaqueIdentifiers} from './build-browser-scramble.mjs';
+import {scrambleWorkspaceOutput,scrambleInlineScripts,transformWorkspaceStrings,opaqueIdentifiers} from './build-workspace-scramble.mjs';
 
 const root=process.cwd(),argument=name=>process.argv.find(value=>value.startsWith('--'+name+'='))?.slice(name.length+3);
 const base=argument('base')||'/',wisp=argument('wisp')||'wss://vps-a556737a.vps.ovh.us/resources/live/';
@@ -50,7 +50,7 @@ async function copy(dir=''){
     if(/\.(?:js|mjs|css|html|json)$/.test(relative)&&(!relative.startsWith('assets/ugs/')||relative==='assets/ugs/play.html'||relative.endsWith('.json'))){
       let source=await readFile(sourceFile(path.join(dist,relative)),'utf8');
       if(entryDocuments[relative])source=Buffer.from(entryDocuments[relative],'base64').toString('utf8');
-      if(relative.endsWith('.js'))source=transformBrowserStrings(source,{decode:true});
+      if(relative.endsWith('.js'))source=transformWorkspaceStrings(source,{decode:true});
       else if(relative.endsWith('.html'))source=scrambleInlineScripts(source,{decode:true});
       if(relative==='script.js'||'/'+relative===aliases['/script.js']){
         source=publicSourceText(await readFile(sourceFile(path.join(root,'script.js')),'utf8'));
@@ -92,7 +92,7 @@ if(base!=='/'){
   await writeFile(path.join(output,'hosting.json'),JSON.stringify({base,configured:false}));
 }
 await writeFile(path.join(output,'runtime-config.js'),`globalThis.__NYX_RUNTIME_CONFIG__=Object.freeze(${JSON.stringify({wispUrl:wisp,wispUrls:[wisp],presenceUrl:'',publicOrigin:'',publisherAdsEnabled:false})});`);
-// The CDN caches branch URLs for a week in browsers. Version Arcade resources
+// The CDN caches branch URLs for a week in workspaces. Version Arcade resources
 // with their built content so existing packages cannot reuse a stale catalog or
 // renderer after a package update.
 const arcadeRevision=createHash('sha256').update(await readFile(sourceFile(path.join(output,'assets/games/games.js')))).update(await readFile(sourceFile(path.join(output,'assets/games/games.json')))).digest('hex').slice(0,20);
@@ -137,5 +137,5 @@ await writeFile(path.join(output,'Nyx.svg'),`<svg xmlns="http://www.w3.org/2000/
 await mkdir(path.join(output,'licenses'),{recursive:true});
 for(const [name,folder] of [['engine','@mercuryworkshop/scramjet'],['controller','@mercuryworkshop/scramjet-controller'],['transport','@mercuryworkshop/libcurl-transport']]){for(const file of ['LICENSE','LICENSE.md','LICENSE.txt'])try{await cp(sourceFile(path.join(root,'node_modules',folder,file)),path.join(output,'licenses',name+'.txt'));break;}catch{}}
 await writeFile(path.join(output,'README.txt'),`Nyx static package\n\nUpload ALL files, preserving folders. Open Nyx.svg over HTTPS.\nBuilt hosting path: ${base}\nRelay: ${wisp}\n\nThis is not an iframe of nyxlearning.org. The SVG installs a local static-file worker, then opens the packaged Nyx interface at the same bookmarkable Nyx.svg address. HTML navigation is served with the correct media type, including on jsDelivr. Scramjet v2 runtime names and URLs use the production renaming build. Accounts, AI, server media, chat and backend publishing are hidden. Some catalog games and remote services still require their upstream servers.\n\nFor jsDelivr, build with --base=/gh/USER/REPO@REVISION/ (include any folder). Upload this entire directory to that exact repository/revision/path. Share https://cdn.jsdelivr.net plus that path plus Nyx.svg. The existing Link Generator's old iframe SVGs are unchanged.\n\nNyx's public Wisp relay accepts connections from any origin after release 2644d33. Other relay servers must allow your hosting origin. A network that blocks the relay itself can still prevent browsing. Renaming is not a guarantee against filtering.\n\nSource: https://github.com/dubcatalt2-lab/Nyx\nIncludes modified AGPL Scramjet and its production patches; retain licenses and publish corresponding source when distributing. Rebuild from the matching Nyx source using npm run build:vps, then node scripts/build-static-export.mjs with your hosting path. No server credentials included.\n`);
-await scrambleBrowserOutput(output);
+await scrambleWorkspaceOutput(output);
 console.log(JSON.stringify({output,base,entry:path.join(output,'Nyx.svg'),worker:workerName}));

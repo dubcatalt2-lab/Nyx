@@ -28,7 +28,7 @@ for(const installed of [false,true]){
  assert.deepEqual(integrated,installed?['fixture']:[]);
  report[installed?'extensionPresent':'extensionAbsent']={upstream:outcome,integrated};
  if(!installed){
-   await page.setContent('<h1>rammerhead</h1><div class="chrome-tabs"></div><div class="browser-tab-content"></div>');
+   await page.setContent('<h1>rammerhead</h1><div class="chrome-tabs"></div><div class="workspace-tab-content"></div>');
    const contentResult=await page.evaluate(code=>new Function(code+';return {securly:!!securlyFindProxy(document,securlyProxyData),goguardian:!!goGuardianFindProxy()}')(),detector);
    assert.deepEqual(contentResult,{securly:true,goguardian:true});report.contentScannerWithoutExtensions=contentResult;
  }

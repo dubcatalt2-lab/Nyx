@@ -8,7 +8,7 @@ import { chromium } from 'playwright';
 
 // A fresh credential-free backend, serving the actual production build. The
 // junction avoids Express's intentional rejection of dot-directory file paths.
-const temp = await mkdtemp(join(tmpdir(), 'nyx-wispurr-browser-'));
+const temp = await mkdtemp(join(tmpdir(), 'nyx-wispurr-workspace-'));
 const staticRoot = join(temp, 'site');
 await symlink(resolve('dist'), staticRoot, process.platform === 'win32' ? 'junction' : 'dir');
 const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => /^(path|systemroot|windir|temp|tmp|home|userprofile|localappdata)$/i.test(key)));
@@ -18,7 +18,7 @@ const child = fork(new URL('../shepherd.js', import.meta.url), [], {
 child.stdout.resume();
 let stderr = '';
 child.stderr.on('data', data => { stderr = (stderr + data).slice(-4000); });
-let browser;
+let workspace;
 try {
   const port = await new Promise((resolve, reject) => {
     const timeout = setTimeout(() => reject(new Error('Server startup timeout')), 20000);
@@ -29,8 +29,8 @@ try {
   const base = `http://127.0.0.1:${port}`;
   const health = await (await fetch(base + '/healthz')).json();
   assert.equal(health.wispImplementation, 'wispurr');
-  browser = await chromium.launch({ channel: 'msedge', headless: true });
-  const page=await browser.newPage();
+  workspace = await chromium.launch({ channel: 'msedge', headless: true });
+  const page=await workspace.newPage();
   const errors=[]; page.on('pageerror',error=>errors.push(error.message));
   const catalogResponse=page.waitForResponse(response=>new URL(response.url()).pathname==='/assets/games/games.json');
   await page.goto(base+'/assets/games/');
@@ -46,7 +46,7 @@ try {
   console.log('Built arcade loads the real JSON manifest and both bundled game catalogs.');
 
 } finally {
-  await browser?.close();
+  await workspace?.close();
   if (child.exitCode === null && child.signalCode === null) {
     const closed = once(child, 'exit'); child.disconnect();
     const timeout = setTimeout(() => child.kill('SIGKILL'), 12000);

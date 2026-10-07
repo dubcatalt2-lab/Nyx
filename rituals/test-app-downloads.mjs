@@ -8,10 +8,10 @@ const temp=await mkdtemp(join(tmpdir(),'nyx-download-test-'));
 import express from 'express';
 import {chromium} from 'playwright';
 const app=express();app.use(express.static('dist'));const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base=`http://127.0.0.1:${server.address().port}`;
-const browser=await chromium.launch();
+const workspace=await chromium.launch();
 try {
  for(const brand of ['nyx','tutsi']) {
-  const tutsi=brand==='tutsi';const page=await browser.newPage({acceptDownloads:true});
+  const tutsi=brand==='tutsi';const page=await workspace.newPage({acceptDownloads:true});
   page.on('pageerror',e=>console.log('PAGE ERROR',e.message));await page.goto(base+'/app.webmanifest');
   await page.setContent(tutsi?'<section data-tutsi-install-card><button data-install-tutsi></button><button data-download-tutsi-singlefile>Download HTML</button><p data-install-tutsi-status></p></section>':'<div class="settings-panel"><div class="settings-grid"></div></div>');
   await page.addScriptTag({url:base+(tutsi?'/apps/tutsi/install.js':'/js/pwa-install.js')});
@@ -28,4 +28,4 @@ try {
   await page.close();
  }
  console.log('PASS: both HTML downloads, filenames, current release, file:// launch, distinct app manifests and icons');
-}finally{await browser.close();await rm(temp,{recursive:true,force:true});await new Promise(r=>server.close(r));}
+}finally{await workspace.close();await rm(temp,{recursive:true,force:true});await new Promise(r=>server.close(r));}

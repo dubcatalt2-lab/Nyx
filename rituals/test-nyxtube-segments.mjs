@@ -15,7 +15,7 @@ import { readMp4Index, segmentTrack } from '../scripture/nyxtube-mp4.mjs';
 const require=createRequire(import.meta.url), exec=promisify(execFile);
 const ffmpeg=process.env.NYX_FFMPEG_BIN||require('@ffmpeg-installer/ffmpeg').path;
 const root=await mkdtemp(join(tmpdir(),'nyx-hls-test-')), id='YE7VzlLtp-4';
-let backend,server,browser,clock=Date.now();
+let backend,server,workspace,clock=Date.now();
 try {
   await exec(ffmpeg,['-v','error','-f','lavfi','-i','testsrc2=size=320x180:rate=24','-t','120','-c:v','libx264','-g','48','-bf','2','-movflags','+faststart',join(root,'video.mp4')]);
   await exec(ffmpeg,['-v','error','-f','lavfi','-i','sine=frequency=440:sample_rate=48000','-t','120','-c:a','aac',join(root,'audio.m4a')]);
@@ -101,8 +101,8 @@ try {
   assert.equal((await fetch(base+prepared.url.replace('master.m3u8','video--1.m4s'))).status,404);
   assert.equal((await fetch(base+prepared.url.replace(token,'a'.repeat(32)))).status,410);
   deny=true;assert.equal((await fetch(base+`/api/nyxtube/native/prepare/${id}/720?mode=hls`,{method:'POST'})).status,404);deny=false;
-  browser=await chromium.launch({headless:true,args:['--autoplay-policy=no-user-gesture-required']});
-  const page=await browser.newPage(),errors=[];
+  workspace=await chromium.launch({headless:true,args:['--autoplay-policy=no-user-gesture-required']});
+  const page=await workspace.newPage(),errors=[];
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto(base+'/test');rangeCalls=[];
   await page.evaluate(id=>{
@@ -124,9 +124,9 @@ try {
   assert.equal(await page.evaluate(()=>window.player.getVolume()),35);assert.equal(await page.evaluate(()=>window.player.getPlaybackRate()),1.5);
   await page.evaluate(()=>window.player.destroy());
   assert.deepEqual(errors,[]);
-  console.log('PASS: range-only indexing (>3 GiB source), fragment decoding, shared downloads, arbitrary seek, cancellation, concurrency, route checks, browser HLS playback and controls.');
+  console.log('PASS: range-only indexing (>3 GiB source), fragment decoding, shared downloads, arbitrary seek, cancellation, concurrency, route checks, workspace HLS playback and controls.');
 
-  // Keep browser prefetch and warmed fragments out of the expiry fixture.
+  // Keep workspace prefetch and warmed fragments out of the expiry fixture.
   await page.goto('about:blank');
   await backend.close();
   options.env.NYX_YOUTUBE_CACHE_DIR=join(root,'expiry-cache');
@@ -207,7 +207,7 @@ try {
   assert.ok(!(await readdir(join(root,'cache'))).some(n=>n.startsWith('work-')));
   console.log('PASS: adaptive fragmented MP4 startup, seek, exact source-fragment reuse, expired-session renewal, and quality restoration.');
 } finally {
-  await browser?.close();await backend?.close();if(server){server.closeAllConnections();await new Promise(r=>server.close(r));}
+  await workspace?.close();await backend?.close();if(server){server.closeAllConnections();await new Promise(r=>server.close(r));}
   assert.equal(dirname(resolve(root)),resolve(tmpdir()));
   assert.ok(basename(root).startsWith('nyx-hls-test-'));
   await rm(root,{recursive:true,force:true});

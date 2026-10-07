@@ -353,7 +353,7 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
     if(document.documentElement.dataset.nyxBeamWallpaper==='obsidian' || document.documentElement.dataset.nyxBeamWallpaper?.startsWith('photo-')){instance?.stop();if(canvas)canvas.hidden=true;return;}
     if(!canvas) return;
     const body=document.body;
-    const externalContent=body?.classList.contains('browser-content-active') && !body.classList.contains('nyx-built-in-content-active');
+    const externalContent=body?.classList.contains('workspace-content-active') && !body.classList.contains('nyx-built-in-content-active');
     const lineWaves=document.documentElement?.dataset.nyxBeamWallpaper==='lineWaves';
     const hidden=!body || lineWaves || body.classList.contains('custom-bg-active') || body.classList.contains('three-d-backgrounds') || externalContent;
     canvas.hidden=hidden;

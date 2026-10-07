@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try {
-  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];
+  const page=await workspace.newPage({viewport:{width:1440,height:900}}),errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   await page.addInitScript(()=>{
     if(window!==top)return;
@@ -43,4 +43,4 @@ try {
   }
   assert.deepEqual(errors,[]);
   console.log('PASS isolated HTML/JS preview, run service fixtures, download, clear/restore, panels, Catppuccin isolation and responsive controls');
-} finally {await browser.close();}
+} finally {await workspace.close();}

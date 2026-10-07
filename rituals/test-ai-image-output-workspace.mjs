@@ -1,9 +1,9 @@
 ﻿import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
-const browser=await chromium.launch({headless:true});
+const workspace=await chromium.launch({headless:true});
 const base=process.env.NYX_TEST_BASE_URL||'http://127.0.0.1:8199';
 try{
- const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const page=await workspace.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/api/founder-profile/auth-config',r=>r.fulfill({json:{}}));
  await page.route('**/api/nyx-ai/providers',r=>r.fulfill({json:{providers:[{id:'shared',label:'OpenRouter'}]}}));
  await page.route('**/api/nyx-ai/models*',r=>r.fulfill({json:{models:[{id:'google/gemini-2.5-flash-image',label:'Gemini Image',imageGeneration:true,vision:true}]}}));
@@ -26,4 +26,4 @@ try{
  assert.deepEqual(personalRequest.modalities,['text','image']);assert.equal(personalRequest.stream,false);assert.equal(personalRequest.max_tokens,2200);
  await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
  assert.deepEqual(errors,[]);console.log('PASS AI image chat: image-only display/download, durable reload, compact history, unsafe output rejection, explanations, personal OpenRouter key and mobile layout');
-}finally{await browser.close();}
+}finally{await workspace.close();}

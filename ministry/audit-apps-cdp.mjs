@@ -1,7 +1,7 @@
 ﻿const port = Number(process.env.CDP_PORT || 9231);
 const base = `http://localhost:${port}`;
 const nyx = process.env.NYX_URL || "http://localhost:8080/";
-const browserMode = process.env.BROWSER_MODE || "auto";
+const workspaceMode = process.env.WORKSPACE_MODE || "auto";
 const transport = process.env.TRANSPORT || "epoxy";
 const allApps = [
   ["Lion AI", "#lion-ai"],
@@ -124,9 +124,9 @@ async function auditApp(name, url) {
   await delay(1000);
   await page.send("Runtime.evaluate", {
     expression: `
-      localStorage.setItem('nyx.browserMode',${JSON.stringify(browserMode)});
+      localStorage.setItem('nyx.workspaceMode',${JSON.stringify(workspaceMode)});
       localStorage.setItem('nyx.transport',${JSON.stringify(transport)});
-      localStorage.setItem('nyx.browserShellMode','true');
+      localStorage.setItem('nyx.workspaceShellMode','true');
       true;
     `
   });

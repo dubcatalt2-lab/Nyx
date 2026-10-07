@@ -18,9 +18,9 @@ const credential=randomBytes(32).toString('base64url'),pair=await post('/pair/st
 const jpeg=await sharp({create:{width:1280,height:720,channels:3,background:'#24332c'}}).jpeg().toBuffer();
 const host=new WebSocket(origin.replace('http:','ws:')+'/api/private-remote/socket');await new Promise(resolve=>host.once('open',resolve));const ready=new Promise(resolve=>host.once('message',resolve));host.send(JSON.stringify({type:'host',id,credential}));await ready;
 host.on('message',raw=>{const data=JSON.parse(raw);inputs.push(data);if(data.type==='control'&&data.active)host.send(jpeg);});
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
- const page=await browser.newPage({viewport:{width:1440,height:950}});const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ const page=await workspace.newPage({viewport:{width:1440,height:950}});const errors=[];page.on('pageerror',error=>errors.push(error.message));
  let token='owner';
  await page.route('https://www.gstatic.com/firebasejs/**/firebase-app.js',route=>route.fulfill({contentType:'text/javascript',body:'export const getApps=()=>[];export const initializeApp=()=>({});'}));
  await page.route('https://www.gstatic.com/firebasejs/**/firebase-auth.js',route=>route.fulfill({contentType:'text/javascript',body:`const user={getIdToken:async()=>${JSON.stringify(token)}};export const getAuth=()=>({currentUser:user});export const browserLocalPersistence={};export const setPersistence=async()=>{};export const onAuthStateChanged=(a,f)=>f(user);`}));
@@ -33,4 +33,4 @@ try{
  await page.setViewportSize({width:390,height:844});assert(await page.locator('body').evaluate(e=>e.scrollWidth<=innerWidth));
  token='member';await page.reload();await page.getByText('This workspace is not available to your account.').waitFor();assert(await page.locator('#workspace').isHidden());assert.equal(await page.getByRole('button',{name:'Connect',exact:true}).count(),0);assert.deepEqual(errors,[]);
  console.log('PASS: built owner viewer over real WebSocket relay, frame rendering, pointer/keyboard/wheel, release, mobile layout and member-hidden UI.');
-}finally{await browser.close();host.close();remote.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+}finally{await workspace.close();host.close();remote.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

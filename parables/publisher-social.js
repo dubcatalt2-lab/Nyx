@@ -9,12 +9,12 @@ export function startSocialSponsor() {
   let dismissed = false;
   const style = document.createElement('style');
   style.textContent = '@media(min-width:1200px){.nyx-social-sponsor{right:128px!important}}.nyx-social-sponsor{position:fixed;right:16px;bottom:16px;z-index:1200;width:min(360px,calc(100vw - 32px));border:1px solid #444;border-radius:12px;overflow:hidden;background:#161616;color:#ddd;box-shadow:0 8px 32px #0006;font:11px system-ui}.nyx-social-sponsor:not([data-ready]){visibility:hidden}.nyx-social-sponsor header{display:flex;align-items:center;justify-content:space-between;padding:6px 10px}.nyx-social-sponsor button{border:0;background:transparent;color:inherit;cursor:pointer;width:28px;height:28px}.nyx-social-sponsor svg{width:16px;height:16px}.nyx-social-sponsor iframe{display:block;border:0;width:100%;height:300px}';
-  style.textContent += '.nyx-social-creative{height:300px;overflow:hidden}body:has(.browser-window.browser-blank .browser-home:not(.hidden)) .nyx-social-sponsor{width:min(270px,calc(100vw - 32px))}body:has(.browser-window.browser-blank .browser-home:not(.hidden)) .nyx-social-creative{height:225px}body:has(.browser-window.browser-blank .browser-home:not(.hidden)) .nyx-social-sponsor iframe{width:133.333333%;transform:scale(.75);transform-origin:top left}';
+  style.textContent += '.nyx-social-creative{height:300px;overflow:hidden}body:has(.workspace-window.workspace-blank .workspace-home:not(.hidden)) .nyx-social-sponsor{width:min(270px,calc(100vw - 32px))}body:has(.workspace-window.workspace-blank .workspace-home:not(.hidden)) .nyx-social-creative{height:225px}body:has(.workspace-window.workspace-blank .workspace-home:not(.hidden)) .nyx-social-sponsor iframe{width:133.333333%;transform:scale(.75);transform-origin:top left}';
   document.head.append(style);
   function clear() {placement?.destroy();placement = null;host?.remove();host = null;}
   function update() {
     if (publisherMode() !== 'adkid') {clear();attempted = false;return;}
-    if (document.hidden || dismissed || attempted || !document.body.classList.contains('browser-shell')) return;
+    if (document.hidden || dismissed || attempted || !document.body.classList.contains('workspace-shell')) return;
     attempted = true;
     host = document.createElement('aside');
     host.className = 'nyx-social-sponsor';

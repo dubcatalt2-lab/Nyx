@@ -114,7 +114,7 @@ function initBulkLinks() {
       amount = Number(count.value);
       estimatedLinkBytes(plan, amount, mode.value);
       if (amount > MEMORY_DOWNLOAD_LIMIT && typeof window.showSaveFilePicker !== "function") {
-        throw new Error(`This browser can safely download up to ${MEMORY_DOWNLOAD_LIMIT.toLocaleString()} links at once. Use Chrome or Edge for larger streamed files.`);
+        throw new Error(`This workspace can safely download up to ${MEMORY_DOWNLOAD_LIMIT.toLocaleString()} links at once. Use Chrome or Edge for larger streamed files.`);
       }
     } catch (error) {
       showProgress(error.message, 0, "error");

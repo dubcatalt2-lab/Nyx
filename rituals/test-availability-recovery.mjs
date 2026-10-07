@@ -1,8 +1,8 @@
 ﻿import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
-const browser=await chromium.launch({channel:'msedge'});
+const workspace=await chromium.launch({channel:'msedge'});
 try{
- const page=await browser.newPage();
+ const page=await workspace.newPage();
  await page.goto('about:blank');await page.clock.install();
  await page.evaluate(()=>{
   window.mode='slow';window.online=true;window.hidden=false;window.url='wss://relay.test/wisp/';window.custom=false;window.opened=0;window.socketClosed=0;
@@ -35,4 +35,4 @@ try{
  for(const width of [1280,390]){await page.setViewportSize({width,height:844});await page.evaluate(()=>{window.online=false;dispatchEvent(new Event('offline'))});assert(await warning.evaluate(e=>e.getBoundingClientRect().right<=innerWidth));}
  assert.equal(await page.evaluate(()=>opened),await page.evaluate(()=>window.socketClosed));
  console.log('PASS: slow handshake, timeout threshold, automatic recovery, background cancellation/resume, custom relay, offline/online, host recovery, responsive banner and socket cleanup.');
-}finally{await browser.close()}
+}finally{await workspace.close()}

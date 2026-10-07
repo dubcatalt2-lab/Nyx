@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
-const base=process.env.NYX_TEST_BASE_URL||'http://127.0.0.1:8199',browser=await chromium.launch();
+const base=process.env.NYX_TEST_BASE_URL||'http://127.0.0.1:8199',workspace=await chromium.launch();
 try{
  for(const width of [1365,390]){
-  const page=await browser.newPage({viewport:{width,height:900}});page.setDefaultTimeout(20000);
+  const page=await workspace.newPage({viewport:{width,height:900}});page.setDefaultTimeout(20000);
   page.on('pageerror',e=>console.log('Settings page error:',e.message));
   await page.addInitScript(()=>{if(window!==window.top)return;localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.releaseNotes.2026-09-14-nyx-1.0.3.seen','2026-09-14-nyx-1.0.3');});
   await page.goto(base+'/',{waitUntil:'domcontentloaded'});
@@ -13,10 +13,10 @@ try{
   await page.getByRole('button',{name:'Got it',exact:true}).click({timeout:5000}).catch(()=>{});
   await page.locator('[data-nyx-dock-item="settings"]').click();
   await page.screenshot({path:`.codex-artifacts/settings-open-${width}.png`});
-  await page.locator('[data-settings-category-button="browser"]').click();
-  const category=page.locator('[data-settings-category="browser"]');
+  await page.locator('[data-settings-category-button="workspace"]').click();
+  const category=page.locator('[data-settings-category="workspace"]');
   await category.getByText('Tab appearance',{exact:true}).waitFor();
-  assert.equal(await category.locator('.nyx-browser-settings-card').count(),3);
+  assert.equal(await category.locator('.nyx-workspace-settings-card').count(),3);
   await category.getByLabel('Tab title',{exact:true}).fill('Study notes');
   await category.locator('[data-tab-cloak-apply]').click();
   assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.tabTitle')),'Study notes');
@@ -24,8 +24,8 @@ try{
   await category.locator('[data-save-cloak]').click();assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.cloakRedirectUrl')),'https://example.com/');
   const bounds=await category.evaluate(el=>[...el.querySelectorAll('input:not([type=hidden]),select,button')].filter(el=>el.getClientRects().length).every(el=>{const r=el.getBoundingClientRect();return r.left>=-1&&r.right<=innerWidth+1;}));
   assert.ok(await category.evaluate(el=>{const dock=document.querySelector('.nyx-visual-dock').getBoundingClientRect();return [...el.querySelectorAll('input:not([type=hidden]),select,button')].filter(e=>e.getClientRects().length).every(e=>{const r=e.getBoundingClientRect();return r.right<=dock.left+1||r.left>=dock.right-1;});}),`Controls must not sit beneath the sidebar at ${width}`);
-  assert.ok(bounds,`Browser settings overflow at ${width}`);
-  await page.screenshot({path:`.codex-artifacts/browser-settings-${width}.png`,fullPage:true});await page.close();
+  assert.ok(bounds,`Workspace settings overflow at ${width}`);
+  await page.screenshot({path:`.codex-artifacts/workspace-settings-${width}.png`,fullPage:true});await page.close();
  }
- console.log('PASS Browser settings: desktop/mobile layout, labelled fields, tab title and launch settings persistence');
-}finally{await browser.close();}
+ console.log('PASS Workspace settings: desktop/mobile layout, labelled fields, tab title and launch settings persistence');
+}finally{await workspace.close();}

@@ -15,9 +15,9 @@ await captions(id,16000);assert.equal(requests,1);
 await assert.rejects(captions('invalid',0));await assert.rejects(captions(id,Infinity));
 let unsafeFetch=false;const blocked=createTubeCaptions({tracks:async()=>[{url:'https://youtube.com@127.0.0.1/api/timedtext'}],request:async()=>{unsafeFetch=true;}});assert.equal((await blocked(id,0)).available,false);assert.equal(unsafeFetch,false);
 const oversized=createTubeCaptions({tracks:async()=>[{url:'https://www.youtube.com/api/timedtext'}],request:async()=>new Response('x',{headers:{'content-length':String(9*1024*1024)}})});assert.equal((await oversized(id,0)).available,false);
-const browser=await chromium.launch({headless:true});
+const workspace=await chromium.launch({headless:true});
 try{
- const page=await browser.newPage();await page.setContent('<div id="player"></div>');
+ const page=await workspace.newPage();await page.setContent('<div id="player"></div>');
  await page.evaluate(()=>{
   window.captionRequests=[];window.errors=[];
   window.fetch=async url=>({ok:true,json:async()=>url.includes('/formats/')?{formats:[{height:720}]}:url.includes('/prepare/')?{state:'ready',kind:'hls',url:'/api/nyxtube/native/hls/'+'a'.repeat(32)+'/master.m3u8'}:(captionRequests.push(url),{available:true,language:'English',start:Math.max(0,Number(new URL(url,'https://fixture.test').searchParams.get('at'))-10),until:Number(new URL(url,'https://fixture.test').searchParams.get('at'))+60,segments:[{startSeconds:10800,durationSeconds:4,text:'Late <script>caption</script>'}]})});
@@ -34,4 +34,4 @@ try{
  await page.evaluate(()=>{player.lastProgress=Date.now()-91000;player.checkProgress();player.checkProgress()});assert.equal(await page.evaluate(()=>errors.length),1);
  await page.evaluate(()=>player.destroy());assert.equal(await page.locator('video').count(),0);
  console.log('PASS captions after three hours, bounded seek windows/shared cache, URL/size rejection, escaped native cues, toggle/seek/cleanup, and one stall recovery followed by finite failure');
-}finally{await browser.close()}
+}finally{await workspace.close()}

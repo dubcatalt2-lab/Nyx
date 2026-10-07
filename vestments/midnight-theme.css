@@ -5,17 +5,17 @@ html body.theme-midnight{
   --theme-strong:#e0f2fe!important;
   color:#e0f2fe!important;
 }
-html body.browser-shell.theme-midnight .browser-mode-menu button:hover{background:#10244e!important;color:#eff6ff!important}
+html body.workspace-shell.theme-midnight .workspace-mode-menu button:hover{background:#10244e!important;color:#eff6ff!important}
 
-html body.browser-shell.theme-midnight .window.maximized{top:94px!important;height:calc(100dvh - 94px)!important}
-html body.browser-shell.theme-midnight #browserModeMenu,
-html body.browser-shell.theme-midnight.menu-open #browserModeMenu,
-html body.browser-shell.theme-midnight .browser-mode-menu{top:94px!important}
+html body.workspace-shell.theme-midnight .window.maximized{top:94px!important;height:calc(100dvh - 94px)!important}
+html body.workspace-shell.theme-midnight #workspaceModeMenu,
+html body.workspace-shell.theme-midnight.menu-open #workspaceModeMenu,
+html body.workspace-shell.theme-midnight .workspace-mode-menu{top:94px!important}
 
-html body.browser-shell.theme-midnight .window.maximized{top:96px!important;height:calc(100dvh - 96px)!important}
-html body.browser-shell.theme-midnight #browserModeMenu,
-  html body.browser-shell.theme-midnight.menu-open #browserModeMenu,
-  html body.browser-shell.theme-midnight .browser-mode-menu{top:96px!important}
+html body.workspace-shell.theme-midnight .window.maximized{top:96px!important;height:calc(100dvh - 96px)!important}
+html body.workspace-shell.theme-midnight #workspaceModeMenu,
+  html body.workspace-shell.theme-midnight.menu-open #workspaceModeMenu,
+  html body.workspace-shell.theme-midnight .workspace-mode-menu{top:96px!important}
 @keyframes midnightShadowTabSelect{
   0%{opacity:.72;transform:scale(.92)}
   68%{opacity:1;transform:scale(1.025)}
@@ -32,52 +32,52 @@ html body.browser-shell.theme-midnight #browserModeMenu,
   100%{opacity:1;transform:translateY(0);scale:1}
 }
 
-html body.browser-shell.theme-midnight .window.maximized{
+html body.workspace-shell.theme-midnight .window.maximized{
     top:96px!important;
     height:calc(100dvh - 96px)!important;
   }
-html body.browser-shell.theme-midnight #browserModeMenu,
-  html body.browser-shell.theme-midnight.menu-open #browserModeMenu,
-  html body.browser-shell.theme-midnight .browser-mode-menu{
+html body.workspace-shell.theme-midnight #workspaceModeMenu,
+  html body.workspace-shell.theme-midnight.menu-open #workspaceModeMenu,
+  html body.workspace-shell.theme-midnight .workspace-mode-menu{
     top:96px!important;
   }
-html body.browser-shell.theme-midnight{
+html body.workspace-shell.theme-midnight{
   --nyx-final-shortcut-icon:#60a5fa!important;
   --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(65%) sepia(60%) saturate(946%) hue-rotate(184deg) brightness(101%) contrast(96%)!important;
 }
 
-html body.browser-shell{
+html body.workspace-shell{
   --nyx-final-shortcut-icon:#a78bfa!important;
   --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(65%) sepia(45%) saturate(2185%) hue-rotate(218deg) brightness(102%) contrast(96%)!important;
 }
-html body.browser-shell.theme-midnight{
+html body.workspace-shell.theme-midnight{
   --nyx-final-shortcut-icon:#60a5fa!important;
 }
-html body.browser-shell.theme-ruby{
+html body.workspace-shell.theme-ruby{
   --nyx-final-shortcut-icon:#fb7185!important;
 }
-html body.browser-shell.theme-emerald{
+html body.workspace-shell.theme-emerald{
   --nyx-final-shortcut-icon:#34d399!important;
 }
-html body.browser-shell.theme-sakura{
+html body.workspace-shell.theme-sakura{
   --nyx-final-shortcut-icon:#f472b6!important;
 }
-html body.browser-shell.theme-fresh{
+html body.workspace-shell.theme-fresh{
   --nyx-final-shortcut-icon:#0f8fa3!important;
 }
 
-html body.browser-shell.theme-midnight .window.browser-window.maximized,
-html body.browser-shell.theme-midnight .browser-window.maximized.browser-blank{
+html body.workspace-shell.theme-midnight .window.workspace-window.maximized,
+html body.workspace-shell.theme-midnight .workspace-window.maximized.workspace-blank{
   border-color:rgba(59,130,246,.46)!important;
 }
 
-html body.browser-shell .window.maximized{
+html body.workspace-shell .window.maximized{
     top:96px!important;
     height:calc(100dvh - 96px)!important;
   }
-html body.browser-shell #browserModeMenu,
-  html body.browser-shell.menu-open #browserModeMenu,
-  html body.browser-shell .browser-mode-menu{top:96px!important}
+html body.workspace-shell #workspaceModeMenu,
+  html body.workspace-shell.menu-open #workspaceModeMenu,
+  html body.workspace-shell .workspace-mode-menu{top:96px!important}
 
 @keyframes nyxSettingsReveal{
   from{opacity:0;transform:translateY(12px) scale(.985)}
@@ -97,11 +97,11 @@ html body.browser-shell #browserModeMenu,
   62%{opacity:1;translate:0 -2px;filter:blur(0)}
   100%{opacity:1;translate:none;filter:blur(0)}
 }
-html body.nyx-startup-reveal.browser-shell iframe.view.tab-opening{
+html body.nyx-startup-reveal.workspace-shell iframe.view.tab-opening{
   animation:none!important;
 }
 
-html:not([data-nyx-beam-wallpaper]) body:not(.three-d-backgrounds):not(.custom-bg-active):not(.browser-content-active) .nyx-wave-bg{
+html:not([data-nyx-beam-wallpaper]) body:not(.three-d-backgrounds):not(.custom-bg-active):not(.workspace-content-active) .nyx-wave-bg{
   display:block!important;
   opacity:1!important;
   transition:filter .45s ease!important;
@@ -119,10 +119,10 @@ html body.theme-emerald .nyx-wave-bg{filter:hue-rotate(278deg) saturate(1.08) br
 html body.theme-sakura .nyx-wave-bg{filter:hue-rotate(85deg) saturate(1.08) brightness(1.02) contrast(.98)!important}
 html body.theme-fresh .nyx-wave-bg{filter:hue-rotate(318deg) saturate(.72) brightness(1.22) contrast(.90)!important}
 html body.three-d-backgrounds .nyx-wave-bg,
-html body.browser-content-active .nyx-wave-bg,
+html body.workspace-content-active .nyx-wave-bg,
 html body.custom-bg-active .nyx-wave-bg{display:none!important}
 
-html body.browser-shell .settings-window .settings-card{
+html body.workspace-shell .settings-window .settings-card{
   min-height:0!important;
   padding:16px!important;
   border:1px solid color-mix(in srgb,var(--nyx-chrome-bright,var(--theme-border,#8b5cf6)) 25%,transparent)!important;
@@ -134,13 +134,13 @@ html body.browser-shell .settings-window .settings-card{
   -webkit-backdrop-filter:blur(36px) saturate(1.1)!important;
   transition:border-color 1.1s ease,background-color .45s ease,box-shadow 1.1s ease!important;
 }
-html body.browser-shell .settings-window .settings-card:hover{
+html body.workspace-shell .settings-window .settings-card:hover{
   transform:none!important;
   border-color:color-mix(in srgb,var(--nyx-chrome-bright,var(--theme-border,#8b5cf6)) 88%,transparent)!important;
   background-color:rgba(3,8,20,.52)!important;
   box-shadow:0 0 0 1px color-mix(in srgb,var(--nyx-chrome-bright,var(--theme-border,#8b5cf6)) 14%,transparent),0 0 22px color-mix(in srgb,var(--nyx-chrome-accent,var(--theme-border,#8b5cf6)) 22%,transparent),0 10px 28px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.08)!important;
 }
-html body.browser-shell .settings-window .settings-card > h2{
+html body.workspace-shell .settings-window .settings-card > h2{
   margin:0 0 9px!important;
   font-size:14px!important;
   font-weight:700!important;
@@ -148,14 +148,14 @@ html body.browser-shell .settings-window .settings-card > h2{
   letter-spacing:0!important;
   text-transform:lowercase!important;
 }
-html body.browser-shell .settings-window .settings-card :is(p,label,.settings-row span){
+html body.workspace-shell .settings-window .settings-card :is(p,label,.settings-row span){
   font-size:12px!important;
   font-weight:500!important;
   line-height:1.42!important;
   color:rgba(226,232,240,.74)!important;
   -webkit-text-fill-color:rgba(226,232,240,.74)!important;
 }
-html body.browser-shell .settings-window .settings-card :is(input:not([type="range"]),select,textarea,.settings-input,.settings-select,.panic-key-display){
+html body.workspace-shell .settings-window .settings-card :is(input:not([type="range"]),select,textarea,.settings-input,.settings-select,.panic-key-display){
   min-height:40px!important;
   border:1px solid color-mix(in srgb,var(--nyx-chrome-bright,var(--theme-border,#8b5cf6)) 25%,transparent)!important;
   border-radius:10px!important;
@@ -164,7 +164,7 @@ html body.browser-shell .settings-window .settings-card :is(input:not([type="ran
   padding:0 10px!important;
   font-size:14px!important;
 }
-html body.browser-shell .settings-window .settings-card :is(button,.settings-action){
+html body.workspace-shell .settings-window .settings-card :is(button,.settings-action){
   min-height:37px!important;
   width:auto;
   border:1px solid color-mix(in srgb,var(--nyx-chrome-bright,var(--theme-border,#8b5cf6)) 25%,transparent)!important;
@@ -175,18 +175,18 @@ html body.browser-shell .settings-window .settings-card :is(button,.settings-act
   font-size:13px!important;
   font-weight:600!important;
 }
-html body.browser-shell .settings-window .settings-card :is(button,.settings-action):hover{
+html body.workspace-shell .settings-window .settings-card :is(button,.settings-action):hover{
   transform:translateY(-1px) scale(1.025)!important;
   background:color-mix(in srgb,var(--nyx-chrome-accent,var(--theme-border,#8b5cf6)) 28%,transparent)!important;
 }
-html body.browser-shell .settings-window .settings-card .settings-row{
+html body.workspace-shell .settings-window .settings-card .settings-row{
   min-height:30px!important;
   display:grid!important;
   grid-template-columns:minmax(0,1fr) auto!important;
   align-items:center!important;
   gap:12px!important;
 }
-html body.browser-shell .settings-window .settings-card .settings-actions{
+html body.workspace-shell .settings-window .settings-card .settings-actions{
   display:flex!important;
   flex-wrap:wrap!important;
   gap:10px!important;
@@ -195,12 +195,12 @@ html body.browser-shell .settings-window .settings-card .settings-actions{
 
 
 
-html body .browser-tools.browser-tools button.tool-btn[data-reload]::before{
+html body .workspace-tools.workspace-tools button.tool-btn[data-reload]::before{
   transform:rotate(var(--nyx-reload-turn,0deg)) scale(.96)!important;
   transform-origin:center!important;
   transition:none!important;
   will-change:transform!important;
 }
-html body .browser-tools.browser-tools button.tool-btn[data-reload]:hover::before{
+html body .workspace-tools.workspace-tools button.tool-btn[data-reload]:hover::before{
   transform:rotate(var(--nyx-reload-turn,0deg)) scale(1.055)!important;
 }

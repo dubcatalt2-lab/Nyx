@@ -1,9 +1,9 @@
 ﻿import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {migrateStorage,storageNames} from './build-storage.mjs';
-const browser=await chromium.launch({channel:'msedge'});
+const workspace=await chromium.launch({channel:'msedge'});
 try{
- const page=await browser.newPage();
+ const page=await workspace.newPage();
  await page.route('http://fixture.test/**',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><title>Storage migration fixture</title>'}));
  await page.goto('http://fixture.test/');
  await page.evaluate(async names=>{for(const name of Object.keys(names)){await new Promise((resolve,reject)=>{const r=indexedDB.open(name,1);r.onupgradeneeded=()=>{const s=r.result.createObjectStore('fixture',{keyPath:'id',autoIncrement:true});s.createIndex('label','label',{unique:true});s.put({id:4,label:'saved cookie',bytes:new Uint8Array([1,2,3])});};r.onerror=()=>reject(r.error);r.onsuccess=()=>{r.result.close();resolve()};});}},storageNames);
@@ -13,4 +13,4 @@ try{
  await page.evaluate(migrateStorage,storageNames);
  const names=await page.evaluate(()=>indexedDB.databases().then(rows=>rows.map(r=>r.name)));for(const name of [...Object.keys(storageNames),...Object.values(storageNames)])assert(names.includes(name));
  console.log('PASS neutral IndexedDB migration: records, keys, indexes, typed arrays, repeat safety and original backups preserved');
-}finally{await browser.close()}
+}finally{await workspace.close()}

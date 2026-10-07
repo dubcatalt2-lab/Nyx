@@ -40,7 +40,7 @@
 .nyx-account-dialog,.nyx-user-profile-dialog{color:#f8fbff!important}.nyx-account-dialog :is(h2,h3,p,label,button),.nyx-user-profile-dialog :is(h2,h3,h4,p,label,button){-webkit-text-fill-color:currentColor}.nyx-account-title,.nyx-account-dialog label,.nyx-user-profile-form header>p:last-child,.nyx-user-profile-form label small{color:#dbe7fa!important}.nyx-account-tab{color:#f8fbff!important}.nyx-account-tab.active,.nyx-account-submit{background:color-mix(in srgb,var(--theme-accent,#5865f2) 65%,#101827)!important;color:#fff!important;-webkit-text-fill-color:#fff!important}.nyx-account-footer{color:#dbe7fa!important;border-color:rgba(255,255,255,.18)!important}.nyx-user-profile-form :is(h3,h4,label){color:#f8fbff!important}.nyx-profile-customizer-section{border-color:rgba(255,255,255,.14)!important;background:rgba(7,15,30,.36)!important}
 .settings-action:is([data-open-nyx-account],[data-open-nyx-profile],[data-open-founder-profile-editor],[data-nyx-account-sign-out]),[data-open-nyx-account]:not(.settings-action),[data-open-nyx-profile]:not(.settings-action),[data-open-founder-profile-editor]:not(.settings-action),[data-nyx-account-sign-out]:not(.settings-action){background:color-mix(in srgb,var(--theme-accent,#5865f2) 65%,#101827)!important;color:#fff!important;border-color:transparent!important;-webkit-text-fill-color:#fff!important}
 
-html body.browser-shell .browser-mode-menu{border:0!important;border-radius:0!important;box-shadow:none!important}html body.browser-shell .browser-mode-menu>button{border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:var(--theme-text,#edf4ff)!important;-webkit-text-fill-color:currentColor!important}html body.browser-shell .browser-mode-menu>button:hover,html body.browser-shell .browser-mode-menu>button:focus-visible{background:color-mix(in srgb,var(--theme-accent,#8fb8ff) 20%,transparent)!important;transform:none!important}html body.browser-shell .browser-mode-menu>hr{border-color:color-mix(in srgb,var(--theme-border,#8fb8ff) 42%,transparent)!important}
+html body.workspace-shell .workspace-mode-menu{border:0!important;border-radius:0!important;box-shadow:none!important}html body.workspace-shell .workspace-mode-menu>button{border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:var(--theme-text,#edf4ff)!important;-webkit-text-fill-color:currentColor!important}html body.workspace-shell .workspace-mode-menu>button:hover,html body.workspace-shell .workspace-mode-menu>button:focus-visible{background:color-mix(in srgb,var(--theme-accent,#8fb8ff) 20%,transparent)!important;transform:none!important}html body.workspace-shell .workspace-mode-menu>hr{border-color:color-mix(in srgb,var(--theme-border,#8fb8ff) 42%,transparent)!important}
 
 .nyx-user-profile-card{background:var(--nyx-user-accent-primary,#5865f2)!important;border:0!important;color:#fff!important;box-shadow:none!important}.nyx-user-profile-banner{background:var(--nyx-user-banner-color,var(--nyx-user-accent-secondary,#8ea1ff))!important}.nyx-user-profile-heading p,.nyx-user-profile-bio,.nyx-user-profile-meta{color:rgba(255,255,255,.88)!important}.nyx-user-profile-avatar{border-color:rgba(255,255,255,.92)!important;background:var(--nyx-user-accent-secondary,#8ea1ff)!important}.nyx-user-status{border-color:var(--nyx-user-accent-primary,#5865f2)!important}.nyx-user-profile-meta{border-color:rgba(255,255,255,.2)!important}.nyx-user-profile-effect-glow{box-shadow:0 0 24px color-mix(in srgb,var(--nyx-user-accent-secondary,#8ea1ff) 70%,transparent)!important}.nyx-user-profile-effect-aurora .nyx-user-profile-effect{display:none!important}
 
@@ -101,9 +101,9 @@ html body.browser-shell .browser-mode-menu{border:0!important;border-radius:0!im
 .nyx-account-button-default span{position:relative;width:21px;height:21px;border:2px solid #dbe7fa;border-radius:50%;box-sizing:border-box}
 .nyx-account-button-default span::before{content:"";position:absolute;left:50%;top:4px;width:6px;height:6px;border-radius:50%;background:#dbe7fa;transform:translateX(-50%)}
 .nyx-account-button-default span::after{content:"";position:absolute;left:50%;bottom:2px;width:11px;height:6px;border-radius:8px 8px 3px 3px;background:#dbe7fa;transform:translateX(-50%)}
-body.browser-shell .nyx-home-presence .nyx-profile-slot{position:absolute;top:50%;left:calc(100% + 8px);display:grid;place-items:center;transform:translateY(-50%)}
-body.browser-shell .nyx-home-presence .nyx-profile-slot .nyx-account-button{width:30px!important;height:30px!important;min-width:30px!important;border-color:transparent!important;background:#0b1122!important;box-shadow:0 0 14px rgba(49,101,198,.24)}
-body.browser-shell .nyx-profile-slot .nyx-account-button:hover{border-color:var(--theme-accent,#8fb8ff)!important;transform:none!important}
+body.workspace-shell .nyx-home-presence .nyx-profile-slot{position:absolute;top:50%;left:calc(100% + 8px);display:grid;place-items:center;transform:translateY(-50%)}
+body.workspace-shell .nyx-home-presence .nyx-profile-slot .nyx-account-button{width:30px!important;height:30px!important;min-width:30px!important;border-color:transparent!important;background:#0b1122!important;box-shadow:0 0 14px rgba(49,101,198,.24)}
+body.workspace-shell .nyx-profile-slot .nyx-account-button:hover{border-color:var(--theme-accent,#8fb8ff)!important;transform:none!important}
 
 
 
@@ -259,7 +259,7 @@ html[data-nyx-theme="fresh"]{--nyx-page-canvas:#080a0f}
 html[data-nyx-theme="custom"]{--nyx-page-canvas:var(--nyx-custom-canvas,#151d2b)}
 html[data-nyx-theme]{min-height:100%;background-color:var(--nyx-page-canvas)!important;color-scheme:dark}
 
-html[data-nyx-theme] body.browser-shell{
+html[data-nyx-theme] body.workspace-shell{
   --theme-field:var(--nyx-unified-field)!important;
   --theme-muted:var(--nyx-home-muted)!important;
   --theme-on-accent:#081018!important;
@@ -278,32 +278,32 @@ html[data-nyx-theme] body.browser-shell{
 
 
 
-html[data-nyx-theme] body.browser-shell .nyx-profile-direct-popover{
+html[data-nyx-theme] body.workspace-shell .nyx-profile-direct-popover{
   background:linear-gradient(155deg,var(--nyx-panel-surface),var(--nyx-home-panel))!important;
   border-color:var(--nyx-home-line)!important;
   color:var(--nyx-home-text)!important;
 }
-html[data-nyx-theme] body.browser-shell .nyx-profile-direct-popover :is(strong,label){
+html[data-nyx-theme] body.workspace-shell .nyx-profile-direct-popover :is(strong,label){
   color:var(--nyx-home-text)!important;
   -webkit-text-fill-color:var(--nyx-home-text)!important;
 }
-html[data-nyx-theme] body.browser-shell .nyx-profile-direct-popover :is(small,p){
+html[data-nyx-theme] body.workspace-shell .nyx-profile-direct-popover :is(small,p){
   color:var(--nyx-home-muted)!important;
   -webkit-text-fill-color:var(--nyx-home-muted)!important;
 }
-html[data-nyx-theme] body.browser-shell .nyx-profile-direct-popover :is(button,select,textarea,input[type="color"]){
+html[data-nyx-theme] body.workspace-shell .nyx-profile-direct-popover :is(button,select,textarea,input[type="color"]){
   background-color:var(--nyx-control-surface)!important;
   background-image:none!important;
   border-color:var(--nyx-home-line)!important;
   color:var(--nyx-home-text)!important;
   -webkit-text-fill-color:var(--nyx-home-text)!important;
 }
-html[data-nyx-theme] body.browser-shell .nyx-profile-direct-popover :is(button,select,textarea,input[type="color"]):is(:hover,:focus-visible){
+html[data-nyx-theme] body.workspace-shell .nyx-profile-direct-popover :is(button,select,textarea,input[type="color"]):is(:hover,:focus-visible){
   background-color:var(--nyx-control-hover)!important;
   border-color:var(--nyx-chrome-bright)!important;
 }
 
-html[data-nyx-theme] body.browser-shell{
+html[data-nyx-theme] body.workspace-shell{
   --weather-accent:var(--nyx-chrome-bright)!important;
   --weather-accent-soft:color-mix(in srgb,var(--nyx-chrome-accent) 15%,transparent)!important;
   --weather-panel-bg:color-mix(in srgb,var(--nyx-home-panel) 95%,var(--nyx-unified-top))!important;
@@ -313,30 +313,30 @@ html[data-nyx-theme] body.browser-shell{
   --weather-text:var(--nyx-home-text)!important;
   --weather-muted:var(--nyx-home-muted)!important;
 }
-html[data-nyx-theme] body.browser-shell .nyx-account-button-default,
-html[data-nyx-theme] body.browser-shell .nyx-home-presence .nyx-profile-slot .nyx-account-button{
+html[data-nyx-theme] body.workspace-shell .nyx-account-button-default,
+html[data-nyx-theme] body.workspace-shell .nyx-home-presence .nyx-profile-slot .nyx-account-button{
   background:var(--nyx-unified-field)!important;
   border-color:transparent!important;
   box-shadow:0 0 14px color-mix(in srgb,var(--nyx-chrome-accent) 22%,transparent)!important;
 }
-html[data-nyx-theme] body.browser-shell .nyx-account-button-default span{
+html[data-nyx-theme] body.workspace-shell .nyx-account-button-default span{
   border-color:var(--nyx-home-wordmark)!important;
 }
-html[data-nyx-theme] body.browser-shell .nyx-account-button-default span::before,
-html[data-nyx-theme] body.browser-shell .nyx-account-button-default span::after{
+html[data-nyx-theme] body.workspace-shell .nyx-account-button-default span::before,
+html[data-nyx-theme] body.workspace-shell .nyx-account-button-default span::after{
   background:var(--nyx-home-wordmark)!important;
 }
 
 
 
-html body.browser-shell ::selection{
+html body.workspace-shell ::selection{
   background:#3390ff;
   color:#fff;
 }
 
 
 
-html[data-nyx-theme] body.browser-shell .nyx-home-copyright{
+html[data-nyx-theme] body.workspace-shell .nyx-home-copyright{
   color:var(--nyx-home-muted)!important;
   -webkit-text-fill-color:var(--nyx-home-muted)!important;
   opacity:1!important;
@@ -754,14 +754,14 @@ html[data-nyx-theme] body .nyx-profile-direct-popover :is(select,textarea,input[
 
 
 
-html[data-nyx-theme] body.browser-shell .top-os.top-os #browserModeMenu.browser-mode-menu,
-html[data-nyx-theme] body.browser-shell.menu-open .top-os.top-os #browserModeMenu.browser-mode-menu{
+html[data-nyx-theme] body.workspace-shell .top-os.top-os #workspaceModeMenu.workspace-mode-menu,
+html[data-nyx-theme] body.workspace-shell.menu-open .top-os.top-os #workspaceModeMenu.workspace-mode-menu{
   border:0!important;
   border-radius:0!important;
   box-shadow:none!important;
 }
-html[data-nyx-theme] body.browser-shell .top-os.top-os #browserModeMenu.browser-mode-menu > button,
-html[data-nyx-theme] body.browser-shell .top-os.top-os #browserModeMenu.browser-mode-menu > button:is(:hover,:focus-visible,:active){
+html[data-nyx-theme] body.workspace-shell .top-os.top-os #workspaceModeMenu.workspace-mode-menu > button,
+html[data-nyx-theme] body.workspace-shell .top-os.top-os #workspaceModeMenu.workspace-mode-menu > button:is(:hover,:focus-visible,:active){
   border:0!important;
   border-radius:0!important;
   outline:0!important;
@@ -1299,10 +1299,10 @@ html[data-nyx-theme] body .nyx-profile-custom-effect-controls small{
   font-size:9px!important;
 }
 
-html[data-nyx-theme] body.browser-shell .nyx-home-presence .nyx-profile-slot{
+html[data-nyx-theme] body.workspace-shell .nyx-home-presence .nyx-profile-slot{
   place-items:center start!important;
 }
-html[data-nyx-theme] body.browser-shell .nyx-home-presence .nyx-profile-slot .nyx-account-button.nyx-account-button-rich{
+html[data-nyx-theme] body.workspace-shell .nyx-home-presence .nyx-profile-slot .nyx-account-button.nyx-account-button-rich{
   display:flex!important;
   width:154px!important;
   height:36px!important;
@@ -1317,7 +1317,7 @@ html[data-nyx-theme] body.browser-shell .nyx-home-presence .nyx-profile-slot .ny
   background:color-mix(in srgb,var(--theme-panel,#172338) 90%,#07090d)!important;
   box-shadow:0 6px 18px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.05)!important;
 }
-html[data-nyx-theme] body.browser-shell .nyx-account-button-rich .nyx-account-button-avatar{
+html[data-nyx-theme] body.workspace-shell .nyx-account-button-rich .nyx-account-button-avatar{
   position:relative;
   display:grid;
   flex:0 0 28px;
@@ -1329,13 +1329,13 @@ html[data-nyx-theme] body.browser-shell .nyx-account-button-rich .nyx-account-bu
   background:color-mix(in srgb,var(--theme-accent,#8fb8ff) 24%,#111214);
   color:var(--theme-text,#fff)!important;
 }
-html[data-nyx-theme] body.browser-shell .nyx-account-button-rich .nyx-account-button-avatar>img{
+html[data-nyx-theme] body.workspace-shell .nyx-account-button-rich .nyx-account-button-avatar>img{
   width:28px!important;
   height:28px!important;
   border-radius:8px!important;
   object-fit:cover!important;
 }
-html[data-nyx-theme] body.browser-shell .nyx-account-button-rich .nyx-account-button-avatar>.nyx-user-status{
+html[data-nyx-theme] body.workspace-shell .nyx-account-button-rich .nyx-account-button-avatar>.nyx-user-status{
   position:absolute!important;
   right:-3px!important;
   bottom:-2px!important;
@@ -1345,15 +1345,15 @@ html[data-nyx-theme] body.browser-shell .nyx-account-button-rich .nyx-account-bu
   border:2px solid color-mix(in srgb,var(--theme-panel,#172338) 90%,#07090d)!important;
 }
 
-html[data-nyx-theme] body.browser-shell .nyx-account-button-rich .nyx-account-button-copy{
+html[data-nyx-theme] body.workspace-shell .nyx-account-button-rich .nyx-account-button-copy{
   display:grid!important;
   min-width:0;
   flex:1 1 auto;
   gap:0;
   text-align:left;
 }
-html[data-nyx-theme] body.browser-shell .nyx-account-button-rich .nyx-account-button-copy>strong,
-html[data-nyx-theme] body.browser-shell .nyx-account-button-rich .nyx-account-button-copy>small{
+html[data-nyx-theme] body.workspace-shell .nyx-account-button-rich .nyx-account-button-copy>strong,
+html[data-nyx-theme] body.workspace-shell .nyx-account-button-rich .nyx-account-button-copy>small{
   overflow:hidden;
   color:var(--theme-text,#fff)!important;
   -webkit-text-fill-color:currentColor!important;
@@ -1361,10 +1361,10 @@ html[data-nyx-theme] body.browser-shell .nyx-account-button-rich .nyx-account-bu
   white-space:nowrap;
   text-shadow:none!important;
 }
-html[data-nyx-theme] body.browser-shell .nyx-account-button-rich .nyx-account-button-copy>strong{
+html[data-nyx-theme] body.workspace-shell .nyx-account-button-rich .nyx-account-button-copy>strong{
   font:700 11px/1.2 "Outfit","Segoe UI",sans-serif!important;
 }
-html[data-nyx-theme] body.browser-shell .nyx-account-button-rich .nyx-account-button-copy>small{
+html[data-nyx-theme] body.workspace-shell .nyx-account-button-rich .nyx-account-button-copy>small{
   opacity:.72;
   font:500 9px/1.2 "Outfit","Segoe UI",sans-serif!important;
 }
@@ -1670,17 +1670,17 @@ html[data-nyx-theme] body .nyx-name-surprise-button:hover{background:#4752c4!imp
   .nyx-name-effect-gradient,.nyx-name-effect-neon,.nyx-name-effect-pop{animation:none!important}
 }
 
-html[data-nyx-theme][data-nyx-theme] body.browser-shell:is(body,#nyx-profile-settings-row):is(body,#nyx-profile-settings-controls)
-  .browser-window.browser-home-page .nyx-home-actions{
+html[data-nyx-theme][data-nyx-theme] body.workspace-shell:is(body,#nyx-profile-settings-row):is(body,#nyx-profile-settings-controls)
+  .workspace-window.workspace-home-page .nyx-home-actions{
   width:min(620px,100%)!important;
   grid-template-columns:repeat(4,minmax(0,1fr))!important;
 }
-html[data-nyx-theme][data-nyx-theme] body.browser-shell:is(body,#nyx-profile-settings-row):is(body,#nyx-profile-settings-controls)
-  .browser-window.browser-home-page .nyx-home-actions>button{
+html[data-nyx-theme][data-nyx-theme] body.workspace-shell:is(body,#nyx-profile-settings-row):is(body,#nyx-profile-settings-controls)
+  .workspace-window.workspace-home-page .nyx-home-actions>button{
   height:38px!important;
   min-height:38px!important;
 }
-html[data-nyx-theme] body.browser-shell .nyx-home-action-profile{
+html[data-nyx-theme] body.workspace-shell .nyx-home-action-profile{
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='8' r='4' fill='none' stroke='black' stroke-width='1.7'/%3E%3Cpath d='M4.5 21a7.5 7.5 0 0 1 15 0' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='8' r='4' fill='none' stroke='black' stroke-width='1.7'/%3E%3Cpath d='M4.5 21a7.5 7.5 0 0 1 15 0' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;
 }
@@ -1833,11 +1833,11 @@ html[data-nyx-theme] body .nyx-user-profile-avatar>.nyx-user-status{
 
 
 
-html[data-nyx-theme] body.browser-shell .nyx-styled-display-name.nyx-name-effect-solid{
+html[data-nyx-theme] body.workspace-shell .nyx-styled-display-name.nyx-name-effect-solid{
   color:var(--nyx-name-color-primary,#fff)!important;
   -webkit-text-fill-color:var(--nyx-name-color-primary,#fff)!important;
 }
-html[data-nyx-theme] body.browser-shell .nyx-styled-display-name:is(.nyx-name-effect-gradient,.nyx-name-effect-neon,.nyx-name-effect-pop){
+html[data-nyx-theme] body.workspace-shell .nyx-styled-display-name:is(.nyx-name-effect-gradient,.nyx-name-effect-neon,.nyx-name-effect-pop){
   background-image:linear-gradient(105deg,var(--nyx-name-color-primary,#fff),var(--nyx-name-color-secondary,#8ea1ff),var(--nyx-name-color-primary,#fff))!important;
   background-size:220% 100%!important;
   background-clip:text!important;
@@ -1845,26 +1845,26 @@ html[data-nyx-theme] body.browser-shell .nyx-styled-display-name:is(.nyx-name-ef
   color:transparent!important;
   -webkit-text-fill-color:transparent!important;
 }
-html[data-nyx-theme] body.browser-shell .nyx-styled-display-name.nyx-name-effect-neon{
+html[data-nyx-theme] body.workspace-shell .nyx-styled-display-name.nyx-name-effect-neon{
   text-shadow:
     0 0 5px color-mix(in srgb,var(--nyx-name-color-primary,#fff) 88%,transparent),
     0 0 12px color-mix(in srgb,var(--nyx-name-color-secondary,#8ea1ff) 78%,transparent),
     0 0 22px color-mix(in srgb,var(--nyx-name-color-secondary,#8ea1ff) 58%,transparent)!important;
 }
-html[data-nyx-theme] body.browser-shell .nyx-styled-display-name.nyx-name-effect-toon{
+html[data-nyx-theme] body.workspace-shell .nyx-styled-display-name.nyx-name-effect-toon{
   color:var(--nyx-name-color-primary,#fff)!important;
   -webkit-text-fill-color:var(--nyx-name-color-primary,#fff)!important;
   -webkit-text-stroke:1px color-mix(in srgb,var(--nyx-name-color-secondary,#8ea1ff) 76%,#17181b)!important;
   text-shadow:2px 2px 0 var(--nyx-name-color-secondary,#8ea1ff),3px 3px 0 rgba(0,0,0,.42)!important;
 }
-html[data-nyx-theme] body.browser-shell .nyx-account-button-copy>.nyx-styled-display-name{
+html[data-nyx-theme] body.workspace-shell .nyx-account-button-copy>.nyx-styled-display-name{
   overflow:visible!important;
 }
-html[data-nyx-theme] body.browser-shell #nyxAccountButton .nyx-account-button-copy>.nyx-styled-display-name.nyx-name-effect-solid{
+html[data-nyx-theme] body.workspace-shell #nyxAccountButton .nyx-account-button-copy>.nyx-styled-display-name.nyx-name-effect-solid{
   color:var(--nyx-name-color-primary,#fff)!important;
   -webkit-text-fill-color:var(--nyx-name-color-primary,#fff)!important;
 }
-html[data-nyx-theme] body.browser-shell #nyxAccountButton .nyx-account-button-copy>.nyx-styled-display-name:is(.nyx-name-effect-gradient,.nyx-name-effect-neon,.nyx-name-effect-pop){
+html[data-nyx-theme] body.workspace-shell #nyxAccountButton .nyx-account-button-copy>.nyx-styled-display-name:is(.nyx-name-effect-gradient,.nyx-name-effect-neon,.nyx-name-effect-pop){
   background-image:linear-gradient(105deg,var(--nyx-name-color-primary,#fff),var(--nyx-name-color-secondary,#8ea1ff),var(--nyx-name-color-primary,#fff))!important;
   background-size:220% 100%!important;
   background-clip:text!important;
@@ -1872,12 +1872,12 @@ html[data-nyx-theme] body.browser-shell #nyxAccountButton .nyx-account-button-co
   color:transparent!important;
   -webkit-text-fill-color:transparent!important;
 }
-html[data-nyx-theme] body.browser-shell #nyxAccountButton .nyx-account-button-copy>.nyx-styled-display-name.nyx-name-effect-neon{
+html[data-nyx-theme] body.workspace-shell #nyxAccountButton .nyx-account-button-copy>.nyx-styled-display-name.nyx-name-effect-neon{
   text-shadow:
     0 0 4px color-mix(in srgb,var(--nyx-name-color-primary,#fff) 86%,transparent),
     0 0 9px color-mix(in srgb,var(--nyx-name-color-secondary,#8ea1ff) 72%,transparent)!important;
 }
-html[data-nyx-theme] body.browser-shell #nyxAccountButton .nyx-account-button-copy>.nyx-styled-display-name.nyx-name-effect-toon{
+html[data-nyx-theme] body.workspace-shell #nyxAccountButton .nyx-account-button-copy>.nyx-styled-display-name.nyx-name-effect-toon{
   color:var(--nyx-name-color-primary,#fff)!important;
   -webkit-text-fill-color:var(--nyx-name-color-primary,#fff)!important;
   -webkit-text-stroke:.7px color-mix(in srgb,var(--nyx-name-color-secondary,#8ea1ff) 76%,#17181b)!important;
@@ -2418,7 +2418,7 @@ html body .lion-ai-composer{
   background:linear-gradient(transparent,rgba(5,7,14,.88) 24%);
 }
 html body .lion-ai-form,
-html body.browser-shell .lion-ai-form{
+html body.workspace-shell .lion-ai-form{
   width:min(820px,100%);
   min-height:54px!important;
   display:grid!important;
@@ -2457,7 +2457,7 @@ html body .lion-ai-plus:hover{
   -webkit-text-fill-color:#fff!important;
 }
 html body .lion-ai-input,
-html body.browser-shell .lion-ai-input{
+html body.workspace-shell .lion-ai-input{
   width:100%;
   min-height:36px!important;
   max-height:116px!important;
@@ -2475,7 +2475,7 @@ html body.browser-shell .lion-ai-input{
   line-height:1.4!important;
 }
 html body .lion-ai-input::placeholder,
-html body.browser-shell .lion-ai-input::placeholder{
+html body.workspace-shell .lion-ai-input::placeholder{
   color:var(--ai-muted)!important;
   -webkit-text-fill-color:var(--ai-muted)!important;
 }
@@ -2620,19 +2620,19 @@ html body .lion-ai-composer{
   background:linear-gradient(transparent,color-mix(in srgb,var(--default-vanta-bg,#020611) 88%,transparent) 30%)!important;
 }
 html body .lion-ai-form,
-html body.browser-shell .lion-ai-form{
+html body.workspace-shell .lion-ai-form{
   border-color:var(--ai-line)!important;
   background:var(--glass,rgba(8,7,13,.82))!important;
   backdrop-filter:blur(calc(var(--glass-blur,20px) * .65)) saturate(var(--glass-saturate,1.2));
 }
 html body .lion-ai-form:focus-within{border-color:var(--ai-accent)!important}
 html body .lion-ai-input,
-html body.browser-shell .lion-ai-input{
+html body.workspace-shell .lion-ai-input{
   color:var(--text,#f8fafc)!important;
   -webkit-text-fill-color:var(--text,#f8fafc)!important;
 }
 html body .lion-ai-input::placeholder,
-html body.browser-shell .lion-ai-input::placeholder{
+html body.workspace-shell .lion-ai-input::placeholder{
   color:var(--ai-muted)!important;
   -webkit-text-fill-color:var(--ai-muted)!important;
 }
@@ -2643,7 +2643,7 @@ html body .lion-ai-clear{
 }
 html body .lion-ai-preview{border-color:var(--ai-line)!important;background:var(--glass,rgba(8,7,13,.82))!important}
 
-html[data-nyx-theme="custom"] body.browser-shell.theme-custom{
+html[data-nyx-theme="custom"] body.workspace-shell.theme-custom{
   --glass:var(--nyx-custom-canvas)!important;
   --glass-panel:var(--nyx-custom-panel)!important;
   --glass-control:var(--nyx-custom-field)!important;
@@ -2659,12 +2659,12 @@ html[data-nyx-theme="custom"] body.browser-shell.theme-custom{
   .nyx-styled-display-name{animation:none!important}
 }
 
-html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default{
+html[data-nyx-theme="custom"] body.workspace-shell.theme-custom.theme-default{
   --nyx-title-theme-color:var(--nyx-custom-bright)!important;
 }
 
 
-html[data-nyx-theme="custom"] body.browser-shell.theme-custom.theme-default .browser-window.browser-home-page :is(
+html[data-nyx-theme="custom"] body.workspace-shell.theme-custom.theme-default .workspace-window.workspace-home-page :is(
   .nyx-home-title,
   .nyx-home-presence,
   .nyx-home-presence .nyx-account-button,
@@ -3008,7 +3008,7 @@ html[data-nyx-theme] body .nyx-profile-directory-card-host .nyx-user-profile-abo
 
 
 
-html[data-nyx-theme] body.browser-shell .apps-launch-grid .quick-tile:is(
+html[data-nyx-theme] body.workspace-shell .apps-launch-grid .quick-tile:is(
   [data-domain="geforcenow"],
   [data-domain="x.com"]
 ) .quick-icon{
@@ -3019,37 +3019,37 @@ html[data-nyx-theme] body.browser-shell .apps-launch-grid .quick-tile:is(
   background-image:none!important;
   box-shadow:0 8px 24px rgba(0,0,0,.24)!important;
 }
-html[data-nyx-theme] body.browser-shell .apps-launch-grid .quick-tile:is(
+html[data-nyx-theme] body.workspace-shell .apps-launch-grid .quick-tile:is(
   [data-domain="geforcenow"],
   [data-domain="x.com"]
 ):is(:hover,:focus-visible) .quick-icon{
   border-color:color-mix(in srgb,var(--nyx-chrome-accent) 48%,#fff)!important;
 }
-html[data-nyx-theme] body.browser-shell .apps-panel :is(h1,h2),html[data-nyx-theme] body.browser-shell .browser-shell-page:has(.apps-launch-grid) :is(h1,h2){
+html[data-nyx-theme] body.workspace-shell .apps-panel :is(h1,h2),html[data-nyx-theme] body.workspace-shell .workspace-shell-page:has(.apps-launch-grid) :is(h1,h2){
   color:var(--nyx-home-text)!important;
   -webkit-text-fill-color:var(--nyx-home-text)!important;
 }
-html[data-nyx-theme] body.browser-shell .apps-panel :is(p,small),html[data-nyx-theme] body.browser-shell .browser-shell-page:has(.apps-launch-grid) :is(p,small){
+html[data-nyx-theme] body.workspace-shell .apps-panel :is(p,small),html[data-nyx-theme] body.workspace-shell .workspace-shell-page:has(.apps-launch-grid) :is(p,small){
   color:var(--nyx-home-muted)!important;
   -webkit-text-fill-color:var(--nyx-home-muted)!important;
 }
 
-html[data-nyx-theme] body.browser-shell .apps-launch-grid>.quick-tile{
+html[data-nyx-theme] body.workspace-shell .apps-launch-grid>.quick-tile{
   border-color:transparent!important;
   background-color:#000!important;
   box-shadow:none!important;
 }
-html[data-nyx-theme] body.browser-shell .apps-launch-grid>.quick-tile .quick-icon{
+html[data-nyx-theme] body.workspace-shell .apps-launch-grid>.quick-tile .quick-icon{
   border-color:transparent!important;
 }
-html[data-nyx-theme] body.browser-shell .apps-launch-grid>.quick-tile:is(:hover,:focus-visible){
+html[data-nyx-theme] body.workspace-shell .apps-launch-grid>.quick-tile:is(:hover,:focus-visible){
   border-color:var(--nyx-chrome-accent)!important;
 }
-html[data-nyx-theme] body.browser-shell .apps-launch-grid>.quick-tile:is(:hover,:focus-visible) .quick-icon{
+html[data-nyx-theme] body.workspace-shell .apps-launch-grid>.quick-tile:is(:hover,:focus-visible) .quick-icon{
   border-color:var(--nyx-chrome-accent)!important;
 }
 
-.nyx-browser-link-menu{
+.nyx-workspace-link-menu{
   position:fixed;
   z-index:2147483646;
   display:grid;
@@ -3060,7 +3060,7 @@ html[data-nyx-theme] body.browser-shell .apps-launch-grid>.quick-tile:is(:hover,
   background:#121318;
   box-shadow:0 16px 38px rgba(0,0,0,.5);
 }
-.nyx-browser-link-menu button{
+.nyx-workspace-link-menu button{
   width:100%;
   min-height:36px;
   padding:8px 10px;
@@ -3075,19 +3075,19 @@ html[data-nyx-theme] body.browser-shell .apps-launch-grid>.quick-tile:is(:hover,
   text-align:left;
   cursor:pointer;
 }
-.nyx-browser-link-menu button:is(:hover,:focus-visible){
+.nyx-workspace-link-menu button:is(:hover,:focus-visible){
   outline:0;
   background:color-mix(in srgb,var(--nyx-chrome-accent,#8fb8ff) 18%,#181a20);
 }
 
-html[data-nyx-theme] body.browser-shell:not(.three-d-backgrounds):not(.custom-bg-active){
+html[data-nyx-theme] body.workspace-shell:not(.three-d-backgrounds):not(.custom-bg-active){
   --nyx-final-shortcut-icon:#f1f3f7!important;
   --nyx-dot-color:#202633!important;
 }
 
 
 
-html[data-nyx-theme] body.browser-shell .lion-ai-form{
+html[data-nyx-theme] body.workspace-shell .lion-ai-form{
   overflow:hidden;
   border-radius:22px!important;
   background:rgba(4,7,12,.74)!important;

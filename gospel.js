@@ -25,6 +25,21 @@
   const $ = id => document.getElementById(id);
   const qsa = (sel, root=document) => Array.from(root.querySelectorAll(sel));
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function normalizeWorkspacePreferences(value){
+    const result={...(value&&typeof value==='object'&&!Array.isArray(value)?value:{})};
+    for(const suffix of ['Mode','Background','Bookmarks','ShellMode']){
+      const old='nyx.b\u0072owser'+suffix,key='nyx.workspace'+suffix;
+      if(!Object.hasOwn(result,key)&&Object.hasOwn(result,old))result[key]=result[old];
+      delete result[old];
+    }
+    return result;
+  }
+  for(const suffix of ['Mode','Background','Bookmarks','ShellMode']){
+    try{
+      const old='nyx.b\u0072owser'+suffix,key='nyx.workspace'+suffix,value=localStorage.getItem(old);
+      if(value!==null){if(localStorage.getItem(key)===null)localStorage.setItem(key,value);localStorage.removeItem(old);}
+    }catch{}
+  }
   const store = {get(k,d){try{return JSON.parse(localStorage.getItem(k)) ?? d}catch{return d}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}queueNyxCloudPreferencesSave?.()}, text(k,d=''){try{return localStorage.getItem(k) ?? d}catch{return d}}, setText(k,v){try{const changed=localStorage.getItem(k)!==String(v);localStorage.setItem(k,String(v));if(changed)nyxRememberAppearanceEdit(k,String(v));}catch{}queueNyxCloudPreferencesSave?.()}};
   try{
     const savedShortcuts=JSON.parse(localStorage.getItem('nyx.homeShortcuts')||'[]');
@@ -366,7 +381,7 @@
     try{return await request}
     finally{if(nyxFirebaseTokenPromise===request)nyxFirebaseTokenPromise=null}
   }
-  const NYX_CLOUD_PREFERENCE_KEYS=Object.freeze(['nyx.theme','nyx.customThemeColor','nyx.font','nyx.engine','nyx.browserMode','nyx.transport','nyx.visualEffect','nyx.visualEffectSpeed','nyx.visualEffectAmount','nyx.beamWallpaper','nyx.beamTheme','nyx.lineWaves.speed','nyx.lineWaves.density','nyx.lineWaves.mouse','nyx.lineWaves.colorVariant','nyx.threeDBackgrounds','nyx.performanceTier','nyx.gamePerformanceMode','nyx.homeDesign','nyx.tabDesign','nyx.homeShortcuts','nyx.customBgData','nyx.customBgUrl','nyx.background','nyx.browserBackground']);
+  const NYX_CLOUD_PREFERENCE_KEYS=Object.freeze(['nyx.theme','nyx.customThemeColor','nyx.font','nyx.engine','nyx.workspaceMode','nyx.transport','nyx.visualEffect','nyx.visualEffectSpeed','nyx.visualEffectAmount','nyx.beamWallpaper','nyx.beamTheme','nyx.lineWaves.speed','nyx.lineWaves.density','nyx.lineWaves.mouse','nyx.lineWaves.colorVariant','nyx.threeDBackgrounds','nyx.performanceTier','nyx.gamePerformanceMode','nyx.homeDesign','nyx.tabDesign','nyx.homeShortcuts','nyx.customBgData','nyx.customBgUrl','nyx.background','nyx.workspaceBackground']);
   let nyxCloudPreferencesTimer=0;
   let nyxCloudPreferencesInterval=0;
   let nyxCloudPreferencesFingerprint='';
@@ -415,8 +430,8 @@
     const cloud=await nyxCloudRequest('/api/account/cloud-preferences');
     if(nyxFounderSignedInUser?.uid!==user.uid||generation!==nyxCloudPreferencesGeneration)return false;
     const marker=localStorage.getItem('nyx.cloud.preferences.user');
-    const preferences=cloud?.preferences&&typeof cloud.preferences==='object'?cloud.preferences:{};
-    let pendingAppearance={};try{pendingAppearance=JSON.parse(localStorage.getItem('nyx.cloud.appearance.pending.'+user.uid)||'{}');}catch{}
+    const preferences=normalizeWorkspacePreferences(cloud?.preferences);
+    let pendingAppearance={};try{pendingAppearance=normalizeWorkspacePreferences(JSON.parse(localStorage.getItem('nyx.cloud.appearance.pending.'+user.uid)||'{}'));}catch{}
     const hasImage=typeof preferences['nyx.customBgData']==='string';
 
 
@@ -647,7 +662,7 @@
     menu.style.setProperty('--nyx-user-banner-color',profile.bannerColor);
     menu.style.cssText+=nyxProfileEffectVars(profile);
     const ownerControls=nyxOwnerDashboardAccess?`<div class="nyx-account-menu-group nyx-account-menu-owner"><button type="button" role="menuitem" data-nyx-account-menu-action="owner-dashboard">${nyxAccountMenuIcon('dashboard')}<span>Owner Dashboard</span>${nyxAccountMenuIcon('chevron')}</button></div>`:'';
-    menu.innerHTML=`<i class="nyx-user-profile-effect nyx-account-menu-profile-effect" aria-hidden="true">${nyxProfileEffectArtwork(profile)}</i><div class="nyx-account-menu-banner">${banner}</div><div class="nyx-account-menu-profile"><div class="nyx-account-menu-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i></div><span class="nyx-account-menu-status"><span>${esc(profile.customStatus||statusLabel)}</span></span><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p class="nyx-account-menu-handle">${esc(profile.handle)}</p><p class="nyx-account-menu-bio">${esc(profile.bio||'')}</p></div>${ownerControls}<div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="edit">${nyxAccountMenuIcon('edit')}<span>Edit Profile</span></button><button type="button" role="menuitem" data-nyx-account-menu-action="profiles">${nyxAccountMenuIcon('people')}<span>Browse Profiles</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="status"><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-hidden="true"></i><span>${esc(statusLabel)}</span>${nyxAccountMenuIcon('chevron')}</button></div><div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="switch">${nyxAccountMenuIcon('switch')}<span>Switch Accounts</span>${nyxAccountMenuIcon('chevron')}</button><button type="button" role="menuitem" data-nyx-account-menu-action="ad-free">${nyxAccountMenuIcon('id')}<span>Ad-free access</span></button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="copy-id">${nyxAccountMenuIcon('id')}<span>Copy User ID</span></button></div>`;
+    menu.innerHTML=`<i class="nyx-user-profile-effect nyx-account-menu-profile-effect" aria-hidden="true">${nyxProfileEffectArtwork(profile)}</i><div class="nyx-account-menu-banner">${banner}</div><div class="nyx-account-menu-profile"><div class="nyx-account-menu-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i></div><span class="nyx-account-menu-status"><span>${esc(profile.customStatus||statusLabel)}</span></span><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p class="nyx-account-menu-handle">${esc(profile.handle)}</p><p class="nyx-account-menu-bio">${esc(profile.bio||'')}</p></div>${ownerControls}<div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="edit">${nyxAccountMenuIcon('edit')}<span>Edit Profile</span></button><button type="button" role="menuitem" data-nyx-account-menu-action="profiles">${nyxAccountMenuIcon('people')}<span>Community profiles</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="status"><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-hidden="true"></i><span>${esc(statusLabel)}</span>${nyxAccountMenuIcon('chevron')}</button></div><div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="switch">${nyxAccountMenuIcon('switch')}<span>Switch Accounts</span>${nyxAccountMenuIcon('chevron')}</button><button type="button" role="menuitem" data-nyx-account-menu-action="ad-free">${nyxAccountMenuIcon('id')}<span>Ad-free access</span></button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="copy-id">${nyxAccountMenuIcon('id')}<span>Copy User ID</span></button></div>`;
     document.body.appendChild(menu);
     syncNyxAccountButtonAvatar(menu.querySelector('.nyx-account-menu-avatar'),profile);
     const bannerHost=menu.querySelector('.nyx-account-menu-banner');
@@ -716,7 +731,7 @@
     const overlay=document.createElement('div');
     overlay.className='nyx-profile-directory-overlay'+(requestedProfileUid?' profile-card-only':'');
     overlay.innerHTML=`<section class="nyx-profile-directory" role="dialog" aria-modal="true" aria-labelledby="nyxProfileDirectoryTitle">
-      <header class="nyx-profile-directory-header"><div><span>NYX COMMUNITY</span><h2 id="nyxProfileDirectoryTitle">${requestedProfileUid?'Profile':'Browse Profiles'}</h2><p>Discover the people using Nyx.</p></div><button type="button" data-close-profile-directory aria-label="Close profile browser">${nyxAccountMenuIcon('close')}</button></header>
+      <header class="nyx-profile-directory-header"><div><span>NYX COMMUNITY</span><h2 id="nyxProfileDirectoryTitle">${requestedProfileUid?'Profile':'Community profiles'}</h2><p>Discover the people using Nyx.</p></div><button type="button" data-close-profile-directory aria-label="Close community profiles">${nyxAccountMenuIcon('close')}</button></header>
       <div class="nyx-profile-directory-layout">
         <aside class="nyx-profile-directory-sidebar">
           <label class="nyx-profile-directory-search">${nyxAccountMenuIcon('people')}<input type="search" data-profile-directory-search placeholder="S3ARC4 name, username, or role" autocomplete="off"></label>
@@ -792,7 +807,7 @@
       summary.textContent='Loading profiles…';
       try{
         const token=await nyxGetFirebaseToken(true);
-        if(!token)throw new Error('Sign in again to browse profiles.');
+        if(!token)throw new Error('Sign in again to view community profiles.');
         if(requestedProfileUid){
           const data=await nyxProfileMediaFetch(`/api/profiles/${encodeURIComponent(requestedProfileUid)}`,{headers:{Authorization:`Bearer ${token}`},cache:'no-store',signal:controller.signal},'Profile could not be loaded.');
           entries=[{uid:data.uid,profile:data.profile,role:data.role||'member',customRole:data.customRole||null,roleLabel:data.roleLabel||'',online:Boolean(data.online),createdAt:data.createdAt,self:data.uid===nyxFounderSignedInUser?.uid}];
@@ -825,7 +840,7 @@
           try{
             const token=await nyxGetFirebaseToken(true);if(!token)throw new Error('Sign in again.');
             const payload=await nyxProfileMediaFetch(message?'/api/chat/conversations':'/api/chat/relationships/'+encodeURIComponent(requestedProfileUid),{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify(message?{participantUid:requestedProfileUid}:{action})},'The action could not be completed.');
-            if(message){if(!payload.conversation?.id)throw new Error('The conversation could not be opened.');close();openBrowserShellAppTab('/apps/chat/?conversation='+encodeURIComponent(payload.conversation.id));}
+            if(message){if(!payload.conversation?.id)throw new Error('The conversation could not be opened.');close();openWorkspaceShellAppTab('/apps/chat/?conversation='+encodeURIComponent(payload.conversation.id));}
             else{relationship=(payload.relationships||[]).find(item=>item.uid===requestedProfileUid)||null;relationshipReady=true;}
           }catch(error){relationshipError=error.message}finally{contactBusy=false;if(overlay.isConnected)renderProfile(entries[0])}
         })();return;
@@ -868,7 +883,7 @@
   function ensureNyxAccountButton(){
     const existing=document.getElementById('nyxAccountButton');
     const signedIn=Boolean(nyxFounderSignedInUser);
-    const host=document.body.classList.contains('browser-shell')?document.querySelector('.nyx-visual-dock [data-nyx-profile-slot]')||document.querySelector('.top-os [data-nyx-profile-slot]')||document.querySelector('.browser-home:not(.hidden) [data-nyx-profile-slot]')||document.querySelector('.browser-home [data-nyx-profile-slot]'):document.querySelector('.status-icons');
+    const host=document.body.classList.contains('workspace-shell')?document.querySelector('.nyx-visual-dock [data-nyx-profile-slot]')||document.querySelector('.top-os [data-nyx-profile-slot]')||document.querySelector('.workspace-home:not(.hidden) [data-nyx-profile-slot]')||document.querySelector('.workspace-home [data-nyx-profile-slot]'):document.querySelector('.status-icons');
     if(!host){return}
     if(existing&&existing.parentElement!==host){closeNyxAccountMenu();existing.remove()}
     const button=document.getElementById('nyxAccountButton')||document.createElement('button');
@@ -962,10 +977,10 @@
         const response=await fetch('/api/founder-profile/auth-config',{cache:'no-store'});
         nyxFounderAuthConfig=await response.json();
         if(!nyxFounderAuthConfig?.enabled){if(response.ok&&nyxFounderAuthConfig?.enabled===false)syncNyxPublisherMode('standard');return;}
-        const [{initializeApp,getApps},{getAuth,onAuthStateChanged,setPersistence,browserLocalPersistence}]=await Promise.all([import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')]);
+        const [{initializeApp,getApps},{getAuth,onAuthStateChanged,setPersistence,browserLocalPersistence:workspaceLocalPersistence}]=await Promise.all([import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')]);
         const app=getApps().find(item=>item.name==='nyx-founder-owner')||initializeApp({apiKey:nyxFounderAuthConfig.apiKey,authDomain:`${nyxFounderAuthConfig.projectId}.firebaseapp.com`,projectId:nyxFounderAuthConfig.projectId},'nyx-founder-owner');
         nyxFounderFirebaseAuth=getAuth(app);
-        try{await setPersistence(nyxFounderFirebaseAuth,browserLocalPersistence)}
+        try{await setPersistence(nyxFounderFirebaseAuth,workspaceLocalPersistence)}
         catch(error){console.warn('Nyx could not enable persistent sign-in:',error)}
         if(typeof nyxFounderFirebaseAuth.authStateReady==='function')await nyxFounderFirebaseAuth.authStateReady();
         onAuthStateChanged(nyxFounderFirebaseAuth,async user=>{syncNyxPublisherMode('pending');nyxFounderSignedInUser=user||null;
@@ -1830,7 +1845,7 @@
       <section><h2>8. Intellectual Property</h2><p>Unless otherwise stated, Nyx, including its software, branding, design, graphics, logos, interface, and original content, is owned by Nyx or its licensors and is protected by applicable intellectual property laws.</p><p>You may not copy, modify, distribute, reverse engineer, sell, or commercially exploit any portion of the Service without prior written permission unless permitted by applicable law.</p></section>
       <section><h2>9. Availability</h2><p>The Service is provided on an <strong>"AS IS"</strong> and <strong>"AS AVAILABLE"</strong> basis.</p><p>We do not guarantee that Nyx will always be available, uninterrupted, secure, or error-free.</p><p>Features may be modified, suspended, or discontinued at any time.</p></section>
       <section><h2>10. Privacy</h2><p>Your use of Nyx is also subject to our Privacy Policy.</p><p>By using the Service, you acknowledge that Nyx may collect and process information necessary to operate, maintain, improve, and secure the Service.</p></section>
-      <section><h2>11. Cookies</h2><p>Nyx may use cookies, local storage, or similar technologies to:</p><ul><li>Remember user preferences.</li><li>Improve website performance.</li><li>Analyze anonymous usage statistics.</li><li>Enhance the overall user experience.</li></ul><p>You may disable cookies through your browser settings, although doing so may affect certain features of the Service.</p></section>
+      <section><h2>11. Cookies</h2><p>Nyx may use cookies, local storage, or similar technologies to:</p><ul><li>Remember user preferences.</li><li>Improve website performance.</li><li>Analyze anonymous usage statistics.</li><li>Enhance the overall user experience.</li></ul><p>You may disable cookies through your workspace settings, although doing so may affect certain features of the Service.</p></section>
       <section><h2>12. Limitation of Liability</h2><p>To the fullest extent permitted by applicable law, Nyx and its owners, developers, contributors, affiliates, and service providers shall not be liable for any indirect, incidental, special, exemplary, consequential, or punitive damages arising from or relating to the use of the Service.</p></section>
       <section><h2>13. Indemnification</h2><p>You agree to defend, indemnify, and hold harmless Nyx, its developers, affiliates, contributors, and service providers from any claims, damages, losses, liabilities, and expenses arising from:</p><ul><li>Your use of the Service.</li><li>Your violation of these Terms.</li><li>Your submitted content.</li><li>Your violation of any applicable law or the rights of another person.</li></ul></section>
       <section><h2>14. Termination</h2><p>We may suspend, restrict, or terminate your access to Nyx at any time, with or without notice, if we reasonably believe you have violated these Terms, abused the Service, or created a security or legal risk.</p><p>We may also discontinue the Service, in whole or in part, at any time.</p></section>
@@ -1897,17 +1912,17 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     .nyx-credits-founder-card{display:block;max-width:470px;margin:0;border-color:rgba(255,255,255,.12);border-radius:16px;background:#111216;box-shadow:0 18px 40px rgba(0,0,0,.28)}.nyx-credits-founder-media{min-height:142px;overflow:visible;background:#f3eef5}.nyx-credits-founder-banner{overflow:hidden;border-radius:15px 15px 0 0;background:var(--nyx-founder-banner-color,#f3eef5)}.nyx-credits-founder-banner::after{display:none}.nyx-credits-founder-banner img{object-position:center;opacity:.92}.nyx-credits-founder-avatar{left:18px;bottom:-47px;width:92px;height:92px;border:6px solid #111216;box-shadow:0 0 0 2px rgba(255,255,255,.18),0 8px 18px rgba(0,0,0,.32)}.nyx-credits-founder-status{right:-2px;bottom:1px;border-color:#111216}.nyx-credits-founder-presence{position:absolute;z-index:2;left:118px;bottom:-39px;display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:0 13px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:#202126;color:#d9dde5;font-size:12px;font-weight:650;box-shadow:0 5px 14px rgba(0,0,0,.2)}.nyx-credits-founder-presence i{width:8px;height:8px;border-radius:50%;background:#77849a}.nyx-credits-founder-presence.nyx-founder-status-online i{background:#5bc68a}.nyx-credits-founder-presence.nyx-founder-status-idle i{background:#e4b65a}.nyx-credits-founder-presence.nyx-founder-status-dnd i{background:#df6875}.nyx-credits-founder-copy{padding:60px 20px 21px}.nyx-credits-founder-copy>p.nyx-credits-founder-role{margin:0 0 7px!important;color:#aeb5c1!important;font-size:10px!important;letter-spacing:.08em!important}.nyx-credits-founder-copy h3{font-size:26px!important;line-height:1.1!important}.nyx-credits-founder-handle{margin:4px 0 14px!important;color:#9ba2ae!important}.nyx-credits-founder-bio{color:#d6d9df!important;font-size:13px!important;line-height:1.55!important}.nyx-credits-founder-roles,.nyx-credits-founder-badges{margin-top:14px}.nyx-credits-founder-role,.nyx-credits-founder-badge{border-color:#444750;border-radius:6px;background:#24262d;color:#d9dde5}.nyx-credits-founder-roles .nyx-credits-founder-role:first-child{border-color:color-mix(in srgb,var(--nyx-founder-accent,var(--credits-accent)) 62%,#535763);background:color-mix(in srgb,#262830 82%,var(--nyx-founder-accent,var(--credits-accent)));color:#fff}@media(max-width:720px){.nyx-credits-founder-card{max-width:none}.nyx-credits-founder-media{min-height:132px}.nyx-credits-founder-copy{padding:58px 18px 19px}}
   `;
   const nyxCreditsOwnerImageStyle=`.nyx-credits-owner-image{width:min(394px,100%);margin:0}.nyx-credits-owner-image img{display:block;width:100%;height:auto;border-radius:0}`;
-  const DEFAULT_BROWSER_MODE='scramjet';
-  const DEFAULT_BROWSER_TRANSPORT='libcurlRaw';
-  function normalizeBrowserTransportName(value=DEFAULT_BROWSER_TRANSPORT){
-    const name=String(value || DEFAULT_BROWSER_TRANSPORT).trim().toLowerCase()
+  const DEFAULT_WORKSPACE_MODE='scramjet';
+  const DEFAULT_WORKSPACE_TRANSPORT='libcurlRaw';
+  function normalizeWorkspaceTransportName(value=DEFAULT_WORKSPACE_TRANSPORT){
+    const name=String(value || DEFAULT_WORKSPACE_TRANSPORT).trim().toLowerCase()
       .replace(atob('bGliY3VybA=='),'libcurl').replace('textlib','libcurl')
       .replace(atob('ZXBveHk='),'epoxy').replace('atlas','epoxy');
     if(name==='libcurl' || name==='libcurlraw') return 'libcurlRaw';
     if(name==='epoxy' || name==='wisp' || name==='auto') return name;
-    return DEFAULT_BROWSER_TRANSPORT;
+    return DEFAULT_WORKSPACE_TRANSPORT;
   }
-  if(String(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)).toLowerCase()==='libcurl'){
+  if(String(store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT)).toLowerCase()==='libcurl'){
     store.setText('nyx.transport','libcurlRaw');
   }
   const nyxFontOptions=[
@@ -1944,7 +1959,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   function requiresContainedPopupNavigation(url){
     try{
-      const source=browserShellSourceUrl(url) || String(url || '');
+      const source=workspaceShellSourceUrl(url) || String(url || '');
       const host=new URL(normalize(source),location.href).hostname.replace(/^www\./,'').toLowerCase();
       return host==='aether.cx' || host.endsWith('.aether.cx');
     }catch{return false}
@@ -1952,25 +1967,25 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function popupProtectionForUrl(url){
     return popupProtectionEnabled() || requiresContainedPopupNavigation(url);
   }
-  const browserAdResourceSignature=/(?:^|[./_-])(?:adinplay|adpushup|adservice|adserver|adnxs|adsrvr|adsterra|adtrafficquality|advertising|amazon-adsystem|clickadu|criteo|doubleclick|exoclick|gamedistribution|gamemonetize|googleadservices|googlesyndication|hilltopads|imasdk|intergi|mgid|monetag|onclickads|openx|outbrain|pagead|playwire|poki-master-loader|poki-sdk|popads|popcash|propellerads|pubmatic|r9x|revcontent|rubiconproject|taboola|trafficjunky|venatus)(?:[./?&=_-]|$)/i;
-  const browserAdElementSelector='iframe[src*="adinplay"],iframe[src*="adtrafficquality"],iframe[src*="doubleclick"],iframe[src*="googlesyndication"],iframe[src*="googleadservices"],iframe[src*="adservice"],iframe[src*="adnxs"],iframe[src*="playwire"],iframe[src*="r9x.in"],iframe[src*="taboola"],iframe[src*="outbrain"],iframe[src*="ads.emulatorjs.org"],iframe[src*="/ad-campaigns/"],script[src*="adinplay"],script[src*="doubleclick"],script[src*="googlesyndication"],script[src*="googleadservices"],script[src*="adservice"],script[src*="adtrafficquality"],script[src*="gamedistribution"],script[src*="gamemonetize"],script[src*="imasdk"],script[src*="playwire"],script[src*="poki-master-loader"],script[src*="poki-sdk"],script[src*="r9x.in"],script[src*="/ads.js"],.adsbygoogle,[data-ad-client],[data-ad-slot],[id^="google_ads"],[id*="google_ads"],[id^="ad-container"],[class~="ad-container"],[class~="ad-banner"],[class~="ad-wrapper"],[class~="ad-overlay"],[class~="advertisement"],[aria-label="Advertisement"]';
-  const browserInjectedAdSignature=/(?:reminder\s*\(\s*\d+\s*\)[\s\S]{0,180}download\s+pending)|(?:download\s+pending[\s\S]{0,180}finish\s+it\s+now)|(?:finish\s+it\s+now[\s\S]{0,180}(?:close|continue))|(?:\[\s*\d+\s*\]\s*update\s*:\s*opera\s+browser[\s\S]{0,180}install)|(?:install\s+(?:opera\s+browser|browser\s+update|extension)[\s\S]{0,180}(?:install\s+for\s+free|continue|download))|(?:sponsored\s+(?:download|update)[\s\S]{0,120}(?:install|continue))/i;
+  const workspaceAdResourceSignature=/(?:^|[./_-])(?:adinplay|adpushup|adservice|adserver|adnxs|adsrvr|adsterra|adtrafficquality|advertising|amazon-adsystem|clickadu|criteo|doubleclick|exoclick|gamedistribution|gamemonetize|googleadservices|googlesyndication|hilltopads|imasdk|intergi|mgid|monetag|onclickads|openx|outbrain|pagead|playwire|poki-master-loader|poki-sdk|popads|popcash|propellerads|pubmatic|r9x|revcontent|rubiconproject|taboola|trafficjunky|venatus)(?:[./?&=_-]|$)/i;
+  const workspaceAdElementSelector='iframe[src*="adinplay"],iframe[src*="adtrafficquality"],iframe[src*="doubleclick"],iframe[src*="googlesyndication"],iframe[src*="googleadservices"],iframe[src*="adservice"],iframe[src*="adnxs"],iframe[src*="playwire"],iframe[src*="r9x.in"],iframe[src*="taboola"],iframe[src*="outbrain"],iframe[src*="ads.emulatorjs.org"],iframe[src*="/ad-campaigns/"],script[src*="adinplay"],script[src*="doubleclick"],script[src*="googlesyndication"],script[src*="googleadservices"],script[src*="adservice"],script[src*="adtrafficquality"],script[src*="gamedistribution"],script[src*="gamemonetize"],script[src*="imasdk"],script[src*="playwire"],script[src*="poki-master-loader"],script[src*="poki-sdk"],script[src*="r9x.in"],script[src*="/ads.js"],.adsbygoogle,[data-ad-client],[data-ad-slot],[id^="google_ads"],[id*="google_ads"],[id^="ad-container"],[class~="ad-container"],[class~="ad-banner"],[class~="ad-wrapper"],[class~="ad-overlay"],[class~="advertisement"],[aria-label="Advertisement"]';
+  const workspaceAttachedAdSignature=/(?:reminder\s*\(\s*\d+\s*\)[\s\S]{0,180}download\s+pending)|(?:download\s+pending[\s\S]{0,180}finish\s+it\s+now)|(?:finish\s+it\s+now[\s\S]{0,180}(?:close|continue))|(?:\[\s*\d+\s*\]\s*update\s*:\s*opera\s+browser[\s\S]{0,180}install)|(?:install\s+(?:opera\s+browser|browser\s+update|extension)[\s\S]{0,180}(?:install\s+for\s+free|continue|download))|(?:sponsored\s+(?:download|update)[\s\S]{0,120}(?:install|continue))/i;
 
 
 
 
 
-  const knownNyxOverlaySelector='.nyx-prompt-shade,.nyx-modal-shade,.nyx-download-safety-shade,.nyx-tos-gate,.nyx-release-notes-overlay,.setup-screen,.setup-panel,.lock-screen,.nyx-browser-tab-sidebar,.nyx-visual-dock,.browser-shell-settings-overlay,.nyx-dashboard-menu,.nyx-account-menu,.nyx-account-overlay,.nyx-user-profile-overlay,.nyx-profile-directory-overlay,.nyx-founder-editor-overlay,.nyx-owner-dashboard-overlay,.context-menu,[data-nyx-owned-overlay]';
-  function isBrowserInjectedOverlay(node){
+  const knownNyxOverlaySelector='.nyx-prompt-shade,.nyx-modal-shade,.nyx-download-safety-shade,.nyx-tos-gate,.nyx-release-notes-overlay,.setup-screen,.setup-panel,.lock-screen,.nyx-workspace-tab-sidebar,.nyx-visual-dock,.workspace-shell-settings-overlay,.nyx-dashboard-menu,.nyx-account-menu,.nyx-account-overlay,.nyx-user-profile-overlay,.nyx-profile-directory-overlay,.nyx-founder-editor-overlay,.nyx-owner-dashboard-overlay,.context-menu,[data-nyx-owned-overlay]';
+  function isWorkspaceAttachedOverlay(node){
     if(!(node instanceof Element) || node===document.body || node===document.documentElement) return false;
-    if(node.matches('#desktop,.top-os,.window,.browser-window,.browser-body,.browser-home,#nyxStudyHubStartup,#nyxStudyHubBackground,#nyxPrivacyCover,#nyxWaveBg,#setupLaunchScreen,.nyx-prompt-shade,.nyx-modal-shade')) return false;
+    if(node.matches('#desktop,.top-os,.window,.workspace-window,.workspace-body,.workspace-home,#nyxStudyHubStartup,#nyxStudyHubBackground,#nyxPrivacyCover,#nyxWaveBg,#setupLaunchScreen,.nyx-prompt-shade,.nyx-modal-shade')) return false;
     if(node.closest(knownNyxOverlaySelector)) return false;
     const frames=node.matches('iframe') ? [node] : [...node.querySelectorAll('iframe')];
-    if(frames.some(frame=>!frame.matches('#nyxStudyHubStartup,#nyxStudyHubBackground,#nyxPrivacyCover,#nyxWaveBg,.browser-body > iframe.view,iframe[title="nyx"]'))) return true;
+    if(frames.some(frame=>!frame.matches('#nyxStudyHubStartup,#nyxStudyHubBackground,#nyxPrivacyCover,#nyxWaveBg,.workspace-body > iframe.view,iframe[title="nyx"]'))) return true;
     const resource=String(node.getAttribute('src') || node.getAttribute('href') || node.getAttribute('data-src') || '');
-    if(resource && browserAdResourceSignature.test(resource)) return true;
+    if(resource && workspaceAdResourceSignature.test(resource)) return true;
     const text=String(node.innerText || node.textContent || '').replace(/\s+/g,' ').trim().slice(0,1200);
-    if(browserInjectedAdSignature.test(text)) return true;
+    if(workspaceAttachedAdSignature.test(text)) return true;
     try{
       const style=getComputedStyle(node);
       const rect=node.getBoundingClientRect();
@@ -1983,48 +1998,48 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       return layered && large && interactive && (!Number.isFinite(zIndex) || zIndex>=100);
     }catch{return false}
   }
-  function browserInjectedOverlayRoot(node){
+  function workspaceAttachedOverlayRoot(node){
     let root=node instanceof Element ? node : node?.parentElement;
     if(!root) return null;
-    let candidate=isBrowserInjectedOverlay(root) ? root : null;
+    let candidate=isWorkspaceAttachedOverlay(root) ? root : null;
     for(let depth=0;root?.parentElement && depth<8;depth+=1){
       const parent=root.parentElement;
       if(parent===document.body || parent===document.documentElement) break;
-      if(parent.matches('#desktop,.top-os,.window,.browser-window,.browser-body,.browser-home')) break;
+      if(parent.matches('#desktop,.top-os,.window,.workspace-window,.workspace-body,.workspace-home')) break;
       root=parent;
-      if(isBrowserInjectedOverlay(root)) candidate=root;
+      if(isWorkspaceAttachedOverlay(root)) candidate=root;
     }
     return candidate;
   }
-  function cleanupBrowserInjectedAds(root=document){
+  function cleanupWorkspaceAttachedAds(root=document){
     const candidates=[];
     if(root instanceof Element) candidates.push(root);
-    root.querySelectorAll?.('body > *, #desktop > *, .browser-window > *')?.forEach(node=>candidates.push(node));
+    root.querySelectorAll?.('body > *, #desktop > *, .workspace-window > *')?.forEach(node=>candidates.push(node));
     const removed=new Set();
     for(const candidate of candidates){
-      const overlay=browserInjectedOverlayRoot(candidate);
+      const overlay=workspaceAttachedOverlayRoot(candidate);
       if(!overlay || removed.has(overlay) || !overlay.isConnected) continue;
       removed.add(overlay);
       overlay.remove();
-      console.info('Nyx removed an ad overlay that escaped its browser tab.');
+      console.info('Nyx removed an ad overlay that escaped its workspace tab.');
     }
     return removed.size;
   }
-  let browserOverlayQuarantineInstalled=false;
-  let browserOverlayQuarantineUntil=0;
-  function installBrowserOverlayQuarantine(){
-    if(browserOverlayQuarantineInstalled || !document.documentElement) return;
-    browserOverlayQuarantineInstalled=true;
+  let workspaceOverlayQuarantineInstalled=false;
+  let workspaceOverlayQuarantineUntil=0;
+  function installWorkspaceOverlayQuarantine(){
+    if(workspaceOverlayQuarantineInstalled || !document.documentElement) return;
+    workspaceOverlayQuarantineInstalled=true;
     const inspectRoot=root=>{
-      const overlay=browserInjectedOverlayRoot(root);
+      const overlay=workspaceAttachedOverlayRoot(root);
       if(overlay?.isConnected){
         overlay.remove();
-        console.info('Nyx blocked an ad overlay from leaving its browser tab.');
+        console.info('Nyx blocked an ad overlay from leaving its workspace tab.');
       }
     };
     const inspect=records=>{
       if(!popupProtectionEnabled()) return;
-      if(!document.querySelector('iframe[data-nyx-browser-contained="true"]') && Date.now()>browserOverlayQuarantineUntil) return;
+      if(!document.querySelector('iframe[data-nyx-workspace-contained="true"]') && Date.now()>workspaceOverlayQuarantineUntil) return;
       for(const record of records){
         if(record.type!=='childList') continue;
         record.addedNodes.forEach(root=>{
@@ -2035,9 +2050,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
     };
     new MutationObserver(inspect).observe(document.documentElement,{childList:true,subtree:true});
-    cleanupBrowserInjectedAds();
+    cleanupWorkspaceAttachedAds();
   }
-  installBrowserOverlayQuarantine();
+  installWorkspaceOverlayQuarantine();
   function isAnimexUrl(url){
     try{
       const host=new URL(normalize(url),location.href).hostname.replace(/^www\./,'').toLowerCase();
@@ -2076,8 +2091,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function nyxDownloadCheckUrl(downloadUrl,sourceUrl=''){
     const actual=String(downloadUrl || '').trim();
     const source=String(sourceUrl || '').trim();
-    if(/^(?:blob|data):/i.test(actual)) return browserShellSourceUrl(source) || source;
-    return browserShellSourceUrl(actual) || actual || browserShellSourceUrl(source) || source;
+    if(/^(?:blob|data):/i.test(actual)) return workspaceShellSourceUrl(source) || source;
+    return workspaceShellSourceUrl(actual) || actual || workspaceShellSourceUrl(source) || source;
   }
   function nyxDownloadSafetyDialog(result,{filename,url}={}){
     document.querySelectorAll('.nyx-download-safety-shade').forEach(element=>element.remove());
@@ -2115,7 +2130,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       shade.querySelector('button')?.focus();
     });
   }
-  async function nyxRequestBrowserDownload(downloadUrl,filename='',sourceUrl=''){
+  async function nyxRequestWorkspaceDownload(downloadUrl,filename='',sourceUrl=''){
     const href=String(downloadUrl || '').trim();
     if(!href || /^(?:javascript|vbscript):/i.test(href)){
       toast('Nyx blocked an invalid download address');
@@ -2180,9 +2195,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   };
 
   const hasHostedBackend = () => location.protocol === 'http:' || location.protocol === 'https:';
-  const browserShellTabs = [];
-  const browserShellOpeningTabs = new Set();
-  let browserShellActiveTab = null;
+  const workspaceShellTabs = [];
+  const workspaceShellOpeningTabs = new Set();
+  let workspaceShellActiveTab = null;
   let nyxErudaLoadPromise = null;
   let nyxErudaHost = null;
   let nyxErudaInitialized = false;
@@ -2207,7 +2222,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(nyxErudaHost) nyxErudaHost.hidden=true;
   }
   async function showNyxErudaPanel(win){
-    const body=win?.querySelector('.browser-body');
+    const body=win?.querySelector('.workspace-body');
     if(!body) return;
     let host=body.querySelector(':scope > .nyx-eruda-host');
     if(!host){
@@ -2236,7 +2251,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
     try{
       const eruda=await loadNyxEruda();
-      if(activeBrowserShellTab()?.url!=='nyx://developer') return;
+      if(activeWorkspaceShellTab()?.url!=='nyx://developer') return;
       if(!nyxErudaInitialized){
         eruda.init({container:mount,tool:['console','elements','network','resources','sources','info','snippets'],useShadowDom:true,autoScale:true,defaults:{displaySize:100,transparency:1,theme:'Dark'}});
         const elementsTool=eruda.get?.('elements');
@@ -2304,7 +2319,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       icon.src=meta.icon;
       icon.alt='';
     });
-    qsa('.nyx-visual-home [data-browser-blank-input]').forEach(input=>{
+    qsa('.nyx-visual-home [data-workspace-blank-input]').forEach(input=>{
       const text=`S3ARC4 ${meta.label} or type a U3L`;
       input.placeholder=text;
       input.setAttribute('aria-label',text);
@@ -2629,25 +2644,25 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     classlink:'./assets/icons/classlink-logo.png'
   };
   const nyxTabTitle = '\u057c\u028f\u04fc';
-  const studyHubTabTitle = 'StudyHub — Where Education Is Achievable';
-  const studyHubTabFavicon = './assets/icons/studyhub.svg?v=20260903-cap-v3';
+  const learningTabTitle = 'Learning Commons — Where Education Is Achievable';
+  const learningTabFavicon = './assets/icons/studyhub.svg?v=20260903-cap-v3';
   let nyxTabFavicon = './assets/icons/nyx-cat-moon-small.svg?v=3';
   const nyxFaviconHref = () => $('appFavicon')?.href || nyxTabFavicon;
-  function migrateStudyHubTabIdentity(){
-    if(store.text('nyx.tabIdentityVersion','')==='studyhub-cap-v3') return;
+  function migrateLearningTabIdentity(){
+    if(store.text('nyx.tabIdentityVersion','')==='learning-commons-v4') return;
     const savedPreset=store.text('nyx.logo','').trim();
     const savedTitle=store.text('nyx.tabTitle','').trim();
     const savedFavicon=store.text('nyx.tabFavicon','').trim();
-    const usesStudyHubIdentity=(!savedPreset || savedPreset==='nyx')
-      && (!savedTitle || savedTitle===studyHubTabTitle)
+    const usesLearningIdentity=(!savedPreset || savedPreset==='nyx')
+      && (!savedTitle || savedTitle===learningTabTitle || /^StudyHub(?:\s+[—-].*)?$/.test(savedTitle))
       && (!savedFavicon || /(?:^|\/)assets\/icons\/studyhub\.svg(?:[?#].*)?$/i.test(savedFavicon));
-    if(usesStudyHubIdentity){
-      store.setText('nyx.tabTitle',studyHubTabTitle);
-      store.setText('nyx.tabFavicon',studyHubTabFavicon);
+    if(usesLearningIdentity){
+      store.setText('nyx.tabTitle',learningTabTitle);
+      store.setText('nyx.tabFavicon',learningTabFavicon);
     }
-    store.setText('nyx.tabIdentityVersion','studyhub-cap-v3');
+    store.setText('nyx.tabIdentityVersion','learning-commons-v4');
   }
-  migrateStudyHubTabIdentity();
+  migrateLearningTabIdentity();
   async function applyNyxLogoTheme(theme=store.text('nyx.theme','default')){
     if(!window.NyxLogo) return;
     try{
@@ -2665,14 +2680,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const favicon=$('appFavicon');
         if(favicon) favicon.href=compactUrl;
       }
-      browserShellTabs.forEach(tab=>{
+      workspaceShellTabs.forEach(tab=>{
         if((tab.title==='Home' && !tab.url) || /^nyx:\/\//i.test(String(tab.url || '')) || tab.icon===themedUrl) tab.icon=compactUrl;
       });
-      activeBrowser?.tabs?.forEach(tab=>{
+      activeWorkspace?.tabs?.forEach(tab=>{
         if((tab.title==='Home' && !tab.url) || /^nyx:\/\//i.test(String(tab.url || '')) || tab.icon===themedUrl) tab.icon=compactUrl;
       });
-      renderBrowserShellTabs();
-      activeBrowser?.renderTabs?.();
+      renderWorkspaceShellTabs();
+      activeWorkspace?.renderTabs?.();
       if(nyxPresetSelected) setCurrentTabCloak(store.text('nyx.tabTitle',nyxTabTitle),compactUrl,false);
     }catch(error){
       console.warn('Nyx logo theme could not be applied:',error);
@@ -2767,7 +2782,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const raw=String(url || '').trim();
     if(!raw || raw==='about:blank' || raw.startsWith('nyx://')) return '';
     try{
-      const source=typeof browserShellSourceUrl==='function' ? (browserShellSourceUrl(raw) || raw) : raw;
+      const source=typeof workspaceShellSourceUrl==='function' ? (workspaceShellSourceUrl(raw) || raw) : raw;
       const parsed=new URL(source,location.href);
       if(!/^https?:$/.test(parsed.protocol)) return '';
       return new URL('/favicon.ico',parsed.origin).href;
@@ -2776,7 +2791,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function websiteFaviconFallbackUrl(url){
     const raw=String(url || '').trim();
     try{
-      const source=typeof browserShellSourceUrl==='function' ? (browserShellSourceUrl(raw) || raw) : raw;
+      const source=typeof workspaceShellSourceUrl==='function' ? (workspaceShellSourceUrl(raw) || raw) : raw;
       const parsed=new URL(source,location.href);
       if(!/^https?:$/.test(parsed.protocol)) return '';
       return `https://www.google.com/s2/favicons?sz=128&domain_url=${encodeURIComponent(parsed.origin)}`;
@@ -2785,7 +2800,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function websiteFaviconFallbackUrls(url){
     const primary=websiteFaviconFallbackUrl(url);
     try{
-      const source=typeof browserShellSourceUrl==='function' ? (browserShellSourceUrl(String(url || '').trim()) || url) : url;
+      const source=typeof workspaceShellSourceUrl==='function' ? (workspaceShellSourceUrl(String(url || '').trim()) || url) : url;
       const host=new URL(source,location.href).hostname;
       const duckDuckGo=host ? `https://icons.duckduckgo.com/ip3/${encodeURIComponent(host)}.ico` : '';
       return [...new Set([primary,duckDuckGo].filter(Boolean))];
@@ -2821,7 +2836,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(/(?:^|\/)apps\/movies(?:\/|$)/i.test(raw)) return appIcon('nyx-movies');
     if(/(?:^|\/)apps\/code-studio(?:\/|$)/i.test(raw)) return appIcon('code-studio');
     if(/(?:^|\/)apps\/code-tutorials(?:\/|$)/i.test(raw)) return appIcon('code-tutorials');
-    const source=typeof browserShellSourceUrl==='function' ? (browserShellSourceUrl(raw) || raw) : raw;
+    const source=typeof workspaceShellSourceUrl==='function' ? (workspaceShellSourceUrl(raw) || raw) : raw;
     if(source.startsWith('assets/games/') || source.startsWith('assets/ugs/') || source.startsWith('/assets/games/') || source.startsWith('/assets/ugs/')) return appIcon('games');
     try{
       const host=new URL(source,location.href).hostname.replace(/^www\./,'').toLowerCase();
@@ -2887,45 +2902,45 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function isExternalWebsiteUrl(url){
     const raw=String(url || '').trim();
     if(!raw) return false;
-    const source=typeof browserShellSourceUrl==='function' ? (browserShellSourceUrl(raw) || raw) : raw;
+    const source=typeof workspaceShellSourceUrl==='function' ? (workspaceShellSourceUrl(raw) || raw) : raw;
     try{
       const parsed=new URL(source,location.href);
       return /^https?:$/.test(parsed.protocol) && parsed.origin!==location.origin;
     }catch{return false}
   }
-  function browserChromeTitle(title,url){
+  function workspaceChromeTitle(title,url){
     return websiteDetailsHidden() && isExternalWebsiteUrl(url) ? 'Website Hidden' : (title || titleForUrl(url));
   }
-  function browserChromeIcon(icon,url){
+  function workspaceChromeIcon(icon,url){
     return websiteDetailsHidden() && isExternalWebsiteUrl(url) ? favicons.nyx : (icon || iconForUrl(url));
   }
   function refreshWebsiteDetailsVisibility(){
-    activeBrowser?.renderTabs?.();
-    renderBrowserShellTabs();
-    const activeTab=activeBrowser?.tabs?.find(tab=>tab.id===activeBrowser.active);
-    const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
+    activeWorkspace?.renderTabs?.();
+    renderWorkspaceShellTabs();
+    const activeTab=activeWorkspace?.tabs?.find(tab=>tab.id===activeWorkspace.active);
+    const shellTab=workspaceShellTabs.find(tab=>tab.id===workspaceShellActiveTab);
     const url=activeTab?.sourceUrl || activeTab?.url || shellTab?.url || '';
     const title=activeTab?.title || shellTab?.title || 'New Tab';
-    const titlebar=activeBrowser?.win?.querySelector?.('.titlebar-title');
-    if(titlebar) titlebar.textContent=browserChromeTitle(title,url);
+    const titlebar=activeWorkspace?.win?.querySelector?.('.titlebar-title');
+    if(titlebar) titlebar.textContent=workspaceChromeTitle(title,url);
   }
-  let zTop = 20, winCount = 0, activeBrowser = null, antiCloseEnabled = store.get('nyx.antiClose',true), panicCaptureArmed = false, antiClosePanicBypass = false;
+  let zTop = 20, winCount = 0, activeWorkspace = null, antiCloseEnabled = store.get('nyx.antiClose',true), panicCaptureArmed = false, antiClosePanicBypass = false;
   let antiCloseConfirmHandler = null, antiCloseGestureHandler = null, antiCloseRearmTimer = null, antiCloseHadGesture = false;
   let renderedChromeMode = '';
-  let scramjetInstallPromise = null;
-  let scramjetController = null;
-  let browserProxyPrewarmScheduled = false;
-  let scramjetV1InstallPromise = null;
-  let scramjetV1Controller = null;
-  let scramjetV1InstallError = '';
-  let bareMuxConnection = null;
-  let scramjetTransport = null;
-  let scramjetTransportKey = '';
-  let scramjetTransportPending = null;
-  let browserTransportOverride = '';
-  let scramjetInstallError = '';
+  let studyjetInstallPromise = null;
+  let studyjetController = null;
+  let workspaceConnectionPrewarmScheduled = false;
+  let studyjetV1InstallPromise = null;
+  let studyjetV1Controller = null;
+  let studyjetV1InstallError = '';
+  let bookmuxConnection = null;
+  let studyjetTransport = null;
+  let studyjetTransportKey = '';
+  let studyjetTransportPending = null;
+  let workspaceTransportOverride = '';
+  let studyjetInstallError = '';
   let nyxPresenceCount = null;
-  const proxyPrivacyGuardSource=`(() => {
+  const connectionPrivacyGuardSource=`(() => {
     if (typeof globalThis === "undefined" || globalThis.__nyxProxyPrivacyInstalled) return;
     globalThis.__nyxProxyPrivacyInstalled = true;
     const denied = Object.freeze({ code: 1, message: "Location access is disabled in Nyx private tabs." });
@@ -2956,13 +2971,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       } catch {}
     }
   })();`;
-  function createProxyPrivacySessionId(){
+  function createConnectionPrivacySessionId(){
     const random=crypto.randomUUID?.() || `${Date.now()}_${Math.random().toString(36).slice(2)}_${Math.random().toString(36).slice(2)}`;
     return `nyx_${String(random).replace(/[^a-z0-9_-]/gi,'_').slice(0,72)}`;
   }
 
-  let scramjetRuntimeGuardSource = '';
-  const scramjetNvidiaAuthGuardSource=`(() => {
+  let studyjetRuntimeGuardSource = '';
+  const studyjetNvidiaAuthGuardSource=`(() => {
     if (typeof window === "undefined" || window.__nyxNvidiaAuthCompatibility) return;
     let hostname="";
     let address="";
@@ -2997,7 +3012,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     try { Object.defineProperty(document,"hasStorageAccess",{configurable:true,value:()=>Promise.resolve(true)}); } catch {}
     try { Object.defineProperty(document,"requestStorageAccess",{configurable:true,value:()=>Promise.resolve(storageHandle())}); } catch {}
   })();`;
-  const scramjetSpotifyChromeOsGuardSource=`(() => {
+  const studyjetSpotifyChromeOsGuardSource=`(() => {
     if (typeof window === "undefined" || window.__nyxSpotifyChromeOsCompatibility) return;
     const nativeUserAgent = String(navigator.userAgent || "");
     if (!/\\bCrOS\\b/i.test(nativeUserAgent)) return;
@@ -3032,11 +3047,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       defineNavigatorValue("userAgentData", desktopData);
     }
   })();`;
-  const browserAdBlockRuntimeSource=`(() => {
-    if (typeof window === "undefined" || window.__nyxBrowserAdBlock) return;
-    window.__nyxBrowserAdBlock = true;
-    const blockedResource=${browserAdResourceSignature};
-    const adSelector=${JSON.stringify(browserAdElementSelector)};
+  const workspaceAdBlockRuntimeSource=`(() => {
+    if (typeof window === "undefined" || window.__nyxWorkspaceAdBlock) return;
+    window.__nyxWorkspaceAdBlock = true;
+    const blockedResource=${workspaceAdResourceSignature};
+    const adSelector=${JSON.stringify(workspaceAdElementSelector)};
     const protectionEnabled=()=>{
       try {
         const value=localStorage.getItem("nyx.popupProtection");
@@ -3090,7 +3105,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     };
     try {
       const style=document.createElement("style");
-      style.id="nyx-browser-ad-block-style";
+      style.id="nyx-page-cleanup-style";
       style.textContent=adSelector+"{display:none!important;visibility:hidden!important;pointer-events:none!important;width:0!important;height:0!important;min-width:0!important;min-height:0!important}";
       (document.head || document.documentElement).appendChild(style);
     } catch {}
@@ -3165,7 +3180,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     queueMicrotask(notifyGameDistributionReady);
     clean(document);
   })();`;
-  const scramjetMinimalRuntimeGuardSource=`(() => {
+  const studyjetMinimalRuntimeGuardSource=`(() => {
     if (typeof window === "undefined" || window.__nyxScramjetMinimalGuards) return;
     window.__nyxScramjetMinimalGuards = true;
     try {
@@ -3399,7 +3414,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       document.addEventListener("submit", stopPopupSubmit, true);
     } catch {}
   })();`;
-  const scramjetHelperRuntimeGuardSource=`(() => {
+  const studyjetHelperRuntimeGuardSource=`(() => {
     if (typeof window === "undefined" || window.__nyxScramjetHelperGuards) return;
     window.__nyxScramjetHelperGuards = true;
     try {
@@ -3431,12 +3446,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       window.$scramjet$pushsourcemap = window.$scramjet$pushsourcemap || noop;
     } catch {}
   })();`;
-  const proxyStateVersion='nyx-proxy-state-20261005-studyjet-only-v14';
-  const scramjetStateVersion='nyx-scramjet-state-20260814-private-tabs-v2';
-  const scramjetV1StateVersion='nyx-scramjet-v1-ready-before-route-v5';
-  const scramjetServiceWorkerUrl='/scramjet.sw.js?v=nyx-sj-20260905-cookie-owner-v5';
-  const scramjetV1RuntimeUrl='/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-ready-before-route-v5';
-  const scramjetV1ServiceWorkerUrl='/scramjet-v1.sw.js?v=nyx-sj-v1-ready-before-route-v5';
+  const connectionStateVersion='nyx-proxy-state-20261005-studyjet-only-v14';
+  const studyjetStateVersion='nyx-scramjet-state-20260814-private-tabs-v2';
+  const studyjetV1StateVersion='nyx-scramjet-v1-ready-before-route-v5';
+  const studyjetServiceWorkerUrl='/scramjet.sw.js?v=nyx-sj-20260905-cookie-owner-v5';
+  const studyjetV1RuntimeUrl='/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-ready-before-route-v5';
+  const studyjetV1ServiceWorkerUrl='/scramjet-v1.sw.js?v=nyx-sj-v1-ready-before-route-v5';
   function installNyxConsoleDedupe(scope='top'){
     if(console.__nyxDedupeInstalled) return;
     const seen=new Map();
@@ -3534,25 +3549,25 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     hieroglyphObserver.observe(document.body,{childList:true,subtree:true});
   }
 
-  function normalizeBrowserChromeButtons(root=document){
+  function normalizeWorkspaceChromeButtons(root=document){
     const scope=root || document;
     const keepOne=selector=>{
       const items=[...scope.querySelectorAll(selector)];
       items.slice(1).forEach(item=>item.remove());
     };
-    keepOne('form.browser-mode-address [data-browser-shell-settings]');
-    keepOne('form.browser-mode-address .browser-mode-weather');
-    keepOne('form.browser-mode-address [data-browser-shell-menu]');
-    keepOne('#browserBookmarkPanel');
-    keepOne('#browserModeMenu');
-    const menu=scope.querySelector('#browserModeMenu');
+    keepOne('form.workspace-mode-address [data-workspace-shell-settings]');
+    keepOne('form.workspace-mode-address .workspace-mode-weather');
+    keepOne('form.workspace-mode-address [data-workspace-shell-menu]');
+    keepOne('#workspaceBookmarkPanel');
+    keepOne('#workspaceModeMenu');
+    const menu=scope.querySelector('#workspaceModeMenu');
     if(menu){
-      [...menu.querySelectorAll('[data-browser-bookmarks-toggle]')].slice(1).forEach(item=>item.remove());
-      menu.querySelector(':scope > [data-browser-shell-new-tab]')?.remove();
+      [...menu.querySelectorAll('[data-workspace-bookmarks-toggle]')].slice(1).forEach(item=>item.remove());
+      menu.querySelector(':scope > [data-workspace-shell-new-tab]')?.remove();
     }
   }
   function bindReloadPointerTurn(root=document){
-    root.querySelectorAll?.('[data-browser-shell-reload],.tool-btn[data-reload]')?.forEach(button=>{
+    root.querySelectorAll?.('[data-workspace-shell-reload],.tool-btn[data-reload]')?.forEach(button=>{
       if(button.dataset.nyxPointerTurnBound==='true') return;
       button.dataset.nyxPointerTurnBound='true';
       let current=0;
@@ -3621,7 +3636,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     applyNyxSidebarExpansion();
   }
   function handleNyxSidebarShortcut(event){
-    if(event.defaultPrevented||event.repeat||event.isComposing||event.key!=='/'||event.ctrlKey||event.metaKey||event.altKey||event.shiftKey||!document.body.classList.contains('browser-shell'))return false;
+    if(event.defaultPrevented||event.repeat||event.isComposing||event.key!=='/'||event.ctrlKey||event.metaKey||event.altKey||event.shiftKey||!document.body.classList.contains('workspace-shell'))return false;
     const target=event.composedPath?.()[0]||event.target;
     if(target?.isContentEditable||target?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role="textbox"],[role="application"],canvas'))return false;
     event.preventDefault();event.stopImmediatePropagation();
@@ -3656,7 +3671,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     nyxVisualDockViewportRepairTimer=setTimeout(enforceNyxVisualDockViewport,260);
   }
   function restoreNyxVisualDock(){
-    const shouldRestore=document.body.classList.contains('browser-shell');
+    const shouldRestore=document.body.classList.contains('workspace-shell');
     const dock=document.querySelector('[data-nyx-visual-dock]');
     if(!shouldRestore) return;
     if(nyxSidebarHidden){enforceNyxVisualDockViewport();return;}
@@ -3712,7 +3727,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(nyxVisualDockRecoveryObserver || !document.body) return;
     nyxVisualDockRecoveryObserver=new MutationObserver(()=>{
       const dock=document.querySelector('[data-nyx-visual-dock]');
-      if(!dock || (document.body.classList.contains('browser-shell') && dock.parentElement!==document.body)) scheduleNyxVisualDockRecovery();
+      if(!dock || (document.body.classList.contains('workspace-shell') && dock.parentElement!==document.body)) scheduleNyxVisualDockRecovery();
     });
     nyxVisualDockRecoveryObserver.observe(document.body,{childList:true,attributes:true,attributeFilter:['class']});
     addEventListener('pageshow',deferNyxVisualDockRecovery);
@@ -3725,9 +3740,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function syncNyxVisualDockState(){
     const dock=document.querySelector('[data-nyx-visual-dock]');
     if(!dock) return;
-    const active=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
+    const active=workspaceShellTabs.find(tab=>tab.id===workspaceShellActiveTab);
     const url=String(active?.url || '').toLowerCase();
-    const settingsOpen=url==='nyx://settings' || Boolean(document.querySelector('.browser-shell-settings-overlay'));
+    const settingsOpen=url==='nyx://settings' || Boolean(document.querySelector('.workspace-shell-settings-overlay'));
     let activeKey='';
     if(settingsOpen) activeKey='settings';
     else if(!url) activeKey='home';
@@ -3799,7 +3814,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
   }
   function ensureNyxVisualDock(){
-    const enabled=document.body.classList.contains('browser-shell');
+    const enabled=document.body.classList.contains('workspace-shell');
     let dock=document.querySelector('[data-nyx-visual-dock]');
     if(!enabled){
       dock?.remove();
@@ -3811,9 +3826,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       dock.className='nyx-visual-dock';
       dock.dataset.nyxVisualDock='';
       dock.setAttribute('aria-label','Nyx navigation');
-      dock.innerHTML=`<div class="nyx-visual-dock-head"><a class="nyx-rail-brand" href="#" data-browser-shell-home-nav aria-label="Nyx home"><img src="/assets/icons/nyx-cat-moon-small.svg?v=3" alt=""><span>NYX</span></a><button class="nyx-visual-dock-expand" data-nyx-dock-expand type="button" aria-expanded="true" aria-label="Collapse sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 3v18"/><path data-sidebar-arrow d="m15 8-4 4 4 4"/></svg></button></div>
+      dock.innerHTML=`<div class="nyx-visual-dock-head"><a class="nyx-rail-brand" href="#" data-workspace-shell-home-nav aria-label="Nyx home"><img src="/assets/icons/nyx-cat-moon-small.svg?v=3" alt=""><span>NYX</span></a><button class="nyx-visual-dock-expand" data-nyx-dock-expand type="button" aria-expanded="true" aria-label="Collapse sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 3v18"/><path data-sidebar-arrow d="m15 8-4 4 4 4"/></svg></button></div>
       <nav aria-label="Nyx destinations">
-        <button type="button" data-nyx-dock-item="home" data-browser-shell-home-nav aria-label="Home">${nyxDashboardIcon('home')}<span>Home</span></button>
+        <button type="button" data-nyx-dock-item="home" data-workspace-shell-home-nav aria-label="Home">${nyxDashboardIcon('home')}<span>Home</span></button>
         <button type="button" data-nyx-dock-item="games" data-app-url="/assets/games/" aria-label="Games">${nyxDashboardIcon('games')}<span>Games</span></button>
         <button type="button" data-nyx-dock-item="music" data-app-url="/apps/nyxify/" aria-label="Music">${nyxDashboardIcon('music')}<span>Music</span></button>
         <button type="button" data-nyx-dock-item="youtube" data-app-url="/apps/nyxtube/" aria-label="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="m10 8 5 3-5 3zM8 21h8"/></svg><span>YouTube</span></button>
@@ -3854,13 +3869,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     };
 
     const headAddButton=dock.querySelector('[data-nyx-dock-new-tab]');
-    if(headAddButton) headAddButton.onclick=()=>openBrowserShellTab('');
+    if(headAddButton) headAddButton.onclick=()=>openWorkspaceShellTab('');
     const youtubeButton=dock.querySelector('[data-nyx-dock-item="youtube"]');
     if(youtubeButton){
       const openYouTube=event=>{
         event?.preventDefault?.();
         event?.stopPropagation?.();
-        openBrowserShellAppTab('/apps/nyxtube/');
+        openWorkspaceShellAppTab('/apps/nyxtube/');
       };
       youtubeButton.onclick=openYouTube;
       youtubeButton.onkeydown=event=>{
@@ -3879,43 +3894,43 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function renderChromeFixed(){
     const top=document.querySelector('.top-os');
     if(top){
-      top.innerHTML="<div class=\"brand-mini\"><button class=\"browser-mode-app-button active\" data-browser-shell-home title=\"Current tab\"><span class=\"browser-home-icon\" aria-hidden=\"true\"></span><span class=\"browser-home-label\">Home</span></button><button class=\"browser-mode-tab\" data-browser-shell-new-tab title=\"New tab\"><span>New tab</span></button></div><span class=\"browser-top-clock\" data-browser-shell-clock>--:--:--</span><form class=\"browser-mode-address\" data-browser-shell-search><button class=\"browser-nav-control\" data-browser-shell-back type=\"button\" title=\"Back\" aria-label=\"Back\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m15 18-6-6 6-6\"></path></svg></button><button class=\"browser-nav-control\" data-browser-shell-forward type=\"button\" title=\"Forward\" aria-label=\"Forward\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"></path></svg></button><button class=\"browser-nav-control\" data-browser-shell-reload type=\"button\" title=\"Reload\" aria-label=\"Reload\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 11a8 8 0 1 0-2.35 5.65\"></path><path d=\"M20 4v7h-7\"></path></svg></button><button class=\"browser-nav-control\" data-browser-shell-home-nav type=\"button\" title=\"Home\" aria-label=\"Home\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m3 11 9-8 9 8\"></path><path d=\"M5 10v10h14V10\"></path><path d=\"M9 20v-6h6v6\"></path></svg></button><input class=\"browser-mode-url\" data-browser-shell-url placeholder=\"S3ARC4 or enter a U3L\" autocomplete=\"off\"><button class=\"browser-mode-bookmark browser-mode-settings\" data-browser-shell-settings data-open=\"settings\" type=\"button\" title=\"Settings\" aria-label=\"Settings\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3\"></circle><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\"></path></svg></button><button class=\"browser-mode-weather\" data-open=\"weather\" type=\"button\" title=\"Weather\" aria-label=\"Weather\"><span class=\"weather-cloud-icon\" aria-hidden=\"true\"></span></button><button data-browser-shell-menu type=\"button\" title=\"Menu\"><span class=\"fresh-real-icon\" aria-hidden=\"true\">⋮</span></button></form><div class=\"browser-bookmark-panel\" id=\"browserBookmarkPanel\" hidden></div><div class=\"browser-mode-menu\" id=\"browserModeMenu\"><button data-browser-shell-new-tab type=\"button\">New tab</button><button data-browser-bookmarks-toggle type=\"button\">Bookmarks</button><button data-open=\"apps\" type=\"button\">Apps</button><hr><button data-open=\"settings\" type=\"button\">Settings</button><button data-browser-hieroglyph-toggle type=\"button\">Hieroglyph Mode</button><button data-app-url=\"/assets/games/index.html\" type=\"button\">GAMES</button><button data-app-url=\"/apps/chat/\" type=\"button\">Chat</button><button data-app-url=\"https://discord.com/app\" type=\"button\">Discord</button><hr><button data-page-fullscreen type=\"button\">Fullscreen</button><button data-shell-about type=\"button\">Open About:Blank</button><button data-shell-about-tab type=\"button\">Open Tab in Abt:Blank</button></div>";
-      const homeNav=top.querySelector('[data-browser-shell-home-nav]');
+      top.innerHTML="<div class=\"brand-mini\"><button class=\"workspace-mode-app-button active\" data-workspace-shell-home title=\"Current tab\"><span class=\"workspace-home-icon\" aria-hidden=\"true\"></span><span class=\"workspace-home-label\">Home</span></button><button class=\"workspace-mode-tab\" data-workspace-shell-new-tab title=\"New tab\"><span>New tab</span></button></div><span class=\"workspace-top-clock\" data-workspace-shell-clock>--:--:--</span><form class=\"workspace-mode-address\" data-workspace-shell-search><button class=\"workspace-nav-control\" data-workspace-shell-back type=\"button\" title=\"Back\" aria-label=\"Back\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m15 18-6-6 6-6\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-forward type=\"button\" title=\"Forward\" aria-label=\"Forward\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-reload type=\"button\" title=\"Reload\" aria-label=\"Reload\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 11a8 8 0 1 0-2.35 5.65\"></path><path d=\"M20 4v7h-7\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-home-nav type=\"button\" title=\"Home\" aria-label=\"Home\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m3 11 9-8 9 8\"></path><path d=\"M5 10v10h14V10\"></path><path d=\"M9 20v-6h6v6\"></path></svg></button><input class=\"workspace-mode-url\" data-workspace-shell-url placeholder=\"S3ARC4 or enter a U3L\" autocomplete=\"off\"><button class=\"workspace-mode-bookmark workspace-mode-settings\" data-workspace-shell-settings data-open=\"settings\" type=\"button\" title=\"Settings\" aria-label=\"Settings\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3\"></circle><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\"></path></svg></button><button class=\"workspace-mode-weather\" data-open=\"weather\" type=\"button\" title=\"Weather\" aria-label=\"Weather\"><span class=\"weather-cloud-icon\" aria-hidden=\"true\"></span></button><button data-workspace-shell-menu type=\"button\" title=\"Menu\"><span class=\"fresh-real-icon\" aria-hidden=\"true\">⋮</span></button></form><div class=\"workspace-bookmark-panel\" id=\"workspaceBookmarkPanel\" hidden></div><div class=\"workspace-mode-menu\" id=\"workspaceModeMenu\"><button data-workspace-shell-new-tab type=\"button\">New tab</button><button data-workspace-bookmarks-toggle type=\"button\">Bookmarks</button><button data-open=\"apps\" type=\"button\">Apps</button><hr><button data-open=\"settings\" type=\"button\">Settings</button><button data-workspace-hieroglyph-toggle type=\"button\">Hieroglyph Mode</button><button data-app-url=\"/assets/games/index.html\" type=\"button\">GAMES</button><button data-app-url=\"/apps/chat/\" type=\"button\">Chat</button><button data-app-url=\"https://discord.com/app\" type=\"button\">Discord</button><hr><button data-page-fullscreen type=\"button\">Fullscreen</button><button data-shell-about type=\"button\">Open About:Blank</button><button data-shell-about-tab type=\"button\">Open Tab in Abt:Blank</button></div>";
+      const homeNav=top.querySelector('[data-workspace-shell-home-nav]');
       if(homeNav) homeNav.innerHTML=nyxDashboardIcon('home');
-      const shellAddress=top.querySelector('form.browser-mode-address');
-      const shellUrl=top.querySelector('[data-browser-shell-url]');
+      const shellAddress=top.querySelector('form.workspace-mode-address');
+      const shellUrl=top.querySelector('[data-workspace-shell-url]');
 
       {
-      const legacyClock=top.querySelector(':scope > .browser-top-clock');
+      const legacyClock=top.querySelector(':scope > .workspace-top-clock');
       legacyClock?.remove();
       shellAddress?.querySelector('[data-open="weather"]')?.remove();
-      const settingsButton=shellAddress?.querySelector('[data-browser-shell-settings]');
-      const menuButton=shellAddress?.querySelector('[data-browser-shell-menu]');
+      const settingsButton=shellAddress?.querySelector('[data-workspace-shell-settings]');
+      const menuButton=shellAddress?.querySelector('[data-workspace-shell-menu]');
       if(menuButton){
-        menuButton.setAttribute('title','Browser menu');
-        menuButton.setAttribute('aria-label','Browser menu');
+        menuButton.setAttribute('title','Workspace menu');
+        menuButton.setAttribute('aria-label','Workspace menu');
         menuButton.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>';
-        top.querySelector('#browserModeMenu')?.insertAdjacentHTML('beforeend','<button type="button" data-open="developer">Developer console</button>');
+        top.querySelector('#workspaceModeMenu')?.insertAdjacentHTML('beforeend','<button type="button" data-open="developer">Developer console</button>');
       }
       const bookmarkButton=document.createElement('button');
       bookmarkButton.type='button';
-      bookmarkButton.className='browser-nav-control browser-mode-bookmark';
-      bookmarkButton.dataset.browserShellBookmark='';
+      bookmarkButton.className='workspace-nav-control workspace-mode-bookmark';
+      bookmarkButton.dataset.workspaceShellBookmark='';
       bookmarkButton.setAttribute('title','Bookmark this page');
       bookmarkButton.setAttribute('aria-label','Bookmark this page');
       bookmarkButton.setAttribute('aria-pressed','false');
-      bookmarkButton.innerHTML=browserBookmarkIcon(false);
+      bookmarkButton.innerHTML=workspaceBookmarkIcon(false);
       if(shellAddress){
-        const backButton=shellAddress.querySelector('[data-browser-shell-back]');
-        const forwardButton=shellAddress.querySelector('[data-browser-shell-forward]');
-        const reloadButton=shellAddress.querySelector('[data-browser-shell-reload]');
+        const backButton=shellAddress.querySelector('[data-workspace-shell-back]');
+        const forwardButton=shellAddress.querySelector('[data-workspace-shell-forward]');
+        const reloadButton=shellAddress.querySelector('[data-workspace-shell-reload]');
         backButton.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4m6-6-6 6 6 6"/></svg>';
         forwardButton.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-6-6 6 6-6 6"/></svg>';
         reloadButton.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M20 12a8 8 0 1 0-2 5"/></svg>';
-        const homeButton=shellAddress.querySelector('[data-browser-shell-home-nav]');
-        const urlField=shellAddress.querySelector('[data-browser-shell-url]');
+        const homeButton=shellAddress.querySelector('[data-workspace-shell-home-nav]');
+        const urlField=shellAddress.querySelector('[data-workspace-shell-url]');
         const secureIndicator=document.createElement('span');
-        secureIndicator.className='browser-mode-secure-indicator';
+        secureIndicator.className='workspace-mode-secure-indicator';
         secureIndicator.setAttribute('role','img');
         secureIndicator.setAttribute('aria-label','Nyx page');
         secureIndicator.title='Nyx page';
@@ -3927,62 +3942,62 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       syncNyxLatencyBubble();
       ensureNyxVisualDock();
       }
-      top.querySelectorAll('.brand-mini button[title],.browser-mode-address button[title]').forEach(button=>{
-        if(!button.getAttribute('aria-label')) button.setAttribute('aria-label',button.getAttribute('title') || 'Browser control');
+      top.querySelectorAll('.brand-mini button[title],.workspace-mode-address button[title]').forEach(button=>{
+        if(!button.getAttribute('aria-label')) button.setAttribute('aria-label',button.getAttribute('title') || 'Workspace control');
         button.removeAttribute('title');
       });
-      top.querySelector('#browserModeMenu > [data-browser-shell-new-tab]')?.remove();
-      normalizeBrowserChromeButtons(top);
+      top.querySelector('#workspaceModeMenu > [data-workspace-shell-new-tab]')?.remove();
+      normalizeWorkspaceChromeButtons(top);
       bindReloadPointerTurn(top);
-      top.querySelector('.brand-mini [data-browser-shell-new-tab]')?.addEventListener('click',event=>{
+      top.querySelector('.brand-mini [data-workspace-shell-new-tab]')?.addEventListener('click',event=>{
         event.nyxShellNewHandled=true;
         event.preventDefault();
         event.stopImmediatePropagation();
         document.body.classList.remove('menu-open');
-        openBrowserShellTab();
-        document.querySelector('[data-browser-shell-url]')?.focus();
+        openWorkspaceShellTab();
+        document.querySelector('[data-workspace-shell-url]')?.focus();
       });
-      top.querySelector('.brand-mini [data-browser-shell-home]')?.addEventListener('click',event=>{
+      top.querySelector('.brand-mini [data-workspace-shell-home]')?.addEventListener('click',event=>{
         event.nyxShellHomeHandled=true;
         event.preventDefault();
         event.stopImmediatePropagation();
-        setBrowserShellHomeActive();
+        setWorkspaceShellHomeActive();
       });
       top.addEventListener('pointerdown',()=>{requestNyxKeyboardLock()},{capture:true});
       top.addEventListener('focusin',()=>{requestNyxKeyboardLock()},{capture:true});
-      renderBrowserShellTabs();
-      renderBrowserBookmarks();
+      renderWorkspaceShellTabs();
+      renderWorkspaceBookmarks();
     }
     const corner=document.querySelector('.corner-gear');
     if(corner) corner.remove();
     ensureNyxAccountButton();
   }
-  function browserShellNeedsStartupHome(){
-    const homeTab=browserShellTabs.find(tab=>tab.title==='Home' && !tab.url);
-    if(!activeBrowser || !activeBrowser.win || !activeBrowser.win.isConnected) return true;
-    const activeShellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
+  function workspaceShellNeedsStartupHome(){
+    const homeTab=workspaceShellTabs.find(tab=>tab.title==='Home' && !tab.url);
+    if(!activeWorkspace || !activeWorkspace.win || !activeWorkspace.win.isConnected) return true;
+    const activeShellTab=workspaceShellTabs.find(tab=>tab.id===workspaceShellActiveTab);
     if(String(activeShellTab?.url || '').trim()) return false;
-    const activeBrowserTab=activeBrowser.tabs?.find(tab=>tab.id===activeBrowser.active);
-    if(String(activeBrowserTab?.sourceUrl || activeBrowserTab?.url || '').trim()) return false;
-    if(browserShellActiveTab && homeTab && browserShellActiveTab!==homeTab.id) return false;
-    const homeEl=activeBrowser.win.querySelector('.browser-home');
+    const activeWorkspaceTab=activeWorkspace.tabs?.find(tab=>tab.id===activeWorkspace.active);
+    if(String(activeWorkspaceTab?.sourceUrl || activeWorkspaceTab?.url || '').trim()) return false;
+    if(workspaceShellActiveTab && homeTab && workspaceShellActiveTab!==homeTab.id) return false;
+    const homeEl=activeWorkspace.win.querySelector('.workspace-home');
     return !homeEl || homeEl.classList.contains('hidden');
   }
   function syncChromeMode(){
-    if(renderedChromeMode==='browser-shell' && document.querySelector('.top-os [data-browser-shell-search]')){
-      if(browserShellNeedsStartupHome()) setBrowserShellHomeActive();
+    if(renderedChromeMode==='workspace-shell' && document.querySelector('.top-os [data-workspace-shell-search]')){
+      if(workspaceShellNeedsStartupHome()) setWorkspaceShellHomeActive();
       return;
     }
     document.body.classList.remove('menu-open');
     renderChromeFixed();
-    if(nyxStartupOpened && browserShellNeedsStartupHome()) setBrowserShellHomeActive();
-    else renderBrowserShellTabs();
-    renderedChromeMode='browser-shell';
-    document.documentElement.classList.remove('nyx-browser-shell-expected');
+    if(nyxStartupOpened && workspaceShellNeedsStartupHome()) setWorkspaceShellHomeActive();
+    else renderWorkspaceShellTabs();
+    renderedChromeMode='workspace-shell';
+    document.documentElement.classList.remove('nyx-workspace-shell-expected');
     tick();
   }
 
-  function browserShellSourceUrl(url,decodeDepth=0){
+  function workspaceShellSourceUrl(url,decodeDepth=0){
     const initial=String(url || '').trim();
     const raw=/^apps\//i.test(initial) ? `/${initial}` : initial;
     if(!raw) return '';
@@ -3991,7 +4006,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const text=String(value || '');
       try{return decodeURIComponent(text)}catch{return text}
     };
-    const decodeRetiredProxyPart=value=>{
+    const decodeRetiredConnectionPart=value=>{
       const text=String(value || '');
 
       const uriDecoded=decodeUriPart(text);
@@ -4002,11 +4017,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const parsed=new URL(raw,location.href);
       const retiredPrefix='/service/';
       const retiredStart=parsed.origin + retiredPrefix;
-      const scramjetStart=parsed.origin + '/scramjet/service/';
-      const scramjetV1Prefix='/~/sj-v1/';
-      const scramjetV2Match=parsed.pathname.match(/^\/~\/sj\/[^/]+\/[^/]+\/([^?#]*)/);
-      if(parsed.origin===location.origin && parsed.pathname.startsWith(scramjetV1Prefix)){
-        const decoded=new URL(decodeUriPart(parsed.pathname.slice(scramjetV1Prefix.length)));
+      const studyjetStart=parsed.origin + '/scramjet/service/';
+      const studyjetV1Prefix='/~/sj-v1/';
+      const studyjetV2Match=parsed.pathname.match(/^\/~\/sj\/[^/]+\/[^/]+\/([^?#]*)/);
+      if(parsed.origin===location.origin && parsed.pathname.startsWith(studyjetV1Prefix)){
+        const decoded=new URL(decodeUriPart(parsed.pathname.slice(studyjetV1Prefix.length)));
         if(parsed.search) decoded.search=parsed.search;
         if(parsed.hash) decoded.hash=parsed.hash;
         return decoded.href;
@@ -4015,19 +4030,19 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         let encoded=parsed.href.slice(retiredStart.length);
         const privateSession=encoded.match(/^nyx_[a-z0-9_-]{12,80}\/(.+)$/i);
         if(privateSession) encoded=privateSession[1];
-        const decoded=decodeRetiredProxyPart(encoded);
+        const decoded=decodeRetiredConnectionPart(encoded);
         if(decoded && decoded!==raw && decodeDepth<3){
-          return browserShellSourceUrl(decoded,decodeDepth+1) || decoded;
+          return workspaceShellSourceUrl(decoded,decodeDepth+1) || decoded;
         }
         try{return new URL(decoded).href}catch{return decoded}
       }
-      if(parsed.origin===location.origin && parsed.href.startsWith(scramjetStart)){
-        const decoded=decodeUriPart(parsed.href.slice(scramjetStart.length));
+      if(parsed.origin===location.origin && parsed.href.startsWith(studyjetStart)){
+        const decoded=decodeUriPart(parsed.href.slice(studyjetStart.length));
         try{return new URL(decoded).href}catch{return decoded}
       }
-      if(parsed.origin===location.origin && scramjetV2Match){
+      if(parsed.origin===location.origin && studyjetV2Match){
         const decodedHash=parsed.hash ? `#${decodeUriPart(parsed.hash.slice(1))}` : '';
-        const decoded=decodeUriPart(scramjetV2Match[1]) + decodedHash;
+        const decoded=decodeUriPart(studyjetV2Match[1]) + decodedHash;
         try{return new URL(decoded).href}catch{return decoded}
       }
       return parsed.href;
@@ -4035,10 +4050,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       return raw;
     }
   }
-  function browserShellIsTransientProxyPath(pathname){
+  function workspaceShellIsTransientConnectionPath(pathname){
     return /^\/(?:unidentified|undefined)(?:[/?#]|$)/i.test(String(pathname || ''));
   }
-  function browserShellIsBrokenProxyLocation(candidate,expected=''){
+  function workspaceShellIsBrokenConnectionLocation(candidate,expected=''){
     const next=String(candidate || '').trim();
     if(!next) return true;
     try{
@@ -4046,27 +4061,27 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
 
 
 
-      if(!browserShellIsTransientProxyPath(parsed.pathname)) return false;
-      const prior=new URL(browserShellSourceUrl(expected) || expected,location.href);
+      if(!workspaceShellIsTransientConnectionPath(parsed.pathname)) return false;
+      const prior=new URL(workspaceShellSourceUrl(expected) || expected,location.href);
       return /^https?:$/i.test(prior.protocol)
         && parsed.hostname===prior.hostname;
     }catch{
       return false;
     }
   }
-  function browserShellRejectFrameLocation(source,expected=''){
+  function workspaceShellRejectFrameLocation(source,expected=''){
     const raw=String(source || '').trim();
     if(!raw || /^\/?(?:unidentified|undefined)(?:[/?#]|$)/i.test(raw)) return true;
-    if(browserShellIsBrokenProxyLocation(raw,expected)) return true;
+    if(workspaceShellIsBrokenConnectionLocation(raw,expected)) return true;
     try{
       const parsed=new URL(raw,location.href);
-      const previous=browserShellSourceUrl(expected) || String(expected || '').trim();
-      if(browserShellIsTransientProxyPath(parsed.pathname) && previous){
+      const previous=workspaceShellSourceUrl(expected) || String(expected || '').trim();
+      if(workspaceShellIsTransientConnectionPath(parsed.pathname) && previous){
         const previousUrl=new URL(previous,location.href);
-        const sameSite=browserHost(parsed.href)===browserHost(previousUrl.href);
-        if(sameSite && !browserShellIsTransientProxyPath(previousUrl.pathname)) return true;
+        const sameSite=workspaceHost(parsed.href)===workspaceHost(previousUrl.href);
+        if(sameSite && !workspaceShellIsTransientConnectionPath(previousUrl.pathname)) return true;
       }
-      if(browserShellIsTransientProxyPath(parsed.pathname)) return true;
+      if(workspaceShellIsTransientConnectionPath(parsed.pathname)) return true;
       if(parsed.origin!==location.origin) return false;
       if(parsed.pathname.startsWith('/service/') || parsed.pathname.startsWith('/~/sj/') || parsed.pathname.startsWith('/scramjet/service/')) return true;
       if(!previous) return false;
@@ -4076,38 +4091,38 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       return false;
     }
   }
-  function browserShellInvalidHistoryEntry(value){
+  function workspaceShellInvalidHistoryEntry(value){
     const raw=String(value || '').trim();
-    if(!raw || isBrowserShellBlankUrl(raw)) return false;
+    if(!raw || isWorkspaceShellBlankUrl(raw)) return false;
     if(/^\/?(?:unidentified|undefined)(?:[/?#]|$)/i.test(raw)) return true;
-    const source=browserShellSourceUrl(raw) || raw;
+    const source=workspaceShellSourceUrl(raw) || raw;
     try{
       const parsed=new URL(source,location.href);
-      return browserShellIsTransientProxyPath(parsed.pathname);
+      return workspaceShellIsTransientConnectionPath(parsed.pathname);
     }catch{
       return false;
     }
   }
-  function browserShellClipboardText(value,expected=''){
+  function workspaceShellClipboardText(value,expected=''){
     const raw=String(value || '');
     const trimmed=raw.trim();
     if(!trimmed) return raw;
     if(!/^https?:\/\//i.test(trimmed) && !/^\/(?:service\/|~\/sj\/|scramjet\/service\/)/i.test(trimmed) && !/^\/?unidentified(?:[/?#]|$)/i.test(trimmed)) return raw;
-    const decoded=browserShellSourceUrl(trimmed) || trimmed;
-    if(browserShellRejectFrameLocation(decoded,expected)){
-      const fallback=browserShellSourceUrl(expected) || String(expected || '').trim();
+    const decoded=workspaceShellSourceUrl(trimmed) || trimmed;
+    if(workspaceShellRejectFrameLocation(decoded,expected)){
+      const fallback=workspaceShellSourceUrl(expected) || String(expected || '').trim();
       return /^https?:\/\//i.test(fallback) ? fallback : raw;
     }
     return /^https?:\/\//i.test(decoded) ? decoded : raw;
   }
-  function browserShellLabel(url){
+  function workspaceShellLabel(url){
     if(!url) return 'Home';
     if(String(url).trim().toLowerCase()==='nyx://settings') return 'Settings';
     if(String(url).trim().toLowerCase()==='nyx://terms') return 'Terms Of Service';
     if(String(url).trim().toLowerCase()==='nyx://developer') return 'Developer Console';
     if(/^nyx:\/\/(?:about|credits)$/i.test(String(url).trim())) return 'About Nyx';
     try{
-      const parsed=new URL(browserShellSourceUrl(url),location.href);
+      const parsed=new URL(workspaceShellSourceUrl(url),location.href);
       if(parsed.origin===location.origin && parsed.pathname==='/search') return parsed.searchParams.get('q') || "S3ARC4";
       if(parsed.origin===location.origin && parsed.pathname.includes('/assets/games/')) return 'GAMES';
       if(parsed.origin===location.origin && parsed.pathname.includes('/assets/ugs/')) return 'GAMES';
@@ -4121,56 +4136,56 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       return String(url || 'New tab').replace(/^https?:\/\//,'').slice(0,34) || 'New tab';
     }
   }
-  function browserShellDisplayValue(url){
+  function workspaceShellDisplayValue(url){
     if(!url) return '';
     try{
-      const parsed=new URL(browserShellSourceUrl(url),location.href);
+      const parsed=new URL(workspaceShellSourceUrl(url),location.href);
       if(parsed.origin===location.origin && parsed.pathname==='/search') return parsed.searchParams.get('q') || '';
       if(parsed.origin===location.origin) return parsed.pathname.replace(/^\/+/,'') || parsed.href;
       return parsed.href;
     }catch{
-      return browserShellSourceUrl(url);
+      return workspaceShellSourceUrl(url);
     }
   }
 
-  function browserBookmarks(){
+  function workspaceBookmarks(){
     try{
-      const parsed=JSON.parse(store.text('nyx.browserBookmarks','[]'));
+      const parsed=JSON.parse(store.text('nyx.workspaceBookmarks','[]'));
       return Array.isArray(parsed) ? parsed.filter(item=>item && item.url) : [];
     }catch{
       return [];
     }
   }
-  function saveBrowserBookmarks(items){
-    store.setText('nyx.browserBookmarks',JSON.stringify(items.slice(0,80)));
+  function saveWorkspaceBookmarks(items){
+    store.setText('nyx.workspaceBookmarks',JSON.stringify(items.slice(0,80)));
   }
-  function activeBrowserShellTab(){
-    ensureBrowserShellHome();
-    return browserShellTabs.find(tab=>tab.id===browserShellActiveTab) || browserShellTabs[0];
+  function activeWorkspaceShellTab(){
+    ensureWorkspaceShellHome();
+    return workspaceShellTabs.find(tab=>tab.id===workspaceShellActiveTab) || workspaceShellTabs[0];
   }
-  function currentBrowserShellUrl(){
-    const tab=activeBrowserShellTab();
-    return normalize(browserShellSourceUrl(tab?.url) || document.querySelector('[data-browser-shell-url]')?.value || '');
+  function currentWorkspaceShellUrl(){
+    const tab=activeWorkspaceShellTab();
+    return normalize(workspaceShellSourceUrl(tab?.url) || document.querySelector('[data-workspace-shell-url]')?.value || '');
   }
-  const browserSuggestionSeeds=[
+  const workspaceSuggestionSeeds=[
     'youtube','tiktok','spotify','discord','roblox','github','google classroom','google docs',
     'duck ai','geforce now','games','weather','anime','music','unblocked games','calculator',
     'roblox codes','gmail','google translate','cool math games','chatgpt','amazon','reddit','netflix'
   ];
-  const browserSuggestionCache=new Map();
-  let browserSuggestionTimer=0;
-  let browserSuggestionAbort=null;
-  function ensureBrowserSuggestionBox(input){
-    let box=$('browserSearchSuggestions');
+  const workspaceSuggestionCache=new Map();
+  let workspaceSuggestionTimer=0;
+  let workspaceSuggestionAbort=null;
+  function ensureWorkspaceSuggestionBox(input){
+    let box=$('workspaceSuggestions');
     if(!box){
       box=document.createElement('div');
-      box.id='browserSearchSuggestions';
-      box.className='browser-search-suggestions';
+      box.id='workspaceSuggestions';
+      box.className='workspace-search-suggestions';
       box.setAttribute('role','listbox');
       document.body.appendChild(box);
     }
     if(input){
-      const anchor=input.closest?.('[data-browser-blank-search]') || input;
+      const anchor=input.closest?.('[data-workspace-blank-search]') || input;
       const rect=anchor.getBoundingClientRect();
       box.nyxSourceInput=input;
       box.style.left=Math.max(8,rect.left)+'px';
@@ -4179,23 +4194,23 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
     return box;
   }
-  function browserSuggestionsAllowed(){
-    if(!document.body.classList.contains('browser-shell')) return false;
-    const tab=activeBrowserShellTab?.();
+  function workspaceSuggestionsAllowed(){
+    if(!document.body.classList.contains('workspace-shell')) return false;
+    const tab=activeWorkspaceShellTab?.();
     const url=String(tab?.url || '');
     const title=String(tab?.title || '').trim().toLowerCase();
     if(url.startsWith('nyx://')) return false;
     if(['apps','lion ai','lionai','ai','bookmarks','links','settings','games'].includes(title)) return false;
-    const state=activeBrowser;
-    const browserTab=state?.tabs?.find(item=>item.id===state.active);
-    if(browserTab?.frame?.getAttribute('srcdoc') && String(browserTab.url || '').startsWith('nyx://')) return false;
+    const state=activeWorkspace;
+    const workspaceTab=state?.tabs?.find(item=>item.id===state.active);
+    if(workspaceTab?.frame?.getAttribute('srcdoc') && String(workspaceTab.url || '').startsWith('nyx://')) return false;
     return true;
   }
-  function browserSuggestionItems(query,remoteItems=[]){
+  function workspaceSuggestionItems(query,remoteItems=[]){
     const q=String(query || '').trim().toLowerCase();
     if(!q) return [];
-    const tabItems=browserShellTabs.map(tab=>browserShellSourceUrl(tab.url) || tab.title).filter(Boolean);
-    const bookmarkItems=browserBookmarks().flatMap(item=>[item.title,item.url]).filter(Boolean);
+    const tabItems=workspaceShellTabs.map(tab=>workspaceShellSourceUrl(tab.url) || tab.title).filter(Boolean);
+    const bookmarkItems=workspaceBookmarks().flatMap(item=>[item.title,item.url]).filter(Boolean);
     const popularByPrefix=[
       ['mine',['minecraft skins','minecraft movie','minecraft seed map','minecraft download','minecraft launcher','minecraft wiki']],
       ['rob',['roblox codes','roblox login','roblox redeem','roblox support','roblox marketplace','roblox avatar']],
@@ -4206,7 +4221,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       ['goo',['google classroom','google docs','google drive','google translate','google maps','google flights']]
     ];
     const prefixItems=popularByPrefix.find(([prefix])=>q.startsWith(prefix))?.[1] || [];
-    const pool=[...remoteItems,...prefixItems,...tabItems,...bookmarkItems,...browserSuggestionSeeds];
+    const pool=[...remoteItems,...prefixItems,...tabItems,...bookmarkItems,...workspaceSuggestionSeeds];
     const seen=new Set();
     const out=[];
     pool
@@ -4235,22 +4250,22 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(!out.includes(query)) out.unshift(query);
     return out.slice(0,6);
   }
-  function renderBrowserSuggestions(input,items){
-    if(!input || !browserSuggestionsAllowed()) return;
-    const box=ensureBrowserSuggestionBox(input);
+  function renderWorkspaceSuggestions(input,items){
+    if(!input || !workspaceSuggestionsAllowed()) return;
+    const box=ensureWorkspaceSuggestionBox(input);
     if(!items.length){
       box.classList.remove('show');
       box.innerHTML='';
       return;
     }
-    box.innerHTML=items.map((item,index)=>`<button class="browser-search-suggestion${index===0?' active':''}" data-browser-suggestion="${esc(item)}" type="button" role="option">${esc(item)}</button>`).join('');
+    box.innerHTML=items.map((item,index)=>`<button class="workspace-search-suggestion${index===0?' active':''}" data-workspace-suggestion="${esc(item)}" type="button" role="option">${esc(item)}</button>`).join('');
     box.classList.add('show');
   }
-  async function fetchBrowserAutocomplete(query,signal){
+  async function fetchWorkspaceAutocomplete(query,signal){
     const q=String(query || '').trim();
     if(q.length<2) return [];
     const key=q.toLowerCase();
-    if(browserSuggestionCache.has(key)) return browserSuggestionCache.get(key);
+    if(workspaceSuggestionCache.has(key)) return workspaceSuggestionCache.get(key);
     try{
       const response=await fetch(`/api/search-suggestions?q=${encodeURIComponent(q)}`,{
         headers:{accept:'application/json'},
@@ -4261,7 +4276,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const clean=(Array.isArray(payload?.suggestions) ? payload.suggestions : [])
           .map(item=>String(item || '').trim()).filter(Boolean).slice(0,8);
         if(clean.length){
-          browserSuggestionCache.set(key,clean);
+          workspaceSuggestionCache.set(key,clean);
           return clean;
         }
       }
@@ -4291,48 +4306,48 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       });
       const clean=items.map(item=>String(item || '').trim()).filter(Boolean).slice(0,8);
       if(clean.length){
-        browserSuggestionCache.set(key,clean);
+        workspaceSuggestionCache.set(key,clean);
         return clean;
       }
     }catch{}
-    browserSuggestionCache.set(key,[]);
+    workspaceSuggestionCache.set(key,[]);
     return [];
   }
-  function showBrowserSuggestions(input){
-    if(!input || !browserSuggestionsAllowed()){
-      hideBrowserSuggestions();
+  function showWorkspaceSuggestions(input){
+    if(!input || !workspaceSuggestionsAllowed()){
+      hideWorkspaceSuggestions();
       return;
     }
     const value=String(input.value || '').trim();
-    renderBrowserSuggestions(input,browserSuggestionItems(value));
-    clearTimeout(browserSuggestionTimer);
-    browserSuggestionAbort?.abort?.();
+    renderWorkspaceSuggestions(input,workspaceSuggestionItems(value));
+    clearTimeout(workspaceSuggestionTimer);
+    workspaceSuggestionAbort?.abort?.();
     if(value.length<2 || document.body.classList.contains('runtime-lag-guard')) return;
-    browserSuggestionAbort=new AbortController();
-    const signal=browserSuggestionAbort.signal;
-    browserSuggestionTimer=setTimeout(async()=>{
-      const remote=await fetchBrowserAutocomplete(value,signal);
+    workspaceSuggestionAbort=new AbortController();
+    const signal=workspaceSuggestionAbort.signal;
+    workspaceSuggestionTimer=setTimeout(async()=>{
+      const remote=await fetchWorkspaceAutocomplete(value,signal);
       if(signal.aborted) return;
       if(!input.isConnected || String(input.value || '').trim()!==value) return;
-      renderBrowserSuggestions(input,browserSuggestionItems(value,remote));
+      renderWorkspaceSuggestions(input,workspaceSuggestionItems(value,remote));
     },180);
   }
-  function hideBrowserSuggestions(){
-    clearTimeout(browserSuggestionTimer);
-    browserSuggestionAbort?.abort?.();
-    const box=$('browserSearchSuggestions');
+  function hideWorkspaceSuggestions(){
+    clearTimeout(workspaceSuggestionTimer);
+    workspaceSuggestionAbort?.abort?.();
+    const box=$('workspaceSuggestions');
     if(box) box.classList.remove('show');
   }
-  function browserSuggestionPointerInside(target){
-    return !!target?.closest?.('[data-browser-shell-url],[data-browser-blank-input],#browserSearchSuggestions,.browser-search-suggestions');
+  function workspaceSuggestionPointerInside(target){
+    return !!target?.closest?.('[data-workspace-shell-url],[data-workspace-blank-input],#workspaceSuggestions,.workspace-search-suggestions');
   }
-  function acceptBrowserSuggestion(value,sourceInput=$('browserSearchSuggestions')?.nyxSourceInput){
-    const input=sourceInput?.isConnected ? sourceInput : document.querySelector('[data-browser-shell-url]');
+  function acceptWorkspaceSuggestion(value,sourceInput=$('workspaceSuggestions')?.nyxSourceInput){
+    const input=sourceInput?.isConnected ? sourceInput : document.querySelector('[data-workspace-shell-url]');
     if(input) input.value=value || '';
-    hideBrowserSuggestions();
-    navigateBrowserShell(value);
+    hideWorkspaceSuggestions();
+    navigateWorkspaceShell(value);
   }
-  function selectBrowserShellUrl(input,force=false){
+  function selectWorkspaceShellUrl(input,force=false){
     if(!input) return;
     if(!force && input.dataset.selectOnFocus!=='1') return;
     input.dataset.selectOnFocus='0';
@@ -4340,8 +4355,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       try{input.select()}catch{}
     });
   }
-  let browserShellUrlFirstPointer=null;
-  function clearBrowserShellUrlSelection(input=document.querySelector('[data-browser-shell-url]')){
+  let workspaceShellUrlFirstPointer=null;
+  function clearWorkspaceShellUrlSelection(input=document.querySelector('[data-workspace-shell-url]')){
     if(!input) return;
     try{
       const end=String(input.value || '').length;
@@ -4371,7 +4386,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     document.execCommand('insertText',false,text);
   }
   async function writeClipboard(text){
-    const cleanText=browserShellClipboardText(text,currentBrowserShellUrl());
+    const cleanText=workspaceShellClipboardText(text,currentWorkspaceShellUrl());
     try{
       if(navigator.clipboard?.writeText){
         await navigator.clipboard.writeText(cleanText);
@@ -4389,20 +4404,20 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     helper.remove();
     return copied;
   }
-  let nyxBrowserLinkMenu=null;
-  let nyxBrowserLinkMenuCleanup=null;
-  function closeBrowserLinkMenu(){
-    nyxBrowserLinkMenuCleanup?.();
-    nyxBrowserLinkMenuCleanup=null;
-    nyxBrowserLinkMenu?.remove();
-    nyxBrowserLinkMenu=null;
+  let nyxWorkspaceLinkMenu=null;
+  let nyxWorkspaceLinkMenuCleanup=null;
+  function closeWorkspaceLinkMenu(){
+    nyxWorkspaceLinkMenuCleanup?.();
+    nyxWorkspaceLinkMenuCleanup=null;
+    nyxWorkspaceLinkMenu?.remove();
+    nyxWorkspaceLinkMenu=null;
   }
-  function showBrowserLinkMenu(url,x,y){
-    closeBrowserLinkMenu();
-    const cleanUrl=browserShellClipboardText(url,currentBrowserShellUrl());
+  function showWorkspaceLinkMenu(url,x,y){
+    closeWorkspaceLinkMenu();
+    const cleanUrl=workspaceShellClipboardText(url,currentWorkspaceShellUrl());
     if(!/^https?:\/\//i.test(cleanUrl)) return false;
     const menu=document.createElement('div');
-    menu.className='nyx-browser-link-menu';
+    menu.className='nyx-workspace-link-menu';
     menu.dataset.nyxOwnedOverlay='';
     menu.setAttribute('role','menu');
     menu.setAttribute('aria-label','Link actions');
@@ -4411,44 +4426,44 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const bounds=menu.getBoundingClientRect();
     menu.style.left=`${Math.max(8,Math.min(Number(x || 0),innerWidth-bounds.width-8))}px`;
     menu.style.top=`${Math.max(8,Math.min(Number(y || 0),innerHeight-bounds.height-8))}px`;
-    nyxBrowserLinkMenu=menu;
+    nyxWorkspaceLinkMenu=menu;
     const closeFromOutside=event=>{
-      if(!menu.contains(event.target)) closeBrowserLinkMenu();
+      if(!menu.contains(event.target)) closeWorkspaceLinkMenu();
     };
     const closeFromKeyboard=event=>{
-      if(event.key==='Escape') closeBrowserLinkMenu();
+      if(event.key==='Escape') closeWorkspaceLinkMenu();
     };
     document.addEventListener('pointerdown',closeFromOutside,true);
     document.addEventListener('keydown',closeFromKeyboard,true);
-    nyxBrowserLinkMenuCleanup=()=>{
+    nyxWorkspaceLinkMenuCleanup=()=>{
       document.removeEventListener('pointerdown',closeFromOutside,true);
       document.removeEventListener('keydown',closeFromKeyboard,true);
     };
     menu.addEventListener('click',async event=>{
       if(event.target.closest('[data-nyx-copy-clean-link]')){
         const copied=await writeClipboard(cleanUrl);
-        closeBrowserLinkMenu();
+        closeWorkspaceLinkMenu();
         toast(copied?'Link copied':'Could not copy the link');
         return;
       }
       if(event.target.closest('[data-nyx-open-clean-link]')){
-        closeBrowserLinkMenu();
-        openBrowserShellAppTab(cleanUrl);
+        closeWorkspaceLinkMenu();
+        openWorkspaceShellAppTab(cleanUrl);
       }
     });
     menu.querySelector('button')?.focus({preventScroll:true});
     return true;
   }
-  function switchBrowserShellTabByIndex(index){
-    if(!document.body.classList.contains('browser-shell')) return false;
+  function switchWorkspaceShellTabByIndex(index){
+    if(!document.body.classList.contains('workspace-shell')) return false;
     const safeIndex=Math.max(0,Math.min(8,Number(index || 0)));
-    const tab=browserShellTabs[safeIndex];
+    const tab=workspaceShellTabs[safeIndex];
     if(!tab) return false;
-    setBrowserShellActive(tab.id);
+    setWorkspaceShellActive(tab.id);
     return true;
   }
-  function primeBrowserShellShortcutFocus(){
-    if(!document.body.classList.contains('browser-shell')) return;
+  function primeWorkspaceShellShortcutFocus(){
+    if(!document.body.classList.contains('workspace-shell')) return;
     requestNyxKeyboardLock();
     try{window.focus()}catch{}
     const target=document.querySelector('.top-os') || document.body;
@@ -4467,13 +4482,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     nyxKeyboardLockRequested=false;
   }
   async function requestNyxKeyboardLock(){
-    const activeTab=activeBrowser?.tabs?.find?.(tab=>tab.id===activeBrowser.active);
-    const activeSource=String(browserShellSourceUrl(activeTab?.sourceUrl || activeTab?.url || '') || activeTab?.sourceUrl || activeTab?.url || '');
+    const activeTab=activeWorkspace?.tabs?.find?.(tab=>tab.id===activeWorkspace.active);
+    const activeSource=String(workspaceShellSourceUrl(activeTab?.sourceUrl || activeTab?.url || '') || activeTab?.sourceUrl || activeTab?.url || '');
     if(/(?:pixelclient\.xyz|play\.geforcenow\.com|geforcenow\.com|\/assets\/(?:games|ugs|gn-math|gms-games)\/)/i.test(activeSource)){
       await releaseNyxKeyboardLock();
       return;
     }
-    if(nyxKeyboardLockRequested || !document.body.classList.contains('browser-shell')) return;
+    if(nyxKeyboardLockRequested || !document.body.classList.contains('workspace-shell')) return;
     nyxKeyboardLockRequested=true;
     try{
       await navigator.keyboard?.lock?.(nyxKeyboardLockKeys);
@@ -4481,53 +4496,53 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       nyxKeyboardLockRequested=false;
     }
   }
-  function handleBrowserShellAltAction(key,eventLike=null){
+  function handleWorkspaceShellAltAction(key,eventLike=null){
     key=String(key || '').toLowerCase();
     if(!key) return false;
     const consume=()=>{try{eventLike?.preventDefault?.()}catch{}; try{eventLike?.stopPropagation?.()}catch{}};
     if(key==='tab') return false;
     if(/^[1-9]$/.test(key)){
-      if(switchBrowserShellTabByIndex(Number(key)-1)){
+      if(switchWorkspaceShellTabByIndex(Number(key)-1)){
         consume();
         return true;
       }
       return false;
     }
-    const input=document.querySelector('[data-browser-shell-url]');
+    const input=document.querySelector('[data-workspace-shell-url]');
     if(key==='l' || key==='d'){
       consume();
       input?.focus();
-      selectBrowserShellUrl(input,true);
-      showBrowserSuggestions(input);
+      selectWorkspaceShellUrl(input,true);
+      showWorkspaceSuggestions(input);
       return true;
     }
     if(key==='t'){
       consume();
-      openBrowserShellTab();
-      const next=document.querySelector('[data-browser-shell-url]');
+      openWorkspaceShellTab();
+      const next=document.querySelector('[data-workspace-shell-url]');
       next?.focus();
-      selectBrowserShellUrl(next,true);
+      selectWorkspaceShellUrl(next,true);
       return true;
     }
     if(key==='w'){
       consume();
-      const tab=activeBrowserShellTab();
-      if(tab?.id) closeBrowserShellTab(tab.id);
+      const tab=activeWorkspaceShellTab();
+      if(tab?.id) closeWorkspaceShellTab(tab.id);
       return true;
     }
     if(key==='r'){
       consume();
-      document.querySelector('[data-browser-shell-reload]')?.click();
+      document.querySelector('[data-workspace-shell-reload]')?.click();
       return true;
     }
     if(key==='arrowleft'){
       consume();
-      document.querySelector('[data-browser-shell-back]')?.click();
+      document.querySelector('[data-workspace-shell-back]')?.click();
       return true;
     }
     if(key==='arrowright'){
       consume();
-      document.querySelector('[data-browser-shell-forward]')?.click();
+      document.querySelector('[data-workspace-shell-forward]')?.click();
       return true;
     }
     return false;
@@ -4538,10 +4553,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const consume=()=>{e.preventDefault(); e.stopPropagation();};
     if(key==='alt'){
       consume();
-      primeBrowserShellShortcutFocus();
+      primeWorkspaceShellShortcutFocus();
       return;
     }
-    if(handleBrowserShellAltAction(key,e)) return;
+    if(handleWorkspaceShellAltAction(key,e)) return;
     const target=e.target;
     if(!isEditableTarget(target)) return;
     if(key==='a'){
@@ -4582,79 +4597,79 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       document.execCommand?.('redo');
     }
   }
-  function browserBookmarkIcon(saved){
+  function workspaceBookmarkIcon(saved){
     return '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="'+(saved?'currentColor':'none')+'" d="m12 3 2.8 5.7 6.3.9-4.6 4.4 1.1 6.3L12 17.3l-5.6 3 1.1-6.3L3 9.6l6.2-.9Z"/></svg>';
   }
-  function renderBrowserBookmarks(){
-    const panel=$('browserBookmarkPanel');
-    const star=document.querySelector('[data-browser-shell-bookmark]');
+  function renderWorkspaceBookmarks(){
+    const panel=$('workspaceBookmarkPanel');
+    const star=document.querySelector('[data-workspace-shell-bookmark]');
     if(!panel && !star) return;
-    const activeUrl=currentBrowserShellUrl();
-    const bookmarks=browserBookmarks();
+    const activeUrl=currentWorkspaceShellUrl();
+    const bookmarks=workspaceBookmarks();
     const saved=!!activeUrl && bookmarks.some(item=>item.url===activeUrl);
     if(star){
       star.classList.toggle('saved',saved);
       star.setAttribute('aria-pressed',String(saved));
-      star.innerHTML=browserBookmarkIcon(saved);
+      star.innerHTML=workspaceBookmarkIcon(saved);
     }
     if(!panel) return;
     if(!bookmarks.length){
-      panel.innerHTML='<p class="browser-bookmark-empty">No bookmarks yet. Open a page and press the star.</p>';
+      panel.innerHTML='<p class="workspace-bookmark-empty">No bookmarks yet. Open a page and press the star.</p>';
       return;
     }
-    panel.innerHTML=bookmarks.map((item,index)=>`<div class="browser-bookmark-row"><button class="browser-bookmark-open" data-browser-bookmark-open="${index}" type="button"><b>${esc(item.title || browserShellLabel(item.url))}</b><small>${esc(browserShellDisplayValue(item.url))}</small></button><button class="browser-bookmark-remove" data-browser-bookmark-remove="${index}" type="button" title="Remove bookmark">x</button></div>`).join('');
+    panel.innerHTML=bookmarks.map((item,index)=>`<div class="workspace-bookmark-row"><button class="workspace-bookmark-open" data-workspace-bookmark-open="${index}" type="button"><b>${esc(item.title || workspaceShellLabel(item.url))}</b><small>${esc(workspaceShellDisplayValue(item.url))}</small></button><button class="workspace-bookmark-remove" data-workspace-bookmark-remove="${index}" type="button" title="Remove bookmark">x</button></div>`).join('');
   }
-  function toggleBrowserBookmark(){
-    const url=currentBrowserShellUrl();
+  function toggleWorkspaceBookmark(){
+    const url=currentWorkspaceShellUrl();
     if(!url){
-      toggleBrowserBookmarksPanel();
+      toggleWorkspaceBookmarksPanel();
       return;
     }
-    const tab=activeBrowserShellTab();
-    const bookmarks=browserBookmarks();
+    const tab=activeWorkspaceShellTab();
+    const bookmarks=workspaceBookmarks();
     const index=bookmarks.findIndex(item=>item.url===url);
     if(index>=0){
       bookmarks.splice(index,1);
       toast('Bookmark removed');
     }else{
-      bookmarks.unshift({url,title:tab?.title || browserShellLabel(url),created:Date.now()});
+      bookmarks.unshift({url,title:tab?.title || workspaceShellLabel(url),created:Date.now()});
       toast('Bookmarked');
     }
-    saveBrowserBookmarks(bookmarks);
-    renderBrowserBookmarks();
+    saveWorkspaceBookmarks(bookmarks);
+    renderWorkspaceBookmarks();
   }
-  function toggleBrowserBookmarksPanel(){
-    renderBrowserBookmarks();
-    const panel=$('browserBookmarkPanel');
+  function toggleWorkspaceBookmarksPanel(){
+    renderWorkspaceBookmarks();
+    const panel=$('workspaceBookmarkPanel');
     if(panel) panel.hidden=!panel.hidden;
   }
-  function openBrowserBookmark(index){
-    const item=browserBookmarks()[Number(index)];
+  function openWorkspaceBookmark(index){
+    const item=workspaceBookmarks()[Number(index)];
     if(!item?.url) return;
-    navigateBrowserShell(item.url);
-    const panel=$('browserBookmarkPanel');
+    navigateWorkspaceShell(item.url);
+    const panel=$('workspaceBookmarkPanel');
     if(panel) panel.hidden=true;
   }
-  function removeBrowserBookmark(index){
-    const bookmarks=browserBookmarks();
+  function removeWorkspaceBookmark(index){
+    const bookmarks=workspaceBookmarks();
     bookmarks.splice(Number(index),1);
-    saveBrowserBookmarks(bookmarks);
-    renderBrowserBookmarks();
+    saveWorkspaceBookmarks(bookmarks);
+    renderWorkspaceBookmarks();
   }
 
-  function isBrowserShellBlankUrl(url){
+  function isWorkspaceShellBlankUrl(url){
     const raw=String(url || '').trim().toLowerCase();
     return !raw;
   }
-  function renderBrowserShellHomeMode(win){
+  function renderWorkspaceShellHomeMode(win){
     if(!win) return;
     hideNyxErudaPanel();
     win.classList.remove('nyx-frame-loading');
     win.querySelector('.nyx-frame-loader')?.setAttribute('aria-hidden','true');
-    win.classList.remove('browser-blank-page');
-    win.classList.add('browser-home-page');
-    win.classList.add('browser-blank');
-    const home=win.querySelector('.browser-home');
+    win.classList.remove('workspace-blank-page');
+    win.classList.add('workspace-home-page');
+    win.classList.add('workspace-blank');
+    const home=win.querySelector('.workspace-home');
     home?.classList.remove('hidden','page-revealing','tab-opening','closing');
     if(home) home.style.filter='';
     const presence=home?.querySelector('.nyx-home-presence');
@@ -4665,55 +4680,55 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       presence.appendChild(slot);
     }
     win.querySelectorAll('.view').forEach(frame=>frame.classList.remove('active'));
-    const input=win.querySelector('[data-browser-blank-input]');
+    const input=win.querySelector('[data-workspace-blank-input]');
     if(input) input.value='';
     ensureNyxAccountButton();
-    scheduleBrowserProxyPrewarmFromHome();
+    scheduleWorkspaceConnectionPrewarmFromHome();
   }
-  function ensureBrowserShellHome(){
-    if(!browserShellTabs.length){
+  function ensureWorkspaceShellHome(){
+    if(!workspaceShellTabs.length){
       const id='shell-'+Date.now()+Math.random().toString(16).slice(2);
-      browserShellTabs.push({id,url:'',title:'Home'});
-      browserShellActiveTab=id;
+      workspaceShellTabs.push({id,url:'',title:'Home'});
+      workspaceShellActiveTab=id;
     }
-    if(!browserShellActiveTab) browserShellActiveTab=browserShellTabs[0].id;
-    armBrowserProxyPrewarmOnIntent();
+    if(!workspaceShellActiveTab) workspaceShellActiveTab=workspaceShellTabs[0].id;
+    armWorkspaceConnectionPrewarmOnIntent();
   }
-  function moveBrowserShellTab(draggedId,targetId,placeAfter=false){
+  function moveWorkspaceShellTab(draggedId,targetId,placeAfter=false){
     if(!draggedId || !targetId || draggedId===targetId) return false;
-    const dragged=browserShellTabs.find(tab=>tab.id===draggedId);
-    const target=browserShellTabs.find(tab=>tab.id===targetId);
+    const dragged=workspaceShellTabs.find(tab=>tab.id===draggedId);
+    const target=workspaceShellTabs.find(tab=>tab.id===targetId);
     if(!dragged || !target || (!dragged.url && dragged.title==='Home') || (!target.url && target.title==='Home')) return false;
-    const from=browserShellTabs.indexOf(dragged);
-    browserShellTabs.splice(from,1);
-    const targetIndex=browserShellTabs.indexOf(target);
-    browserShellTabs.splice(Math.max(0,targetIndex+(placeAfter?1:0)),0,dragged);
-    if(activeBrowser?.tabs?.length){
-      const rank=new Map(browserShellTabs.map((tab,index)=>[tab.browserTabId,index]).filter(([id])=>id));
-      const originalOrder=new Map(activeBrowser.tabs.map((tab,index)=>[tab.id,index]));
-      activeBrowser.tabs.sort((left,right)=>{
+    const from=workspaceShellTabs.indexOf(dragged);
+    workspaceShellTabs.splice(from,1);
+    const targetIndex=workspaceShellTabs.indexOf(target);
+    workspaceShellTabs.splice(Math.max(0,targetIndex+(placeAfter?1:0)),0,dragged);
+    if(activeWorkspace?.tabs?.length){
+      const rank=new Map(workspaceShellTabs.map((tab,index)=>[tab.workspaceTabId,index]).filter(([id])=>id));
+      const originalOrder=new Map(activeWorkspace.tabs.map((tab,index)=>[tab.id,index]));
+      activeWorkspace.tabs.sort((left,right)=>{
         const leftRank=rank.has(left.id)?rank.get(left.id):Number.MAX_SAFE_INTEGER;
         const rightRank=rank.has(right.id)?rank.get(right.id):Number.MAX_SAFE_INTEGER;
         return leftRank-rightRank || originalOrder.get(left.id)-originalOrder.get(right.id);
       });
-      activeBrowser.renderTabs?.();
+      activeWorkspace.renderTabs?.();
     }
-    renderBrowserShellTabs();
-    requestAnimationFrame(()=>document.querySelector(`[data-browser-shell-tab="${CSS.escape(draggedId)}"]`)?.focus({preventScroll:true}));
+    renderWorkspaceShellTabs();
+    requestAnimationFrame(()=>document.querySelector(`[data-workspace-shell-tab="${CSS.escape(draggedId)}"]`)?.focus({preventScroll:true}));
     return true;
   }
-  function clearBrowserShellTabDropState(row){
+  function clearWorkspaceShellTabDropState(row){
     row?.querySelectorAll?.('.tab-dragging,.tab-drop-before,.tab-drop-after').forEach(tab=>tab.classList.remove('tab-dragging','tab-drop-before','tab-drop-after'));
     document.body.classList.remove('nyx-tab-reordering');
   }
-  function installBrowserShellTabReordering(row){
+  function installWorkspaceShellTabReordering(row){
     if(!row || row.dataset.nyxTabReordering==='true') return;
     row.dataset.nyxTabReordering='true';
     let draggedId='';
     row.addEventListener('dragstart',event=>{
-      const tab=event.target.closest?.('[data-browser-shell-tab]');
+      const tab=event.target.closest?.('[data-workspace-shell-tab]');
       if(!tab || event.target.closest?.('button')){event.preventDefault();return}
-      draggedId=tab.dataset.browserShellTab || '';
+      draggedId=tab.dataset.workspaceShellTab || '';
       if(!draggedId){event.preventDefault();return}
       tab.classList.add('tab-dragging');
       document.body.classList.add('nyx-tab-reordering');
@@ -4724,8 +4739,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
     });
     row.addEventListener('dragover',event=>{
-      const target=event.target.closest?.('[data-browser-shell-tab]');
-      if(!draggedId || !target || target.dataset.browserShellTab===draggedId) return;
+      const target=event.target.closest?.('[data-workspace-shell-tab]');
+      if(!draggedId || !target || target.dataset.workspaceShellTab===draggedId) return;
       event.preventDefault();
       if(event.dataTransfer)event.dataTransfer.dropEffect='move';
       row.querySelectorAll('.tab-drop-before,.tab-drop-after').forEach(tab=>tab.classList.remove('tab-drop-before','tab-drop-after'));
@@ -4733,55 +4748,55 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       target.classList.add(event.clientX>=rect.left+rect.width/2?'tab-drop-after':'tab-drop-before');
     });
     row.addEventListener('drop',event=>{
-      const target=event.target.closest?.('[data-browser-shell-tab]');
+      const target=event.target.closest?.('[data-workspace-shell-tab]');
       if(!draggedId || !target) return;
       event.preventDefault();
       const rect=target.getBoundingClientRect();
-      moveBrowserShellTab(draggedId,target.dataset.browserShellTab,event.clientX>=rect.left+rect.width/2);
+      moveWorkspaceShellTab(draggedId,target.dataset.workspaceShellTab,event.clientX>=rect.left+rect.width/2);
       draggedId='';
-      clearBrowserShellTabDropState(row);
+      clearWorkspaceShellTabDropState(row);
     });
     row.addEventListener('dragend',()=>{
       draggedId='';
-      clearBrowserShellTabDropState(row);
+      clearWorkspaceShellTabDropState(row);
     });
     row.addEventListener('keydown',event=>{
       if(!(event.ctrlKey||event.metaKey) || !event.shiftKey || !['ArrowLeft','ArrowRight'].includes(event.key)) return;
-      const tab=event.target.closest?.('[data-browser-shell-tab]');
+      const tab=event.target.closest?.('[data-workspace-shell-tab]');
       if(!tab) return;
-      const movable=browserShellTabs.filter(item=>item.url || item.title!=='Home');
-      const index=movable.findIndex(item=>item.id===tab.dataset.browserShellTab);
+      const movable=workspaceShellTabs.filter(item=>item.url || item.title!=='Home');
+      const index=movable.findIndex(item=>item.id===tab.dataset.workspaceShellTab);
       const direction=event.key==='ArrowLeft'?-1:1;
       const target=movable[index+direction];
       if(!target) return;
       event.preventDefault();
-      moveBrowserShellTab(tab.dataset.browserShellTab,target.id,direction>0);
+      moveWorkspaceShellTab(tab.dataset.workspaceShellTab,target.id,direction>0);
     });
   }
-  function ensureBrowserShellTabSidebar(){
-    let sidebar=document.getElementById('nyxBrowserTabSidebar');
+  function ensureWorkspaceShellTabSidebar(){
+    let sidebar=document.getElementById('nyxWorkspaceTabSidebar');
     if(sidebar) return sidebar;
     sidebar=document.createElement('aside');
-    sidebar.id='nyxBrowserTabSidebar';
-    sidebar.className='nyx-browser-tab-sidebar';
-    sidebar.setAttribute('aria-label','Browser tabs');
-    sidebar.innerHTML='<header><strong>Tabs</strong><div><button type="button" data-browser-bookmarks-toggle title="Bookmarks" aria-label="Bookmarks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h5l1.5 2H19v11H5z"></path></svg></button><button type="button" data-browser-shell-new-tab title="New tab" aria-label="New tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></header><div class="nyx-browser-tab-list" data-browser-shell-tab-list role="tablist" aria-label="Open tabs"></div>';
-    sidebar.querySelector('[data-browser-shell-new-tab]')?.addEventListener('click',event=>{
+    sidebar.id='nyxWorkspaceTabSidebar';
+    sidebar.className='nyx-workspace-tab-sidebar';
+    sidebar.setAttribute('aria-label','Workspace tabs');
+    sidebar.innerHTML='<header><strong>Tabs</strong><div><button type="button" data-workspace-bookmarks-toggle title="Bookmarks" aria-label="Bookmarks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h5l1.5 2H19v11H5z"></path></svg></button><button type="button" data-workspace-shell-new-tab title="New tab" aria-label="New tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></header><div class="nyx-workspace-tab-list" data-workspace-shell-tab-list role="tablist" aria-label="Open tabs"></div>';
+    sidebar.querySelector('[data-workspace-shell-new-tab]')?.addEventListener('click',event=>{
       event.preventDefault();
       event.stopPropagation();
-      openBrowserShellTab();
-      document.querySelector('[data-browser-shell-url]')?.focus();
+      openWorkspaceShellTab();
+      document.querySelector('[data-workspace-shell-url]')?.focus();
     });
     document.body.appendChild(sidebar);
     return sidebar;
   }
-  function normalizeBrowserTabDesign(value){
+  function normalizeWorkspaceTabDesign(value){
     return String(value || '').trim().toLowerCase()==='list' ? 'list' : 'bar';
   }
-  function setBrowserTabSidebarOpen(open,{restoreFocus=false}={}){
+  function setWorkspaceTabSidebarOpen(open,{restoreFocus=false}={}){
     const shouldOpen=Boolean(open);
     document.body.classList.toggle('nyx-tab-sidebar-open',shouldOpen);
-    const toggles=[...document.querySelectorAll('[data-browser-shell-tabs-toggle]')];
+    const toggles=[...document.querySelectorAll('[data-workspace-shell-tabs-toggle]')];
     toggles.forEach(button=>button.setAttribute('aria-expanded',String(shouldOpen)));
     if(!shouldOpen && restoreFocus){
       const visibleToggle=toggles.find(button=>button.getClientRects().length && button.tabIndex>=0 && button.getAttribute('aria-hidden')!=='true');
@@ -4791,23 +4806,23 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
     return shouldOpen;
   }
-  function applyBrowserTabDesignSetting(){
-    const design=normalizeBrowserTabDesign(store.text('nyx.tabDesign','bar'));
+  function applyWorkspaceTabDesignSetting(){
+    const design=normalizeWorkspaceTabDesign(store.text('nyx.tabDesign','bar'));
     if(store.text('nyx.tabDesign','bar')!==design) store.setText('nyx.tabDesign',design);
     document.documentElement.dataset.nyxTabDesign=design;
     document.body.dataset.nyxTabDesign=design;
     document.body.classList.toggle('nyx-tab-design-list',design==='list');
     qsa('[data-tab-design-value]').forEach(select=>{select.value=design});
-    document.querySelectorAll('[data-browser-shell-tabs-toggle]').forEach(button=>{
+    document.querySelectorAll('[data-workspace-shell-tabs-toggle]').forEach(button=>{
       button.tabIndex=0;
       button.setAttribute('aria-expanded',String(document.body.classList.contains('nyx-tab-sidebar-open')));
     });
-    renderBrowserShellTabs();
+    renderWorkspaceShellTabs();
   }
-  function browserShellTabDomain(tab){
-    const url=browserShellSourceUrl(tab?.url || '');
+  function workspaceShellTabDomain(tab){
+    const url=workspaceShellSourceUrl(tab?.url || '');
     if(!url) return 'nyxlearning.org';
-    try{return new URL(url,location.href).hostname || 'nyxlearning.org'}catch{return browserShellLabel(url) || 'nyxlearning.org'}
+    try{return new URL(url,location.href).hostname || 'nyxlearning.org'}catch{return workspaceShellLabel(url) || 'nyxlearning.org'}
   }
   function renderNyxVisualTabStrip(){
     if(!nyxVisualDockUsesSideLayout()) return;
@@ -4821,42 +4836,42 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       strip.setAttribute('role','tablist');
       strip.setAttribute('aria-label','Open tabs');
       top.prepend(strip);
-      installBrowserShellTabReordering(strip);
+      installWorkspaceShellTabReordering(strip);
     }
-    if(!top.querySelector('[data-browser-shell-tabs-toggle]')){
+    if(!top.querySelector('[data-workspace-shell-tabs-toggle]')){
       const toggle=document.createElement('button');
       toggle.type='button';
       toggle.className='nyx-tab-list-toggle';
-      toggle.dataset.browserShellTabsToggle='';
+      toggle.dataset.workspaceShellTabsToggle='';
       toggle.setAttribute('aria-label','Open tabs');
-      toggle.setAttribute('aria-controls','nyxBrowserTabSidebar');
+      toggle.setAttribute('aria-controls','nyxWorkspaceTabSidebar');
       toggle.setAttribute('aria-expanded','false');
       toggle.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M3 6h1M3 12h1M3 18h1"/></svg>';
       top.appendChild(toggle);
     }
     const fragment=document.createDocumentFragment();
-    browserShellTabs.forEach(tab=>{
+    workspaceShellTabs.forEach(tab=>{
       const button=document.createElement('div');
-      const active=tab.id===browserShellActiveTab;
+      const active=tab.id===workspaceShellActiveTab;
       button.className='nyx-visual-dock-tab'+(active?' active':'');
-      button.dataset.browserShellTab=tab.id;
+      button.dataset.workspaceShellTab=tab.id;
       button.setAttribute('role','tab');
       button.tabIndex=active ? 0 : -1;
       button.setAttribute('aria-selected',String(active));
-      button.setAttribute('aria-label',browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url));
-      const title=tab.title==='Home' && !tab.url ? 'Home' : browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url);
-      const close=browserShellTabs.length>1?`<button class="nyx-visual-dock-tab-close" data-browser-shell-close-tab="${esc(tab.id)}" type="button" aria-label="Close ${esc(title)}">&times;</button>`:'';
-      button.innerHTML=`<img alt="" src="${esc(browserChromeIcon(tab.icon,tab.url))}"><strong aria-hidden="true">${esc(window.nyxDisplayName(title))}</strong>${close}`;
+      button.setAttribute('aria-label',workspaceChromeTitle(tab.title || workspaceShellLabel(tab.url),tab.url));
+      const title=tab.title==='Home' && !tab.url ? 'Home' : workspaceChromeTitle(tab.title || workspaceShellLabel(tab.url),tab.url);
+      const close=workspaceShellTabs.length>1?`<button class="nyx-visual-dock-tab-close" data-workspace-shell-close-tab="${esc(tab.id)}" type="button" aria-label="Close ${esc(title)}">&times;</button>`:'';
+      button.innerHTML=`<img alt="" src="${esc(workspaceChromeIcon(tab.icon,tab.url))}"><strong aria-hidden="true">${esc(window.nyxDisplayName(title))}</strong>${close}`;
       bindTabIconFallback(button.querySelector('img'));
-      button.querySelector('[data-browser-shell-close-tab]')?.addEventListener('click',event=>{
+      button.querySelector('[data-workspace-shell-close-tab]')?.addEventListener('click',event=>{
         event.preventDefault();
         event.stopPropagation();
-        closeBrowserShellTab(tab.id);
+        closeWorkspaceShellTab(tab.id);
       });
       button.addEventListener('keydown',event=>{
-        if(event.target.closest?.('[data-browser-shell-close-tab]')) return;
-        if(event.key==='Enter' || event.key===' '){event.preventDefault();setBrowserShellActive(tab.id)}
-        if((event.key==='Delete' || event.key==='Backspace') && browserShellTabs.length>1){event.preventDefault();closeBrowserShellTab(tab.id)}
+        if(event.target.closest?.('[data-workspace-shell-close-tab]')) return;
+        if(event.key==='Enter' || event.key===' '){event.preventDefault();setWorkspaceShellActive(tab.id)}
+        if((event.key==='Delete' || event.key==='Backspace') && workspaceShellTabs.length>1){event.preventDefault();closeWorkspaceShellTab(tab.id)}
       });
       fragment.appendChild(button);
     });
@@ -4866,10 +4881,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     add.dataset.nyxVisualNewTab='';
     add.setAttribute('aria-label','New tab');
     add.innerHTML='<span aria-hidden="true">+</span><strong>New tab</strong>';
-    add.addEventListener('click',()=>openBrowserShellTab(''));
+    add.addEventListener('click',()=>openWorkspaceShellTab(''));
     fragment.appendChild(add);
-    const activeChanged=strip.dataset.activeTab!==String(browserShellActiveTab);
-    strip.dataset.activeTab=String(browserShellActiveTab);
+    const activeChanged=strip.dataset.activeTab!==String(workspaceShellActiveTab);
+    strip.dataset.activeTab=String(workspaceShellActiveTab);
     strip.replaceChildren(fragment);
     if(activeChanged){
       requestAnimationFrame(()=>{
@@ -4882,11 +4897,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       });
     }
   }
-  function browserShellSecurityStateForUrl(value=''){
+  function workspaceShellSecurityStateForUrl(value=''){
     const raw=String(value || '').trim();
     if(!raw || /^nyx:\/\//i.test(raw)) return 'internal';
     try{
-      const source=browserShellSourceUrl(raw) || raw;
+      const source=workspaceShellSourceUrl(raw) || raw;
       const target=new URL(source,location.href);
       if(target.origin===location.origin) return 'internal';
       if(target.protocol==='http:') return 'insecure';
@@ -4894,23 +4909,23 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }catch{}
     return 'unknown';
   }
-  function setBrowserTabSecurityState(browserTab,state){
+  function setWorkspaceTabSecurityState(workspaceTab,state){
     const next=['internal','secure','insecure','unknown'].includes(state) ? state : 'unknown';
-    if(browserTab && typeof browserTab==='object') browserTab.securityState=next;
-    const browserTabId=typeof browserTab==='string' ? browserTab : browserTab?.id;
-    const shellTab=(browserTabId && browserShellTabs.find(tab=>tab.browserTabId===browserTabId))
-      || browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
+    if(workspaceTab && typeof workspaceTab==='object') workspaceTab.securityState=next;
+    const workspaceTabId=typeof workspaceTab==='string' ? workspaceTab : workspaceTab?.id;
+    const shellTab=(workspaceTabId && workspaceShellTabs.find(tab=>tab.workspaceTabId===workspaceTabId))
+      || workspaceShellTabs.find(tab=>tab.id===workspaceShellActiveTab);
     if(!shellTab) return;
     shellTab.securityState=next;
-    if(shellTab.id===browserShellActiveTab) syncBrowserShellSecurityIndicator(shellTab.url,next);
+    if(shellTab.id===workspaceShellActiveTab) syncWorkspaceShellSecurityIndicator(shellTab.url,next);
   }
-  function syncBrowserShellSecurityIndicator(value='',forcedState=''){
-    const indicator=document.querySelector('.browser-mode-secure-indicator');
+  function syncWorkspaceShellSecurityIndicator(value='',forcedState=''){
+    const indicator=document.querySelector('.workspace-mode-secure-indicator');
     if(!indicator) return;
     const raw=String(value || '').trim();
     const state=['internal','secure','insecure','unknown'].includes(forcedState)
       ? forcedState
-      : browserShellSecurityStateForUrl(raw);
+      : workspaceShellSecurityStateForUrl(raw);
     const label=state==='secure' ? 'Secure HTTPS connection'
       : state==='insecure' ? 'Connection is not secure'
       : state==='unknown' ? 'Connection security is not verified'
@@ -4923,38 +4938,38 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       : '<svg viewBox="0 0 24 24"><rect x="6" y="10" width="12" height="9" rx="2"></rect><path d="M9 10V7a3 3 0 0 1 6 0v3"></path></svg>';
   }
   let nyxLastNavigation='';
-  function renderBrowserShellTabs(){
-    if(!document.body.classList.contains('browser-shell')) return;
-    ensureBrowserShellHome();
-    const sidebar=ensureBrowserShellTabSidebar();
-    const list=sidebar.querySelector('[data-browser-shell-tab-list]');
-    const home=document.querySelector('body.browser-shell .brand-mini [data-browser-shell-home]');
+  function renderWorkspaceShellTabs(){
+    if(!document.body.classList.contains('workspace-shell')) return;
+    ensureWorkspaceShellHome();
+    const sidebar=ensureWorkspaceShellTabSidebar();
+    const list=sidebar.querySelector('[data-workspace-shell-tab-list]');
+    const home=document.querySelector('body.workspace-shell .brand-mini [data-workspace-shell-home]');
     if(!list) return;
-    if(!browserShellTabs.length){
-      browserShellActiveTab=null;
-      const contentStateChanged=document.body.classList.contains('browser-content-active');
-      document.body.classList.remove('browser-content-active');
+    if(!workspaceShellTabs.length){
+      workspaceShellActiveTab=null;
+      const contentStateChanged=document.body.classList.contains('workspace-content-active');
+      document.body.classList.remove('workspace-content-active');
       document.body.classList.remove('nyx-built-in-content-active');
       window.NyxBeamsWallpaper?.syncVisibility?.();
       if(contentStateChanged) queueMicrotask(()=>syncThemeVantaBackgrounds());
       if(home){
         home.style.display='none';
-        delete home.dataset.browserShellTab;
+        delete home.dataset.workspaceShellTab;
       }
-      const input=document.querySelector('[data-browser-shell-url]');
+      const input=document.querySelector('[data-workspace-shell-url]');
       if(input && document.activeElement!==input) input.value='';
-      syncBrowserShellSecurityIndicator('');
+      syncWorkspaceShellSecurityIndicator('');
       list.replaceChildren();
       return;
     }
-    let active=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
+    let active=workspaceShellTabs.find(tab=>tab.id===workspaceShellActiveTab);
     if(!active){
-      active=browserShellTabs[0];
-      browserShellActiveTab=active.id;
+      active=workspaceShellTabs[0];
+      workspaceShellActiveTab=active.id;
     }
 
-    const chromeVisible=browserShellTabs.length>1 || Boolean(active?.url) || active?.title!=='Home';
-    document.body.classList.toggle('nyx-browser-chrome-visible',chromeVisible);
+    const chromeVisible=workspaceShellTabs.length>1 || Boolean(active?.url) || active?.title!=='Home';
+    document.body.classList.toggle('nyx-workspace-chrome-visible',chromeVisible);
     syncNyxRecentSearches();
     const activeShowsContent=Boolean(active?.url);
     const navigationKey=active.id+'|'+(active.url||'');
@@ -4963,9 +4978,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(activeShowsContent){store.set('nyx.sidebarExpanded',false);applyNyxSidebarExpansion()}
     }
     applyNyxAppearance();
-    const contentStateChanged=document.body.classList.contains('browser-content-active')!==activeShowsContent;
-    document.body.classList.toggle('browser-content-active',activeShowsContent);
-    const activeSource=browserShellSourceUrl(active?.url || '') || active?.url || '';
+    const contentStateChanged=document.body.classList.contains('workspace-content-active')!==activeShowsContent;
+    document.body.classList.toggle('workspace-content-active',activeShowsContent);
+    const activeSource=workspaceShellSourceUrl(active?.url || '') || active?.url || '';
     let activeIsBuiltIn=false;
     try{
       const activeTarget=new URL(activeSource,location.href);
@@ -4976,47 +4991,47 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(contentStateChanged) queueMicrotask(()=>syncThemeVantaBackgrounds());
     if(home){
       home.style.display='';
-      home.innerHTML='<span class="browser-home-icon" aria-hidden="true"></span><span class="browser-home-label">Nyx</span>';
-      delete home.dataset.browserShellTab;
+      home.innerHTML='<span class="workspace-home-icon" aria-hidden="true"></span><span class="workspace-home-label">Nyx</span>';
+      delete home.dataset.workspaceShellTab;
       home.title='Home';
       home.classList.toggle('active',active.title==='Home' && !active.url);
     }
     list.replaceChildren();
-    const tabListDesign=normalizeBrowserTabDesign(store.text('nyx.tabDesign','bar'))==='list';
-    browserShellTabs.forEach(tab=>{
+    const tabListDesign=normalizeWorkspaceTabDesign(store.text('nyx.tabDesign','bar'))==='list';
+    workspaceShellTabs.forEach(tab=>{
       const item=document.createElement('div');
-      const opening=browserShellOpeningTabs.has(tab.id);
-      item.className='nyx-browser-tab-row'+(tab.id===browserShellActiveTab?' active':'')+(opening?' tab-opening':'');
-      item.dataset.browserShellTab=tab.id;
+      const opening=workspaceShellOpeningTabs.has(tab.id);
+      item.className='nyx-workspace-tab-row'+(tab.id===workspaceShellActiveTab?' active':'')+(opening?' tab-opening':'');
+      item.dataset.workspaceShellTab=tab.id;
       item.setAttribute('role','tab');
-      item.setAttribute('tabindex',tab.id===browserShellActiveTab?'0':'-1');
-      item.setAttribute('aria-selected',String(tab.id===browserShellActiveTab));
-      const close=browserShellTabs.length>1?`<button class="nyx-browser-tab-close" type="button" data-browser-shell-close-tab="${esc(tab.id)}" aria-label="Close ${esc(browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url))}">&times;</button>`:'';
-      item.innerHTML=`<img class="nyx-browser-tab-icon" alt="" src="${esc(browserChromeIcon(tab.icon,tab.url))}"><span><strong aria-label="${esc(browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url))}">${esc(window.nyxDisplayName(browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url)))}</strong><small>${esc(browserShellTabDomain(tab))}</small></span>${close}`;
-      bindTabIconFallback(item.querySelector('.nyx-browser-tab-icon'));
+      item.setAttribute('tabindex',tab.id===workspaceShellActiveTab?'0':'-1');
+      item.setAttribute('aria-selected',String(tab.id===workspaceShellActiveTab));
+      const close=workspaceShellTabs.length>1?`<button class="nyx-workspace-tab-close" type="button" data-workspace-shell-close-tab="${esc(tab.id)}" aria-label="Close ${esc(workspaceChromeTitle(tab.title || workspaceShellLabel(tab.url),tab.url))}">&times;</button>`:'';
+      item.innerHTML=`<img class="nyx-workspace-tab-icon" alt="" src="${esc(workspaceChromeIcon(tab.icon,tab.url))}"><span><strong aria-label="${esc(workspaceChromeTitle(tab.title || workspaceShellLabel(tab.url),tab.url))}">${esc(window.nyxDisplayName(workspaceChromeTitle(tab.title || workspaceShellLabel(tab.url),tab.url)))}</strong><small>${esc(workspaceShellTabDomain(tab))}</small></span>${close}`;
+      bindTabIconFallback(item.querySelector('.nyx-workspace-tab-icon'));
       item.addEventListener('click',event=>{
-        if(event.target.closest?.('[data-browser-shell-close-tab]')) return;
+        if(event.target.closest?.('[data-workspace-shell-close-tab]')) return;
         event.preventDefault();
-        setBrowserShellActive(tab.id);
+        setWorkspaceShellActive(tab.id);
       });
-      item.querySelector('[data-browser-shell-close-tab]')?.addEventListener('click',event=>{
+      item.querySelector('[data-workspace-shell-close-tab]')?.addEventListener('click',event=>{
         event.preventDefault();
         event.stopPropagation();
-        closeBrowserShellTab(tab.id);
+        closeWorkspaceShellTab(tab.id);
       });
       item.addEventListener('keydown',event=>{
         if(event.target.closest?.('button')) return;
-        if(event.key==='Enter' || event.key===' '){event.preventDefault();setBrowserShellActive(tab.id)}
-        if((event.key==='Delete' || event.key==='Backspace') && browserShellTabs.length>1){event.preventDefault();closeBrowserShellTab(tab.id)}
+        if(event.key==='Enter' || event.key===' '){event.preventDefault();setWorkspaceShellActive(tab.id)}
+        if((event.key==='Delete' || event.key==='Backspace') && workspaceShellTabs.length>1){event.preventDefault();closeWorkspaceShellTab(tab.id)}
       });
       if(tabListDesign){
         const slot=document.createElement('div');
-        slot.className='nyx-browser-tab-slot';
+        slot.className='nyx-workspace-tab-slot';
         const add=document.createElement('button');
-        add.className='nyx-browser-tab-add';
+        add.className='nyx-workspace-tab-add';
         add.type='button';
-        add.dataset.browserShellNewTabAfter=tab.id;
-        add.setAttribute('aria-label',`Open a new tab after ${browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url)}`);
+        add.dataset.workspaceShellNewTabAfter=tab.id;
+        add.setAttribute('aria-label',`Open a new tab after ${workspaceChromeTitle(tab.title || workspaceShellLabel(tab.url),tab.url)}`);
         add.title='New tab';
         add.textContent='+';
         slot.append(item,add);
@@ -5027,58 +5042,58 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const finishOpening=()=>{
           if(openingFinished) return;
           openingFinished=true;
-          browserShellOpeningTabs.delete(tab.id);
+          workspaceShellOpeningTabs.delete(tab.id);
           item.classList.remove('tab-opening');
         };
         item.addEventListener('animationend',finishOpening,{once:true});
         setTimeout(finishOpening,1250);
       }
     });
-    document.querySelectorAll('[data-browser-shell-tabs-toggle]').forEach(button=>button.setAttribute('aria-expanded',String(document.body.classList.contains('nyx-tab-sidebar-open'))));
-    const input=document.querySelector('[data-browser-shell-url]');
-    if(input && document.activeElement!==input) input.value=browserShellDisplayValue(active.url);
-    syncBrowserShellSecurityIndicator(active.url,active.securityState);
-    renderBrowserBookmarks();
+    document.querySelectorAll('[data-workspace-shell-tabs-toggle]').forEach(button=>button.setAttribute('aria-expanded',String(document.body.classList.contains('nyx-tab-sidebar-open'))));
+    const input=document.querySelector('[data-workspace-shell-url]');
+    if(input && document.activeElement!==input) input.value=workspaceShellDisplayValue(active.url);
+    syncWorkspaceShellSecurityIndicator(active.url,active.securityState);
+    renderWorkspaceBookmarks();
     if(typeof applyVisualEffectSetting==='function') applyVisualEffectSetting();
-    if(!browserSuggestionsAllowed()) hideBrowserSuggestions();
+    if(!workspaceSuggestionsAllowed()) hideWorkspaceSuggestions();
     if(active?.url!=='nyx://developer') hideNyxErudaPanel();
     renderNyxVisualTabStrip();
     syncNyxVisualDockState();
   }
-  function openBrowserShellTab(url='',options={}){
+  function openWorkspaceShellTab(url='',options={}){
     closeWeatherForWindowOpen();
 
 
 
-    closeBrowserShellSettings();
+    closeWorkspaceShellSettings();
     const id='shell-'+Date.now()+Math.random().toString(16).slice(2);
     const normalized=url ? normalize(url) : '';
     const isBlank=!normalized;
-    browserShellTabs.push({id,url:normalized,title:isBlank ? 'New Tab' : browserShellLabel(normalized),icon:isBlank ? favicons.nyx : iconForUrl(normalized)});
-    browserShellOpeningTabs.add(id);
-    browserShellActiveTab=id;
-    renderBrowserShellTabs();
-    if(activeBrowser?.win?.isConnected && typeof activeBrowser.addTab==='function'){
-      const created=activeBrowser.addTab(normalized,options.forceMode || '');
+    workspaceShellTabs.push({id,url:normalized,title:isBlank ? 'New Tab' : workspaceShellLabel(normalized),icon:isBlank ? favicons.nyx : iconForUrl(normalized)});
+    workspaceShellOpeningTabs.add(id);
+    workspaceShellActiveTab=id;
+    renderWorkspaceShellTabs();
+    if(activeWorkspace?.win?.isConnected && typeof activeWorkspace.addTab==='function'){
+      const created=activeWorkspace.addTab(normalized,options.forceMode || '');
       if(!created){
-        browserShellTabs.splice(0,browserShellTabs.length,...browserShellTabs.filter(tab=>tab.id!==id));
-        browserShellActiveTab=browserShellTabs[0]?.id || null;
-        renderBrowserShellTabs();
+        workspaceShellTabs.splice(0,workspaceShellTabs.length,...workspaceShellTabs.filter(tab=>tab.id!==id));
+        workspaceShellActiveTab=workspaceShellTabs[0]?.id || null;
+        renderWorkspaceShellTabs();
         return null;
       }else{
-        browserShellTabs.find(tab=>tab.id===id).browserTabId=created.id;
+        workspaceShellTabs.find(tab=>tab.id===id).workspaceTabId=created.id;
       }
       if(!isBlank){
         created.url=normalized;
-        created.title=browserShellLabel(normalized);
+        created.title=workspaceShellLabel(normalized);
         created.icon=iconForUrl(normalized);
-        browserShellActiveTab=id;
-        activeBrowser.activate?.(created.id);
-        activeBrowser.renderTabs?.();
-        updateBrowserShellLocation(normalized,created.id);
+        workspaceShellActiveTab=id;
+        activeWorkspace.activate?.(created.id);
+        activeWorkspace.renderTabs?.();
+        updateWorkspaceShellLocation(normalized,created.id);
       }
       else{
-        activeBrowser.activate?.(created?.id);
+        activeWorkspace.activate?.(created?.id);
         created.url='';
         created.title='New Tab';
         created.icon=favicons.nyx;
@@ -5088,25 +5103,25 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         created.frame.removeAttribute('src');
         created.frame.removeAttribute('srcdoc');
         created.frame.classList.remove('active');
-        renderBrowserShellHomeMode(activeBrowser.win);
-        activeBrowser.renderTabs?.();
-        updateBrowserShellLocation('',created.id,true);
-        renderBrowserShellTabs();
-        if(options.focusAddress!==false) setTimeout(()=>document.querySelector('[data-browser-shell-url]')?.focus(),30);
+        renderWorkspaceShellHomeMode(activeWorkspace.win);
+        activeWorkspace.renderTabs?.();
+        updateWorkspaceShellLocation('',created.id,true);
+        renderWorkspaceShellTabs();
+        if(options.focusAddress!==false) setTimeout(()=>document.querySelector('[data-workspace-shell-url]')?.focus(),30);
       }
       return id;
     }
-    const win=openBrowser(normalized,options);
+    const win=openWorkspace(normalized,options);
     win?.classList.add('maximized');
-    const created=activeBrowser?.tabs?.[activeBrowser.tabs.length-1];
-    if(created) browserShellTabs.find(tab=>tab.id===id).browserTabId=created.id;
+    const created=activeWorkspace?.tabs?.[activeWorkspace.tabs.length-1];
+    if(created) workspaceShellTabs.find(tab=>tab.id===id).workspaceTabId=created.id;
     if(created && !isBlank){
       created.url=normalized;
-      created.title=browserShellLabel(normalized);
+      created.title=workspaceShellLabel(normalized);
       created.icon=iconForUrl(normalized);
-      browserShellActiveTab=id;
-      activeBrowser?.activate?.(created.id);
-      activeBrowser?.renderTabs?.();
+      workspaceShellActiveTab=id;
+      activeWorkspace?.activate?.(created.id);
+      activeWorkspace?.renderTabs?.();
     }
     if(isBlank){
       if(created){
@@ -5120,54 +5135,54 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         created.frame.removeAttribute('srcdoc');
         created.frame.classList.remove('active');
       }
-      renderBrowserShellHomeMode(activeBrowser?.win);
-      activeBrowser?.activate?.(created?.id);
-      renderBrowserShellHomeMode(activeBrowser?.win);
-      activeBrowser?.renderTabs?.();
-      updateBrowserShellLocation('',created?.id || '',true);
-      renderBrowserShellTabs();
-      if(options.focusAddress!==false) setTimeout(()=>document.querySelector('[data-browser-shell-url]')?.focus(),30);
+      renderWorkspaceShellHomeMode(activeWorkspace?.win);
+      activeWorkspace?.activate?.(created?.id);
+      renderWorkspaceShellHomeMode(activeWorkspace?.win);
+      activeWorkspace?.renderTabs?.();
+      updateWorkspaceShellLocation('',created?.id || '',true);
+      renderWorkspaceShellTabs();
+      if(options.focusAddress!==false) setTimeout(()=>document.querySelector('[data-workspace-shell-url]')?.focus(),30);
     }
     updateDockFullscreenState();
     return id;
   }
-  function openBrowserShellTabAfter(afterId){
-    const id=openBrowserShellTab('',{focusAddress:false});
-    const created=browserShellTabs.find(tab=>tab.id===id);
-    const after=browserShellTabs.find(tab=>tab.id===afterId);
+  function openWorkspaceShellTabAfter(afterId){
+    const id=openWorkspaceShellTab('',{focusAddress:false});
+    const created=workspaceShellTabs.find(tab=>tab.id===id);
+    const after=workspaceShellTabs.find(tab=>tab.id===afterId);
     if(!created || !after) return id;
-    browserShellTabs.splice(browserShellTabs.indexOf(created),1);
-    browserShellTabs.splice(browserShellTabs.indexOf(after)+1,0,created);
-    if(activeBrowser?.tabs?.length){
-      const rank=new Map(browserShellTabs.map((tab,index)=>[tab.browserTabId,index]).filter(([tabId])=>tabId));
-      const originalOrder=new Map(activeBrowser.tabs.map((tab,index)=>[tab.id,index]));
-      activeBrowser.tabs.sort((left,right)=>{
+    workspaceShellTabs.splice(workspaceShellTabs.indexOf(created),1);
+    workspaceShellTabs.splice(workspaceShellTabs.indexOf(after)+1,0,created);
+    if(activeWorkspace?.tabs?.length){
+      const rank=new Map(workspaceShellTabs.map((tab,index)=>[tab.workspaceTabId,index]).filter(([tabId])=>tabId));
+      const originalOrder=new Map(activeWorkspace.tabs.map((tab,index)=>[tab.id,index]));
+      activeWorkspace.tabs.sort((left,right)=>{
         const leftRank=rank.has(left.id)?rank.get(left.id):Number.MAX_SAFE_INTEGER;
         const rightRank=rank.has(right.id)?rank.get(right.id):Number.MAX_SAFE_INTEGER;
         return leftRank-rightRank || originalOrder.get(left.id)-originalOrder.get(right.id);
       });
-      activeBrowser.renderTabs?.();
+      activeWorkspace.renderTabs?.();
     }
-    renderBrowserShellTabs();
-    setTimeout(()=>document.querySelector('[data-browser-shell-url]')?.focus(),30);
+    renderWorkspaceShellTabs();
+    setTimeout(()=>document.querySelector('[data-workspace-shell-url]')?.focus(),30);
     return id;
   }
-  function openBrowserShellInternalTab(name){
-    hideBrowserSuggestions();
+  function openWorkspaceShellInternalTab(name){
+    hideWorkspaceSuggestions();
     if(String(name || '').toLowerCase()==='settings'){
-      const existing=browserShellTabs.find(tab=>tab.url==='nyx://settings');
+      const existing=workspaceShellTabs.find(tab=>tab.url==='nyx://settings');
       if(existing){
-        setBrowserShellActive(existing.id);
-        renderBrowserShellSettingsTab();
+        setWorkspaceShellActive(existing.id);
+        renderWorkspaceShellSettingsTab();
         return existing.id;
       }
-      const id=openBrowserShellTab('');
-      const shellTab=browserShellTabs.find(tab=>tab.id===id);
+      const id=openWorkspaceShellTab('');
+      const shellTab=workspaceShellTabs.find(tab=>tab.id===id);
       if(shellTab){
         shellTab.url='nyx://settings';
         shellTab.title='Settings';
         shellTab.icon=appIcon('settings');
-        const linked=activeBrowser?.tabs?.find(tab=>tab.id===shellTab.browserTabId);
+        const linked=activeWorkspace?.tabs?.find(tab=>tab.id===shellTab.workspaceTabId);
         if(linked){
           linked.url='nyx://settings';
           linked.title='Settings';
@@ -5176,66 +5191,66 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           linked.index=0;
         }
       }
-      renderBrowserShellTabs();
-      const address=document.querySelector('[data-browser-shell-url]');
+      renderWorkspaceShellTabs();
+      const address=document.querySelector('[data-workspace-shell-url]');
       if(address) address.value='nyx://settings';
-      renderBrowserShellSettingsTab();
+      renderWorkspaceShellSettingsTab();
       return id;
     }
-    closeBrowserShellSettings();
-    const id=openBrowserShellTab('');
-    if(id) browserShellActiveTab=id;
-    showBrowserShellInternalPage(name);
+    closeWorkspaceShellSettings();
+    const id=openWorkspaceShellTab('');
+    if(id) workspaceShellActiveTab=id;
+    showWorkspaceShellInternalPage(name);
     return id;
   }
   async function openNyxVmsApp(){
     try{
 
-      const id=openBrowserShellTab('/apps/nyxcloud/?embedded=1',{forceMode:'iframe'});
-      const tab=browserShellTabs.find(item=>item.id===id);if(tab)tab.title='VMs';
-      renderBrowserShellTabs();
+      const id=openWorkspaceShellTab('/apps/nyxcloud/?embedded=1',{forceMode:'iframe'});
+      const tab=workspaceShellTabs.find(item=>item.id===id);if(tab)tab.title='VMs';
+      renderWorkspaceShellTabs();
     }catch(error){toast(error.message);}
   }
-  function openBrowserShellAppTab(url){
+  function openWorkspaceShellAppTab(url){
     if(String(url||'').replace(/\/+$/,'')==='/apps/nyxcloud'){void openNyxVmsApp();return;}
-    hideBrowserSuggestions();
+    hideWorkspaceSuggestions();
     closeWeatherForWindowOpen();
     if(String(url || '').trim().toLowerCase()==='nyx://settings'){
-      return openBrowserShellInternalTab('settings');
+      return openWorkspaceShellInternalTab('settings');
     }
     if(String(url || '').trim().toLowerCase()==='nyx://ai'){
-      return openBrowserShellInternalTab('ai');
+      return openWorkspaceShellInternalTab('ai');
     }
     if(String(url || '').trim().toLowerCase()==='nyx://ephesians1'){
-      return openBrowserShellInternalTab('ephesians1');
+      return openWorkspaceShellInternalTab('ephesians1');
     }
     if(/^nyx:\/\/(apps|terms|developer|about|credits)$/i.test(String(url || '').trim())){
-      return openBrowserShellInternalTab(String(url).trim().slice(6).toLowerCase());
+      return openWorkspaceShellInternalTab(String(url).trim().slice(6).toLowerCase());
     }
-    const id=openBrowserShellTab(url || '',{forceMode:appCompatibilityMode(url)});
-    if(id) browserShellActiveTab=id;
-    renderBrowserShellTabs();
+    const id=openWorkspaceShellTab(url || '',{forceMode:appCompatibilityMode(url)});
+    if(id) workspaceShellActiveTab=id;
+    renderWorkspaceShellTabs();
     return id;
   }
   function openNyxAiSettings(){
-    return openBrowserShellInternalTab('ai');
+    return openWorkspaceShellInternalTab('ai');
   }
-  function ensureBrowserShellLinkedTab(shellTab){
-    if(!shellTab || !activeBrowser?.win?.isConnected) return null;
-    let tab=shellTab.browserTabId ? activeBrowser.tabs?.find(item=>item.id===shellTab.browserTabId) : null;
+  function ensureWorkspaceShellLinkedTab(shellTab){
+    if(!shellTab || !activeWorkspace?.win?.isConnected) return null;
+    let tab=shellTab.workspaceTabId ? activeWorkspace.tabs?.find(item=>item.id===shellTab.workspaceTabId) : null;
     if(tab){
-      activeBrowser.activate?.(tab.id);
+      activeWorkspace.activate?.(tab.id);
       return tab;
     }
-    tab=activeBrowser.tabs?.find(item=>item.id===activeBrowser.active) || activeBrowser.tabs?.[0] || null;
-    if(!tab && typeof activeBrowser.addTab==='function') tab=activeBrowser.addTab('');
+    tab=activeWorkspace.tabs?.find(item=>item.id===activeWorkspace.active) || activeWorkspace.tabs?.[0] || null;
+    if(!tab && typeof activeWorkspace.addTab==='function') tab=activeWorkspace.addTab('');
     if(!tab) return null;
-    shellTab.browserTabId=tab.id;
-    activeBrowser.activate?.(tab.id);
+    shellTab.workspaceTabId=tab.id;
+    activeWorkspace.activate?.(tab.id);
     return tab;
   }
-  function browserShellTabPreservesSearch(shellTab){
-    const source=browserShellSourceUrl(shellTab?.url || '');
+  function workspaceShellTabPreservesSearch(shellTab){
+    const source=workspaceShellSourceUrl(shellTab?.url || '');
     if(!source) return false;
     try{
       const parsed=new URL(source,location.href);
@@ -5244,28 +5259,28 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       return false;
     }
   }
-  function setBrowserShellActive(id){
-    if(!browserShellTabs.some(tab=>tab.id===id)) return;
-    hideBrowserSuggestions();
-    setBrowserTabSidebarOpen(false);
+  function setWorkspaceShellActive(id){
+    if(!workspaceShellTabs.some(tab=>tab.id===id)) return;
+    hideWorkspaceSuggestions();
+    setWorkspaceTabSidebarOpen(false);
     closeWeatherForWindowOpen();
-    browserShellActiveTab=id;
-    const shellTab=browserShellTabs.find(tab=>tab.id===id);
-    if(shellTab?.url==='nyx://settings') renderBrowserShellSettingsTab();
-    else closeBrowserShellSettings();
+    workspaceShellActiveTab=id;
+    const shellTab=workspaceShellTabs.find(tab=>tab.id===id);
+    if(shellTab?.url==='nyx://settings') renderWorkspaceShellSettingsTab();
+    else closeWorkspaceShellSettings();
     if(shellTab?.title==='Home' && !shellTab.url){
-      renderBrowserShellHomeMode(activeBrowser?.win,'home');
-    }else if(isBrowserShellBlankUrl(shellTab?.url)){
-      if(shellTab?.browserTabId && activeBrowser?.activate) activeBrowser.activate(shellTab.browserTabId);
-      renderBrowserShellHomeMode(activeBrowser?.win);
-    }else if(shellTab?.browserTabId && activeBrowser?.activate) activeBrowser.activate(shellTab.browserTabId);
-    renderBrowserShellTabs();
-    animateActiveBrowserShellTab();
+      renderWorkspaceShellHomeMode(activeWorkspace?.win,'home');
+    }else if(isWorkspaceShellBlankUrl(shellTab?.url)){
+      if(shellTab?.workspaceTabId && activeWorkspace?.activate) activeWorkspace.activate(shellTab.workspaceTabId);
+      renderWorkspaceShellHomeMode(activeWorkspace?.win);
+    }else if(shellTab?.workspaceTabId && activeWorkspace?.activate) activeWorkspace.activate(shellTab.workspaceTabId);
+    renderWorkspaceShellTabs();
+    animateActiveWorkspaceShellTab();
   }
-  function animateActiveBrowserShellTab(){
+  function animateActiveWorkspaceShellTab(){
     if(suppressHomeEntranceOnStartup) return;
     requestAnimationFrame(()=>{
-      const tab=document.querySelector('body.browser-shell .nyx-browser-tab-row.active,body.browser-shell .brand-mini > .active:is(.browser-mode-app-button,.browser-mode-shell-tab)');
+      const tab=document.querySelector('body.workspace-shell .nyx-workspace-tab-row.active,body.workspace-shell .brand-mini > .active:is(.workspace-mode-app-button,.workspace-mode-shell-tab)');
       if(!tab) return;
       tab.classList.remove('tab-activating');
       void tab.offsetWidth;
@@ -5273,75 +5288,75 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       setTimeout(()=>tab.classList.remove('tab-activating'),340);
     });
   }
-  function setBrowserShellHomeActive(){
+  function setWorkspaceShellHomeActive(){
     document.body.classList.remove('nyx-home-search-active');
     closeWeatherForWindowOpen();
-    closeBrowserShellSettings();
-    ensureBrowserShellHome();
-    let homeTab=browserShellTabs.find(tab=>tab.title==='Home' && !tab.url);
+    closeWorkspaceShellSettings();
+    ensureWorkspaceShellHome();
+    let homeTab=workspaceShellTabs.find(tab=>tab.title==='Home' && !tab.url);
     if(!homeTab){
       const id='shell-'+Date.now()+Math.random().toString(16).slice(2);
       homeTab={id,url:'',title:'Home'};
-      browserShellTabs.unshift(homeTab);
+      workspaceShellTabs.unshift(homeTab);
     }
-    browserShellActiveTab=homeTab.id;
-    if(!activeBrowser?.win?.isConnected){
-      const win=openBrowser('');
+    workspaceShellActiveTab=homeTab.id;
+    if(!activeWorkspace?.win?.isConnected){
+      const win=openWorkspace('');
       win?.classList.add('maximized');
       updateDockFullscreenState();
     }
-    if(activeBrowser?.win?.isConnected){
-      const state=activeBrowser;
+    if(activeWorkspace?.win?.isConnected){
+      const state=activeWorkspace;
       state?.tabs?.forEach(tab=>tab.frame?.classList.remove('active'));
-      renderBrowserShellHomeMode(state.win,'home');
+      renderWorkspaceShellHomeMode(state.win,'home');
       state?.renderTabs?.();
       playHomeEntranceAnimation(state.win);
     }
-    renderBrowserShellTabs();
-    animateActiveBrowserShellTab();
-    const input=document.querySelector('[data-browser-shell-url]');
+    renderWorkspaceShellTabs();
+    animateActiveWorkspaceShellTab();
+    const input=document.querySelector('[data-workspace-shell-url]');
     if(input) input.value='';
   }
 
-  function browserShellSettingsMarkup(presetTiles){
+  function workspaceShellSettingsMarkup(presetTiles){
     const savedTitle=esc(store.text('nyx.tabTitle',document.title || 'ռʏӼ'));
     const savedFavicon=esc(store.text('nyx.tabFavicon',nyxFaviconHref()));
     const currentPreset=esc(store.text('nyx.logo','nyx'));
     const engine=esc(store.text('nyx.engine','duckduckgo'));
-    const savedBrowserMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
-    const browserMode=esc(savedBrowserMode==='rammerhead' ? 'auto' : savedBrowserMode);
-    const transport=esc(normalizeBrowserTransportName(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT)));
+    const savedWorkspaceMode=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE));
+    const workspaceMode=esc(savedWorkspaceMode==='rammerhead' ? 'auto' : savedWorkspaceMode);
+    const transport=esc(normalizeWorkspaceTransportName(store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT)));
     const theme=esc(store.text('nyx.theme','default'));
     const effect=esc(store.text('nyx.visualEffect','none'));
     const effectSpeed=esc(store.text('nyx.visualEffectSpeed','1.1'));
     const effectAmount=esc(store.text('nyx.visualEffectAmount','16'));
-    return `<section class="settings-app settings-single-pane browser-only-settings"><main class="settings-main"><h1>Browser Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original tab redirect U3L"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Auto Cloak</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>S3ARC4 Engine</h2><select class="settings-select" data-browser-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>DuckDuckGo</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Proxy Engine</h2><select class="settings-select" data-browser-mode-select><option value="auto" ${browserMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${browserMode==='scramjet'?'selected':''}>Scrapmmy</option></select></section><section class="settings-block"><h2>HTTP bridge</h2><p>Recommended for devices or networks that block WebSockets. Turn off to use direct WebSocket connections. Applies to the default relay; custom relays keep their saved choice. Reload website tabs after changing.</p><div class="settings-row"><span>Use HTTP bridge</span><button class="settings-action ${store.get('nyx.httpBridge',true)?'on':''}" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-browser-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Eppy over Relay</option><option value="wisp" ${transport==='wisp'?'selected':''}>Relay endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Libby over Relay</option></select><div class="settings-actions"><button class="settings-action" data-browser-settings-save type="button">Save Browser Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
+    return `<section class="settings-app settings-single-pane workspace-only-settings"><main class="settings-main"><h1>Workspace Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original tab redirect U3L"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Auto Cloak</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>S3ARC4 Engine</h2><select class="settings-select" data-workspace-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>DuckDuckGo</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Proxy Engine</h2><select class="settings-select" data-workspace-mode-select><option value="auto" ${workspaceMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${workspaceMode==='scramjet'?'selected':''}>Scrapmmy</option></select></section><section class="settings-block"><h2>HTTP bridge</h2><p>Recommended for devices or networks that block WebSockets. Turn off to use direct WebSocket connections. Applies to the default relay; custom relays keep their saved choice. Reload website tabs after changing.</p><div class="settings-row"><span>Use HTTP bridge</span><button class="settings-action ${store.get('nyx.httpBridge',true)?'on':''}" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-workspace-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Eppy over Relay</option><option value="wisp" ${transport==='wisp'?'selected':''}>Relay endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Libby over Relay</option></select><div class="settings-actions"><button class="settings-action" data-workspace-settings-save type="button">Save Workspace Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
   }
-  function browserShellPresetTiles(){
+  function workspaceShellPresetTiles(){
     return `<button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${nyxTabFavicon}"><span>ռʏӼ tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
   }
-  function saveBrowserShellSettings(root=document){
-    const engine=root.querySelector('[data-browser-engine]');
-    const mode=root.querySelector('[data-browser-mode-select]');
-    const transport=root.querySelector('[data-browser-transport]');
+  function saveWorkspaceShellSettings(root=document){
+    const engine=root.querySelector('[data-workspace-engine]');
+    const mode=root.querySelector('[data-workspace-mode-select]');
+    const transport=root.querySelector('[data-workspace-transport]');
     const font=root.querySelector('[data-font-value]');
     const tabDesign=root.querySelector('[data-tab-design-value]');
     store.setText('nyx.engine', engine?.value || 'duckduckgo');
-    store.setText('nyx.browserMode', normalizeBrowserModeName(mode?.value || DEFAULT_BROWSER_MODE));
+    store.setText('nyx.workspaceMode', normalizeWorkspaceModeName(mode?.value || DEFAULT_WORKSPACE_MODE));
     if(font) store.setText('nyx.font',nyxFontChoice(font.value)[0]);
-    if(tabDesign) store.setText('nyx.tabDesign',normalizeBrowserTabDesign(tabDesign.value));
-    const nextTransport=normalizeBrowserTransportName(transport?.value);
-    if(normalizeBrowserTransportName(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT))!==nextTransport){
-      scramjetInstallPromise=null;
-      scramjetController=null;
-      scramjetTransport=null;
-      scramjetTransportKey='';
+    if(tabDesign) store.setText('nyx.tabDesign',normalizeWorkspaceTabDesign(tabDesign.value));
+    const nextTransport=normalizeWorkspaceTransportName(transport?.value);
+    if(normalizeWorkspaceTransportName(store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT))!==nextTransport){
+      studyjetInstallPromise=null;
+      studyjetController=null;
+      studyjetTransport=null;
+      studyjetTransportKey='';
     }
     store.setText('nyx.transport', nextTransport);
     applyUserSettings();
-    resetBrowserProxyRuntime();
+    resetWorkspaceConnectionRuntime();
   }
-  function enhanceBrowserShellSettings(overlay){
+  function enhanceWorkspaceShellSettings(overlay){
     const app=overlay.querySelector('.settings-app');
     const main=app?.querySelector('.settings-main');
     const source=main?.querySelector('.settings-section.active');
@@ -5349,16 +5364,16 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
 
 
 
-    const browserModeSelect=source.querySelector('[data-browser-mode-select]');
+    const workspaceModeSelect=source.querySelector('[data-workspace-mode-select]');
 
-    if(browserModeSelect){
-      const browserModeLabels={
+    if(workspaceModeSelect){
+      const workspaceModeLabels={
         auto:'Auto',
         scramjet:'Scramjet v2',
 
       };
-      [...browserModeSelect.options].forEach(option=>{
-        if(browserModeLabels[option.value]) option.textContent=browserModeLabels[option.value];
+      [...workspaceModeSelect.options].forEach(option=>{
+        if(workspaceModeLabels[option.value]) option.textContent=workspaceModeLabels[option.value];
       });
     }
 
@@ -5374,12 +5389,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const definitions=[
       ['general','General',settingsIcons.advanced,'Choose Nyx defaults and everyday behavior.',['nyx','home design','search engine']],
       ['appearance','Appearance',settingsIcons.customize,'Make Nyx feel like yours.',['theme','homepage','sidebar','custom theme','effects','wallpapers','line waves','performance']],
-      ['browser','Browser',settingsIcons.browsing,'Manage tabs, search, and browsing controls.',['tab cloak','preset cloak','cloaking','tab design']],
+      ['workspace','Workspace',settingsIcons.browsing,'Manage tabs, search, and browsing controls.',['tab cloak','preset cloak','cloaking','tab design']],
       ['privacy','Privacy',settingsIcons.privacy,'Keep your browsing surface private and protected.',['private tabs','popup protection']],
       ['proxy','Proxy',settingsIcons.browsing,'Choose how Nyx reaches the web.',['proxy engine','http bridge','transport','wisp url']],
       ['accounts','Accounts',settingsIcons.account,'Manage your identity, cloud saves, and staff tools.',['account','cloud saves','owner dashboard','founder profile']],
       ['data','Data',settingsIcons.advanced,'Move, download, or reset local Nyx data.',['data transfer','clear cache']],
-      ['advanced','Advanced',settingsIcons.advanced,'Configure power-user browser controls.',['panic key','font']],
+      ['advanced','Advanced',settingsIcons.advanced,'Configure power-user workspace controls.',['panic key','font']],
       ['credits','Credits',settingsIcons.account,'Thanks to the people who help make Nyx.',[]]
     ];
     const categoryFor=title=>definitions.find(([, , , ,titles])=>titles.includes(title))?.[0] || 'advanced';
@@ -5454,13 +5469,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         }else controls.replaceChildren(grid);
         block.classList.add('nyx-color-theme-block');
       }
-      if(categoryFor(title)==='browser'){
-        block.classList.add('nyx-browser-settings-card');
+      if(categoryFor(title)==='workspace'){
+        block.classList.add('nyx-workspace-settings-card');
         const labels=[['[data-tab-title]','Tab title'],['[data-tab-favicon-file]','Tab icon'],['[data-cloak-type]','Open Nyx in'],['[data-cloak-redirect-url]','Redirect address']];
         labels.forEach(([selector,text])=>{
           const field=controls.querySelector(selector);
           if(!field)return;
-          const label=document.createElement('label');label.className='nyx-browser-setting-field';
+          const label=document.createElement('label');label.className='nyx-workspace-setting-field';
           const caption=document.createElement('span');caption.textContent=text;
           field.replaceWith(label);label.append(caption,field);
         });
@@ -5468,7 +5483,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         if(title==='preset cloak')heading.textContent='Quick presets';
         if(title==='cloaking'){
           heading.textContent='Launch options';
-          const toggles=document.createElement('div');toggles.className='nyx-browser-setting-toggles';
+          const toggles=document.createElement('div');toggles.className='nyx-workspace-setting-toggles';
           const rows=[...controls.querySelectorAll(':scope > .settings-row')];
           if(rows.length){rows[0].before(toggles);rows.forEach(row=>toggles.appendChild(row));}
         }
@@ -5490,7 +5505,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const about=document.createElement('section');
     about.className='settings-block';
     about.dataset.settingsSearch='about nyx version support reset cache';
-    about.innerHTML='<div class="nyx-settings-copy"><h2>Nyx</h2><p>Nyx Learning browser workspace. Settings are stored on this device unless they belong to your signed-in account.</p></div><div class="nyx-settings-control"><p class="nyx-settings-version">Version 2</p><div class="settings-actions"><button class="settings-action" data-clear-nyx-cache type="button">Reset local settings</button></div></div>';
+    about.innerHTML='<div class="nyx-settings-copy"><h2>Nyx</h2><p>Nyx Learning workspace workspace. Settings are stored on this device unless they belong to your signed-in account.</p></div><div class="nyx-settings-control"><p class="nyx-settings-version">Version 2</p><div class="settings-actions"><button class="settings-action" data-clear-nyx-cache type="button">Reset local settings</button></div></div>';
     categories.get('general').querySelector('.nyx-settings-group').appendChild(about);
 
     const credits=document.createElement('section');
@@ -5549,20 +5564,20 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     activate('appearance');
     syncFounderOwnerControls();
   }
-  function openBrowserShellSettings(){
-    if(!document.body.classList.contains('browser-shell')){
+  function openWorkspaceShellSettings(){
+    if(!document.body.classList.contains('workspace-shell')){
       openSettings();
       return;
     }
-    return openBrowserShellInternalTab('settings');
+    return openWorkspaceShellInternalTab('settings');
   }
-  function renderBrowserShellSettingsTab(){
-    document.querySelector('.browser-shell-settings-overlay')?.remove();
+  function renderWorkspaceShellSettingsTab(){
+    document.querySelector('.workspace-shell-settings-overlay')?.remove();
     const overlay=document.createElement('div');
-    overlay.className='browser-shell-settings-overlay';
-    overlay.innerHTML=`<main class="browser-shell-settings-panel" aria-label="Settings">${browserShellSettingsMarkup(browserShellPresetTiles())}</main>`;
+    overlay.className='workspace-shell-settings-overlay';
+    overlay.innerHTML=`<main class="workspace-shell-settings-panel" aria-label="Settings">${workspaceShellSettingsMarkup(workspaceShellPresetTiles())}</main>`;
     document.body.appendChild(overlay);
-    const transportSelect=overlay.querySelector('[data-browser-transport]');
+    const transportSelect=overlay.querySelector('[data-workspace-transport]');
     const legacyLibcurlOption=transportSelect?.querySelector('option[value="libcurl"]');
     if(legacyLibcurlOption){
       legacyLibcurlOption.value='libcurlRaw';
@@ -5570,7 +5585,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
     if(transportSelect && !transportSelect.querySelector('option[value="auto"]')){
       transportSelect.prepend(new Option('Auto (recommended)','auto'));
-      transportSelect.value=normalizeBrowserTransportName(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT));
+      transportSelect.value=normalizeWorkspaceTransportName(store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT));
     }
     if(transportSelect){
       const transportLabels={epoxy:'Epoxy',wisp:'Wisp',libcurl:'Libcurl',libcurlRaw:'Libcurl',auto:'Auto'};
@@ -5583,7 +5598,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const customWisp=storedCustomWispUrl();
       const wispBlock=document.createElement('section');
       wispBlock.className='settings-block nyx-wisp-setting';
-      wispBlock.innerHTML=`<h2>Wisp U3L</h2><p>Use a custom Wisp relay for Nyx proxy transports. Only use a relay you trust because it carries your proxied traffic.</p><div class="settings-form-row"><input class="settings-input" data-browser-wisp-url type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(customWisp)}" placeholder="${esc(defaultWispUrl())}" aria-label="Custom Wisp U3L"></div><p class="settings-hint" data-browser-wisp-status>${customWisp ? `Custom relay: ${esc(customWisp)}` : `Default relay: ${esc(defaultWispUrl())}`}</p><div class="settings-actions"><button class="settings-action" data-browser-wisp-save type="button">Save Wisp U3L</button><button class="settings-action" data-browser-wisp-reset type="button">Use default</button><button class="settings-action" data-browser-connection-repair type="button">Repair connection</button></div>`;
+      wispBlock.innerHTML=`<h2>Wisp U3L</h2><p>Use a custom Wisp relay for Nyx proxy transports. Only use a relay you trust because it carries your proxied traffic.</p><div class="settings-form-row"><input class="settings-input" data-workspace-wisp-url type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(customWisp)}" placeholder="${esc(defaultWispUrl())}" aria-label="Custom Wisp U3L"></div><p class="settings-hint" data-workspace-wisp-status>${customWisp ? `Custom relay: ${esc(customWisp)}` : `Default relay: ${esc(defaultWispUrl())}`}</p><div class="settings-actions"><button class="settings-action" data-workspace-wisp-save type="button">Save Wisp U3L</button><button class="settings-action" data-workspace-wisp-reset type="button">Use default</button><button class="settings-action" data-workspace-connection-repair type="button">Repair connection</button></div>`;
       transportBlock.after(wispBlock);
       const transferBlock=document.createElement('section');
       transferBlock.className='settings-block nyx-data-transfer-setting';
@@ -5677,188 +5692,188 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       effectBlock.before(resetBlock);
     }
     ensureFreshThemeOptions(overlay);
-    enhanceBrowserShellSettings(overlay);
+    enhanceWorkspaceShellSettings(overlay);
     syncSwitches(overlay);
     wirePresetCloakControls(overlay);
     syncFounderOwnerControls();
   }
-  function closeBrowserShellSettings(){
-    document.querySelector('.browser-shell-settings-overlay')?.remove();
+  function closeWorkspaceShellSettings(){
+    document.querySelector('.workspace-shell-settings-overlay')?.remove();
     syncNyxVisualDockState();
   }
 
-  function closeBrowserShellTab(id){
-    const index=browserShellTabs.findIndex(tab=>tab.id===id);
+  function closeWorkspaceShellTab(id){
+    const index=workspaceShellTabs.findIndex(tab=>tab.id===id);
     if(index<0) return;
-    const closingWasActive=browserShellActiveTab===id;
-    const closing=browserShellTabs[index];
+    const closingWasActive=workspaceShellActiveTab===id;
+    const closing=workspaceShellTabs[index];
     try{
-      if(closingWasActive && closing.url==='nyx://settings') closeBrowserShellSettings();
-      const nextIndex=browserShellTabs.findIndex(tab=>tab.id===id);
+      if(closingWasActive && closing.url==='nyx://settings') closeWorkspaceShellSettings();
+      const nextIndex=workspaceShellTabs.findIndex(tab=>tab.id===id);
       if(nextIndex<0) return;
-      const shellTab=browserShellTabs[nextIndex];
+      const shellTab=workspaceShellTabs[nextIndex];
 
 
 
-      if(shellTab?.browserTabId && activeBrowser?.closeTab){
-        try{activeBrowser.closeTab(shellTab.browserTabId)}catch(error){console.warn('Nyx: embedded tab cleanup failed during shell close',error)}
+      if(shellTab?.workspaceTabId && activeWorkspace?.closeTab){
+        try{activeWorkspace.closeTab(shellTab.workspaceTabId)}catch(error){console.warn('Nyx: embedded tab cleanup failed during shell close',error)}
       }
-      browserShellTabs.splice(nextIndex,1);
-      if(browserShellActiveTab===id) browserShellActiveTab=browserShellTabs[Math.max(0,nextIndex-1)]?.id || browserShellTabs[0]?.id || null;
-      if(!browserShellTabs.length){
+      workspaceShellTabs.splice(nextIndex,1);
+      if(workspaceShellActiveTab===id) workspaceShellActiveTab=workspaceShellTabs[Math.max(0,nextIndex-1)]?.id || workspaceShellTabs[0]?.id || null;
+      if(!workspaceShellTabs.length){
         const freshId='shell-'+Date.now()+Math.random().toString(16).slice(2);
-        browserShellTabs.push({id:freshId,url:'',title:'Home'});
-        browserShellActiveTab=freshId;
-        if(!activeBrowser?.win?.isConnected){
-          const win=openBrowser('');
+        workspaceShellTabs.push({id:freshId,url:'',title:'Home'});
+        workspaceShellActiveTab=freshId;
+        if(!activeWorkspace?.win?.isConnected){
+          const win=openWorkspace('');
           win?.classList.add('maximized');
         }
       }
-      const activeShell=browserShellTabs.find(tab=>tab.id===browserShellActiveTab) || browserShellTabs[0];
+      const activeShell=workspaceShellTabs.find(tab=>tab.id===workspaceShellActiveTab) || workspaceShellTabs[0];
       if(closingWasActive){
-        hideBrowserSuggestions();
-        const address=document.querySelector('[data-browser-shell-url]');
-        if(address) address.value=browserShellDisplayValue(activeShell?.url || '');
+        hideWorkspaceSuggestions();
+        const address=document.querySelector('[data-workspace-shell-url]');
+        if(address) address.value=workspaceShellDisplayValue(activeShell?.url || '');
       }
       if(!closingWasActive){
-        renderBrowserShellTabs();
+        renderWorkspaceShellTabs();
         return;
       }
       if(activeShell?.title==='Home' && !activeShell.url){
-        if(activeBrowser?.win?.isConnected){
-          activeBrowser.tabs?.forEach(tab=>tab.frame?.classList.remove('active'));
-          renderBrowserShellHomeMode(activeBrowser.win,'home');
-          activeBrowser.renderTabs?.();
+        if(activeWorkspace?.win?.isConnected){
+          activeWorkspace.tabs?.forEach(tab=>tab.frame?.classList.remove('active'));
+          renderWorkspaceShellHomeMode(activeWorkspace.win,'home');
+          activeWorkspace.renderTabs?.();
         }
       }else if(activeShell?.url==='nyx://settings'){
-        if(activeShell?.browserTabId && activeBrowser?.activate) activeBrowser.activate(activeShell.browserTabId);
-        renderBrowserShellSettingsTab();
-      }else if(isBrowserShellBlankUrl(activeShell?.url)){
-        if(activeShell?.browserTabId && activeBrowser?.activate) activeBrowser.activate(activeShell.browserTabId);
-        renderBrowserShellHomeMode(activeBrowser?.win);
-      }else if(activeShell?.browserTabId && activeBrowser?.activate){
-        activeBrowser.activate(activeShell.browserTabId);
+        if(activeShell?.workspaceTabId && activeWorkspace?.activate) activeWorkspace.activate(activeShell.workspaceTabId);
+        renderWorkspaceShellSettingsTab();
+      }else if(isWorkspaceShellBlankUrl(activeShell?.url)){
+        if(activeShell?.workspaceTabId && activeWorkspace?.activate) activeWorkspace.activate(activeShell.workspaceTabId);
+        renderWorkspaceShellHomeMode(activeWorkspace?.win);
+      }else if(activeShell?.workspaceTabId && activeWorkspace?.activate){
+        activeWorkspace.activate(activeShell.workspaceTabId);
       }
-      renderBrowserShellTabs();
+      renderWorkspaceShellTabs();
     }finally{
 
 
 
 
-      if(!document.body.classList.contains('browser-shell')){
-        document.body.classList.add('browser-shell');
+      if(!document.body.classList.contains('workspace-shell')){
+        document.body.classList.add('workspace-shell');
       }
       ensureNyxVisualDock();
       deferNyxVisualDockRecovery();
     }
   }
-  function updateBrowserShellLocation(url,browserTabId='',forceInput=false){
-    ensureBrowserShellHome();
-    const tab=(browserTabId && browserShellTabs.find(tab=>tab.browserTabId===browserTabId))
-      || browserShellTabs.find(tab=>tab.id===browserShellActiveTab)
-      || browserShellTabs[0];
+  function updateWorkspaceShellLocation(url,workspaceTabId='',forceInput=false){
+    ensureWorkspaceShellHome();
+    const tab=(workspaceTabId && workspaceShellTabs.find(tab=>tab.workspaceTabId===workspaceTabId))
+      || workspaceShellTabs.find(tab=>tab.id===workspaceShellActiveTab)
+      || workspaceShellTabs[0];
     const nextUrl=String(url || '').trim();
     const previousUrl=String(tab.url || '').trim();
     tab.url=nextUrl;
-    if(nextUrl!==previousUrl || !tab.securityState) tab.securityState=browserShellSecurityStateForUrl(nextUrl);
+    if(nextUrl!==previousUrl || !tab.securityState) tab.securityState=workspaceShellSecurityStateForUrl(nextUrl);
     if(nextUrl){
-      tab.title=browserShellLabel(nextUrl);
+      tab.title=workspaceShellLabel(nextUrl);
       tab.icon=iconForUrl(nextUrl);
     }else if(tab.title!=='Home' && tab.title!=='New Tab'){
       tab.title='New Tab';
       tab.icon=favicons.nyx;
     }
-    renderBrowserShellTabs();
-    if(forceInput && tab.id===browserShellActiveTab){
-      const input=document.querySelector('[data-browser-shell-url]');
+    renderWorkspaceShellTabs();
+    if(forceInput && tab.id===workspaceShellActiveTab){
+      const input=document.querySelector('[data-workspace-shell-url]');
       if(input){
-        input.value=browserShellDisplayValue(nextUrl);
+        input.value=workspaceShellDisplayValue(nextUrl);
         input.dataset.selectOnFocus='1';
       }
     }
   }
-  function navigateBrowserShell(value){
-    closeBrowserShellSettings();
+  function navigateWorkspaceShell(value){
+    closeWorkspaceShellSettings();
     document.body.classList.remove('menu-open');
     const raw=canonicalAddressInput(value);
     if(!raw){
-      openBrowserShellTab('');
+      openWorkspaceShellTab('');
       return;
     }
     if(raw.toLowerCase()==='nyx://ai'){
-      showBrowserShellInternalPage('ai');
+      showWorkspaceShellInternalPage('ai');
       return;
     }
     if(raw.toLowerCase()==='nyx://settings'){
-      openBrowserShellSettings();
+      openWorkspaceShellSettings();
       return;
     }
     if(raw.toLowerCase()==='nyx://ephesians1'){
-      showBrowserShellInternalPage('ephesians1');
+      showWorkspaceShellInternalPage('ephesians1');
       return;
     }
     if(/^nyx:\/\/(terms|developer|about|credits)$/i.test(raw)){
-      openBrowserShellInternalTab(raw.slice(6).toLowerCase());
+      openWorkspaceShellInternalTab(raw.slice(6).toLowerCase());
       return;
     }
     if(shouldTriggerSixtySevenJumpscare(raw)){
       showSixtySevenJumpscare();
       return;
     }
-    ensureBrowserShellHome();
+    ensureWorkspaceShellHome();
 
 
 
     scheduleNyxVisualDockViewportRepair();
-    const proxyInternal=/^(?:\/service\/|\/~\/sj\/|\/scramjet\/service\/|nyx:\/\/)/i.test(raw);
+    const connectionInternal=/^(?:\/service\/|\/~\/sj\/|\/scramjet\/service\/|nyx:\/\/)/i.test(raw);
     const looksLikeUrl=/^(?:[a-z][a-z0-9+.-]*:|[\w.-]+\.[a-z]{2,}(?:\/|$)|\/|\.\/|\.\.\/|assets\/)/i.test(raw);
-    const isSearchQuery=raw && !looksLikeUrl && !proxyInternal;
+    const isSearchQuery=raw && !looksLikeUrl && !connectionInternal;
     if(isSearchQuery) rememberNyxRecentSearch(raw);
     const normalized=normalize(raw);
     const target=isSearchQuery ? selectedSearchUrl(raw) : (normalized || raw);
-    let shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab) || browserShellTabs[0];
-    if(browserShellTabPreservesSearch(shellTab)){
-      const resultShellId=openBrowserShellTab('',{focusAddress:false});
-      const resultShellTab=browserShellTabs.find(tab=>tab.id===resultShellId);
+    let shellTab=workspaceShellTabs.find(tab=>tab.id===workspaceShellActiveTab) || workspaceShellTabs[0];
+    if(workspaceShellTabPreservesSearch(shellTab)){
+      const resultShellId=openWorkspaceShellTab('',{focusAddress:false});
+      const resultShellTab=workspaceShellTabs.find(tab=>tab.id===resultShellId);
       if(resultShellTab){
         shellTab=resultShellTab;
-        setBrowserShellActive(resultShellId);
+        setWorkspaceShellActive(resultShellId);
       }
     }
-    if(activeBrowser?.win?.isConnected){
-      ensureBrowserShellLinkedTab(shellTab);
-      if(shellTab?.browserTabId) activeBrowser.activate?.(shellTab.browserTabId);
-      if(activeBrowser.navigate) activeBrowser.navigate(target);
-      else openBrowser(target);
-      const activeTab=activeBrowser?.tabs?.find(tab=>tab.id===shellTab?.browserTabId || tab.id===activeBrowser.active);
+    if(activeWorkspace?.win?.isConnected){
+      ensureWorkspaceShellLinkedTab(shellTab);
+      if(shellTab?.workspaceTabId) activeWorkspace.activate?.(shellTab.workspaceTabId);
+      if(activeWorkspace.navigate) activeWorkspace.navigate(target);
+      else openWorkspace(target);
+      const activeTab=activeWorkspace?.tabs?.find(tab=>tab.id===shellTab?.workspaceTabId || tab.id===activeWorkspace.active);
       if(activeTab){
-        if(shellTab) shellTab.browserTabId=activeTab.id;
-        if(shellTab) browserShellActiveTab=shellTab.id;
-        activeBrowser.activate?.(activeTab.id);
+        if(shellTab) shellTab.workspaceTabId=activeTab.id;
+        if(shellTab) workspaceShellActiveTab=shellTab.id;
+        activeWorkspace.activate?.(activeTab.id);
         activeTab.url=target;
-        activeTab.title=browserShellLabel(target);
+        activeTab.title=workspaceShellLabel(target);
         activeTab.icon=iconForUrl(target);
-        activeBrowser.renderTabs?.();
+        activeWorkspace.renderTabs?.();
       }
     }else{
-      const win=openBrowser(target);
+      const win=openWorkspace(target);
       win?.classList.add('maximized');
-      const created=activeBrowser?.tabs?.[activeBrowser.tabs.length-1];
-      if(shellTab && created) shellTab.browserTabId=created.id;
+      const created=activeWorkspace?.tabs?.[activeWorkspace.tabs.length-1];
+      if(shellTab && created) shellTab.workspaceTabId=created.id;
       updateDockFullscreenState();
     }
-    updateBrowserShellLocation(target,'',true);
+    updateWorkspaceShellLocation(target,'',true);
   }
-  function goBrowserShellHome(){
-    ensureBrowserShellHome();
-    if(!activeBrowser?.win?.isConnected){
-      const win=openBrowser('');
+  function goWorkspaceShellHome(){
+    ensureWorkspaceShellHome();
+    if(!activeWorkspace?.win?.isConnected){
+      const win=openWorkspace('');
       win?.classList.add('maximized');
       updateDockFullscreenState();
     }
-    const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab) || browserShellTabs[0];
-    if(shellTab?.browserTabId && activeBrowser?.activate) activeBrowser.activate(shellTab.browserTabId);
-    const state=activeBrowser;
+    const shellTab=workspaceShellTabs.find(tab=>tab.id===workspaceShellActiveTab) || workspaceShellTabs[0];
+    if(shellTab?.workspaceTabId && activeWorkspace?.activate) activeWorkspace.activate(shellTab.workspaceTabId);
+    const state=activeWorkspace;
     const tab=state?.tabs?.find(t=>t.id===state.active);
     if(tab){
         tab.url='';
@@ -5871,32 +5886,32 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       tab.frame.removeAttribute('srcdoc');
       tab.frame.classList.remove('active');
     }
-    state?.win?.querySelector('.browser-home')?.classList.remove('hidden');
-    state?.win?.classList.add('browser-blank');
-    playBrowserShellPageReveal(state?.win || document);
+    state?.win?.querySelector('.workspace-home')?.classList.remove('hidden');
+    state?.win?.classList.add('workspace-blank');
+    playWorkspaceShellPageReveal(state?.win || document);
     state?.renderTabs?.();
-    updateBrowserShellLocation('');
-    document.querySelector('[data-browser-shell-url]')?.focus();
+    updateWorkspaceShellLocation('');
+    document.querySelector('[data-workspace-shell-url]')?.focus();
   }
 
-  function legacyBrowserShellInternalPage(name){
-    ensureBrowserShellHome();
-    if(!activeBrowser?.win?.isConnected){
-      const win=openBrowser('');
+  function legacyWorkspaceShellInternalPage(name){
+    ensureWorkspaceShellHome();
+    if(!activeWorkspace?.win?.isConnected){
+      const win=openWorkspace('');
       win?.classList.add('maximized');
-      const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
-      const created=activeBrowser?.tabs?.[activeBrowser.tabs.length-1];
-      if(shellTab && created) shellTab.browserTabId=created.id;
+      const shellTab=workspaceShellTabs.find(tab=>tab.id===workspaceShellActiveTab);
+      const created=activeWorkspace?.tabs?.[activeWorkspace.tabs.length-1];
+      if(shellTab && created) shellTab.workspaceTabId=created.id;
       updateDockFullscreenState();
     }
-    const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
-    const state=activeBrowser;
-    const tab=ensureBrowserShellLinkedTab(shellTab) || state?.tabs?.find(t=>t.id===state.active);
+    const shellTab=workspaceShellTabs.find(tab=>tab.id===workspaceShellActiveTab);
+    const state=activeWorkspace;
+    const tab=ensureWorkspaceShellLinkedTab(shellTab) || state?.tabs?.find(t=>t.id===state.active);
     if(!tab) return false;
     const discordFounderProfileStyle='.nyx-founder-profile-standard{display:block!important;max-width:620px!important;margin:0 auto!important;padding:0!important;overflow:hidden!important;border:1px solid color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 42%,transparent)!important;border-radius:16px!important;background:#111827!important;box-shadow:0 16px 42px rgba(0,0,0,.32)!important}.nyx-founder-profile-standard .nyx-founder-banner{height:140px!important;margin:0!important;background:var(--nyx-founder-accent,#8fb8ff)!important}.nyx-founder-profile-standard .nyx-founder-profile-content{display:block!important;padding:0 16px 18px!important}.nyx-founder-profile-standard .nyx-founder-image-wrap{width:88px!important;height:88px!important;margin:-45px 0 0!important;border:6px solid #111827!important;border-radius:50%!important;background:#111827!important}.nyx-founder-profile-standard .nyx-founder-image{border:0!important;border-radius:50%!important;background:#172338!important}.nyx-founder-profile-standard .nyx-founder-status{right:-2px!important;bottom:-2px!important;border:4px solid #111827!important}.nyx-founder-profile-standard .nyx-founder-copy{padding-top:13px!important}.nyx-founder-name-row{display:flex!important;align-items:center!important;gap:7px!important}.nyx-founder-profile-standard .nyx-founder-copy h3{margin:0!important;color:#f8fbff!important;font-size:24px!important;font-weight:700!important;letter-spacing:-.025em!important}.nyx-founder-owner-crown{color:#f0c85c!important;font-size:18px!important;line-height:1!important}.nyx-founder-profile-standard .nyx-founder-handle{margin:2px 0 10px!important;color:#b5c2d5!important;font-size:14px!important}.nyx-founder-profile-standard .nyx-founder-role{margin:0 0 11px!important;color:#9cadc4!important;font-size:11px!important;font-weight:600!important;letter-spacing:.09em!important}.nyx-founder-role-list{display:flex!important;flex-wrap:wrap!important;gap:7px!important;margin:0 0 12px!important}.nyx-founder-role-chip{display:inline-flex!important;align-items:center!important;gap:5px!important;padding:4px 8px!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:4px!important;background:rgba(255,255,255,.08)!important;color:#d9e3f1!important;font-size:11px!important;font-weight:650!important}.nyx-founder-role-owner{border-color:color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 78%,transparent)!important;background:color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 22%,transparent)!important;color:#fff!important}.nyx-founder-role-owner span{color:#f0c85c!important}.nyx-founder-profile-standard .nyx-founder-badges{margin:0 0 14px!important}.nyx-founder-profile-standard .nyx-founder-badge{border:0!important;border-radius:4px!important;background:rgba(255,255,255,.1)!important;color:#c9d7ea!important}.nyx-founder-about{padding-top:13px!important;border-top:1px solid rgba(255,255,255,.14)!important}.nyx-founder-about>strong{display:block!important;margin-bottom:7px!important;color:#f5f8ff!important;font-size:12px!important;font-weight:700!important;text-transform:uppercase!important}.nyx-founder-profile-standard .nyx-founder-bio{color:#d5dfec!important;font-size:14px!important;line-height:1.55!important}.nyx-founder-profile-standard .nyx-founder-link{margin-top:14px!important;color:#cbd9ff!important}@media(max-width:680px){.nyx-founder-profile-standard .nyx-founder-image-wrap{width:88px!important;margin:-45px 0 0!important}.nyx-founder-profile-standard .nyx-founder-copy{text-align:left!important}.nyx-founder-profile-standard .nyx-founder-badges{justify-content:flex-start!important}}';
     const pages={
-      apps:{title:'Apps',body:`<style>html,body,.apps-shell-page{background:transparent!important;background-image:none!important}</style><div class="browser-home browser-shell-page apps-shell-page"><h1 class="home-heading">Apps</h1><p class="home-sub">Everything in Nyx.</p><div class="quick-grid apps-launch-grid" data-nyx-global-app-grid>${quickTiles()}</div></div>`},
-      links:{title:'Bookmarks',body:`<div class="browser-home browser-shell-page"><h1 class="home-heading">Bookmarks</h1><p class="home-sub">Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>DuckDuckGo</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></div>`}
+      apps:{title:'Apps',body:`<style>html,body,.apps-shell-page{background:transparent!important;background-image:none!important}</style><div class="workspace-home workspace-shell-page apps-shell-page"><h1 class="home-heading">Apps</h1><p class="home-sub">Everything in Nyx.</p><div class="quick-grid apps-launch-grid" data-nyx-global-app-grid>${quickTiles()}</div></div>`},
+      links:{title:'Bookmarks',body:`<div class="workspace-home workspace-shell-page"><h1 class="home-heading">Bookmarks</h1><p class="home-sub">Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>DuckDuckGo</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></div>`}
     };
     const page=pages[name] || pages.apps;
     tab.url='nyx://'+name;
@@ -5908,61 +5923,61 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     tab.frame.style.backgroundColor=clearInternal?'transparent':'';
     applyGlassInternalTheme(tab.frame);
     tab.frame.removeAttribute('src');
-    tab.frame.srcdoc=browserShellPageSrcdoc(page);
+    tab.frame.srcdoc=workspaceShellPageSrcdoc(page);
     tab.frame.classList.add('active');
-    state.win.querySelector('.browser-home')?.classList.add('hidden');
-    state.win.classList.remove('browser-blank');
+    state.win.querySelector('.workspace-home')?.classList.add('hidden');
+    state.win.classList.remove('workspace-blank');
     state.renderTabs?.();
     if(shellTab){
       shellTab.url=tab.url;
       shellTab.title=tab.title;
       shellTab.icon=tab.icon;
-      renderBrowserShellTabs();
+      renderWorkspaceShellTabs();
     }
-    updateBrowserShellLocation(tab.url);
+    updateWorkspaceShellLocation(tab.url);
     return true;
   }
 
-  function browserShellPageSrcdoc(page){
-    const script='function nyxEffectPayload(){return{type:"nyx:effect-settings",effect:document.querySelector("[data-effect-value]")?.value||"none",speed:document.querySelector("[data-effect-speed]")?.value||"1.1",amount:document.querySelector("[data-effect-amount]")?.value||"16",theme:document.querySelector("[data-theme-value]")?.value||"default"}}function nyxBrowserPayload(){return{type:"nyx:browser-settings",engine:document.querySelector("[data-browser-engine]")?.value||"duckduckgo",browserMode:document.querySelector("[data-browser-mode-select]")?.value||"auto",transport:document.querySelector("[data-browser-transport]")?.value||"libcurlRaw"}}document.addEventListener("click",e=>{const preset=e.target.closest("[data-preset]");if(preset){e.preventDefault();e.stopPropagation();parent.postMessage({type:"nyx:preset",preset:preset.dataset.preset},"*");return}const app=e.target.closest("[data-app-url]");if(app){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:app.dataset.appUrl},"*");return}const url=e.target.closest("[data-url]");if(url&&url.closest(".shell-page,.browser-shell-page")){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:url.dataset.url},"*");return}if(e.target.closest("[data-browser-settings-save]")){e.preventDefault();parent.postMessage(nyxBrowserPayload(),"*")}if(e.target.closest("[data-page-fullscreen]"))parent.postMessage({type:"nyx:fullscreen"},"*");if(e.target.closest("[data-shell-about]"))parent.postMessage({type:"nyx:about"},"*");if(e.target.closest("[data-shell-about-tab]"))parent.postMessage({type:"nyx:about-tab"},"*")});document.addEventListener("change",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){document.querySelectorAll("[data-tab-title]").forEach(el=>{el.value=presetSelect.options[presetSelect.selectedIndex]?.textContent||presetSelect.value||"nyx"});parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-value],[data-effect-speed],[data-effect-amount],[data-theme-value]"))parent.postMessage(nyxEffectPayload(),"*");if(e.target.closest("[data-browser-engine],[data-browser-mode-select],[data-browser-transport]"))parent.postMessage(nyxBrowserPayload(),"*")});document.addEventListener("input",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-speed],[data-effect-amount]")){document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=(Number(document.querySelector("[data-effect-speed]")?.value||1.1)).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=document.querySelector("[data-effect-amount]")?.value||"16"});parent.postMessage(nyxEffectPayload(),"*")}});';
+  function workspaceShellPageSrcdoc(page){
+    const script='function nyxEffectPayload(){return{type:"nyx:effect-settings",effect:document.querySelector("[data-effect-value]")?.value||"none",speed:document.querySelector("[data-effect-speed]")?.value||"1.1",amount:document.querySelector("[data-effect-amount]")?.value||"16",theme:document.querySelector("[data-theme-value]")?.value||"default"}}function nyxWorkspacePayload(){return{type:"nyx:workspace-settings",engine:document.querySelector("[data-workspace-engine]")?.value||"duckduckgo",workspaceMode:document.querySelector("[data-workspace-mode-select]")?.value||"auto",transport:document.querySelector("[data-workspace-transport]")?.value||"libcurlRaw"}}document.addEventListener("click",e=>{const preset=e.target.closest("[data-preset]");if(preset){e.preventDefault();e.stopPropagation();parent.postMessage({type:"nyx:preset",preset:preset.dataset.preset},"*");return}const app=e.target.closest("[data-app-url]");if(app){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:app.dataset.appUrl},"*");return}const url=e.target.closest("[data-url]");if(url&&url.closest(".shell-page,.workspace-shell-page")){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:url.dataset.url},"*");return}if(e.target.closest("[data-workspace-settings-save]")){e.preventDefault();parent.postMessage(nyxWorkspacePayload(),"*")}if(e.target.closest("[data-page-fullscreen]"))parent.postMessage({type:"nyx:fullscreen"},"*");if(e.target.closest("[data-shell-about]"))parent.postMessage({type:"nyx:about"},"*");if(e.target.closest("[data-shell-about-tab]"))parent.postMessage({type:"nyx:about-tab"},"*")});document.addEventListener("change",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){document.querySelectorAll("[data-tab-title]").forEach(el=>{el.value=presetSelect.options[presetSelect.selectedIndex]?.textContent||presetSelect.value||"nyx"});parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-value],[data-effect-speed],[data-effect-amount],[data-theme-value]"))parent.postMessage(nyxEffectPayload(),"*");if(e.target.closest("[data-workspace-engine],[data-workspace-mode-select],[data-workspace-transport]"))parent.postMessage(nyxWorkspacePayload(),"*")});document.addEventListener("input",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-speed],[data-effect-amount]")){document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=(Number(document.querySelector("[data-effect-speed]")?.value||1.1)).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=document.querySelector("[data-effect-amount]")?.value||"16"});parent.postMessage(nyxEffectPayload(),"*")}});';
     const popupScript='document.addEventListener("click",e=>{const popup=e.target.closest("[data-popup-protection]");if(!popup)return;e.preventDefault();const next=popup.dataset.enabled!=="true";popup.dataset.enabled=String(next);popup.classList.toggle("on",next);popup.textContent="Popup Protection "+(next?"On":"Off");parent.postMessage({type:"nyx:popup-protection",enabled:next},"*")});';
     const panicFrameScript='let NYX_PANIC_CAPTURE=false;function nyxPanicCombo(e){const key=String(e.key||"").trim();if(!key||["Control","Shift","Alt","Meta"].includes(key))return "";const parts=[];if(e.ctrlKey)parts.push("Ctrl");if(e.altKey)parts.push("Alt");if(e.shiftKey)parts.push("Shift");if(e.metaKey)parts.push("Meta");parts.push(key.length===1?key.toUpperCase():key.replace(/^Arrow/,""));return parts.join("+")}document.addEventListener("click",e=>{if(e.target.closest("[data-panic-capture]"))NYX_PANIC_CAPTURE=true;if(e.target.closest("[data-panic-clear]"))NYX_PANIC_CAPTURE=false},true);document.addEventListener("keydown",e=>{if(!NYX_PANIC_CAPTURE)return;const combo=nyxPanicCombo(e);if(!combo)return;e.preventDefault();e.stopPropagation();NYX_PANIC_CAPTURE=false;document.querySelectorAll("[data-panic-key-display]").forEach(el=>el.textContent=combo);parent.postMessage({type:"nyx:panic-key-set",combo},"*")},true);';
     const finalInternalPaintScript='document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=Number(NYX_EFFECT_SPEED).toFixed(1)+"x"});';
     return '<!doctype html><html data-nyx-theme="'+esc(normalizeNyxTheme(store.text('nyx.theme','default')))+'" style="--nyx-custom-base:'+esc(nyxCustomThemePalette().base)+'" data-nyx-appearance="'+esc(store.text('nyx.appearance','dark'))+'"><head><meta charset="utf-8"><base target="_self"><link rel="stylesheet" href="/css/avatar-decorations.css"><link rel="stylesheet" href="/css/profile-effects.css"><style>'+(page.style||'')+'</style><link rel="stylesheet" href="/apps/obsidian.css?v=20261001-halloween-v3"><link rel="stylesheet" href="/apps/internal-pages.css?v=20260926-icons-v2"></head><body>'+page.body+'<script>const NYX_EFFECT='+JSON.stringify(store.text('nyx.visualEffect','none'))+';const NYX_EFFECT_SPEED='+JSON.stringify(store.text('nyx.visualEffectSpeed','1.1'))+';const NYX_EFFECT_AMOUNT='+JSON.stringify(store.text('nyx.visualEffectAmount','16'))+';const NYX_THEME='+JSON.stringify(normalizeNyxTheme(store.text('nyx.theme','default')))+';'+finalInternalPaintScript+script+popupScript+panicFrameScript+(page.script||'')+'<\/script></body></html>';
   }
-  function showBrowserShellInternalPage(name){
-    hideBrowserSuggestions();
+  function showWorkspaceShellInternalPage(name){
+    hideWorkspaceSuggestions();
     if(/^(lionai|lion ai)$/i.test(String(name || ''))) name='ai';
     if(/^settings$/i.test(String(name || ''))){
-      openBrowserShellSettings();
+      openWorkspaceShellSettings();
       return true;
     }
-    ensureBrowserShellHome();
-    if(!activeBrowser?.win?.isConnected){
-      const win=openBrowser('');
+    ensureWorkspaceShellHome();
+    if(!activeWorkspace?.win?.isConnected){
+      const win=openWorkspace('');
       win?.classList.add('maximized');
-      const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
-      const created=activeBrowser?.tabs?.[activeBrowser.tabs.length-1];
-      if(shellTab && created) shellTab.browserTabId=created.id;
+      const shellTab=workspaceShellTabs.find(tab=>tab.id===workspaceShellActiveTab);
+      const created=activeWorkspace?.tabs?.[activeWorkspace.tabs.length-1];
+      if(shellTab && created) shellTab.workspaceTabId=created.id;
       updateDockFullscreenState();
     }
-    const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
-    if(shellTab?.browserTabId && activeBrowser?.activate) activeBrowser.activate(shellTab.browserTabId);
-    const state=activeBrowser;
+    const shellTab=workspaceShellTabs.find(tab=>tab.id===workspaceShellActiveTab);
+    if(shellTab?.workspaceTabId && activeWorkspace?.activate) activeWorkspace.activate(shellTab.workspaceTabId);
+    const state=activeWorkspace;
     const tab=state?.tabs?.find(t=>t.id===state.active);
     if(!tab) return false;
     if(/^ai$/i.test(String(name || ''))){
       tab.url='nyx://ai';
       tab.title="Nyx A1";
       tab.icon=favicons.nyx;
-      state.win.classList.remove('internal-clear','browser-blank');
+      state.win.classList.remove('internal-clear','workspace-blank');
       tab.frame.classList.remove('transparent-internal-page');
       tab.frame.removeAttribute('srcdoc');
       tab.frame.src='/ai.html';
       tab.frame.classList.add('active');
-      state.win.querySelector('.browser-home')?.classList.add('hidden');
+      state.win.querySelector('.workspace-home')?.classList.add('hidden');
       state.renderTabs?.();
-      updateBrowserShellLocation(tab.url);
+      updateWorkspaceShellLocation(tab.url);
       return true;
     }
     const presetTiles=`<button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${favicons.nyx}"><span>ռʏӼ tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
@@ -6020,7 +6035,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       .nyx-founder-effect-bubbles .nyx-founder-profile-effect{display:block;opacity:.72;background-image:radial-gradient(circle,transparent 0 5px,rgba(255,255,255,.58) 6px 7px,transparent 8px),radial-gradient(circle,transparent 0 9px,color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 72%,#fff) 10px 11px,transparent 12px),radial-gradient(circle,transparent 0 13px,rgba(213,243,255,.5) 14px 15px,transparent 16px);background-size:93px 131px,157px 191px,229px 271px;background-position:9px 120%,62px 135%,133px 150%;mix-blend-mode:screen;filter:drop-shadow(0 0 4px rgba(207,239,255,.55));animation:nyx-founder-bubbles 10s linear infinite}
       @keyframes nyx-founder-name-gradient{0%,100%{background-position:0 50%}50%{background-position:100% 50%}}@keyframes nyx-founder-name-neon{0%,100%{filter:brightness(.9)}50%{filter:brightness(1.28)}}@keyframes nyx-founder-name-pop{0%,82%,100%{transform:translateY(0) scale(1)}88%{transform:translateY(-2px) scale(1.035)}93%{transform:translateY(0) scale(.985)}}@keyframes nyx-founder-sparkle{to{background-position:150px -150px,-193px -193px,221px -221px,-169px 169px,247px -247px}}@keyframes nyx-founder-aurora{50%{background-position:100% 0}}@keyframes nyx-founder-holographic{to{background-position:250% 0}}@keyframes nyx-founder-fireflies{50%{background-position:35px -54px;transform:translateY(-10px)}}@keyframes nyx-founder-cosmic-dust{to{background-position:0 0,127px -149px,-181px -167px,211px -193px,-157px 223px,239px -179px}}@keyframes nyx-founder-electric-storm{0%,16%,18%,55%,57%,100%{opacity:.08}17%,56%{opacity:.88}17.4%,56.4%{opacity:.28}17.8%,56.8%{opacity:.72}40%{background-position:-50% 90%,140% -20%}}@keyframes nyx-founder-meteor-shower{to{background-position:18% 260px,72% 320px,38% 300px}}@keyframes nyx-founder-cyber-grid{to{background-position:0 68px,68px 0,0 0}}@keyframes nyx-founder-plasma{to{transform:rotate(360deg) scale(1.06)}}@keyframes nyx-founder-snowfall{to{background-position:12px 650px,63px 620px,116px 590px}}@keyframes nyx-founder-embers{to{background-position:18px -280px,56px -370px,174px -450px}}@keyframes nyx-founder-bubbles{to{background-position:31px -290px,39px -390px,178px -510px}}@keyframes nyx-founder-decoration-orbit{to{transform:rotate(360deg)}}@keyframes nyx-founder-decoration-twinkle{0%,100%{opacity:.55;filter:brightness(.85)}50%{opacity:1;filter:brightness(1.35)}}@media(prefers-reduced-motion:reduce){.nyx-founder-profile-effect,.nyx-avatar-decoration,.nyx-styled-display-name{animation:none!important}}
     `;
-    const terminalPageScript=`(()=>{const output=document.querySelector('[data-nyx-terminal-output]');const input=document.querySelector('[data-nyx-terminal-input]');const write=(text,type='')=>{const row=document.createElement('div');row.className='nyx-terminal-line'+(type?' '+type:'');row.textContent=String(text);output.appendChild(row);output.scrollTop=output.scrollHeight};const run=raw=>{const command=String(raw||'').trim();if(!command)return;write('nyx> '+command,'command');const name=command.toLowerCase();if(name==='clear'){output.textContent='';return}if(name==='help'){write('Commands: help, status, theme, origin, storage, date, clear');return}if(name==='status'){write('Nyx is '+(navigator.onLine?'online':'offline')+' · '+(navigator.platform||'browser'));return}if(name==='theme'){write('Theme: '+(document.body.className.match(/theme-([^ ]+)/)?.[1]||'default'));return}if(name==='origin'){write('Origin: '+parent.location.origin);return}if(name==='storage'){write('Local settings entries: '+localStorage.length);return}if(name==='date'){write(new Date().toLocaleString());return}write('Unknown command: '+command+'. Type "help" for the command list.','error')};write('Nyx Developer Console');write('Type "help" to list commands. Browser DevTools cannot be opened by a webpage.');document.querySelector('[data-nyx-terminal-form]')?.addEventListener('submit',event=>{event.preventDefault();run(input?.value);if(input)input.value=''});setTimeout(()=>input?.focus(),50)})();`;
+    const terminalPageScript=`(()=>{const output=document.querySelector('[data-nyx-terminal-output]');const input=document.querySelector('[data-nyx-terminal-input]');const write=(text,type='')=>{const row=document.createElement('div');row.className='nyx-terminal-line'+(type?' '+type:'');row.textContent=String(text);output.appendChild(row);output.scrollTop=output.scrollHeight};const run=raw=>{const command=String(raw||'').trim();if(!command)return;write('nyx> '+command,'command');const name=command.toLowerCase();if(name==='clear'){output.textContent='';return}if(name==='help'){write('Commands: help, status, theme, origin, storage, date, clear');return}if(name==='status'){write('Nyx is '+(navigator.onLine?'online':'offline')+' · '+(navigator.platform||'workspace'));return}if(name==='theme'){write('Theme: '+(document.body.className.match(/theme-([^ ]+)/)?.[1]||'default'));return}if(name==='origin'){write('Origin: '+parent.location.origin);return}if(name==='storage'){write('Local settings entries: '+localStorage.length);return}if(name==='date'){write(new Date().toLocaleString());return}write('Unknown command: '+command+'. Type "help" for the command list.','error')};write('Nyx Developer Console');write('Type "help" to list commands. Workspace DevTools cannot be opened by a webpage.');document.querySelector('[data-nyx-terminal-form]')?.addEventListener('submit',event=>{event.preventDefault();run(input?.value);if(input)input.value=''});setTimeout(()=>input?.focus(),50)})();`;
     const pages={
       apps:{title:'Apps',body:`<style>html,body,.apps-shell-page{background:transparent!important;background-image:none!important}</style><section class="shell-page apps-shell-page"><h1>Apps</h1><p>Everything in Nyx.</p><div class="quick-grid apps-launch-grid" data-nyx-global-app-grid>${quickTiles()}</div></section>`},
       links:{title:'Bookmarks',body:`<section class="shell-page"><h1>Bookmarks</h1><p>Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>DuckDuckGo</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></section>`},
@@ -6058,12 +6073,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     tab.frame.style.backgroundColor=clearInternal?'transparent':'';
     applyGlassInternalTheme(tab.frame);
     tab.frame.removeAttribute('src');
-    tab.frame.srcdoc=browserShellPageSrcdoc(page);
+    tab.frame.srcdoc=workspaceShellPageSrcdoc(page);
     tab.frame.classList.add('active');
-    state.win.querySelector('.browser-home')?.classList.add('hidden');
-    state.win.classList.remove('browser-blank');
+    state.win.querySelector('.workspace-home')?.classList.add('hidden');
+    state.win.classList.remove('workspace-blank');
     state.renderTabs?.();
-    updateBrowserShellLocation(tab.url);
+    updateWorkspaceShellLocation(tab.url);
     if(name==='developer') showNyxErudaPanel(state.win);
     else hideNyxErudaPanel();
     return true;
@@ -6087,16 +6102,16 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return `<button class="bg-choice" data-bg-choice="${esc(key)}" title="${esc(bgNames[key]||'Background')}" aria-label="${esc(bgNames[key]||'Background')}"><span>${esc(bgNames[key]||'Background')}</span></button>`;
   }
   function backgroundScope(root=document){
-    return root?.dataset?.bgScope || (document.body.classList.contains('browser-shell') ? 'browser' : 'windows');
+    return root?.dataset?.bgScope || (document.body.classList.contains('workspace-shell') ? 'workspace' : 'windows');
   }
   function currentBackgroundKeyForScope(scope){
-    return scope==='browser' ? store.text('nyx.browserBackground','lofiPurple') : store.text('nyx.background','dragon');
+    return scope==='workspace' ? store.text('nyx.workspaceBackground','lofiPurple') : store.text('nyx.background','dragon');
   }
   function renderBackgroundChoices(root, current=currentBackgroundKeyForScope(backgroundScope(root))){
     const scope=backgroundScope(root);
     const customData=store.text('nyx.customBgData','');
     const customUrl=store.text('nyx.customBgUrl','');
-    const custom=scope==='browser' ? '' : (customData || customUrl);
+    const custom=scope==='workspace' ? '' : (customData || customUrl);
     const hasCustom=!!custom;
     root.dataset.bgScope=scope;
     const choices=(hasCustom ? `<button class="bg-choice selected" data-custom-bg-preview title="Uploaded background" aria-label="Uploaded background"><span>Uploaded</span></button>` : '') + Object.keys(bgPresets).map(k=>bgButton(k)).join('');
@@ -6106,7 +6121,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     });
     const customBtn=root.querySelector('[data-custom-bg-preview]');
     if(customBtn){
-      const customPreview=customUrl && !customData ? (imageProxySrc(customUrl) || customUrl) : custom;
+      const customPreview=customUrl && !customData ? (imageConnectionSrc(customUrl) || customUrl) : custom;
       customBtn.style.backgroundImage = normalizeBgValue(customPreview);
       customBtn.classList.add('selected');
     }
@@ -6114,8 +6129,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     syncBackgroundPreview();
   }
   function chooseBackground(key, scope='windows'){
-    if(scope==='browser'){
-      store.setText('nyx.browserBackground', key || 'lofiPurple');
+    if(scope==='workspace'){
+      store.setText('nyx.workspaceBackground', key || 'lofiPurple');
     }else{
       store.setText('nyx.background', key || 'dragon');
       store.setText('nyx.customBg','');
@@ -6217,11 +6232,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     };
     requestAnimationFrame(loop);
   }
-  function applyBrowserShellMode(){
-    try{localStorage.removeItem('nyx.browserShellMode')}catch{}
+  function applyWorkspaceShellMode(){
+    try{localStorage.removeItem('nyx.workspaceShellMode')}catch{}
     if(store.text('nyx.glassLevel','80')!=='-40') store.setText('nyx.glassLevel','-40');
     store.set('nyx.backgroundEnhancer',false);
-    document.body.classList.add('browser-shell');
+    document.body.classList.add('workspace-shell');
     syncChromeMode();
     applyGlassSetting();
     updateResponsiveFit();
@@ -6242,7 +6257,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   let emeraldVantaInstance=null;
   let sakuraVantaInstance=null;
   function shouldPauseVantaBackgrounds(){
-    return document.body.classList.contains('browser-content-active');
+    return document.body.classList.contains('workspace-content-active');
   }
   function threeDBackgroundsEnabled(){
     return store.get('nyx.threeDBackgrounds',false);
@@ -6531,7 +6546,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function syncNyxWaveBackground(){
     const wave=$('nyxWaveBg');
     if(!wave) return;
-    const active=!document.documentElement.dataset.nyxBeamWallpaper && !threeDBackgroundsEnabled() && !store.get('nyx.lagReducer',false) && !document.body.classList.contains('browser-content-active') && !document.body.classList.contains('custom-bg-active');
+    const active=!document.documentElement.dataset.nyxBeamWallpaper && !threeDBackgroundsEnabled() && !store.get('nyx.lagReducer',false) && !document.body.classList.contains('workspace-content-active') && !document.body.classList.contains('custom-bg-active');
     const notify=()=>{
       try{wave.contentWindow?.postMessage({type:'nyx-wave-active',active},location.origin)}catch{}
     };
@@ -6615,7 +6630,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(store.text('nyx.homeDesign','redesigned')!==homeDesign) store.setText('nyx.homeDesign',homeDesign);
     document.documentElement.dataset.nyxHomeDesign=homeDesign;
     document.body.dataset.nyxHomeDesign=homeDesign;
-    ['nyxHomepageMinimalStyles','nyxBrowserMicrointeractionsStyles'].forEach(id=>{
+    ['nyxHomepageMinimalStyles','nyxWorkspaceMicrointeractionsStyles'].forEach(id=>{
       const stylesheet=document.getElementById(id);
       if(stylesheet) stylesheet.disabled=false;
     });
@@ -6626,7 +6641,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     document.querySelectorAll('iframe.view').forEach(frame=>{
       try{
         const frameHref=String(frame.contentWindow?.location?.href || frame.getAttribute('src') || '');
-        const source=browserShellSourceUrl(frameHref) || frameHref;
+        const source=workspaceShellSourceUrl(frameHref) || frameHref;
         const target=new URL(source,location.href);
         if(target.origin!==location.origin && !(frame.hasAttribute('srcdoc') && frameHref==='about:srcdoc')) return;
         const doc=frame.contentDocument;
@@ -6655,7 +6670,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const value=allowed.includes(effect) ? effect : 'none';
     const speed=Math.max(.3,Math.min(3,Number(store.text('nyx.visualEffectSpeed','1.1')) || 1.1));
     const requestedAmount=Math.max(1,Math.min(64,Number(store.text('nyx.visualEffectAmount','16')) || 16));
-    const canShow=nyxStartupOpened && document.body.classList.contains('browser-shell') && !document.body.classList.contains('browser-content-active') && !store.get('nyx.lagReducer',false);
+    const canShow=nyxStartupOpened && document.body.classList.contains('workspace-shell') && !document.body.classList.contains('workspace-content-active') && !store.get('nyx.lagReducer',false);
     syncPerformanceLite();
     const lite=document.body.classList.contains('performance-lite');
     const amount=lite ? Math.min(requestedAmount,16) : requestedAmount;
@@ -6733,9 +6748,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     document.body.classList.add('nyx-home-hide-constellations');
     applyNyxSidebarLocation();
     applyLagReducerSetting();
-    applyBrowserShellMode();
+    applyWorkspaceShellMode();
     applyHomeDesignSetting();
-    applyBrowserTabDesignSetting();
+    applyWorkspaceTabDesignSetting();
     applyThemeSetting();
     syncPerformanceLite();
     syncThemeVantaBackgrounds();
@@ -6760,7 +6775,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
     applyBackgroundValue(value);
     document.documentElement.style.setProperty('--bg-enhanced-render',normalizeBgValue(value));
-    document.documentElement.style.setProperty('--browser-bg-render',normalizeBgValue(currentBrowserBackgroundValue()));
+    document.documentElement.style.setProperty('--workspace-bg-render',normalizeBgValue(currentWorkspaceBackgroundValue()));
     syncBackgroundPreview(value);
     updateWeatherContrast(value);
     store.set('nyx.backgroundEnhancer',false);
@@ -6831,17 +6846,17 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const legacy=store.text('nyx.customBg','');
     return customData ? `url("${customData}")` : customUrl ? `url("${customUrl.replaceAll('"','%22')}")` : legacy || bgPresets[bg] || bgPresets.dragon;
   }
-  function currentBrowserBackgroundValue(){
-    const bg=store.text('nyx.browserBackground','lofiPurple');
+  function currentWorkspaceBackgroundValue(){
+    const bg=store.text('nyx.workspaceBackground','lofiPurple');
     return bgPresets[bg] || bgPresets.lofiPurple || bgPresets.dragon;
   }
-  function imageProxySrc(src){
+  function imageConnectionSrc(src){
     if(!/^https?:\/\//i.test(src)) return '';
     return 'https://images.weserv.nl/?url=' + encodeURIComponent(src.replace(/^https?:\/\//i,''));
   }
   function imageCandidates(src){
-    const proxy=imageProxySrc(src);
-    return proxy && proxy!==src ? [src,proxy] : [src];
+    const connectionLesson=imageConnectionSrc(src);
+    return connectionLesson && connectionLesson!==src ? [src,connectionLesson] : [src];
   }
   function loadImageWithFallback(img, src, onLoad, onError){
     const candidates=imageCandidates(src);
@@ -7266,7 +7281,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         || await Promise.all(['/scramjet/scramjet.js','/baremux/index.mjs'].map(path=>fetchOk(path,900)))
           .then(results=>results.some(Boolean))
       ))],
-      ['Checking browser engine',async()=>doubleCheck(async()=>Boolean(window.fetch && window.Promise && window.URL && window.Blob))],
+      ['Checking workspace engine',async()=>doubleCheck(async()=>Boolean(window.fetch && window.Promise && window.URL && window.Blob))],
       ['Checking storage',async()=>{
         return doubleCheck(async()=>{
           try{
@@ -7278,13 +7293,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }],
       ['Checking proxy updates',async()=>doubleCheck(async()=>{
         if(typeof preflightStateCurrent==='function') return preflightStateCurrent();
-        return typeof proxyStateVersion==='string' && typeof scramjetStateVersion==='string';
+        return typeof connectionStateVersion==='string' && typeof studyjetStateVersion==='string';
       })],
       ['Checking for bugs',async()=>doubleCheck(async()=>(
         Boolean(document.body && $('desktop') && $('visualEffects') && $('customBgImage'))
         && window.__nyxStartupErrors.length===0
       ))],
-      ['Launching Nyx',async()=>doubleCheck(async()=>Boolean($('browserShell') || $('desktop')))]
+      ['Launching Nyx',async()=>doubleCheck(async()=>Boolean($('workspaceShell') || $('desktop')))]
     ];
     setProgress(0,'Checking Nyx');
     for(let i=0;i<checks.length;i++){
@@ -7330,7 +7345,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
 
       await runStep(12,'Preparing interface',()=>{
         applyLagReducerSetting();
-        document.body.classList.add('browser-shell');
+        document.body.classList.add('workspace-shell');
         syncChromeMode();
       },380);
 
@@ -7351,7 +7366,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         ]);
       },480);
 
-      await runStep(67,'Starting browser',async()=>{
+      await runStep(67,'Starting workspace',async()=>{
         await requestNyxKeyboardLock();
         tick();
       },430);
@@ -7443,20 +7458,20 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function rhBuildUrl(base,id,url){
     return base + id + '/' + url;
   }
-  function proxyModeUrl(mode,url,privacySessionId=''){
-    mode=normalizeBrowserModeName(mode);
-    const target=proxyTargetUrl(url);
+  function connectionModeUrl(mode,url,privacySessionId=''){
+    mode=normalizeWorkspaceModeName(mode);
+    const target=connectionTargetUrl(url);
     if(!target) return url;
     {}
-    if(mode==='scramjet') return scramjetUrl(target) || target;
+    if(mode==='scramjet') return studyjetUrl(target) || target;
     return url;
   }
   window.nyxProxyGameUrl=async url=>{
-    const target=proxyTargetUrl(url);
+    const target=connectionTargetUrl(url);
     if(!target) return '';
-    const ready=await installScramjet();
+    const ready=await installStudyjet();
     if(!ready) throw new Error('Nyx game proxy is unavailable.');
-    return scramjetUrl(target);
+    return studyjetUrl(target);
   };
   const nyxManagedGameFrames=new WeakMap();
   const nyxAdProtectedGameFrames=new WeakSet();
@@ -7482,8 +7497,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         frameWindow=frame.contentWindow;
         frameDocument=frame.contentDocument;
         if(frameWindow && frameWindow!==window){
-          if(!frameWindow.__nyxBrowserAdBlock) frameWindow.eval(browserAdBlockRuntimeSource);
-          if(!frameWindow.__nyxScramjetMinimalGuards) frameWindow.eval(scramjetMinimalRuntimeGuardSource);
+          if(!frameWindow.__nyxWorkspaceAdBlock) frameWindow.eval(workspaceAdBlockRuntimeSource);
+          if(!frameWindow.__nyxScramjetMinimalGuards) frameWindow.eval(studyjetMinimalRuntimeGuardSource);
         }
       }catch{}
       if(!frameDocument?.documentElement) return false;
@@ -7503,7 +7518,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
             .observe(frameDocument.documentElement,{childList:true,subtree:true});
         }catch{}
       }
-      return !!frameWindow?.__nyxBrowserAdBlock;
+      return !!frameWindow?.__nyxWorkspaceAdBlock;
     };
     if(!nyxAdProtectedGameFrames.has(frame)){
       nyxAdProtectedGameFrames.add(frame);
@@ -7516,22 +7531,22 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return protect();
   }
   window.nyxInstallGameAdProtection=frame=>installGameFrameAdProtection(frame);
-  window.nyxLaunchGameFrame=async (frame,url,{forceProxy=false,signal}={})=>{
-    const target=proxyTargetUrl(url);
+  window.nyxLaunchGameFrame=async (frame,url,{forceProxy:forceConnection=false,signal}={})=>{
+    const target=connectionTargetUrl(url);
     if(!target) return {managed:false,engine:'',url:''};
     installGameFrameAdProtection(frame);
-    const mode=forceProxy ? 'scramjet' : selectedBrowserMode(target);
+    const mode=forceConnection ? 'scramjet' : selectedWorkspaceMode(target);
     if(mode==='scramjet' && String(frame?.tagName || '').toLowerCase()==='iframe'){
-      const ready=await installScramjet();
-      const controller=scramjetController;
+      const ready=await installStudyjet();
+      const controller=studyjetController;
       if(ready && controller){
         let managed=nyxManagedGameFrames.get(frame);
         if(!managed || managed.__nyxScramjetVersion!=='v2'){
           frame.removeAttribute('src');
           managed=controller.createFrame(frame,{plugins:[
-                createScramjetCompatibilityPlugin('','proxy-sri'),
-                createScramjetCompatibilityPlugin(browserAdBlockRuntimeSource,'ad-block'),
-                createScramjetCompatibilityPlugin(scramjetMinimalRuntimeGuardSource,'minimal-guard')
+                createStudyjetCompatibilityPlugin('','proxy-sri'),
+                createStudyjetCompatibilityPlugin(workspaceAdBlockRuntimeSource,'ad-block'),
+                createStudyjetCompatibilityPlugin(studyjetMinimalRuntimeGuardSource,'minimal-guard')
               ]});
           managed.__nyxScramjetVersion='v2';
           nyxManagedGameFrames.set(frame,managed);
@@ -7555,7 +7570,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(recover) nyxManagedGameFrames.delete(frame);
     await window.nyxLaunchGameFrame(frame,url,{forceProxy:true,signal});
   };
-  function normalizeBrowserModeName(mode){
+  function normalizeWorkspaceModeName(mode){
     let value=String(mode || 'auto').trim();
     if((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))){
       try{value=JSON.parse(value)}catch{value=value.slice(1,-1)}
@@ -7568,20 +7583,20 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(value==='direct' || value==='iframe') return 'iframe';
     return value || 'auto';
   }
-  function proxyTargetUrl(url){
+  function connectionTargetUrl(url){
     try{
       const target=new URL(url,location.href);
       return /^https?:$/.test(target.protocol) ? target.href : '';
     }catch{return ''}
   }
-  function browserHost(url){
+  function workspaceHost(url){
     try{return new URL(url).hostname.replace(/^www\./,'').toLowerCase()}catch{return ''}
   }
   function hostMatches(host,domains){
     return domains.some(domain=>host===domain || host.endsWith('.'+domain));
   }
   function isNyxLinkGeneratorUrl(url){
-    const raw=browserShellSourceUrl(String(url || '')) || String(url || '');
+    const raw=workspaceShellSourceUrl(String(url || '')) || String(url || '');
     try{
       const parsed=new URL(raw,location.href);
       return parsed.origin===location.origin && /^\/apps\/link-generator(?:\/|$)/i.test(parsed.pathname);
@@ -7602,17 +7617,17 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       return /^https?:$/.test(target.protocol) && target.origin!==location.origin;
     }catch{return false}
   }
-  function bestBrowserMode(url){
+  function bestWorkspaceMode(url){
     try{
       const target=new URL(url,location.href);
       if(target.origin===location.origin || target.protocol==='file:') return 'iframe';
     }catch{}
-    const host=browserHost(url);
+    const host=workspaceHost(url);
     if(!host) return 'iframe';
     if(hostMatches(host,['slither.io'])) return 'iframe';
     if(hostMatches(host,['cineby.at'])) return 'scramjet';
     if(hostMatches(host,['tcgplayer.com'])) return 'iframe';
-    const scramjetHosts=[
+    const studyjetHosts=[
       'geforcenow.com','nvidia.com','play.geforcenow.com',
       'xbox.com','xboxlive.com','xboxservices.com',
       'spotify.com','open.spotify.com','accounts.spotify.com',
@@ -7622,28 +7637,28 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       'localhost','127.0.0.1'
     ];
     if(hostMatches(host,iframeHosts)) return 'iframe';
-    if(hostMatches(host,scramjetHosts)) return 'scramjet';
+    if(hostMatches(host,studyjetHosts)) return 'scramjet';
     return 'scramjet';
   }
-  function selectedBrowserMode(url){
+  function selectedWorkspaceMode(url){
     try{
       const target=new URL(url,location.href);
       if(target.origin===location.origin || target.protocol==='file:') return 'iframe';
     }catch{}
-    const mode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
+    const mode=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE));
     if(isSpotifyFamilyUrl(url)) return 'scramjet';
-    if(hostMatches(browserHost(url),['tiktok.com'])) return 'scramjet';
-    if(hostMatches(browserHost(url),['slither.io'])) return 'iframe';
-    if(mode==='iframe' && hostMatches(browserHost(url),['cineby.at'])) return 'scramjet';
+    if(hostMatches(workspaceHost(url),['tiktok.com'])) return 'scramjet';
+    if(hostMatches(workspaceHost(url),['slither.io'])) return 'iframe';
+    if(mode==='iframe' && hostMatches(workspaceHost(url),['cineby.at'])) return 'scramjet';
     if(mode!=='auto') return mode;
-    return bestBrowserMode(url);
+    return bestWorkspaceMode(url);
   }
   function appCompatibilityMode(url){
-    if(hostMatches(browserHost(url),['aether.cx','crazygames.com','tiktok.com'])) return 'scramjet';
+    if(hostMatches(workspaceHost(url),['aether.cx','crazygames.com','tiktok.com'])) return 'scramjet';
     return '';
   }
   function isYouTubeUrl(url){
-    return hostMatches(browserHost(url),['youtube.com','youtu.be']);
+    return hostMatches(workspaceHost(url),['youtube.com','youtu.be']);
   }
   function youtubeEnglishUrl(url){
     if(!isYouTubeUrl(url)) return url;
@@ -7656,14 +7671,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }catch{return url}
   }
 
-  function scramjetUrl(url){
-    const target=proxyTargetUrl(url);
-    if(!target || !scramjetController?.prefix) return '';
-    const config=scramjetConfig();
+  function studyjetUrl(url){
+    const target=connectionTargetUrl(url);
+    if(!target || !studyjetController?.prefix) return '';
+    const config=studyjetConfig();
     const encode=typeof config.codec?.encode==='function' ? config.codec.encode : encodeURIComponent;
     return config.prefix + encode(target);
   }
-  function proxyFailureHtml(message,engine='Nyx',{allowDirect=false,heading=''}={}){
+  function connectionFailureHtml(message,engine='Nyx',{allowDirect=false,heading=''}={}){
     const safe=String(message || 'Refresh this page once so the updated service worker can take over, then search again.').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const safeHeading=String(heading || `${engine || 'Nyx'} did not start`).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const repairAction='<button type="button" data-nyx-repair onclick="parent.postMessage({type:\'nyx:repair-connection\'},parent.location.origin)">Repair connection</button><small>Your account and saved settings stay in place.</small>';
@@ -7730,12 +7745,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const active=fresh?.active || current?.active || null;
         return compatible(active) ? active : null;
       }
-      async function refreshScramjetServiceWorker(){
+      async function refreshStudyjetServiceWorker(){
         if(!('serviceWorker' in navigator)) return false;
         const registration=await navigator.serviceWorker.getRegistration('/~/sj/');
         if(!registration) return false;
         await registration.update().catch(()=>null);
-        return Boolean(await waitForServiceWorkerScript(registration,scramjetServiceWorkerUrl));
+        return Boolean(await waitForServiceWorkerScript(registration,studyjetServiceWorkerUrl));
       }
   function normalizeWispUrl(value){
     const raw=String(value || '').trim();
@@ -7756,20 +7771,20 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return `${protocol}//${location.host}/resources/live/`;
   }
   function storedCustomWispUrl(){
-    try{const url=normalizeWispUrl(store.text('nyx.wispUrl',''));return url===browserHttpRelayUrl()?'':url}catch{return ''}
+    try{const url=normalizeWispUrl(store.text('nyx.wispUrl',''));return url===workspaceHttpRelayUrl()?'':url}catch{return ''}
   }
-  function browserHttpRelayUrl(){
+  function workspaceHttpRelayUrl(){
     return `${location.protocol==='https:'?'wss:':'ws:'}//${location.host}/api/tutsi-relay/socket/`;
   }
   function wispUrl(){
     return storedCustomWispUrl() || window.NyxRelaySelection?.current(configuredWispUrls()) || configuredWispUrls()[0];
   }
   function configuredWispUrls(){
-    if(store.get('nyx.httpBridge',true))return [browserHttpRelayUrl()];
+    if(store.get('nyx.httpBridge',true))return [workspaceHttpRelayUrl()];
     const extras=globalThis.__NYX_RUNTIME_CONFIG__?.wispUrls;
     const urls=[...new Set([defaultWispUrl(),...(Array.isArray(extras)?extras:[])].map(value=>{
       try{return normalizeWispUrl(value)}catch{return ''}
-    }).filter(url=>url&&url!==browserHttpRelayUrl()))];
+    }).filter(url=>url&&url!==workspaceHttpRelayUrl()))];
     return urls.length?urls:[`${location.protocol==='https:'?'wss:':'ws:'}//${location.host}/resources/live/`];
   }
   async function selectWispRelay(failed=''){
@@ -7781,25 +7796,25 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
     return await window.NyxRelaySelection?.choose(configuredWispUrls(),failed) || configuredWispUrls()[0];
   }
-  function activeBrowserSourceUrl(){
-    const activeTab=activeBrowser?.tabs?.find(tab=>tab.id===activeBrowser.active);
+  function activeWorkspaceSourceUrl(){
+    const activeTab=activeWorkspace?.tabs?.find(tab=>tab.id===activeWorkspace.active);
     const raw=activeTab?.sourceUrl || activeTab?.url || '';
-    return browserShellSourceUrl(raw) || raw;
+    return workspaceShellSourceUrl(raw) || raw;
   }
-  function resetBrowserProxyRuntime(reloadActive=true){
-    const activeSource=activeBrowserSourceUrl();
-    browserTransportOverride='';
-    scramjetInstallPromise=null;
-    scramjetController=null;
-    scramjetTransport?.close?.();
-    scramjetTransport=null;
-    scramjetTransportPending=null;
-    scramjetTransportKey='';
-    if(reloadActive && /^https?:\/\//i.test(activeSource)) setTimeout(()=>activeBrowser?.navigate?.(activeSource),0);
+  function resetWorkspaceConnectionRuntime(reloadActive=true){
+    const activeSource=activeWorkspaceSourceUrl();
+    workspaceTransportOverride='';
+    studyjetInstallPromise=null;
+    studyjetController=null;
+    studyjetTransport?.close?.();
+    studyjetTransport=null;
+    studyjetTransportPending=null;
+    studyjetTransportKey='';
+    if(reloadActive && /^https?:\/\//i.test(activeSource)) setTimeout(()=>activeWorkspace?.navigate?.(activeSource),0);
   }
-  function saveBrowserWispUrl(root,reset=false){
-    const input=root?.querySelector('[data-browser-wisp-url]');
-    const status=root?.querySelector('[data-browser-wisp-status]');
+  function saveWorkspaceWispUrl(root,reset=false){
+    const input=root?.querySelector('[data-workspace-wisp-url]');
+    const status=root?.querySelector('[data-workspace-wisp-status]');
     let next='';
     try{next=reset ? '' : normalizeWispUrl(input?.value || '')}catch(error){
       input?.focus();
@@ -7809,7 +7824,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     store.setText('nyx.wispUrl',next);
     if(input) input.value=next;
     if(status) status.textContent=next ? `Custom relay: ${next}` : `Default relay: ${defaultWispUrl()}`;
-    resetBrowserProxyRuntime();
+    resetWorkspaceConnectionRuntime();
     toast(next ? "Custom Wisp U3L saved" : "Default Wisp U3L restored");
     return true;
   }
@@ -7999,17 +8014,17 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     setInterval(heartbeat,15_000);
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible') heartbeat()});
   }
-  async function installBareMuxTransport(){
+  async function installBookmuxTransport(){
     await selectWispRelay();
-    const { BareMuxConnection } = await import('/baremux/index.mjs?v=nyx-baremux-worker-start-v2');
-    const connection = bareMuxConnection || (bareMuxConnection = new BareMuxConnection('/baremux/worker.js'));
+    const { BareMuxConnection:BookmuxConnection } = await import('/baremux/index.mjs?v=nyx-baremux-worker-start-v2');
+    const connection = bookmuxConnection || (bookmuxConnection = new BookmuxConnection('/baremux/worker.js'));
     const wisp=wispUrl();
     const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
     const setTransportWithRetry=async (path,args)=>{
       let lastError=null;
       for(let attempt=0;attempt<3;attempt++){
         try{
-          if(wisp===browserHttpRelayUrl()){
+          if(wisp===workspaceHttpRelayUrl()){
             await connection.setManualTransport(`
               const {installHttpRelaySocket}=await import('/chapels/tutsi/http-relay.mjs');
               installHttpRelaySocket();
@@ -8027,7 +8042,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       throw lastError;
     };
-    const transport=normalizeBrowserTransportName(browserTransportOverride || store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT));
+    const transport=normalizeWorkspaceTransportName(workspaceTransportOverride || store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT));
     try{
       if(transport==='libcurlRaw' || transport==='auto'){
         try{
@@ -8051,16 +8066,16 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       return connection;
     }
   }
-  async function createScramjetTransport(){
+  async function createStudyjetTransport(){
     await selectWispRelay();
-    const transport=normalizeBrowserTransportName(browserTransportOverride || store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT));
+    const transport=normalizeWorkspaceTransportName(workspaceTransportOverride || store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT));
     const key=`${transport}:${wispUrl()}`;
-    if(scramjetTransport && scramjetTransportKey===key) return scramjetTransport;
-    if(scramjetTransportPending?.key===key) return scramjetTransportPending.promise;
+    if(studyjetTransport && studyjetTransportKey===key) return studyjetTransport;
+    if(studyjetTransportPending?.key===key) return studyjetTransportPending.promise;
     const wisp=wispUrl();
     const buildTransport=async name=>{
       let endpoint=null;
-      if(wisp===browserHttpRelayUrl()){
+      if(wisp===workspaceHttpRelayUrl()){
         const {createHttpRelayEndpoint}=await import('/chapels/tutsi/http-relay.mjs');
         endpoint=createHttpRelayEndpoint();
       }
@@ -8081,26 +8096,26 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
 
 
     const pending={key,promise:null};
-    scramjetTransportPending=pending;
+    studyjetTransportPending=pending;
     pending.promise=(async()=>{
       const {RelayTransport}=await import('/chapels/tutsi/relay.mjs');
       const client=new RelayTransport({urls:[wisp],monitorMs:0,storage:null,createClient:async()=>{
         const next=await buildTransport(transport);
         let timer;
         try{if(typeof next.init==='function'&&!next.ready)await Promise.race([
-          next.init(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Browser transport startup timed out')),10000);})
+          next.init(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Workspace transport startup timed out')),10000);})
         ]);return next;}catch(error){next.close?.();throw error;}finally{clearTimeout(timer);}
       }});
       try{await client.init();}catch(error){client.close();throw error;}
-      if(scramjetTransportPending===pending){
-        scramjetTransport=client;
-        scramjetTransportKey=key;
+      if(studyjetTransportPending===pending){
+        studyjetTransport=client;
+        studyjetTransportKey=key;
       }
       return client;
-    })().finally(()=>{if(scramjetTransportPending===pending) scramjetTransportPending=null;});
+    })().finally(()=>{if(studyjetTransportPending===pending) studyjetTransportPending=null;});
     return pending.promise;
   }
-  function scramjetConfig(){
+  function studyjetConfig(){
     return {
       prefix:'/~/sj/',
       scramjetPath:'/scramjet/scramjet.js?v=20260905-optional-history-url-v1',
@@ -8113,7 +8128,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
     };
   }
-  function scramjetRuntimeConfig(){
+  function studyjetRuntimeConfig(){
     const authSafeFlags={
       captureErrors:false,
       cleanErrors:false,
@@ -8146,7 +8161,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       maskedfiles:['inject.js','scramjet.wasm.js']
     };
   }
-  function createScramjetController(serviceworker,transport){
+  function createStudyjetController(serviceworker,transport){
     const api=window.$scramjetController;
     const Controller=api?.Controller;
     if(!Controller) throw new Error('Scramjet controller API did not load');
@@ -8154,17 +8169,17 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return new Controller({
       serviceworker,
       transport,
-      config:scramjetConfig(),
-      scramjetConfig:scramjetRuntimeConfig()
+      config:studyjetConfig(),
+      scramjetConfig:studyjetRuntimeConfig()
     });
   }
-  async function createPrivateScramjetController(){
-    const base=scramjetController;
+  async function createPrivateStudyjetController(){
+    const base=studyjetController;
     if(!base?.serviceWorkerController || !base?.transport) throw new Error('Scramjet private session is unavailable');
-    const controller=createScramjetController(base.serviceWorkerController,base.transport);
-    const {trackProxyController,waitForProxyController}=await import('/js/intercession-startup.mjs');
-    controller.nyxStopWorkerTracking=trackProxyController(controller);
-    try{await waitForProxyController(controller,5000);}catch(error){
+    const controller=createStudyjetController(base.serviceWorkerController,base.transport);
+    const {trackConnectionController,waitForConnectionController}=await import('/js/intercession-startup.mjs');
+    controller.nyxStopWorkerTracking=trackConnectionController(controller);
+    try{await waitForConnectionController(controller,5000);}catch(error){
       controller.nyxStopWorkerTracking();
       try{controller.cookieSyncChannel?.close?.()}catch{}
       try{controller.port?.close?.()}catch{}
@@ -8178,7 +8193,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     try{controller.cookieSyncChannel?.close?.()}catch{}
     return controller;
   }
-  function destroyProxyPrivacySession(tab){
+  function destroyConnectionPrivacySession(tab){
     if(!tab) return;
     const controller=tab.privateScramjetController;
     if(controller){
@@ -8203,9 +8218,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   window.addEventListener('pagehide',event=>{
     if(event.persisted) return;
-    activeBrowser?.tabs?.forEach?.(tab=>destroyProxyPrivacySession(tab));
+    activeWorkspace?.tabs?.forEach?.(tab=>destroyConnectionPrivacySession(tab));
   });
-  async function reconnectScramjetController(controller,serviceworker,transport,force=false){
+  async function reconnectStudyjetController(controller,serviceworker,transport,force=false){
     if(!controller || !serviceworker) return false;
     controller.setTransport?.(transport);
     if(controller.serviceWorkerController===serviceworker && !force) return true;
@@ -8216,59 +8231,59 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     await new Promise(resolve=>setTimeout(resolve,120));
     return true;
   }
-  async function ensureScramjetWorkerConnection(controller,force=false){
+  async function ensureStudyjetWorkerConnection(controller,force=false){
     let registration=await navigator.serviceWorker.getRegistration('/~/sj/');
     if(!registration || registration.scope!==new URL('/~/sj/',location.href).href){
-      registration=await navigator.serviceWorker.register(scramjetServiceWorkerUrl,{scope:'/~/sj/',updateViaCache:'none'});
+      registration=await navigator.serviceWorker.register(studyjetServiceWorkerUrl,{scope:'/~/sj/',updateViaCache:'none'});
     }
-    const worker=await waitForServiceWorkerScript(registration,scramjetServiceWorkerUrl);
+    const worker=await waitForServiceWorkerScript(registration,studyjetServiceWorkerUrl);
     if(!worker) throw new Error('The browsing connection could not be restored. Try again.');
-    for(const current of new Set([scramjetController,controller])){
-      if(current && !await reconnectScramjetController(current,worker,scramjetController.transport,force)){
+    for(const current of new Set([studyjetController,controller])){
+      if(current && !await reconnectStudyjetController(current,worker,studyjetController.transport,force)){
         throw new Error('The browsing session could not reconnect. Try again.');
       }
     }
   }
-  let browserConnectionRepair=null;
-  function repairBrowserConnection(){
-    if(browserConnectionRepair)return browserConnectionRepair;
-    browserConnectionRepair=(async()=>{
-      if(!navigator.serviceWorker)throw new Error('This browser cannot create a browsing connection.');
-      await scramjetInstallPromise;
-      await scramjetTransportPending?.promise.catch(()=>null);
-      scramjetInstallPromise=null;
-      scramjetTransport?.close?.();
-      scramjetTransport=null;
-      scramjetTransportPending=null;
-      scramjetTransportKey='';
-      await unregisterProxyScope('/~/sj/');
-      if(!await installScramjet())throw new Error(scramjetInstallError || 'The browsing connection is unavailable.');
-      await ensureScramjetWorkerConnection(null,true);
-      for(const tab of activeBrowser?.tabs || []){
-        if(tab.privateScramjetController)await ensureScramjetWorkerConnection(tab.privateScramjetController,true);
+  let workspaceConnectionRepair=null;
+  function repairWorkspaceConnection(){
+    if(workspaceConnectionRepair)return workspaceConnectionRepair;
+    workspaceConnectionRepair=(async()=>{
+      if(!navigator.serviceWorker)throw new Error('This workspace cannot create a browsing connection.');
+      await studyjetInstallPromise;
+      await studyjetTransportPending?.promise.catch(()=>null);
+      studyjetInstallPromise=null;
+      studyjetTransport?.close?.();
+      studyjetTransport=null;
+      studyjetTransportPending=null;
+      studyjetTransportKey='';
+      await unregisterConnectionScope('/~/sj/');
+      if(!await installStudyjet())throw new Error(studyjetInstallError || 'The browsing connection is unavailable.');
+      await ensureStudyjetWorkerConnection(null,true);
+      for(const tab of activeWorkspace?.tabs || []){
+        if(tab.privateScramjetController)await ensureStudyjetWorkerConnection(tab.privateScramjetController,true);
       }
-    })().finally(()=>{browserConnectionRepair=null});
-    return browserConnectionRepair;
+    })().finally(()=>{workspaceConnectionRepair=null});
+    return workspaceConnectionRepair;
   }
-  async function loadScramjetRuntimeGuardSource(){
-    if(scramjetRuntimeGuardSource) return scramjetRuntimeGuardSource;
+  async function loadStudyjetRuntimeGuardSource(){
+    if(studyjetRuntimeGuardSource) return studyjetRuntimeGuardSource;
     const response=await fetch('/nyx-scramjet-runtime-guard.js',{cache:'no-store'});
     if(!response.ok) throw new Error('Could not load Scramjet runtime guard');
-    scramjetRuntimeGuardSource=await response.text();
-    return scramjetRuntimeGuardSource;
+    studyjetRuntimeGuardSource=await response.text();
+    return studyjetRuntimeGuardSource;
   }
-  function findScramjetHtmlNode(node,name){
+  function findStudyjetHtmlNode(node,name){
     if(String(node?.name || '').toLowerCase()===name) return node;
     const children=node?.childNodes || node?.children;
     if(!Array.isArray(children)) return null;
     for(const child of children){
-      const found=findScramjetHtmlNode(child,name);
+      const found=findStudyjetHtmlNode(child,name);
       if(found) return found;
     }
     return null;
   }
-  function installScramjetRuntimeGuards(root,source=scramjetRuntimeGuardSource,key='runtime-guard'){
-    const target=findScramjetHtmlNode(root,'head') || findScramjetHtmlNode(root,'html') || root;
+  function installStudyjetRuntimeGuards(root,source=studyjetRuntimeGuardSource,key='runtime-guard'){
+    const target=findStudyjetHtmlNode(root,'head') || findStudyjetHtmlNode(root,'html') || root;
     const children=target?.childNodes || target?.children;
     if(!Array.isArray(children)) return;
     if(children.some(child=>child?.attribs?.['data-nyx-runtime-guard']===key)) return;
@@ -8286,12 +8301,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(children[0]) children[0].prev=script;
     children.unshift(script);
   }
-  function shouldUseScramjetRuntimeGuard(url){
+  function shouldUseStudyjetRuntimeGuard(url){
     return false;
   }
-  function shouldUseScramjetMinimalGuard(url){
+  function shouldUseStudyjetMinimalGuard(url){
     const raw=String(url || '');
-    const host=browserHost(browserShellSourceUrl(raw) || raw);
+    const host=workspaceHost(workspaceShellSourceUrl(raw) || raw);
     if(host && hostMatches(host,[
       'spotify.com',
       'spotifycdn.com',
@@ -8308,24 +8323,24 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       'googletagmanager.com'
     ]);
   }
-  function shouldUseScramjetHelperGuard(url){
+  function shouldUseStudyjetHelperGuard(url){
     return false;
   }
   function isNvidiaAuthFamilyUrl(url){
     const raw=String(url || '');
-    const host=browserHost(browserShellSourceUrl(raw) || raw);
+    const host=workspaceHost(workspaceShellSourceUrl(raw) || raw);
     return !!host && hostMatches(host,[
       'geforcenow.com',
       'nvidia.com',
       'nvidiagrid.net'
     ]);
   }
-  function shouldStripScramjetDuckDuckGoScripts(url){
+  function shouldStripStudyjetDuckDuckGoScripts(url){
     return false;
   }
   function isSpotifyFamilyUrl(url){
     const raw=String(url || '');
-    const host=browserHost(browserShellSourceUrl(raw) || raw);
+    const host=workspaceHost(workspaceShellSourceUrl(raw) || raw);
     return !!host && hostMatches(host,[
       'spotify.com',
       'spotifycdn.com',
@@ -8423,8 +8438,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     let applied=false;
     qsa('iframe').forEach(frame=>{
       const raw=String(frame.getAttribute('src') || frame.src || '');
-      const source=browserShellSourceUrl(raw) || raw;
-      const host=browserHost(source);
+      const source=workspaceShellSourceUrl(raw) || raw;
+      const host=workspaceHost(source);
       let decodedRaw=raw;
       try{decodedRaw=decodeURIComponent(raw)}catch{}
       if(!(host && hostMatches(host,['spotify.com','spotifycdn.com','scdn.co'])) && !/(spotify\.com|spotifycdn\.com|scdn\.co)/i.test(decodedRaw)) return;
@@ -8486,13 +8501,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         }catch{}
       });
       const textLength=String(health.visibleText || health.text || '').replace(/\s+/g,' ').trim().length;
-      let looksBrowserDefault=false;
+      let looksWorkspaceDefault=false;
       try{
         const bodyStyle=doc.defaultView?.getComputedStyle?.(doc.body);
         const family=String(bodyStyle?.fontFamily || '').toLowerCase();
         const background=String(bodyStyle?.backgroundColor || '').replace(/\s+/g,'');
         const color=String(bodyStyle?.color || '').replace(/\s+/g,'');
-        looksBrowserDefault=/times new roman|serif/.test(family)
+        looksWorkspaceDefault=/times new roman|serif/.test(family)
           && ['rgba(0,0,0,0)','rgb(255,255,255)'].includes(background)
           && color==='rgb(0,0,0)';
       }catch{}
@@ -8503,30 +8518,30 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         && textLength>80
         && stylesheetLinks>0
         && linkedStylesMissing
-        && (styleElements===0 || looksBrowserDefault);
+        && (styleElements===0 || looksWorkspaceDefault);
       const blank=complete && health.blank && !health.hasErrorText;
       const usableControls=textLength>0 && Array.from(doc.querySelectorAll('button,input,select,textarea,[role="button"]')).some(element=>{
         const style=doc.defaultView?.getComputedStyle?.(element);
         return element.getClientRects().length>0 && style?.visibility!=='hidden' && style?.display!=='none';
       });
-      return {...health,reachable:true,blank,unstyled,usableControls,stylesheetLinks,linkedStyleSheets,readableLinkedSheets,linkedStyleRules,styleElements,looksBrowserDefault,textLength};
+      return {...health,reachable:true,blank,unstyled,usableControls,stylesheetLinks,linkedStyleSheets,readableLinkedSheets,linkedStyleRules,styleElements,looksWorkspaceDefault:looksWorkspaceDefault,textLength};
     }catch(error){
       return {reachable:false,blank:false,unstyled:false,readyState:'',error:String(error?.message || error)};
     }
   }
-  function browserFrameStillAtSource(t,sourceUrl){
-    const source=browserShellSourceUrl(sourceUrl) || String(sourceUrl || '');
-    const current=browserShellSourceUrl(t?.sourceUrl || t?.url || '') || String(t?.sourceUrl || t?.url || '');
+  function workspaceFrameStillAtSource(t,sourceUrl){
+    const source=workspaceShellSourceUrl(sourceUrl) || String(sourceUrl || '');
+    const current=workspaceShellSourceUrl(t?.sourceUrl || t?.url || '') || String(t?.sourceUrl || t?.url || '');
     if(current!==source) return false;
     try{
-      const actual=browserShellSourceUrl(t.frame.contentWindow.location.href);
-      if(/^https?:/i.test(actual) && !browserShellRejectFrameLocation(actual,source)) return actual===source;
+      const actual=workspaceShellSourceUrl(t.frame.contentWindow.location.href);
+      if(/^https?:/i.test(actual) && !workspaceShellRejectFrameLocation(actual,source)) return actual===source;
     }catch{}
     return true;
   }
-  function watchScramjetHealth(t,sourceUrl){
+  function watchStudyjetHealth(t,sourceUrl){
     if(!t?.frame || !sourceUrl) return;
-    const source=browserShellSourceUrl(sourceUrl) || String(sourceUrl);
+    const source=workspaceShellSourceUrl(sourceUrl) || String(sourceUrl);
     if(!/^https?:/i.test(source)) return;
     if(t.scramjetPresentationIntent!==(t.navigationIntent || '')){
       t.scramjetPresentationIntent=t.navigationIntent || '';
@@ -8547,7 +8562,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       && t.scramjetHealthWatchToken===token
       && (t.navigationIntent || '')===navigationIntent
       && t.scramjetPresentationSource===source
-      && browserFrameStillAtSource(t,source);
+      && workspaceFrameStillAtSource(t,source);
     const recover=async reason=>{
       if(recoveryStarted || !current()) return;
       const retries=Number(t.scramjetPresentationRetries || 0);
@@ -8556,20 +8571,20 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       t.scramjetPresentationRetries=retries+1;
       t.scramjetHealthWatchToken='recovering-'+token;
       if(t.scramjetPresentationRetries>1){
-        await refreshScramjetServiceWorker().catch(()=>false);
-        scramjetInstallPromise=null;
-        await installScramjet().catch(()=>false);
+        await refreshStudyjetServiceWorker().catch(()=>false);
+        studyjetInstallPromise=null;
+        await installStudyjet().catch(()=>false);
       }else{
         await new Promise(resolve=>setTimeout(resolve,240));
       }
-      if(!t.frame?.isConnected || (t.navigationIntent || '')!==navigationIntent || t.scramjetPresentationSource!==source || !browserFrameStillAtSource(t,source)) return;
+      if(!t.frame?.isConnected || (t.navigationIntent || '')!==navigationIntent || t.scramjetPresentationSource!==source || !workspaceFrameStillAtSource(t,source)) return;
       try{
         t.scramjetFrame?.go(source);
       }catch{
         return;
       }
       setTimeout(()=>{
-        if(t.frame?.isConnected && (t.navigationIntent || '')===navigationIntent) watchScramjetHealth(t,source);
+        if(t.frame?.isConnected && (t.navigationIntent || '')===navigationIntent) watchStudyjetHealth(t,source);
       },120);
     };
     const check=()=>{
@@ -8612,17 +8627,17 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     setTimeout(check,8200);
   }
 
-  function removeScramjetHtmlNodes(root,predicate){
+  function removeStudyjetHtmlNodes(root,predicate){
     const children=root?.childNodes || root?.children;
     if(!Array.isArray(children)) return;
     for(let i=children.length-1;i>=0;i--){
       const child=children[i];
       if(predicate(child)) children.splice(i,1);
-      else removeScramjetHtmlNodes(child,predicate);
+      else removeStudyjetHtmlNodes(child,predicate);
     }
   }
-  function stripScramjetDuckDuckGoScripts(root){
-    removeScramjetHtmlNodes(root,node=>{
+  function stripStudyjetDuckDuckGoScripts(root){
+    removeStudyjetHtmlNodes(root,node=>{
       if(String(node?.name || '').toLowerCase()!=='script') return false;
       const src=String(node?.attribs?.src || '').toLowerCase();
       const id=String(node?.attribs?.id || '').toLowerCase();
@@ -8633,8 +8648,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         || text.includes('window.__sc__=');
     });
   }
-  function stripScramjetPreloadLinks(root){
-    removeScramjetHtmlNodes(root,node=>{
+  function stripStudyjetPreloadLinks(root){
+    removeStudyjetHtmlNodes(root,node=>{
       if(String(node?.name || '').toLowerCase()!=='link') return false;
       if(String(node?.attribs?.rel || '').toLowerCase()!=='preload') return false;
       const asType=String(node?.attribs?.as || '').toLowerCase();
@@ -8646,7 +8661,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         || href.endsWith('.json');
     });
   }
-  function stripScramjetResourceIntegrity(root){
+  function stripStudyjetResourceIntegrity(root){
     const visit=node=>{
       if(!node || typeof node!=='object') return;
       const attrs=node.attribs;
@@ -8672,26 +8687,26 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       replaceCinebyDevtoolBundle(node);
     }
   }
-  function patchScramjetHtml(root,source=scramjetRuntimeGuardSource,key='runtime-guard'){
+  function patchStudyjetHtml(root,source=studyjetRuntimeGuardSource,key='runtime-guard'){
     if(key==='proxy-sri'){
-      stripScramjetResourceIntegrity(root);
+      stripStudyjetResourceIntegrity(root);
       return;
     }
     if(key==='duckduckgo-noscript'){
-      stripScramjetDuckDuckGoScripts(root);
+      stripStudyjetDuckDuckGoScripts(root);
       return;
     }
     if(key==='spotify-preload-strip'){
-      stripScramjetPreloadLinks(root);
+      stripStudyjetPreloadLinks(root);
       return;
     }
     if(key==='cineby-disable-devtool'){
       replaceCinebyDevtoolBundle(root);
       return;
     }
-    installScramjetRuntimeGuards(root,source,key);
+    installStudyjetRuntimeGuards(root,source,key);
   }
-  function createScramjetCompatibilityPlugin(source=scramjetRuntimeGuardSource,key='runtime-guard'){
+  function createStudyjetCompatibilityPlugin(source=studyjetRuntimeGuardSource,key='runtime-guard'){
     const plugin={
       name:'nyx-compatibility-'+key,
       dependencies:[],
@@ -8699,7 +8714,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const Tap=window.$scramjet?.Tap;
         const hook=frame?.fetchHandler?.hooks?.rewriter?.html?.post;
         if(!Tap?.tap) return;
-        if(hook) Tap.tap(hook,context=>patchScramjetHtml(context?.handler?.root,source,key),plugin);
+        if(hook) Tap.tap(hook,context=>patchStudyjetHtml(context?.handler?.root,source,key),plugin);
         if(key==='proxy-sri'){
           const responseHook=frame?.fetchHandler?.hooks?.fetch?.response;
           if(responseHook) Tap.tap(responseHook,(_context,result)=>{
@@ -8713,7 +8728,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     };
     return plugin;
   }
-  function isScramjetIdbShapeError(error){
+  function isStudyjetIdbShapeError(error){
     return /object stores? was not found|not found/i.test(String(error?.message || error));
   }
   function deleteIndexedDb(name){
@@ -8734,13 +8749,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       store.set('nyx.removedStartupPdfData',true);
     }catch{}
   }
-  async function unregisterProxyScope(scope){
+  async function unregisterConnectionScope(scope){
     const registration=await navigator.serviceWorker.getRegistration(scope).catch(()=>null);
     if(registration?.scope===new URL(scope,location.href).href)await registration.unregister().catch(()=>null);
   }
-  async function repairScramjetStorage(){
+  async function repairStudyjetStorage(){
     if(navigator.serviceWorker){
-      await Promise.all(['/~/sj/','/scramjet/service/'].map(unregisterProxyScope));
+      await Promise.all(['/~/sj/','/scramjet/service/'].map(unregisterConnectionScope));
     }
     const names=['$scramjet','__scramjet_controller'];
     if(indexedDB.databases){
@@ -8751,26 +8766,26 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
     await Promise.all(names.map(name=>deleteIndexedDb(name)));
   }
-  async function repairScramjetV1Storage(){
+  async function repairStudyjetV1Storage(){
     if(navigator.serviceWorker){
-      await unregisterProxyScope('/~/sj-v1/');
+      await unregisterConnectionScope('/~/sj-v1/');
     }
 
 
-    scramjetV1Controller?.db?.close?.();
+    studyjetV1Controller?.db?.close?.();
     await deleteIndexedDb('$nyx_scramjet_v1_v4');
   }
-  async function repairScramjetCaches(){
+  async function repairStudyjetCaches(){
     if(!window.caches?.keys) return;
     const names=await caches.keys().catch(()=>[]);
     await Promise.all(names.filter(name=>/scramjet/i.test(name)).map(name=>caches.delete(name).catch(()=>false)));
   }
-  async function repairRetiredProxyStorage(){
+  async function repairRetiredConnectionStorage(){
     if(navigator.serviceWorker){
-      await Promise.all(['/service/','/uv/'].map(unregisterProxyScope));
+      await Promise.all(['/service/','/uv/'].map(unregisterConnectionScope));
     }
   }
-  async function repairRetiredProxyCaches(){
+  async function repairRetiredConnectionCaches(){
     if(!window.caches?.keys) return;
     const names=await caches.keys().catch(()=>[]);
     await Promise.all(names.filter(name=>/(ultraviolet|uv|bare|epoxy|libcurl)/i.test(name)).map(name=>caches.delete(name).catch(()=>false)));
@@ -8828,162 +8843,162 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     try{localStorage.clear()}catch{}
     setTimeout(()=>location.replace(location.pathname || '/'),220);
   }
-  async function ensureFreshProxyState(){
-    if(store.text('nyx.proxyStateVersion','')===proxyStateVersion) return;
+  async function ensureFreshConnectionState(){
+    if(store.text('nyx.proxyStateVersion','')===connectionStateVersion) return;
     await Promise.all([
-      repairScramjetStorage(),
-      repairScramjetCaches(),
-      repairRetiredProxyStorage(),
-      repairRetiredProxyCaches()
+      repairStudyjetStorage(),
+      repairStudyjetCaches(),
+      repairRetiredConnectionStorage(),
+      repairRetiredConnectionCaches()
     ]);
-    scramjetController=null;
-    scramjetTransport=null;
-    scramjetTransportKey='';
-    store.setText('nyx.scramjetStateVersion',scramjetStateVersion);
-    store.setText('nyx.proxyStateVersion',proxyStateVersion);
+    studyjetController=null;
+    studyjetTransport=null;
+    studyjetTransportKey='';
+    store.setText('nyx.scramjetStateVersion',studyjetStateVersion);
+    store.setText('nyx.proxyStateVersion',connectionStateVersion);
   }
-  async function ensureFreshScramjetState(){
-    if(store.text('nyx.scramjetStateVersion','')===scramjetStateVersion) return;
-    await repairScramjetStorage();
-    await repairScramjetCaches();
-    scramjetController=null;
-    scramjetTransport=null;
-    scramjetTransportKey='';
-    store.setText('nyx.scramjetStateVersion',scramjetStateVersion);
+  async function ensureFreshStudyjetState(){
+    if(store.text('nyx.scramjetStateVersion','')===studyjetStateVersion) return;
+    await repairStudyjetStorage();
+    await repairStudyjetCaches();
+    studyjetController=null;
+    studyjetTransport=null;
+    studyjetTransportKey='';
+    store.setText('nyx.scramjetStateVersion',studyjetStateVersion);
   }
-  async function ensureFreshScramjetV1State(){
-    if(store.text('nyx.scramjetV1StateVersion','')===scramjetV1StateVersion) return;
-    await repairScramjetV1Storage();
-    scramjetV1Controller=null;
-    bareMuxConnection=null;
-    store.setText('nyx.scramjetV1StateVersion',scramjetV1StateVersion);
+  async function ensureFreshStudyjetV1State(){
+    if(store.text('nyx.scramjetV1StateVersion','')===studyjetV1StateVersion) return;
+    await repairStudyjetV1Storage();
+    studyjetV1Controller=null;
+    bookmuxConnection=null;
+    store.setText('nyx.scramjetV1StateVersion',studyjetV1StateVersion);
   }
 
-  function scramjetV1Config(){
+  function studyjetV1Config(){
     return {
       prefix:'/~/sj-v1/',
       files:{
-        all:scramjetV1RuntimeUrl,
+        all:studyjetV1RuntimeUrl,
         wasm:'/scramjet-v1/scramjet.wasm.wasm',
         sync:'/scramjet-v1/scramjet.sync.js'
       }
     };
   }
-  async function initializeScramjetV1Controller(){
+  async function initializeStudyjetV1Controller(){
     const api=window.$scramjetLoadController?.();
     const Controller=api?.ScramjetController;
     if(!Controller) throw new Error('Scramjet v1 controller API did not load');
-    const controller=new Controller(scramjetV1Config());
+    const controller=new Controller(studyjetV1Config());
 
 
 
-    scramjetV1Controller=controller;
+    studyjetV1Controller=controller;
     await controller.init();
     return controller;
   }
-  async function sendScramjetV1Config(controller,serviceworker){
+  async function sendStudyjetV1Config(controller,serviceworker){
     const db=controller?.db || await controller?.openIDB?.();
     const config=await db?.get?.('config','config');
     if(!config) throw new Error('Scramjet v1 configuration did not initialize');
     serviceworker.postMessage({scramjet$type:'loadConfig',config});
   }
-  function installScramjetV1(){
+  function installStudyjetV1(){
     return Promise.resolve(false);
 }
-  function installScramjet(){
-    if(scramjetInstallPromise) return scramjetInstallPromise;
+  function installStudyjet(){
+    if(studyjetInstallPromise) return studyjetInstallPromise;
     let step='starting Scramjet';
-    scramjetInstallPromise=(async()=>{
-      step='checking browser support';
+    studyjetInstallPromise=(async()=>{
+      step='checking workspace support';
       if(location.protocol==='file:'){
-        scramjetInstallError='Scramjet needs Nyx to be opened from its website, not as a local file.';
+        studyjetInstallError='Scramjet needs Nyx to be opened from its website, not as a local file.';
         return false;
       }
       if(!('serviceWorker' in navigator)){
-        scramjetInstallError='This browser does not support the Service Workers Scramjet needs. Some watch browsers do not provide that feature.';
+        studyjetInstallError='This workspace does not support the Service Workers Scramjet needs. Some watch workspaces do not provide that feature.';
         return false;
       }
       step='resetting stale Scramjet state';
-      await ensureFreshProxyState();
-      await ensureFreshScramjetState();
+      await ensureFreshConnectionState();
+      await ensureFreshStudyjetState();
       step='loading Scramjet assets';
-      const {loadProxyScript,waitForProxyController,trackProxyController}=await import('/js/intercession-startup.mjs');
-      await loadProxyScript('/scramjet/scramjet.js?v=20260905-optional-history-url-v1',()=>Boolean(window.$scramjet));
-      await loadProxyScript('/controller/controller.api.js',()=>Boolean(window.$scramjetController));
+      const {loadConnectionScript,waitForConnectionController,trackConnectionController}=await import('/js/intercession-startup.mjs');
+      await loadConnectionScript('/scramjet/scramjet.js?v=20260905-optional-history-url-v1',()=>Boolean(window.$scramjet));
+      await loadConnectionScript('/controller/controller.api.js',()=>Boolean(window.$scramjetController));
       step='loading Scramjet runtime guard';
-      await loadScramjetRuntimeGuardSource();
+      await loadStudyjetRuntimeGuardSource();
       step='starting Scramjet relay';
-      const transport=await createScramjetTransport();
+      const transport=await createStudyjetTransport();
       step='registering Scramjet service worker';
-      const registration=await navigator.serviceWorker.register(scramjetServiceWorkerUrl,{scope:'/~/sj/',updateViaCache:'none'});
+      const registration=await navigator.serviceWorker.register(studyjetServiceWorkerUrl,{scope:'/~/sj/',updateViaCache:'none'});
 
 
       step='activating Scramjet service worker';
-      const serviceworker=await waitForServiceWorkerScript(registration,scramjetServiceWorkerUrl);
+      const serviceworker=await waitForServiceWorkerScript(registration,studyjetServiceWorkerUrl);
       if(!serviceworker) throw new Error('Scramjet service worker did not activate');
       step='initializing Scramjet controller';
       try{
-        if(!scramjetController) scramjetController=createScramjetController(serviceworker,transport);
-        else if(!await reconnectScramjetController(scramjetController,serviceworker,transport)){
-          scramjetController=createScramjetController(serviceworker,transport);
+        if(!studyjetController) studyjetController=createStudyjetController(serviceworker,transport);
+        else if(!await reconnectStudyjetController(studyjetController,serviceworker,transport)){
+          studyjetController=createStudyjetController(serviceworker,transport);
         }
-        scramjetController.nyxStopWorkerTracking=trackProxyController(scramjetController);
-        await waitForProxyController(scramjetController);
+        studyjetController.nyxStopWorkerTracking=trackConnectionController(studyjetController);
+        await waitForConnectionController(studyjetController);
       }catch(initError){
-        if(!isScramjetIdbShapeError(initError)) throw initError;
+        if(!isStudyjetIdbShapeError(initError)) throw initError;
         step='repairing Scramjet storage';
-        await repairScramjetStorage();
-        const repairedRegistration=await navigator.serviceWorker.register(scramjetServiceWorkerUrl,{scope:'/~/sj/',updateViaCache:'none'});
-        const repairedServiceworker=await waitForServiceWorkerScript(repairedRegistration,scramjetServiceWorkerUrl);
+        await repairStudyjetStorage();
+        const repairedRegistration=await navigator.serviceWorker.register(studyjetServiceWorkerUrl,{scope:'/~/sj/',updateViaCache:'none'});
+        const repairedServiceworker=await waitForServiceWorkerScript(repairedRegistration,studyjetServiceWorkerUrl);
         if(!repairedServiceworker) throw new Error('Scramjet service worker did not activate after storage repair');
         step='initializing Scramjet controller after storage repair';
-        scramjetController?.nyxStopWorkerTracking?.();
-        scramjetController=createScramjetController(repairedServiceworker,transport);
-        scramjetController.nyxStopWorkerTracking=trackProxyController(scramjetController);
-        await waitForProxyController(scramjetController);
+        studyjetController?.nyxStopWorkerTracking?.();
+        studyjetController=createStudyjetController(repairedServiceworker,transport);
+        studyjetController.nyxStopWorkerTracking=trackConnectionController(studyjetController);
+        await waitForConnectionController(studyjetController);
       }
-      scramjetInstallError='';
+      studyjetInstallError='';
       return true;
     })().catch(err=>{
-      scramjetInstallError=`Failed while ${step}: ${err?.message || err}`;
-      scramjetController?.nyxStopWorkerTracking?.();
-      scramjetController=null;
-      scramjetInstallPromise=null;
+      studyjetInstallError=`Failed while ${step}: ${err?.message || err}`;
+      studyjetController?.nyxStopWorkerTracking?.();
+      studyjetController=null;
+      studyjetInstallPromise=null;
       return false;
     });
-    return scramjetInstallPromise;
+    return studyjetInstallPromise;
   }
-  function scheduleBrowserProxyPrewarm(){
-    if(browserProxyPrewarmScheduled) return;
-    const mode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
+  function scheduleWorkspaceConnectionPrewarm(){
+    if(workspaceConnectionPrewarmScheduled) return;
+    const mode=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE));
     if(mode!=='auto' && mode!=='scramjet') return;
-    browserProxyPrewarmScheduled=true;
+    workspaceConnectionPrewarmScheduled=true;
     const warm=()=>{
       if(document.visibilityState==='hidden'){
-        browserProxyPrewarmScheduled=false;
+        workspaceConnectionPrewarmScheduled=false;
         return;
       }
-      void installScramjet();
+      void installStudyjet();
     };
     if(typeof requestIdleCallback==='function') requestIdleCallback(warm,{timeout:700});
     else setTimeout(warm,0);
   }
-  let browserProxyPrewarmIntentArmed=false;
-  let browserProxyHomeWarmTimer=0;
-  function scheduleBrowserProxyPrewarmFromHome(){
-    if(browserProxyHomeWarmTimer || browserProxyPrewarmScheduled) return;
-    browserProxyHomeWarmTimer=setTimeout(()=>{
-      browserProxyHomeWarmTimer=0;
-      if(!document.querySelector('.browser-window.browser-home-page [data-browser-blank-input]')) return;
-      scheduleBrowserProxyPrewarm();
+  let workspaceConnectionPrewarmIntentArmed=false;
+  let workspaceConnectionHomeWarmTimer=0;
+  function scheduleWorkspaceConnectionPrewarmFromHome(){
+    if(workspaceConnectionHomeWarmTimer || workspaceConnectionPrewarmScheduled) return;
+    workspaceConnectionHomeWarmTimer=setTimeout(()=>{
+      workspaceConnectionHomeWarmTimer=0;
+      if(!document.querySelector('.workspace-window.workspace-home-page [data-workspace-blank-input]')) return;
+      scheduleWorkspaceConnectionPrewarm();
     },800);
   }
-  function armBrowserProxyPrewarmOnIntent(){
-    if(browserProxyPrewarmIntentArmed) return;
-    browserProxyPrewarmIntentArmed=true;
+  function armWorkspaceConnectionPrewarmOnIntent(){
+    if(workspaceConnectionPrewarmIntentArmed) return;
+    workspaceConnectionPrewarmIntentArmed=true;
     const warmFromSearchIntent=event=>{
-      if(!event.target?.closest?.('[data-browser-blank-input],[data-browser-shell-url]')) return;
-      scheduleBrowserProxyPrewarm();
+      if(!event.target?.closest?.('[data-workspace-blank-input],[data-workspace-shell-url]')) return;
+      scheduleWorkspaceConnectionPrewarm();
     };
     document.addEventListener('pointerdown',warmFromSearchIntent,{capture:true,passive:true});
     document.addEventListener('focusin',warmFromSearchIntent,{capture:true,passive:true});
@@ -9045,9 +9060,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   function closeWindowAnimated(win){
     if(!win || win.classList.contains('closing')) return;
-    if(activeBrowser?.win===win){
-      activeBrowser.tabs?.forEach?.(tab=>destroyProxyPrivacySession(tab));
-      activeBrowser=null;
+    if(activeWorkspace?.win===win){
+      activeWorkspace.tabs?.forEach?.(tab=>destroyConnectionPrivacySession(tab));
+      activeWorkspace=null;
     }
     $('minimizedTray')?.querySelector(`[data-restore="${win.dataset.winId}"]`)?.remove();
     updateMinimizedDock();
@@ -9083,7 +9098,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     responsiveFitTimer=setTimeout(updateResponsiveFit,60);
     clearTimeout(nyxVisualDockViewportTimer);
     nyxVisualDockViewportTimer=setTimeout(()=>{
-      if(document.body.classList.contains('browser-shell')) ensureNyxVisualDock();
+      if(document.body.classList.contains('workspace-shell')) ensureNyxVisualDock();
     },80);
   }
   window.addEventListener('resize',scheduleResponsiveFit);
@@ -9157,7 +9172,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       bar.classList.add('dragging'); e.preventDefault();
     };
     bar.addEventListener('pointerdown',startDrag);
-    win.querySelector('.browser-tabs')?.addEventListener('pointerdown',startDrag);
+    win.querySelector('.workspace-tabs')?.addEventListener('pointerdown',startDrag);
     win.querySelectorAll('[data-resize]').forEach(handle=>{
       handle.addEventListener('pointerdown',e=>{
         if(win.classList.contains('maximized')) return;
@@ -9209,12 +9224,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     win.style.height=height+'px';
     updateWindowSizeClasses(win);
   }
-  function browserBody(){
+  function workspaceBody(){
     const minimalPresenceText=nyxPresenceCount===null ? 'Connecting\u2026' : `${nyxPresenceCount} online`;
     {
       const searchEngine=selectedSearchEngineMeta();
       const searchLabel=`S3ARC4 ${searchEngine.label} or type a U3L`;
-      return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="S3ARC4"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home nyx-minimal-home nyx-visual-home"><main class="browser-shell-start nyx-minimal-hero"><div class="nyx-minimal-brand"><img class="nyx-home-logo" data-nyx-logo src="/assets/icons/nyx-cat-moon.svg?v=3" alt="Nyx"><h1>NYX</h1></div><form class="browser-blank-search nyx-minimal-search" data-browser-blank-search><svg class="nyx-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input data-browser-blank-input data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"></form><nav class="nyx-home-links" data-nyx-recent-searches aria-label="Recent searches" hidden></nav></main><nav class="nyx-minimal-utility-links" aria-label="Nyx tools and terms"><a data-open="terms" href="nyx://terms">Terms</a></nav><button class="nyx-appearance-toggle" data-nyx-appearance type="button" aria-label="Use light appearance" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button><button class="nyx-visual-customize" data-open="settings" type="button">${nyxDashboardIcon('settings')}<span>Customize</span></button><div class="nyx-home-presence${nyxFounderIsOwner&&nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'button':'status'}" tabindex="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${minimalPresenceText}</span></div></div></div>`;
+      return `<div class="workspace-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="workspace-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="S3ARC4"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="workspace-body"><div class="workspace-home nyx-minimal-home nyx-visual-home"><main class="workspace-shell-start nyx-minimal-hero"><div class="nyx-minimal-brand"><img class="nyx-home-logo" data-nyx-logo src="/assets/icons/nyx-cat-moon.svg?v=3" alt="Nyx"><h1>NYX</h1></div><form class="workspace-blank-search nyx-minimal-search" data-workspace-blank-search><svg class="nyx-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input data-workspace-blank-input data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"></form><nav class="nyx-home-links" data-nyx-recent-searches aria-label="Recent searches" hidden></nav></main><nav class="nyx-minimal-utility-links" aria-label="Nyx tools and terms"><a data-open="terms" href="nyx://terms">Terms</a></nav><button class="nyx-appearance-toggle" data-nyx-appearance type="button" aria-label="Use light appearance" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button><button class="nyx-visual-customize" data-open="settings" type="button">${nyxDashboardIcon('settings')}<span>Customize</span></button><div class="nyx-home-presence${nyxFounderIsOwner&&nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'button':'status'}" tabindex="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${minimalPresenceText}</span></div></div></div>`;
     }
   }
 
@@ -9302,7 +9317,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(key.includes('discord')) return '/assets/icons/shortcut-discord.svg';
     return '';
   }
-  function browserHomeShortcutTiles(){
+  function workspaceHomeShortcutTiles(){
     const tiles=homeShortcuts()
       .map((item,index)=>({...item,index}))
       .sort((a,b)=>(b.favorite===true)-(a.favorite===true))
@@ -9314,7 +9329,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }).join('');
     return tiles + '<button class="quick-tile home-shortcut-add" data-home-shortcut-add type="button"><b>+</b><span>Add Resource</span></button>';
   }
-  browserHomeShortcutTiles=function(){
+  workspaceHomeShortcutTiles=function(){
     const tiles=homeShortcuts()
       .map((item,index)=>({...item,index}))
       .sort((a,b)=>(b.favorite===true)-(a.favorite===true))
@@ -9335,10 +9350,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if($('cloakLaunchScreen')?.classList.contains('show')) return false;
     const welcome=$('welcomeScreen');
     if(welcome && !welcome.classList.contains('hidden')) return false;
-    if(!document.body.classList.contains('browser-shell')) return false;
-    const home=scope.querySelector?.('.browser-home:not(.hidden)') || document.querySelector('.browser-home:not(.hidden)');
+    if(!document.body.classList.contains('workspace-shell')) return false;
+    const home=scope.querySelector?.('.workspace-home:not(.hidden)') || document.querySelector('.workspace-home:not(.hidden)');
     if(!home) return false;
-    if(document.body.classList.contains('browser-content-active')) return false;
+    if(document.body.classList.contains('workspace-content-active')) return false;
     return !!home.querySelector('[data-home-shortcuts]');
   }
   function playHomeShortcutAnimation(root=document){
@@ -9405,7 +9420,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function playNyxStartupReveal(){
     const body=document.body;
     const targets=[
-      ...document.querySelectorAll('body.browser-shell .top-os .brand-mini > button, body.browser-shell .top-os > :is(.browser-top-clock,.nyx-latency-bubble), body.browser-shell .top-os .browser-mode-address > *, body.browser-shell .browser-home [data-home-shortcuts], body.browser-shell .browser-home [data-home-shortcuts] > .quick-tile')
+      ...document.querySelectorAll('body.workspace-shell .top-os .brand-mini > button, body.workspace-shell .top-os > :is(.workspace-top-clock,.nyx-latency-bubble), body.workspace-shell .top-os .workspace-mode-address > *, body.workspace-shell .workspace-home [data-home-shortcuts], body.workspace-shell .workspace-home [data-home-shortcuts] > .quick-tile')
     ];
     document.querySelectorAll('.shortcut-entrance').forEach(el=>el.classList.remove('shortcut-entrance'));
     document.querySelectorAll('.tab-opening,.tab-activating').forEach(el=>el.classList.remove('tab-opening','tab-activating'));
@@ -9425,13 +9440,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function playHomeChromeAnimation(root=document){
     if(!homeEntranceCanPlay(root)) return;
     const scope=root || document;
-    scope.querySelectorAll?.('.browser-shell-start').forEach((el,index)=>animateHomeElement(el,index,{delay:60,duration:1200,start:'translate(-28px,44px) scale(.9)',mid:'translate(-8px,13px) scale(.98)'}));
+    scope.querySelectorAll?.('.workspace-shell-start').forEach((el,index)=>animateHomeElement(el,index,{delay:60,duration:1200,start:'translate(-28px,44px) scale(.9)',mid:'translate(-8px,13px) scale(.98)'}));
     const tabItems=[
-      ...document.querySelectorAll('body.browser-shell .brand-mini [data-browser-shell-home], body.browser-shell .brand-mini .browser-mode-shell-tab, body.browser-shell .brand-mini [data-browser-shell-new-tab]')
+      ...document.querySelectorAll('body.workspace-shell .brand-mini [data-workspace-shell-home], body.workspace-shell .brand-mini .workspace-mode-shell-tab, body.workspace-shell .brand-mini [data-workspace-shell-new-tab]')
     ];
     tabItems.forEach((el,index)=>animateHomeElement(el,index,{delay:45+(index*65),duration:650,start:'translate(-24px,34px) scale(.88)',mid:'translate(-7px,10px) scale(.97)'}));
     const toolbarItems=[
-      ...document.querySelectorAll('body.browser-shell [data-browser-shell-back], body.browser-shell [data-browser-shell-forward], body.browser-shell [data-browser-shell-reload], body.browser-shell [data-browser-shell-home-nav], body.browser-shell [data-browser-shell-url], body.browser-shell [data-browser-shell-settings], body.browser-shell .browser-mode-weather, body.browser-shell [data-browser-shell-menu], body.browser-shell #clock')
+      ...document.querySelectorAll('body.workspace-shell [data-workspace-shell-back], body.workspace-shell [data-workspace-shell-forward], body.workspace-shell [data-workspace-shell-reload], body.workspace-shell [data-workspace-shell-home-nav], body.workspace-shell [data-workspace-shell-url], body.workspace-shell [data-workspace-shell-settings], body.workspace-shell .workspace-mode-weather, body.workspace-shell [data-workspace-shell-menu], body.workspace-shell #clock')
     ];
     toolbarItems.forEach((el,index)=>animateHomeElement(el,index,{delay:120+(index*58),duration:690,start:'translate(-26px,38px) scale(.9)',mid:'translate(-8px,12px) scale(.98)'}));
   }
@@ -9446,9 +9461,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     playHomeShortcutAnimation(root);
     playHomeChromeAnimation(root);
   }
-  function playBrowserShellPageReveal(root=document){
+  function playWorkspaceShellPageReveal(root=document){
     const scope=root || document;
-    const home=scope.querySelector?.('.browser-home:not(.hidden)');
+    const home=scope.querySelector?.('.workspace-home:not(.hidden)');
     if(!home) return;
     home.classList.remove('tab-opening');
     void home.offsetWidth;
@@ -9475,7 +9490,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           const shortcutRoot=node.matches?.('[data-home-shortcuts]') ? node : node.querySelector?.('[data-home-shortcuts]');
           if(shortcutRoot && !shortcutRoot.dataset.entranceSeen){
             shortcutRoot.dataset.entranceSeen='true';
-            trigger(shortcutRoot.closest?.('.browser-home') || node);
+            trigger(shortcutRoot.closest?.('.workspace-home') || node);
             return;
           }
         }
@@ -9662,8 +9677,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       syncHomeWeatherWidgets();
     };
     const scan=root=>{
-      if(root?.matches?.('.browser-home.nyx-minimal-home')) initialize(root);
-      root?.querySelectorAll?.('.browser-home.nyx-minimal-home').forEach(initialize);
+      if(root?.matches?.('.workspace-home.nyx-minimal-home')) initialize(root);
+      root?.querySelectorAll?.('.workspace-home.nyx-minimal-home').forEach(initialize);
     };
     new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{
       if(node.nodeType===1) scan(node);
@@ -9907,7 +9922,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     scan(document);
   }
   function renderHomeShortcuts(root=document){
-    root.querySelectorAll('[data-home-shortcuts]').forEach(grid=>{grid.innerHTML=browserHomeShortcutTiles()});
+    root.querySelectorAll('[data-home-shortcuts]').forEach(grid=>{grid.innerHTML=workspaceHomeShortcutTiles()});
     playHomeEntranceAnimation(root);
   }
   function addHomeShortcut(){
@@ -10009,7 +10024,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     });
     setInterval(()=>{if(!document.hidden) void loadNyxGlobalApps()},60_000);
   }
-  function cleanBrowserControls(win){
+  function cleanWorkspaceControls(win){
     const back=win.querySelector('[data-back]'), forward=win.querySelector('[data-forward]'), reload=win.querySelector('[data-reload]'), menu=win.querySelector('[data-menu]');
     if(back) back.textContent='➜';
     if(forward) forward.textContent='➜';
@@ -10065,11 +10080,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
     }),timeout,`${url} websocket timed out`);
   }
-  function preflightBrowserModeForTarget(target=''){
-    const mode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
+  function preflightWorkspaceModeForTarget(target=''){
+    const mode=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE));
     if(mode!=='auto') return mode;
     try{
-      const normalized=normalize(browserShellSourceUrl(target) || target);
+      const normalized=normalize(workspaceShellSourceUrl(target) || target);
       return 'scramjet';
     }catch{
       return 'scramjet';
@@ -10077,13 +10092,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   async function preflightEngineReady(target=''){
     if(location.protocol==='file:' || !('serviceWorker' in navigator)) return false;
-    if(preflightBrowserModeForTarget(target)==='iframe') return true;
-    return installScramjet();
+    if(preflightWorkspaceModeForTarget(target)==='iframe') return true;
+    return installStudyjet();
 }
   async function preflightTransportReady(target=''){
     if(location.protocol==='file:') return false;
-    if(preflightBrowserModeForTarget(target)==='iframe') return true;
-    return !!(await createScramjetTransport());
+    if(preflightWorkspaceModeForTarget(target)==='iframe') return true;
+    return !!(await createStudyjetTransport());
 }
   async function preflightServiceWorkerReady(target=''){
     if(location.protocol==='file:' || !('serviceWorker' in navigator)) return false;
@@ -10129,8 +10144,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return checks.every(check=>check.status==='fulfilled' && check.value);
   }
   async function preflightStateCurrent(){
-    await ensureFreshProxyState();
-    return store.text('nyx.proxyStateVersion','')===proxyStateVersion && store.text('nyx.scramjetStateVersion','')===scramjetStateVersion;
+    await ensureFreshConnectionState();
+    return store.text('nyx.proxyStateVersion','')===connectionStateVersion && store.text('nyx.scramjetStateVersion','')===studyjetStateVersion;
   }
   async function preflightBugScan(){
     const required=[
@@ -10139,10 +10154,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       document.querySelector('#visualEffects'),
       document.querySelector('#customBgImage')
     ];
-    const browserApis=Boolean(window.fetch && window.Promise && window.URL && window.localStorage);
-    const proxyApis=location.protocol==='file:' || Boolean('serviceWorker' in navigator && 'caches' in window && window.indexedDB);
+    const workspaceApis=Boolean(window.fetch && window.Promise && window.URL && window.localStorage);
+    const connectionApis=location.protocol==='file:' || Boolean('serviceWorker' in navigator && 'caches' in window && window.indexedDB);
     await preflightDelay(160);
-    return required.every(Boolean) && browserApis && proxyApis;
+    return required.every(Boolean) && workspaceApis && connectionApis;
   }
   function nyxPreflightTasks(kind='startup',options={}){
     const target=String(options.target || '').trim();
@@ -10175,7 +10190,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const base=[
       {label:'Fetching server list',run:serverCheck},
       {label:'Selecting fastest server',run:async()=>{await preflightDelay(180); return true}},
-      {label:'Loading browser engine',run:()=>preflightEngineReady(target)},
+      {label:'Loading workspace engine',run:()=>preflightEngineReady(target)},
       {label:'Opening transport',run:()=>preflightTransportReady(target)},
       {label:'Registering service worker',run:()=>preflightServiceWorkerReady(target)}
     ];
@@ -10194,11 +10209,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         {label:'Preparing results tab',run:async()=>{await preflightDelay(160); return true}}
       ]);
     }
-    if(kind==='browser'){
+    if(kind==='workspace'){
       return appendFinal([
         {label:'Checking requested page',run:searchCheck},
         ...base,
-        {label:'Opening browser tab',run:async()=>{await preflightDelay(160); return true}}
+        {label:'Opening workspace tab',run:async()=>{await preflightDelay(160); return true}}
       ]);
     }
     if(kind==='startup-diagnostics'){
@@ -10246,7 +10261,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const tasks=nyxPreflightTasks(kind,options);
       const overlay=document.createElement('div');
       overlay.className='nyx-preflight';
-      const preflightTitle=kind==='startup-diagnostics' ? 'Startup Diagnostics' : kind==='startup' ? 'Starting nyx' : kind==='apps' ? 'Opening Apps' : kind==='search' ? "Checking S3ARC4" : 'Checking Browser';
+      const preflightTitle=kind==='startup-diagnostics' ? 'Startup Diagnostics' : kind==='startup' ? 'Starting nyx' : kind==='apps' ? 'Opening Apps' : kind==='search' ? "Checking S3ARC4" : 'Checking Workspace';
       overlay.innerHTML=`<section class="nyx-preflight-card" role="status" aria-live="polite"><h2 class="nyx-preflight-title">${esc(preflightTitle)}</h2><ul class="nyx-preflight-list">${tasks.map((task,index)=>`<li class="nyx-preflight-item" data-preflight-step="${index}"><span class="nyx-preflight-dot">&bull;</span><span>${esc(task.label)}</span></li>`).join('')}</ul><div class="nyx-preflight-bar"><div class="nyx-preflight-fill"></div></div></section>`;
       document.body.appendChild(overlay);
       requestAnimationFrame(()=>overlay.classList.add('show'));
@@ -10279,28 +10294,28 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return nyxPreflightPromise;
   }
 
-  function openBrowser(url='https://duckduckgo.com/',options={}){
-    const win=makeWindow({title:'New Tab',className:'browser-window',body:browserBody()});
+  function openWorkspace(url='https://duckduckgo.com/',options={}){
+    const win=makeWindow({title:'New Tab',className:'workspace-window',body:workspaceBody()});
 
-    cleanBrowserControls(win);
+    cleanWorkspaceControls(win);
     tick();
     initDesktopSplash();
     const state={tabs:[],active:null,win};
     const chatNotificationIds=new Set();
-    win.browserState=state; activeBrowser=state;
+    win.workspaceState=state; activeWorkspace=state;
     function renderTabs(){
-      const row=win.querySelector('.browser-tabs');
-      row.querySelectorAll('.browser-tab').forEach(x=>x.remove());
+      const row=win.querySelector('.workspace-tabs');
+      row.querySelectorAll('.workspace-tab').forEach(x=>x.remove());
       state.tabs.forEach(t=>{
-        const el=document.createElement('div'); el.className='browser-tab'+(t.id===state.active?' active':'')+(t.opening?' tab-opening':'')+(t.chatUnread?' chat-unread':'');
+        const el=document.createElement('div'); el.className='workspace-tab'+(t.id===state.active?' active':'')+(t.opening?' tab-opening':'')+(t.chatUnread?' chat-unread':'');
         const displayUrl=t.sourceUrl || t.url;
-        el.innerHTML=`<span aria-label="${esc(browserChromeTitle(t.title,displayUrl))}">${esc(window.nyxDisplayName(browserChromeTitle(t.title,displayUrl)))}</span><button data-close-tab="${t.id}">×</button>`;
+        el.innerHTML=`<span aria-label="${esc(workspaceChromeTitle(t.title,displayUrl))}">${esc(window.nyxDisplayName(workspaceChromeTitle(t.title,displayUrl)))}</span><button data-close-tab="${t.id}">×</button>`;
         const label=el.querySelector('span');
         if(label){
           const icon=document.createElement('img');
-          icon.className='browser-tab-icon';
+          icon.className='workspace-tab-icon';
           icon.alt='';
-          icon.src=browserChromeIcon(t.icon,displayUrl);
+          icon.src=workspaceChromeIcon(t.icon,displayUrl);
           bindTabIconFallback(icon);
           el.insertBefore(icon,label);
         }
@@ -10319,15 +10334,15 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(!icon) icon=iconForUrl(t.sourceUrl || t.url);
       if(!icon || icon===t.icon) return false;
       t.icon=icon;
-      const shellTab=browserShellTabs.find(tab=>tab.browserTabId===t.id);
+      const shellTab=workspaceShellTabs.find(tab=>tab.workspaceTabId===t.id);
       if(shellTab) shellTab.icon=icon;
       renderTabs();
-      renderBrowserShellTabs();
+      renderWorkspaceShellTabs();
       return true;
     }
     function current(){return state.tabs.find(t=>t.id===state.active)}
     function isGameInputTab(t=current()){
-      const source=String(browserShellSourceUrl(t?.sourceUrl || t?.url || '') || t?.sourceUrl || t?.url || '');
+      const source=String(workspaceShellSourceUrl(t?.sourceUrl || t?.url || '') || t?.sourceUrl || t?.url || '');
       if(/(?:play\.geforcenow\.com|geforcenow\.com|nvidia|pixelclient\.xyz|\/assets\/games\/|\/assets\/ugs\/|\/assets\/gn-math\/|\/assets\/gms-games\/)/i.test(source)) return true;
       try{return !!t?.frame?.contentDocument?.querySelector('canvas,[role="application"],[data-testid*="game" i],[class*="game" i],[id*="game" i]')}catch{return false}
     }
@@ -10337,8 +10352,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       releaseNyxKeyboardLock();
       try{t.frame.focus({preventScroll:true})}catch{try{t.frame.focus()}catch{}}
     }
-    win.querySelector('.browser-body')?.addEventListener('pointerdown',()=>setTimeout(focusActiveGameFrame,0),true);
-    win.querySelector('.browser-body')?.addEventListener('mousedown',()=>setTimeout(focusActiveGameFrame,0),true);
+    win.querySelector('.workspace-body')?.addEventListener('pointerdown',()=>setTimeout(focusActiveGameFrame,0),true);
+    win.querySelector('.workspace-body')?.addEventListener('mousedown',()=>setTimeout(focusActiveGameFrame,0),true);
     win.addEventListener('wheel',event=>{
       if(!isGameInputTab() || !event.ctrlKey) return;
       event.preventDefault();
@@ -10354,15 +10369,15 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     function directOnly(url){
       return false;
     }
-    function showBrowserMessage(t,url){
-      loadScramjetTab(t,url,false);
+    function showWorkspaceMessage(t,url){
+      loadStudyjetTab(t,url,false);
     }
     function addTab(openUrl='',forceMode=''){
       const id='tab'+Date.now()+Math.random().toString(16).slice(2);
       const frame=document.createElement('iframe'); frame.className='view';
       applyFrameInteractionPermissions(frame);
-      win.querySelector('.browser-body').appendChild(frame);
-      const tab={id,title:'New Tab',url:'',icon:favicons.nyx,history:[],index:-1,frame,opening:true,privacySessionId:createProxyPrivacySessionId()};
+      win.querySelector('.workspace-body').appendChild(frame);
+      const tab={id,title:'New Tab',url:'',icon:favicons.nyx,history:[],index:-1,frame,opening:true,privacySessionId:createConnectionPrivacySessionId()};
       state.tabs.push(tab);
       activate(id);
       if(openUrl) navigate(openUrl,forceMode);
@@ -10371,19 +10386,19 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     function reloadTab(tabId=state.active){
       const t=state.tabs.find(tab=>tab.id===tabId) || current();
       if(!t) return false;
-      const source=browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
+      const source=workspaceShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
       if(!source){
         activate(t.id);
         return false;
       }
       activate(t.id);
       if(String(source).startsWith('nyx://')){
-        showBrowserShellInternalPage(source.replace(/^nyx:\/\//,'') || 'apps');
+        showWorkspaceShellInternalPage(source.replace(/^nyx:\/\//,'') || 'apps');
         return true;
       }
       if(t.scramjetFrame){
-        if(!scramjetController || t.privateScramjetController?.transport !== scramjetController.transport){
-          loadScramjetTab(t,source,false);
+        if(!studyjetController || t.privateScramjetController?.transport !== studyjetController.transport){
+          loadStudyjetTab(t,source,false);
           return true;
         }
         clearFrameDocument(t);
@@ -10391,7 +10406,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           t.scramjetFrame.go(source);
           return true;
         }catch{
-          retryScramjetTab(t,source);
+          retryStudyjetTab(t,source);
           return true;
         }
       }
@@ -10442,7 +10457,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           showPopupWarningTab(t);
         }
       };
-      const locationProxy={
+      const locationConnection={
         assign:go,
         replace:go,
         reload(){if(t.url) navigate(t.url)},
@@ -10458,7 +10473,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           const index=state.tabs.findIndex(tab=>tab.id===t.id);
           if(index<0) return;
           if(t.id===state.active) setTabLoading(t,false);
-          destroyProxyPrivacySession(t);
+          destroyConnectionPrivacySession(t);
           t.frame.remove();
           state.tabs.splice(index,1);
           this.closed=true;
@@ -10467,7 +10482,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         },
         postMessage(){},
         document:popupDocument,
-        get location(){return locationProxy},
+        get location(){return locationConnection},
         set location(value){go(value)},
         get href(){return t.url || 'about:blank'},
         set href(value){go(value)}
@@ -10481,11 +10496,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       t.icon=favicons.nyx;
       t.frame.removeAttribute('src');
       t.frame.srcdoc=popupWarningHtml(t.popupBlockMessage);
-      win.querySelector('.browser-home').classList.add('hidden');
+      win.querySelector('.workspace-home').classList.add('hidden');
       t.frame.classList.add('active');
       renderTabs();
       activate(t.id);
-      updateBrowserShellLocation(t.url,t.id);
+      updateWorkspaceShellLocation(t.url,t.id);
     }
     function blockedPopupHandle(popup,message=''){
       const popupMessage=message || 'are you trying to hack me ︻デ═一 indian shwarma scamma? get blocked by 1aqlla dummy haha67';
@@ -10530,8 +10545,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
     function installCrazyGamesOfflineRecovery(t,url=''){
       if(!t?.frame) return;
-      const source=browserShellSourceUrl(url || t.sourceUrl || t.url || '') || url || t.sourceUrl || t.url || '';
-      if(!hostMatches(browserHost(source),['crazygames.com'])) return;
+      const source=workspaceShellSourceUrl(url || t.sourceUrl || t.url || '') || url || t.sourceUrl || t.url || '';
+      if(!hostMatches(workspaceHost(source),['crazygames.com'])) return;
       if(t.crazyGamesRecoveryInstalled) return;
       t.crazyGamesRecoveryInstalled=true;
       const startedAt=Date.now();
@@ -10573,60 +10588,60 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       scan();
     }
     function installDuckDuckGoImageViewportFix(t){
-      globalThis.NyxDuckImageViewport?.(t,browserShellSourceUrl);
+      globalThis.NyxDuckImageViewport?.(t,workspaceShellSourceUrl);
     }
-    function installBrowserAdProtection(t){
+    function installWorkspaceAdProtection(t){
       if(!t?.frame) return false;
       if(isNyxPublisherFrame(t.frame))return false;
       try{
         const frameWindow=t.frame.contentWindow;
         if(!frameWindow || frameWindow===window) return false;
-        if(!frameWindow.__nyxBrowserAdBlock) frameWindow.eval(browserAdBlockRuntimeSource);
-        return !!frameWindow.__nyxBrowserAdBlock;
+        if(!frameWindow.__nyxWorkspaceAdBlock) frameWindow.eval(workspaceAdBlockRuntimeSource);
+        return !!frameWindow.__nyxWorkspaceAdBlock;
       }catch{
         try{
           const doc=t.frame.contentDocument;
           if(!doc?.documentElement) return false;
-          let style=doc.getElementById('nyx-browser-ad-block-style');
+          let style=doc.getElementById('nyx-page-cleanup-style');
           if(!style){
             style=doc.createElement('style');
-            style.id='nyx-browser-ad-block-style';
-            style.textContent=browserAdElementSelector+'{display:none!important;visibility:hidden!important;pointer-events:none!important;width:0!important;height:0!important}';
+            style.id='nyx-page-cleanup-style';
+            style.textContent=workspaceAdElementSelector+'{display:none!important;visibility:hidden!important;pointer-events:none!important;width:0!important;height:0!important}';
             (doc.head || doc.documentElement).appendChild(style);
           }
-          doc.querySelectorAll(browserAdElementSelector).forEach(node=>node.remove());
+          doc.querySelectorAll(workspaceAdElementSelector).forEach(node=>node.remove());
           return true;
         }catch{return false}
       }
     }
-    function installBrowserLinkContextMenu(t){
+    function installWorkspaceLinkContextMenu(t){
       if(!t?.frame) return;
       const currentSource=()=>{
         let frameHref='';
         try{frameHref=String(t.frame.contentWindow?.location?.href || '')}catch{}
-        const previous=browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
-        const frameSource=browserShellSourceUrl(frameHref);
-        return frameSource && !browserShellRejectFrameLocation(frameSource,previous) ? frameSource : previous;
+        const previous=workspaceShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
+        const frameSource=workspaceShellSourceUrl(frameHref);
+        return frameSource && !workspaceShellRejectFrameLocation(frameSource,previous) ? frameSource : previous;
       };
       const attach=()=>{
         try{
           const doc=t.frame.contentDocument;
           if(!doc?.documentElement || doc.documentElement.dataset.nyxLinkContextMenu==='true') return;
           doc.documentElement.dataset.nyxLinkContextMenu='true';
-          doc.addEventListener('pointerdown',closeBrowserLinkMenu,true);
+          doc.addEventListener('pointerdown',closeWorkspaceLinkMenu,true);
           doc.addEventListener('contextmenu',event=>{
             const link=event.target?.closest?.('a[href]');
             if(!link) return;
             const raw=String(link.href || link.getAttribute('href') || '').trim();
-            const decoded=browserShellSourceUrl(raw) || raw;
+            const decoded=workspaceShellSourceUrl(raw) || raw;
             let resolved='';
             try{resolved=new URL(decoded,currentSource()).href}catch{return}
-            const cleanUrl=browserShellClipboardText(resolved,currentSource());
+            const cleanUrl=workspaceShellClipboardText(resolved,currentSource());
             if(!/^https?:\/\//i.test(cleanUrl)) return;
             event.preventDefault();
             event.stopImmediatePropagation();
             const frameBounds=t.frame.getBoundingClientRect();
-            showBrowserLinkMenu(cleanUrl,frameBounds.left+event.clientX,frameBounds.top+event.clientY);
+            showWorkspaceLinkMenu(cleanUrl,frameBounds.left+event.clientX,frameBounds.top+event.clientY);
           },true);
         }catch{}
       };
@@ -10640,7 +10655,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       attach();
     }
-    function recoverRejectedScramjetLocation(t,rejectedSource,previousSource){
+    function recoverRejectedStudyjetLocation(t,rejectedSource,previousSource){
       const recoverySource=/^https?:\/\//i.test(previousSource) ? previousSource : '';
       if(!t?.scramjetFrame || !recoverySource) return;
       const recoveryKey=`${recoverySource}\n${rejectedSource}`;
@@ -10654,24 +10669,24 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
 
 
         try{
-          const actual=browserShellSourceUrl(frame.contentWindow.location.href);
-          if(!browserShellRejectFrameLocation(actual,recoverySource)) return;
+          const actual=workspaceShellSourceUrl(frame.contentWindow.location.href);
+          if(!workspaceShellRejectFrameLocation(actual,recoverySource)) return;
         }catch{return}
         try{t.scramjetFrame.go(recoverySource)}catch{}
       },160);
     }
     function installPopupBridge(t){
       if(!t?.frame) return;
-      installBrowserLinkContextMenu(t);
+      installWorkspaceLinkContextMenu(t);
       if(t.frame.dataset.nyxAdGuardWatch!=='true'){
         t.frame.dataset.nyxAdGuardWatch='true';
         t.frame.addEventListener('load',()=>{
-          installBrowserAdProtection(t);
-          setTimeout(()=>installBrowserAdProtection(t),80);
-          setTimeout(()=>installBrowserAdProtection(t),500);
+          installWorkspaceAdProtection(t);
+          setTimeout(()=>installWorkspaceAdProtection(t),80);
+          setTimeout(()=>installWorkspaceAdProtection(t),500);
         });
       }
-      installBrowserAdProtection(t);
+      installWorkspaceAdProtection(t);
       if(t.popupBridgeInstalled) return;
       if(t.frame.dataset.nyxDuckImageLoadFix!=='true'){
         t.frame.dataset.nyxDuckImageLoadFix='true';
@@ -10688,11 +10703,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           try{
             if(t.previousNavigationDocument && t.frame.contentDocument===t.previousNavigationDocument)return;
             const frameHref=String(t.frame?.contentWindow?.location?.href || '');
-            const source=browserShellSourceUrl(frameHref);
+            const source=workspaceShellSourceUrl(frameHref);
             if(!/^https?:\/\//i.test(source) || source===location.href) return;
-            const previousSource=browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
-            if(browserShellRejectFrameLocation(source,previousSource)){
-              if(!sameDocument) recoverRejectedScramjetLocation(t,source,previousSource);
+            const previousSource=workspaceShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
+            if(workspaceShellRejectFrameLocation(source,previousSource)){
+              if(!sameDocument) recoverRejectedStudyjetLocation(t,source,previousSource);
               return;
             }
 
@@ -10700,7 +10715,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
             if(sameDocument) t.scramjetHealthyDocument=frame.contentDocument;
             t.scramjetRejectedLocationKey='';
             t.previousNavigationDocument=null;
-            const currentHistory=browserShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
+            const currentHistory=workspaceShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
             if(pendingFrameNavigation && pendingFrameNavigation.index===t.index){
               if(source!==currentHistory && t.index>=0) t.history[t.index]=source;
             }else if(source!==currentHistory && source!==previousSource){
@@ -10716,8 +10731,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
             renderTabs();
             if(t.id===state.active){
               const address=win.querySelector('.urlbar');
-              if(document.activeElement!==address)address.value=browserShellDisplayValue(source);
-              updateBrowserShellLocation(source,t.id);
+              if(document.activeElement!==address)address.value=workspaceShellDisplayValue(source);
+              updateWorkspaceShellLocation(source,t.id);
             }
             syncLoadedTabIcon(t);
           }catch{}
@@ -10742,7 +10757,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       const bridgeUrl=t.sourceUrl || t.url || t.frame.getAttribute('src') || '';
       if(isSpotifyFamilyUrl(bridgeUrl) || isAuthSensitiveUrl(bridgeUrl)) return;
-      if(hostMatches(browserHost(browserShellSourceUrl(bridgeUrl) || bridgeUrl),['youtube.com','youtu.be'])) return;
+      if(hostMatches(workspaceHost(workspaceShellSourceUrl(bridgeUrl) || bridgeUrl),['youtube.com','youtu.be'])) return;
       t.popupBridgeInstalled=true;
       const shouldTrapPopupTarget=target=>{
         const value=String(target || '').toLowerCase();
@@ -10751,9 +10766,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const currentBridgeUrl=()=>{
         let frameHref='';
         try{frameHref=String(t.frame?.contentWindow?.location?.href || '')}catch{}
-        const previous=browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || bridgeUrl;
-        const frameSource=browserShellSourceUrl(frameHref);
-        return frameSource && !browserShellRejectFrameLocation(frameSource,previous) ? frameSource : previous;
+        const previous=workspaceShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || bridgeUrl;
+        const frameSource=workspaceShellSourceUrl(frameHref);
+        return frameSource && !workspaceShellRejectFrameLocation(frameSource,previous) ? frameSource : previous;
       };
       const popupProtectionActive=()=>popupProtectionForUrl(currentBridgeUrl());
       const isTrustedGeneratedLink=link=>{
@@ -10766,7 +10781,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         if(!raw || /^about:blank$/i.test(raw)) return '';
         try{
           const base=currentBridgeUrl();
-          const resolvedRaw=browserShellSourceUrl(raw) || raw;
+          const resolvedRaw=workspaceShellSourceUrl(raw) || raw;
           const resolved=new URL(resolvedRaw,base);
           const source=new URL(base,location.href);
           const cleanHost=host=>String(host || '').replace(/^www\./i,'').toLowerCase();
@@ -10785,7 +10800,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       };
       const searchResultUrl=link=>{
         if(!link) return '';
-        const sourceHost=browserHost(browserShellSourceUrl(t.sourceUrl || t.url || bridgeUrl) || bridgeUrl);
+        const sourceHost=workspaceHost(workspaceShellSourceUrl(t.sourceUrl || t.url || bridgeUrl) || bridgeUrl);
         let isResult=false;
         if(hostMatches(sourceHost,['duckduckgo.com'])) isResult=!!link.closest?.('[data-testid="result"],article,.result,.results_links');
         else if(hostMatches(sourceHost,['google.com'])) isResult=!!link.closest?.('#search,.MjjYud,.g');
@@ -10793,7 +10808,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         if(!isResult) return '';
         const raw=String(link.href || link.getAttribute?.('href') || '').trim();
         try{
-          const resolved=new URL(browserShellSourceUrl(raw) || raw,t.sourceUrl || bridgeUrl);
+          const resolved=new URL(workspaceShellSourceUrl(raw) || raw,t.sourceUrl || bridgeUrl);
           if(hostMatches(resolved.hostname.replace(/^www\./i,''),['duckduckgo.com'])){
             const direct=resolved.searchParams.get('uddg');
             if(/^https?:\/\//i.test(direct || '')) return direct;
@@ -10824,7 +10839,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const searchUrlForCurrentProvider=query=>{
         const value=String(query || '').trim();
         if(!value) return '';
-        const host=browserHost(currentBridgeUrl());
+        const host=workspaceHost(currentBridgeUrl());
         const encoded=encodeURIComponent(value);
         if(hostMatches(host,['duckduckgo.com'])) return `https://duckduckgo.com/?q=${encoded}`;
         if(/(?:^|\.)google\.[a-z.]+$/i.test(host)) return `https://${host}/search?q=${encoded}`;
@@ -10859,12 +10874,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const requestFrameDownload=(value,filename='')=>{
         const href=String(value || '').trim();
         if(!href) return false;
-        void nyxRequestBrowserDownload(href,String(filename || '').trim(),currentBridgeUrl());
+        void nyxRequestWorkspaceDownload(href,String(filename || '').trim(),currentBridgeUrl());
         return true;
       };
       const searchDocuments=new WeakSet();
       const containSearchDocument=doc=>{
-        if(!doc?.documentElement||searchDocuments.has(doc)||!hostMatches(browserHost(currentBridgeUrl()),['duckduckgo.com','bing.com','google.com']))return;
+        if(!doc?.documentElement||searchDocuments.has(doc)||!hostMatches(workspaceHost(currentBridgeUrl()),['duckduckgo.com','bing.com','google.com']))return;
         searchDocuments.add(doc);
           const containSearchResults=(root=doc)=>{
             const links=[...(root.matches?.('a[target]')?[root]:[]),...(root.querySelectorAll?.('a[target]')||[])];
@@ -10875,13 +10890,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
             }
           };
           containSearchResults();
-          if(hostMatches(browserHost(currentBridgeUrl()),['duckduckgo.com','bing.com','google.com'])){
+          if(hostMatches(workspaceHost(currentBridgeUrl()),['duckduckgo.com','bing.com','google.com'])){
             new MutationObserver(records=>{for(const record of records){if(record.type==='attributes')containSearchResults(record.target);else for(const node of record.addedNodes)containSearchResults(node);}}).observe(doc.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['target']});
           }
       };
       const attachBridge=()=>{
         try{
-          const liveHost=browserHost(currentBridgeUrl());
+          const liveHost=workspaceHost(currentBridgeUrl());
           const doc=t.frame.contentDocument;
           containSearchDocument(doc);
           if(hostMatches(liveHost,['google.com','gstatic.com'])) return;
@@ -10894,7 +10909,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
               try{
                 Object.defineProperty(frameClipboard,'writeText',{
                   configurable:true,
-                  value:value=>nativeWriteText(browserShellClipboardText(value,currentBridgeUrl()))
+                  value:value=>nativeWriteText(workspaceShellClipboardText(value,currentBridgeUrl()))
                 });
                 Object.defineProperty(frameClipboard,'__nyxCleanWriteText',{value:true});
               }catch{}
@@ -10931,14 +10946,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           }
           if(!doc?.documentElement || doc.documentElement.dataset.nyxPopupBridge==='true') return;
           doc.documentElement.dataset.nyxPopupBridge='true';
-          const sourceHost=browserHost(currentBridgeUrl());
+          const sourceHost=workspaceHost(currentBridgeUrl());
           if(hostMatches(sourceHost,['cineby.at']) && !doc.documentElement.dataset.nyxCinebyFrameGuard){
             doc.documentElement.dataset.nyxCinebyFrameGuard='true';
             const blockDirectCinebyFrame=node=>{
               if(!node?.matches?.('iframe[src],frame[src]')) return;
               const raw=String(node.getAttribute('src') || '').trim();
               if(!/^https?:\/\//i.test(raw)) return;
-              const host=browserHost(raw);
+              const host=workspaceHost(raw);
               if(!hostMatches(host,['cineby.at'])) return;
               node.removeAttribute('src');
               node.remove();
@@ -11009,7 +11024,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           doc.addEventListener('auxclick',trapLink,true);
           doc.addEventListener('copy',event=>{
             const selected=String(doc.getSelection?.() || '');
-            const cleaned=browserShellClipboardText(selected,currentBridgeUrl());
+            const cleaned=workspaceShellClipboardText(selected,currentBridgeUrl());
             if(!selected || cleaned===selected || !event.clipboardData) return;
             event.preventDefault();
             event.clipboardData.setData('text/plain',cleaned);
@@ -11038,7 +11053,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const raw=String(url || '');
       if(/recaptcha|captcha|challenge|oauth|sso|login|signin|accounts/i.test(raw)) return true;
       try{
-        const parsed=new URL(browserShellSourceUrl(raw) || raw,location.href);
+        const parsed=new URL(workspaceShellSourceUrl(raw) || raw,location.href);
         const host=parsed.hostname.replace(/^www\./,'').toLowerCase();
         const path=(parsed.pathname+parsed.search+parsed.hash).toLowerCase();
         if(host==='accounts.spotify.com') return true;
@@ -11054,10 +11069,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const install=()=>{
         try{
           const frameHref=String(frame.contentWindow?.location?.href || frame.getAttribute('src') || '');
-          const source=browserShellSourceUrl(frameHref)
-            || browserShellSourceUrl(t.sourceUrl || t.url || '')
+          const source=workspaceShellSourceUrl(frameHref)
+            || workspaceShellSourceUrl(t.sourceUrl || t.url || '')
             || t.sourceUrl || t.url || frameHref;
-          if(!hostMatches(browserHost(source),['youtube.com','youtu.be'])) return;
+          if(!hostMatches(workspaceHost(source),['youtube.com','youtu.be'])) return;
           const doc=frame.contentDocument;
           const frameWindow=frame.contentWindow;
           if(!doc?.documentElement || !frameWindow) return;
@@ -11116,8 +11131,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const install=()=>{
         try{
           const frameHref=String(frame.contentWindow?.location?.href || frame.getAttribute('src') || '');
-          const source=browserShellSourceUrl(frameHref)
-            || browserShellSourceUrl(t.sourceUrl || t.url || '')
+          const source=workspaceShellSourceUrl(frameHref)
+            || workspaceShellSourceUrl(t.sourceUrl || t.url || '')
             || t.sourceUrl || t.url || frameHref;
           if(!isYouTubeUrl(source)) return;
           const doc=frame.contentDocument;
@@ -11162,9 +11177,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       install();
     }
-    function shouldRelaxProxySandbox(url){
-      const raw=browserShellSourceUrl(String(url || '')) || String(url || '');
-      const host=browserHost(raw);
+    function shouldRelaxConnectionSandbox(url){
+      const raw=workspaceShellSourceUrl(String(url || '')) || String(url || '');
+      const host=workspaceHost(raw);
       return isAuthSensitiveUrl(raw) || hostMatches(host,[
         'geforcenow.com',
         'play.geforcenow.com',
@@ -11183,20 +11198,20 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         'youtu.be'
       ]);
     }
-    const browserFrameAllow="geolocation 'none'; autoplay; encrypted-media; fullscreen; keyboard-map; gamepad; clipboard-read; clipboard-write; camera; microphone; display-capture; accelerometer; gyroscope; magnetometer; xr-spatial-tracking; payment; publickey-credentials-get; identity-credentials-get; private-state-token-issuance; private-state-token-redemption";
-    const browserFrameAltKeys=new Set(['l','d','t','w','r','arrowleft','arrowright','tab']);
-    function isBrowserFrameAltShortcut(key){
+    const workspaceFrameAllow="geolocation 'none'; autoplay; encrypted-media; fullscreen; keyboard-map; gamepad; clipboard-read; clipboard-write; camera; microphone; display-capture; accelerometer; gyroscope; magnetometer; xr-spatial-tracking; payment; publickey-credentials-get; identity-credentials-get; private-state-token-issuance; private-state-token-redemption";
+    const workspaceFrameAltKeys=new Set(['l','d','t','w','r','arrowleft','arrowright','tab']);
+    function isWorkspaceFrameAltShortcut(key){
       key=String(key || '').toLowerCase();
-      return /^[1-9]$/.test(key) || browserFrameAltKeys.has(key);
+      return /^[1-9]$/.test(key) || workspaceFrameAltKeys.has(key);
     }
     function stopFrameAltEvent(event){
       try{event.preventDefault()}catch{}
       try{event.stopPropagation()}catch{}
       try{event.stopImmediatePropagation?.()}catch{}
     }
-    function installBrowserAltBridgeInDocument(doc){
-      if(!doc || doc.__nyxBrowserAltBridge) return;
-      try{doc.__nyxBrowserAltBridge=true}catch{}
+    function installWorkspaceAltBridgeInDocument(doc){
+      if(!doc || doc.__nyxWorkspaceAltBridge) return;
+      try{doc.__nyxWorkspaceAltBridge=true}catch{}
       const handler=event=>{
         try{
           if(handleNyxSidebarShortcut(event))return;
@@ -11204,19 +11219,19 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           const key=String(event.key || '').toLowerCase();
           if(key==='alt'){
             stopFrameAltEvent(event);
-            primeBrowserShellShortcutFocus();
+            primeWorkspaceShellShortcutFocus();
             return;
           }
-          if(!isBrowserFrameAltShortcut(key)) return;
-          if(handleBrowserShellAltAction(key,event)) stopFrameAltEvent(event);
+          if(!isWorkspaceFrameAltShortcut(key)) return;
+          if(handleWorkspaceShellAltAction(key,event)) stopFrameAltEvent(event);
         }catch{}
       };
       try{doc.addEventListener('keydown',handler,true)}catch{}
       try{doc.defaultView?.addEventListener?.('keydown',handler,true)}catch{}
       const releaseForPageInput=event=>{
         try{
-          hideBrowserSuggestions();
-          clearBrowserShellUrlSelection();
+          hideWorkspaceSuggestions();
+          clearWorkspaceShellUrlSelection();
           const target=event?.target;
           if(!target?.closest?.('canvas,input,textarea,select,[contenteditable="true"],[role="application"]')) return;
           releaseNyxKeyboardLock();
@@ -11229,7 +11244,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const installNested=()=>{
         try{
           doc.querySelectorAll?.('iframe,frame').forEach(child=>{
-            try{installBrowserAltBridgeInDocument(child.contentDocument)}catch{}
+            try{installWorkspaceAltBridgeInDocument(child.contentDocument)}catch{}
           });
         }catch{}
       };
@@ -11239,25 +11254,25 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         if(root) new MutationObserver(installNested).observe(root,{childList:true,subtree:true});
       }catch{}
     }
-    function installBrowserAltBridgeForFrame(frame){
+    function installWorkspaceAltBridgeForFrame(frame){
       try{
         const frameHref=String(frame.contentWindow?.location?.href || frame.getAttribute('src') || '');
-        const source=browserShellSourceUrl(frameHref) || frameHref;
-        if(hostMatches(browserHost(source),['youtube.com','youtu.be'])) return;
-        installBrowserAltBridgeInDocument(frame.contentDocument);
+        const source=workspaceShellSourceUrl(frameHref) || frameHref;
+        if(hostMatches(workspaceHost(source),['youtube.com','youtu.be'])) return;
+        installWorkspaceAltBridgeInDocument(frame.contentDocument);
       }catch{}
     }
     function applyFrameInteractionPermissions(frame){
       if(!frame) return;
       frame.tabIndex=0;
       frame.setAttribute('tabindex','0');
-      frame.setAttribute('allow',browserFrameAllow);
+      frame.setAttribute('allow',workspaceFrameAllow);
       frame.style.pointerEvents='auto';
       const installAltBridge=()=>{
-        installBrowserAltBridgeForFrame(frame);
+        installWorkspaceAltBridgeForFrame(frame);
         syncInternalThemeFrames();
-        setTimeout(()=>installBrowserAltBridgeForFrame(frame),120);
-        setTimeout(()=>installBrowserAltBridgeForFrame(frame),700);
+        setTimeout(()=>installWorkspaceAltBridgeForFrame(frame),120);
+        setTimeout(()=>installWorkspaceAltBridgeForFrame(frame),700);
       };
       installAltBridge();
       if(frame.dataset.nyxInputReady==='true') return;
@@ -11278,17 +11293,17 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           const key=String(event.key || '').toLowerCase();
           if(key==='alt'){
             stopFrameAltEvent(event);
-            primeBrowserShellShortcutFocus();
+            primeWorkspaceShellShortcutFocus();
             return;
           }
-          if(isBrowserFrameAltShortcut(key) && handleBrowserShellAltAction(key,event)) stopFrameAltEvent(event);
+          if(isWorkspaceFrameAltShortcut(key) && handleWorkspaceShellAltAction(key,event)) stopFrameAltEvent(event);
         }catch{}
       },true);
       const handoffFrameInput=()=>{
 
         releaseNyxKeyboardLock();
-        hideBrowserSuggestions();
-        clearBrowserShellUrlSelection();
+        hideWorkspaceSuggestions();
+        clearWorkspaceShellUrlSelection();
       };
       frame.addEventListener('focus',handoffFrameInput);
       frame.addEventListener('pointerdown',handoffFrameInput,{capture:true});
@@ -11299,11 +11314,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(!t?.frame) return;
       const sourceUrl=t.sourceUrl || t.url || t.frame.getAttribute('src') || '';
       const containPopups=popupProtectionForUrl(sourceUrl);
-      t.frame.dataset.nyxBrowserContained=containPopups ? 'true' : 'false';
+      t.frame.dataset.nyxWorkspaceContained=containPopups ? 'true' : 'false';
       applyFrameInteractionPermissions(t.frame);
       installYouTubeCompositorGuard(t);
       installYouTubeCompatibilityGuard(t);
-      if(!containPopups && shouldRelaxProxySandbox(sourceUrl)){
+      if(!containPopups && shouldRelaxConnectionSandbox(sourceUrl)){
         t.frame.removeAttribute('sandbox');
         applyFrameInteractionPermissions(t.frame);
         return;
@@ -11344,7 +11359,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       installPopupBridge(t);
     }
     function ensureTabLoadingScene(){
-      const body=win.querySelector('.browser-body');
+      const body=win.querySelector('.workspace-body');
       if(!body) return null;
       let loader=body.querySelector('.nyx-frame-loader');
       if(loader) return loader;
@@ -11364,33 +11379,33 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
     }
     function activate(id){
-      cleanupBrowserInjectedAds();
+      cleanupWorkspaceAttachedAds();
       state.active=id; const t=current();
       if(t?.chatUnread)t.chatUnread=false;
       let mappedShellTab=null;
-      if(document.body.classList.contains('browser-shell')){
-        mappedShellTab=browserShellTabs.find(tab=>tab.browserTabId===id) || null;
-        if(mappedShellTab) browserShellActiveTab=mappedShellTab.id;
+      if(document.body.classList.contains('workspace-shell')){
+        mappedShellTab=workspaceShellTabs.find(tab=>tab.workspaceTabId===id) || null;
+        if(mappedShellTab) workspaceShellActiveTab=mappedShellTab.id;
       }
       const activeUrl=t?.url || mappedShellTab?.url || '';
-      const activeLocation=browserShellSourceUrl(t?.sourceUrl || activeUrl) || t?.sourceUrl || activeUrl;
+      const activeLocation=workspaceShellSourceUrl(t?.sourceUrl || activeUrl) || t?.sourceUrl || activeUrl;
       const activeTitle=t?.title || mappedShellTab?.title || 'New Tab';
-      const activeIsBlank=isBrowserShellBlankUrl(activeUrl);
+      const activeIsBlank=isWorkspaceShellBlankUrl(activeUrl);
       win.classList.toggle('nyx-frame-loading',!!t?.loading);
       ensureTabLoadingScene()?.setAttribute('aria-hidden',t?.loading?'false':'true');
       win.classList.toggle('internal-clear',!!t?.frame?.classList.contains('transparent-internal-page'));
       win.querySelectorAll('.view').forEach(f=>f.classList.remove('active'));
-      win.classList.toggle('browser-blank',activeIsBlank);
-      if(activeUrl && !activeIsBlank){t?.frame.classList.add('active'); win.querySelector('.browser-home').classList.add('hidden')}
+      win.classList.toggle('workspace-blank',activeIsBlank);
+      if(activeUrl && !activeIsBlank){t?.frame.classList.add('active'); win.querySelector('.workspace-home').classList.add('hidden')}
       else{
-        win.querySelector('.browser-home').classList.remove('hidden');
-        if(t?.opening) playBrowserShellPageReveal(win);
+        win.querySelector('.workspace-home').classList.remove('hidden');
+        if(t?.opening) playWorkspaceShellPageReveal(win);
       }
       state.tabs.forEach(tab=>{
         if(tab===t) return;
         let tabPath='';
         try{
-          const tabSource=browserShellSourceUrl(tab.sourceUrl||tab.url||'') || tab.sourceUrl || tab.url || tab.frame?.getAttribute('src') || '';
+          const tabSource=workspaceShellSourceUrl(tab.sourceUrl||tab.url||'') || tab.sourceUrl || tab.url || tab.frame?.getAttribute('src') || '';
           tabPath=new URL(tabSource,location.href).pathname;
         }catch{}
 
@@ -11403,10 +11418,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           doc?.querySelectorAll('video,audio').forEach(media=>media.pause());
         }catch{}
       });
-      win.querySelector('.urlbar').value=browserShellDisplayValue(activeLocation); win.querySelector('.titlebar-title').textContent=browserChromeTitle(activeTitle,activeLocation); renderTabs(); bring(win);
-      if(t?.url || !mappedShellTab?.url) updateBrowserShellLocation(activeLocation,t?.id || '');
+      win.querySelector('.urlbar').value=workspaceShellDisplayValue(activeLocation); win.querySelector('.titlebar-title').textContent=workspaceChromeTitle(activeTitle,activeLocation); renderTabs(); bring(win);
+      if(t?.url || !mappedShellTab?.url) updateWorkspaceShellLocation(activeLocation,t?.id || '');
     }
-    function detectBrowserEngine(url,t){
+    function detectWorkspaceEngine(url,t){
       const raw=String(url || '');
       const frameSrc=String(t?.frame?.getAttribute?.('src') || '');
       if(t?.scramjetFrame || raw.startsWith('/~/sj/') || frameSrc.includes('/~/sj/')) return 'scramjet';
@@ -11416,34 +11431,34 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(raw.startsWith('nyx://')) return 'nyx';
       return raw ? 'iframe' : 'blank';
     }
-    function markBrowserEngine(t,expected,url,phase='load'){
+    function markWorkspaceEngine(t,expected,url,phase='load'){
       if(!t) return;
       t.expectedEngine=expected || t.expectedEngine || '';
-      t.actualEngine=detectBrowserEngine(url,t);
+      t.actualEngine=detectWorkspaceEngine(url,t);
     }
-    function resetProxyInstallers(){
-      scramjetInstallPromise=null;
-      scramjetTransport=null;
-      scramjetTransportKey='';
+    function resetConnectionInstallers(){
+      studyjetInstallPromise=null;
+      studyjetTransport=null;
+      studyjetTransportKey='';
     }
-    function setBrowserTransportOverride(next){
-      next=next ? normalizeBrowserTransportName(next) : '';
-      if(browserTransportOverride===next) return;
-      browserTransportOverride=next;
-      resetProxyInstallers();
+    function setWorkspaceTransportOverride(next){
+      next=next ? normalizeWorkspaceTransportName(next) : '';
+      if(workspaceTransportOverride===next) return;
+      workspaceTransportOverride=next;
+      resetConnectionInstallers();
     }
-    function applyPreferredTransportForUrl(url,browserMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE))){
+    function applyPreferredTransportForUrl(url,workspaceMode=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE))){
       if(!transportAutoEnabled()){
-        setBrowserTransportOverride('');
+        setWorkspaceTransportOverride('');
         return;
       }
-      setBrowserTransportOverride('libcurlRaw');
+      setWorkspaceTransportOverride('libcurlRaw');
     }
     function transportAutoEnabled(){
-      return normalizeBrowserTransportName(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT))==='auto';
+      return normalizeWorkspaceTransportName(store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT))==='auto';
     }
-    function proxyTransportName(){
-      return normalizeBrowserTransportName(browserTransportOverride || store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT));
+    function connectionTransportName(){
+      return normalizeWorkspaceTransportName(workspaceTransportOverride || store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT));
     }
     function transportRetryOrder(current){
       const ordered=['libcurlRaw','epoxy','wisp'];
@@ -11466,16 +11481,16 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       t.searchHandshakeRecovery=key;
       t.transportWatchToken='';
       t.loadWatchToken='';
-      const current=proxyTransportName();
-      setBrowserTransportOverride(current==='libcurlRaw'||current==='auto'?'epoxy':'libcurlRaw');
-      loadScramjetTab(t,sourceUrl,false);
+      const current=connectionTransportName();
+      setWorkspaceTransportOverride(current==='libcurlRaw'||current==='auto'?'epoxy':'libcurlRaw');
+      loadStudyjetTab(t,sourceUrl,false);
       return true;
     }
-    function monitorBrowserTabSecurity(t,sourceUrl,navigationIntent=t?.navigationIntent || ''){
+    function monitorWorkspaceTabSecurity(t,sourceUrl,navigationIntent=t?.navigationIntent || ''){
       if(!t?.frame) return;
-      const source=browserShellSourceUrl(sourceUrl) || String(sourceUrl || '');
-      const initialState=browserShellSecurityStateForUrl(source);
-      setBrowserTabSecurityState(t,initialState);
+      const source=workspaceShellSourceUrl(sourceUrl) || String(sourceUrl || '');
+      const initialState=workspaceShellSecurityStateForUrl(source);
+      setWorkspaceTabSecurityState(t,initialState);
       if(initialState!=='unknown') return;
       const token='security-'+Date.now()+Math.random().toString(16).slice(2);
       t.securityCheckToken=token;
@@ -11487,19 +11502,19 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const health=inspectFrameHealth(t);
         const errorText=String(health.text || health.error || '');
         if(tlsCertificateErrorText(errorText)){
-          setBrowserTabSecurityState(t,'insecure');
+          setWorkspaceTabSecurityState(t,'insecure');
           return;
         }
         if(health.reachable && health.hasErrorText){
-          setBrowserTabSecurityState(t,'unknown');
+          setWorkspaceTabSecurityState(t,'unknown');
           return;
         }
-        if(health.reachable && health.readyState==='complete') setBrowserTabSecurityState(t,'secure');
+        if(health.reachable && health.readyState==='complete') setWorkspaceTabSecurityState(t,'secure');
       };
       const onLoad=()=>setTimeout(check,220);
       t.frame.addEventListener('load',onLoad,{once:true});
       t.frame.addEventListener('error',()=>{
-        if(current()) setBrowserTabSecurityState(t,'insecure');
+        if(current()) setWorkspaceTabSecurityState(t,'insecure');
       },{once:true});
 
 
@@ -11520,10 +11535,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         signal:controller?.signal
       }).then(()=>{
         clearTimeout(probeTimer);
-        if(current()) setBrowserTabSecurityState(t,'secure');
+        if(current()) setWorkspaceTabSecurityState(t,'secure');
       }).catch(()=>{
         clearTimeout(probeTimer);
-        if(current() && !probeTimedOut) setBrowserTabSecurityState(t,'insecure');
+        if(current() && !probeTimedOut) setWorkspaceTabSecurityState(t,'insecure');
       });
       setTimeout(check,850);
       setTimeout(check,2200);
@@ -11536,42 +11551,42 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const certificateFailure=tlsCertificateErrorText(reason);
       const failedSecurityState=certificateFailure ? 'insecure' : 'unknown';
       const failureMessage=certificateFailure
-        ? `Nyx blocked ${browserShellLabel(key)} because its HTTPS certificate could not be verified. Check the address, or try again after the site fixes its certificate.`
-        : `Nyx could not connect to ${browserShellLabel(key)}. Check that the address exists and is spelled correctly, then try again.`;
+        ? `Nyx blocked ${workspaceShellLabel(key)} because its HTTPS certificate could not be verified. Check the address, or try again after the site fixes its certificate.`
+        : `Nyx could not connect to ${workspaceShellLabel(key)}. Check that the address exists and is spelled correctly, then try again.`;
       t.selectedSearchFallbackKey=key;
       t.url=key;
       t.sourceUrl=key;
-      t.title=browserShellLabel(key);
+      t.title=workspaceShellLabel(key);
       t.icon=iconForUrl(key);
       t.frame.removeAttribute('src');
-      t.frame.srcdoc=proxyFailureHtml(failureMessage,'Page',certificateFailure ? {heading:'Connection not private'} : {});
-      t.frame.classList.toggle('active',isSelectedBrowserTab(t));
+      t.frame.srcdoc=connectionFailureHtml(failureMessage,'Page',certificateFailure ? {heading:'Connection not private'} : {});
+      t.frame.classList.toggle('active',isSelectedWorkspaceTab(t));
       renderTabs();
-      updateBrowserShellLocation(key,t.id,true);
-      setBrowserTabSecurityState(t,failedSecurityState);
+      updateWorkspaceShellLocation(key,t.id,true);
+      setWorkspaceTabSecurityState(t,failedSecurityState);
       return true;
     }
-    function fallbackProxyEngine(t,sourceUrl,expectedEngine,reason=''){
+    function fallbackConnectionEngine(t,sourceUrl,expectedEngine,reason=''){
       if(!t || !sourceUrl || !expectedEngine) return false;
-      const configuredMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
+      const configuredMode=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE));
       if(configuredMode==='iframe'){
         if(expectedEngine!=='iframe') loadTab(t,sourceUrl,false,'iframe',sourceUrl);
         else return loadSelectedSearchFallback(t,sourceUrl,reason || 'selected iframe mode failed');
         return true;
       }
       if(expectedEngine!=='scramjet'){
-        loadScramjetTab(t,sourceUrl,false);
+        loadStudyjetTab(t,sourceUrl,false);
         return true;
       }
       return loadSelectedSearchFallback(t,sourceUrl,reason || 'Scramjet retries exhausted');
 }
     function watchFrameTransportErrors(t,sourceUrl,expectedEngine){
       if(!t?.frame || !sourceUrl || !expectedEngine) return;
-      const automaticMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE))==='auto';
+      const automaticMode=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE))==='auto';
       const token='transport-'+Date.now()+Math.random().toString(16).slice(2);
       t.transportWatchToken=token;
       const check=()=>{
-        if(t.transportWatchToken!==token || !state.tabs.includes(t) || !browserFrameStillAtSource(t,sourceUrl)) return;
+        if(t.transportWatchToken!==token || !state.tabs.includes(t) || !workspaceFrameStillAtSource(t,sourceUrl)) return;
         let text='';
         const health=inspectFrameHealth(t);
         text=health.visibleText || '';
@@ -11582,8 +11597,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           t.workerRouteRecovery=recoveryKey;
           t.transportWatchToken='';
           t.loadWatchToken='';
-          void ensureScramjetWorkerConnection(t.privateScramjetController,true).then(()=>{
-            if(state.tabs.includes(t) && t.navigationIntent===navigationIntent && browserFrameStillAtSource(t,sourceUrl)) loadScramjetTab(t,sourceUrl,false);
+          void ensureStudyjetWorkerConnection(t.privateScramjetController,true).then(()=>{
+            if(state.tabs.includes(t) && t.navigationIntent===navigationIntent && workspaceFrameStillAtSource(t,sourceUrl)) loadStudyjetTab(t,sourceUrl,false);
           }).catch(()=>{
             if(state.tabs.includes(t) && t.navigationIntent===navigationIntent) loadSelectedSearchFallback(t,sourceUrl,'The browsing connection could not be restored.');
           });
@@ -11591,7 +11606,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         }
         if(!health.hasErrorText || !serviceWorkerTransportErrorText(text)) return;
         const certificateFailure=tlsCertificateErrorText(text);
-        setBrowserTabSecurityState(t,certificateFailure ? 'insecure' : 'unknown');
+        setWorkspaceTabSecurityState(t,certificateFailure ? 'insecure' : 'unknown');
         if(certificateFailure){
           loadSelectedSearchFallback(t,sourceUrl,text);
           return;
@@ -11608,28 +11623,28 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           return;
         }
         if(attempts[key]>2){
-          fallbackProxyEngine(t,sourceUrl,expectedEngine,'transport retries exhausted');
+          fallbackConnectionEngine(t,sourceUrl,expectedEngine,'transport retries exhausted');
           return;
         }
         if(!transportAutoEnabled()){
-          fallbackProxyEngine(t,sourceUrl,expectedEngine,'transport failed with fixed transport');
+          fallbackConnectionEngine(t,sourceUrl,expectedEngine,'transport failed with fixed transport');
           return;
         }
-        const currentTransport=proxyTransportName();
-        const nextTransport=transportRetryOrder(currentTransport)[0] || DEFAULT_BROWSER_TRANSPORT;
-        setBrowserTransportOverride(nextTransport);
-        if(expectedEngine==='scramjet') loadScramjetTab(t,sourceUrl,false);
+        const currentTransport=connectionTransportName();
+        const nextTransport=transportRetryOrder(currentTransport)[0] || DEFAULT_WORKSPACE_TRANSPORT;
+        setWorkspaceTransportOverride(nextTransport);
+        if(expectedEngine==='scramjet') loadStudyjetTab(t,sourceUrl,false);
         else {}
       };
       t.frame.addEventListener('load',()=>setTimeout(check,80),{once:true});
       setTimeout(check,1300);
       setTimeout(check,4200);
     }
-    function watchProxyLoad(t,sourceUrl,expectedEngine){
+    function watchConnectionLoad(t,sourceUrl,expectedEngine){
       if(!sourceUrl || !expectedEngine) return;
 
 
-      if(normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE))!=='auto') return;
+      if(normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE))!=='auto') return;
       if(t.fallbackSource!==sourceUrl){
         t.fallbackSource=sourceUrl;
         t.fallbackAttempts=0;
@@ -11642,7 +11657,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
 
 
       const current=()=>!settled && t.loadWatchToken===token && state.tabs.includes(t)
-        && browserFrameStillAtSource(t,sourceUrl);
+        && workspaceFrameStillAtSource(t,sourceUrl);
       const settle=()=>{
         settled=true;
         t.frame?.removeEventListener?.('load',markLoaded);
@@ -11651,15 +11666,15 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const frameSrc=String(t.frame?.getAttribute?.('src') || '');
         let frameHref='';
         try{frameHref=String(t.frame?.contentWindow?.location?.href || '')}catch{}
-        const hasProxyPath=frameSrc.startsWith('/service/') || frameSrc.startsWith('/~/sj/') || frameSrc.startsWith('/scramjet/service/')
+        const hasConnectionPath=frameSrc.startsWith('/service/') || frameSrc.startsWith('/~/sj/') || frameSrc.startsWith('/scramjet/service/')
           || frameHref.includes('/service/') || frameHref.includes('/~/sj/') || frameHref.includes('/scramjet/service/');
         const hasDirectPage=/^https?:/i.test(frameSrc) || (/^https?:/i.test(frameHref) && frameHref!=='about:blank' && frameHref!==location.href);
-        if(!hasProxyPath && !hasDirectPage) return;
+        if(!hasConnectionPath && !hasDirectPage) return;
         loaded=true;
         t.frame?.removeEventListener?.('load',markLoaded);
       };
       t.frame.addEventListener('load',markLoaded);
-      const proxyLooksBroken=()=>{
+      const connectionLooksBroken=()=>{
         const health=inspectFrameHealth(t);
         if(!health.reachable) return false;
         if(health.blank && health.readyState!=='complete') return false;
@@ -11677,12 +11692,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         return !!(health.blank || health.hasErrorText);
       };
       const protectedSiteReturnedEmptyShell=()=>{
-        const host=browserHost(sourceUrl);
+        const host=workspaceHost(sourceUrl);
         if(!hostMatches(host,['meta.ai'])) return false;
         const health=inspectFrameHealth(t);
         return health.reachable && !health.hasErrorText && String(health.visibleText || '').length<12 && /meta ai/i.test(health.title || '');
       };
-      if(hostMatches(browserHost(sourceUrl),['meta.ai'])){
+      if(hostMatches(workspaceHost(sourceUrl),['meta.ai'])){
         let consecutiveProtectedBlanks=0;
         let protectedChecks=0;
         const protectedTimer=setInterval(()=>{
@@ -11728,26 +11743,26 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         if(t.url!==sourceUrl && !currentUrl.startsWith('/service/') && !currentUrl.startsWith('/~/sj/') && !currentUrl.startsWith('/scramjet/service/')) return;
         t.fallbackAttempts=(t.fallbackAttempts || 0) + 1;
         if(t.fallbackAttempts>4) return;
-        const browserMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
+        const workspaceMode=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE));
         const canAutoTransport=transportAutoEnabled();
-        const currentTransport=proxyTransportName();
+        const currentTransport=connectionTransportName();
         const nextTransport=transportRetryOrder(currentTransport)[0] || '';
         let handled=false;
         if(expectedEngine==='scramjet'){
           if(canAutoTransport && nextTransport){
-            setBrowserTransportOverride(nextTransport);
-            loadScramjetTab(t,sourceUrl,false);
+            setWorkspaceTransportOverride(nextTransport);
+            loadStudyjetTab(t,sourceUrl,false);
             handled=true;
-          }else if(browserMode==='scramjet'){
-            loadScramjetTab(t,sourceUrl,false);
+          }else if(workspaceMode==='scramjet'){
+            loadStudyjetTab(t,sourceUrl,false);
             handled=true;
-          }else if(browserMode==='auto'){
-            if(canAutoTransport) setBrowserTransportOverride('epoxy');
+          }else if(workspaceMode==='auto'){
+            if(canAutoTransport) setWorkspaceTransportOverride('epoxy');
             loadSelectedSearchFallback(t,sourceUrl,'Scramjet relays exhausted');
             handled=true;
           }
         }
-        if(!handled) fallbackProxyEngine(t,sourceUrl,expectedEngine,'blank or timed-out proxy frame');
+        if(!handled) fallbackConnectionEngine(t,sourceUrl,expectedEngine,'blank or timed-out proxy frame');
       };
       const checkBlankFallback=()=>{
         if(!current()) return;
@@ -11755,7 +11770,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           loadSelectedSearchFallback(t,sourceUrl,'the site returned a blocked empty shell');
           return;
         }
-        if(proxyLooksBroken()) attemptFallback(true);
+        if(connectionLooksBroken()) attemptFallback(true);
         else{
           const health=inspectFrameHealth(t);
           if(health.reachable && !health.blank && !health.hasErrorText
@@ -11769,24 +11784,24 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       setTimeout(attemptFallback,5200);
       setTimeout(attemptFallback,11000);
     }
-    function isSelectedBrowserTab(t){
-      const linked=browserShellTabs.find(tab=>tab.browserTabId===t.id);
-      return state.active===t.id && (!document.body.classList.contains('browser-shell') || !linked || linked.id===browserShellActiveTab);
+    function isSelectedWorkspaceTab(t){
+      const linked=workspaceShellTabs.find(tab=>tab.workspaceTabId===t.id);
+      return state.active===t.id && (!document.body.classList.contains('workspace-shell') || !linked || linked.id===workspaceShellActiveTab);
     }
     function loadTab(t,url,addHistory=true,expectedEngine='',sourceUrl=''){
       const requestedSource=sourceUrl || (/^https?:/i.test(url) ? url : '');
-      if(expectedEngine==='iframe' && hostMatches(browserHost(requestedSource),['cineby.at'])){
-        loadScramjetTab(t,requestedSource,addHistory);
+      if(expectedEngine==='iframe' && hostMatches(workspaceHost(requestedSource),['cineby.at'])){
+        loadStudyjetTab(t,requestedSource,addHistory);
         return;
       }
       t.expectedEngine=expectedEngine || t.expectedEngine || '';
       t.sourceUrl=sourceUrl || (/^https?:/i.test(url) ? url : t.sourceUrl || '');
-      const securitySource=browserShellSourceUrl(t.sourceUrl || requestedSource || url) || t.sourceUrl || requestedSource || url;
+      const securitySource=workspaceShellSourceUrl(t.sourceUrl || requestedSource || url) || t.sourceUrl || requestedSource || url;
       const securityIntent=t.navigationIntent || '';
-      setBrowserTabSecurityState(t,browserShellSecurityStateForUrl(securitySource));
+      setWorkspaceTabSecurityState(t,workspaceShellSecurityStateForUrl(securitySource));
       t.frame.classList.remove('transparent-internal-page');
       t.frame.style.backgroundColor='';
-      if(isSelectedBrowserTab(t)) win.classList.remove('internal-clear');
+      if(isSelectedWorkspaceTab(t)) win.classList.remove('internal-clear');
       t.url=url;
       if(addHistory){
         t.history=t.history.slice(0,t.index+1);
@@ -11795,8 +11810,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       t.title=titleForUrl(sourceUrl || url);
       t.icon=iconForUrl(sourceUrl || url);
-      if(isSelectedBrowserTab(t)){
-        win.querySelector('.browser-home').classList.add('hidden');
+      if(isSelectedWorkspaceTab(t)){
+        win.querySelector('.workspace-home').classList.add('hidden');
         t.frame.classList.add('active');
       }
       installPopupBridge(t);
@@ -11804,20 +11819,20 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(!url.startsWith('/scramjet/service/') && !url.startsWith('/~/sj/')) t.scramjetFrame=null;
       setFrameSandbox(t,true);
       clearFrameDocument(t);
-      if(normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE))==='auto' && directOnly(url) && !proxied){
-        loadScramjetTab(t,url,addHistory);
+      if(normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE))==='auto' && directOnly(url) && !proxied){
+        loadStudyjetTab(t,url,addHistory);
         return;
       }
-      watchProxyLoad(t,sourceUrl || (/^https?:/i.test(url) ? url : ''),expectedEngine);
+      watchConnectionLoad(t,sourceUrl || (/^https?:/i.test(url) ? url : ''),expectedEngine);
       watchFrameTransportErrors(t,sourceUrl || (/^https?:/i.test(url) ? url : ''),expectedEngine);
 
       t.frameHistoryPending={index:t.index};
-      monitorBrowserTabSecurity(t,securitySource,securityIntent);
+      monitorWorkspaceTabSecurity(t,securitySource,securityIntent);
       t.frame.src=url;
-      markBrowserEngine(t,expectedEngine,url,'iframe-src');
+      markWorkspaceEngine(t,expectedEngine,url,'iframe-src');
       renderTabs();
-      if(isSelectedBrowserTab(t)) activate(t.id);
-      updateBrowserShellLocation(browserShellSourceUrl(t.sourceUrl || url) || t.sourceUrl || url,t.id);
+      if(isSelectedWorkspaceTab(t)) activate(t.id);
+      updateWorkspaceShellLocation(workspaceShellSourceUrl(t.sourceUrl || url) || t.sourceUrl || url,t.id);
     }
     function setTabMeta(t,url,addHistory=true){
       t.url=url;
@@ -11828,26 +11843,26 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       t.title=titleForUrl(url);
       t.icon=iconForUrl(url);
-      if(isSelectedBrowserTab(t)){
-        win.querySelector('.browser-home').classList.add('hidden');
+      if(isSelectedWorkspaceTab(t)){
+        win.querySelector('.workspace-home').classList.add('hidden');
         t.frame.classList.add('active');
       }
       installCrazyGamesOfflineRecovery(t,url);
       renderTabs();
-      if(isSelectedBrowserTab(t)) activate(t.id);
-      updateBrowserShellLocation(url,t.id);
+      if(isSelectedWorkspaceTab(t)) activate(t.id);
+      updateWorkspaceShellLocation(url,t.id);
     }
-    function retryScramjetTab(t,url){
+    function retryStudyjetTab(t,url){
       t.scramjetRetries=(t.scramjetRetries || 0) + 1;
       if(t.scramjetRetries>3) return false;
       const navigationIntent=t.navigationIntent || '';
       t.frame.removeAttribute('src');
       setTimeout(async ()=>{
         if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-        await refreshScramjetServiceWorker().catch(()=>false);
+        await refreshStudyjetServiceWorker().catch(()=>false);
         if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-        scramjetInstallPromise=null;
-        const ok=await installScramjet();
+        studyjetInstallPromise=null;
+        const ok=await installStudyjet();
         if(!ok || !state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
         if(t.scramjetFrame){
           try{t.scramjetFrame.go(url); return}catch{}
@@ -11855,11 +11870,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       },220);
       return true;
     }
-    function loadScramjetV1Tab(t,url,addHistory=true){
+    function loadStudyjetV1Tab(t,url,addHistory=true){
       t.expectedEngine='scramjet-v1';
       t.sourceUrl=url;
       if(addHistory){
-        const currentHistory=browserShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
+        const currentHistory=workspaceShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
         if(currentHistory!==url){
           t.history=t.history.slice(0,t.index+1);
           t.history.push(url);
@@ -11867,9 +11882,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         }
       }
       const navigationIntent=t.navigationIntent || '';
-      installScramjetV1().then(ok=>{
+      installStudyjetV1().then(ok=>{
         if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-        if(!ok || !scramjetV1Controller){
+        if(!ok || !studyjetV1Controller){
           t.url=url;
           setTabMeta(t,url,false);
           t.actualEngine='scramjet-v1-failed';
@@ -11884,14 +11899,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           t.frame.removeAttribute('src');
           clearFrameDocument(t);
           installPopupBridge(t);
-          t.scramjetFrame=scramjetV1Controller.createFrame(t.frame);
+          t.scramjetFrame=studyjetV1Controller.createFrame(t.frame);
           t.scramjetVersion='v1';
           t.scramjetFrame.addEventListener?.('urlchange',event=>{
-            const next=browserShellSourceUrl(String(event.url || '')) || String(event.url || '');
+            const next=workspaceShellSourceUrl(String(event.url || '')) || String(event.url || '');
             if(!next) return;
-            const previousSource=browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
-            if(browserShellRejectFrameLocation(next,previousSource)) return;
-            const currentHistory=browserShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
+            const previousSource=workspaceShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
+            if(workspaceShellRejectFrameLocation(next,previousSource)) return;
+            const currentHistory=workspaceShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
             if(t.scramjetHistoryPending){
               t.scramjetHistoryPending=false;
               if(t.index>=0) t.history[t.index]=next;
@@ -11905,8 +11920,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
             t.title=titleForUrl(next);
             t.icon=iconForUrl(next);
             renderTabs();
-            if(t.id===state.active) win.querySelector('.urlbar').value=browserShellDisplayValue(next);
-            updateBrowserShellLocation(next,t.id);
+            if(t.id===state.active) win.querySelector('.urlbar').value=workspaceShellDisplayValue(next);
+            updateWorkspaceShellLocation(next,t.id);
             setTimeout(()=>syncLoadedTabIcon(t),120);
           });
         }
@@ -11915,7 +11930,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         clearFrameDocument(t);
         try{
           t.scramjetFrame.go(url);
-          markBrowserEngine(t,'scramjet-v1',String(t.frame.getAttribute('src') || url),'scramjet-v1');
+          markWorkspaceEngine(t,'scramjet-v1',String(t.frame.getAttribute('src') || url),'scramjet-v1');
         }catch(error){
           t.actualEngine='scramjet-v1-failed';
           t.frame.removeAttribute('srcdoc');
@@ -11925,12 +11940,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         t.actualEngine='scramjet-v1-failed';
       });
     }
-    function loadScramjetTab(t,url,addHistory=true){
+    function loadStudyjetTab(t,url,addHistory=true){
       t.expectedEngine='scramjet';
       t.sourceUrl=url;
       setTabLoading(t,true);
       if(addHistory){
-        const currentHistory=browserShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
+        const currentHistory=workspaceShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
         if(currentHistory!==url){
           t.history=t.history.slice(0,t.index+1);
           t.history.push(url);
@@ -11938,16 +11953,16 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         }
       }
       const navigationIntent=t.navigationIntent || '';
-      installScramjet().then(async ok=>{
+      installStudyjet().then(async ok=>{
         if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-        if(!ok || !scramjetController){
+        if(!ok || !studyjetController){
           if(transportAutoEnabled()){
             const retryCount=Number(t.scramjetStartupRetries || 0);
-            const nextTransport=transportRetryOrder(proxyTransportName())[0] || '';
+            const nextTransport=transportRetryOrder(connectionTransportName())[0] || '';
             if(retryCount<2 && nextTransport){
               t.scramjetStartupRetries=retryCount+1;
-              setBrowserTransportOverride(nextTransport);
-              loadScramjetTab(t,url,false);
+              setWorkspaceTransportOverride(nextTransport);
+              loadStudyjetTab(t,url,false);
               return;
             }
           }
@@ -11957,26 +11972,26 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           t.actualEngine='scramjet-failed';
           setFrameSandbox(t,true);
           clearFrameDocument(t);
-          t.frame.srcdoc=proxyFailureHtml(scramjetInstallError,'Scramjet',{allowDirect:true});
+          t.frame.srcdoc=connectionFailureHtml(studyjetInstallError,'Scramjet',{allowDirect:true});
           return;
         }
-        await ensureScramjetWorkerConnection(t.privateScramjetController);
+        await ensureStudyjetWorkerConnection(t.privateScramjetController);
         if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-        if(t.privateScramjetController && t.privateScramjetController.transport !== scramjetController.transport){
-          t.privateScramjetController.setTransport(scramjetController.transport);
+        if(t.privateScramjetController && t.privateScramjetController.transport !== studyjetController.transport){
+          t.privateScramjetController.setTransport(studyjetController.transport);
         }
         const existingFrameSrc=String(t.frame.getAttribute('src') || '');
         if(existingFrameSrc.startsWith('/service/') || t.actualEngine==='ultraviolet'){
           replaceTabFrame(t);
         }
         const spotifyChromeOsCompatibility=/\bCrOS\b/i.test(String(navigator.userAgent || '')) && isSpotifyFamilyUrl(url);
-        const guardMode=isNvidiaAuthFamilyUrl(url) ? 'nvidia-auth' : (spotifyChromeOsCompatibility ? 'spotify-chromeos' : (shouldUseScramjetRuntimeGuard(url) ? 'full' : (shouldUseScramjetMinimalGuard(url) ? 'minimal' : (shouldUseScramjetHelperGuard(url) ? 'helper' : 'none'))));
+        const guardMode=isNvidiaAuthFamilyUrl(url) ? 'nvidia-auth' : (spotifyChromeOsCompatibility ? 'spotify-chromeos' : (shouldUseStudyjetRuntimeGuard(url) ? 'full' : (shouldUseStudyjetMinimalGuard(url) ? 'minimal' : (shouldUseStudyjetHelperGuard(url) ? 'helper' : 'none'))));
         if(t.scramjetFrame && t.scramjetRuntimeGuarded!==guardMode){
           replaceTabFrame(t);
         }
         if(!t.scramjetFrame){
           if(!t.privateScramjetControllerPromise){
-            const startup=createPrivateScramjetController();
+            const startup=createPrivateStudyjetController();
             const tracked=startup.then(controller=>{
               if(t.privateScramjetControllerPromise!==tracked){
                 controller.nyxStopWorkerTracking?.();
@@ -12001,35 +12016,35 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           clearFrameDocument(t);
           installPopupBridge(t);
           const plugins=[
-            createScramjetCompatibilityPlugin('','proxy-sri'),
-            createScramjetCompatibilityPlugin(proxyPrivacyGuardSource,'privacy'),
-            createScramjetCompatibilityPlugin(browserAdBlockRuntimeSource,'ad-block')
+            createStudyjetCompatibilityPlugin('','proxy-sri'),
+            createStudyjetCompatibilityPlugin(connectionPrivacyGuardSource,'privacy'),
+            createStudyjetCompatibilityPlugin(workspaceAdBlockRuntimeSource,'ad-block')
           ];
-          if(guardMode==='full') plugins.push(createScramjetCompatibilityPlugin(scramjetRuntimeGuardSource,'runtime-guard'));
-          else if(guardMode==='nvidia-auth') plugins.push(createScramjetCompatibilityPlugin(scramjetNvidiaAuthGuardSource,'nvidia-auth'));
-          else if(guardMode==='spotify-chromeos') plugins.push(createScramjetCompatibilityPlugin(scramjetSpotifyChromeOsGuardSource,'spotify-chromeos'));
-          else if(guardMode==='minimal') plugins.push(createScramjetCompatibilityPlugin(scramjetMinimalRuntimeGuardSource,'minimal-guard'));
-          else if(guardMode==='helper') plugins.push(createScramjetCompatibilityPlugin(scramjetHelperRuntimeGuardSource,'helper-guard'));
-          if(shouldStripScramjetDuckDuckGoScripts(url)){
-            plugins.push(createScramjetCompatibilityPlugin('', 'duckduckgo-noscript'));
+          if(guardMode==='full') plugins.push(createStudyjetCompatibilityPlugin(studyjetRuntimeGuardSource,'runtime-guard'));
+          else if(guardMode==='nvidia-auth') plugins.push(createStudyjetCompatibilityPlugin(studyjetNvidiaAuthGuardSource,'nvidia-auth'));
+          else if(guardMode==='spotify-chromeos') plugins.push(createStudyjetCompatibilityPlugin(studyjetSpotifyChromeOsGuardSource,'spotify-chromeos'));
+          else if(guardMode==='minimal') plugins.push(createStudyjetCompatibilityPlugin(studyjetMinimalRuntimeGuardSource,'minimal-guard'));
+          else if(guardMode==='helper') plugins.push(createStudyjetCompatibilityPlugin(studyjetHelperRuntimeGuardSource,'helper-guard'));
+          if(shouldStripStudyjetDuckDuckGoScripts(url)){
+            plugins.push(createStudyjetCompatibilityPlugin('', 'duckduckgo-noscript'));
           }
-          if(hostMatches(browserHost(url),['cineby.at'])){
-            plugins.push(createScramjetCompatibilityPlugin('', 'cineby-disable-devtool'));
+          if(hostMatches(workspaceHost(url),['cineby.at'])){
+            plugins.push(createStudyjetCompatibilityPlugin('', 'cineby-disable-devtool'));
           }
           t.scramjetRuntimeGuarded=guardMode;
           t.scramjetFrame=privateController.createFrame(t.frame,{plugins});
           t.scramjetFrame.addEventListener?.('urlchange',event=>{
-            const next=browserShellSourceUrl(String(event.url || '')) || String(event.url || '');
+            const next=workspaceShellSourceUrl(String(event.url || '')) || String(event.url || '');
             if(!next) return;
-            const previousSource=browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
-            if(browserShellRejectFrameLocation(next,previousSource)){
-              recoverRejectedScramjetLocation(t,next,previousSource);
+            const previousSource=workspaceShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
+            if(workspaceShellRejectFrameLocation(next,previousSource)){
+              recoverRejectedStudyjetLocation(t,next,previousSource);
               return;
             }
             t.scramjetRejectedLocationKey='';
-            const currentHistory=browserShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
-            const initialScramjetRedirect=t.scramjetHistoryPending===true;
-            if(initialScramjetRedirect){
+            const currentHistory=workspaceShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
+            const initialStudyjetRedirect=t.scramjetHistoryPending===true;
+            if(initialStudyjetRedirect){
               t.scramjetHistoryPending=false;
               if(t.index>=0) t.history[t.index]=next;
             }else if(next!==currentHistory && next!==previousSource){
@@ -12042,27 +12057,27 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
             t.title=titleForUrl(next);
             t.icon=iconForUrl(next);
             renderTabs();
-            if(t.id===state.active) win.querySelector('.urlbar').value=browserShellDisplayValue(next);
-            updateBrowserShellLocation(next,t.id);
-            monitorBrowserTabSecurity(t,next,t.navigationIntent || '');
-            watchScramjetHealth(t,next);
+            if(t.id===state.active) win.querySelector('.urlbar').value=workspaceShellDisplayValue(next);
+            updateWorkspaceShellLocation(next,t.id);
+            monitorWorkspaceTabSecurity(t,next,t.navigationIntent || '');
+            watchStudyjetHealth(t,next);
             setTimeout(()=>syncLoadedTabIcon(t),120);
           });
         }
         setTabMeta(t,url,false);
-        monitorBrowserTabSecurity(t,url,navigationIntent);
+        monitorWorkspaceTabSecurity(t,url,navigationIntent);
         t.scramjetHistoryPending=true;
         t.scramjetHealthRetries=0;
         t.scramjetRetries=0;
-        watchProxyLoad(t,url,'scramjet');
+        watchConnectionLoad(t,url,'scramjet');
         watchFrameTransportErrors(t,url,'scramjet');
-        watchScramjetHealth(t,url);
+        watchStudyjetHealth(t,url);
         if(String(t.frame.getAttribute('src') || '').startsWith('/service/')) t.frame.removeAttribute('src');
         clearFrameDocument(t);
         try{
           t.scramjetFrame.go(url);
         }catch{
-          retryScramjetTab(t,url);
+          retryStudyjetTab(t,url);
         }
         const isSearchNavigation=Object.values(engines).some(prefix=>String(url).startsWith(prefix));
         const revealLoadedFrame=()=>{
@@ -12072,7 +12087,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         t.frame.addEventListener('load',revealLoadedFrame,{once:true});
         setTimeout(revealLoadedFrame,2500);
         void waitForTabResultPaint(t,isSearchNavigation ? 12000 : 8000).then(painted=>{
-          if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent || !browserFrameStillAtSource(t,url)) return;
+          if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent || !workspaceFrameStillAtSource(t,url)) return;
 
 
           if(isSearchNavigation && !painted && inspectFrameHealth(t).blank) loadSelectedSearchFallback(t,url,'search results did not finish loading');
@@ -12082,30 +12097,30 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         setTimeout(()=>{
           if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
           if(t.scramjetFrame && !String(t.frame.getAttribute('src') || '').includes('/~/sj/')){
-            markBrowserEngine(t,'scramjet',String(t.frame.getAttribute('src') || ''),'scramjet-path-check');
+            markWorkspaceEngine(t,'scramjet',String(t.frame.getAttribute('src') || ''),'scramjet-path-check');
             try{t.scramjetFrame.go(url)}catch{}
           }
         },450);
         setTimeout(()=>{
           if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-          markBrowserEngine(t,'scramjet',String(t.frame.getAttribute('src') || url),'scramjet-final');
+          markWorkspaceEngine(t,'scramjet',String(t.frame.getAttribute('src') || url),'scramjet-final');
         },900);
         setTimeout(()=>{
           if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
           try{
-            const isScramjetPath=t.frame.contentWindow?.location?.pathname?.startsWith('/~/sj/');
+            const isStudyjetPath=t.frame.contentWindow?.location?.pathname?.startsWith('/~/sj/');
             const loadednyx=!!t.frame.contentDocument?.querySelector('#desktop,#welcomeScreen');
-            if(isScramjetPath && loadednyx) retryScramjetTab(t,url);
+            if(isStudyjetPath && loadednyx) retryStudyjetTab(t,url);
           }catch{}
         },1800);
       }).catch(()=>{
         if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
         setTabLoading(t,false);
-        destroyProxyPrivacySession(t);
+        destroyConnectionPrivacySession(t);
         t.actualEngine='scramjet-failed';
         setFrameSandbox(t,true);
         clearFrameDocument(t);
-        t.frame.srcdoc=proxyFailureHtml('The private tab session could not start. Reload Nyx and try again.','Scramjet',{allowDirect:true});
+        t.frame.srcdoc=connectionFailureHtml('The private tab session could not start. Reload Nyx and try again.','Scramjet',{allowDirect:true});
       });
     }
     function waitForTabResultPaint(t,timeout=4200){
@@ -12113,7 +12128,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         if(!t?.frame) return resolve(false);
         let done=false;
         let loadSeen=false;
-        const sourceForReadiness=()=>browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
+        const sourceForReadiness=()=>workspaceShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
         const hasMeaningfulContent=()=>{
           try{
             const doc=t.frame.contentDocument;
@@ -12122,7 +12137,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
             const text=String(doc.body.textContent || '').replace(/\s+/g,' ').trim().slice(0,6000);
             const ready=doc.readyState==='complete' || doc.readyState==='interactive';
             const source=sourceForReadiness();
-            const host=browserHost(source);
+            const host=workspaceHost(source);
             const isDuckSearch=hostMatches(host,['duckduckgo.com']) && /[?&]q=/.test(source);
             if(isDuckSearch){
               if(/No results found|not many great results|try different keywords|there are no results/i.test(text)) return ready;
@@ -12191,41 +12206,41 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         return;
       }
       const rawText=canonicalAddressInput(raw);
-      const proxyInternal=/^(?:\/service\/|\/~\/sj\/|\/scramjet\/service\/|nyx:\/\/)/i.test(rawText);
+      const connectionInternal=/^(?:\/service\/|\/~\/sj\/|\/scramjet\/service\/|nyx:\/\/)/i.test(rawText);
       const looksLikeUrl=/^(?:[a-z][a-z0-9+.-]*:|[\w.-]+\.[a-z]{2,}(?:\/|$)|\/|\.\/|\.\.\/|assets\/|apps\/)/i.test(rawText);
-      const isSearchQuery=rawText && !forceMode && !looksLikeUrl && !proxyInternal;
+      const isSearchQuery=rawText && !forceMode && !looksLikeUrl && !connectionInternal;
       if(isSearchQuery){
         void nyxRecordSearchHistory(rawText);
         const url=selectedSearchUrl(rawText);
         document.querySelectorAll('.nyx-preflight').forEach(overlay=>overlay.remove());
-        win.querySelector('.urlbar').value=browserShellDisplayValue(url);
-        hideBrowserSuggestions();
-        const browserMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
-        if(!forceMode || !browserTransportOverride) applyPreferredTransportForUrl(url,browserMode);
-        updateBrowserShellLocation(url,t.id,true);
-        const mode=normalizeBrowserModeName(forceMode || selectedBrowserMode(url));
-        if(browserMode==='auto' && mode==='iframe' && directOnly(url)){
-          loadScramjetTab(t,url,true);
+        win.querySelector('.urlbar').value=workspaceShellDisplayValue(url);
+        hideWorkspaceSuggestions();
+        const workspaceMode=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE));
+        if(!forceMode || !workspaceTransportOverride) applyPreferredTransportForUrl(url,workspaceMode);
+        updateWorkspaceShellLocation(url,t.id,true);
+        const mode=normalizeWorkspaceModeName(forceMode || selectedWorkspaceMode(url));
+        if(workspaceMode==='auto' && mode==='iframe' && directOnly(url)){
+          loadStudyjetTab(t,url,true);
         }else if(mode==='rammerhead'){
           rhNavigate(url,finalUrl=>{
             if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
             loadTab(t,finalUrl,true,'rammerhead',url);
           });
         }else if(mode==='scramjet-v1'){
-          loadScramjetV1Tab(t,url,true);
+          loadStudyjetV1Tab(t,url,true);
         }else if(mode==='scramjet'){
-          loadScramjetTab(t,url,true);
+          loadStudyjetTab(t,url,true);
         }else {
-          loadTab(t,proxyModeUrl(mode,url,t.privacySessionId),true,mode || 'iframe',url);
+          loadTab(t,connectionModeUrl(mode,url,t.privacySessionId),true,mode || 'iframe',url);
         }
         return;
       }
-      if(rawText && looksLikeUrl && !proxyInternal) document.querySelectorAll('.nyx-preflight').forEach(overlay=>overlay.remove());
-      const url=youtubeEnglishUrl(normalize(browserShellSourceUrl(raw) || raw)); if(!url)return;
-      win.querySelector('.urlbar').value=browserShellDisplayValue(url);
-      const browserMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
-      if(!forceMode || !browserTransportOverride) applyPreferredTransportForUrl(url,browserMode);
-      updateBrowserShellLocation(url,t.id,true);
+      if(rawText && looksLikeUrl && !connectionInternal) document.querySelectorAll('.nyx-preflight').forEach(overlay=>overlay.remove());
+      const url=youtubeEnglishUrl(normalize(workspaceShellSourceUrl(raw) || raw)); if(!url)return;
+      win.querySelector('.urlbar').value=workspaceShellDisplayValue(url);
+      const workspaceMode=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE));
+      if(!forceMode || !workspaceTransportOverride) applyPreferredTransportForUrl(url,workspaceMode);
+      updateWorkspaceShellLocation(url,t.id,true);
       try{
         const parsed=new URL(url,location.href);
         if(parsed.origin===location.origin && !parsed.pathname.includes('/assets/') && (parsed.pathname==='/' || /\/index\.html$/i.test(parsed.pathname))){
@@ -12237,9 +12252,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           clearFrameDocument(t);
           t.frame.removeAttribute('src');
           t.frame.classList.remove('active');
-          renderBrowserShellHomeMode(win);
+          renderWorkspaceShellHomeMode(win);
           renderTabs();
-          updateBrowserShellLocation('',t.id,true);
+          updateWorkspaceShellLocation('',t.id,true);
           return;
         }
         if(parsed.origin===location.origin && (parsed.pathname.includes('/assets/') || parsed.pathname.includes('/apps/') || parsed.pathname.endsWith('/index.html'))){
@@ -12247,9 +12262,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           return;
         }
       }catch{}
-      const mode=normalizeBrowserModeName(forceMode || selectedBrowserMode(url));
-      if(browserMode==='auto' && mode==='iframe' && directOnly(url)){
-        loadScramjetTab(t,url,true);
+      const mode=normalizeWorkspaceModeName(forceMode || selectedWorkspaceMode(url));
+      if(workspaceMode==='auto' && mode==='iframe' && directOnly(url)){
+        loadStudyjetTab(t,url,true);
         return;
       }
       if(mode==='rammerhead'){
@@ -12258,18 +12273,18 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           loadTab(t,finalUrl,true,'rammerhead');
         });
       }else if(mode==='scramjet-v1'){
-        loadScramjetV1Tab(t,url,true);
+        loadStudyjetV1Tab(t,url,true);
       }else if(mode==='scramjet'){
-        loadScramjetTab(t,url,true);
+        loadStudyjetTab(t,url,true);
       }else {
-        loadTab(t,proxyModeUrl(mode,url,t.privacySessionId),true,mode || 'iframe',url);
+        loadTab(t,connectionModeUrl(mode,url,t.privacySessionId),true,mode || 'iframe',url);
       }
     }
     function goFrameHistory(direction){
       const t=current();
       if(!t) return;
       let nextIndex=t.index+direction;
-      while(nextIndex>=0 && nextIndex<t.history.length && browserShellInvalidHistoryEntry(t.history[nextIndex])){
+      while(nextIndex>=0 && nextIndex<t.history.length && workspaceShellInvalidHistoryEntry(t.history[nextIndex])){
         nextIndex+=direction;
       }
       if(nextIndex>=0 && nextIndex<t.history.length){
@@ -12279,7 +12294,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         t.selectedSearchFallbackKey='';
         t.index=nextIndex;
         const stored=t.history[nextIndex];
-        if(isBrowserShellBlankUrl(stored)){
+        if(isWorkspaceShellBlankUrl(stored)){
           t.url='';
           t.sourceUrl='';
           t.title='New Tab';
@@ -12291,18 +12306,18 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           t.frame.removeAttribute('src');
           t.frame.classList.remove('active','transparent-internal-page');
           win.classList.remove('internal-clear');
-          renderBrowserShellHomeMode(win);
+          renderWorkspaceShellHomeMode(win);
           renderTabs();
-          updateBrowserShellLocation('',t.id,true);
+          updateWorkspaceShellLocation('',t.id,true);
           activate(t.id);
           return;
         }
-        const source=browserShellSourceUrl(stored) || stored;
-        const engine=selectedBrowserMode(source);
+        const source=workspaceShellSourceUrl(stored) || stored;
+        const engine=selectedWorkspaceMode(source);
         if(engine==='scramjet-v1'){
-          loadScramjetV1Tab(t,source,false);
+          loadStudyjetV1Tab(t,source,false);
         }else if(engine==='scramjet'){
-          loadScramjetTab(t,source,false);
+          loadStudyjetTab(t,source,false);
         }else {
           loadTab(t,stored,false,engine,source);
         }
@@ -12321,13 +12336,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const nextIndex=state.tabs.findIndex(t=>t.id===tabId);
         if(nextIndex<0) return;
         const closingTab=state.tabs[nextIndex];
-        const wasActive=isSelectedBrowserTab(closingTab);
-        if(closingTab.frame?.dataset?.nyxBrowserContained==='true') browserOverlayQuarantineUntil=Date.now()+30000;
+        const wasActive=isSelectedWorkspaceTab(closingTab);
+        if(closingTab.frame?.dataset?.nyxWorkspaceContained==='true') workspaceOverlayQuarantineUntil=Date.now()+30000;
         if(closingTab.id===state.active) setTabLoading(closingTab,false);
-        destroyProxyPrivacySession(closingTab);
+        destroyConnectionPrivacySession(closingTab);
         closingTab.frame.remove();
         state.tabs.splice(nextIndex,1);
-        cleanupBrowserInjectedAds();
+        cleanupWorkspaceAttachedAds();
         if(!state.tabs.length){
           if(keepBlank) addTab();
           else renderTabs();
@@ -12350,7 +12365,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     win.querySelector('[data-reload]').onclick=()=>reloadTab();
     win.querySelector('[data-back]').onclick=()=>goFrameHistory(-1);
     win.querySelector('[data-forward]').onclick=()=>goFrameHistory(1);
-    win.querySelector('[data-menu]').onclick=()=>document.body.classList.contains('browser-shell') ? openBrowserShellSettings() : openSettings();
+    win.querySelector('[data-menu]').onclick=()=>document.body.classList.contains('workspace-shell') ? openWorkspaceShellSettings() : openSettings();
     win.addEventListener('click',e=>{
       const ignoredShortcutClick=e.target.closest('.home-shortcut[data-ignore-shortcut-click="1"]');
       if(ignoredShortcutClick){
@@ -12379,28 +12394,28 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const shortcutAdd=e.target.closest('[data-home-shortcut-add]');
       if(shortcutAdd){e.preventDefault(); e.stopPropagation(); addHomeShortcut(); return}
       if(!e.target.closest('.home-shortcut-menu') && !e.target.closest('[data-home-shortcut-menu]')) win.querySelectorAll('.home-shortcut.menu-open').forEach(item=>item.classList.remove('menu-open'));
-      const credits=e.target.closest('[data-browser-credits]');
+      const credits=e.target.closest('[data-workspace-credits]');
       if(credits){
         e.preventDefault();
         e.stopPropagation();
-        if(document.body.classList.contains('browser-shell')){
-          activeBrowser=state;
-          const linkedShellTab=browserShellTabs.find(tab=>tab.browserTabId===state.active);
-          if(linkedShellTab) browserShellActiveTab=linkedShellTab.id;
-          if(!showBrowserShellInternalPage('credits')) openBrowserShellInternalTab('credits');
+        if(document.body.classList.contains('workspace-shell')){
+          activeWorkspace=state;
+          const linkedShellTab=workspaceShellTabs.find(tab=>tab.workspaceTabId===state.active);
+          if(linkedShellTab) workspaceShellActiveTab=linkedShellTab.id;
+          if(!showWorkspaceShellInternalPage('credits')) openWorkspaceShellInternalTab('credits');
         }else openAboutNyx();
         return;
       }
-      const app=e.target.closest('[data-app-url]'); if(app){e.preventDefault(); if(String(app.dataset.appUrl || '').trim().toLowerCase()==='nyx://ai') openBrowserShellAppTab('nyx://ai'); else if(document.body.classList.contains('browser-shell')) openBrowserShellAppTab(app.dataset.appUrl); else navigate(app.dataset.appUrl,appCompatibilityMode(app.dataset.appUrl)); return}
+      const app=e.target.closest('[data-app-url]'); if(app){e.preventDefault(); if(String(app.dataset.appUrl || '').trim().toLowerCase()==='nyx://ai') openWorkspaceShellAppTab('nyx://ai'); else if(document.body.classList.contains('workspace-shell')) openWorkspaceShellAppTab(app.dataset.appUrl); else navigate(app.dataset.appUrl,appCompatibilityMode(app.dataset.appUrl)); return}
       const q=e.target.closest('[data-url]'); if(q){e.preventDefault(); navigate(q.dataset.url)}
     });
-    const browserMessageSourcePath=tab=>{
+    const workspaceMessageSourcePath=tab=>{
       const candidates=[tab?.sourceUrl,tab?.url,tab?.frame?.getAttribute?.('src')];
       try{candidates.push(tab?.frame?.contentWindow?.location?.href)}catch{}
       for(const candidate of candidates){
         if(!candidate)continue;
         try{
-          const source=browserShellSourceUrl(candidate)||candidate;
+          const source=workspaceShellSourceUrl(candidate)||candidate;
           const parsed=new URL(source,location.href);
           if(parsed.origin===location.origin)return parsed.pathname;
         }catch{}
@@ -12411,7 +12426,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const nyxTubeSourcePath=path=>['/apps/nyxtube','/apps/nyxtube/','/apps/nyxtube/index.html'].includes(path);
     const nyxAccountClientSourcePath=path=>nyxChatSourcePath(path)||['/apps/link-generator','/apps/link-generator/','/apps/link-generator/index.html','/apps/link-generator/bulk.html','/ai.html','/assets/games','/assets/games/','/assets/games/index.html','/apps/link-checker','/apps/link-checker/','/apps/link-checker/index.html','/apps/cloud-gaming','/apps/cloud-gaming/','/apps/cloud-gaming/index.html','/api','/api/','/apps/api-keys','/apps/api-keys/','/apps/api-keys/index.html','/apps/code-studio','/apps/code-studio/','/apps/code-studio/index.html','/apps/code-tutorials','/apps/code-tutorials/','/apps/code-tutorials/index.html'].includes(path);
     const messageHandler=e=>{
-      if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:browser-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:nyxtube-profile-request','nyx:nyxtube-open-profile','nyx:account-token-request','nyx:account-open-signin','nyx:chat-open-profile','nyx:chat-notification','nyx:subscription-refresh','nyx:repair-connection','nyx:proxy-direct-fallback','nyx:cloud-game-load','nyx:cloud-game-save','nyx:close-tab','nyx:go-home'].includes(e.data?.type)) return;
+      if(!['nyx:navigate','nyx:popup','nyx:download-request','nyx:popup-protection','nyx:fullscreen','nyx:about','nyx:about-tab','nyx:internal','nyx:preset','nyx:tab-cloak','nyx:workspace-settings','nyx:settings-window','nyx:effect','nyx:effect-settings','nyx:panic-capture','nyx:panic-clear','nyx:panic-key-set','nyx:shell-tab-index','nyx:alt-prime','nyx:alt-shortcut','nyx:ai-profile-request','nyx:ai-open-profile','nyx:nyxtube-profile-request','nyx:nyxtube-open-profile','nyx:account-token-request','nyx:account-open-signin','nyx:chat-open-profile','nyx:chat-notification','nyx:subscription-refresh','nyx:repair-connection','nyx:proxy-direct-fallback','nyx:cloud-game-load','nyx:cloud-game-save','nyx:close-tab','nyx:go-home'].includes(e.data?.type)) return;
       if(['nyx:cloud-game-load','nyx:cloud-game-save'].includes(e.data.type)){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
@@ -12435,14 +12450,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(e.data.type==='nyx:account-open-signin'){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);
-        if(!sourceTab||!nyxAccountClientSourcePath(browserMessageSourcePath(sourceTab)))return;
+        if(!sourceTab||!nyxAccountClientSourcePath(workspaceMessageSourcePath(sourceTab)))return;
         void openNyxAccountAccess({mode:'signin'});
         return;
       }
       if(e.data.type==='nyx:account-token-request'){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
-        const sourcePath=browserMessageSourcePath(sourceTab);
+        const sourcePath=workspaceMessageSourcePath(sourceTab);
         if(!nyxAccountClientSourcePath(sourcePath))return;
         const requestId=String(e.data.requestId||'').slice(0,120);if(!requestId)return;
         void (async()=>{await initializeFounderOwnerAccess();const token=await nyxGetFirebaseToken();e.source?.postMessage({type:'nyx:account-token-response',requestId,token},location.origin)})();
@@ -12451,22 +12466,22 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(e.data.type==='nyx:close-tab'){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
-        const sourceShellTab=browserShellTabs.find(tab=>tab.browserTabId===sourceTab.id);
-        if(sourceShellTab)closeBrowserShellTab(sourceShellTab.id);else closeTabById(sourceTab.id,true);
+        const sourceShellTab=workspaceShellTabs.find(tab=>tab.workspaceTabId===sourceTab.id);
+        if(sourceShellTab)closeWorkspaceShellTab(sourceShellTab.id);else closeTabById(sourceTab.id,true);
         return;
       }
       if(e.data.type==='nyx:go-home'){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
-        const sourcePath=browserMessageSourcePath(sourceTab);
+        const sourcePath=workspaceMessageSourcePath(sourceTab);
         if(!nyxChatSourcePath(sourcePath))return;
-        setBrowserShellHomeActive();
+        setWorkspaceShellHomeActive();
         return;
       }
       if(e.data.type==='nyx:chat-open-profile'){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
-        const sourcePath=browserMessageSourcePath(sourceTab);
+        const sourcePath=workspaceMessageSourcePath(sourceTab);
         if(!nyxChatSourcePath(sourcePath))return;
         const uid=String(e.data.uid||'').trim();if(!/^[A-Za-z0-9_-]{8,128}$/.test(uid))return;
         void openNyxProfileDirectory(uid).catch(()=>toast('That profile could not be opened.'));
@@ -12475,7 +12490,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(['nyx:nyxtube-profile-request','nyx:nyxtube-open-profile'].includes(e.data.type)){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
-        const sourcePath=browserMessageSourcePath(sourceTab);if(!nyxTubeSourcePath(sourcePath))return;
+        const sourcePath=workspaceMessageSourcePath(sourceTab);if(!nyxTubeSourcePath(sourcePath))return;
         if(e.data.type==='nyx:nyxtube-open-profile'){
           const uid=String(e.data.uid||'').trim();
           if(uid&&uid===String(nyxFounderSignedInUser?.uid||'')) void openNyxProfileDirectory(uid).catch(()=>toast('Your profile could not be opened.'));
@@ -12501,7 +12516,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(e.data.type==='nyx:chat-notification'){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
-        const sourcePath=browserMessageSourcePath(sourceTab);
+        const sourcePath=workspaceMessageSourcePath(sourceTab);
         if(!nyxChatSourcePath(sourcePath))return;
         const notificationId=String(e.data.notificationId||'').trim().slice(0,180);if(!notificationId||chatNotificationIds.has(notificationId))return;
         chatNotificationIds.add(notificationId);if(chatNotificationIds.size>200)chatNotificationIds.delete(chatNotificationIds.values().next().value);
@@ -12515,7 +12530,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(e.data.type==='nyx:subscription-refresh'){
         if(e.origin!==location.origin)return;
         const sourceTab=state.tabs.find(tab=>tab.frame.contentWindow===e.source);if(!sourceTab)return;
-        const sourcePath=browserMessageSourcePath(sourceTab);
+        const sourcePath=workspaceMessageSourcePath(sourceTab);
         if(!nyxChatSourcePath(sourcePath))return;
         void loadNyxUserProfile();
         return;
@@ -12560,13 +12575,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         repairButton.textContent='Repairing...';
         tab.transportWatchToken='';
         tab.loadWatchToken='';
-        void repairBrowserConnection().then(()=>{
+        void repairWorkspaceConnection().then(()=>{
           if(!state.tabs.includes(tab) || tab.navigationIntent!==intent || tab.sourceUrl!==source)return;
           tab.workerRouteRecovery='';
           tab.scramjetStartupRetries=0;
-          loadScramjetTab(tab,source,false);
+          loadStudyjetTab(tab,source,false);
         }).catch(()=>{
-          toast('Connection repair could not finish. Check your browser extensions or try again.');
+          toast('Connection repair could not finish. Check your workspace extensions or try again.');
         }).finally(()=>{
           tab.connectionRepairPending=false;
           repairButton.disabled=false;
@@ -12583,16 +12598,16 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         return;
       }
       if(e.data.type==='nyx:shell-tab-index'){
-        switchBrowserShellTabByIndex(e.data.index);
+        switchWorkspaceShellTabByIndex(e.data.index);
         return;
       }
       if(e.data.type==='nyx:alt-prime'){
-        primeBrowserShellShortcutFocus();
+        primeWorkspaceShellShortcutFocus();
         return;
       }
       if(e.data.type==='nyx:alt-shortcut'){
         const key=String(e.data.key || '').toLowerCase();
-        handleBrowserShellAltAction(key,{
+        handleWorkspaceShellAltAction(key,{
           preventDefault(){},
           stopPropagation(){},
           altKey:true,
@@ -12632,27 +12647,27 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         applyCustomTabCloak(e.data.title || '???', e.data.favicon || favicons.nyx);
         return;
       }
-      if(e.data.type==='nyx:browser-settings'){
+      if(e.data.type==='nyx:workspace-settings'){
         store.setText('nyx.engine',e.data.engine || 'duckduckgo');
-        store.setText('nyx.browserMode',normalizeBrowserModeName(e.data.browserMode || DEFAULT_BROWSER_MODE));
-        const nextTransport=normalizeBrowserTransportName(e.data.transport);
-        browserTransportOverride='';
-        if(normalizeBrowserTransportName(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT))!==nextTransport){
-          scramjetInstallPromise=null;
-          scramjetController=null;
-          scramjetTransport=null;
-          scramjetTransportKey='';
+        store.setText('nyx.workspaceMode',normalizeWorkspaceModeName(e.data.workspaceMode || e.data.b\u0072owserMode || DEFAULT_WORKSPACE_MODE));
+        const nextTransport=normalizeWorkspaceTransportName(e.data.transport);
+        workspaceTransportOverride='';
+        if(normalizeWorkspaceTransportName(store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT))!==nextTransport){
+          studyjetInstallPromise=null;
+          studyjetController=null;
+          studyjetTransport=null;
+          studyjetTransportKey='';
         }
         store.setText('nyx.transport',nextTransport);
         applyUserSettings();
-        toast('Browser settings saved');
+        toast('Workspace settings saved');
         return;
       }
       if(e.data.type==='nyx:popup-protection'){
         const enabled=!!e.data.enabled;
         store.set('nyx.popupProtection',enabled);
         qsa('[data-switch="nyx.popupProtection"]').forEach(el=>el.classList.toggle('on',enabled));
-        activeBrowser?.refreshSandbox?.();
+        activeWorkspace?.refreshSandbox?.();
         toast('Popup Protection '+(enabled?'on':'off'));
         return;
       }
@@ -12667,24 +12682,24 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         applyThemeSetting();
         if(nextTheme!==previousTheme) applyNyxThemeBeamWallpaper(nextTheme);
         applyVisualEffectSetting();
-        const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
+        const shellTab=workspaceShellTabs.find(tab=>tab.id===workspaceShellActiveTab);
         if(shellTab?.url?.startsWith('nyx://')){
-          showBrowserShellInternalPage(shellTab.url.replace('nyx://','') || 'apps');
+          showWorkspaceShellInternalPage(shellTab.url.replace('nyx://','') || 'apps');
         }
         return;
       }
       if(e.data.type==='nyx:navigate'){
-        openBrowserShellAppTab(e.data.url || '');
+        openWorkspaceShellAppTab(e.data.url || '');
         return;
       }
       if(e.data.type==='nyx:internal'){
-        openBrowserShellInternalTab(e.data.page || 'apps');
+        openWorkspaceShellInternalTab(e.data.page || 'apps');
         return;
       }
       const sourceTab=state.tabs.find(t=>t.frame.contentWindow===e.source);
       if(e.data.type==='nyx:download-request'){
         if(!sourceTab) return;
-        void nyxRequestBrowserDownload(e.data.url || '',e.data.filename || '',e.data.sourceUrl || sourceTab.sourceUrl || sourceTab.url || '');
+        void nyxRequestWorkspaceDownload(e.data.url || '',e.data.filename || '',e.data.sourceUrl || sourceTab.sourceUrl || sourceTab.url || '');
         return;
       }
       if(e.data.type==='nyx:popup'){
@@ -12712,35 +12727,35 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         store.set('nyx.visualEffectUserChoice',true);
         store.setText('nyx.visualEffect',e.data.effect || 'none');
         applyVisualEffectSetting();
-        toast('Browser Mode effect updated');
+        toast('Workspace Mode effect updated');
         return;
       }
       if(e.data.type==='nyx:settings-window'){
-        document.body.classList.contains('browser-shell') ? openBrowserShellSettings() : openSettings();
+        document.body.classList.contains('workspace-shell') ? openWorkspaceShellSettings() : openSettings();
         return;
       }
       navigate(e.data.url);
     };
     window.addEventListener('message',messageHandler);
     const initialTab=addTab(url,options.forceMode || '');
-    if(document.body.classList.contains('browser-shell') && !url){
-      ensureBrowserShellHome();
-      const homeTab=browserShellTabs.find(tab=>tab.title==='Home' && !tab.url) || browserShellTabs[0];
+    if(document.body.classList.contains('workspace-shell') && !url){
+      ensureWorkspaceShellHome();
+      const homeTab=workspaceShellTabs.find(tab=>tab.title==='Home' && !tab.url) || workspaceShellTabs[0];
       if(homeTab){
-        homeTab.browserTabId=initialTab.id;
+        homeTab.workspaceTabId=initialTab.id;
         homeTab.url='';
         homeTab.title='Home';
         homeTab.icon=favicons.nyx;
-        browserShellActiveTab=homeTab.id;
+        workspaceShellActiveTab=homeTab.id;
       }
       initialTab.url='';
       initialTab.title='Home';
       initialTab.icon=favicons.nyx;
       initialTab.history=[''];
       initialTab.index=0;
-      renderBrowserShellHomeMode(win,'home');
+      renderWorkspaceShellHomeMode(win,'home');
       renderTabs();
-      renderBrowserShellTabs();
+      renderWorkspaceShellTabs();
       playHomeEntranceAnimation(win);
       tick();
       initDesktopSplash();
@@ -12748,7 +12763,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return win;
   }
   function openUpdates(){
-    makeWindow({title:'ռʏӼ Fixes',left:'24px',top:'60px',width:'520px',height:'620px',autoMaximize:true,body:`<div class="panel"><h1>ռʏӼ Fixes</h1><p class="home-sub">Click ռʏӼ in the top-left anytime to see this.</p><div class="glass-grid" style="grid-template-columns:1fr"><div class="glass-card"><h2>Latest fixes</h2><p>- Added animated windows that eject from the bottom dock and fade when closed.</p><p>- Made the Updates window open fullscreen every time.</p><p>- Added one-time Updates popup on startup.</p><p>- Added multiple weather location choices for ambiguous searches.</p><p>- Added hot and freezing weather themes.</p><p>- Updated glassmorphism so 100%+ lowers blur instead of over-brightening.</p><p>- Replaced the Discord logo with the new attached icon.</p><p>- Removed the left desktop Browser and Updates buttons.</p><p>- Changed Weather from an app into a right-side liquid glass panel.</p><p>- Added visible background previews and background upload.</p><p>- Rebuilt the loading screen so it types the welcome text.</p><p>- Added local app icons to avoid blocked favicon requests.</p></div><div class="glass-card"><h2>Browser fixes</h2><p>- Replaced the old Wisp server package.</p><p>- Pinned the compatible Epoxy transport.</p></div></div></div>`});
+    makeWindow({title:'ռʏӼ Fixes',left:'24px',top:'60px',width:'520px',height:'620px',autoMaximize:true,body:`<div class="panel"><h1>ռʏӼ Fixes</h1><p class="home-sub">Click ռʏӼ in the top-left anytime to see this.</p><div class="glass-grid" style="grid-template-columns:1fr"><div class="glass-card"><h2>Latest fixes</h2><p>- Added animated windows that eject from the bottom dock and fade when closed.</p><p>- Made the Updates window open fullscreen every time.</p><p>- Added one-time Updates popup on startup.</p><p>- Added multiple weather location choices for ambiguous searches.</p><p>- Added hot and freezing weather themes.</p><p>- Updated glassmorphism so 100%+ lowers blur instead of over-brightening.</p><p>- Replaced the Discord logo with the new attached icon.</p><p>- Removed the left desktop Workspace and Updates buttons.</p><p>- Changed Weather from an app into a right-side liquid glass panel.</p><p>- Added visible background previews and background upload.</p><p>- Rebuilt the loading screen so it types the welcome text.</p><p>- Added local app icons to avoid blocked favicon requests.</p></div><div class="glass-card"><h2>Workspace fixes</h2><p>- Replaced the old Wisp server package.</p><p>- Pinned the compatible Epoxy transport.</p></div></div></div>`});
   }
   function weatherDescription(code){
     const map={0:'Clear',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Rime fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',56:'Freezing drizzle',57:'Freezing drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',66:'Freezing rain',67:'Freezing rain',71:'Light snow',73:'Snow',75:'Heavy snow',77:'Snow grains',80:'Light showers',81:'Showers',82:'Heavy showers',85:'Snow showers',86:'Snow showers',95:'Thunderstorm',96:'Thunderstorm',99:'Thunderstorm, hail'};
@@ -13048,7 +13063,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     setTimeout(()=>{
       panel.classList.remove('closing');
       panel.classList.add('minimized');
-      if(!document.body.classList.contains('browser-shell')) restore?.classList.add('show');
+      if(!document.body.classList.contains('workspace-shell')) restore?.classList.add('show');
       else restore?.classList.remove('show');
     },520);
   }
@@ -13972,7 +13987,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     makeWindow({title:'Links',left:'18vw',top:'100px',width:'520px',height:'380px',body:`<div class="panel"><h1>Links</h1><div class="glass-grid"><div class="glass-card"><h2>S3ARC4 Engines</h2><button data-url="https://www.google.com/">Google</button><button data-url="https://duckduckgo.com/">DuckDuckGo</button></div><div class="glass-card"><h2>School</h2><button data-url="https://docs.google.com/">Docs</button><button data-url="https://classroom.google.com/">Classroom</button></div></div></div>`});
   }
   function openTermsOfService(){
-    if(document.body.classList.contains('browser-shell')) return openBrowserShellInternalTab('terms');
+    if(document.body.classList.contains('workspace-shell')) return openWorkspaceShellInternalTab('terms');
     makeWindow({
       title:'Terms Of Service',
       left:'18vw',
@@ -13985,7 +14000,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     });
   }
   function openAboutNyx(){
-    if(document.body.classList.contains('browser-shell')) return showBrowserShellInternalPage('credits');
+    if(document.body.classList.contains('workspace-shell')) return showWorkspaceShellInternalPage('credits');
     makeWindow({
       title:'About Nyx',
       left:'22vw',
@@ -14049,7 +14064,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       return;
     }
     if(name==='status'){
-      nyxTerminalWrite(output,`Nyx is ${navigator.onLine?'online':'offline'} · ${navigator.platform || 'browser'} · ${location.hostname || 'local'}`);
+      nyxTerminalWrite(output,`Nyx is ${navigator.onLine?'online':'offline'} · ${navigator.platform || 'workspace'} · ${location.hostname || 'local'}`);
       return;
     }
     if(name==='theme'){
@@ -14074,7 +14089,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function openDeveloperConsole(){
 
 
-    return openBrowserShellInternalTab('developer');
+    return openWorkspaceShellInternalTab('developer');
   }
   openApps = function(){
     makeWindow({title:'Apps',left:'8vw',top:'64px',width:'960px',height:'650px',body:`<div class="panel apps-panel"><h1>Apps</h1><div class="quick-grid apps-launch-grid" data-nyx-global-app-grid>${quickTiles()}</div></div>`});
@@ -14099,7 +14114,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         </section>
         <section class="settings-card">
           <h2>Tab Presets</h2>
-          <p>Changes the browser tab title and icon.</p>
+          <p>Changes the workspace tab title and icon.</p>
           <div class="seg"><button data-preset="classroom" type="button">Google Classroom</button><button data-preset="drive" type="button">Google Drive</button><button data-preset="classlink" type="button">Classlink</button><button data-preset="google" type="button">Google</button><button data-preset="nyx" type="button">Reset</button></div>
         </section>
         <section class="settings-card">
@@ -14165,7 +14180,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           <button data-clear-nyx-cache type="button">Clear Cache and Reset</button>
         </section>
         <section class="settings-card">
-          <h2>Browser Mode</h2>
+          <h2>Workspace Mode</h2>
           <p>Makes nyx look like a Chrome page with tabs on top, an address bar, and an Apps button instead of the bottom app bar.</p>
         </section>
         <section class="settings-card">
@@ -14186,13 +14201,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           <div class="settings-row"><span>${esc(toHieroglyphText('Auto Hieroglyph'))}</span><button class="switch ${store.get('nyx.autoHieroglyphText',false)?'on':''}" data-switch="nyx.autoHieroglyphText" aria-label="Auto hieroglyph on open"></button></div>
         </section>
         <section class="settings-card wide settings-backgrounds">
-          <h2>${document.body.classList.contains('browser-shell') ? 'Browser Background' : 'Change Background'}</h2>
+          <h2>${document.body.classList.contains('workspace-shell') ? 'Workspace Background' : 'Change Background'}</h2>
           <p>Pick one of your current ռʏӼ backgrounds.</p>
-          <div class="background-picker" data-bg-picker data-bg-scope="${document.body.classList.contains('browser-shell') ? 'browser' : 'windows'}"></div>
+          <div class="background-picker" data-bg-picker data-bg-scope="${document.body.classList.contains('workspace-shell') ? 'workspace' : 'windows'}"></div>
           <div class="settings-row"><span>3D Backgrounds</span><button class="switch ${store.get('nyx.threeDBackgrounds',false)?'on':''}" data-switch="nyx.threeDBackgrounds" aria-label="3D backgrounds"></button></div>
           <div class="settings-row"><span>Background Enhancer</span><button class="switch ${store.get('nyx.backgroundEnhancer',false)?'on':''}" data-bg-enhancer aria-label="Background enhancer"></button></div>
           <p class="bg-quality-status" data-bg-quality-status></p>
-          <div class="settings-upload" ${document.body.classList.contains('browser-shell') ? 'hidden' : ''}>
+          <div class="settings-upload" ${document.body.classList.contains('workspace-shell') ? 'hidden' : ''}>
             <h2>Upload</h2>
             <input class="file-input" id="settingBgFile" type="file" accept="image/*">
             <div class="settings-row"><input id="settingBgUrl" value="${esc(store.text('nyx.customBgUrl',''))}" placeholder="https://example.com/background.jpg"><button data-save-bg>Apply Background</button></div>
@@ -14200,14 +14215,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         </section>
       </div>
 
-      <h1 class="settings-section-title">Browser Settings</h1>
+      <h1 class="settings-section-title">Workspace Settings</h1>
       <div class="settings-grid">
         <section class="settings-card">
           <h2>Change Proxy</h2>
-          <p>Choose the browser engine Nyx uses for external sites.
-Scramjet supports more websites, while Ultraviolet can work better for some pages.
+          <p>Choose the workspace engine Nyx uses for external sites.
+StudyJet opens web resources inside your workspace. Use Repair connection if a tab cannot connect.
 Auto uses Scramjet with Libcurl by default and can recover with another relay if the connection fails.</p>
-          <select id="settingBrowserMode">
+          <select id="settingWorkspaceMode">
             <option value="auto">Auto</option>
             <option value="scramjet">Use Scramjet v2</option>
 
@@ -14223,16 +14238,16 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
             <option value="wisp">Wisp</option>
             <option value="libcurlRaw">Libcurl</option>
           </select>
-          <button data-save-browser>Save Browser Settings</button><button class="settings-action" data-browser-connection-repair type="button">Repair connection</button>
+          <button data-save-workspace>Save Workspace Settings</button><button class="settings-action" data-workspace-connection-repair type="button">Repair connection</button>
         </section>
         <section class="settings-card">
           <h2>Change S3ARC4 Engine</h2>
-          <p>Pick the s3arc4 engine used for browser searches.</p>
+          <p>Pick the s3arc4 engine used for workspace searches.</p>
           <select id="settingEngine" data-engine-value><option value="google">Google</option><option value="bing">Bing</option><option value="duckduckgo">DuckDuckGo</option></select>
         </section>
         <section class="settings-card">
           <h2>Effects</h2>
-          <p>Pick the particles shown in browser mode.</p>
+          <p>Pick the particles shown in workspace mode.</p>
           <select data-effect-value>
             <option value="none">None</option>
             <option value="rain">Rain</option>
@@ -14261,20 +14276,20 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     if(picker) renderBackgroundChoices(picker);
     const engineSel=win.querySelector('#settingEngine');
     if(engineSel) engineSel.value=store.text('nyx.engine','duckduckgo');
-    const modeSel=win.querySelector('#settingBrowserMode');
+    const modeSel=win.querySelector('#settingWorkspaceMode');
     if(modeSel){
-      const mode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
+      const mode=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE));
       modeSel.value=mode==='rammerhead' ? 'auto' : mode;
     }
     const transportSel=win.querySelector('#settingTransport');
-    if(transportSel) transportSel.value=normalizeBrowserTransportName(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT));
+    if(transportSel) transportSel.value=normalizeWorkspaceTransportName(store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT));
     applyVisualEffectSetting();
     syncSwitches(win);
     syncFounderOwnerControls();
     setTimeout(()=>win.querySelector('#settingName')?.focus(),60);
   }
   let setupStepIndex=0;
-  const setupStepTitles=['Welcome','Username','Account','Profile','Theme','Effects','Browser','Font','Preview','Shortcuts'];
+  const setupStepTitles=['Welcome','Username','Account','Profile','Theme','Effects','Workspace','Font','Preview','Shortcuts'];
   function syncSetupAccountStep(){
     const setup=$('setupScreen');
     if(!setup)return;
@@ -14308,7 +14323,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     if(!setup) return;
     const themeSelect=$('setupTheme');
     const effectSelect=$('setupEffect');
-    const browserSelect=$('setupBrowserMode');
+    const workspaceSelect=$('setupWorkspaceMode');
     const engineSelect=$('setupEngine');
     const fontSelect=$('setupFont');
     const theme=themeSelect?.value || 'default';
@@ -14317,7 +14332,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     const values=[
       ['[data-setup-preview-theme]',setupOptionText(themeSelect)],
       ['[data-setup-preview-effect]',setupOptionText(effectSelect)],
-      ['[data-setup-preview-browser]',setupOptionText(browserSelect)],
+      ['[data-setup-preview-workspace]',setupOptionText(workspaceSelect)],
       ['[data-setup-preview-engine]',setupOptionText(engineSelect)],
       ['[data-setup-preview-font]',setupOptionText(fontSelect)]
     ];
@@ -14396,7 +14411,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
     },true);
     setup.addEventListener('change',event=>{
-      if(!event.target.closest?.('[data-theme-value],[data-effect-value],[data-browser-mode-select],[data-browser-engine],[data-font-value]')) return;
+      if(!event.target.closest?.('[data-theme-value],[data-effect-value],[data-workspace-mode-select],[data-workspace-engine],[data-font-value]')) return;
       syncSetupThemeCards();
       updateSetupPreview();
     },true);
@@ -14434,8 +14449,8 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     if(theme) theme.value=store.text('nyx.theme','default');
     const effect=$('setupEffect');
     if(effect) effect.value=store.text('nyx.visualEffect','none');
-    const browser=$('setupBrowserMode');
-    if(browser) browser.value=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
+    const workspace=$('setupWorkspaceMode');
+    if(workspace) workspace.value=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE));
     const engine=$('setupEngine');
     if(engine) engine.value=store.text('nyx.engine','duckduckgo');
     const font=$('setupFont');
@@ -14603,7 +14618,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     applyNyxThemeBeamWallpaper(theme);
     store.setText('nyx.visualEffect',$('setupEffect')?.value || 'none');
     store.set('nyx.visualEffectUserChoice',true);
-    store.setText('nyx.browserMode',normalizeBrowserModeName($('setupBrowserMode')?.value || DEFAULT_BROWSER_MODE));
+    store.setText('nyx.workspaceMode',normalizeWorkspaceModeName($('setupWorkspaceMode')?.value || DEFAULT_WORKSPACE_MODE));
     store.setText('nyx.engine',$('setupEngine')?.value || 'duckduckgo');
     store.setText('nyx.font',nyxFontChoice($('setupFont')?.value || 'outfit')[0]);
     store.set('nyx.setupComplete',true);
@@ -14642,7 +14657,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
             : !store.get(key,key==='nyx.httpBridge');
         store.set(key,v);
         if(key==='nyx.httpBridge'){
-          resetBrowserProxyRuntime(false);
+          resetWorkspaceConnectionRuntime(false);
           toast('Connection setting saved. Reload website tabs to apply.');
         }
         qsa(`[data-switch="${key}"]`).forEach(el=>{el.classList.toggle('on',v);el.setAttribute('aria-checked',String(!!v))});
@@ -14666,7 +14681,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
           applyUserSettings();
           toast('3D Backgrounds '+(v?'on':'off'));
         }else if(key==='nyx.popupProtection'){
-          activeBrowser?.refreshSandbox?.();
+          activeWorkspace?.refreshSandbox?.();
           toast('Popup Protection '+(v?'on':'off'));
         }else if(key==='nyx.hideWebsiteDetails'){
           refreshWebsiteDetailsVisibility();
@@ -14703,23 +14718,23 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     store.setText('nyx.tabTitle',title);
     store.setText('nyx.tabFavicon',favicon);
     syncPresetCloakFields();
-    repairBlankBrowserShellPresetTabs(previousCloakTitle);
+    repairBlankWorkspaceShellPresetTabs(previousCloakTitle);
     scheduleStoredTabCloakEnforce();
     requestAnimationFrame(()=>setCurrentTabCloak(title,favicon,false));
     if(!silent) toast('Tab preset applied');
   }
-  function repairBlankBrowserShellPresetTabs(previousCloakTitle=''){
-    if(!Array.isArray(browserShellTabs) || !browserShellTabs.length) return;
+  function repairBlankWorkspaceShellPresetTabs(previousCloakTitle=''){
+    if(!Array.isArray(workspaceShellTabs) || !workspaceShellTabs.length) return;
     const presetTitles=new Set([nyxTabTitle,'ռʏӼ','Õ¼ÊÓ¼','Google Classroom','Google Drive','ClassLink','Google']);
     if(previousCloakTitle) presetTitles.add(previousCloakTitle);
     let changed=false;
-    browserShellTabs.forEach((tab,index)=>{
+    workspaceShellTabs.forEach((tab,index)=>{
       if(tab.url || !presetTitles.has(String(tab.title || '').trim())) return;
       tab.title=index===0 ? 'Home' : 'New Tab';
       tab.icon=favicons.nyx;
       changed=true;
     });
-    if(changed && document.body.classList.contains('browser-shell')) renderBrowserShellTabs();
+    if(changed && document.body.classList.contains('workspace-shell')) renderWorkspaceShellTabs();
   }
   function wirePresetCloakControls(root=document){
     const scope=root || document;
@@ -14976,8 +14991,8 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       postMessage(){},
       location:{
         href:target,
-        assign(next){openBrowser(next || target)},
-        replace(next){openBrowser(next || target)}
+        assign(next){openWorkspace(next || target)},
+        replace(next){openWorkspace(next || target)}
       },
       document:{
         open(){return this},
@@ -15158,11 +15173,11 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     const nativeOpen=window.open?.bind(window);
     window.__nyxNativeOpen=nativeOpen;
     window.open=(url,target,features)=>{
-      if(activeBrowser?.openPopupTab) return activeBrowser.openPopupTab(url || 'about:blank');
+      if(activeWorkspace?.openPopupTab) return activeWorkspace.openPopupTab(url || 'about:blank');
       return nativeOpen ? nativeOpen(url,target,features) : null;
     };
   }
-  function installBareMuxPortResponder(){
+  function installBookmuxPortResponder(){
     if(window.__nyxBareMuxResponderInstalled) return;
     window.__nyxBareMuxResponderInstalled=true;
     window.addEventListener('message',event=>{
@@ -15446,10 +15461,10 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       const target=String(link.getAttribute('target') || '').toLowerCase();
       if(!['_blank','_new'].includes(target)) return;
       if(!popupProtectionEnabled()) return;
-      if(activeBrowser?.openPopupTab){
+      if(activeWorkspace?.openPopupTab){
         e.preventDefault();
         e.stopPropagation();
-        activeBrowser.openPopupTab(link.href || link.getAttribute('href') || 'about:blank');
+        activeWorkspace.openPopupTab(link.href || link.getAttribute('href') || 'about:blank');
       }
     },true);
     document.addEventListener('click',e=>{
@@ -15460,65 +15475,65 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         shortcutMenuPointerHandled=false;
         return;
       }
-      if(e.target.closest?.('[data-browser-settings-close]')){
+      if(e.target.closest?.('[data-workspace-settings-close]')){
         e.preventDefault();
-        const overlay=e.target.closest('.browser-shell-settings-overlay');
-        const panel=overlay?.querySelector('.browser-shell-settings-panel');
-        const settingsTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab && tab.url==='nyx://settings');
+        const overlay=e.target.closest('.workspace-shell-settings-overlay');
+        const panel=overlay?.querySelector('.workspace-shell-settings-panel');
+        const settingsTab=workspaceShellTabs.find(tab=>tab.id===workspaceShellActiveTab && tab.url==='nyx://settings');
         if(panel){
           panel.style.animation='settingsDropOut .22s ease forwards';
           setTimeout(()=>{
             overlay?.remove();
-            if(settingsTab) closeBrowserShellTab(settingsTab.id);
+            if(settingsTab) closeWorkspaceShellTab(settingsTab.id);
           },220);
         }else overlay?.remove();
         return;
       }
-      const browserSettingsSave=e.target.closest?.('[data-browser-settings-save]');
-      if(browserSettingsSave && browserSettingsSave.closest('.browser-shell-settings-overlay')){
+      const workspaceSettingsSave=e.target.closest?.('[data-workspace-settings-save]');
+      if(workspaceSettingsSave && workspaceSettingsSave.closest('.workspace-shell-settings-overlay')){
         e.preventDefault();
-        saveBrowserShellSettings(browserSettingsSave.closest('.browser-shell-settings-overlay'));
-        toast('Browser settings saved');
+        saveWorkspaceShellSettings(workspaceSettingsSave.closest('.workspace-shell-settings-overlay'));
+        toast('Workspace settings saved');
         return;
       }
-      const connectionRepair=e.target.closest?.('[data-browser-connection-repair]');
+      const connectionRepair=e.target.closest?.('[data-workspace-connection-repair]');
       if(connectionRepair){
         e.preventDefault();
         if(connectionRepair.disabled)return;
         connectionRepair.disabled=true;
         connectionRepair.textContent='Repairing...';
-        void repairBrowserConnection().then(()=>{
+        void repairWorkspaceConnection().then(()=>{
           toast('Connection refreshed. Try your search again.');
         }).catch(()=>{
-          toast('Connection repair could not finish. Check your browser extensions or try again.');
+          toast('Connection repair could not finish. Check your workspace extensions or try again.');
         }).finally(()=>{
           connectionRepair.disabled=false;
           connectionRepair.textContent='Repair connection';
         });
         return;
       }
-      const wispSave=e.target.closest?.('[data-browser-wisp-save]');
+      const wispSave=e.target.closest?.('[data-workspace-wisp-save]');
       if(wispSave){
         e.preventDefault();
-        saveBrowserWispUrl(wispSave.closest('.browser-shell-settings-overlay'));
+        saveWorkspaceWispUrl(wispSave.closest('.workspace-shell-settings-overlay'));
         return;
       }
-      const wispReset=e.target.closest?.('[data-browser-wisp-reset]');
+      const wispReset=e.target.closest?.('[data-workspace-wisp-reset]');
       if(wispReset){
         e.preventDefault();
-        saveBrowserWispUrl(wispReset.closest('.browser-shell-settings-overlay'),true);
+        saveWorkspaceWispUrl(wispReset.closest('.workspace-shell-settings-overlay'),true);
         return;
       }
       const dataExport=e.target.closest?.('[data-nyx-data-export]');
       if(dataExport){
         e.preventDefault();
-        exportNyxPortableBackup(dataExport.closest('.browser-shell-settings-overlay'));
+        exportNyxPortableBackup(dataExport.closest('.workspace-shell-settings-overlay'));
         return;
       }
       const dataImport=e.target.closest?.('[data-nyx-data-import]');
       if(dataImport){
         e.preventDefault();
-        dataImport.closest('.browser-shell-settings-overlay')?.querySelector('[data-nyx-data-import-file]')?.click();
+        dataImport.closest('.workspace-shell-settings-overlay')?.querySelector('[data-nyx-data-import-file]')?.click();
         return;
       }
       if(e.target.closest?.('[data-nyx-data-reload]')){
@@ -15527,7 +15542,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         return;
       }
       const popupButton=e.target.closest?.('[data-popup-protection]');
-      if(popupButton && popupButton.closest('.browser-shell-settings-overlay')){
+      if(popupButton && popupButton.closest('.workspace-shell-settings-overlay')){
         e.preventDefault();
         const next=popupButton.dataset.enabled!=='true';
         store.set('nyx.popupProtection',next);
@@ -15555,59 +15570,59 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       e.stopPropagation();
     },true);
     document.addEventListener('input',e=>{
-      const input=e.target.closest?.('[data-browser-shell-url],[data-browser-blank-input]');
-      if(input) showBrowserSuggestions(input);
+      const input=e.target.closest?.('[data-workspace-shell-url],[data-workspace-blank-input]');
+      if(input) showWorkspaceSuggestions(input);
     });
     document.addEventListener('focusin',e=>{
-      const input=e.target.closest?.('[data-browser-shell-url],[data-browser-blank-input]');
+      const input=e.target.closest?.('[data-workspace-shell-url],[data-workspace-blank-input]');
       if(!input) return;
-      if(input.matches('[data-browser-shell-url]')) selectBrowserShellUrl(input,true);
-      showBrowserSuggestions(input);
+      if(input.matches('[data-workspace-shell-url]')) selectWorkspaceShellUrl(input,true);
+      showWorkspaceSuggestions(input);
     });
     document.addEventListener('focusout',e=>{
-      const input=e.target.closest?.('[data-browser-shell-url]');
+      const input=e.target.closest?.('[data-workspace-shell-url]');
       if(!input) return;
-      clearBrowserShellUrlSelection(input);
+      clearWorkspaceShellUrlSelection(input);
     });
     document.addEventListener('pointerdown',e=>{
       const pointButton=shortcutMenuButtonAtPoint(e.clientX,e.clientY);
       if(pointButton){
         return;
       }
-      const shellUrlInput=e.target.closest?.('[data-browser-shell-url]');
+      const shellUrlInput=e.target.closest?.('[data-workspace-shell-url]');
       if(shellUrlInput && document.activeElement!==shellUrlInput){
-        browserShellUrlFirstPointer=shellUrlInput;
+        workspaceShellUrlFirstPointer=shellUrlInput;
         e.preventDefault();
         shellUrlInput.focus();
-        selectBrowserShellUrl(shellUrlInput,true);
+        selectWorkspaceShellUrl(shellUrlInput,true);
       }
-      if(!e.target.closest?.('[data-browser-shell-url]')) clearBrowserShellUrlSelection();
-      if(!browserSuggestionPointerInside(e.target)) hideBrowserSuggestions();
+      if(!e.target.closest?.('[data-workspace-shell-url]')) clearWorkspaceShellUrlSelection();
+      if(!workspaceSuggestionPointerInside(e.target)) hideWorkspaceSuggestions();
       if(!e.target.closest?.('[data-home-shortcut-menu],.home-shortcut-menu')){
         document.querySelectorAll('.home-shortcut.menu-open').forEach(item=>item.classList.remove('menu-open'));
       }
-      if(!e.target.closest?.('#browserModeMenu,[data-browser-shell-menu]')){
+      if(!e.target.closest?.('#workspaceModeMenu,[data-workspace-shell-menu]')){
         document.body.classList.remove('menu-open');
       }
-      if(!e.target.closest?.('#browserBookmarkPanel,[data-browser-shell-bookmark],[data-browser-bookmarks-toggle]')){
-        $('browserBookmarkPanel')?.setAttribute('hidden','');
+      if(!e.target.closest?.('#workspaceBookmarkPanel,[data-workspace-shell-bookmark],[data-workspace-bookmarks-toggle]')){
+        $('workspaceBookmarkPanel')?.setAttribute('hidden','');
       }
     },true);
     document.addEventListener('pointerup',e=>{
-      const input=e.target.closest?.('[data-browser-shell-url],[data-browser-blank-input]');
+      const input=e.target.closest?.('[data-workspace-shell-url],[data-workspace-blank-input]');
       if(!input) return;
-      if(input.matches('[data-browser-shell-url]') && browserShellUrlFirstPointer===input){
+      if(input.matches('[data-workspace-shell-url]') && workspaceShellUrlFirstPointer===input){
         e.preventDefault();
-        browserShellUrlFirstPointer=null;
-        selectBrowserShellUrl(input,true);
+        workspaceShellUrlFirstPointer=null;
+        selectWorkspaceShellUrl(input,true);
       }
-      showBrowserSuggestions(input);
+      showWorkspaceSuggestions(input);
     });
     document.addEventListener('keydown',e=>{
-      const input=e.target.closest?.('[data-browser-shell-url],[data-browser-blank-input]');
+      const input=e.target.closest?.('[data-workspace-shell-url],[data-workspace-blank-input]');
       if(!input) return;
-      const box=$('browserSearchSuggestions');
-      const items=[...box?.querySelectorAll('.browser-search-suggestion') || []];
+      const box=$('workspaceSuggestions');
+      const items=[...box?.querySelectorAll('.workspace-search-suggestion') || []];
       if(!items.length) return;
       const current=Math.max(0,items.findIndex(item=>item.classList.contains('active')));
       if(e.key==='ArrowDown' || e.key==='ArrowUp'){
@@ -15615,56 +15630,56 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         const next=e.key==='ArrowDown' ? (current+1)%items.length : (current-1+items.length)%items.length;
         items.forEach(item=>item.classList.remove('active'));
         items[next].classList.add('active');
-        input.value=items[next].dataset.browserSuggestion || items[next].textContent || input.value;
+        input.value=items[next].dataset.workspaceSuggestion || items[next].textContent || input.value;
       }else if(e.key==='Enter' && box?.classList.contains('show')){
         const raw=String(input.value || '').trim();
         const directUrl=/^(?:https?:\/\/|[a-z][a-z0-9+.-]*:\/\/|(?:localhost|(?:\d{1,3}\.){3}\d{1,3})(?::\d+)?(?:\/|$)|[\w.-]+\.[a-z]{2,}(?:[\/:?#]|$))/i.test(raw);
         if(directUrl){
-          hideBrowserSuggestions();
+          hideWorkspaceSuggestions();
           return;
         }
         const active=items.find(item=>item.classList.contains('active')) || items[0];
         if(active){
           e.preventDefault();
-          acceptBrowserSuggestion(active.dataset.browserSuggestion || active.textContent || input.value);
+          acceptWorkspaceSuggestion(active.dataset.workspaceSuggestion || active.textContent || input.value);
         }
       }else if(e.key==='Escape'){
-        hideBrowserSuggestions();
+        hideWorkspaceSuggestions();
       }
     });
     document.addEventListener('keydown',e=>{
       if(e.key!=='Escape' || !document.body.classList.contains('nyx-tab-sidebar-open')) return;
       e.preventDefault();
       e.stopImmediatePropagation();
-      setBrowserTabSidebarOpen(false,{restoreFocus:true});
+      setWorkspaceTabSidebarOpen(false,{restoreFocus:true});
     });
     document.addEventListener('keydown',e=>{
-      if(e.key!=='Escape' || !document.querySelector('.browser-shell-settings-overlay')) return;
+      if(e.key!=='Escape' || !document.querySelector('.workspace-shell-settings-overlay')) return;
       e.preventDefault();
-      const settingsTab=browserShellTabs.find(tab=>tab.url==='nyx://settings');
-      if(settingsTab) closeBrowserShellTab(settingsTab.id);
-      else closeBrowserShellSettings();
+      const settingsTab=workspaceShellTabs.find(tab=>tab.url==='nyx://settings');
+      if(settingsTab) closeWorkspaceShellTab(settingsTab.id);
+      else closeWorkspaceShellSettings();
     });
     document.addEventListener('submit',e=>{
-      const shellSearch=e.target.closest?.('[data-browser-shell-search]');
+      const shellSearch=e.target.closest?.('[data-workspace-shell-search]');
       if(shellSearch){
         e.preventDefault();
         document.body.classList.remove('menu-open');
-        hideBrowserSuggestions();
-        navigateBrowserShell(shellSearch.querySelector('[data-browser-shell-url]')?.value);
+        hideWorkspaceSuggestions();
+        navigateWorkspaceShell(shellSearch.querySelector('[data-workspace-shell-url]')?.value);
         return;
       }
-      const blankSearch=e.target.closest?.('[data-browser-blank-search]');
+      const blankSearch=e.target.closest?.('[data-workspace-blank-search]');
       if(blankSearch){
         if(e.nyxBlankSearchHandled) return;
         e.nyxBlankSearchHandled=true;
         e.preventDefault();
         e.stopImmediatePropagation();
-        const input=blankSearch.querySelector('[data-browser-blank-input]');
+        const input=blankSearch.querySelector('[data-workspace-blank-input]');
         const value=(input?.value || '').trim();
-        hideBrowserSuggestions();
+        hideWorkspaceSuggestions();
         if(input) input.value='';
-        if(value) navigateBrowserShell(value);
+        if(value) navigateWorkspaceShell(value);
         return;
       }
       const form=e.target.closest?.('[data-lion-ai-form]');
@@ -15722,8 +15737,8 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         openNyxOwnerDashboard();
         return;
       }
-      if((e.ctrlKey || e.metaKey) && String(e.key || '').toLowerCase()==='k' && document.body.classList.contains('browser-shell')){
-        const homeSearch=document.querySelector('.browser-window.browser-home-page .nyx-home-search [data-browser-blank-input]');
+      if((e.ctrlKey || e.metaKey) && String(e.key || '').toLowerCase()==='k' && document.body.classList.contains('workspace-shell')){
+        const homeSearch=document.querySelector('.workspace-window.workspace-home-page .nyx-home-search [data-workspace-blank-input]');
         if(homeSearch){
           e.preventDefault();
           homeSearch.focus();
@@ -15746,7 +15761,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       if(label) label.textContent=nyxAiModelLabel(model.value);
     });
     document.addEventListener('dragstart',e=>{
-      if(!e.target.closest?.('.browser-mode-shell-tab')){
+      if(!e.target.closest?.('.workspace-mode-shell-tab')){
         e.preventDefault();
         e.stopPropagation();
       }
@@ -15768,14 +15783,14 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       const appsToggle=e.target.closest?.('[data-nyx-apps-toggle]');
       if(appsToggle){
         e.preventDefault();
-        openBrowserShellInternalTab('apps');
+        openWorkspaceShellInternalTab('apps');
         return;
       }
       if(e.target.closest?.('[data-nyx-focus-search]')){
         e.preventDefault();
         document.body.classList.remove('nyx-home-search-active');
-        openBrowserShellTab();
-        document.querySelector('[data-browser-shell-url]')?.focus();
+        openWorkspaceShellTab();
+        document.querySelector('[data-workspace-shell-url]')?.focus();
         return;
       }
       const accountToggle=e.target.closest?.('[data-toggle-nyx-account-menu]');
@@ -15846,140 +15861,140 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         e.preventDefault();
         e.stopPropagation();
         applyPreset(presetButton.dataset.preset || 'nyx');
-        syncPresetCloakFields(presetButton.closest('.window,.settings-app,.browser-shell-settings-overlay') || document);
+        syncPresetCloakFields(presetButton.closest('.window,.settings-app,.workspace-shell-settings-overlay') || document);
         return;
       }
-      const shellTabsToggle=e.target.closest('[data-browser-shell-tabs-toggle]');
+      const shellTabsToggle=e.target.closest('[data-workspace-shell-tabs-toggle]');
       if(shellTabsToggle){
         e.preventDefault();
-        setBrowserTabSidebarOpen(!document.body.classList.contains('nyx-tab-sidebar-open'));
+        setWorkspaceTabSidebarOpen(!document.body.classList.contains('nyx-tab-sidebar-open'));
         return;
       }
-      if(document.body.classList.contains('nyx-tab-sidebar-open') && !e.target.closest('#nyxBrowserTabSidebar')) setBrowserTabSidebarOpen(false);
+      if(document.body.classList.contains('nyx-tab-sidebar-open') && !e.target.closest('#nyxWorkspaceTabSidebar')) setWorkspaceTabSidebarOpen(false);
       const recentSearch=e.target.closest('[data-nyx-recent-search]');
       if(recentSearch){
         e.preventDefault();
-        navigateBrowserShell(recentSearch.dataset.nyxRecentSearch);
+        navigateWorkspaceShell(recentSearch.dataset.nyxRecentSearch);
         return;
       }
-      const shellNewAfter=e.target.closest('[data-browser-shell-new-tab-after]');
+      const shellNewAfter=e.target.closest('[data-workspace-shell-new-tab-after]');
       if(shellNewAfter){
         e.preventDefault();
         e.stopImmediatePropagation();
         document.body.classList.remove('menu-open');
-        openBrowserShellTabAfter(shellNewAfter.dataset.browserShellNewTabAfter);
+        openWorkspaceShellTabAfter(shellNewAfter.dataset.workspaceShellNewTabAfter);
         return;
       }
-      const shellNew=e.target.closest('[data-browser-shell-new-tab]');
+      const shellNew=e.target.closest('[data-workspace-shell-new-tab]');
       if(shellNew){
         if(e.nyxShellNewHandled) return;
         e.nyxShellNewHandled=true;
         e.preventDefault();
         e.stopImmediatePropagation();
         document.body.classList.remove('menu-open');
-        openBrowserShellTab();
-        document.querySelector('[data-browser-shell-url]')?.focus();
+        openWorkspaceShellTab();
+        document.querySelector('[data-workspace-shell-url]')?.focus();
         return;
       }
-      const browserSuggestion=e.target.closest('[data-browser-suggestion]');
-      if(browserSuggestion){
+      const workspaceSuggestion=e.target.closest('[data-workspace-suggestion]');
+      if(workspaceSuggestion){
         e.preventDefault();
-        acceptBrowserSuggestion(browserSuggestion.dataset.browserSuggestion || browserSuggestion.textContent,$('browserSearchSuggestions')?.nyxSourceInput);
+        acceptWorkspaceSuggestion(workspaceSuggestion.dataset.workspaceSuggestion || workspaceSuggestion.textContent,$('workspaceSuggestions')?.nyxSourceInput);
         return;
       }
-      if(!e.target.closest('[data-browser-shell-url],[data-browser-blank-input]') && !e.target.closest('#browserSearchSuggestions')){
-        hideBrowserSuggestions();
+      if(!e.target.closest('[data-workspace-shell-url],[data-workspace-blank-input]') && !e.target.closest('#workspaceSuggestions')){
+        hideWorkspaceSuggestions();
       }
-      const shellClose=e.target.closest('[data-browser-shell-close-tab]');
+      const shellClose=e.target.closest('[data-workspace-shell-close-tab]');
       if(shellClose){
         e.preventDefault();
         e.stopPropagation();
-        const id=shellClose.dataset.browserShellCloseTab || shellClose.closest('[data-browser-shell-tab]')?.dataset.browserShellTab;
-        if(id) closeBrowserShellTab(id);
+        const id=shellClose.dataset.workspaceShellCloseTab || shellClose.closest('[data-workspace-shell-tab]')?.dataset.workspaceShellTab;
+        if(id) closeWorkspaceShellTab(id);
         return;
       }
-      const shellTab=e.target.closest('[data-browser-shell-tab]');
+      const shellTab=e.target.closest('[data-workspace-shell-tab]');
       if(shellTab){
         e.preventDefault();
-        const id=shellTab.dataset.browserShellTab;
-        setBrowserShellActive(id);
+        const id=shellTab.dataset.workspaceShellTab;
+        setWorkspaceShellActive(id);
         return;
       }
-      const shellHome=e.target.closest('[data-browser-shell-home]');
+      const shellHome=e.target.closest('[data-workspace-shell-home]');
       if(shellHome){
         e.preventDefault();
-        if(shellHome.dataset.browserShellTab) setBrowserShellActive(shellHome.dataset.browserShellTab);
-        else setBrowserShellHomeActive();
+        if(shellHome.dataset.workspaceShellTab) setWorkspaceShellActive(shellHome.dataset.workspaceShellTab);
+        else setWorkspaceShellHomeActive();
         return;
       }
-      const shellBack=e.target.closest('[data-browser-shell-back]');
+      const shellBack=e.target.closest('[data-workspace-shell-back]');
       if(shellBack){
         e.preventDefault();
-        activeBrowser?.win?.querySelector('[data-back]')?.click();
+        activeWorkspace?.win?.querySelector('[data-back]')?.click();
         return;
       }
-      const shellNavHome=e.target.closest('[data-browser-shell-home-nav]');
+      const shellNavHome=e.target.closest('[data-workspace-shell-home-nav]');
       if(shellNavHome){
         e.preventDefault();
-        setBrowserShellHomeActive();
+        setWorkspaceShellHomeActive();
         return;
       }
-      const shellForward=e.target.closest('[data-browser-shell-forward]');
+      const shellForward=e.target.closest('[data-workspace-shell-forward]');
       if(shellForward){
         e.preventDefault();
-        activeBrowser?.win?.querySelector('[data-forward]')?.click();
+        activeWorkspace?.win?.querySelector('[data-forward]')?.click();
         return;
       }
-      const shellReload=e.target.closest('[data-browser-shell-reload]');
+      const shellReload=e.target.closest('[data-workspace-shell-reload]');
       if(shellReload){
         e.preventDefault();
-        const shellTab=activeBrowserShellTab();
+        const shellTab=activeWorkspaceShellTab();
         if(!shellTab?.url){
-          setBrowserShellHomeActive();
-          playHomeEntranceAnimation(activeBrowser?.win || document);
+          setWorkspaceShellHomeActive();
+          playHomeEntranceAnimation(activeWorkspace?.win || document);
           return;
         }
-        const browserTabId=shellTab.browserTabId || activeBrowser?.active || '';
+        const workspaceTabId=shellTab.workspaceTabId || activeWorkspace?.active || '';
         document.querySelectorAll('.nyx-preflight').forEach(overlay=>overlay.remove());
-        const targetTab=activeBrowser?.tabs?.find(tab=>tab.id===browserTabId) || activeBrowser?.tabs?.find(tab=>tab.id===activeBrowser?.active);
+        const targetTab=activeWorkspace?.tabs?.find(tab=>tab.id===workspaceTabId) || activeWorkspace?.tabs?.find(tab=>tab.id===activeWorkspace?.active);
         if(targetTab){
-          activeBrowser?.activate?.(targetTab.id);
-          if(!activeBrowser?.reloadTab?.(targetTab.id)){
-            activeBrowser?.navigate?.(targetTab.sourceUrl || targetTab.url);
+          activeWorkspace?.activate?.(targetTab.id);
+          if(!activeWorkspace?.reloadTab?.(targetTab.id)){
+            activeWorkspace?.navigate?.(targetTab.sourceUrl || targetTab.url);
           }
         }
         return;
       }
-      const shellMenuButton=e.target.closest('[data-browser-shell-menu]');
+      const shellMenuButton=e.target.closest('[data-workspace-shell-menu]');
       if(shellMenuButton){
         e.preventDefault();
         document.body.classList.toggle('menu-open');
-        $('browserBookmarkPanel')?.setAttribute('hidden','');
+        $('workspaceBookmarkPanel')?.setAttribute('hidden','');
         return;
       }
-      const shellBookmark=e.target.closest('[data-browser-shell-bookmark]');
+      const shellBookmark=e.target.closest('[data-workspace-shell-bookmark]');
       if(shellBookmark){
         e.preventDefault();
-        toggleBrowserBookmark();
+        toggleWorkspaceBookmark();
         return;
       }
-      const bookmarksToggle=e.target.closest('[data-browser-bookmarks-toggle]');
+      const bookmarksToggle=e.target.closest('[data-workspace-bookmarks-toggle]');
       if(bookmarksToggle){
         e.preventDefault();
         document.body.classList.remove('menu-open');
-        toggleBrowserBookmarksPanel();
+        toggleWorkspaceBookmarksPanel();
         return;
       }
-      const bookmarkOpen=e.target.closest('[data-browser-bookmark-open]');
+      const bookmarkOpen=e.target.closest('[data-workspace-bookmark-open]');
       if(bookmarkOpen){
         e.preventDefault();
-        openBrowserBookmark(bookmarkOpen.dataset.browserBookmarkOpen);
+        openWorkspaceBookmark(bookmarkOpen.dataset.workspaceBookmarkOpen);
         return;
       }
-      const bookmarkRemove=e.target.closest('[data-browser-bookmark-remove]');
+      const bookmarkRemove=e.target.closest('[data-workspace-bookmark-remove]');
       if(bookmarkRemove){
         e.preventDefault();
-        removeBrowserBookmark(bookmarkRemove.dataset.browserBookmarkRemove);
+        removeWorkspaceBookmark(bookmarkRemove.dataset.workspaceBookmarkRemove);
         return;
       }
       if(e.target.closest('[data-shell-about]')){
@@ -15994,11 +16009,11 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         launchHostedCloak('ac');
         return;
       }
-      if(document.body.classList.contains('menu-open') && !e.target.closest('#browserModeMenu') && !e.target.closest('[data-browser-shell-menu]')){
+      if(document.body.classList.contains('menu-open') && !e.target.closest('#workspaceModeMenu') && !e.target.closest('[data-workspace-shell-menu]')){
         document.body.classList.remove('menu-open');
       }
-      if(!e.target.closest('#browserBookmarkPanel') && !e.target.closest('[data-browser-shell-bookmark]') && !e.target.closest('[data-browser-bookmarks-toggle]')){
-        $('browserBookmarkPanel')?.setAttribute('hidden','');
+      if(!e.target.closest('#workspaceBookmarkPanel') && !e.target.closest('[data-workspace-shell-bookmark]') && !e.target.closest('[data-workspace-bookmarks-toggle]')){
+        $('workspaceBookmarkPanel')?.setAttribute('hidden','');
       }
       const shortcutMenu=e.target.closest('[data-home-shortcut-menu]');
       if(shortcutMenu){
@@ -16007,9 +16022,9 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         toggleShortcutMenu(shortcutMenu);
         return;
       }
-      if(document.body.classList.contains('browser-shell')){
-        const browserHieroglyph=e.target.closest('[data-browser-hieroglyph-toggle]');
-        if(browserHieroglyph){
+      if(document.body.classList.contains('workspace-shell')){
+        const workspaceHieroglyph=e.target.closest('[data-workspace-hieroglyph-toggle]');
+        if(workspaceHieroglyph){
           e.preventDefault();
           document.body.classList.remove('menu-open');
           const next=!hieroglyphTextEnabled();
@@ -16021,33 +16036,33 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
           toast('Hieroglyph text '+(next?'on':'off'));
           return;
         }
-        const browserModeOpen=e.target.closest('[data-open]');
-        if(browserModeOpen){
-          const v=browserModeOpen.dataset.open;
-          if(v==='browser'){
+        const workspaceModeOpen=e.target.closest('[data-open]');
+        if(workspaceModeOpen){
+          const v=workspaceModeOpen.dataset.open;
+          if(v==='workspace'){
             e.preventDefault();
             document.body.classList.remove('menu-open');
-            setBrowserShellHomeActive();
+            setWorkspaceShellHomeActive();
             return;
           }
           if(v==='settings'){
             e.preventDefault();
             document.body.classList.remove('menu-open');
-            openBrowserShellSettings();
+            openWorkspaceShellSettings();
             return;
           }
           if(['apps','links'].includes(v)){
             e.preventDefault();
             document.body.classList.remove('menu-open');
-            openBrowserShellInternalTab(v);
+            openWorkspaceShellInternalTab(v);
             return;
           }
         }
-        const browserModeApp=e.target.closest('[data-app-url]');
-        if(browserModeApp && !browserModeApp.closest('.browser-window')){
+        const workspaceModeApp=e.target.closest('[data-app-url]');
+        if(workspaceModeApp && !workspaceModeApp.closest('.workspace-window')){
           e.preventDefault();
           document.body.classList.remove('menu-open');
-          openBrowserShellAppTab(browserModeApp.dataset.appUrl);
+          openWorkspaceShellAppTab(workspaceModeApp.dataset.appUrl);
           return;
         }
       }
@@ -16075,39 +16090,39 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       if(!e.target.closest('.home-shortcut-menu') && !e.target.closest('[data-home-shortcut-menu]')){
         document.querySelectorAll('.home-shortcut.menu-open').forEach(item=>item.classList.remove('menu-open'));
       }
-      const open=e.target.closest('[data-open]'); if(open){e.preventDefault(); document.body.classList.remove('menu-open'); const v=open.dataset.open; if(v==='browser')openBrowser(); if(v==='home')openBrowser(); if(v==='updates')openUpdates(); if(v==='settings')openSettings(); if(v==='apps')openApps(); if(v==='links')openLinks(); if(v==='weather')openWeather(open.matches('.browser-mode-weather')?'top':'bottom',open); if(v==='terms')openTermsOfService(); if(v==='developer')openDeveloperConsole(); if(v==='about'||v==='credits')openAboutNyx(); return}
+      const open=e.target.closest('[data-open]'); if(open){e.preventDefault(); document.body.classList.remove('menu-open'); const v=open.dataset.open; if(v==='workspace')openWorkspace(); if(v==='home')openWorkspace(); if(v==='updates')openUpdates(); if(v==='settings')openSettings(); if(v==='apps')openApps(); if(v==='links')openLinks(); if(v==='weather')openWeather(open.matches('.workspace-mode-weather')?'top':'bottom',open); if(v==='terms')openTermsOfService(); if(v==='developer')openDeveloperConsole(); if(v==='about'||v==='credits')openAboutNyx(); return}
       const app=e.target.closest('[data-app-url]');
-      if(app && !app.closest('.browser-window')){
+      if(app && !app.closest('.workspace-window')){
         if(app.dataset.appUrl==='/apps/nyxcloud/'){e.preventDefault();void openNyxVmsApp();return;}
         e.preventDefault();
         document.body.classList.remove('menu-open');
-        if(String(app.dataset.appUrl || '').trim().toLowerCase()==='nyx://ai') openBrowserShellAppTab('nyx://ai');
-        else openBrowser(app.dataset.appUrl,{forceMode:appCompatibilityMode(app.dataset.appUrl)});
+        if(String(app.dataset.appUrl || '').trim().toLowerCase()==='nyx://ai') openWorkspaceShellAppTab('nyx://ai');
+        else openWorkspace(app.dataset.appUrl,{forceMode:appCompatibilityMode(app.dataset.appUrl)});
         return
       }
       const url=e.target.closest('[data-url]');
-      if(url && !url.closest('.browser-window')){e.preventDefault(); document.body.classList.remove('menu-open'); openBrowser(url.dataset.url); return}
+      if(url && !url.closest('.workspace-window')){e.preventDefault(); document.body.classList.remove('menu-open'); openWorkspace(url.dataset.url); return}
       if(e.target.closest('[data-save-profile]')){
         saveProfile(e.target.closest('.window'));
         return;
       }
-      if(e.target.closest('[data-save-browser]')){
+      if(e.target.closest('[data-save-workspace]')){
         const win=e.target.closest('.window');
         const input=win?.querySelector('#settingEngine');
-        const mode=win?.querySelector('#settingBrowserMode');
+        const mode=win?.querySelector('#settingWorkspaceMode');
         const transport=win?.querySelector('#settingTransport');
         store.setText('nyx.engine', input?.value || 'duckduckgo');
-        store.setText('nyx.browserMode', normalizeBrowserModeName(mode?.value || DEFAULT_BROWSER_MODE));
-        const nextTransport=normalizeBrowserTransportName(transport?.value);
-        browserTransportOverride='';
-        if(normalizeBrowserTransportName(store.text('nyx.transport',DEFAULT_BROWSER_TRANSPORT))!==nextTransport){
-          scramjetInstallPromise=null;
-          scramjetController=null;
-          scramjetTransport=null;
-          scramjetTransportKey='';
+        store.setText('nyx.workspaceMode', normalizeWorkspaceModeName(mode?.value || DEFAULT_WORKSPACE_MODE));
+        const nextTransport=normalizeWorkspaceTransportName(transport?.value);
+        workspaceTransportOverride='';
+        if(normalizeWorkspaceTransportName(store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT))!==nextTransport){
+          studyjetInstallPromise=null;
+          studyjetController=null;
+          studyjetTransport=null;
+          studyjetTransportKey='';
         }
         store.setText('nyx.transport', nextTransport);
-        applyUserSettings(); toast('Browser settings saved'); return;
+        applyUserSettings(); toast('Workspace settings saved'); return;
       }
       const bgChoice=e.target.closest('[data-bg-choice]');
       if(bgChoice){
@@ -16115,7 +16130,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         const scope=backgroundScope(root);
         chooseBackground(bgChoice.dataset.bgChoice,scope);
         if(root) renderBackgroundChoices(root, bgChoice.dataset.bgChoice);
-        toast(scope==='browser' ? 'Browser background applied' : 'Background applied'); return;
+        toast(scope==='workspace' ? 'Workspace background applied' : 'Background applied'); return;
       }
       if(e.target.closest('[data-save-bg]')){
         const win=e.target.closest('.window');
@@ -16164,7 +16179,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
       const customThemeApply=e.target.closest('[data-apply-custom-theme]');
       if(customThemeApply){
-        const root=customThemeApply.closest('.settings-block,.browser-shell-settings-overlay,.window') || document;
+        const root=customThemeApply.closest('.settings-block,.workspace-shell-settings-overlay,.window') || document;
         const color=nyxThemeHex(root.querySelector('[data-custom-theme-hex]')?.value || root.querySelector('[data-custom-theme-color]')?.value);
         applyCustomThemeColor(color);
         syncCustomThemeMaker(document,color);
@@ -16179,7 +16194,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         return;
       }
       if(e.target.closest('[data-save-cloak]')){
-        saveCloakSettings(e.target.closest('.window,.settings-app,.browser-shell-settings-overlay') || document);
+        saveCloakSettings(e.target.closest('.window,.settings-app,.workspace-shell-settings-overlay') || document);
         return;
       }
       if(e.target.closest('[data-clear-nyx-cache]')){
@@ -16190,7 +16205,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         return;
       }
       if(e.target.closest('[data-launch-selected-cloak]')){
-        const root=e.target.closest('.window,.settings-app,.browser-shell-settings-overlay') || document;
+        const root=e.target.closest('.window,.settings-app,.workspace-shell-settings-overlay') || document;
         saveCloakSettings(root);
         launchHostedCloak(store.text('nyx.cloakType','a'));
         return;
@@ -16276,7 +16291,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         const raw=String(e.target.value || '').trim();
         if(e.target.matches('[data-custom-theme-hex]') && !/^#[0-9a-f]{6}$/i.test(raw)) return;
         const color=nyxThemeHex(raw,store.text('nyx.customThemeColor',nyxCustomThemeDefaults.base));
-        const root=e.target.closest('.settings-block,.browser-shell-settings-overlay,.window') || document;
+        const root=e.target.closest('.settings-block,.workspace-shell-settings-overlay,.window') || document;
         root.querySelectorAll?.('[data-custom-theme-color],[data-custom-theme-hex]')?.forEach(input=>{if(input!==e.target || input.type==='color') input.value=color});
         root.querySelectorAll?.('[data-custom-theme-swatch]')?.forEach(swatch=>swatch.style.setProperty('--nyx-swatch',color));
       }
@@ -16303,9 +16318,9 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
     });
     document.addEventListener('keydown',e=>{
-      if(e.target?.matches?.('[data-browser-wisp-url]') && e.key==='Enter'){
+      if(e.target?.matches?.('[data-workspace-wisp-url]') && e.key==='Enter'){
         e.preventDefault();
-        saveBrowserWispUrl(e.target.closest('.browser-shell-settings-overlay'));
+        saveWorkspaceWispUrl(e.target.closest('.workspace-shell-settings-overlay'));
         return;
       }
       if(e.target?.id==='settingName' && e.key==='Enter'){
@@ -16319,15 +16334,15 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
     });
     document.addEventListener('change',e=>{
-      const browserSettingsRoot=e.target.closest?.('.browser-shell-settings-overlay');
-      if(browserSettingsRoot && e.target.matches?.('[data-nyx-data-import-file]')){
+      const workspaceSettingsRoot=e.target.closest?.('.workspace-shell-settings-overlay');
+      if(workspaceSettingsRoot && e.target.matches?.('[data-nyx-data-import-file]')){
         const file=e.target.files?.[0] || null;
-        void importNyxPortableBackup(file,browserSettingsRoot).finally(()=>{e.target.value=''});
+        void importNyxPortableBackup(file,workspaceSettingsRoot).finally(()=>{e.target.value=''});
         return;
       }
-      if(browserSettingsRoot && e.target.closest?.('[data-browser-engine],[data-browser-mode-select],[data-browser-transport],[data-font-value]')){
-        saveBrowserShellSettings(browserSettingsRoot);
-        toast('Browser settings saved');
+      if(workspaceSettingsRoot && e.target.closest?.('[data-workspace-engine],[data-workspace-mode-select],[data-workspace-transport],[data-font-value]')){
+        saveWorkspaceShellSettings(workspaceSettingsRoot);
+        toast('Workspace settings saved');
         return;
       }
       const fontSelect=e.target.closest?.('[data-font-value]');
@@ -16337,7 +16352,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         toast('Font updated');
         return;
       }
-      if(browserSettingsRoot && e.target.closest?.('[data-theme-value]')){
+      if(workspaceSettingsRoot && e.target.closest?.('[data-theme-value]')){
         const theme=normalizeNyxTheme(e.target.value);
         store.setText('nyx.theme',theme);
         applyThemeSetting();
@@ -16347,7 +16362,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
       const presetSelect=e.target.closest?.('[data-preset-select]');
       if(presetSelect){
-        const root=e.target.closest('.window,.settings-app,.browser-shell-settings-overlay') || document;
+        const root=e.target.closest('.window,.settings-app,.workspace-shell-settings-overlay') || document;
         applyPreset(presetSelect.value || 'nyx');
         syncPresetCloakFields(root);
         return;
@@ -16443,8 +16458,8 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
   let nyxDashboardWorkerState='Starting';
   let nyxDashboardWorkerCheckedAt=0;
   let nyxDashboardWorkerProbe=null;
-  function nyxDashboardProxyEngine(){
-    const engine=store.text('nyx.browserMode','standard').trim().toLowerCase();
+  function nyxDashboardConnectionEngine(){
+    const engine=store.text('nyx.workspaceMode','standard').trim().toLowerCase();
     if(!engine || engine==='standard') return 'Standard';
     return engine.replace(/(^|[-_\s])(\w)/g,(_,prefix,letter)=>prefix+letter.toUpperCase());
   }
@@ -16523,7 +16538,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     const memoryText=memoryUsedMb===null ? 'Unavailable' : memoryLimitMb===null ? `${memoryUsedMb} MB` : `${memoryUsedMb} / ${memoryLimitMb} MB`;
     const latencyText=Number.isFinite(nyxDashboardLatencyMs) ? `${nyxDashboardLatencyMs} ms` : nyxDashboardLatencyState;
     const fpsText=Number.isFinite(nyxDashboardPerformanceFps) ? `${Math.max(1,Math.round(nyxDashboardPerformanceFps))} fps` : 'Sampling…';
-    const values={fps:fpsText,memory:memoryText,ping:latencyText,cpu:String(navigator.hardwareConcurrency || '—'),worker:nyxDashboardWorkerState,engine:nyxDashboardProxyEngine()};
+    const values={fps:fpsText,memory:memoryText,ping:latencyText,cpu:String(navigator.hardwareConcurrency || '—'),worker:nyxDashboardWorkerState,engine:nyxDashboardConnectionEngine()};
     qsa('[data-nyx-perf-stat]').forEach(stat=>{stat.textContent=values[stat.dataset.nyxPerfStat] || '—'});
     const memoryPercent=memoryUsedMb!==null && memoryLimitMb ? memoryUsedMb/memoryLimitMb*100 : 0;
     const latencyValue=Number.isFinite(nyxDashboardLatencyMs) ? nyxDashboardLatencyMs : 0;
@@ -16609,7 +16624,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     setText('[data-nyx-latency-stable]',Number.isFinite(nyxLatencyMs) ? `${nyxLatencyMs} ms` : '-- ms');
     setText('[data-nyx-latency-range]',Number.isFinite(rangeMin) ? `${rangeMin}–${rangeMax} ms` : '-- ms');
     setText('[data-nyx-health-overall]',nyxLatencyHealth.ok===true ? 'Healthy' : nyxLatencyHealth.ok===false ? 'Unavailable' : 'Checking');
-    setText('[data-nyx-health-browser]',navigator.onLine ? 'Online' : 'Offline');
+    setText('[data-nyx-health-workspace]',navigator.onLine ? 'Online' : 'Offline');
     setText('[data-nyx-health-wisp]',nyxLatencyHealth.ok===false ? 'Unavailable' : nyxLatencyHealth.wisp ? nyxLatencyHealth.wisp==='embedded' ? 'Embedded' : nyxLatencyHealth.wisp : 'Checking');
     setText('[data-nyx-health-chat]',nyxLatencyHealth.ok===false ? 'Unavailable' : nyxLatencyHealth.chatRealtime ? nyxLatencyHealth.chatRealtime==='socket.io' ? 'Realtime' : nyxLatencyHealth.chatRealtime : 'Checking');
     const updatedPrefix=nyxLatencyHealth.ok===false ? 'Last healthy' : 'Updated';
@@ -16730,7 +16745,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     window.NyxAvailability?.start(()=>({url:wispUrl(),custom:!!storedCustomWispUrl()}),async failed=>{
       if(storedCustomWispUrl())return;
       const next=await selectWispRelay(failed);
-      if(!storedCustomWispUrl() && next!==failed)resetBrowserProxyRuntime();
+      if(!storedCustomWispUrl() && next!==failed)resetWorkspaceConnectionRuntime();
     });
     syncNyxLatencyBubble();
     void calibrateNyxLatency();
@@ -16757,7 +16772,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     const full=centerClockText(d);
     qsa('#clock').forEach(clock=>{clock.textContent=short});
     qsa('#centerClock').forEach(clock=>{clock.textContent=full});
-    qsa('[data-browser-shell-clock]').forEach(clock=>{clock.textContent=short});
+    qsa('[data-workspace-shell-clock]').forEach(clock=>{clock.textContent=short});
     syncNyxLatencyBubble();
   }
   function centerClockText(date=new Date()){
@@ -16771,7 +16786,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       const now=new Date();
       const text=centerClockText(now);
       if(clock) clock.textContent=text;
-      qsa('[data-browser-shell-clock]').forEach(el=>{el.textContent=now.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})});
+      qsa('[data-workspace-shell-clock]').forEach(el=>{el.textContent=now.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'})});
       syncNyxLatencyBubble();
     };
     update();
@@ -16784,7 +16799,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     if(finishNyxOpenStartup.done) return;
     finishNyxOpenStartup.done=true;
     if(store.text('nyx.tabTitle','') || store.text('nyx.tabFavicon','')) enforceStoredTabCloak();
-    else setCurrentTabCloak(studyHubTabTitle,studyHubTabFavicon,false);
+    else setCurrentTabCloak(learningTabTitle,learningTabFavicon,false);
     migrateGlassDefault();
     applyAutoHieroglyphPreference();
   }
@@ -16820,10 +16835,10 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       const response=await fetch('/api/founder-profile/auth-config',{cache:'no-store'});
       const config=await response.json();
       if(!response.ok||!config.enabled)throw new Error('Accounts are unavailable.');
-      const [{initializeApp,getApps},{getAuth,setPersistence,browserLocalPersistence}]=await Promise.all([import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')]);
+      const [{initializeApp,getApps},{getAuth,setPersistence,browserLocalPersistence:workspaceLocalPersistence}]=await Promise.all([import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')]);
       const app=getApps().find(item=>item.name==='nyx-founder-owner')||initializeApp({apiKey:config.apiKey,authDomain:`${config.projectId}.firebaseapp.com`,projectId:config.projectId},'nyx-founder-owner');
       nyxFounderFirebaseAuth=getAuth(app);
-      await setPersistence(nyxFounderFirebaseAuth,browserLocalPersistence);
+      await setPersistence(nyxFounderFirebaseAuth,workspaceLocalPersistence);
       await nyxFounderFirebaseAuth.authStateReady?.();
       nyxFounderAuthReadyPromise=Promise.resolve();
       send({type:'tutsi:profile-ready'});
@@ -16841,7 +16856,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     if(hostedCloakEntry) document.body.classList.add('hosted-cloak-entry');
     document.documentElement.classList.toggle('nyx-chromeos',isChromeOsUser());
     document.body.classList.add('runtime-lag-guard');
-    removeLegacyStartupPdfData(); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); startNyxGlobalApps(); installInteractiveHomeTitleDots(); initWeatherPanel(); startCenterClock(); startNyxPresence(); startNyxLatencyMonitor(); startSpotifyChromeOsCompatibilitySweep(); loadFounderProfile(); initializeFounderOwnerAccess(); startNyx();
+    removeLegacyStartupPdfData(); installDeltaNewTabRedirect(); installBookmuxPortResponder(); installAntiClose(); bind(); startNyxGlobalApps(); installInteractiveHomeTitleDots(); initWeatherPanel(); startCenterClock(); startNyxPresence(); startNyxLatencyMonitor(); startSpotifyChromeOsCompatibilitySweep(); loadFounderProfile(); initializeFounderOwnerAccess(); startNyx();
     if(hostedCloakEntry){
       scheduleHostedCloakLaunch();
       return;

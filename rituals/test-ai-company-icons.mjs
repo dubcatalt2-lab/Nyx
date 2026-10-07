@@ -5,9 +5,9 @@ const app=express();app.use(express.static(process.env.NYX_TEST_STATIC_ROOT||'.'
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base='http://127.0.0.1:'+server.address().port;
 const authors=['apodex','heygen','togethercomputer','voyageai','respan','jaredpalmer','fish-audio','nex-agi','deepgram','krea','sourceful','canopylabs','sesame','hexgrad','thenlper','intfloat','sentence-transformers','baai'];
 let models=[{id:'openai/gpt-6-luna',label:'GPT-6 Luna'},{id:'anthropic/claude-haiku-4.5',label:'Claude Haiku 4.5'},...authors.map(key=>({id:key+'/fixture',label:key}))];
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
- const page=await browser.newPage({viewport:{width:1280,height:850}}),errors=[],badAssets=[];
+ const page=await workspace.newPage({viewport:{width:1280,height:850}}),errors=[],badAssets=[];
  page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.url().includes('/assets/icons/')&&r.status()!==200)badAssets.push(r.url());});
  await page.route('**/api/**',route=>{const path=new URL(route.request().url()).pathname;return route.fulfill({json:path.endsWith('/models')?{models}:path.endsWith('/providers')?{providers:[{id:'shared',label:'OpenRouter'}]}:{}});});
  await page.goto(base+'/ai.html');await page.locator('#modelTrigger').click();
@@ -32,4 +32,4 @@ try{
  models=[{id:'openai/gpt-6-luna',label:'GPT-6 Luna'}];await page.reload();await page.locator('#modelTrigger').click();await pinned.click();assert.equal(await page.locator('#modelOptions [data-model-id]').count(),0);assert.match(await page.locator('.ai-model-empty').innerText(),/available for this account/);
  assert.deepEqual(errors,[]);assert.deepEqual(badAssets,[]);
  console.log('PASS 18 provider icons, no letter placeholders, pinned Anthropic/filter, mobile bounds, Tutsi layout and account-restricted empty state');
-}finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}
+}finally{await workspace.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

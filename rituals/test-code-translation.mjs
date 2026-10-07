@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';import {chromium} from 'playwright';
-const browser=await chromium.launch({channel:'msedge',headless:true});
-try{const page=await browser.newPage({viewport:{width:1440,height:900}});let failure=false,request;
+const workspace=await chromium.launch({channel:'msedge',headless:true});
+try{const page=await workspace.newPage({viewport:{width:1440,height:900}});let failure=false,request;
 await page.addInitScript(()=>{localStorage.setItem('nyx.codeStudio.v1',JSON.stringify({language:'javascript',codes:{javascript:'console.log("hello")',python:'print("older version")'}}));localStorage.setItem('nyx.theme','custom');localStorage.setItem('nyx.customThemeColor','#ff0000')});
 await page.route('**/api/founder-profile/auth-config',r=>r.fulfill({json:{}}));
 await page.route('**/api/nyx-ai/providers',r=>r.fulfill({json:{providers:[{id:'shared'}]}}));
@@ -20,4 +20,4 @@ assert.notEqual(await page.locator('body').evaluate(el=>getComputedStyle(el).get
 await page.screenshot({path:'.codex-artifacts/code-translation-desktop.png'});
 await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
 console.log('PASS model choice, language translation, source/target backups, version restore, failed conversion preservation and mobile bounds');
-}finally{await browser.close()}
+}finally{await workspace.close()}

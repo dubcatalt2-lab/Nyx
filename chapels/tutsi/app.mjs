@@ -1,4 +1,4 @@
-import {warmBrowser} from './intercession.mjs';
+import {warmWorkspace} from './intercession.mjs';
 import {watchWebsiteFrame} from './frame-navigation.mjs';
 import {websiteAddress} from "./navigation.mjs";
 import {installShortcuts} from "./shortcuts.mjs";
@@ -7,7 +7,7 @@ import { scanFilters, filterSignatures, identifyFilterAddress } from "./filter-d
 import { decorateEmbedded } from "./embedded.mjs";
 import { startClock } from "./clock.mjs";
 import { icons as nyxIcons } from "./icons.mjs";
-import { browse, control, reloadBrowser, closeBrowser, testRelay, updateProtectionPolicy, currentWebsiteUrl } from "./intercession.mjs";
+import { explore, control, reloadWorkspace, closeWorkspace, testRelay, updateProtectionPolicy, currentWebsiteUrl } from "./intercession.mjs";
 const $ = (id) => document.getElementById(id),
   root = document.documentElement;
 const defaults = {
@@ -316,7 +316,7 @@ function applySettings() {
   $("tab-preset").value = settings.tabPreset;
   $("tab-title").value = settings.tabTitle;
   $("connection-shortcut").firstChild.textContent =
-    "Browser settings ";
+    "Workspace settings ";
   tabAppearance();
   frames.forEach(styleApp);
   try {
@@ -328,7 +328,7 @@ function applySettings() {
     if (settings.relay) localStorage.setItem("nyx.wispUrl", settings.relay);
     else localStorage.removeItem("nyx.wispUrl");
   } catch {
-    toast("Your browser could not save these settings.");
+    toast("Your workspace could not save these settings.");
   }
 }
 for (const [id, key] of Object.entries({
@@ -351,7 +351,7 @@ for (const [id, key] of Object.entries({
     if(key==='httpBridge')toast('Connection setting saved. Reload website tabs to apply.');
     if(['adBlock','popupBlock','downloadBlock'].includes(key)){
       for(const [name,frame] of frames){if(['games','movies'].includes(name))frame.src=frame.src;else protectAppContents(frame);}
-      for(const tab of browserTabs)if(tab.element){tab.element.setAttribute('sandbox',protectionSandbox(settings));control('reload',tab.element);}
+      for(const tab of workspaceTabs)if(tab.element){tab.element.setAttribute('sandbox',protectionSandbox(settings));control('reload',tab.element);}
     }
   });
 document.querySelectorAll("[name=theme]").forEach((el) =>
@@ -364,7 +364,7 @@ function applyTabFields(){
  settings.tabPreset=$('tab-preset').value;
  settings.tabTitle=$('tab-title').value;
  applySettings();
- $('tab-preset-status').textContent='Applied to this browser tab.';
+ $('tab-preset-status').textContent='Applied to this workspace tab.';
 }
 $('tab-title').addEventListener('input',applyTabFields);
 $('tab-preset').addEventListener('input',applyTabFields);
@@ -394,7 +394,7 @@ $("reset-settings").onclick = () => {
   if(!confirm("Reset Tutsi settings? Your account, chats and game saves will stay."))return;
   settings = { ...defaults };
   applySettings();
-  for(const tab of browserTabs)if(tab.element){tab.element.setAttribute("sandbox",protectionSandbox(settings));control("reload",tab.element);}
+  for(const tab of workspaceTabs)if(tab.element){tab.element.setAttribute("sandbox",protectionSandbox(settings));control("reload",tab.element);}
   toast("Tutsi settings restored.");
 };
 $("test-connection").onclick = async () => {
@@ -424,22 +424,22 @@ const appPaths = {
   publisher: "/apps/jsdelivr-publisher/",
   api: "/apps/api-keys/",
 };
-installShellPopupProtection(()=>settings,()=>document.body.dataset.view==='browser'||['#games','#movies'].includes(location.hash));
+installShellPopupProtection(()=>settings,()=>document.body.dataset.view==='workspace'||['#games','#movies'].includes(location.hash));
 const protectEmbeddedFrame=installGameProtectionHost(()=>settings,()=>[...frames.values()]);
-// Remote game runners and Movies use the same transport/settings as browser tabs.
+// Remote game runners and Movies use the same transport/settings as workspace tabs.
 window.nyxLaunchGameFrame=async(frame,url,{signal}={})=>{
   const target=new URL(url);
   if(!['http:','https:'].includes(target.protocol)||target.username||target.password||!protectEmbeddedFrame(frame))throw Error('Invalid game frame.');
   if(signal?.aborted||!frame.isConnected)return;
-  const cancel=()=>closeBrowser(frame);
+  const cancel=()=>closeWorkspace(frame);
   signal?.addEventListener('abort',cancel,{once:true});
-  try { await browse(target.href,settings,frame); if(signal?.aborted){closeBrowser(frame);return;} return {managed:true,engine:'scramjet',url:target.href}; }
+  try { await explore(target.href,settings,frame); if(signal?.aborted){closeWorkspace(frame);return;} return {managed:true,engine:'scramjet',url:target.href}; }
   catch(error){signal?.removeEventListener('abort',cancel);cancel();throw error;}
 };
 window.nyxLaunchMovieFrame=async(frame,url,{signal,recover=false}={})=>{
   const {movieSourceUrl}=await import('/chapels/movies/providers.mjs');
   if(!movieSourceUrl(url)||frame?.ownerDocument?.location?.pathname!=='/apps/movies/'||frame.getAttribute('sandbox')!=='allow-scripts allow-same-origin allow-forms allow-presentation')throw Error('Invalid movie proxy request.');
-  if(recover)closeBrowser(frame);
+  if(recover)closeWorkspace(frame);
   await window.nyxLaunchGameFrame(frame,url,{signal});
 };
 const protectedAppDocs=new WeakSet();
@@ -500,18 +500,19 @@ function appFrame(name) {
 }
 $('address').addEventListener('blur',()=>{$('address').scrollLeft=0;});
 function route() {
-  const name = location.hash.slice(1) || "home";
+  let name = location.hash.slice(1) || "home";
+  if(name==='b\u0072owser'){name='workspace';history.replaceState(null,'',location.pathname+location.search+'#workspace');}
   const section = appPaths[name]
     ? "app-view"
     : ["appearance", "connection", "protections", "shortcuts", "privacy", "tab-appearance"].includes(name)
       ? "settings"
-      : ["home", "apps", "browser", "settings", "terms"].includes(name)
+      : ["home", "apps", "workspace", "settings", "terms"].includes(name)
         ? name
         : "home";
   document
     .querySelectorAll("main>.view")
     .forEach((el) => (el.hidden = el.id !== section));
-  $("footer").hidden = ["browser", "app-view"].includes(section);
+  $("footer").hidden = ["workspace", "app-view"].includes(section);
   document.body.dataset.view = section;
   if(appPaths[name]) $("address").value="tutsi://"+name;
   else $("address").value=activeTab?.url||"";
@@ -529,49 +530,49 @@ function route() {
   requestAnimationFrame(updateSettingsSection);
 }
 addEventListener("hashchange", route);
-let proxyElement;
-const browserTabs=[],closedWebsites=[];
+let connectionElement;
+const workspaceTabs=[],closedWebsites=[];
 let activeTab=null;
-function renderBrowserTabs(){
-  const strip=$('browser-tabs');strip.replaceChildren();
-  browserTabs.forEach((tab,index)=>{
+function renderWorkspaceTabs(){
+  const strip=$('workspace-tabs');strip.replaceChildren();
+  workspaceTabs.forEach((tab,index)=>{
     const button=document.createElement('button');button.type='button';button.setAttribute('role','tab');button.setAttribute('aria-selected',String(tab===activeTab));
     let label='New tab';try{label=new URL(tab.url).hostname}catch{}
-    button.textContent=label;button.title=`Alt+${index+1}: ${label}`;button.onclick=()=>selectBrowserTab(tab);
-    const item=document.createElement('div');item.className='browser-tab';item.setAttribute('role','presentation');item.dataset.active=String(tab===activeTab);
-    const close=document.createElement('button');close.type='button';close.className='browser-tab-close';close.textContent=String.fromCharCode(215);close.setAttribute('aria-label',`Close ${label}`);close.title='Close tab';
-    close.onclick=()=>{removeWebsiteTab(tab);$('browser-tabs').querySelector('[aria-selected="true"]')?.focus();};
+    button.textContent=label;button.title=`Alt+${index+1}: ${label}`;button.onclick=()=>selectWorkspaceTab(tab);
+    const item=document.createElement('div');item.className='workspace-tab';item.setAttribute('role','presentation');item.dataset.active=String(tab===activeTab);
+    const close=document.createElement('button');close.type='button';close.className='workspace-tab-close';close.textContent=String.fromCharCode(215);close.setAttribute('aria-label',`Close ${label}`);close.title='Close tab';
+    close.onclick=()=>{removeWebsiteTab(tab);$('workspace-tabs').querySelector('[aria-selected="true"]')?.focus();};
     item.append(button,close);strip.append(item);
   });
-  const add=document.createElement('button');add.textContent='+';add.type='button';add.setAttribute('aria-label','New tab (Alt+T)');add.onclick=()=>newBrowserTab();strip.append(add);
+  const add=document.createElement('button');add.textContent='+';add.type='button';add.setAttribute('aria-label','New tab (Alt+T)');add.onclick=()=>newWorkspaceTab();strip.append(add);
 }
-function syncBrowserTabView(){
-  $('browser-new-tab').hidden=!!activeTab?.url;
-  for(const tab of browserTabs){
+function syncWorkspaceTabView(){
+  $('workspace-new-tab').hidden=!!activeTab?.url;
+  for(const tab of workspaceTabs){
     if(tab.element)tab.element.hidden=tab!==activeTab;
     if(tab.status)tab.status.hidden=tab!==activeTab||!tab.loading;
   }
 }
-function selectBrowserTab(tab){
-  if(!browserTabs.includes(tab))return;activeTab=tab;proxyElement=tab.element;
-  browserTabs.forEach(item=>{if(item.element)item.element.hidden=item!==tab;});
-  $('address').value=tab.url;location.hash='browser';route();renderBrowserTabs();syncBrowserTabView();
+function selectWorkspaceTab(tab){
+  if(!workspaceTabs.includes(tab))return;activeTab=tab;connectionElement=tab.element;
+  workspaceTabs.forEach(item=>{if(item.element)item.element.hidden=item!==tab;});
+  $('address').value=tab.url;location.hash='workspace';route();renderWorkspaceTabs();syncWorkspaceTabView();
 }
 // SPA history changes do not fire iframe load events (for example Spotify).
 setInterval(()=>{
   if(document.hidden||!activeTab?.element||activeTab.loading)return;
   const url=currentWebsiteUrl(activeTab.element);
   if(!url||url===activeTab.url)return;
-  activeTab.url=url;renderBrowserTabs();
+  activeTab.url=url;renderWorkspaceTabs();
   if(document.activeElement!==$('address') && !appPaths[location.hash.slice(1)])$('address').value=url;
 },750);
-function newBrowserTab(url=''){
-  if(browserTabs.length>=8){toast('You can open up to 8 website tabs. Close one first.');return false;}
-  const tab={url:'',element:null,status:null,navigation:0};browserTabs.push(tab);selectBrowserTab(tab);
+function newWorkspaceTab(url=''){
+  if(workspaceTabs.length>=8){toast('You can open up to 8 website tabs. Close one first.');return false;}
+  const tab={url:'',element:null,status:null,navigation:0};workspaceTabs.push(tab);selectWorkspaceTab(tab);
   if(url)void navigate(url);else {$('new-tab-query').value='';$('new-tab-query').focus();}
   return true;
 }
-function closeBrowserTab(){
+function closeWorkspaceTab(){
   const routeName=location.hash.slice(1)||'home';
   if(appPaths[routeName]){
     const app=frames.get(routeName);
@@ -583,7 +584,7 @@ function closeBrowserTab(){
     location.hash='home';return;
   }
   const blankTab=routeName==='home' && activeTab && !activeTab.url;
-  if(routeName!=='browser' && !blankTab){
+  if(routeName!=='workspace' && !blankTab){
     if($('customize-dialog')?.open)dismissCustomize();
     document.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());
     location.hash='home';return;
@@ -591,22 +592,22 @@ function closeBrowserTab(){
   removeWebsiteTab(activeTab);
 }
 function removeWebsiteTab(tab){
-  const index=browserTabs.indexOf(tab);if(index<0)return;
+  const index=workspaceTabs.indexOf(tab);if(index<0)return;
   const wasActive=tab===activeTab,url=currentWebsiteUrl(tab.element)||tab.url;
   if(/^https?:\/\//i.test(url)){closedWebsites.push(url);if(closedWebsites.length>10)closedWebsites.shift();}
-  tab.navigation++;tab.stopNavigationWatch?.();tab.status?.remove();closeBrowser(tab.element);tab.element?.remove();browserTabs.splice(index,1);
-  if(!wasActive){renderBrowserTabs();syncBrowserTabView();return;}
-  activeTab=null;proxyElement=null;
-  if(browserTabs.length)selectBrowserTab(browserTabs[Math.max(0,index-1)]);else {location.hash='home';renderBrowserTabs();}
+  tab.navigation++;tab.stopNavigationWatch?.();tab.status?.remove();closeWorkspace(tab.element);tab.element?.remove();workspaceTabs.splice(index,1);
+  if(!wasActive){renderWorkspaceTabs();syncWorkspaceTabView();return;}
+  activeTab=null;connectionElement=null;
+  if(workspaceTabs.length)selectWorkspaceTab(workspaceTabs[Math.max(0,index-1)]);else {location.hash='home';renderWorkspaceTabs();}
 }
 
-function restoreBrowserTab(){const url=closedWebsites.at(-1);if(url&&newBrowserTab(url))closedWebsites.pop();else if(!url)toast('No closed website to reopen.');}
+function restoreWorkspaceTab(){const url=closedWebsites.at(-1);if(url&&newWorkspaceTab(url))closedWebsites.pop();else if(!url)toast('No closed website to reopen.');}
 const shortcutActions={
   home(){location.hash="home";},
-  address(){const input=['browser','app-view'].includes(document.body.dataset.view)?$('address'):$('query');if(input.id==='query'){location.hash='home';route();}input.focus();input.select();},
-  newTab:newBrowserTab,close:closeBrowserTab,restore:restoreBrowserTab,
-  reload(){browserControl('reload')},back(){browserControl('back')},forward(){browserControl('forward')},
-  select(index){selectBrowserTab(browserTabs[index])},notice:toast
+  address(){const input=['workspace','app-view'].includes(document.body.dataset.view)?$('address'):$('query');if(input.id==='query'){location.hash='home';route();}input.focus();input.select();},
+  newTab:newWorkspaceTab,close:closeWorkspaceTab,restore:restoreWorkspaceTab,
+  reload(){workspaceControl('reload')},back(){workspaceControl('back')},forward(){workspaceControl('forward')},
+  select(index){selectWorkspaceTab(workspaceTabs[index])},notice:toast
 };
 installShortcuts(document,shortcutActions);
 
@@ -623,70 +624,70 @@ async function navigate(value, {newTab=false, input=null} = {}) {
     toast(e.message);
     return;
   }
-  if((!activeTab || (newTab && activeTab.url))&&!newBrowserTab())return;
+  if((!activeTab || (newTab && activeTab.url))&&!newWorkspaceTab())return;
   if(input)input.value="";
-  const targetTab=activeTab;targetTab.url=url;renderBrowserTabs();
+  const targetTab=activeTab;targetTab.url=url;renderWorkspaceTabs();
   // The old document remains accessible until the next navigation commits.
   try{targetTab.previousDocument=targetTab.element?.contentDocument}catch{targetTab.previousDocument=null;}
   const request = ++targetTab.navigation;
   targetTab.stopNavigationWatch?.();
-  location.hash = "browser";
+  location.hash = "workspace";
   route();
   $("address").value = url;
   let status = targetTab.status;
   if (!status) {
     status = document.createElement("div");
-    status.className = "browser-status";
+    status.className = "workspace-status";
     targetTab.status = status;
-    $("browser-stage").append(status);
+    $("workspace-stage").append(status);
   }
   status.textContent = "Loading...";
   targetTab.loading = true;
-  syncBrowserTabView();
+  syncWorkspaceTabView();
   if (!targetTab.element) {
-    proxyElement = document.createElement("iframe");
-    proxyElement.title = "Website";
-    targetTab.element=proxyElement;
-    proxyElement.addEventListener("load",()=>{
-      if(!browserTabs.includes(targetTab))return;
+    connectionElement = document.createElement("iframe");
+    connectionElement.title = "Website";
+    targetTab.element=connectionElement;
+    connectionElement.addEventListener("load",()=>{
+      if(!workspaceTabs.includes(targetTab))return;
       try{if(targetTab.loading&&targetTab.element.contentDocument===targetTab.previousDocument)return;installShortcuts(targetTab.element.contentDocument,shortcutActions)}catch{}
       // Ignore initial about:blank events while the engine is starting.
       if(!targetTab.element.getAttribute('src')?.includes('/~/tm/'))return;
-      if(!targetTab.loading){const latest=currentWebsiteUrl(targetTab.element);if(latest){targetTab.url=latest;renderBrowserTabs();}}
+      if(!targetTab.loading){const latest=currentWebsiteUrl(targetTab.element);if(latest){targetTab.url=latest;renderWorkspaceTabs();}}
 
     });
-    proxyElement.setAttribute(
+    connectionElement.setAttribute(
       "sandbox",
       protectionSandbox(settings),
     );
-    proxyElement.allow =
+    connectionElement.allow =
       "fullscreen; autoplay; encrypted-media; picture-in-picture";
-    $("browser-stage").prepend(proxyElement);
+    $("workspace-stage").prepend(connectionElement);
   }
-  proxyElement=targetTab.element;
-  syncBrowserTabView();
+  connectionElement=targetTab.element;
+  syncWorkspaceTabView();
   const fail=message=>{
-    if(request!==targetTab.navigation||!browserTabs.includes(targetTab))return;
+    if(request!==targetTab.navigation||!workspaceTabs.includes(targetTab))return;
     targetTab.stopNavigationWatch?.();
-    targetTab.loading=false;syncBrowserTabView();
+    targetTab.loading=false;syncWorkspaceTabView();
     if(activeTab===targetTab)toast('This website is not responding. You can open another address.');
   };
   targetTab.stopNavigationWatch=watchWebsiteFrame(targetTab.element,{
     previousDocument:targetTab.previousDocument,
     onError:fail,
-    reload:()=>browse(url,{...settings},targetTab.element,{reconnect:true}),
+    reload:()=>explore(url,{...settings},targetTab.element,{reconnect:true}),
     onReady:()=>{
-      if(request!==targetTab.navigation||!browserTabs.includes(targetTab))return;
+      if(request!==targetTab.navigation||!workspaceTabs.includes(targetTab))return;
       targetTab.loading=false;targetTab.previousDocument=null;
       targetTab.url=currentWebsiteUrl(targetTab.element)||url;
       if(activeTab===targetTab&&document.activeElement!==$('address'))$('address').value=targetTab.url;
-      syncBrowserTabView();renderBrowserTabs();
+      syncWorkspaceTabView();renderWorkspaceTabs();
     }
   });
   try {
-    await browse(url, { ...settings }, targetTab.element);
-    if(request!==targetTab.navigation||!browserTabs.includes(targetTab))return;
-    syncBrowserTabView();
+    await explore(url, { ...settings }, targetTab.element);
+    if(request!==targetTab.navigation||!workspaceTabs.includes(targetTab))return;
+    syncWorkspaceTabView();
   }catch(error){if(request===targetTab.navigation)void targetTab.stopNavigationWatch.failed(error.message||'Could not open this page.');}
 
 }
@@ -699,19 +700,19 @@ $("address-form").onsubmit = (e) => {
   navigate($("address").value);
 };
 $('new-tab-search').onsubmit = event => {event.preventDefault();void navigate($('new-tab-query').value, {input:$('new-tab-query')});};
-function browserControl(action){
+function workspaceControl(action){
   if(document.body.dataset.view==="app-view"){
     if(action==="reload") frames.get(location.hash.slice(1))?.contentWindow.location.reload();
     else history[action]();
-  }else if(action==='reload'&&activeTab)void navigate(currentWebsiteUrl(proxyElement)||activeTab.url);
-  else control(action,proxyElement);
+  }else if(action==='reload'&&activeTab)void navigate(currentWebsiteUrl(connectionElement)||activeTab.url);
+  else control(action,connectionElement);
 }
-for (const action of ["back", "forward", "reload"]) $(action).onclick=()=>browserControl(action);
-$("close-browser").onclick = () => {
-  if(appPaths[location.hash.slice(1)] || document.body.dataset.view==='browser')closeBrowserTab();
+for (const action of ["back", "forward", "reload"]) $(action).onclick=()=>workspaceControl(action);
+$("close-workspace").onclick = () => {
+  if(appPaths[location.hash.slice(1)] || document.body.dataset.view==='workspace')closeWorkspaceTab();
   else removeWebsiteTab(activeTab);
 };
-$("browser-home").onclick=()=>{location.hash="home";};
+$("workspace-home").onclick=()=>{location.hash="home";};
 addEventListener("keydown", (e) => {
   if (e.defaultPrevented) return;
   if (
@@ -1074,7 +1075,7 @@ addEventListener("message", async (event) => {
     reply({type:"nyx:nyxtube-profile",requestId:data.requestId,profile:profilePayload()});
   } else if (data.type === "nyx:close-tab") {
     // A hidden app cannot close the user's current tab.
-    if(location.hash.slice(1)===name)closeBrowserTab();
+    if(location.hash.slice(1)===name)closeWorkspaceTab();
   } else if (
     name === "games" &&
     ["nyx:cloud-game-load", "nyx:cloud-game-save"].includes(data.type)
@@ -1293,7 +1294,7 @@ addEventListener('tutsi:filter-detected',({detail:{vendors,observed=[],checks=[]
 });
 $('detect-filter').addEventListener('click',async()=>{
   const button=$('detect-filter');button.disabled=true;
-  $('filter-detection-result').textContent='Checking this browser...';
+  $('filter-detection-result').textContent='Checking this workspace...';
   try{await scanFilters({refresh:true})}catch{$('filter-detection-result').textContent='The check could not finish. Try again or use a block-page address.'}finally{button.disabled=false}
 });
 $('blocker').addEventListener('change',()=>{if(settings.blocker==='auto')void scanFilters()});
@@ -1315,7 +1316,7 @@ $('use-address-filter').onclick=()=>{
   if(![...$('blocker').options].some(option=>option.value===vendor))$('blocker').add(new Option(label,vendor));
   $('blocker').value=vendor;$('blocker').dispatchEvent(new Event('change'));
   $('filter-address').value='';addressFilter=null;$('use-address-filter').hidden=true;
-  $('filter-address-result').textContent=`${label} saved. Used when the next browser connection starts.`;
+  $('filter-address-result').textContent=`${label} saved. Used when the next workspace connection starts.`;
 };
 
 // Keep player shortcuts working when focus remains in the enclosing Tutsi page.
@@ -1338,7 +1339,7 @@ function protectionNotice(kind){
 }
 addEventListener('tutsi:protection',event=>protectionNotice(event.detail?.kind));
 addEventListener('message',event=>{
-  if(event.origin===location.origin&&proxyElement&&event.source===proxyElement.contentWindow&&event.data?.type==='tutsi:protection')protectionNotice(event.data.kind);
+  if(event.origin===location.origin&&connectionElement&&event.source===connectionElement.contentWindow&&event.data?.type==='tutsi:protection')protectionNotice(event.data.kind);
 });
 
 const customize=$('customize-dialog');
@@ -1426,7 +1427,7 @@ $('customize-next').onclick=()=>{
 await window.tutsiStartupReady;
 try{if(localStorage.getItem('tutsi.customize.pending')||((!saved||Object.keys(saved).length===0)&&!localStorage.getItem('tutsi.customize.seen')&&(!location.hash||location.hash==='#home')))openCustomize();}catch{}
 
-// Scroll highlighting never changes the hash or adds browser-history entries.
+// Scroll highlighting never changes the hash or adds workspace-history entries.
 function updateSettingsSection(){
  if(document.body.dataset.view!=='settings')return;
  const links=[...document.querySelectorAll('.settings-nav > a')].filter(link=>document.querySelector('.settings-content '+link.getAttribute('href')));
@@ -1457,12 +1458,12 @@ $('clear-cache').onclick=async()=>{
      }
    }}
    $('storage-status').textContent='Tutsi cache cleared. Your account and saved data are unchanged.';
- }catch{$('storage-status').textContent='Cache could not be cleared. Try your browser settings.';}
+ }catch{$('storage-status').textContent='Cache could not be cleared. Try your workspace settings.';}
  finally{button.disabled=false;}
 };
 
-let warmingBrowser;
-const prepareBrowser=()=>{if(document.hidden||warmingBrowser)return;warmingBrowser=warmBrowser(settings).finally(()=>{warmingBrowser=null;});};
-$('query').addEventListener('focus',prepareBrowser);
-$('query').addEventListener('pointerdown',prepareBrowser,{passive:true});
-if(typeof requestIdleCallback==='function')requestIdleCallback(prepareBrowser,{timeout:1000});else setTimeout(prepareBrowser,700);
+let warmingWorkspace;
+const prepareWorkspace=()=>{if(document.hidden||warmingWorkspace)return;warmingWorkspace=warmWorkspace(settings).finally(()=>{warmingWorkspace=null;});};
+$('query').addEventListener('focus',prepareWorkspace);
+$('query').addEventListener('pointerdown',prepareWorkspace,{passive:true});
+if(typeof requestIdleCallback==='function')requestIdleCallback(prepareWorkspace,{timeout:1000});else setTimeout(prepareWorkspace,700);

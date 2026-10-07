@@ -4,11 +4,11 @@ import express from 'express';
 import {chromium} from 'playwright';
 const app=express();app.use(express.static('dist'));const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base=process.env.NYX_TEST_BASE_URL||'http://127.0.0.1:'+server.address().port;
 const testUid=process.env.NYX_VM_TEST_USER||'3158eOj4ATMzkoC1PAm8H7TXc2R2';
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
- const page=await browser.newPage({viewport:{width:1440,height:960}}),errors=[];let releaseList;const listGate=new Promise(r=>releaseList=r);
+ const page=await workspace.newPage({viewport:{width:1440,height:960}}),errors=[];let releaseList;const listGate=new Promise(r=>releaseList=r);
  page.on('pageerror',e=>errors.push(e.message));
- await page.addInitScript(()=>{localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.browserShellMode','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');});
+ await page.addInitScript(()=>{localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.workspaceShellMode','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');});
  await page.route('https://www.gstatic.com/firebasejs/**/firebase-app.js',r=>r.fulfill({contentType:'text/javascript',body:'export const getApps=()=>[];export const initializeApp=()=>({});'}));
  await page.route('https://www.gstatic.com/firebasejs/**/firebase-auth.js',r=>r.fulfill({contentType:'text/javascript',body:('const user={uid:"3158eOj4ATMzkoC1PAm8H7TXc2R2",email:"fixture@example.com",getIdToken:async()=>"fixture",reload:async()=>{}};export const getAuth=()=>({currentUser:user});export const browserLocalPersistence={};export const setPersistence=async()=>{};export const onAuthStateChanged=(a,f)=>{queueMicrotask(()=>f(a.currentUser));return ()=>{}};').replace('3158eOj4ATMzkoC1PAm8H7TXc2R2',testUid)}));
  await page.route('https://loremgroup.org/**',r=>r.fulfill({contentType:'text/html',body:'<html style="background:#171621;color:#eee"><h1>Desktop fixture</h1></html>'}));
@@ -77,4 +77,4 @@ try{
  await page.waitForTimeout(100);await assertFilled();
  assert(await desktop.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'No horizontal overflow on mobile');
  assert.deepEqual(errors,[]);console.log('PASS full Nyx shell: public VMs tile, internal tab without top-level navigation, boot overlay, desktop load, disconnect/reconnect and mobile bounds');
-}finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}
+}finally{await workspace.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

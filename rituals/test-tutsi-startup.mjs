@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 const base=process.env.TUTSI_TEST_URL||'http://localhost:9091/tutsi';
-const browser=await chromium.launch();
+const workspace=await chromium.launch();
 try{
- const page=await browser.newPage();
+ const page=await workspace.newPage();
  await page.goto(base+'#settings',{waitUntil:'domcontentloaded'});
  const cover=page.locator('#studyready-startup');
  await cover.waitFor();
@@ -18,7 +18,7 @@ try{
  await page.reload({waitUntil:'domcontentloaded'});
  await cover.waitFor();
  await cover.waitFor({state:'detached',timeout:9000});
- const fresh=await browser.newPage({viewport:{width:390,height:844}});
+ const fresh=await workspace.newPage({viewport:{width:390,height:844}});
  await fresh.goto(base,{waitUntil:'domcontentloaded'});
  await fresh.locator('#studyready-startup').waitFor();
  assert(!await fresh.locator('#customize-dialog').evaluate(el=>el?.open||false));
@@ -26,7 +26,7 @@ try{
  await fresh.waitForFunction(()=>document.querySelector('dialog[open]'));
  assert(!await fresh.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1));
  for(const action of ['click','keyboard','scroll','touch']) {
-   const interactive=await browser.newPage({hasTouch:action==='touch'});
+   const interactive=await workspace.newPage({hasTouch:action==='touch'});
    await interactive.clock.install();
    await interactive.goto(base,{waitUntil:'domcontentloaded'});
    const study=interactive.frameLocator('#studyready-startup');
@@ -43,5 +43,5 @@ try{
    await interactive.close();
  }
  console.log('PASS: StudyReady lessons, four-second startup, reload, preserved route, mobile and wizard sequencing');
-}finally{await browser.close()}
+}finally{await workspace.close()}
 

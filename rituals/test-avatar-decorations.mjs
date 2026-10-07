@@ -21,9 +21,9 @@ const mockModule=name=>fixture.match(new RegExp('const '+name+'=`([\\s\\S]*?)`;'
 const base=process.env.NYX_TEST_BASE_URL||'http://127.0.0.1:8199';
 let profile={displayName:'Decoration Test',handle:'@account-test',avatarUrl:'',avatarDecoration:'none',profileEffect:'none',status:'online'},saved;
 let dropEffectOnSave=false,dropEffectOnReload=false;
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
- const page=await browser.newPage({viewport:{width:1440,height:960}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const page=await workspace.newPage({viewport:{width:1440,height:960}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.addInitScript(()=>{localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.releaseNotes.2026-09-14-nyx-1.0.3.seen','2026-09-14-nyx-1.0.3');});
  for(const [file,module] of [['firebase-app.js','firebaseAppModule'],['firebase-auth.js','firebaseAuthModule']])await page.route('https://www.gstatic.com/firebasejs/11.10.0/'+file,r=>r.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:mockModule(module)}));
  await page.route('**/api/**',r=>{
@@ -74,4 +74,4 @@ try{
  await page.getByRole('navigation',{name:'Profile sections'}).getByRole('button',{name:'Decorations',exact:true}).click();await page.waitForTimeout(400);await page.screenshot({path:'.codex-artifacts/profile-editor-decorations.png'});
  assert.deepEqual(errors,[]);
  console.log('PASS 25 avatar decorations and 54 profile effects: animation/stills, server allowlists, labels, previews, save/reload, reduced motion and mobile layout');
-}finally{await browser.close();}
+}finally{await workspace.close();}

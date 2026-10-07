@@ -1,8 +1,8 @@
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
-const browser=await chromium.launch();
+const workspace=await chromium.launch();
 try {
- const page=await browser.newPage({viewport:{width:1280,height:900}});
+ const page=await workspace.newPage({viewport:{width:1280,height:900}});
  await page.route('**/firebase-app.js',r=>r.fulfill({contentType:'text/javascript',body:'export const getApps=()=>[];export const initializeApp=()=>({});'}));
  await page.route('**/firebase-auth.js',r=>r.fulfill({contentType:'text/javascript',body:"export const getAuth=()=>({currentUser:{getIdToken:async()=>'fixture'},authStateReady:async()=>{}});export const setPersistence=async()=>{};export const browserLocalPersistence={};export const onAuthStateChanged=()=>()=>{};"}));
  let releaseLaunch;
@@ -49,4 +49,4 @@ try {
  }
  await page.screenshot({path:'.codex-artifacts/cloud-tutsi-mobile.png'});
  console.log('Nested Cloud Gaming theme, typography, desktop/mobile sizing and single scrolling passed.');
-}finally{await browser.close()}
+}finally{await workspace.close()}

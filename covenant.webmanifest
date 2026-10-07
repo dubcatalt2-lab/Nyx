@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Nyx",
   "short_name": "Nyx",
-  "description": "Nyx browser and apps.",
+  "description": "Nyx learning workspace and apps.",
   "start_url": "/?source=installed-app",
   "scope": "/",
   "display": "standalone",

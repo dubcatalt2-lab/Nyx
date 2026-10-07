@@ -6,9 +6,9 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-const browser = await chromium.launch({ headless: true });
+const workspace = await chromium.launch({ headless: true });
 try {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const page = await workspace.newPage({ viewport: { width: 1280, height: 900 } });
   page.setDefaultTimeout(10_000);
   const pageErrors = [];
   const modelHeaders = [];
@@ -156,8 +156,8 @@ z = \frac{9}{3}`;
   assert((await page.locator('.ai-response-stats').nth(1).innerText()).includes('estimated'),'Missing usage must be labeled estimated');
   await page.reload();await page.locator('.ai-response-stats').first().waitFor();
   assert(await page.locator('.ai-response-stats').count()===2,'Response metrics did not survive reload');
-  assert(pageErrors.length === 0, `Browser errors: ${pageErrors.join(" | ")}`);
+  assert(pageErrors.length === 0, `Workspace errors: ${pageErrors.join(" | ")}`);
   console.log("AI workspace test: OpenRouter-only selection, image picker/preview/removal/send, keyboard activation, screen capture, multiline KaTeX formatting, stop control, and mobile layout passed");
 } finally {
-  await browser.close();
+  await workspace.close();
 }

@@ -14,9 +14,9 @@ const a=backend.resolve(id),b=backend.resolve(id);release();await Promise.all([a
 for(const response of [()=>new Response('blocked',{status:429}),()=>new Response('x'.repeat(524289),{headers:{'Content-Type':'text/html'}}),()=>new Response('{}',{headers:{'Content-Type':'application/json'}})]){
  const service=createInvidiousPlayback({env:{NYX_INVIDIOUS_EMBED_ORIGIN:origin},fetch:async()=>response()});await assert.rejects(()=>service.resolve(id));service.close();
 }
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
- const page=await browser.newPage();await page.route('https://fixture.test/**',r=>r.fulfill({contentType:'text/html',body:'<div id="host"></div>'}));
+ const page=await workspace.newPage();await page.route('https://fixture.test/**',r=>r.fulfill({contentType:'text/html',body:'<div id="host"></div>'}));
  await page.goto('https://fixture.test/');await page.clock.install();
  await page.addScriptTag({content:await readFile(sourceFile('apps/nyxtube/invidious-player.js'),'utf8')});
  // Model media events explicitly: fixture never downloads public media or reports fake playback as live verification.
@@ -41,4 +41,4 @@ try{
  await page.evaluate(()=>instance.pauseVideo());await page.clock.runFor(60000);assert.equal(await page.evaluate(()=>requests.length),6,'intentional pause never causes retry');
  await page.evaluate(()=>instance.destroy());
  console.log('PASS Invidious source validation, bounded resolver/coalescing/cache, media-error retries, startup stall recovery, position/audio preservation and navigation/pause cleanup');
-}finally{await browser.close();}
+}finally{await workspace.close();}

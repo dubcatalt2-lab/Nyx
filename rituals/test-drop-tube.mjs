@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {readFile} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
- const page=await browser.newPage({viewport:{width:1440,height:950}}),errors=[],requests=[];page.on('pageerror',e=>errors.push(e.message));
+ const page=await workspace.newPage({viewport:{width:1440,height:950}}),errors=[],requests=[];page.on('pageerror',e=>errors.push(e.message));
  if(process.env.DROP_TEST_DIST)await page.route('http://localhost:6767/**',async route=>{const path=new URL(route.request().url()).pathname;try{const file=resolve('dist','.'+decodeURIComponent(path)+(path.endsWith('/')?'index.html':''));if(!file.startsWith(resolve('dist')+'\\'))throw Error('Invalid path');await route.fulfill({body:await readFile(sourceFile(file)),contentType:({'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.woff2':'font/woff2'})[extname(file)]||'application/octet-stream'});}catch{await route.continue();}});
  const long={id:'abcdefghijk',title:'A full video',creator:'A creator',durationSeconds:600,isShort:false,channelId:'UCabcdefghijklmnopqrstuv'};
  const short={...long,id:'short123456',title:'Excluded clip',isShort:true};
@@ -22,4 +22,4 @@ try{
  await page.setViewportSize({width:390,height:844});await page.locator('#collapse').click();await page.locator('#tubeNav').click();await page.waitForTimeout(350);assert(await tube.locator('body').evaluate(e=>e.scrollWidth<=innerWidth+1));assert(!requests.some(p=>p.endsWith('/shorts')));assert.deepEqual(errors,[]);
  await page.goto('http://localhost:6767/apps/drop/tube.html?video=short123456');await page.locator('[data-notice]').filter({hasText:'not available in DropTube'}).waitFor();assert(await page.locator('[data-view=watch]').isHidden());assert.equal(await page.locator('.video-card:not(.skeleton)').count(),1);
  console.log('PASS DropTube feed/search/channel Shorts exclusion, profile/signup/sign-out and mobile layout');
-}finally{await browser.close();}
+}finally{await workspace.close();}

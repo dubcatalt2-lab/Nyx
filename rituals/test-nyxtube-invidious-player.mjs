@@ -9,9 +9,9 @@ for (const value of ['', 'http://localhost', 'https://user:pass@example.com', 'h
 const live=process.env.NYX_TEST_INVIDIOUS_LIVE==='1', root=resolve(process.env.NYX_PALETTE_ROOT||'.'), base='http://nyx.test';
 const origin=live?'https://invidious.tiekoetter.com':'https://invidious.fixture.test';
 const id='aqz-KE-bpKQ', video={id,title:'Big Buck Bunny',creator:'Blender Foundation',durationSeconds:635,detailsPending:false,isShort:false};
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try {
- const context=await browser.newContext({viewport:{width:1280,height:900}});
+ const context=await workspace.newContext({viewport:{width:1280,height:900}});
  let nativeAvailable=!live,pending=false,detailStatus=503,detailCalls=0;
  const shortRequests=new Map();
  await context.route(base+'/**', async route=>{
@@ -104,4 +104,4 @@ try {
  await page.locator('.video-cover').first().click();await page.locator('[data-watch-backup]').click();await iframe.waitFor();
  await page.evaluate(()=>postMessage({type:'drop:tube-pause'},location.origin));await page.waitForFunction(()=>!document.querySelector('[data-watch-player] iframe'));
  assert.deepEqual(errors,[]);console.log('PASS native-error fallback, explicit Invidious selection, initial state transfer, reachable player controls, return/cleanup, Shorts discovery-independent playback/cleanup, and Drop Shorts/pause isolation');
-}finally{await browser.close();}
+}finally{await workspace.close();}

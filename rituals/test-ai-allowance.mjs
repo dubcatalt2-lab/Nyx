@@ -67,11 +67,11 @@ async function run() {
   }
   {
     const f=fixture({NYX_AI_NEW_DAILY_REQUESTS:'1'}),a=f.allowance;
-    for(let n=0;n<3;n++)await a.finish(await a.begin(f.actor(`device${n}`,{device:'same-browser'})),true);
-    await a.finish(await a.begin(f.actor('device4',{device:'same-browser'})));
+    for(let n=0;n<3;n++)await a.finish(await a.begin(f.actor(`device${n}`,{device:'same-workspace'})),true);
+    await a.finish(await a.begin(f.actor('device4',{device:'same-workspace'})));
     await a.finish(await a.begin(f.actor('device0')),true); // Legacy daily message configuration no longer gates chat.
     f.advance(DAY);
-    await a.finish(await a.begin(f.actor('device0',{device:'same-browser'})));
+    await a.finish(await a.begin(f.actor('device0',{device:'same-workspace'})));
     for(let n=0;n<3;n++)await a.register('signup-device','school');
     await rejected(f.create().register('signup-device','school'),/creation limit/);
     for(let n=0;n<97;n++)await a.register(`school-device-${n}`,'school');

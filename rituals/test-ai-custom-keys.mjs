@@ -1,8 +1,8 @@
 ﻿import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
-const browser=await chromium.launch({headless:true});
+const workspace=await chromium.launch({headless:true});
 try{for(const width of [1280,390]){
- const page=await browser.newPage({viewport:{width,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const page=await workspace.newPage({viewport:{width,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/api/founder-profile/auth-config',r=>r.fulfill({json:{}}));
  await page.route('**/api/nyx-ai/providers',r=>r.fulfill({json:{providers:[{id:'shared',label:'OpenRouter'}]}}));
  await page.route('**/api/nyx-ai/models',r=>r.fulfill({json:{models:[{id:'google/gemini-2.5-flash-lite',label:'Gemini',vision:true}]}}));
@@ -22,4 +22,4 @@ try{for(const width of [1280,390]){
  assert.equal(calls[0].body.stream,false);assert.equal(calls[1].body.stream,true);
  await page.locator('#customKeyButton').click();await page.screenshot({path:'.codex-artifacts/custom-key-'+width+'.png'});await page.locator('#customKeyRemove').click();
  assert.equal(await page.locator('#providerSelect').inputValue(),'shared');assert.deepEqual(errors,[]);await page.close();
-}console.log('PASS: Nyx and OpenRouter custom keys, correct endpoint/auth, JSON and streaming playback, memory-only secrets, shared restore, desktop/mobile');}finally{await browser.close();}
+}console.log('PASS: Nyx and OpenRouter custom keys, correct endpoint/auth, JSON and streaming playback, memory-only secrets, shared restore, desktop/mobile');}finally{await workspace.close();}

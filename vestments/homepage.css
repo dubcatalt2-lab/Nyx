@@ -78,29 +78,29 @@ html body #setupLaunchScreen .nyx-loading-spinner{
 }
 html body #setupLaunchScreen .setup-launch-card .nyx-loading-stage{color:var(--nyx-load-muted)!important;-webkit-text-fill-color:var(--nyx-load-muted)!important}
 html body #setupLaunchScreen .setup-launch-card .setup-launch-credit{color:color-mix(in srgb,var(--nyx-load-muted) 74%,var(--nyx-load-bg))!important;-webkit-text-fill-color:color-mix(in srgb,var(--nyx-load-muted) 74%,var(--nyx-load-bg))!important}
-html body.browser-shell .nyx-home-action-apps{
+html body.workspace-shell .nyx-home-action-apps{
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.7'%3E%3Crect x='3' y='3' width='7' height='7' rx='1'/%3E%3Crect x='14' y='3' width='7' height='7' rx='1'/%3E%3Crect x='3' y='14' width='7' height='7' rx='1'/%3E%3Crect x='14' y='14' width='7' height='7' rx='1'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.7'%3E%3Crect x='3' y='3' width='7' height='7' rx='1'/%3E%3Crect x='14' y='3' width='7' height='7' rx='1'/%3E%3Crect x='3' y='14' width='7' height='7' rx='1'/%3E%3Crect x='14' y='14' width='7' height='7' rx='1'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat;
 }
-html body.browser-shell .nyx-home-action-games{
+html body.workspace-shell .nyx-home-action-games{
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7.2 7.2h9.6c2 0 3.3 1.1 3.8 3.3l1 4.3c.5 2.1-.4 3.8-2.2 4.1-1.2.2-2.1-.4-3.3-2.2H7.9c-1.2 1.8-2.1 2.4-3.3 2.2-1.8-.3-2.7-2-2.2-4.1l1-4.3c.5-2.2 1.8-3.3 3.8-3.3Z' fill='none' stroke='black' stroke-width='1.6'/%3E%3Cpath d='M7 10v4m-2-2h4m7-1h.01M18 13h.01' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7.2 7.2h9.6c2 0 3.3 1.1 3.8 3.3l1 4.3c.5 2.1-.4 3.8-2.2 4.1-1.2.2-2.1-.4-3.3-2.2H7.9c-1.2 1.8-2.1 2.4-3.3 2.2-1.8-.3-2.7-2-2.2-4.1l1-4.3c.5-2.2 1.8-3.3 3.8-3.3Z' fill='none' stroke='black' stroke-width='1.6'/%3E%3Cpath d='M7 10v4m-2-2h4m7-1h.01M18 13h.01' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat;
 }
-html body.browser-shell .nyx-home-action-study{
+html body.workspace-shell .nyx-home-action-study{
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 3.5h8.5L19 8v12.5H6z' fill='none' stroke='black' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M14.5 3.5V8H19M9 12h7M9 15h7M9 18h5' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 3.5h8.5L19 8v12.5H6z' fill='none' stroke='black' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M14.5 3.5V8H19M9 12h7M9 15h7M9 18h5' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
 }
-html body.browser-shell .nyx-home-action-settings{
+html body.workspace-shell .nyx-home-action-settings{
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M19.4 13a7.7 7.7 0 0 0 .05-1 7.7 7.7 0 0 0-.05-1l2.05-1.6-2-3.46-2.5 1a8 8 0 0 0-1.74-1L14.83 3h-4l-.38 2.94a8 8 0 0 0-1.74 1l-2.5-1-2 3.46L6.26 11a7.7 7.7 0 0 0-.05 1 7.7 7.7 0 0 0 .05 1l-2.05 1.6 2 3.46 2.5-1a8 8 0 0 0 1.74 1l.38 2.94h4l.38-2.94a8 8 0 0 0 1.74-1l2.5 1 2-3.46L19.4 13Z' fill='none' stroke='black' stroke-width='1.35' stroke-linejoin='round'/%3E%3Ccircle cx='12.83' cy='12' r='2.6' fill='none' stroke='black' stroke-width='1.5'/%3E%3C/svg%3E") center/contain no-repeat;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M19.4 13a7.7 7.7 0 0 0 .05-1 7.7 7.7 0 0 0-.05-1l2.05-1.6-2-3.46-2.5 1a8 8 0 0 0-1.74-1L14.83 3h-4l-.38 2.94a8 8 0 0 0-1.74 1l-2.5-1-2 3.46L6.26 11a7.7 7.7 0 0 0-.05 1 7.7 7.7 0 0 0 .05 1l-2.05 1.6 2 3.46 2.5-1a8 8 0 0 0 1.74 1l.38 2.94h4l.38-2.94a8 8 0 0 0 1.74-1l2.5 1 2-3.46L19.4 13Z' fill='none' stroke='black' stroke-width='1.35' stroke-linejoin='round'/%3E%3Ccircle cx='12.83' cy='12' r='2.6' fill='none' stroke='black' stroke-width='1.5'/%3E%3C/svg%3E") center/contain no-repeat;
 }
 
-html body.browser-shell.theme-default{
+html body.workspace-shell.theme-default{
   --nyx-final-shortcut-icon:#a9c7f8!important;
 }
-html body.browser-shell.theme-default #nyxWaveBg,
-html body.browser-shell.theme-default .nyx-wave-bg,
-html body.browser-shell.theme-default:not(.three-d-backgrounds) #defaultVantaBg{display:none!important}
+html body.workspace-shell.theme-default #nyxWaveBg,
+html body.workspace-shell.theme-default .nyx-wave-bg,
+html body.workspace-shell.theme-default:not(.three-d-backgrounds) #defaultVantaBg{display:none!important}
 
 html body .setup-launch-card,
 html body .setup-launch-card :is(h2,p,strong){font-family:var(--nyx-font,Inter),Arial,sans-serif!important}
@@ -117,20 +117,20 @@ html body .setup-launch-card .setup-launch-credit{
   letter-spacing:.11em!important;
 }
 
-html body.browser-shell{
+html body.workspace-shell{
   --nyx-themed-logo-url:url("/assets/icons/nyx-cat-moon.svg?v=3");
   --nyx-title-theme-color:#92b7ed;
 }
-html body.browser-shell.theme-ruby{
+html body.workspace-shell.theme-ruby{
   --nyx-title-theme-color:#e97b8d;
 }
-html body.browser-shell.theme-emerald{
+html body.workspace-shell.theme-emerald{
   --nyx-title-theme-color:#53cda3;
 }
-html body.browser-shell.theme-sakura{
+html body.workspace-shell.theme-sakura{
   --nyx-title-theme-color:#df91bd;
 }
-html body.browser-shell.theme-fresh{
+html body.workspace-shell.theme-fresh{
   --nyx-title-theme-color:#2aa59d;
 }
 

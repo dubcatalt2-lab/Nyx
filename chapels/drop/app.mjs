@@ -1,7 +1,7 @@
-import {warmBrowser} from '../tutsi/intercession.mjs';
+import {warmWorkspace} from '../tutsi/intercession.mjs';
 import {watchWebsiteFrame} from '../tutsi/frame-navigation.mjs';
 import {setupDropPresence} from './presence.mjs';
-import {browse,control,closeBrowser,currentWebsiteUrl,testRelay} from '../tutsi/intercession.mjs';
+import {explore,control,closeWorkspace,currentWebsiteUrl,testRelay} from '../tutsi/intercession.mjs';
 import {websiteAddress} from '../tutsi/navigation.mjs';
 import {protectionSandbox,installShellPopupProtection,installGameProtectionHost} from '../tutsi/protections.mjs';
 import {trafficMeter} from './traffic.mjs';
@@ -17,22 +17,22 @@ settings.connection=['auto','bridge','direct'].includes(saved.connection)?saved.
 function configureConnection(){settings.httpBridge=settings.connection!=='direct';settings.autoRelay=settings.connection!=='bridge';}
 configureConnection();
 const meter=trafficMeter();settings.onTraffic=(direction,bytes)=>meter.add(direction,bytes);
-installShellPopupProtection(()=>settings,()=>view==='browser'||view==='games');
+installShellPopupProtection(()=>settings,()=>view==='workspace'||view==='games');
 installGameProtectionHost(()=>settings,()=>[$('gamesFrame')]);
 let tabs=[],active=null,view='home',noticeTimer,aiReady=false,pendingAi=[],signedIn=false;
 function notice(message){$('notice').textContent=message;$('notice').hidden=false;clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>$('notice').hidden=true,6500);}
-function saveSettings(){try{localStorage.setItem('drop.settings',JSON.stringify(settings));}catch{notice('Browser storage is unavailable.');}}
+function saveSettings(){try{localStorage.setItem('drop.settings',JSON.stringify(settings));}catch{notice('Workspace storage is unavailable.');}}
 function saveTabs(){try{if(settings.restore)localStorage.setItem('drop.tabs',JSON.stringify(tabs.map(({url,title,pinned})=>({url,title,pinned:!!pinned}))));else localStorage.removeItem('drop.tabs');}catch{}}
-function setView(next){view=next;document.body.dataset.view=next;for(const name of ['home','browser','ai','games','tube','bookmarks'])$(name).hidden=name!==next;$('homeNav').toggleAttribute('aria-current',next==='home');$('homeNav').setAttribute('aria-current',next==='home'?'page':'false');$('aiNav').setAttribute('aria-current',next==='ai'?'page':'false');if(next==='home'){$('query').value='';$('query').focus();}if(next==='ai')ensureAi();if(next==='games'&&!$('gamesFrame').getAttribute('src')){$('gamesFrame').src='/apps/drop/games.html';ensureAi();}if(next==='tube'&&!$('tubeFrame').getAttribute('src')){$('tubeFrame').src='/apps/drop/tube.html';ensureAi();}if(next!=='tube'&&$('tubeFrame').contentWindow)$('tubeFrame').contentWindow.postMessage({type:'drop:tube-pause'},location.origin);if(next==='bookmarks')renderBookmarks();for(const name of ['games','tube','bookmarks'])$(name+'Nav').setAttribute('aria-current',next===name?'page':'false');renderTabs();}
-function renderTabs(){tabs.sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned));syncPageActions();$('tabCount').textContent=tabs.length;$('tabs').replaceChildren(...tabs.map(tab=>{const row=document.createElement('div');row.className='tab'+(tab.pinned?' pinned':'');row.setAttribute('role','tab');row.setAttribute('aria-selected',String(view==='browser'&&active===tab));const open=document.createElement('button');open.innerHTML=icon(tab.pinned?'pin':'file');const label=document.createElement('span');label.className='label';label.textContent=tab.title||new URL(tab.url).hostname;open.append(label);open.title=label.textContent;open.onclick=()=>activate(tab);const close=document.createElement('button');close.className='icon close-tab';close.innerHTML=icon('close');close.setAttribute('aria-label','Close '+label.textContent);close.onclick=()=>remove(tab);const pin=document.createElement('button');pin.className='icon pin-tab';pin.innerHTML=icon('pin');pin.setAttribute('aria-label',(tab.pinned?'Unpin ':'Pin ')+label.textContent);pin.setAttribute('aria-pressed',String(!!tab.pinned));pin.onclick=()=>togglePin(tab);row.append(open,pin,close);return row;}));}
-function activate(tab){active=tab;setView('browser');for(const item of tabs)if(item.frame)item.frame.hidden=item!==tab;$('address').value=tab.url;$('loading').textContent=tab.loading?'Loading...':'';showBrowseError(tab.error);if(!tab.frame)void navigate(tab,tab.url);}
-function remove(tab){tab.stopNavigationWatch?.();clearTimeout(tab.loadTimer);const i=tabs.indexOf(tab);tabs=tabs.filter(t=>t!==tab);if(tab.frame){closeBrowser(tab.frame);tab.frame.remove();}if(active===tab){active=null;if(tabs.length)activate(tabs[Math.max(0,i-1)]);else setView('home');}renderTabs();saveTabs();}
+function setView(next){view=next;document.body.dataset.view=next;for(const name of ['home','workspace','ai','games','tube','bookmarks'])$(name).hidden=name!==next;$('homeNav').toggleAttribute('aria-current',next==='home');$('homeNav').setAttribute('aria-current',next==='home'?'page':'false');$('aiNav').setAttribute('aria-current',next==='ai'?'page':'false');if(next==='home'){$('query').value='';$('query').focus();}if(next==='ai')ensureAi();if(next==='games'&&!$('gamesFrame').getAttribute('src')){$('gamesFrame').src='/apps/drop/games.html';ensureAi();}if(next==='tube'&&!$('tubeFrame').getAttribute('src')){$('tubeFrame').src='/apps/drop/tube.html';ensureAi();}if(next!=='tube'&&$('tubeFrame').contentWindow)$('tubeFrame').contentWindow.postMessage({type:'drop:tube-pause'},location.origin);if(next==='bookmarks')renderBookmarks();for(const name of ['games','tube','bookmarks'])$(name+'Nav').setAttribute('aria-current',next===name?'page':'false');renderTabs();}
+function renderTabs(){tabs.sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned));syncPageActions();$('tabCount').textContent=tabs.length;$('tabs').replaceChildren(...tabs.map(tab=>{const row=document.createElement('div');row.className='tab'+(tab.pinned?' pinned':'');row.setAttribute('role','tab');row.setAttribute('aria-selected',String(view==='workspace'&&active===tab));const open=document.createElement('button');open.innerHTML=icon(tab.pinned?'pin':'file');const label=document.createElement('span');label.className='label';label.textContent=tab.title||new URL(tab.url).hostname;open.append(label);open.title=label.textContent;open.onclick=()=>activate(tab);const close=document.createElement('button');close.className='icon close-tab';close.innerHTML=icon('close');close.setAttribute('aria-label','Close '+label.textContent);close.onclick=()=>remove(tab);const pin=document.createElement('button');pin.className='icon pin-tab';pin.innerHTML=icon('pin');pin.setAttribute('aria-label',(tab.pinned?'Unpin ':'Pin ')+label.textContent);pin.setAttribute('aria-pressed',String(!!tab.pinned));pin.onclick=()=>togglePin(tab);row.append(open,pin,close);return row;}));}
+function activate(tab){active=tab;setView('workspace');for(const item of tabs)if(item.frame)item.frame.hidden=item!==tab;$('address').value=tab.url;$('loading').textContent=tab.loading?'Loading...':'';showExploreError(tab.error);if(!tab.frame)void navigate(tab,tab.url);}
+function remove(tab){tab.stopNavigationWatch?.();clearTimeout(tab.loadTimer);const i=tabs.indexOf(tab);tabs=tabs.filter(t=>t!==tab);if(tab.frame){closeWorkspace(tab.frame);tab.frame.remove();}if(active===tab){active=null;if(tabs.length)activate(tabs[Math.max(0,i-1)]);else setView('home');}renderTabs();saveTabs();}
 function newTab(url){if(tabs.length>=20){notice('Close a tab before opening another.');return;}const tab={id:crypto.randomUUID(),url,title:new URL(url).hostname,version:0};tabs.push(tab);activate(tab);saveTabs();}
 async function navigate(tab,url){
  const version=++tab.version;tab.stopNavigationWatch?.();
  let previousDocument;try{previousDocument=tab.frame?.contentDocument}catch{}
  tab.url=url;tab.title=new URL(url).hostname;tab.loading=true;tab.error='';
- if(active===tab)showBrowseError('');
+ if(active===tab)showExploreError('');
  if(!tab.frame){
   const frame=document.createElement('iframe');frame.title=tab.title;
   frame.setAttribute('sandbox',protectionSandbox(settings));frame.setAttribute('allow','fullscreen; autoplay; clipboard-write');
@@ -42,17 +42,17 @@ async function navigate(tab,url){
  if(active===tab){$('address').value=url;$('loading').textContent='Loading...';}renderTabs();
  tab.stopNavigationWatch=watchWebsiteFrame(tab.frame,{previousDocument,
   onError:message=>failNavigation(tab,version,message),
-  reload:()=>browse(url,settings,tab.frame,{reconnect:true}),
+  reload:()=>explore(url,settings,tab.frame,{reconnect:true}),
   onReady:()=>{
    if(version!==tab.version||!tabs.includes(tab))return;
    const current=currentWebsiteUrl(tab.frame);if(current)tab.url=current;
    try{tab.title=tab.frame.contentDocument?.title||new URL(tab.url).hostname}catch{}
    tab.loading=false;tab.error='';
-   if(active===tab){showBrowseError('');if(document.activeElement!==$('address'))$('address').value=tab.url;$('loading').textContent='';}
+   if(active===tab){showExploreError('');if(document.activeElement!==$('address'))$('address').value=tab.url;$('loading').textContent='';}
    renderTabs();saveTabs();
   }
  });
- try{await browse(url,settings,tab.frame);if(version===tab.version&&tabs.includes(tab))saveTabs();}
+ try{await explore(url,settings,tab.frame);if(version===tab.version&&tabs.includes(tab))saveTabs();}
  catch(error){if(version===tab.version)void tab.stopNavigationWatch.failed(error.message||'Could not open this page.');}
 }
 
@@ -69,7 +69,7 @@ $('connectionMode').onchange=()=>{settings.connection=$('connectionMode').value;
 $('testConnection').onclick=async()=>{const button=$('testConnection');button.disabled=true;try{await testRelay(settings);}catch(error){$('connectionStatus').textContent='Unavailable';notice(error.message);}finally{button.disabled=false;}};
 addEventListener('tutsi:relay-status',({detail})=>{const bridge=detail.url?.includes('/api/tutsi-relay/socket/');$('connectionStatus').textContent=['connected','available','switched'].includes(detail.state)?(bridge?'HTTP bridge connected':'WebSocket connected'):detail.state==='checking'?'Connecting...':'Unavailable';});
 // SPA navigation updates history without firing an iframe load event.
-setInterval(()=>{if(document.hidden||view!=='browser'||!active?.frame||active.loading)return;const url=currentWebsiteUrl(active.frame);if(!url||!/^https?:/.test(url))return;let title=active.title;try{title=active.frame.contentDocument?.title||new URL(url).hostname;}catch{}if(url===active.url&&title===active.title)return;active.url=url;active.title=title;if(document.activeElement!==$('address'))$('address').value=url;renderTabs();saveTabs();},500);
+setInterval(()=>{if(document.hidden||view!=='workspace'||!active?.frame||active.loading)return;const url=currentWebsiteUrl(active.frame);if(!url||!/^https?:/.test(url))return;let title=active.title;try{title=active.frame.contentDocument?.title||new URL(url).hostname;}catch{}if(url===active.url&&title===active.title)return;active.url=url;active.title=title;if(document.activeElement!==$('address'))$('address').value=url;renderTabs();saveTabs();},500);
 $('engine').value=settings.engine;$('restore').checked=settings.restore;$('popups').checked=settings.popupBlock;$('ads').checked=settings.adBlock;
 $('settingsButton').onclick=()=>$('settings').showModal();document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).close());
 for(const [id,key] of [['engine','engine'],['restore','restore'],['popups','popupBlock'],['ads','adBlock']])$(id).onchange=()=>{settings[key]=id==='engine'?$(id).value:$(id).checked;saveSettings();saveTabs();if(id==='popups'||id==='ads'){for(const t of tabs)if(t.frame)t.frame.setAttribute('sandbox',protectionSandbox(settings));import('../tutsi/intercession.mjs').then(m=>m.updateProtectionPolicy(settings));}};
@@ -88,14 +88,14 @@ setInterval(()=>{
  $('traffic').setAttribute('aria-label','Activity. '+Object.values(values).join('. '));
  for(const [key,samples]of Object.entries(sample.history)){const max=key==='processing'?100:Math.max(key==='traffic'?.1:1,...samples);$('graph').querySelector('[data-series='+key+']').setAttribute('d',samples.map((value,i)=>(i?'L':'M')+(i*90/(samples.length-1)).toFixed(1)+' '+(26-value/max*23).toFixed(1)).join(' '));}
 },1000);
-addEventListener('keydown',e=>{if(e.altKey&&e.key==='n'){e.preventDefault();setView('home');}if(e.altKey&&e.key==='w'&&view==='browser'&&active){e.preventDefault();remove(active);}if(e.altKey&&/^[1-9]$/.test(e.key)&&tabs[Number(e.key)-1]){e.preventDefault();activate(tabs[Number(e.key)-1]);}});
+addEventListener('keydown',e=>{if(e.altKey&&e.key==='n'){e.preventDefault();setView('home');}if(e.altKey&&e.key==='w'&&view==='workspace'&&active){e.preventDefault();remove(active);}if(e.altKey&&/^[1-9]$/.test(e.key)&&tabs[Number(e.key)-1]){e.preventDefault();activate(tabs[Number(e.key)-1]);}});
 if(settings.restore)try{const stored=JSON.parse(localStorage.getItem('drop.tabs')||'[]');if(Array.isArray(stored))tabs=stored.slice(0,20).filter(t=>typeof t.url==='string'&&/^https?:\/\//.test(t.url)).map(t=>({id:crypto.randomUUID(),url:new URL(t.url).href,title:String(t.title||new URL(t.url).hostname).slice(0,100),pinned:t.pinned===true,version:0}));}catch{}
 
-function showBrowseError(message){$('browseError').hidden=!message;$('browseErrorText').textContent=message||'';}
-function failNavigation(tab,version,message){if(!tabs.includes(tab)||tab.version!==version)return;tab.stopNavigationWatch?.();clearTimeout(tab.loadTimer);tab.loading=false;tab.error='';if(active===tab){$('loading').textContent='';showBrowseError('');notice('This website is not responding. You can open another address.');}}
+function showExploreError(message){$('resourceError').hidden=!message;$('resourceErrorText').textContent=message||'';}
+function failNavigation(tab,version,message){if(!tabs.includes(tab)||tab.version!==version)return;tab.stopNavigationWatch?.();clearTimeout(tab.loadTimer);tab.loading=false;tab.error='';if(active===tab){$('loading').textContent='';showExploreError('');notice('This website is not responding. You can open another address.');}}
 function togglePin(tab){tab.pinned=!tab.pinned;renderTabs();saveTabs();}
 let bookmarks=[];try{const saved=JSON.parse(localStorage.getItem('drop.bookmarks')||'[]');if(Array.isArray(saved))bookmarks=saved.filter(b=>typeof b.url==='string'&&/^https?:\/\//.test(b.url)).map(b=>({url:new URL(b.url).href,title:String(b.title||b.url).slice(0,200)}));}catch{}
-function persistBookmarks(){try{localStorage.setItem('drop.bookmarks',JSON.stringify(bookmarks));}catch{notice('Bookmarks could not be saved. Browser storage may be full.');}syncPageActions();renderBookmarks();}
+function persistBookmarks(){try{localStorage.setItem('drop.bookmarks',JSON.stringify(bookmarks));}catch{notice('Bookmarks could not be saved. Workspace storage may be full.');}syncPageActions();renderBookmarks();}
 function syncPageActions(){const saved=!!active&&bookmarks.some(b=>b.url===active.url);for(const [id,on,label]of [['bookmarkPage',saved,saved?'Remove bookmark':'Bookmark page'],['pinPage',!!active?.pinned,active?.pinned?'Unpin tab':'Pin tab']]){$(id).setAttribute('aria-pressed',String(on));$(id).setAttribute('aria-label',label);$(id).title=label;}}
 $('bookmarkPage').onclick=()=>{if(!active)return;const i=bookmarks.findIndex(b=>b.url===active.url);if(i>=0)bookmarks.splice(i,1);else bookmarks.unshift({url:active.url,title:active.title});persistBookmarks();};
 $('pinPage').onclick=()=>{if(active)togglePin(active);};
@@ -143,8 +143,8 @@ async function showFirstSetup(){
 }
 if(document.readyState==='complete')void showFirstSetup();else document.addEventListener('DOMContentLoaded',()=>void showFirstSetup(),{once:true});
 
-let warmingBrowser;
-const prepareBrowser=()=>{if(document.hidden||warmingBrowser)return;warmingBrowser=warmBrowser(settings).finally(()=>{warmingBrowser=null;});};
-$('query').addEventListener('focus',prepareBrowser);
-$('query').addEventListener('pointerdown',prepareBrowser,{passive:true});
-if(typeof requestIdleCallback==='function')requestIdleCallback(prepareBrowser,{timeout:1000});else setTimeout(prepareBrowser,700);
+let warmingWorkspace;
+const prepareWorkspace=()=>{if(document.hidden||warmingWorkspace)return;warmingWorkspace=warmWorkspace(settings).finally(()=>{warmingWorkspace=null;});};
+$('query').addEventListener('focus',prepareWorkspace);
+$('query').addEventListener('pointerdown',prepareWorkspace,{passive:true});
+if(typeof requestIdleCallback==='function')requestIdleCallback(prepareWorkspace,{timeout:1000});else setTimeout(prepareWorkspace,700);

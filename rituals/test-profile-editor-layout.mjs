@@ -3,7 +3,7 @@ import {chromium} from 'playwright';
 
 const origin=process.env.NYX_TEST_BASE_URL||'http://127.0.0.1:8199';
 const profile={
-  displayName:'Account Test',handle:'@account-test',bio:'Browser regression profile',
+  displayName:'Account Test',handle:'@account-test',bio:'Workspace regression profile',
   avatarUrl:'',bannerUrl:'',accentPrimary:'#5865f2',accentSecondary:'#8ea1ff',
   bannerColor:'#8ea1ff',displayNameFont:'gg-sans',displayNameEffect:'solid',
   displayNameColorPrimary:'#ffffff',displayNameColorSecondary:'#8ea1ff',
@@ -25,17 +25,17 @@ const firebaseAuthModule=`
   export async function signInWithCustomToken(){return {user:auth.currentUser}}
 `;
 
-let browser;
+let workspace;
 let postedChatMessage=null;
 try{
 
-  browser=await chromium.launch({channel:'msedge',headless:true});
-  const page=await browser.newPage({viewport:{width:1280,height:800}});
+  workspace=await chromium.launch({channel:'msedge',headless:true});
+  const page=await workspace.newPage({viewport:{width:1280,height:800}});
   const pageErrors=[];
   page.on('pageerror',error=>pageErrors.push(error.message));
   await page.addInitScript(()=>{
     localStorage.setItem('nyx.setupComplete','true');
-    localStorage.setItem('nyx.browserShellMode','true');
+    localStorage.setItem('nyx.workspaceShellMode','true');
     if(!sessionStorage.getItem('nyx.test.originalMigration')){
       localStorage.setItem('nyx.homeDesign','original');
       sessionStorage.setItem('nyx.test.originalMigration','true');
@@ -120,4 +120,4 @@ try{
   const chooser=page.waitForEvent('filechooser');await editor.locator('[data-nyx-pick-image="banner"]').click();await chooser;
   assert.deepEqual(pageErrors,[]);
   console.log('PASS centered editor, compact live card, SVG navigation, profile save/decorations, mobile Edit/Preview and preserved image picker');
-}finally{await browser?.close();}
+}finally{await workspace?.close();}

@@ -1,5 +1,5 @@
 import {sourceWebsiteUrl} from "./navigation.mjs";
-import {browserAdSource} from "./browser-ad-runtime.mjs";
+import {workspaceAdSource as workspaceAdSource} from "./workspace-ad-runtime.mjs";
 import {gameAdSource} from "./game-ad-runtime.mjs";
 ﻿// Small, explicit host list. Match domain boundaries, never words in a query string.
 export const adHosts = ['adtrafficquality.google','r9x.in','clickadu.com','hilltopads.net','html5.api.gamedistribution.com','gamemonetize.com','imasdk.googleapis.com','mgid.com','onclickads.net','openx.net','playwire.com','sdk.poki.com','trafficjunky.com','venatusmedia.com','doubleclick.net','googlesyndication.com','googleadservices.com','adnxs.com','adsrvr.org','adinplay.com','adsterra.com','popads.net','popcash.net','propellerads.com','monetag.com','exoclick.com','trafficjunky.net','taboola.com','outbrain.com','criteo.com','pubmatic.com','rubiconproject.com','amazon-adsystem.com','ads.emulatorjs.org'];
@@ -130,7 +130,7 @@ export function pageProtection(policy, riskySource) {
     (document.head||document.documentElement).append(style);
   }
 }
-export function protectionSource(policy){return `(${pageProtection.toString()})(${JSON.stringify(policyFrom(policy))},${JSON.stringify(riskyExtension.source)});\n${policy.adBlock!==false?browserAdSource+'\n'+gameAdSource:""}`;}
+export function protectionSource(policy){return `(${pageProtection.toString()})(${JSON.stringify(policyFrom(policy))},${JSON.stringify(riskyExtension.source)});\n${policy.adBlock!==false?workspaceAdSource+'\n'+gameAdSource:""}`;}
 export function protectionSandbox(settings){
   return 'allow-scripts allow-same-origin allow-forms allow-downloads allow-modals allow-pointer-lock allow-presentation'+(settings.popupBlock===false?' allow-popups':'');
 }

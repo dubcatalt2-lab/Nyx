@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 const source=await readFile(sourceFile(new URL('../script.js',import.meta.url)),'utf8');
-const start=source.indexOf('async function unregisterProxyScope('),end=source.indexOf('async function repairScramjetStorage(',start);
+const start=source.indexOf('async function unregisterConnectionScope('),end=source.indexOf('async function repairStudyjetStorage(',start);
 assert(start>=0&&end>start);
 let scope='https://example.org/export/',removed=0;
 const unregister=vm.runInNewContext('('+source.slice(start,end).trim()+')',{

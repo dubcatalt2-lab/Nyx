@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
- const page=await browser.newPage();const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ const page=await workspace.newPage();const errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.route('https://www.gstatic.com/firebasejs/**/firebase-app.js',r=>r.fulfill({contentType:'text/javascript',body:'export const getApps=()=>[];export const initializeApp=()=>({});'}));
  await page.route('https://www.gstatic.com/firebasejs/**/firebase-auth.js',r=>r.fulfill({contentType:'text/javascript',body:`
  const auth={currentUser:null};let listener;
@@ -24,4 +24,4 @@ try{
  await page.evaluate(()=>window.__authError='');await page.locator('#authSubmit').click();await page.locator('#login').waitFor({state:'hidden'});assert.equal(await page.locator('#account').innerText(),'Sign out');assert.equal(await page.locator('#password').inputValue(),'');assert.equal(await page.locator('#confirmPassword').inputValue(),'');
  await page.locator('#account').click();await page.locator('#account').click();await page.locator('#authSwitch').click();assert(await page.locator('#confirmPasswordLabel').isHidden());await page.locator('#password').fill('test-password');await page.locator('#authSubmit').click();await page.locator('#login').waitFor({state:'hidden'});assert(await page.evaluate(()=>window.__signin));assert.deepEqual(errors,[]);
  console.log('PASS account creation, mismatched passwords, duplicate email, retry, password clearing and existing-account sign-in');
-}finally{await browser.close();}
+}finally{await workspace.close();}

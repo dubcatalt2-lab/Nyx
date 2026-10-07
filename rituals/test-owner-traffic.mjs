@@ -5,7 +5,7 @@ import {readFile, mkdir} from 'node:fs/promises';
 import {resolve, extname, sep} from 'node:path';
 
 const root=resolve(process.env.NYX_TEST_ASSET_ROOT || '.');
-const browser=await chromium.launch({headless:true});
+const workspace=await chromium.launch({headless:true});
 await mkdir('.codex-artifacts',{recursive:true});
 const now=Date.UTC(2026,9,1,19,34,30);
 function fixture(minutes) {
@@ -16,13 +16,13 @@ function fixture(minutes) {
 }
 try {
   for(const width of [1440,390]) {
-    const page=await browser.newPage({viewport:{width,height:1000},timezoneId:'America/Los_Angeles'});
+    const page=await workspace.newPage({viewport:{width,height:1000},timezoneId:'America/Los_Angeles'});
     await page.clock.install({time:new Date(now)});
     const errors=[];page.on('pageerror',error=>errors.push(error.message));
     let trafficCalls=0,failTraffic=false,founder=true,lastQuery='';
     await page.route('http://nyx.test/**',async route=>{
       const url=new URL(route.request().url()),path=url.pathname;
-      if(path==='/')return route.fulfill({contentType:'text/html',body:'<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/css/owner-dashboard-polish.css"></head><body class="browser-shell"><script src="/js/owner-dashboard.js"></script></body></html>'});
+      if(path==='/')return route.fulfill({contentType:'text/html',body:'<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/css/owner-dashboard-polish.css"></head><body class="workspace-shell"><script src="/js/owner-dashboard.js"></script></body></html>'});
       if(!path.startsWith('/api/')) {
         const asset=resolve(root,'.'+path);
         if(!asset.startsWith(root+sep))return route.fulfill({status:404,body:''});
@@ -116,4 +116,4 @@ try {
     assert.deepEqual(errors,[]);await page.close();
   }
   console.log('Desktop/mobile dashboard sections, real chart rendering, spike timestamps, keyboard inspection, range changes, polling, stale data and owner-only UI passed.');
-} finally {await browser.close();}
+} finally {await workspace.close();}

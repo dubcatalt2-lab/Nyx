@@ -17,12 +17,12 @@ const bytes = await readFile(sourceFile(fixture));
 const staticRoot = join(folder, 'site');
 await symlink(resolve(process.env.NYX_TEST_ASSET_ROOT || '.'), staticRoot, process.platform === 'win32' ? 'junction' : 'dir');
 const app=express();app.use(express.static(staticRoot));const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const origin='http://127.0.0.1:'+server.address().port;
-let browser;
+let workspace;
 const tracks = [1, 2].map(id => ({ id: String(id), title: `Music fixture ${id}`, artist: 'Nyx test', duration: 125, catalog: 'deezer', cover: '', album: 'Test album' }));
 try {
-  browser = await chromium.launch();
+  workspace = await chromium.launch();
   for (const width of [1280, 390]) {
-    let page = await browser.newPage({ viewport: { width, height: 850 } });
+    let page = await workspace.newPage({ viewport: { width, height: 850 } });
     await page.addInitScript(() => {
       localStorage.setItem('nyx_nyxify_volume', 'invalid');
       localStorage.setItem('nyx_nyxify_history', '{}');
@@ -60,7 +60,7 @@ try {
     });
     const hostPage=page;
     if(process.env.NYX_TEST_SHELL){
-      await page.addInitScript(()=>{localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.browserShellMode','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');});
+      await page.addInitScript(()=>{localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.workspaceShellMode','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');});
       await page.goto(origin+'/');
       await page.getByRole('button',{name:'Got it',exact:true}).click();
       await page.locator('[data-nyx-dock-item="music"]').click();
@@ -107,6 +107,6 @@ try {
   }
   console.log('PASS repeat one, repeat all, off at queue end and manual next on desktop/mobile with real audio');
 }finally{
- await browser?.close();server.closeAllConnections();await new Promise(r=>server.close(r));
+ await workspace?.close();server.closeAllConnections();await new Promise(r=>server.close(r));
  await rm(folder,{recursive:true,force:true});
 }

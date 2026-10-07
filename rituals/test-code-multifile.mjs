@@ -1,8 +1,8 @@
 ﻿import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
- const page=await browser.newPage({viewport:{width:1440,height:900}});
+ const page=await workspace.newPage({viewport:{width:1440,height:900}});
  await page.route('**/api/**',r=>r.fulfill({json:{}}));
  await page.goto((process.env.NYX_TEST_BASE_URL||'http://localhost:6767')+'/apps/code-studio/');
  const editor=page.locator('[data-code-input]'),files=page.getByRole('combobox',{name:'Workspace files'});
@@ -19,4 +19,4 @@ try{
  await page.goto((process.env.NYX_AGENTS_TEST_URL||'http://localhost:6769')+'/apps/agents/');await page.waitForSelector('#connect svg',{state:'attached'});assert.equal(await page.locator('#send svg').count(),1);assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:'.codex-artifacts/agents-redesign.png'});
  await page.locator('#account').click();assert(await page.locator('#login').evaluate(e=>e.open));await page.locator('#closeLogin').click();assert.equal(await page.locator('#login').evaluate(e=>e.open),false);
  console.log('PASS named files, duplicate guard, persistence, linked CSS/JS with deferred execution, rounded composer, Agents layout and sign-in controls');
-}finally{await browser.close();}
+}finally{await workspace.close();}

@@ -6,7 +6,7 @@ import {join,posix} from 'node:path';
 import {createHash} from 'node:crypto';
 import {minify} from 'terser';
 import {formatPublishedHtml,formatPublishedJs} from './format-published-html.mjs';
-import {scrambleInlineScripts,opaqueIdentifiers} from './build-browser-scramble.mjs';
+import {scrambleInlineScripts,opaqueIdentifiers} from './build-workspace-scramble.mjs';
 const alias=path=>posix.join(posix.dirname(path),'@r'+createHash('sha256').update('frontend-education-v1:'+path).digest('hex').slice(0,24)+'!'+posix.extname(path));
 function rewriteRelativeScriptUrls(source,path,aliases){
   const edits=[];
@@ -70,17 +70,28 @@ export async function buildFrontendAssets(output,files,lessonHtml) {
     const loader=posix.join(posix.dirname('/'+path),'@r'+createHash('sha256').update('entry:'+path).digest('hex').slice(0,24)+'!.js');
     // Decode as UTF-8, preserve the original document URL, script order and handlers.
     const payload=Buffer.from(original).toString('base64').match(/.{1,112}/g)||[];
-    const boot=`(async()=>{await (${migrateStorage.toString()})(JSON.parse(atob(${JSON.stringify(Buffer.from(JSON.stringify(storageNames)).toString("base64"))})));const html=new TextDecoder().decode(Uint8Array.from(atob(${JSON.stringify(payload)}.join('')),c=>c.charCodeAt(0)));document.open();document.write(html);document.close()})().catch(()=>{const p=document.createElement('p');p.setAttribute('role','alert');p.textContent='Saved browser data could not be updated. Close other site tabs and reload.';document.body.prepend(p)});`;
+    const boot=`(async()=>{await (${migrateStorage.toString()})(JSON.parse(atob(${JSON.stringify(Buffer.from(JSON.stringify(storageNames)).toString("base64"))})));const html=new TextDecoder().decode(Uint8Array.from(atob(${JSON.stringify(payload)}.join('')),c=>c.charCodeAt(0)));document.open();document.write(html);document.close()})().catch(()=>{const p=document.createElement('p');p.setAttribute('role','alert');p.textContent='Saved workspace data could not be updated. Close other site tabs and reload.';document.body.prepend(p)});`;
     // Compression can fold the chunk array back into one huge literal. Keep
     // chunks intact while retaining local-name mangling and readable layout.
     await writeFile(join(output,loader.slice(1)),formatPublishedJs((await minify(boot,{mangle:{toplevel:true,nth_identifier:opaqueIdentifiers('entry:'+path)},compress:false,format:{beautify:true,indent_level:2}})).code));
     const destination=path==='index.html'?'study.html':path;
     entryDocuments[destination]=Buffer.from(original).toString('base64');
-    const shell=`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>StudyHub</title></head><body><script src="${loader}"></script></body></html>`;
+    const shell=`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Learning Commons</title></head><body><script src="${loader}"></script></body></html>`;
     await writeFile(join(output,destination),formatPublishedHtml(shell));
   }
   const cover=lessonHtml.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'').replaceAll('/learning/','/apps/tutsi/studyready/').replace('</head>','<meta http-equiv="refresh" content="1;url=study.html"></head>').replace('</body>','<p><a href="study.html">Continue to your workspace</a></p></body>');
   await writeFile(join(output,'index.html'),formatPublishedHtml(cover));
+  const mappings=JSON.parse(await readFile(join(output,'public-modules.json'),'utf8'));
+  for(const [from,to]of Object.entries(mappings.aliases)){
+    if(!from.endsWith('.mjs'))continue;
+    const prior=from.slice(0,-4)+'.js';
+    if(prior!==to&&!/\.module-[a-f0-9]+\.js$/.test(to)){
+      mappings.aliases[prior]=to;
+      mappings.aliases[alias(prior)]=to;
+      mappings.aliases[to.slice(0,-3)+'.mjs']=to;
+    }
+  }
+  await writeFile(join(output,'public-modules.json'),JSON.stringify(mappings));
   await writeFile(join(output,'frontend-assets.json'),JSON.stringify({version:2,aliases,entryDocuments}));
   console.log(`Frontend build: ${candidates.length} stable script aliases; one lesson cover with an HTML redirect to study.html.`);
 }

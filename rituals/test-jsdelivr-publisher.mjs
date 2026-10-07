@@ -85,7 +85,7 @@ async function fillPublisher(page, count = 3) {
   });
 }
 
-let browser;
+let workspace;
 try {
   await waitForServer();
   for(let attempt=0;attempt<2;attempt++){
@@ -98,9 +98,9 @@ try {
   const apps = await appsResponse.json();
   assert.ok(apps.apps?.some(app => app.id === 'jsdelivr-publisher' && app.url === '/apps/jsdelivr-publisher/'), 'The JSDelivr Publisher was missing from the app catalog');
 
-  browser = await chromium.launch({ headless: true });
+  workspace = await chromium.launch({ headless: true });
 
-  const handoffPage = await browser.newPage({ viewport: { width: 1_280, height: 900 } });
+  const handoffPage = await workspace.newPage({ viewport: { width: 1_280, height: 900 } });
   const handoffErrors = [];
   let p2pRequest = null;
   let preparationPolls = 0;
@@ -148,7 +148,7 @@ try {
   assert.equal(p2pRequest?.label, 'study room', 'Link Generator did not send the requested P2P label');
   assert.match(await handoffPage.locator('[data-result-url]').inputValue(), /p2p-test\.svg$/, 'P2P did not render the returned Nyx link');
   assert.equal(await handoffPage.locator('#token').count(), 0, 'P2P exposed the personal-token publisher form');
-  assert.deepEqual(handoffErrors, [], `Direct P2P Link Generator browser errors: ${handoffErrors.join(' | ')}`);
+  assert.deepEqual(handoffErrors, [], `Direct P2P Link Generator workspace errors: ${handoffErrors.join(' | ')}`);
   // A stale server returning an empty authorized response must not redirect to a token form.
   await handoffPage.route('**/api/link-generator',route=>json(route,{authorized:true,provider:'jsdelivr',requested:1,links:[]}));
   await handoffPage.reload({waitUntil:'domcontentloaded'});
@@ -164,7 +164,7 @@ try {
   assert.equal(await handoffPage.locator('#token').count(),0);
   await handoffPage.close();
 
-  const cloakBridgePage = await browser.newPage({ viewport: { width: 1_280, height: 900 } });
+  const cloakBridgePage = await workspace.newPage({ viewport: { width: 1_280, height: 900 } });
   const cloakBridgeErrors = [];
   cloakBridgePage.on('pageerror', error => cloakBridgeErrors.push(error.message));
   await cloakBridgePage.route('https://nyxlearning.org/', route => route.fulfill({
@@ -178,7 +178,7 @@ try {
   assert.deepEqual(cloakBridgeErrors, [], `JSDelivr tab-cloak bridge errors: ${cloakBridgeErrors.join(' | ')}`);
   await cloakBridgePage.close();
 
-  const page = await browser.newPage({ viewport: { width: 1_280, height: 900 } });
+  const page = await workspace.newPage({ viewport: { width: 1_280, height: 900 } });
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   const requests = await installGithubMock(page);
@@ -201,17 +201,17 @@ try {
   assert.ok(treePayload.tree.every(entry => entry.content.includes('<title>Nyx test</title>')), 'The selected SVG was not preserved in each tree entry');
   assert.ok(requests.every(request => request.authorization === 'Bearer github_pat_test_secret'), 'A GitHub API request omitted the bearer token');
   const storage = await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }));
-  assert.doesNotMatch(storage, /github_pat_test_secret/, 'The GitHub token was written to browser storage');
+  assert.doesNotMatch(storage, /github_pat_test_secret/, 'The GitHub token was written to workspace storage');
 
   await page.locator('#providerTabs [data-provider="fastly"]').click();
   assert.match(await page.locator('#linksOutput').inputValue(), /^https:\/\/fastly\.jsdelivr\.net\/gh\//, 'Provider switching did not update the generated links');
   await page.setViewportSize({ width: 390, height: 844 });
   const mobileOverflow = await page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth);
   assert.ok(mobileOverflow <= 1, `The publisher caused ${mobileOverflow}px of mobile overflow`);
-  assert.deepEqual(pageErrors, [], `Publisher browser errors: ${pageErrors.join(' | ')}`);
+  assert.deepEqual(pageErrors, [], `Publisher workspace errors: ${pageErrors.join(' | ')}`);
   await page.close();
 
-  const presetPage = await browser.newPage();
+  const presetPage = await workspace.newPage();
   const presetRequests = await installGithubMock(presetPage);
   const presetErrors = [];
   presetPage.on('pageerror', error => presetErrors.push(error.message));
@@ -232,7 +232,7 @@ try {
   assert.doesNotMatch(await presetPage.evaluate(() => JSON.stringify({...localStorage, ...sessionStorage})), /github_pat_test_secret/);
   await presetPage.close();
 
-  const errorPage = await browser.newPage({ viewport: { width: 1_280, height: 800 } });
+  const errorPage = await workspace.newPage({ viewport: { width: 1_280, height: 800 } });
   const errorPageErrors = [];
   errorPage.on('pageerror', error => errorPageErrors.push(error.message));
   await installGithubMock(errorPage, { failTree: true });
@@ -242,11 +242,11 @@ try {
   await errorPage.locator('#publisherMessage.error').waitFor({ state: 'visible' });
   assert.match(await errorPage.locator('#publisherMessage').textContent(), /GitHub API 403: Resource not accessible by personal access token/i, 'The publisher hid the actionable GitHub permission error');
   assert.equal(await errorPage.locator('#results').isHidden(), true, 'Failed publishing exposed stale results');
-  assert.deepEqual(errorPageErrors, [], `Permission-error browser errors: ${errorPageErrors.join(' | ')}`);
+  assert.deepEqual(errorPageErrors, [], `Permission-error workspace errors: ${errorPageErrors.join(' | ')}`);
   await errorPage.close();
 
   console.log('Link Generator handoff and JSDelivr Publisher catalog, publishing, outer tab cloak, provider, token-safety, filter, error, and mobile regressions passed.');
 } finally {
-  await browser?.close().catch(() => {});
+  await workspace?.close().catch(() => {});
   if (server.exitCode === null) server.kill();
 }

@@ -3,26 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>StudyHub — Where Education Is Achievable</title>
-<meta name="description" content="StudyHub is a browser-based learning workspace where education is achievable. Build lasting mastery through rigorous foundations and hands-on mentorship.">
+<title>Learning Commons — Where Education Is Achievable</title>
+<meta name="description" content="Learning Commons is a online learning workspace where education is achievable. Build lasting mastery through rigorous foundations and hands-on mentorship.">
 <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
-<meta name="application-name" content="StudyHub">
+<meta name="application-name" content="Learning Commons">
 <link rel="canonical" href="https://nyxlearning.org/">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://nyxlearning.org/">
-<meta property="og:site_name" content="StudyHub">
-<meta property="og:title" content="StudyHub — Where Education Is Achievable">
-<meta property="og:description" content="StudyHub is a browser-based learning workspace where education is achievable.">
+<meta property="og:site_name" content="Learning Commons">
+<meta property="og:title" content="Learning Commons — Where Education Is Achievable">
+<meta property="og:description" content="Learning Commons is a online learning workspace where education is achievable.">
 <meta property="og:image" content="https://nyxlearning.org/assets/icons/studyhub-512.png">
 <meta property="og:image:type" content="image/png">
 <meta property="og:image:width" content="512">
 <meta property="og:image:height" content="512">
-<meta property="og:image:alt" content="StudyHub logo">
+<meta property="og:image:alt" content="Learning Commons logo">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="StudyHub — Where Education Is Achievable">
-<meta name="twitter:description" content="StudyHub is a browser-based learning workspace where education is achievable.">
+<meta name="twitter:title" content="Learning Commons — Where Education Is Achievable">
+<meta name="twitter:description" content="Learning Commons is a online learning workspace where education is achievable.">
 <meta name="twitter:image" content="https://nyxlearning.org/assets/icons/studyhub-512.png">
-<meta name="twitter:image:alt" content="StudyHub logo">
+<meta name="twitter:image:alt" content="Learning Commons logo">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -31,17 +31,17 @@
       "@type": "WebSite",
       "@id": "https://nyxlearning.org/#website",
       "url": "https://nyxlearning.org/",
-      "name": "StudyHub",
+      "name": "Learning Commons",
       "alternateName": ["nyxlearning.org"],
-      "description": "StudyHub is a browser-based learning workspace at nyxlearning.org.",
+      "description": "Learning Commons is a online learning workspace at nyxlearning.org.",
       "inLanguage": "en"
     },
     {
       "@type": "Organization",
       "@id": "https://nyxlearning.org/#organization",
       "url": "https://nyxlearning.org/",
-      "name": "StudyHub Learning Collective",
-      "alternateName": ["StudyHub"],
+      "name": "Learning Commons Learning Collective",
+      "alternateName": ["Learning Commons"],
       "logo": {
         "@type": "ImageObject",
         "url": "https://nyxlearning.org/assets/icons/studyhub-512.png",
@@ -98,17 +98,17 @@
   try{localStorage.setItem('nyx.homeDesign','redesigned')}catch{}
   try{tabDesign=localStorage.getItem('nyx.tabDesign')==='list' ? 'list' : 'bar'}catch{}
   try{
-    localStorage.removeItem('nyx.browserShellMode');
+    localStorage.removeItem('nyx.workspaceShellMode');
   }catch{}
   document.documentElement.dataset.nyxHomeDesign='redesigned';
   document.documentElement.dataset.nyxTabDesign=tabDesign;
-  document.documentElement.classList.add('nyx-browser-shell-expected');
+  document.documentElement.classList.add('nyx-workspace-shell-expected');
 })();
 </script>
 <style>
 
 
-html.nyx-browser-shell-expected body:not(.browser-shell)>:is(#customBgImage,#nyxWaveBg,#defaultVantaBg,#rubyVantaBg,#whiteVantaBg,#emeraldVantaBg,#sakuraVantaBg,#visualEffects,.top-os,#desktop,#weatherRestore,.dock){visibility:hidden!important}
+html.nyx-workspace-shell-expected body:not(.workspace-shell)>:is(#customBgImage,#nyxWaveBg,#defaultVantaBg,#rubyVantaBg,#whiteVantaBg,#emeraldVantaBg,#sakuraVantaBg,#visualEffects,.top-os,#desktop,#weatherRestore,.dock){visibility:hidden!important}
 </style>
 <link rel="stylesheet" href="css/obsidian.css?v=20261001-wallpaper-upload-v6">
   <link rel="stylesheet" href="css/profile-editor-layout.css?v=20261004-profile-layout">
@@ -234,7 +234,7 @@ html.nyx-browser-shell-expected body:not(.browser-shell)>:is(#customBgImage,#nyx
       </section>
       <section class="setup-step" data-setup-step="5">
         <h2>Effects</h2>
-        <p>Choose the particles Nyx shows in browser mode.</p>
+        <p>Choose the particles Nyx shows in your workspace.</p>
         <div class="setup-field">
           <label for="setupEffect">Effects</label>
           <select id="setupEffect" data-effect-value>
@@ -249,20 +249,20 @@ html.nyx-browser-shell-expected body:not(.browser-shell)>:is(#customBgImage,#nyx
         </div>
       </section>
       <section class="setup-step" data-setup-step="6">
-        <h2>Browser</h2>
-        <p>Pick how browsing and s3arc4 should open.</p>
+        <h2>Workspace</h2>
+        <p>Choose how to open links and find resources.</p>
         <div class="setup-custom-grid">
           <div class="setup-field">
-            <label for="setupBrowserMode">Browser</label>
-            <select id="setupBrowserMode" data-browser-mode-select>
+            <label for="setupWorkspaceMode">Workspace</label>
+            <select id="setupWorkspaceMode" data-workspace-mode-select>
               <option value="auto">Auto</option>
-              <option value="scramjet" selected>Scramjet v2</option>
+              <option value="scramjet" selected>StudyJet v2</option>
 
             </select>
           </div>
           <div class="setup-field">
             <label for="setupEngine">S3ARC4 Engine</label>
-            <select id="setupEngine" data-browser-engine>
+            <select id="setupEngine" data-workspace-engine>
               <option value="duckduckgo">DuckDuckGo</option>
               <option value="google">Google</option>
               <option value="bing">Bing</option>
@@ -286,7 +286,7 @@ html.nyx-browser-shell-expected body:not(.browser-shell)>:is(#customBgImage,#nyx
           <div class="setup-final-list">
             <div class="setup-final-row"><span>Theme</span><strong data-setup-preview-theme>Default</strong></div>
             <div class="setup-final-row"><span>Effect</span><strong data-setup-preview-effect>None</strong></div>
-            <div class="setup-final-row"><span>Browser</span><strong data-setup-preview-browser>Scramjet v2</strong></div>
+            <div class="setup-final-row"><span>Workspace</span><strong data-setup-preview-workspace>StudyJet v2</strong></div>
             <div class="setup-final-row"><span>S3ARC4</span><strong data-setup-preview-engine>DuckDuckGo</strong></div>
             <div class="setup-final-row"><span>Font</span><strong data-setup-preview-font>Outfit</strong></div>
           </div>

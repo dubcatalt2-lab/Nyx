@@ -6,12 +6,12 @@ import {chromium} from 'playwright';
 // Local source/build overrides at live origins: real game assets, isolated storage,
 // no production account mutations and no publishing of files.
 const root=resolve(process.env.NYX_TEST_STATIC_ROOT||'.');
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 await mkdir('.codex-artifacts',{recursive:true});
 try {
  for(const brand of ['nyx','tutsi']){
   const origin=brand==='nyx'?'https://nyxlearning.org':'https://tutsi.nyxlearning.org';
-  const context=await browser.newContext({viewport:{width:1280,height:720}});
+  const context=await workspace.newContext({viewport:{width:1280,height:720}});
   try {
    await context.route('**/api/**',r=>['GET','HEAD'].includes(r.request().method())?r.continue():r.fulfill({json:{}}));
    for(const file of ['assets/ugs/C/clcookieclicker.html','assets/gn-math/play.html','assets/games/gladihoppers.html'])await context.route('**/'+file+'*',async r=>r.fulfill({contentType:'text/html',body:await readFile(sourceFile(resolve(root,file)),'utf8')}));
@@ -42,4 +42,4 @@ try {
    console.log(brand+': Gladihoppers Unity runtime, canvas, tutorial input and ad compatibility passed.');
   }finally{await context.close();}
  }
-}finally{await browser.close();}
+}finally{await workspace.close();}

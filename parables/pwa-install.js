@@ -21,7 +21,7 @@
     if (/Safari/i.test(agent) && !/Chrome|Chromium|Edg/i.test(agent)) {
       return "In Safari, choose File, then Add to Dock.";
     }
-    return "Use the install icon in the browser address bar, or open the browser menu and choose Install Nyx.";
+    return "Use the install icon in the workspace address bar, or open the workspace menu and choose Install Nyx.";
   }
 
   function installCard(kind) {
@@ -42,15 +42,15 @@
   }
 
   function ensureInstallCards() {
-    document.querySelectorAll(".browser-only-settings.nyx-settings-dashboard").forEach((app) => {
+    document.querySelectorAll(".workspace-only-settings.nyx-settings-dashboard").forEach((app) => {
       if (app.querySelector("[data-nyx-install-card]")) return;
       const group = app.querySelector('[data-settings-category="advanced"] .nyx-settings-group');
       if (group) group.prepend(installCard("dashboard"));
     });
 
-    document.querySelectorAll(".browser-only-settings .settings-section.active").forEach((section) => {
+    document.querySelectorAll(".workspace-only-settings .settings-section.active").forEach((section) => {
       if (section.querySelector("[data-nyx-install-card]")) return;
-      const card = installCard("browser");
+      const card = installCard("workspace");
       const displayHeading = [...section.querySelectorAll("h2")]
         .find((heading) => heading.textContent.trim() === "Display Mode");
       const displayCard = displayHeading?.closest(".settings-block");

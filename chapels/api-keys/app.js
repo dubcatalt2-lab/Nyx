@@ -37,11 +37,11 @@ const note=m=>{$('#notice').textContent=m;};
     const configResponse=await fetch('/api/founder-profile/auth-config',{cache:'no-store'});
     const config=await configResponse.json();
     if(!config?.enabled||!config?.apiKey||!config?.projectId)return '';
-    const [{initializeApp,getApps},{getAuth,setPersistence,browserLocalPersistence}]=await Promise.all([
+    const [{initializeApp,getApps},{getAuth,setPersistence,browserLocalPersistence:workspaceLocalPersistence}]=await Promise.all([
       import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')
     ]);
     const app=getApps().find(item=>item.name==='nyx-founder-owner')||initializeApp({apiKey:config.apiKey,authDomain:`${config.projectId}.firebaseapp.com`,projectId:config.projectId},'nyx-founder-owner');
-    const auth=getAuth(app); localAuth=auth;try{await setPersistence(auth,browserLocalPersistence)}catch{}
+    const auth=getAuth(app); localAuth=auth;try{await setPersistence(auth,workspaceLocalPersistence)}catch{}
     if(typeof auth.authStateReady==='function')await auth.authStateReady();
     return auth.currentUser?auth.currentUser.getIdToken():'';
   }

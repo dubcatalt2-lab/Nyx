@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {readFile,mkdir} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
-const browser=await chromium.launch({channel:'msedge'});
+const workspace=await chromium.launch({channel:'msedge'});
 const answer=String.raw`**Formatted reply** with $e$ and \(\frac{a}{b}\).
 
 \[
@@ -21,7 +21,7 @@ Costs $5 and $10.
 `+'```js\nconst literal = "$e$ \\{x\\}";\n'+'z'.repeat(500)+'\n```\n\n'+'Long paragraph. '.repeat(3000)+'END OF LONG REPLY';
 try{
  for(const shell of ['nook','drop']){
-  const page=await browser.newPage({viewport:{width:1280,height:900}});
+  const page=await workspace.newPage({viewport:{width:1280,height:900}});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.route('http://localhost:6767/**',async route=>{
    const path=new URL(route.request().url()).pathname;
@@ -71,4 +71,4 @@ try{
   console.log('PASS',shell,'math, Markdown, code literals, HTML escaping, long replies, mobile width, saved history');
   await page.close();
  }
-}finally{await browser.close();}
+}finally{await workspace.close();}

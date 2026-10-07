@@ -62,9 +62,9 @@ for(const premium of [false,true]){
   await assert.rejects(a.reserve(s,'shared',payload(),price),e=>e.reason==='shared_budget');await a.finish(s,false);
 }
 {
-  const {a,actor,payload}=fixture(true),first={...actor,app:'nook',device:'shared-browser'},second={...first,uid:'second-member'};
+  const {a,actor,payload}=fixture(true),first={...actor,app:'nook',device:'shared-workspace'},second={...first,uid:'second-member'};
   const s=await a.begin(first),r=await a.reserve(s,'shared',payload(),price);
-  assert.equal((await a.usage(second)).tokens.pending,r.tokens,'Nook pending totals include other accounts using the same browser pool');
+  assert.equal((await a.usage(second)).tokens.pending,r.tokens,'Nook pending totals include other accounts using the same workspace pool');
   await a.settle(r,null);assert.equal((await a.usage(second)).tokens.uncertain,r.tokens);
   await a.settle(r,{input:10,output:10});await a.finish(s,true);
   const view=await a.usage(second);assert.equal(view.tokens.used,20);assert.equal(view.tokens.pending,0);assert.equal(view.tokens.uncertain,0);

@@ -90,14 +90,14 @@ await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const origin=`http://127.0.0.1:${server.address().port}`;
 assert.equal((await fetch(origin+'/api/chat/voice/audio',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})).status,401);
 assert.equal((await fetch(origin+'/api/chat/voice/audio',{method:'POST',headers:{origin:'https://elsewhere.example','Content-Type':'application/json'},body:'{}'})).status,403);
-const browser=await chromium.launch({args:['--use-fake-ui-for-media-stream','--use-fake-device-for-media-stream','--autoplay-policy=no-user-gesture-required']});
+const workspace=await chromium.launch({args:['--use-fake-ui-for-media-stream','--use-fake-device-for-media-stream','--autoplay-policy=no-user-gesture-required']});
 const fixture=readFileSync(sourceFile('scripts/test-account-controls.mjs'),'utf8'),moduleText=name=>fixture.match(new RegExp('const '+name+'=`([\\s\\S]*?)`;'))[1];
 try{
   for(const scenario of ['http','socket','automatic','timeout']){
     liveSessions.clear();socketFailure=false;counters.http=0;counters.socket=0;
     const pages=[],contexts=[];
     for(const [index,uid] of ['voice-a','voice-b'].entries()){
-      const ctx=await browser.newContext({permissions:['microphone']});contexts.push(ctx);
+      const ctx=await workspace.newContext({permissions:['microphone']});contexts.push(ctx);
       const page=await ctx.newPage();pages.push(page);const errors=[];page.on('pageerror',e=>errors.push(e.message));
       page.fixtureErrors=errors;
       await page.addInitScript(({scenario,index})=>{
@@ -152,4 +152,4 @@ try{
     for(const ctx of contexts)await ctx.close();
     console.log(`PASS ${scenario}: Nyx + Tutsi bidirectional real worklet PCM playback, mute/deafen, cleanup${scenario==='http'?' without WebRTC/WebSocket':', socket-to-HTTP recovery'}.`);
   }
-}finally{await browser.close();io.close();server.closeAllConnections();await new Promise(r=>server.close(r));}
+}finally{await workspace.close();io.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

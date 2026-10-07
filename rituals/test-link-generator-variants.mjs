@@ -9,9 +9,9 @@ const fixture = await staticPublisherFixture();
 const hosts = ['cdn.jsdelivr.net', 'gcore.jsdelivr.net', 'fastly.jsdelivr.net', 'quantil.jsdelivr.net', 'originfastly.jsdelivr.net', 'testingcf.jsdelivr.net', 'jsdelivr.b-cdn.net', 'esm.sh', 'raw.esm.sh'];
 
 // Intercept every request; tests never publish to GitHub.
-const browser = await chromium.launch({ headless: true });
+const workspace = await chromium.launch({ headless: true });
 try {
-  const page = await browser.newPage();
+  const page = await workspace.newPage();
   let sourceRequests = 0;
   await page.route('**/*', async route => {
     const url = new URL(route.request().url());
@@ -149,4 +149,4 @@ try {
     }
   }
   console.log('jsDelivr handoff, source, responsive card, publish sequence and failure checks passed (mocked publishing).');
-} finally { await browser.close(); }
+} finally { await workspace.close(); }

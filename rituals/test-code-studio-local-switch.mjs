@@ -1,7 +1,7 @@
 ﻿import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
-const browser=await chromium.launch();try{
- const page=await browser.newPage();let aiCalls=0;
+const workspace=await chromium.launch();try{
+ const page=await workspace.newPage();let aiCalls=0;
  await page.route('**/api/**',r=>{if(r.request().method()==='POST'&&r.request().url().includes('nyx-ai'))aiCalls++;return r.fulfill({contentType:'application/json',body:'{}'});});
  for(const suffix of ['', '?tutsi=1']){
  await page.goto('http://localhost:9091/apps/code-studio/'+suffix);
@@ -16,4 +16,4 @@ const browser=await chromium.launch();try{
  await page.setViewportSize({width:1280,height:900});
  }
  console.log('PASS code assistant desktop/mobile close/reopen, rounded focus and 16 local language switches without AI or lost edits');
-}finally{await browser.close();}
+}finally{await workspace.close();}

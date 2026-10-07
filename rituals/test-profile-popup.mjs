@@ -6,9 +6,9 @@ import {chromium} from 'playwright';
 const source = readFileSync(sourceFile('script.js'), 'utf8'), functions = new Map();
 function visit(node) {if (!node || typeof node !== 'object') return; if (node.type === 'FunctionDeclaration') functions.set(node.id.name, source.slice(node.start, node.end)); for (const value of Object.values(node)) if (Array.isArray(value)) value.forEach(visit); else if (value && typeof value === 'object') visit(value);}
 visit(parse(source, {ecmaVersion: 'latest'}));
-const browser = await chromium.launch({channel: 'msedge', headless: true});
+const workspace = await chromium.launch({channel: 'msedge', headless: true});
 try {
-  const page = await browser.newPage({viewport: {width: 1400, height: 900}});
+  const page = await workspace.newPage({viewport: {width: 1400, height: 900}});
   await page.goto((process.env.NYX_TEST_BASE_URL||'http://127.0.0.1:8199')+'/apps/chat/');
   await page.setContent('<html data-nyx-theme="halloween"><head><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/css/avatar-decorations.css"><link rel="stylesheet" href="/css/profile-editor-layout.css"></head><body style="background:#18191c"><button id="origin">View profile</button></body></html>');
   let relation = {}, action;
@@ -23,7 +23,7 @@ try {
     let nyxFounderSignedInUser={uid:'viewer-user'},nyxFounderIsOwner=false,nyxUserAccountRole='member',nyxUserProfileCreatedAt='';
     const closeNyxAccountMenu=()=>{},syncNyxVisualDockState=()=>{},nyxManageUserProfileGifs=()=>{};
     const nyxGetFirebaseToken=async()=>'fixture',nyxProfileMediaFetch=async(url,options)=>{const response=await fetch(url,options);if(!response.ok)throw Error('Unavailable');return response.json()};
-    const openBrowserShellAppTab=url=>window.openedConversation=url;
+    const openWorkspaceShellAppTab=url=>window.openedConversation=url;
     const normalizeNyxUserProfile=p=>({displayName:'Member',handle:'@member',bio:'',avatarUrl:'',bannerUrl:'',accentPrimary:'#5865f2',accentSecondary:'#8ea1ff',bannerColor:'#8ea1ff',avatarDecoration:'none',status:'online',...p});
     const nyxProfileStillSource=value=>value,nyxProfileEffectClass=()=>'',nyxProfileEffectArtwork=()=>'',nyxProfileEffectVars=()=>'',nyxDisplayNameStyleClass=()=>'',nyxDisplayNameStyleVars=()=>'';
     const esc=value=>String(value||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -53,4 +53,4 @@ try {
   await page.locator('.nyx-profile-directory-overlay').waitFor({state: 'detached'});
   assert.equal(await page.evaluate(() => document.activeElement.id), 'origin');
   console.log('PASS compact main-site public profile, hidden directory chrome, safe role/bio, friend/block actions, mobile sizing, DM navigation and focus restoration');
-} finally {await browser.close();}
+} finally {await workspace.close();}

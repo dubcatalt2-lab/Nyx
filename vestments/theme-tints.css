@@ -17,27 +17,27 @@ html body.theme-fresh{
   --nyx-load-bright:#f1f3f7;--nyx-load-mid:#b8d5b0;--nyx-load-accent:#a6c99c;--nyx-load-deep:#6f9668;--nyx-load-muted:#929aaa;--nyx-load-surface:#0f131b;--nyx-load-bg:#080a0f;--nyx-load-deep-bg:#090b10;--nyx-load-glow:transparent;
 }
 
-html body.browser-shell.theme-midnight{
+html body.workspace-shell.theme-midnight{
   --nyx-final-shortcut-icon:#9eb7d9!important;
   --nyx-dot-color:#223047;
 }
-html body.browser-shell.theme-default{
+html body.workspace-shell.theme-default{
   --nyx-final-shortcut-icon:#9b8cf5!important;
   --nyx-dot-color:#202b3d;
 }
-html body.browser-shell.theme-ruby{
+html body.workspace-shell.theme-ruby{
   --nyx-final-shortcut-icon:#d58b9a!important;
   --nyx-dot-color:#332733;
 }
-html body.browser-shell.theme-emerald{
+html body.workspace-shell.theme-emerald{
   --nyx-final-shortcut-icon:#82c4ae!important;
   --nyx-dot-color:#24343a;
 }
-html body.browser-shell.theme-sakura{
+html body.workspace-shell.theme-sakura{
   --nyx-final-shortcut-icon:#d5a2c6!important;
   --nyx-dot-color:#332936;
 }
-html body.browser-shell.theme-fresh{
+html body.workspace-shell.theme-fresh{
   --nyx-final-shortcut-icon:#a6c99c!important;
   --nyx-dot-color:#28382b;
   color-scheme:dark!important;
@@ -46,7 +46,7 @@ html body.browser-shell.theme-fresh{
 
 
 
-html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh){
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).workspace-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh){
   --weather-accent:var(--nyx-home-wordmark);
   --weather-accent-soft:color-mix(in srgb,var(--nyx-home-wordmark) 14%,transparent);
   --weather-panel-bg:color-mix(in srgb,var(--nyx-home-panel) 95%,#080e18);
@@ -56,7 +56,7 @@ html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser
   --weather-text:var(--nyx-home-text);
   --weather-muted:var(--nyx-home-muted);
 }
-html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh) .browser-home :is(.nyx-home-weather,.nyx-home-utility-links button,.nyx-account-button){
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).workspace-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh) .workspace-home :is(.nyx-home-weather,.nyx-home-utility-links button,.nyx-account-button){
   border-color:transparent!important;
   background:color-mix(in srgb,var(--nyx-home-panel) 84%,transparent)!important;
   background-image:none!important;
@@ -64,7 +64,7 @@ html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser
   -webkit-text-fill-color:var(--nyx-home-muted)!important;
   box-shadow:none!important;
 }
-html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh) .browser-home
+html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).workspace-shell:is(.theme-default,.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh) .workspace-home
   :is(.nyx-home-weather,.nyx-home-utility-links button,.nyx-account-button):is(:hover,:focus-visible){
   border-color:var(--nyx-chrome-bright)!important;
 }
@@ -72,7 +72,7 @@ html body:is(body,#nyx-theme-unified):is(body,#nyx-theme-unified-layout).browser
 
 
 
-html[data-nyx-theme] body.browser-shell{
+html[data-nyx-theme] body.workspace-shell{
   transition:background-color .18s ease,border-color .18s ease,color .18s ease!important;
 }
 
@@ -85,7 +85,7 @@ html[data-nyx-theme] body.browser-shell{
 
 
 
-html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell .browser-shell-settings-overlay.browser-shell-settings-overlay .browser-shell-settings-close{
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.workspace-shell.workspace-shell.workspace-shell .workspace-shell-settings-overlay.workspace-shell-settings-overlay .workspace-shell-settings-close{
   border-color:transparent!important;
   background:transparent!important;
   color:var(--nyx-home-wordmark)!important;
@@ -96,7 +96,7 @@ html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-
 
 
 
-html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-shell.browser-shell{
+html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.workspace-shell.workspace-shell.workspace-shell{
   --theme-strong:var(--nyx-home-text)!important;
   --theme-a:var(--nyx-chrome-accent)!important;
   --theme-b:var(--nyx-chrome-bright)!important;
@@ -109,7 +109,7 @@ html[data-nyx-theme][data-nyx-theme][data-nyx-theme] body.browser-shell.browser-
   --line:var(--nyx-home-line)!important;
 }
 
-html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"] body.browser-shell.theme-fresh.browser-shell{
+html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"] body.workspace-shell.theme-fresh.workspace-shell{
   color:var(--nyx-home-text)!important;
   border-color:var(--nyx-home-line)!important;
 }
@@ -213,7 +213,7 @@ html[data-nyx-theme="custom"] body.theme-custom{
   color:var(--nyx-custom-text)!important;
   color-scheme:dark!important;
 }
-html[data-nyx-theme="custom"] body.browser-shell.theme-custom{
+html[data-nyx-theme="custom"] body.workspace-shell.theme-custom{
   border-color:var(--nyx-home-line)!important;
 }
 .nyx-custom-theme-controls{display:flex;align-items:center;gap:10px;max-width:440px}

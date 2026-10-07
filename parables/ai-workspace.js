@@ -125,13 +125,13 @@
           const configResponse=await fetch('/api/founder-profile/auth-config',{cache:'no-store'});
           const config=await configResponse.json();
           if(!config?.enabled||!config?.apiKey||!config?.projectId)return null;
-          const [{initializeApp,getApps},{getAuth,setPersistence,browserLocalPersistence,onAuthStateChanged}]=await Promise.all([
+          const [{initializeApp,getApps},{getAuth,setPersistence,browserLocalPersistence:workspaceLocalPersistence,onAuthStateChanged}]=await Promise.all([
             import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),
             import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')
           ]);
           const firebaseApp=getApps().find(item=>item.name==='nyx-founder-owner')||initializeApp({apiKey:config.apiKey,authDomain:`${config.projectId}.firebaseapp.com`,projectId:config.projectId},'nyx-founder-owner');
           const auth=getAuth(firebaseApp);
-          try{await setPersistence(auth,browserLocalPersistence)}catch{}
+          try{await setPersistence(auth,workspaceLocalPersistence)}catch{}
           if(typeof auth.authStateReady==='function')await auth.authStateReady();
           if(typeof onAuthStateChanged==='function')onAuthStateChanged(auth,()=>{void renderUsage();});
           return auth;
@@ -225,7 +225,7 @@
       const format=n=>new Intl.NumberFormat().format(n);
       usageWeek.textContent=data.unlimited?'Unlimited':format(tokens.remaining);
       usageAll.textContent=format(tokens.used);usageRequests.textContent=format(tokens.pending);
-      const scope=data.scope==='browser'?'Shared browser':data.scope==='expensive-models'?'Expensive models':'Account';
+      const scope=data.scope==='workspace'?'Shared workspace':data.scope==='expensive-models'?'Expensive models':'Account';
       const reset=data.resetAt?` Resets ${new Date(data.resetAt).toLocaleString()}.`:' Starts with your first request.';
       usageStatus.textContent=data.unlimited?'Owner - no account token limit.':`${scope} - ${format(tokens.limit)} tokens / 4 days.${reset}`;
       if(tokens.pending)usageStatus.textContent+=' Pending tokens are reserved for requests awaiting final usage.';
@@ -689,7 +689,7 @@
 
   async function startScreenSharing(){
     if(!navigator.mediaDevices?.getDisplayMedia){
-      showAttachmentError('Screen sharing is not supported by this browser.','Screen sharing unavailable');
+      showAttachmentError('Screen sharing is not supported by this workspace.','Screen sharing unavailable');
       return;
     }
     stopScreenSharing();
@@ -721,7 +721,7 @@
     const scale=Math.min(1,MAX_PREPARED_IMAGE_EDGE/Math.max(width,height));
     const canvas=document.createElement('canvas');
     const context=canvas.getContext('2d');
-    if(!context) return Promise.reject(new Error('Screen capture is unavailable in this browser.'));
+    if(!context) return Promise.reject(new Error('Screen capture is unavailable in this workspace.'));
     canvas.width=Math.max(1,Math.round(width*scale));
     canvas.height=Math.max(1,Math.round(height*scale));
     context.drawImage(screenVideo,0,0,canvas.width,canvas.height);

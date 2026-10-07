@@ -344,7 +344,7 @@ function buildRuntimeEmbed(source) {
             try {`,
     `            if (!id) return;
             if (typeof RTCPeerConnection !== "function") {
-                showEnded("WebRTC is disabled by this Chromebook or browser policy. Ask the device administrator to allow WebRTC.");
+                showEnded("WebRTC is disabled by this Chromebook or workspace policy. Ask the device administrator to allow WebRTC.");
                 return;
             }
             try {`,

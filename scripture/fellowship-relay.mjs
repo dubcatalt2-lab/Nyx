@@ -8,7 +8,7 @@ const serverInfo = Buffer.from([5, 0, 0, 0, 0, 2, 1]);
 
 // Wispurr 4.2 has no bind-address setting. Require a fresh private password on
 // every worker connection, including when its port is reachable off-host.
-// Terminate that handshake here so existing v1/v2 browser clients need no secret.
+// Terminate that handshake here so existing v1/v2 workspace clients need no secret.
 export async function startWispurr({ port = 6001, onFailure = () => {} } = {}) {
   const { wispurr } = await import('wispurr');
   // Upstream detect-port enumerates interfaces via AF_NETLINK on Linux. The

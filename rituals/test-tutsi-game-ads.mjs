@@ -12,9 +12,9 @@ assert(isAdUrl('https://cdn.playwire.com/sdk.js'));
 assert(isAdUrl('https://example.com/poki-sdk.js'));
 assert(!isAdUrl('https://playwire.com.example.org/game.js'));
 assert(!isAdUrl('https://example.org/game.js?next=doubleclick.net'));
-const browser=await chromium.launch();
+const workspace=await chromium.launch();
 try {
- const page=await browser.newPage();
+ const page=await workspace.newPage();
  await page.route('**/apps/tutsi/*.mjs',async route=>{
    const name=new URL(route.request().url()).pathname.split('/').pop();
    await route.fulfill({contentType:'text/javascript',body:await readFile(sourceFile(new URL('../apps/tutsi/'+name,import.meta.url)))});
@@ -42,5 +42,5 @@ try {
  });
  assert.deepEqual(result,{status:204,scriptConnected:false,guarded:true,popup:true,sdk:true,off:false});
  console.log('PASS: shared Nyx rules, domain boundaries, game hook, nested frames, SDKs, popup protection and disabled policy');
-} finally {await browser.close()}
+} finally {await workspace.close()}
 

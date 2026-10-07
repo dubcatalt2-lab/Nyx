@@ -47,7 +47,7 @@ vm.runInContext(['nyxAiKey','nyxAiEndpoint','nyxAiCatalogEndpoint','nyxAiSharedP
 vm.runInContext(declaration('nyxAiRateLimit'),context);
 await vm.runInContext("nyxAiBudgetContext.run({session:{}},()=>nyxAiRateLimit({}, {}, ()=>true))",context).then(value=>assert.equal(value,true,'Shared requests must bypass duplicate local rate accounting'));
 vm.runInContext(declaration('nyxAiProviderFetch')+'\n'+declaration('authenticatedNyxCloudUser'),context);
-installDeveloperApi(app,{nook:createNookDeveloper({allowance:context.nyxSharedAiAllowance,catalog:actor=>context.nyxAiAvailableModels('',false,null,actor),configured:()=>true,send:(req,payload)=>context.nyxBudgetedAiFetch('shared','https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{authorization:'Bearer fixture-inference'},body:JSON.stringify(payload)})}),firebase:async()=>firebase,authenticate:context.authenticatedNyxUser,ownerUid:()=> 'owner',passwordHash:()=>'',sameOrigin:()=>true,device:async()=> 'browser',configured:()=>true,page:(_req,res)=>res.send('API'),send:async(req,payload)=>context.nyxBudgetedAiFetch('shared','https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{authorization:'Bearer fixture-inference'},body:JSON.stringify(payload)})});
+installDeveloperApi(app,{nook:createNookDeveloper({allowance:context.nyxSharedAiAllowance,catalog:actor=>context.nyxAiAvailableModels('',false,null,actor),configured:()=>true,send:(req,payload)=>context.nyxBudgetedAiFetch('shared','https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{authorization:'Bearer fixture-inference'},body:JSON.stringify(payload)})}),firebase:async()=>firebase,authenticate:context.authenticatedNyxUser,ownerUid:()=> 'owner',passwordHash:()=>'',sameOrigin:()=>true,device:async()=> 'workspace',configured:()=>true,page:(_req,res)=>res.send('API'),send:async(req,payload)=>context.nyxBudgetedAiFetch('shared','https://openrouter.ai/api/v1/chat/completions',{method:'POST',headers:{authorization:'Bearer fixture-inference'},body:JSON.stringify(payload)})});
 for(const path of ['/api/nyx-ai'])app.post(path,async(req,res)=>{
   try {
     if(path==='/api/v1/ai')return res.status(410).json({error:'Retired'});
@@ -98,13 +98,13 @@ try {
   const beforeEligibility=calls;
   db.records.set('nyxUserAdministration/late-approved',{aiAccess:'trusted',createdAt:'2020-01-01T00:00:00Z'});
   assert.equal((await send('late-approved',{model:'openai/gpt-5.6-luna'})).status,403,'Owner trust or a profile date cannot bypass actual Firebase creation time');
-  assert.equal((await send('late-member',{model:'openai/gpt-5.6-luna'}, {'x-nyx-premium':'true'})).status,403,'Browser headers cannot grant Premium');
+  assert.equal((await send('late-member',{model:'openai/gpt-5.6-luna'}, {'x-nyx-premium':'true'})).status,403,'Workspace headers cannot grant Premium');
   assert.equal(calls,beforeEligibility,'Ineligible requests must not contact inference');
   db.records.set('nyxUserAdministration/late-premium',{subscriptionStatus:'premium'});
   assert.equal((await send('late-premium')).status,200,'Server-authorized Premium qualifies after cutoff');
   db.records.set('nyxUserAdministration/late-coowner',{role:'co_owner'});
   assert.equal((await send('late-coowner')).status,200,'Server-verified co-owner has priority access');
-  assert.equal((await send('late-spoof',{model:'openai/gpt-5.6-luna'}, {'x-nyx-role':'co_owner'})).status,403,'Browser headers cannot grant co-owner priority');
+  assert.equal((await send('late-spoof',{model:'openai/gpt-5.6-luna'}, {'x-nyx-role':'co_owner'})).status,403,'Workspace headers cannot grant co-owner priority');
   const cloud=await context.authenticatedNyxCloudUser({get:()=> 'Bearer member'});assert.equal(cloud.token.uid,'member');assert.equal(cloud.account.emailVerified,false);
   await assert.rejects(context.authenticatedNyxCloudUser({get:()=> ''}),e=>e.status===401);
   Object.assign(context,{nyxRolePolicy:role=>({rank:{owner:100,admin:80,member:0}[role]}),nyxActorHasPermission:()=>true,nyxAssignableRolesForActor:()=>[]});
@@ -219,7 +219,7 @@ try {
   const upgraded=await(await fetch(origin+'/api/tutsi-ai/usage',{headers:{authorization:'Bearer member'}})).json();
   assert.equal(upgraded.tokens.limit,50000);assert.equal(upgraded.tokens.used,memberUsage.tokens.used);assert.equal(upgraded.resetAt,memberUsage.resetAt);
   const nookUsage=await(await fetch(origin+'/api/nook-ai/usage',{headers:{authorization:'Bearer nook-route',cookie}})).json();
-  assert.equal(nookUsage.scope,'browser');assert.equal(nookUsage.tokens.limit,7000);
+  assert.equal(nookUsage.scope,'workspace');assert.equal(nookUsage.tokens.limit,7000);
   const dropUsage=await(await fetch(origin+'/api/drop-ai/usage',{headers:{authorization:'Bearer drop-route'}})).json();
   assert.equal(dropUsage.scope,'expensive-models');assert.equal(dropUsage.tokens.limit,500);
   const ownerUsage=await(await fetch(origin+'/api/nyx-ai/usage',{headers:{authorization:'Bearer '+fullCatalogUid}})).json();assert.equal(ownerUsage.unlimited,true);

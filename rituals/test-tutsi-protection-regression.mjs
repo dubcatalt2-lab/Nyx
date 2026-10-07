@@ -3,16 +3,16 @@ import {sourceFile} from '../scripture/source-layout.mjs';
 import {readFileSync} from 'node:fs';
 import {parse} from 'acorn';
 import vm from 'node:vm';
-import {browserAdSource} from '../chapels/tutsi/browser-ad-runtime.mjs';
+import {workspaceAdSource} from '../chapels/tutsi/workspace-ad-runtime.mjs';
 import {chromium} from 'playwright';
 import {protectionSource,installGameProtectionHost,installPageProtection,protectionSandbox} from '../chapels/tutsi/protections.mjs';
-const source=readFileSync(sourceFile('script.js'),'utf8'),wanted=new Set(['browserAdResourceSignature','browserAdElementSelector','browserAdBlockRuntimeSource']),declarations=[];
+const source=readFileSync(sourceFile('script.js'),'utf8'),wanted=new Set(['workspaceAdResourceSignature','workspaceAdElementSelector','workspaceAdBlockRuntimeSource']),declarations=[];
 function visit(n){if(!n||typeof n!=='object')return;if(n.type==='VariableDeclarator'&&wanted.has(n.id?.name))declarations.push('const '+source.slice(n.start,n.end)+';');for(const v of Object.values(n))if(Array.isArray(v))v.forEach(visit);else if(v&&typeof v==='object')visit(v)}
 visit(parse(source,{ecmaVersion:'latest'}));
-assert.equal(browserAdSource,vm.runInNewContext(declarations.join('\n')+'browserAdBlockRuntimeSource;').replace('const value=localStorage.getItem("nyx.popupProtection");','const value=JSON.stringify(window.__tutsiProtection?.adBlock ?? true);'));
-const browser=await chromium.launch();
+assert.equal(workspaceAdSource,vm.runInNewContext(declarations.join('\n')+'workspaceAdBlockRuntimeSource;').replace('const value=localStorage.getItem("nyx.popupProtection");','const value=JSON.stringify(window.__tutsiProtection?.adBlock ?? true);'));
+const workspace=await chromium.launch();
 try{
- const page=await browser.newPage();
+ const page=await workspace.newPage();
  await page.route('**/*',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><html><head></head><body></body></html>'}));
  await page.goto('https://fixture.test/');
  await page.evaluate(()=>{window.openCalls=0;window.open=()=>{window.openCalls++};});
@@ -31,4 +31,4 @@ try{
  await page.evaluate(()=>{const div=document.createElement('div');div.className='advertisement';div.textContent='Ad';document.body.append(div)});
  await page.waitForTimeout(100);assert.equal(await page.locator('.advertisement').count(),0);
  console.log('PASS restored popup hooks, live toggle, blocked archive reputation check, and shared Nyx dynamic ad rules.');
-}finally{await browser.close()}
+}finally{await workspace.close()}

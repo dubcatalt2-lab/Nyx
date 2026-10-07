@@ -33,12 +33,12 @@ export function createKeyStore(db,now=Date.now,vault=null) {
         const d=ref(`grant-device-${hash(device)}`),g=ref('grant-global');
         const [ds,gs]=await Promise.all([tx.get(d),tx.get(g)]);
         const dc=ds.data()?.day===day?ds.data().count||0:0,gc=gs.data()?.day===day?gs.data().count||0:0;
-        if(dc>=3)throw fail('This browser has reached its free API key signup limit for today. Use your existing account or try tomorrow.',429);
+        if(dc>=3)throw fail('This workspace has reached its free API key signup limit for today. Use your existing account or try tomorrow.',429);
         if(gc>=30)throw fail('Free API key signups have reached today’s limit. Existing keys still work. Try tomorrow or contact the owner.',429);
         tx.set(d,{day,count:dc+1});tx.set(g,{day,count:gc+1});
       }
       const nook=product==='nook'?{app:'nook',device:data.nookDevice||device}:{};
-      if(product==='nook'&&!nook.device)throw fail('Your browser allowance could not be identified.',503);
+      if(product==='nook'&&!nook.device)throw fail('Your workspace allowance could not be identified.',503);
       tx.set(account(uid),{...data,uid,activeKey:id,lastIssuedAt:now(),...(product==='nook'?{nookDevice:nook.device}:{})});
       tx.set(ref(`key-${id}`),{uid,prefix:secret.slice(0,13),label:String(label||'My API key').trim().slice(0,60),createdAt:now(),revoked:false,...nook,...(encryptedKey?{encryptedKey}:{})});
     });
@@ -76,7 +76,7 @@ export function createKeyStore(db,now=Date.now,vault=null) {
       if(!id)throw fail('Create a key first.',404);
       const r=ref(`key-${id}`),k=(await tx.get(r)).data();
       if(!k||k.revoked)throw fail('This key is revoked.',401);
-      const bound=data.nookDevice||device;if(!bound)throw fail('Your browser allowance could not be identified.',503);
+      const bound=data.nookDevice||device;if(!bound)throw fail('Your workspace allowance could not be identified.',503);
       tx.set(account(uid),{nookDevice:bound},{merge:true});tx.set(r,{app:'nook',device:bound},{merge:true});
     });
   }

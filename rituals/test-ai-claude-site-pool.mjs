@@ -5,7 +5,7 @@ import {memoryFirestore} from './test-ai-allowance.mjs';
 const db=memoryFirestore();let now=Date.parse('2026-09-30T12:00:00Z');
 const a=createAiAllowance({db,config:aiAllowanceConfig({}),now:()=>now});
 const model='anthropic/claude-opus-5.5',price={inputPerMillion:4,outputPerMillion:20};
-const actor=app=>({uid:'member',app,device:'browser',premium:true,trusted:true});
+const actor=app=>({uid:'member',app,device:'workspace',premium:true,trusted:true});
 const payload=(id=model)=>({model:id,messages:[{role:'user',content:'hi'}],max_tokens:1200});
 async function session(app='nyx',extra={}){return a.begin({...actor(app),...extra});}
 assert(expensiveClaudeModel('anthropic/claude-fable-5.1',price));

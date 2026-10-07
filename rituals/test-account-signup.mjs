@@ -26,7 +26,7 @@ const waitForServer=async()=>{
 };
 
 const profile={
-  displayName:'Account Test',handle:'@account-test',bio:'Browser regression profile',
+  displayName:'Account Test',handle:'@account-test',bio:'Workspace regression profile',
   avatarUrl:'',bannerUrl:'',accentPrimary:'#5865f2',accentSecondary:'#8ea1ff',
   bannerColor:'#8ea1ff',displayNameFont:'gg-sans',displayNameEffect:'solid',
   displayNameColorPrimary:'#ffffff',displayNameColorSecondary:'#8ea1ff',
@@ -49,18 +49,18 @@ const firebaseAuthModule=`
   export async function sendEmailVerification(){throw new Error('Email verification must not be requested')}
 `;
 
-let browser;
+let workspace;
 let postedChatMessage=null;
 let registrations=0,cloudReads=0;
 try{
   await waitForServer();
-  browser=await chromium.launch({headless:true});
-  const page=await browser.newPage({viewport:{width:1280,height:800}});
+  workspace=await chromium.launch({headless:true});
+  const page=await workspace.newPage({viewport:{width:1280,height:800}});
   const pageErrors=[];
   page.on('pageerror',error=>pageErrors.push(error.message));
   await page.addInitScript(()=>{
     localStorage.setItem('nyx.setupComplete','true');
-    localStorage.setItem('nyx.browserShellMode','true');
+    localStorage.setItem('nyx.workspaceShellMode','true');
     if(!sessionStorage.getItem('nyx.test.originalMigration')){
       localStorage.setItem('nyx.homeDesign','original');
       sessionStorage.setItem('nyx.test.originalMigration','true');
@@ -142,6 +142,6 @@ try{
   assert.deepEqual(pageErrors,[]);
   console.log('PASS: desktop/mobile signup with optional or absent email, no verification request/gate, unverified cloud sync');
 } finally {
-  await browser?.close().catch(()=>{});
+  await workspace?.close().catch(()=>{});
   if(server.exitCode===null)server.kill();
 }

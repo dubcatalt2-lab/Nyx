@@ -12,9 +12,9 @@ const person={uid:'member-user-123',displayName:'Decorated member',handle:'decor
 for(const result of [context.nyxChatMessagePayload({id:'message1',data:()=>({author:person})}).author,context.nyxChatConversationMember(person),context.nyxChatVoiceParticipant({uid:person.uid,identity:person})]){assert.equal(result.avatarDecoration,person.avatarDecoration);assert.equal(result.profileEffect,person.profileEffect);}
 assert.equal(context.nyxChatConversationMember({...person,avatarDecoration:'../../bad'}).avatarDecoration,'none');
 const fixture=readFileSync(sourceFile('scripts/test-account-controls.mjs'),'utf8'),mockModule=name=>fixture.match(new RegExp('const '+name+'=`([\\s\\S]*?)`;'))[1];
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
- const page=await browser.newPage({viewport:{width:1400,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const page=await workspace.newPage({viewport:{width:1400,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  for(const [file,module] of [['firebase-app.js','firebaseAppModule'],['firebase-auth.js','firebaseAuthModule']])await page.route('https://www.gstatic.com/firebasejs/11.10.0/'+file,r=>r.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:mockModule(module)}));
  await page.route('**/socket.io/**',r=>r.abort());
  await page.route('**/api/**',r=>{
@@ -46,4 +46,4 @@ try{
  await page.emulateMedia({reducedMotion:'reduce'});assert.match(await art.evaluate(e=>getComputedStyle(e).backgroundImage),/arcane-circle-still.png/);
  await page.locator('[data-member-dialog-close]').click();await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  assert.deepEqual(errors,[]);console.log('PASS Chat message/DM/voice serialization, old-message decoration hydration, avatar clipping, popup artwork, reduced motion and mobile bounds');
-}finally{await browser.close();}
+}finally{await workspace.close();}

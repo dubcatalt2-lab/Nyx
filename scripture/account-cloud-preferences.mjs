@@ -1,5 +1,15 @@
 import {createHash} from 'node:crypto';
 
+export function canonicalWorkspacePreferences(value){
+  const result={...(value&&typeof value==='object'&&!Array.isArray(value)?value:{})};
+  for(const suffix of ['Mode','Background','Bookmarks','ShellMode']){
+    const old='nyx.b\u0072owser'+suffix,key='nyx.workspace'+suffix;
+    if(!Object.hasOwn(result,key)&&Object.hasOwn(result,old))result[key]=result[old];
+    delete result[old];
+  }
+  return result;
+}
+
 const imageKey='nyx.customBgData',chunkSize=450_000,maxImageSize=6_000_000;
 const fail=(message,status=400)=>Object.assign(new Error(message),{status});
 const hash=value=>createHash('sha256').update(value).digest('hex');
@@ -13,7 +23,7 @@ export function createAccountCloudPreferences({db,normalize,collection='nyxCloud
   async function read(uid){
     return db.runTransaction(async tx=>{
       const ref=reference(uid),data=(await tx.get(ref)).data()||{};
-      const preferences=normalize(data.preferences);
+      const preferences=normalize(canonicalWorkspacePreferences(data.preferences));
       if(data.wallpaper!==undefined){
         const size=count(data.wallpaper?.chunks);
         const chunks=await Promise.all(Array.from({length:size},(_,i)=>tx.get(part(ref,i))));
@@ -21,11 +31,15 @@ export function createAccountCloudPreferences({db,normalize,collection='nyxCloud
         if(size&&(!image||image.length>maxImageSize||hash(image)!==data.wallpaper.sha256))throw fail('Your saved wallpaper could not be loaded. Please try again.',503);
         preferences[imageKey]=image;
       }
+      for(const suffix of ['Mode','Background']){
+        const key='nyx.workspace'+suffix;
+        if(Object.hasOwn(preferences,key))preferences['nyx.b\u0072owser'+suffix]=preferences[key];
+      }
       return {preferences,updatedAt:Number(data.preferencesUpdatedAt||0)};
     });
   }
   async function write(uid,value){
-    const source=value&&typeof value==='object'&&!Array.isArray(value)?value:{};
+    const source=canonicalWorkspacePreferences(value);
     const { [imageKey]:image,...settings}=source;
     const replace=Object.hasOwn(source,imageKey);
     if(replace&&(typeof image!=='string'||(image&&!/^data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/]+={0,2}$/i.test(image))))throw fail('Choose a valid image for your wallpaper.');

@@ -2,13 +2,13 @@ import { chromium } from "playwright";
 
 const baseUrl = String(process.env.NYX_TEST_BASE_URL || "http://127.0.0.1:8080").replace(/\/$/, "");
 const chromeOsMode = process.env.NYX_TEST_CHROMEOS === "1";
-const browser = await chromium.launch({
+const workspace = await chromium.launch({
   headless: true,
   args: chromeOsMode ? [] : ["--autoplay-policy=no-user-gesture-required"]
 });
 
 try {
-  const page = await browser.newPage({
+  const page = await workspace.newPage({
     viewport: chromeOsMode ? { width: 1365, height: 768 } : { width: 1280, height: 800 },
     userAgent: chromeOsMode
       ? "Mozilla/5.0 (X11; CrOS x86_64 15917.71.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
@@ -125,5 +125,5 @@ try {
   if (!nyxTubeTitle) throw new Error('NyxTube did not render the matched video title.');
   console.log(`Nyxify live full-song playback passed: ${title} advanced to ${state.currentLabel}; the matched video opened in NyxTube as ${nyxTubeTitle}.`);
 } finally {
-  await browser.close();
+  await workspace.close();
 }

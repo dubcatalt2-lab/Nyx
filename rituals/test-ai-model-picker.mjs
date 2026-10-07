@@ -18,7 +18,7 @@ const child = fork(new URL('../shepherd.js', import.meta.url), [], {
 child.stdout.resume();
 let stderr = '';
 child.stderr.on('data', data => { stderr = (stderr + data).slice(-4000); });
-let browser;
+let workspace;
 try {
   const port = await new Promise((resolve, reject) => {
     const timeout = setTimeout(() => reject(new Error('Server startup timeout')), 20000);
@@ -29,7 +29,7 @@ try {
   const base = `http://127.0.0.1:${port}`;
   const health = await (await fetch(base + '/healthz')).json();
   assert.equal(health.wispImplementation, 'external');
-  browser = await chromium.launch({ channel: 'msedge', headless: true });
+  workspace = await chromium.launch({ channel: 'msedge', headless: true });
   const fixtures=[
     {id:'openrouter/free',label:'Free router'},
     {id:'google/gemma-4-31b-it:free',label:'Gemma',vision:true},
@@ -43,7 +43,7 @@ try {
   ];
   for(const variant of ['nyx','tutsi-desktop','tutsi-mobile']) {
     const tutsi=variant.startsWith('tutsi');
-    const context=await browser.newContext({viewport:{width:variant.endsWith('mobile')?390:1280,height:850}});
+    const context=await workspace.newContext({viewport:{width:variant.endsWith('mobile')?390:1280,height:850}});
     try {
       let reverse=false;
       await context.route('**/api/**',route=>route.fulfill({contentType:'application/json',body:'{}'}));
@@ -99,7 +99,7 @@ try {
     } finally {await context.close();}
   }
 
-  const embedded=await browser.newContext({viewport:{width:1280,height:850}});
+  const embedded=await workspace.newContext({viewport:{width:1280,height:850}});
   try{
     await embedded.route('**/api/**',route=>route.fulfill({contentType:'application/json',body:'{}'}));
     await embedded.route('**/api/nyx-ai/providers',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({providers:[{id:'shared',label:'OpenRouter'}]})}));
@@ -125,7 +125,7 @@ try {
   }finally{await embedded.close();}
 
 } finally {
-  await browser?.close();
+  await workspace?.close();
   if (child.exitCode === null && child.signalCode === null) {
     const closed = once(child, 'exit'); child.disconnect();
     const timeout = setTimeout(() => child.kill('SIGKILL'), 12000);

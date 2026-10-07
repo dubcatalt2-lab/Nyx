@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
- const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];let payload;
+ const page=await workspace.newPage({viewport:{width:1440,height:900}}),errors=[];let payload;
  page.on('pageerror',error=>errors.push(error.message));
  await page.addInitScript(()=>{
   window.SpeechRecognition=class {start(){window.__recognition=this;}stop(){this.onend?.();}abort(){this.onend?.();}};
@@ -44,4 +44,4 @@ try{
  await page.locator('#collapseChats').click();assert.equal(await page.locator('#collapseChats').getAttribute('aria-expanded'),'false');assert.equal(await page.locator('#toggleChats').count(),0);assert(await page.locator('#sidebarNewChat').isVisible());assert(await page.locator('#tempChat').isVisible());assert(await page.locator('#railProjects').isVisible());await page.waitForFunction(()=>Math.round(document.getElementById('chatSidebar').getBoundingClientRect().width)===52);await page.locator('#railProjects').click();await page.locator('#organizeDialog [aria-label=Close]').click();
  await page.locator('#sidebarNewChat').click();assert.equal(await page.locator('.message').count(),0);await page.screenshot({path:'.codex-artifacts/nook-icon-rail.png',animations:'disabled'});await page.locator('#collapseChats').click();
  assert.deepEqual(errors,[]);console.log('PASS project files/context, chat moves, both kinds of pins, persistence, temporary privacy, account isolation, file bounds, deletion and light/dark mode');
-}finally{await browser.close();}
+}finally{await workspace.close();}

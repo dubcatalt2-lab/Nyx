@@ -7,7 +7,7 @@ export async function migrateStorage(names) {
     const existing=await indexedDB.databases();
     for(const [name,alias] of Object.entries(names)) {
       if(!existing.some(db=>db.name===name)||existing.some(db=>db.name===alias))continue;
-      const open=(name,version,upgrade)=>new Promise((resolve,reject)=>{const r=version?indexedDB.open(name,version):indexedDB.open(name);r.onerror=()=>reject(r.error);r.onblocked=()=>reject(Error('Close other site tabs and reload to update saved browser data.'));r.onupgradeneeded=()=>upgrade?.(r.result);r.onsuccess=()=>resolve(r.result);});
+      const open=(name,version,upgrade)=>new Promise((resolve,reject)=>{const r=version?indexedDB.open(name,version):indexedDB.open(name);r.onerror=()=>reject(r.error);r.onblocked=()=>reject(Error('Close other site tabs and reload to update saved workspace data.'));r.onupgradeneeded=()=>upgrade?.(r.result);r.onsuccess=()=>resolve(r.result);});
       const old=await open(name);const stores=[...old.objectStoreNames];
       let snapshots;
       try {snapshots=await new Promise((resolve,reject)=>{

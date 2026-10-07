@@ -7,10 +7,10 @@ const root=process.env.NYX_TEST_STATIC_ROOT||'dist';
 const app=express();app.use(express.static(root));
 const server=app.listen(0,'127.0.0.1');await new Promise(resolve=>server.once('listening',resolve));
 const base=`http://127.0.0.1:${server.address().port}`;
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 const track=title=>({id:title,title,artist:'Fixture artist',artistId:'42',catalog:'deezer',duration:120,cover:''});
 try{
-  const page=await browser.newPage(),errors=[],pending=new Map();let playbackRequests=0;
+  const page=await workspace.newPage(),errors=[],pending=new Map();let playbackRequests=0;
   page.on('pageerror',error=>errors.push(error.message));
   if(!process.argv.includes('--built')){
     const html=await readFile(`${root}/apps/nyxify/index.html`,'utf8');
@@ -59,4 +59,4 @@ try{
   assert.equal(playbackRequests,0,'Keyboard Like must not start playback');
   assert.deepEqual(errors,[]);
   console.log('PASS delayed Music searches/details, out-of-order results, stale errors and navigation back Home.');
-}finally{await browser.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+}finally{await workspace.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

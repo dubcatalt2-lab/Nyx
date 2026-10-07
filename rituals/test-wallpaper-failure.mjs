@@ -7,14 +7,14 @@ const root=process.env.NYX_TEST_STATIC_ROOT||'.';
 const app=express();app.get('/runtime-config.js',(_,res)=>res.type('js').send(''));
 app.use('/api',(_,res)=>res.json({enabled:false,online:0,users:[],apps:[]}));app.use(express.static(root));
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
- const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const page=await workspace.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  const vendor=await readFile(sourceFile(root+'/assets/vendor/three.r134.min.js'),'utf8');
  await page.route('**/assets/vendor/three.r134.min.js',route=>route.fulfill({contentType:'text/javascript',body:vendor+`;const OriginalRenderer=THREE.WebGLRenderer;THREE.WebGLRenderer=class extends OriginalRenderer{constructor(options){super(options);if(options.canvas.id==='nyxBeamsBg')this.render=()=>{if(!window.allowWallpaperRender)throw new Error('Simulated wallpaper renderer failure');};}};`}));
  await page.addInitScript(()=>{if(window!==window.top)return;localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.theme','ruby');localStorage.setItem('nyx.beamWallpaper','rose');localStorage.setItem('nyx.beamTheme','ruby');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');});
  await page.goto('http://127.0.0.1:'+server.address().port,{waitUntil:'domcontentloaded'});
- await page.waitForFunction(()=>document.body?.classList.contains('browser-shell')&&!document.body.classList.contains('nyx-loading-active'));
+ await page.waitForFunction(()=>document.body?.classList.contains('workspace-shell')&&!document.body.classList.contains('nyx-loading-active'));
  await page.getByRole('button',{name:'Got it',exact:true}).click({timeout:1800}).catch(()=>{});
  const home=page.locator('.nyx-minimal-search').first();
  await home.waitFor({timeout:5000});
@@ -39,4 +39,4 @@ try{
  await home.waitFor();
  assert.deepEqual(errors,[],'theme-change render failure must preserve the interface');
  console.log('Wallpaper render failure preserves startup, settings and theme changes; context recovery restores the renderer.');
-}finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}
+}finally{await workspace.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

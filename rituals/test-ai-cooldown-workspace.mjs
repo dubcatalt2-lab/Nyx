@@ -4,9 +4,9 @@ import {chromium} from 'playwright';
 const server=express().use(express.static(process.env.NYX_TEST_BUILT==='1'?'dist':'.')).listen(0,'127.0.0.1');
 await new Promise(resolve=>server.once('listening',resolve));
 const origin='http://127.0.0.1:'+server.address().port;
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try {for(const brand of ['nyx','tutsi','nook','drop']){
- const page=await browser.newPage();const errors=[];let attempts=0;
+ const page=await workspace.newPage();const errors=[];let attempts=0;
  page.on('pageerror',error=>errors.push(error.message));
  await page.route('https://www.gstatic.com/firebasejs/**/firebase-app.js',r=>r.fulfill({contentType:'text/javascript',body:'export const getApps=()=>[];export const initializeApp=()=>({});'}));
  await page.route('https://www.gstatic.com/firebasejs/**/firebase-auth.js',r=>r.fulfill({contentType:'text/javascript',body:'const auth={currentUser:{uid:"fixture",getIdToken:async()=>"fixture"}};export const getAuth=()=>auth;export const browserLocalPersistence={};export const setPersistence=async()=>{};export const onAuthStateChanged=(a,f)=>f(a.currentUser);export const signOut=async()=>{};'}));
@@ -37,4 +37,4 @@ try {for(const brand of ['nyx','tutsi','nook','drop']){
  await page.waitForTimeout(2400);assert(!(await ui.locator('#send').isDisabled()));assert.equal(await input.inputValue(),'My next draft');
  assert.equal(attempts,1,'No automatic paid retry');assert.deepEqual(errors,[]);
  await page.close();console.log('PASS '+brand+' countdown, preserved draft, submit blocking and automatic unlock');
- }}finally{await browser.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+ }}finally{await workspace.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

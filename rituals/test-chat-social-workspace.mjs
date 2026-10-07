@@ -9,13 +9,13 @@ const moduleText = name => fixture.match(new RegExp('const ' + name + '=`([\\s\\
 const app = express(); app.use(express.static(process.env.NYX_TEST_STATIC_ROOT || process.cwd()));
 const server = app.listen(0, '127.0.0.1'); await new Promise(resolve => server.once('listening', resolve));
 const base = process.env.NYX_TEST_BASE_URL || 'http://127.0.0.1:' + server.address().port;
-const browser = await chromium.launch({channel: 'msedge', headless: true});
+const workspace = await chromium.launch({channel: 'msedge', headless: true});
 const me = {uid: 'fixture-member', displayName: 'Alex', handle: '@alex', role: 'member'};
 const peer = {uid: 'outside-directory', displayName: 'River', handle: '@river', role: 'owner', online: true};
 let relations = [], actions = [], dmCalls = 0;
 const errors = [];
 try {
-  const page = await browser.newPage({viewport: {width: 1440, height: 940}});
+  const page = await workspace.newPage({viewport: {width: 1440, height: 940}});
   page.on('pageerror', error => errors.push(error.message));
   for (const [file, name] of [['firebase-app.js', 'firebaseAppModule'], ['firebase-auth.js', 'firebaseAuthModule']]) {
     await page.route('https://www.gstatic.com/firebasejs/11.10.0/' + file, route => route.fulfill({contentType: 'text/javascript', headers: {'access-control-allow-origin': '*'}, body: moduleText(name)}));
@@ -106,4 +106,4 @@ try {
   assert(await frame.locator('[data-member-dialog]').isVisible());
   assert.deepEqual(errors, []);
   console.log('PASS out-of-directory author profiles, keyboard entry, safe bio, friendship requests/acceptance, block and ignore persistence, DM button, mobile card/composer bounds');
-} finally {await browser.close(); await new Promise(resolve => server.close(resolve));}
+} finally {await workspace.close(); await new Promise(resolve => server.close(resolve));}

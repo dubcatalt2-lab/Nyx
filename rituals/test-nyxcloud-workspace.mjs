@@ -24,9 +24,9 @@ app.use('/apps/nyxcloud',express.static(resolve(process.env.NYX_TEST_BUILT?'dist
 app.use('/assets/vendor/novnc',express.static(dirname(dirname(createRequire(import.meta.url).resolve('@novnc/novnc')))));
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));server.on('upgrade',cloud.upgrade);
 const origin='http://127.0.0.1:'+server.address().port;
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
- const context=await browser.newContext({viewport:{width:1440,height:900}});
+ const context=await workspace.newContext({viewport:{width:1440,height:900}});
  await context.route('https://www.gstatic.com/firebasejs/**',route=>route.fulfill({contentType:'application/javascript',body:route.request().url().endsWith('firebase-app.js')?'export const getApps=()=>[]; export const initializeApp=()=>({});':'const user={getIdToken:async()=>"local-test"};export const getAuth=()=>({currentUser:user});export const browserLocalPersistence={};export const setPersistence=async()=>{};export const onAuthStateChanged=(_auth,callback)=>callback(user);'}));
  const session=await context.request.post(origin+'/api/nyxcloud/session',{headers:{Authorization:'Bearer local-test',Origin:origin}});assert.equal(session.status(),200);
  const cookie=session.headers()['set-cookie'].split(';')[0];
@@ -34,7 +34,7 @@ try{
  const canonical=await context.request.get(origin+'/apps/nyxcloud',{maxRedirects:0,headers:{cookie}});assert.equal(canonical.status(),302);
  const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));page.on('response',r=>{if(r.status()>=400)errors.push(r.status()+' '+new URL(r.url()).pathname);});
  await page.addInitScript(()=>{const Original=window.WebSocket;window.WebSocket=new Proxy(Original,{construct(Type,args){const socket=new Type(...args);if(String(args[0]).includes('/api/nyxcloud/socket')){window.testDesktopSocket=socket;window.testDesktopConnections=(window.testDesktopConnections||0)+1;}return socket;}});});
- const navigation=await page.goto(origin+'/apps/nyxcloud/');assert.equal(navigation.status(),200,'Browser owner page status');
+ const navigation=await page.goto(origin+'/apps/nyxcloud/');assert.equal(navigation.status(),200,'Workspace owner page status');
  try{await page.waitForFunction(()=>document.getElementById('status')?.textContent==='Connected',{timeout:15000});}catch(error){console.log({status:await page.locator('body').textContent({timeout:1000}),errors});throw error;}
  const display=await page.locator('#screen canvas').evaluate(canvas=>({width:canvas.width,height:canvas.height}));assert(display.width>=1280&&display.height>=720,JSON.stringify(display));
  // An idle guest can legitimately show a black screensaver. Require a decoded
@@ -54,5 +54,5 @@ try{
  }
  await page.locator('#disconnect').click();await page.waitForFunction(()=>document.getElementById('status').textContent==='Disconnected.');
  await page.locator('#connect').click();await page.waitForFunction(()=>document.getElementById('status').textContent==='Connected');
- console.log('PASS live NyxCloud browser: authenticated viewer, full-resolution VNC, no JS errors, disconnect/reconnect; no guest input sent.',display);
-}finally{await browser.close();cloud.close();server.closeAllConnections();await new Promise(r=>server.close(r));}
+ console.log('PASS live NyxCloud workspace: authenticated viewer, full-resolution VNC, no JS errors, disconnect/reconnect; no guest input sent.',display);
+}finally{await workspace.close();cloud.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

@@ -1,4 +1,4 @@
-globalThis.NyxDuckImageViewport = function(t, browserShellSourceUrl){
+globalThis.NyxDuckImageViewport = function(t, workspaceShellSourceUrl){
       if(!t?.frame) return;
       let doc;
       try{doc=t.frame.contentDocument}catch{return}
@@ -6,9 +6,9 @@ globalThis.NyxDuckImageViewport = function(t, browserShellSourceUrl){
       const currentSource=()=>{
         try{
           const href=String(t.frame.contentWindow?.location?.href || '');
-          return browserShellSourceUrl(href) || browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
+          return workspaceShellSourceUrl(href) || workspaceShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
         }catch{
-          return browserShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
+          return workspaceShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
         }
       };
       let initial;
@@ -20,8 +20,8 @@ globalThis.NyxDuckImageViewport = function(t, browserShellSourceUrl){
         const match=raw.match(/https?%3a%2f%2f/i);
         if(!match) return '';
         const isEncodedUrl=match.index===0;
-        const isScramjetPath=raw.includes('/~/sj/');
-        if(!isEncodedUrl && !isScramjetPath) return '';
+        const isStudyjetPath=raw.includes('/~/sj/');
+        if(!isEncodedUrl && !isStudyjetPath) return '';
         let encoded=raw.slice(match.index);
         const metadataAt=encoded.search(/[?&]%24(?:rfp|io|tf|pf|iframe)=/i);
         if(metadataAt>0) encoded=encoded.slice(0,metadataAt);

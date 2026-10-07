@@ -55,9 +55,9 @@ const server = createServer((request, response) => {
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
-const browser = await chromium.launch({ headless: true });
+const workspace = await chromium.launch({ headless: true });
 try {
-  const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
+  const page = await workspace.newPage({ viewport: { width: 1440, height: 960 } });
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   // Keep real HTTP caching enabled; block upstream traffic through CDP instead.
@@ -67,7 +67,7 @@ try {
   await page.addInitScript(() => {
     if(window!==window.top)return;
     localStorage.setItem('nyx.setupComplete', 'true');
-    localStorage.setItem('nyx.browserShellMode', 'true');
+    localStorage.setItem('nyx.workspaceShellMode', 'true');
     localStorage.setItem('nyx.tosAcceptedVersion', '2026-07-30');
     localStorage.setItem('nyx.releaseNotes.2026-10-02-nyx-1.6.8.seen', '2026-10-02-nyx-1.6.8');
   });
@@ -77,7 +77,7 @@ try {
   assert.equal(await page.evaluate(async url=>(await fetch(url).then(r=>r.text())).includes('includeUnillustrated'),origin+gameScriptUrl),false);
   legacyCatalog=false;
   assert.equal(await page.evaluate(async url=>(await fetch(url).then(r=>r.text())).includes('includeUnillustrated'),origin+gameScriptUrl),false);
-  // The unversioned URL is still stale in this existing browser profile.
+  // The unversioned URL is still stale in this existing workspace profile.
   assert.equal(await page.evaluate(async url=>(await fetch(url).then(r=>r.json())).includeUnillustrated,origin+base+'assets/games/games.json'),undefined);
   await page.goto(origin + '/gh/test/repo@main/link.svg', { waitUntil: 'domcontentloaded' });
   await page.waitForURL(origin + base + 'Nyx.svg');
@@ -114,7 +114,7 @@ try {
   const games = page.frameLocator('iframe.view.active');
   await games.locator('#catalogProgress.done').waitFor({ state: 'attached' });
   const allCount = Number((await games.locator('[data-library="all"] .library-tab-count').innerText()).replaceAll(',', ''));
-  assert(versionedArcadeRequests.some(path=>path.endsWith('/games.json')), 'Catalog must refresh despite the old browser cache');
+  assert(versionedArcadeRequests.some(path=>path.endsWith('/games.json')), 'Catalog must refresh despite the old workspace cache');
   assert(versionedArcadeRequests.some(path=>path.endsWith('.js')), 'Game renderer must use the current package revision');
   assert(allCount > 1000, `Static All games must include the packaged catalog even without cover art; got ${allCount}`);
   assert.equal(await games.locator('.game-card').count(), 30);
@@ -140,7 +140,7 @@ try {
   assert.deepEqual(errors,[]);
   console.log(`PASS actual static package: ${manifest.files.length} assets verified and published through mocked Git, launcher redirect, worker startup, HTML MIME correction, isolated app shell and reload.`);
 } finally {
-  await browser.close();
+  await workspace.close();
   server.closeAllConnections();
   await new Promise(resolve => server.close(resolve));
 }

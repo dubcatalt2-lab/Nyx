@@ -1,8 +1,8 @@
 import { chromium } from "playwright";
 import assert from "node:assert/strict";
-const browser = await chromium.launch();
+const workspace = await chromium.launch();
 try {
-  const page = await browser.newPage({
+  const page = await workspace.newPage({
     viewport: { width: 1440, height: 1000 },
   });
   const errors = [];
@@ -114,13 +114,13 @@ try {
     await page.locator("#dock-apps button[data-route=ai] circle").count(),
     2,
   );
-  if(await page.locator("#browser-home").isVisible()) await page.locator("#browser-home").click();
+  if(await page.locator("#workspace-home").isVisible()) await page.locator("#workspace-home").click();
   await page.locator("#account-button").click();
   await page.fill("#identifier", "testuser");
   await page.fill("#password", "test-password");
   await page.locator("#auth-submit").click();
   await page.locator("#account-dialog").waitFor({ state: "hidden" });
-  if(await page.locator("#browser-home").isVisible()) await page.locator("#browser-home").click();
+  if(await page.locator("#workspace-home").isVisible()) await page.locator("#workspace-home").click();
   await page.locator("#account-button").click();
   await page.locator("#edit-profile").click();
   const f = page.frameLocator('iframe[title="Profiles"]');
@@ -172,7 +172,7 @@ try {
     profile.avatarUrl,
     "/api/profile-media/" + uid + "/avatar/fixtureavatar1234",
   );
-  if(await page.locator("#browser-home").isVisible()) await page.locator("#browser-home").click();
+  if(await page.locator("#workspace-home").isVisible()) await page.locator("#workspace-home").click();
   await page.locator("#account-button").click();
   await page.waitForFunction(()=>document.querySelector('#account-name').textContent==='Tutsi friend' && document.querySelector('#account-button img')?.naturalWidth > 0);
   assert.equal(await page.locator('#account-handle').textContent(), '@testuser');
@@ -199,11 +199,11 @@ try {
     .locator(".nyx-user-profile-heading h2")
     .filter({ hasText: "Tutsi friend" })
     .waitFor();
-  await page.locator("#browser-home").click();
+  await page.locator("#workspace-home").click();
   await page.locator('.header-actions a[href="#chat"]').click();
   const chat = page.frameLocator('iframe[title="Chat"]');
   await chat.locator("body").waitFor();
-  await page.locator("#browser-home").click();
+  await page.locator("#workspace-home").click();
   await page.locator("#dock-apps [data-route=settings]").click();
   await chat
     .locator("body")
@@ -236,7 +236,7 @@ try {
     );
   await f.locator(".nyx-user-profile-heading h2").waitFor();
   await page.setViewportSize({ width: 390, height: 844 });
-  if(await page.locator("#browser-home").isVisible()) await page.locator("#browser-home").click();
+  if(await page.locator("#workspace-home").isVisible()) await page.locator("#workspace-home").click();
   await page.locator("#account-button").click();
   await page.locator("#edit-profile").click();
   await f.locator("[name=bio]").waitFor();
@@ -265,5 +265,5 @@ try {
     "Shared profile editing/viewing, chat profile bridge, safe mention toast, icons and mobile editor passed with fixtures.",
   );
 } finally {
-  await browser.close();
+  await workspace.close();
 }

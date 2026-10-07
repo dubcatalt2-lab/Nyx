@@ -43,11 +43,11 @@ const nextTrack = {
   duration: 245
 };
 
-let browser;
+let workspace;
 try {
   await waitForServer();
-  browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage({ viewport: { width: 1_280, height: 800 } });
+  workspace = await chromium.launch({ headless: true });
+  const page = await workspace.newPage({ viewport: { width: 1_280, height: 800 } });
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   await page.addInitScript(() => {
@@ -342,9 +342,9 @@ try {
   assert.equal(await page.locator('#fullTrackVideo').getAttribute('aria-pressed'), 'false', 'Switching back to the cover did not clear the active state');
   assert.equal(await page.locator('#nowPlayingArt').evaluate(image => getComputedStyle(image).visibility), 'visible', 'Switching back did not restore the album cover');
   await page.setViewportSize({ width: 1_280, height: 800 });
-  assert.deepEqual(pageErrors, [], `Browser errors: ${pageErrors.join(' | ')}`);
+  assert.deepEqual(pageErrors, [], `Workspace errors: ${pageErrors.join(' | ')}`);
 
-  const chromeOsContext = await browser.newContext({
+  const chromeOsContext = await workspace.newContext({
     viewport: { width: 1_280, height: 800 },
     userAgent: 'Mozilla/5.0 (X11; CrOS x86_64 15917.71.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36'
   });
@@ -409,10 +409,10 @@ try {
   assert.equal(chromeOsInlineVideo.pressed, 'true', 'ChromeOS direct player did not switch into the cover area');
   assert.ok(chromeOsInlineVideo.frameWidth > 0 && Math.abs(chromeOsInlineVideo.frameWidth - chromeOsInlineVideo.mediaWidth) <= 2, 'ChromeOS inline video did not fit the cover area');
   assert.equal(await chromeOsPage.locator('#fullTrackFullscreen').isVisible(), true, 'ChromeOS inline video did not expose fullscreen');
-  assert.deepEqual(chromeOsErrors, [], `ChromeOS direct-player browser errors: ${chromeOsErrors.join(' | ')}`);
+  assert.deepEqual(chromeOsErrors, [], `ChromeOS direct-player workspace errors: ${chromeOsErrors.join(' | ')}`);
   await chromeOsContext.close();
 
-  const invalidJsonPage = await browser.newPage({ viewport: { width: 1_280, height: 800 } });
+  const invalidJsonPage = await workspace.newPage({ viewport: { width: 1_280, height: 800 } });
   await invalidJsonPage.route('**/api/**', route => {
     const path = new URL(route.request().url()).pathname;
     if (path === '/api/nyxify/home') return route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>Gateway fallback</title>' });
@@ -428,6 +428,6 @@ try {
 
   console.log('Nyxify player, production endpoint handling, and non-JSON fallback regressions passed.');
 } finally {
-  await browser?.close().catch(() => {});
+  await workspace?.close().catch(() => {});
   if (server?.exitCode === null) server.kill();
 }

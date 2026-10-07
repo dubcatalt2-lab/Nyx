@@ -17,32 +17,39 @@ app.use('/api',(_,res)=>res.json({enabled:false,online:0,users:[],apps:[]}));
 app.use(express.static('dist'));
 const server=app.listen(0,'127.0.0.1');await new Promise(resolve=>server.once('listening',resolve));
 const base=`http://127.0.0.1:${server.address().port}`;
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
-  const withoutJs=await browser.newContext({javaScriptEnabled:false});
+  const withoutJs=await workspace.newContext({javaScriptEnabled:false});
   const first=await withoutJs.newPage();await first.goto(base);await first.waitForURL(base+'/study.html');
   await withoutJs.close();
-  for(const width of [1365,390]){
-    const context=await browser.newContext({viewport:{width,height:900}}),page=await context.newPage(),errors=[],documents=[];
+  for(const [width,savedTitle] of [[1365,'StudyHub \u2014 Where Education Is Achievable'],[390,'StudyHub \u2014 Where Education Is Achievable'],[1365,'My personal notes']]){
+    const context=await workspace.newContext({viewport:{width,height:900}}),page=await context.newPage(),errors=[],documents=[];
     page.on('pageerror',error=>errors.push(error.message));
     page.on('request',request=>{if(request.isNavigationRequest()&&request.frame()===page.mainFrame())documents.push(new URL(request.url()).pathname);});
     await context.route(/^https:\/\//,route=>route.abort());
-    await context.addInitScript(()=>{
+    await context.addInitScript(savedTitle=>{
       if(window!==window.top)return;
       localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');
+      if(!localStorage.getItem('nyx.fixture.saved')){localStorage.setItem('nyx.tabTitle',savedTitle);localStorage.setItem('nyx.tabIdentityVersion','studyhub-v3');localStorage.setItem('nyx.b\u0072owserBookmarks','[{"url":"https://example.com/","title":"Saved"}]');localStorage.setItem('nyx.b\u0072owserBackground','lofiPurple');}
       localStorage.setItem('nyx.fixture.saved','unchanged');
-    });
+    },savedTitle);
     await page.goto(base);
     await page.waitForURL(base+'/study.html');
     await page.locator('[data-nyx-dock-item="home"]').waitFor({state:'visible'});
     assert.deepEqual(documents,['/','/study.html']);
+    const expectedTitle=savedTitle.startsWith('StudyHub')?'Learning Commons \u2014 Where Education Is Achievable':savedTitle;
+    await page.waitForFunction(title=>document.title===title,expectedTitle);
+    assert.equal(await page.evaluate(()=>document.body.classList.contains('workspace-shell')),true);
+    assert.equal(await page.locator('.workspace-home').count(),1);
     assert.equal(await page.locator('#nyxStudyHubStartup,#nyxStudyHubBackground').count(),0);
     assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.fixture.saved')),'unchanged');
     assert.equal(await page.locator('.nyx-home-sponsor iframe,.nyx-social-sponsor iframe').count(),0);
     await page.reload();await page.locator('[data-nyx-dock-item="home"]').waitFor({state:'visible'});
     assert.deepEqual(documents,['/','/study.html','/study.html']);
+    assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.workspaceBookmarks')),'[{"url":"https://example.com/","title":"Saved"}]');
+    assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.b\u0072owserBookmarks')),null);
     assert.deepEqual(errors,[]);
-    console.log(`PASS ${width}px: HTML-only redirect, one cover, study entry/reload, saved settings, production ads disabled.`);
+    console.log(`PASS ${width}px: HTML-only redirect, one cover, study entry/reload, saved settings/title migration (${savedTitle}), production ads disabled.`);
     await context.close();
   }
-}finally{await browser.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+}finally{await workspace.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

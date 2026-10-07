@@ -4,8 +4,8 @@ import {readFile} from 'node:fs/promises';
 import {resolve, extname, sep} from 'node:path';
 import {chromium} from 'playwright';
 const root=resolve(process.env.NYX_PALETTE_ROOT||'.'), base='http://nyx.test';
-const browser=await chromium.launch({channel:'msedge',headless:true});
-const context=await browser.newContext({viewport:{width:1280,height:900}});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
+const context=await workspace.newContext({viewport:{width:1280,height:900}});
 await context.route(base+'/**',async route=>{
   let path=new URL(route.request().url()).pathname;
   if(path.startsWith('/api/'))return route.fulfill({json:path.includes('status')?{configured:true}:{videos:[],users:[],channels:[],online:0}});
@@ -46,4 +46,4 @@ try{
     await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,JSON.stringify(await page.evaluate(()=>[...document.querySelectorAll('body *')].filter(e=>e.getBoundingClientRect().right>innerWidth+1&&getComputedStyle(e).position!=='fixed').slice(0,8).map(e=>({class:e.className,width:e.getBoundingClientRect().width})))));await page.setViewportSize({width:1280,height:900});
   }
   console.log('PASS Tutsi chat/YouTube/code/links ownership and inner surfaces; NyxTube dark/light/Halloween/custom live theme changes and mobile fit');
-}finally{await browser.close();}
+}finally{await workspace.close();}

@@ -9,10 +9,10 @@ app.use(express.static(process.env.NYX_TEST_STATIC_ROOT || '.'));
 const server = app.listen(0, '127.0.0.1');
 await new Promise(resolve => server.once('listening', resolve));
 const base = process.env.NYX_TEST_BASE_URL || `http://127.0.0.1:${server.address().port}`;
-const browser = await chromium.launch({channel: 'msedge', headless: true});
+const workspace = await chromium.launch({channel: 'msedge', headless: true});
 const errors = [];
 try {
-  const context = await browser.newContext({viewport: {width: 1440, height: 900}});
+  const context = await workspace.newContext({viewport: {width: 1440, height: 900}});
   if (process.env.NYX_TEST_BASE_URL) await context.route('**/api/**', route => route.fulfill({json:{enabled:false,online:0,users:[],apps:[]}}));
   let bannerRequests = 0;
   await context.route('https://bicea.org/**', route => {
@@ -86,7 +86,7 @@ try {
     const tab = await context.newPage();
     tab.on('pageerror', error => errors.push(error.message));
     await tab.goto(base, {waitUntil: 'domcontentloaded'});
-    await tab.waitForFunction(() => document.body?.classList.contains('browser-shell') && !document.body.classList.contains('nyx-loading-active'));
+    await tab.waitForFunction(() => document.body?.classList.contains('workspace-shell') && !document.body.classList.contains('nyx-loading-active'));
     await tab.getByRole('button', {name: 'Got it', exact: true}).click({timeout: 1500}).catch(() => {});
     await tab.evaluate(() => {
       window.testNow = Date.now();
@@ -111,7 +111,7 @@ try {
   const second = await homePage();
   const clock = await first.evaluate(() => Date.now());
   await second.evaluate(now => {window.testNow = now;}, clock);
-  const clickHome = tab => tab.locator('.browser-home.nyx-minimal-home:not(.hidden) h1').click();
+  const clickHome = tab => tab.locator('.workspace-home.nyx-minimal-home:not(.hidden) h1').click();
   await clickHome(first);
   await first.waitForFunction(() => window.sponsorOpens.length === 1);
   await clickHome(second);
@@ -132,7 +132,7 @@ try {
   await first.waitForFunction(() => window.sponsorOpens.length === 3);
   const opened = await first.evaluate(() => window.sponsorOpens);
   assert.ok(opened.every(([url, target, features]) => url === 'https://asiafilm.org/4/4e423fea224eac7374c037f143e080e3' && target === '_blank' && features === 'noopener,noreferrer'));
-  await first.evaluate(() => {window.testNow += 10 * 60 * 1000; document.querySelector('.browser-home.nyx-minimal-home h1').click();});
+  await first.evaluate(() => {window.testNow += 10 * 60 * 1000; document.querySelector('.workspace-home.nyx-minimal-home h1').click();});
   assert.equal(await first.evaluate(() => window.sponsorOpens.length), 3, 'synthetic clicks never open ads');
   await first.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
   await first.waitForFunction(()=>document.querySelectorAll('.nyx-home-sponsor iframe').length===0);
@@ -149,7 +149,7 @@ try {
     await new Promise(resolve => game.addEventListener('load', resolve, {once: true}));
     window.nyxInstallGameAdProtection(game);
     await new Promise(resolve => setTimeout(resolve, 50));
-    const protectedGame = game.contentWindow.__nyxBrowserAdBlock === true;
+    const protectedGame = game.contentWindow.__nyxWorkspaceAdBlock === true;
     const removed = !game.contentDocument.querySelector('.ad-banner');
     game.remove();
     return {allowed, protectedGame, removed};
@@ -304,7 +304,7 @@ try {
   assert.deepEqual(errors, []);
   console.log('PASS nested creative writes with account/storage isolation; banners and mobile bounds; Adkid 100/minute cap, app clicks, Social Bar dismissal and premium/staff exclusions; ordinary shared cap, expiry, synthetic-click rejection and retained game ad protection. No live advertising impressions or clicks generated.');
 } finally {
-  await browser.close();
+  await workspace.close();
   server.closeAllConnections();
   await new Promise(resolve => server.close(resolve));
 }

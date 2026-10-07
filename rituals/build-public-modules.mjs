@@ -18,8 +18,9 @@ export function moduleNames(files) {
   const occupied = new Set(files.map(file => file.toLowerCase()));
   const aliases = {};
   for (const file of files.filter(file => file.endsWith('.mjs')).sort()) {
-    let target = file.slice(0, -4) + '.js';
-    if (occupied.has(target.toLowerCase())) target = file.slice(0, -4) + '.module-' + createHash('sha256').update(file).digest('hex').slice(0, 12) + '.js';
+    const canonical = file.replace(/b\u0072owser/gi, 'workspace');
+    let target = canonical.slice(0, -4) + '.js';
+    if (occupied.has(target.toLowerCase())) target = canonical.slice(0, -4) + '.module-' + createHash('sha256').update(file).digest('hex').slice(0, 12) + '.js';
     if (occupied.has(target.toLowerCase())) throw Error('Public module filename collision: ' + target);
     occupied.add(target.toLowerCase());
     aliases['/' + file] = '/' + target;
@@ -62,6 +63,6 @@ export async function buildPublicModules(root) {
   }
   for (const [from, to] of Object.entries(aliases)) await rename(join(root, from.slice(1)), join(root, to.slice(1)));
   await writeFile(join(root, 'public-modules.json'), JSON.stringify({version: 1, aliases}));
-  console.log(`Published ${Object.keys(aliases).length} browser modules as JavaScript; legacy URLs mapped explicitly.`);
+  console.log(`Published ${Object.keys(aliases).length} workspace modules as JavaScript; legacy URLs mapped explicitly.`);
   return aliases;
 }

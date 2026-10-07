@@ -263,7 +263,7 @@
     const p2p=refs.generationMethod.value==='p2p';
     refs.generationMethodHint.textContent=p2p
       ? `P2P bulk-publishes up to ${p2pPremiumBatchLimit.toLocaleString()} Nyx links directly and keeps the GitHub credential on the Nyx server.`
-      : 'Nyx managed uses the protected server publisher; its GitHub credential never reaches your browser.';
+      : 'Nyx managed uses the protected server publisher; its GitHub credential never reaches your workspace.';
     setPremiumLayout();
   }
   function setWizardStep(nextStep,direction=nextStep>=wizardStep?'forward':'back'){

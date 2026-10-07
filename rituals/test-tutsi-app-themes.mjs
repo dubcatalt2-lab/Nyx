@@ -4,9 +4,9 @@ import assert from "node:assert/strict";
 import {readFile} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
 const base=process.env.TUTSI_TEST_URL||'http://localhost:9091/tutsi';
-const browser = await chromium.launch({channel:'msedge'});
+const workspace = await chromium.launch({channel:'msedge'});
 try {
-  const p = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const p = await workspace.newPage({ viewport: { width: 1280, height: 900 } });
   if(process.env.TUTSI_TEST_DIST)await p.route(new URL(base).origin+'/**',async route=>{
     const pathname=new URL(route.request().url()).pathname;
     const path=pathname==='/tutsi'?'/apps/tutsi/index.html':pathname;
@@ -104,5 +104,5 @@ try {
     "All built-in app fonts/backgrounds and embedded/native play-button behavior passed.",
   );
 } finally {
-  await browser.close();
+  await workspace.close();
 }

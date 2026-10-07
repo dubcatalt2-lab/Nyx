@@ -5,7 +5,7 @@ import {hasFullAiCatalog,aiCatalogPrice} from './ai-owner-catalog.mjs';
 const fail=(message,status=400)=>Object.assign(Error(message),{status});
 
 // Both catalog checks and inference use current account policy, never privileges
-// cached at key issuance. The signed browser identity is bound server-side.
+// cached at key issuance. The signed workspace identity is bound server-side.
 export function createNookDeveloper({allowance,catalog,send,configured}){
  const device=(req,res,firebase)=>allowance(firebase).device(req,res,{cookieName:'nook_device',maxAge:31536000});
  async function actor(u){
@@ -17,11 +17,12 @@ export function createNookDeveloper({allowance,catalog,send,configured}){
   const who=await actor(u),saved=await u.store.details(u.uid),current=await device(req,res,u.firebase);
   const bound=saved.nookDevice||current;
   const available=(await catalog(who)).filter(m=>aiModelAllowed(m.id,who,aiCatalogPrice(m)));
+  const currentUsage=bound!==current?await allowance(u.firebase).nookUsage({...who,device:current}):null;
   return {uid:u.uid,configured:configured(),key:saved.key,unlimited:hasFullAiCatalog(who),
    models:available.map(m=>m.id),catalog:available.map(m=>({...m,expensive:aiCatalogPrice(m)?nookModelIsExpensive(aiCatalogPrice(m)):null})),
    usage:await allowance(u.firebase).nookUsage({...who,device:bound}),
-   currentBrowserUsage:bound!==current?await allowance(u.firebase).nookUsage({...who,device:current}):null,
-   keyUsesCurrentBrowser:bound===current};
+   currentWorkspaceUsage:currentUsage,currentB\u0072owserUsage:currentUsage,
+   keyUsesCurrentWorkspace:bound===current,keyUsesCurrentB\u0072owser:bound===current};
  }
  async function complete(req,res,u){
   const b=req.body||{},available=await models(u),selected=available.find(m=>m.id===b.model);

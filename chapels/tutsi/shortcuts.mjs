@@ -11,11 +11,11 @@ export function installShortcuts(doc, actions, depth=0){
       event.preventDefault();event.stopImmediatePropagation();
       if(key==='a'){if(target.select)target.select();else doc.execCommand('selectAll');return;}
       if(key==='v'){
-        if(!navigator.clipboard?.readText){actions.notice?.('Use your browser paste menu.');return;}
+        if(!navigator.clipboard?.readText){actions.notice?.('Use your workspace paste menu.');return;}
         void navigator.clipboard.readText().then(text=>{
           if(target.setRangeText){target.setRangeText(text,target.selectionStart,target.selectionEnd,'end');target.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:'insertFromPaste',data:text}));}
           else doc.execCommand('insertText',false,text);
-        }).catch(()=>actions.notice?.('Clipboard access was denied. Use your browser paste menu.'));return;
+        }).catch(()=>actions.notice?.('Clipboard access was denied. Use your workspace paste menu.'));return;
       }
       doc.execCommand({c:'copy',x:'cut',z:'undo',y:'redo'}[key]);
     }

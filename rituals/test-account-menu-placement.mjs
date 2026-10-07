@@ -6,9 +6,9 @@ import { chromium } from 'playwright';
 
 const source = await readFile(sourceFile('script.js'), 'utf8');
 const position = source.slice(source.indexOf('  function positionNyxAccountMenu('), source.indexOf('  function openNyxAccountMenu('));
-const browser = await chromium.launch({ headless: true });
+const workspace = await chromium.launch({ headless: true });
 try {
-  const page = await browser.newPage();
+  const page = await workspace.newPage();
   await page.route('http://nyx.test/**', async route => {
     const path = new URL(route.request().url()).pathname;
     try {
@@ -67,4 +67,4 @@ try {
   }
   await page.screenshot({ path: '.codex-artifacts/account-menu-placement.png' });
   console.log('Account menu fits above/below anchors at four desktop/mobile sizes; all actions remain reachable.');
-} finally { await browser.close(); }
+} finally { await workspace.close(); }

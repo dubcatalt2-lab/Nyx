@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
-const base=process.env.NYX_TEST_BASE_URL||'http://127.0.0.1:8199',browser=await chromium.launch({channel:"msedge"});
+const base=process.env.NYX_TEST_BASE_URL||'http://127.0.0.1:8199',workspace=await chromium.launch({channel:"msedge"});
 try{
- const page=await browser.newPage();page.on('pageerror',error=>console.error('PAGE',error.message));page.on('console',message=>{if(message.type()==='error')console.error('BROWSER',message.text())});page.setDefaultTimeout(15000);
+ const page=await workspace.newPage();page.on('pageerror',error=>console.error('PAGE',error.message));page.on('console',message=>{if(message.type()==='error')console.error('WORKSPACE',message.text())});page.setDefaultTimeout(15000);
  await page.route('**/api/founder-profile/auth-config',r=>r.fulfill({json:{}}));
  await page.route('**/api/nyx-ai/providers',r=>r.fulfill({json:{providers:[{id:'shared',label:'OpenRouter'}]}}));
  await page.route('**/api/nyx-ai/models*',r=>r.fulfill({json:{models:[{id:'qwen/qwen3.7-flash',label:'Qwen'}]}}));
@@ -33,4 +33,4 @@ try{
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('nyx.aiThreads.v1')).find(t=>t.id==='thread-0').messages.length),64,'Failed saves must preserve the last durable history');
   console.log('PASS AI history: >40 messages and conversations retained, earlier-message loading, bounded provider context, reload and visible storage-failure recovery');
  }
-}finally{await browser.close();}
+}finally{await workspace.close();}

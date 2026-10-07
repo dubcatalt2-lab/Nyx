@@ -11,13 +11,13 @@ html body.theme-fresh{
   --fresh-line:rgba(0,245,212,.68)!important;
 }
 
-html body.browser-shell #weatherRestore,
-html body.browser-shell #weatherRestore.show{
+html body.workspace-shell #weatherRestore,
+html body.workspace-shell #weatherRestore.show{
   display:none!important;
   opacity:0!important;
   pointer-events:none!important;
 }
-html body.browser-shell .weather-panel{
+html body.workspace-shell .weather-panel{
   top:94px!important;
   right:14px!important;
   width:min(368px,calc(100vw - 28px))!important;
@@ -31,9 +31,9 @@ html body.browser-shell .weather-panel{
   backdrop-filter:blur(18px) saturate(1.12)!important;
   -webkit-backdrop-filter:blur(18px) saturate(1.12)!important;
 }
-html body.browser-shell .weather-panel::-webkit-scrollbar{width:0}
-html body.browser-shell .weather-search{grid-template-columns:minmax(0,1fr) 44px!important;gap:9px!important;margin-bottom:16px!important}
-html body.browser-shell .weather-search input{
+html body.workspace-shell .weather-panel::-webkit-scrollbar{width:0}
+html body.workspace-shell .weather-search{grid-template-columns:minmax(0,1fr) 44px!important;gap:9px!important;margin-bottom:16px!important}
+html body.workspace-shell .weather-search input{
   height:44px!important;
   border-radius:13px!important;
   padding:0 13px 0 40px!important;
@@ -48,24 +48,24 @@ html body.browser-shell .weather-search input{
   border-color:rgba(164,144,255,.22)!important;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.05)!important;
 }
-html body.browser-shell .weather-search input::placeholder{color:#8f87ad!important;text-align:left!important}
-html body.browser-shell .weather-search button{
+html body.workspace-shell .weather-search input::placeholder{color:#8f87ad!important;text-align:left!important}
+html body.workspace-shell .weather-search button{
   width:44px!important;
   height:44px!important;
   border-radius:13px!important;
   background:rgba(12,13,26,.72)!important;
   border-color:rgba(164,144,255,.22)!important;
 }
-html body.browser-shell .weather-options{height:38px!important;margin:-8px 0 13px!important;font-size:13px!important}
-html body.browser-shell .weather-current{gap:13px!important}
-html body.browser-shell .weather-now{grid-template-columns:56px minmax(0,1fr) minmax(78px,auto)!important;gap:10px!important}
-html body.browser-shell .weather-glyph{width:50px!important;height:50px!important;font-size:34px!important}
-html body.browser-shell .weather-panel .weather-temp{font-size:42px!important;line-height:.9!important}
-html body.browser-shell .weather-panel .weather-desc{font-size:14px!important}
-html body.browser-shell .weather-panel .weather-place{max-width:108px!important;font-size:14px!important;color:#aaa2c8!important}
-html body.browser-shell .weather-region-time{margin-top:-6px!important;font-size:12px!important}
-html body.browser-shell .weather-stat-grid{gap:8px!important}
-html body.browser-shell .weather-stat{
+html body.workspace-shell .weather-options{height:38px!important;margin:-8px 0 13px!important;font-size:13px!important}
+html body.workspace-shell .weather-current{gap:13px!important}
+html body.workspace-shell .weather-now{grid-template-columns:56px minmax(0,1fr) minmax(78px,auto)!important;gap:10px!important}
+html body.workspace-shell .weather-glyph{width:50px!important;height:50px!important;font-size:34px!important}
+html body.workspace-shell .weather-panel .weather-temp{font-size:42px!important;line-height:.9!important}
+html body.workspace-shell .weather-panel .weather-desc{font-size:14px!important}
+html body.workspace-shell .weather-panel .weather-place{max-width:108px!important;font-size:14px!important;color:#aaa2c8!important}
+html body.workspace-shell .weather-region-time{margin-top:-6px!important;font-size:12px!important}
+html body.workspace-shell .weather-stat-grid{gap:8px!important}
+html body.workspace-shell .weather-stat{
   min-height:36px!important;
   padding:0 12px!important;
   border-radius:12px!important;
@@ -73,10 +73,10 @@ html body.browser-shell .weather-stat{
   color:#9188aa!important;
   font-size:14px!important;
 }
-html body.browser-shell .weather-stat strong{font-size:15px!important}
-html body.browser-shell .weather-forecast-title{margin:2px 0 -1px!important;font-size:12px!important;letter-spacing:.14em!important}
-html body.browser-shell .weather-forecast{gap:6px!important}
-html body.browser-shell .weather-forecast-row{
+html body.workspace-shell .weather-stat strong{font-size:15px!important}
+html body.workspace-shell .weather-forecast-title{margin:2px 0 -1px!important;font-size:12px!important;letter-spacing:.14em!important}
+html body.workspace-shell .weather-forecast{gap:6px!important}
+html body.workspace-shell .weather-forecast-row{
   grid-template-columns:58px 30px 52px 1fr!important;
   min-height:30px!important;
   padding:0 10px!important;
@@ -87,24 +87,24 @@ html body.browser-shell .weather-forecast-row{
   pointer-events:none!important;
   cursor:default!important;
 }
-html body.browser-shell .weather-forecast-row .weather-rain-chance{color:#8ec9ff!important}
-html body.browser-shell .weather-forecast-row .weather-high-low{font-size:14px!important}
-html body.browser-shell .weather-status{min-height:12px!important;font-size:11px!important}
-html body.browser-shell.theme-fresh .weather-panel{
+html body.workspace-shell .weather-forecast-row .weather-rain-chance{color:#8ec9ff!important}
+html body.workspace-shell .weather-forecast-row .weather-high-low{font-size:14px!important}
+html body.workspace-shell .weather-status{min-height:12px!important;font-size:11px!important}
+html body.workspace-shell.theme-fresh .weather-panel{
   background:rgba(238,253,255,.74)!important;
   border-color:rgba(0,245,212,.62)!important;
   box-shadow:0 18px 54px rgba(20,120,150,.16),inset 0 1px 0 rgba(255,255,255,.75)!important;
 }
-html body.browser-shell.theme-fresh .weather-search input,
-html body.browser-shell.theme-fresh .weather-search button,
-html body.browser-shell.theme-fresh .weather-stat,
-html body.browser-shell.theme-fresh .weather-forecast-row{
+html body.workspace-shell.theme-fresh .weather-search input,
+html body.workspace-shell.theme-fresh .weather-search button,
+html body.workspace-shell.theme-fresh .weather-stat,
+html body.workspace-shell.theme-fresh .weather-forecast-row{
   background:rgba(255,255,255,.42)!important;
   border-color:rgba(0,245,212,.42)!important;
 }
-html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!important}
+html body.workspace-shell.theme-fresh .weather-search input{color:#167b8f!important}
 
-body.browser-shell{
+body.workspace-shell{
   --chrome-black:#04050a;
   --chrome-black-2:#070812;
   --chrome-border-gradient:linear-gradient(110deg,
@@ -112,15 +112,15 @@ body.browser-shell{
     color-mix(in srgb,var(--theme-border,#8b5cf6) 48%,#ffffff 22%),
     color-mix(in srgb,var(--theme-border,#8b5cf6) 86%,#000000 14%));
 }
-body.browser-shell .fresh-real-icon{
+body.workspace-shell .fresh-real-icon{
   font-size:17px!important;
   line-height:1!important;
 }
-body.browser-shell .browser-mode-weather > .weather-cloud-icon{
+body.workspace-shell .workspace-mode-weather > .weather-cloud-icon{
   width:15px!important;
   height:15px!important;
 }
-body.browser-shell .browser-mode-menu{
+body.workspace-shell .workspace-mode-menu{
   top:56px!important;
   right:10px!important;
   width:146px!important;
@@ -129,57 +129,57 @@ body.browser-shell .browser-mode-menu{
   border-radius:0!important;
   padding:2px!important;
 }
-body.browser-shell .browser-mode-menu button{
+body.workspace-shell .workspace-mode-menu button{
   min-height:24px!important;
   height:24px!important;
   padding:0 7px!important;
   font-size:11px!important;
   border-radius:0!important;
 }
-body.browser-shell .browser-mode-menu hr{
+body.workspace-shell .workspace-mode-menu hr{
   margin:2px 3px!important;
 }
 
-html body.browser-shell .browser-mode-weather > .weather-cloud-icon{
+html body.workspace-shell .workspace-mode-weather > .weather-cloud-icon{
   width:14px!important;
   height:14px!important;
   margin:0!important;
 }
 
-body.browser-shell #centerClock{
+body.workspace-shell #centerClock{
   display:none!important;
 }
-body.browser-shell .browser-blank-center{
+body.workspace-shell .workspace-blank-center{
   width:min(760px,calc(100vw - 56px))!important;
   justify-items:center!important;
   gap:18px!important;
   margin:0 auto!important;
   transform:translateY(-2vh);
 }
-body.browser-shell .browser-blank-logo{
+body.workspace-shell .workspace-blank-logo{
   width:132px!important;
   height:132px!important;
   object-fit:contain!important;
   filter:drop-shadow(0 0 18px color-mix(in srgb,var(--theme-border,#8b5cf6) 48%,transparent))!important;
 }
-body.browser-shell .browser-blank-center [data-home-shortcuts]{
+body.workspace-shell .workspace-blank-center [data-home-shortcuts]{
   justify-content:center!important;
 }
 
-body.browser-shell .browser-window.browser-blank-page .browser-blank-logo{
+body.workspace-shell .workspace-window.workspace-blank-page .workspace-blank-logo{
   animation:blankLogoRise .72s cubic-bezier(.18,.82,.22,1) both!important;
 }
-body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile{
+body.workspace-shell .workspace-window.workspace-blank-page .home-shortcut-grid > .quick-tile{
   animation:blankShortcutRise .72s cubic-bezier(.18,.82,.22,1) both!important;
 }
-body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(1){animation-delay:.16s!important}
-body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(2){animation-delay:.21s!important}
-body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(3){animation-delay:.26s!important}
-body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(4){animation-delay:.31s!important}
-body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(5){animation-delay:.36s!important}
-body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(6){animation-delay:.41s!important}
-body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(7){animation-delay:.46s!important}
-body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(8){animation-delay:.51s!important}
+body.workspace-shell .workspace-window.workspace-blank-page .home-shortcut-grid > .quick-tile:nth-child(1){animation-delay:.16s!important}
+body.workspace-shell .workspace-window.workspace-blank-page .home-shortcut-grid > .quick-tile:nth-child(2){animation-delay:.21s!important}
+body.workspace-shell .workspace-window.workspace-blank-page .home-shortcut-grid > .quick-tile:nth-child(3){animation-delay:.26s!important}
+body.workspace-shell .workspace-window.workspace-blank-page .home-shortcut-grid > .quick-tile:nth-child(4){animation-delay:.31s!important}
+body.workspace-shell .workspace-window.workspace-blank-page .home-shortcut-grid > .quick-tile:nth-child(5){animation-delay:.36s!important}
+body.workspace-shell .workspace-window.workspace-blank-page .home-shortcut-grid > .quick-tile:nth-child(6){animation-delay:.41s!important}
+body.workspace-shell .workspace-window.workspace-blank-page .home-shortcut-grid > .quick-tile:nth-child(7){animation-delay:.46s!important}
+body.workspace-shell .workspace-window.workspace-blank-page .home-shortcut-grid > .quick-tile:nth-child(8){animation-delay:.51s!important}
 @keyframes blankLogoRise{
   0%{opacity:0;transform:translateY(20px) scale(.88);filter:blur(8px)}
   64%{opacity:1;transform:translateY(-3px) scale(1.025);filter:blur(0)}
@@ -204,14 +204,14 @@ body *::after{
   font-family:var(--nyx-font,Inter),Arial,sans-serif!important;
 }
 
-html body.browser-shell .fresh-real-icon{
+html body.workspace-shell .fresh-real-icon{
   font-size:18px!important;
 }
-html body.browser-shell .browser-mode-weather > .weather-cloud-icon{
+html body.workspace-shell .workspace-mode-weather > .weather-cloud-icon{
   width:18px!important;
   height:18px!important;
 }
-html body.browser-shell .browser-mode-menu{
+html body.workspace-shell .workspace-mode-menu{
   top:68px!important;
 }
 html,
@@ -267,12 +267,12 @@ body.theme-fresh{
 }
 .post-cover-loader-label{max-width:170px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .post-cover-loader-percent{min-width:34px;text-align:right}
-html body.browser-shell .window.maximized{
+html body.workspace-shell .window.maximized{
   top:52px!important;
   height:calc(100dvh - 52px)!important;
 }
-html body.browser-shell .browser-mode-menu{top:52px!important}
-html body.browser-shell .browser-shell-settings-close{
+html body.workspace-shell .workspace-mode-menu{top:52px!important}
+html body.workspace-shell .workspace-shell-settings-close{
   position:sticky!important;
   top:4px!important;
   right:4px!important;
@@ -296,8 +296,8 @@ html body.browser-shell .browser-shell-settings-close{
   text-align:center!important;
   z-index:50!important;
 }
-html body.browser-shell .browser-shell-settings-close::before,
-html body.browser-shell .browser-shell-settings-close::after{display:none!important;content:none!important}
+html body.workspace-shell .workspace-shell-settings-close::before,
+html body.workspace-shell .workspace-shell-settings-close::after{display:none!important;content:none!important}
 html body.theme-fresh{
   --accent:#54ebd9!important;
   --theme-a:#ffffff!important;
@@ -325,8 +325,8 @@ html body.theme-fresh .post-cover-loader-track{
 }
 html body.theme-fresh .post-cover-loader-fill{background:#54ebd9!important}
 
-html body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid,
-html body.browser-shell [data-home-shortcuts]{
+html body.workspace-shell .workspace-window.workspace-blank-page .home-shortcut-grid,
+html body.workspace-shell [data-home-shortcuts]{
   position:absolute!important;
   left:50%!important;
   right:auto!important;
@@ -354,13 +354,13 @@ html body.browser-shell [data-home-shortcuts]{
   transform:translateX(-50%)!important;
   z-index:18!important;
 }
-html body.browser-shell.theme-fresh .browser-window.browser-blank-page .home-shortcut-grid,
-html body.browser-shell.theme-fresh [data-home-shortcuts]{
+html body.workspace-shell.theme-fresh .workspace-window.workspace-blank-page .home-shortcut-grid,
+html body.workspace-shell.theme-fresh [data-home-shortcuts]{
   background:rgba(255,255,255,.62)!important;
   border-color:rgba(84,235,217,.78)!important;
   box-shadow:0 12px 28px rgba(11,114,128,.12),inset 0 1px 0 rgba(255,255,255,.42)!important;
 }
-html body.browser-shell .home-shortcut-glyph{
+html body.workspace-shell .home-shortcut-glyph{
   width:22px!important;
   height:22px!important;
   display:block!important;
@@ -369,22 +369,22 @@ html body.browser-shell .home-shortcut-glyph{
   mask:var(--shortcut-mask) center/contain no-repeat!important;
   filter:drop-shadow(0 0 8px color-mix(in srgb,var(--nyx-shell-icon,#f8fafc) 54%,transparent))!important;
 }
-html body.browser-shell .home-shortcut-menu{
+html body.workspace-shell .home-shortcut-menu{
   bottom:42px!important;
   top:auto!important;
   min-width:96px!important;
 }
-html body.browser-shell [data-home-shortcuts]{
+html body.workspace-shell [data-home-shortcuts]{
   width:max-content!important;
   min-width:0!important;
   max-width:calc(100vw - 24px)!important;
 }
-html body.browser-shell [data-home-shortcuts] > .quick-tile.home-shortcut,
-html body.browser-shell [data-home-shortcuts] > .quick-tile.home-shortcut:hover,
-html body.browser-shell [data-home-shortcuts] > .quick-tile.home-shortcut:focus-within,
-html body.browser-shell [data-home-shortcuts] > .quick-tile.home-shortcut-add,
-html body.browser-shell [data-home-shortcuts] > .quick-tile.home-shortcut-add:hover,
-html body.browser-shell [data-home-shortcuts] > .quick-tile.home-shortcut-add:focus-visible{
+html body.workspace-shell [data-home-shortcuts] > .quick-tile.home-shortcut,
+html body.workspace-shell [data-home-shortcuts] > .quick-tile.home-shortcut:hover,
+html body.workspace-shell [data-home-shortcuts] > .quick-tile.home-shortcut:focus-within,
+html body.workspace-shell [data-home-shortcuts] > .quick-tile.home-shortcut-add,
+html body.workspace-shell [data-home-shortcuts] > .quick-tile.home-shortcut-add:hover,
+html body.workspace-shell [data-home-shortcuts] > .quick-tile.home-shortcut-add:focus-visible{
   position:relative!important;
   inset:auto!important;
   flex:0 0 38px!important;
@@ -402,12 +402,12 @@ html body.browser-shell [data-home-shortcuts] > .quick-tile.home-shortcut-add:fo
   box-shadow:none!important;
   animation:none!important;
 }
-html body.browser-shell [data-home-shortcuts] > .quick-tile.home-shortcut:not(:hover),
-html body.browser-shell [data-home-shortcuts] > .quick-tile.home-shortcut-add:not(:hover){
+html body.workspace-shell [data-home-shortcuts] > .quick-tile.home-shortcut:not(:hover),
+html body.workspace-shell [data-home-shortcuts] > .quick-tile.home-shortcut-add:not(:hover){
   transform:none!important;
 }
-html body.browser-shell [data-home-shortcuts] > .quick-tile.home-shortcut:hover,
-html body.browser-shell [data-home-shortcuts] > .quick-tile.home-shortcut-add:hover{
+html body.workspace-shell [data-home-shortcuts] > .quick-tile.home-shortcut:hover,
+html body.workspace-shell [data-home-shortcuts] > .quick-tile.home-shortcut-add:hover{
   transform:translateY(-3px) scale(1.06)!important;
 }
 
@@ -441,19 +441,19 @@ body.theme-fresh .welcome-card .welcome-progress{
 body.theme-fresh .welcome-card .welcome-progress::before{
   background:#54ebd9!important;
 }
-html body.browser-shell .home-shortcut-glyph{
+html body.workspace-shell .home-shortcut-glyph{
   width:20px!important;
   height:20px!important;
   margin:auto!important;
   position:relative!important;
   z-index:1!important;
 }
-html body.browser-shell .home-shortcut-menu{
+html body.workspace-shell .home-shortcut-menu{
   z-index:80!important;
 }
 
-html body.browser-shell.menu-open .browser-mode-menu,
-html body.browser-shell .browser-mode-menu{
+html body.workspace-shell.menu-open .workspace-mode-menu,
+html body.workspace-shell .workspace-mode-menu{
   position:fixed!important;
   top:52px!important;
   right:8px!important;
@@ -462,24 +462,24 @@ html body.browser-shell .browser-mode-menu{
   pointer-events:auto!important;
 }
 
-html body.browser-shell .window.maximized{
+html body.workspace-shell .window.maximized{
   top:68px!important;
   height:calc(100dvh - 68px)!important;
 }
-html body.browser-shell .browser-mode-menu{
+html body.workspace-shell .workspace-mode-menu{
   top:68px!important;
 }
-html body.browser-shell.menu-open .browser-mode-menu{
+html body.workspace-shell.menu-open .workspace-mode-menu{
   display:grid!important;
   opacity:1!important;
   visibility:visible!important;
   transform:none!important;
 }
-html body.browser-shell .browser-window.maximized,
-html body.browser-shell .browser-body{
+html body.workspace-shell .workspace-window.maximized,
+html body.workspace-shell .workspace-body{
   overflow:visible!important;
 }
-html body.browser-shell .home-shortcut-glyph{
+html body.workspace-shell .home-shortcut-glyph{
   width:27px!important;
   height:27px!important;
   min-width:27px!important;
@@ -489,39 +489,39 @@ html body.browser-shell .home-shortcut-glyph{
   transform:none!important;
 }
 
-html body.browser-shell{
+html body.workspace-shell{
   --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(97%) sepia(5%) saturate(851%) hue-rotate(181deg) brightness(103%) contrast(98%);
 }
-html body.browser-shell.theme-sakura{
+html body.workspace-shell.theme-sakura{
   --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(83%) sepia(30%) saturate(793%) hue-rotate(286deg) brightness(101%) contrast(95%);
 }
-html body.browser-shell.theme-emerald{
+html body.workspace-shell.theme-emerald{
   --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(83%) sepia(19%) saturate(1317%) hue-rotate(96deg) brightness(92%) contrast(94%);
 }
-html body.browser-shell.theme-ruby{
+html body.workspace-shell.theme-ruby{
   --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(75%) sepia(31%) saturate(1336%) hue-rotate(309deg) brightness(101%) contrast(98%);
 }
-html body.browser-shell.theme-fresh{
+html body.workspace-shell.theme-fresh{
   --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(78%) sepia(96%) saturate(1138%) hue-rotate(106deg) brightness(101%) contrast(101%);
 }
 
-html body.browser-shell{
+html body.workspace-shell{
   --nyx-final-shortcut-icon:#f8fafc;
 }
-html body.browser-shell.theme-sakura{
+html body.workspace-shell.theme-sakura{
   --nyx-final-shortcut-icon:#f9a8d4;
 }
-html body.browser-shell.theme-emerald{
+html body.workspace-shell.theme-emerald{
   --nyx-final-shortcut-icon:#6ee7b7;
 }
-html body.browser-shell.theme-ruby{
+html body.workspace-shell.theme-ruby{
   --nyx-final-shortcut-icon:#fca5a5;
 }
-html body.browser-shell.theme-fresh{
+html body.workspace-shell.theme-fresh{
   --nyx-final-shortcut-icon:#00f5d4;
 }
 
-html body.browser-shell .weather-panel{
+html body.workspace-shell .weather-panel{
   transform-origin:top right!important;
   transition:
     transform .62s cubic-bezier(.16,1,.3,1),
@@ -530,15 +530,15 @@ html body.browser-shell .weather-panel{
   animation:none!important;
   will-change:transform,opacity,filter;
 }
-html body.browser-shell .weather-panel.opening{
+html body.workspace-shell .weather-panel.opening{
   display:block!important;
   animation:nyxWeatherOpenSlow .62s cubic-bezier(.16,1,.3,1) both!important;
 }
-html body.browser-shell .weather-panel.closing{
+html body.workspace-shell .weather-panel.closing{
   pointer-events:none!important;
   animation:nyxWeatherCloseSlow .52s cubic-bezier(.7,0,.2,1) both!important;
 }
-html body.browser-shell .weather-restore{
+html body.workspace-shell .weather-restore{
   transition:
     transform .62s cubic-bezier(.16,1,.3,1),
     opacity .62s ease,
@@ -546,7 +546,7 @@ html body.browser-shell .weather-restore{
     border-color .62s ease,
     box-shadow .62s ease!important;
 }
-html body.browser-shell .weather-restore.show{
+html body.workspace-shell .weather-restore.show{
   animation:nyxWeatherRestoreIn .56s cubic-bezier(.16,1,.3,1) both!important;
 }
 @keyframes nyxWeatherOpenSlow{
@@ -563,40 +563,40 @@ html body.browser-shell .weather-restore.show{
   100%{opacity:1;transform:translateY(0) scale(1)}
 }
 
-html body.browser-shell .browser-mode-menu > [data-browser-shell-new-tab]{
+html body.workspace-shell .workspace-mode-menu > [data-workspace-shell-new-tab]{
   display:none!important;
   pointer-events:none!important;
 }
 
-html body.browser-shell .browser-mode-menu{
+html body.workspace-shell .workspace-mode-menu{
   border:1px solid var(--accent,#7c3aed)!important;
   box-shadow:0 16px 38px rgba(0,0,0,.38)!important;
   overflow:hidden!important;
 }
-html body.browser-shell .browser-mode-menu button,
-html body.browser-shell .browser-mode-menu button:hover,
-html body.browser-shell .browser-mode-menu button:focus-visible{
+html body.workspace-shell .workspace-mode-menu button,
+html body.workspace-shell .workspace-mode-menu button:hover,
+html body.workspace-shell .workspace-mode-menu button:focus-visible{
   border:0!important;
   outline:0!important;
   box-shadow:none!important;
   border-radius:0!important;
 }
-html body.browser-shell .browser-mode-menu hr{
+html body.workspace-shell .workspace-mode-menu hr{
   height:1px!important;
   margin:0!important;
   border:0!important;
   background:var(--nyx-surface-line,rgba(255,255,255,.1))!important;
 }
-html body.browser-shell.menu-open .browser-mode-menu,
-html body.browser-shell .browser-mode-menu{
+html body.workspace-shell.menu-open .workspace-mode-menu,
+html body.workspace-shell .workspace-mode-menu{
   overflow:hidden!important;
 }
-html body.browser-shell.menu-open .browser-mode-menu > button,
-html body.browser-shell.menu-open .browser-mode-menu > button:hover,
-html body.browser-shell.menu-open .browser-mode-menu > button:focus-visible,
-html body.browser-shell .browser-mode-menu > button,
-html body.browser-shell .browser-mode-menu > button:hover,
-html body.browser-shell .browser-mode-menu > button:focus-visible{
+html body.workspace-shell.menu-open .workspace-mode-menu > button,
+html body.workspace-shell.menu-open .workspace-mode-menu > button:hover,
+html body.workspace-shell.menu-open .workspace-mode-menu > button:focus-visible,
+html body.workspace-shell .workspace-mode-menu > button,
+html body.workspace-shell .workspace-mode-menu > button:hover,
+html body.workspace-shell .workspace-mode-menu > button:focus-visible{
   border:0!important;
   outline:0!important;
   box-shadow:none!important;
@@ -666,9 +666,9 @@ body.theme-fresh.post-cover-loading .post-cover-loader{
   -webkit-text-fill-color:#0b7280!important;
 }
 
-html body.browser-shell .browser-mode-menu,
-html body.browser-shell .browser-mode-menu *,
-html body.browser-shell .browser-mode-menu > button{
+html body.workspace-shell .workspace-mode-menu,
+html body.workspace-shell .workspace-mode-menu *,
+html body.workspace-shell .workspace-mode-menu > button{
   font-weight:400!important;
   font-style:normal!important;
 }
@@ -677,34 +677,34 @@ html body .welcome-card .welcome-progress::before{
   display:none!important;
   animation:none!important;
 }
-html body.browser-shell .browser-mode-menu > button,
-html body.browser-shell.menu-open .browser-mode-menu > button{
+html body.workspace-shell .workspace-mode-menu > button,
+html body.workspace-shell.menu-open .workspace-mode-menu > button{
   font-weight:400!important;
   font-style:normal!important;
 }
 
-html body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):not(.theme-fresh):not(.theme-midnight){
+html body.workspace-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):not(.theme-fresh):not(.theme-midnight){
   --theme-strong:#c7a7ff!important;
   --accent:#8b5cf6!important;
 }
 
-html body.browser-shell{
+html body.workspace-shell{
   --nyx-final-shortcut-icon:#c7a7ff!important;
   --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(68%) sepia(57%) saturate(1206%) hue-rotate(218deg) brightness(101%) contrast(102%)!important;
 }
-html body.browser-shell.theme-ruby{
+html body.workspace-shell.theme-ruby{
   --nyx-final-shortcut-icon:#fca5a5!important;
   --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(76%) sepia(22%) saturate(1828%) hue-rotate(310deg) brightness(102%) contrast(98%)!important;
 }
-html body.browser-shell.theme-emerald{
+html body.workspace-shell.theme-emerald{
   --nyx-final-shortcut-icon:#6ee7b7!important;
   --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(79%) sepia(28%) saturate(1029%) hue-rotate(98deg) brightness(93%) contrast(92%)!important;
 }
-html body.browser-shell.theme-sakura{
+html body.workspace-shell.theme-sakura{
   --nyx-final-shortcut-icon:#f9a8d4!important;
   --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(84%) sepia(31%) saturate(938%) hue-rotate(286deg) brightness(102%) contrast(96%)!important;
 }
-html body.browser-shell.theme-fresh{
+html body.workspace-shell.theme-fresh{
   --nyx-final-shortcut-icon:#0f8fa3!important;
   --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(47%) sepia(97%) saturate(974%) hue-rotate(146deg) brightness(91%) contrast(92%)!important;
 }
@@ -719,26 +719,26 @@ html body.browser-shell.theme-fresh{
   100%{opacity:0;max-width:0;min-width:0;width:0;padding-left:0;padding-right:0;margin-left:-6px;margin-right:0;transform:translateX(-18px) translateY(-5px) scale(.88);filter:blur(5px)}
 }
 
-html body.browser-shell .home-shortcut:not(.menu-open) .home-shortcut-menu,
-html body.browser-shell .browser-bookmark-panel[hidden],
-html body.browser-shell:not(.menu-open) .browser-mode-menu{
+html body.workspace-shell .home-shortcut:not(.menu-open) .home-shortcut-menu,
+html body.workspace-shell .workspace-bookmark-panel[hidden],
+html body.workspace-shell:not(.menu-open) .workspace-mode-menu{
   pointer-events:none!important;
 }
 
 
 
-html body.browser-shell #browserModeMenu,
-html body.browser-shell.menu-open #browserModeMenu{
+html body.workspace-shell #workspaceModeMenu,
+html body.workspace-shell.menu-open #workspaceModeMenu{
   top:68px!important;
   right:8px!important;
   z-index:50000!important;
 }
 html body,html body *:not(.fresh-real-icon):not(.weather-cloud-icon){font-family:var(--nyx-font)!important}
 
-html body.browser-shell .window.maximized{
+html body.workspace-shell .window.maximized{
   top:84px!important;
   height:calc(100dvh - 84px)!important;
 }
-html body.browser-shell #browserModeMenu,
-html body.browser-shell.menu-open #browserModeMenu,
-html body.browser-shell .browser-mode-menu{top:84px!important}
+html body.workspace-shell #workspaceModeMenu,
+html body.workspace-shell.menu-open #workspaceModeMenu,
+html body.workspace-shell .workspace-mode-menu{top:84px!important}

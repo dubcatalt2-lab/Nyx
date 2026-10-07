@@ -2,9 +2,9 @@ import { chromium } from "playwright";
 
 const baseUrl = process.env.NYX_TEST_BASE_URL || "http://127.0.0.1:8080";
 const assert = (value, message) => { if (!value) throw new Error(message); };
-const browser = await chromium.launch({ headless: true });
+const workspace = await chromium.launch({ headless: true });
 try {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const page = await workspace.newPage({ viewport: { width: 1280, height: 900 } });
   page.setDefaultTimeout(8_000);
   const errors = [];
   page.on("pageerror", error => errors.push(error.message));
@@ -26,5 +26,5 @@ try {
   assert(errors.length === 0, `Tutorial errors: ${errors.join(" | ")}`);
   console.log("Code Tutorials test: themed lessons, progress, practice, and mobile layout passed");
 } finally {
-  await browser.close();
+  await workspace.close();
 }

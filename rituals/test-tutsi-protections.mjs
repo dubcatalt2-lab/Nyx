@@ -16,9 +16,9 @@ assert.equal((await guarded.request(new URL('https://example.com/report.pdf'))).
 policy=policyFrom({adBlock:false,downloadBlock:false});assert.equal((await guarded.request(new URL('https://doubleclick.net/ad'))).status,200);assert.equal(calls,2);
 const base=process.env.TUTSI_TEST_ORIGIN||'http://localhost:9091';
 const aliases=JSON.parse(await readFile(sourceFile('dist/proxy-assets.json'),'utf8')).aliases;
-const browser=await chromium.launch({headless:true});
+const workspace=await chromium.launch({headless:true});
 try {
- const page=await browser.newPage();page.on('pageerror',e=>console.log('Page error:',e.message));
+ const page=await workspace.newPage();page.on('pageerror',e=>console.log('Page error:',e.message));
  await page.goto(base+'/tutsi#settings');
  await page.locator('#close-prevention').uncheck();await page.selectOption('#blocker','');await page.selectOption('#transport','epoxy');
  for(const id of ['ad-block','popup-block','download-block'])assert(await page.locator('#'+id).isChecked());
@@ -29,19 +29,19 @@ try {
  await page.route(url=>[ '/assets/transports/epoxy-scramjet.mjs',aliases['/assets/transports/epoxy-scramjet.mjs'] ].includes(url.pathname),r=>r.fulfill({contentType:'text/javascript',body:client}));
  let popups=0,downloads=0;page.on('popup',async p=>{popups++;await p.close()});page.on('download',()=>downloads++);
  await page.goto(base+'/tutsi#home');await page.fill('#query','https://fixture.test/');await page.locator('#search button').click();
- const frame=page.frameLocator('#browser-stage iframe');try{await frame.getByRole('heading',{name:'Fixture'}).waitFor();}catch(error){console.log('Browser status:',await page.locator('#browser-stage').innerText());console.log('Frames:',page.frames().map(f=>f.url()));for(const f of page.frames().slice(1))console.log((await f.locator('body').innerText()).slice(0,1800));throw error;}
+ const frame=page.frameLocator('#workspace-stage iframe');try{await frame.getByRole('heading',{name:'Fixture'}).waitFor();}catch(error){console.log('Workspace status:',await page.locator('#workspace-stage').innerText());console.log('Frames:',page.frames().map(f=>f.url()));for(const f of page.frames().slice(1))console.log((await f.locator('body').innerText()).slice(0,1800));throw error;}
  assert(await frame.locator('body').evaluate(el=>{const ad=el.querySelector('.ad-banner');return !ad||getComputedStyle(ad).display==='none'}));
  assert.equal(await frame.locator('html').getAttribute('data-fixture-ad'),null);
  await frame.locator('#popup').click();await frame.locator('#download').click();await page.waitForTimeout(150);assert.equal(popups,0);assert.equal(downloads,0);
  // Disabling the ad toggle reloads the current page and restores its resources.
  await page.goto(base+'/tutsi#settings');await page.locator('#ad-block').uncheck();
- await page.goto(base+'/tutsi#browser');
+ await page.goto(base+'/tutsi#workspace');
  await frame.locator('.ad-banner').waitFor({state:'visible'});
  await page.waitForTimeout(500);assert.equal(await frame.locator('html').getAttribute('data-fixture-ad'),'loaded');
  await page.goto(base+'/tutsi#settings');await page.locator('#popup-block').uncheck();await page.locator('#download-block').uncheck();await page.reload();
  assert(!(await page.locator('#popup-block').isChecked()));assert(!(await page.locator('#download-block').isChecked()));
  // Independent page guard checks: native calls continue when toggles are off.
- const fixture=await browser.newPage();await fixture.setContent('<a id="file" download="installer.exe" href="data:text/plain,test">File</a>');
+ const fixture=await workspace.newPage();await fixture.setContent('<a id="file" download="installer.exe" href="data:text/plain,test">File</a>');
  await fixture.evaluate(()=>{window.opens=0;window.open=()=>{window.opens++;return null}});
  await fixture.addScriptTag({content:protectionSource({adBlock:false,popupBlock:false,downloadBlock:false})});
  await fixture.evaluate(()=>window.open('https://example.com'));assert.equal(await fixture.evaluate(()=>window.opens),1);
@@ -54,4 +54,4 @@ try {
  }
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  console.log('Protection checks passed: actual rewritten page, ad requests/cosmetics, popup/download blocking, toggles/reload, domain boundaries, reputation rejection and mobile (crawler checks opt-in for backend origins).');
-}finally{await browser.close()}
+}finally{await workspace.close()}

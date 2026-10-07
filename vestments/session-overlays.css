@@ -1,5 +1,5 @@
 .nyx-frame-loader{position:absolute;z-index:8;left:50%;top:28px;transform:translateX(-50%);display:flex;align-items:center;gap:10px;max-width:calc(100% - 40px);padding:12px 16px;border:1px solid var(--obsidian-line);border-radius:9px;background:var(--obsidian-panel);color:var(--obsidian-muted);font-size:12px;pointer-events:none}
-.nyx-frame-loader[aria-hidden="true"],.browser-home-page .nyx-frame-loader,.browser-blank .nyx-frame-loader{display:none!important}
+.nyx-frame-loader[aria-hidden="true"],.workspace-home-page .nyx-frame-loader,.workspace-blank .nyx-frame-loader{display:none!important}
 .nyx-page-spinner{width:14px;height:14px;flex:none;border:1.5px solid var(--obsidian-line);border-top-color:var(--obsidian-text);border-radius:50%;animation:nyx-page-spin .8s linear infinite}
 @keyframes nyx-page-spin{to{transform:rotate(360deg)}}
 .nyx-release-notes-overlay{position:fixed;z-index:2147483644;inset:0;display:grid;place-items:center;padding:24px;background:rgba(2,5,3,.78);backdrop-filter:blur(14px);opacity:0;transition:opacity .18s}
@@ -9,7 +9,7 @@
 .nyx-release-notes header span{font-size:10px;color:var(--obsidian-muted);letter-spacing:.1em;text-transform:uppercase}
 .nyx-release-notes h1{margin:7px 0 0;font-size:30px;letter-spacing:-.035em}
 
-body.browser-shell .nyx-release-notes h1{font-weight:700!important}
+body.workspace-shell .nyx-release-notes h1{font-weight:700!important}
 .nyx-release-notes h1:focus{outline:none}
 .nyx-release-notes header button{width:30px;height:30px;flex:none;font-size:23px;padding:0}
 .nyx-release-message{padding:0 26px;color:var(--obsidian-muted);font-size:13px;line-height:1.7}
@@ -21,7 +21,7 @@ body.browser-shell .nyx-release-notes h1{font-weight:700!important}
 .nyx-release-message .nyx-release-changes{padding:0;margin:16px 0 20px}
 .nyx-release-greeting{margin:0}
 .nyx-release-greeting strong{font-size:15px}
-body.browser-shell .nyx-release-greeting strong{font-weight:650!important}
+body.workspace-shell .nyx-release-greeting strong{font-weight:650!important}
 .nyx-release-community{margin:0}
 .nyx-release-community a{color:var(--obsidian-text);font-weight:600;text-decoration:underline;text-underline-offset:3px}
 .nyx-release-community a:hover{opacity:.8}

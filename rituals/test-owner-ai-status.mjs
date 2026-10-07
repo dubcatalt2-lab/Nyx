@@ -25,10 +25,10 @@ const giftNode=ast.body.find(n=>n.type==='ExpressionStatement'&&n.expression.typ
 let giftHandler;vm.runInNewContext(source.slice(giftNode.start,giftNode.end),{app:{post:(_path,fn)=>giftHandler=fn},sameOriginRequest:()=>true,authenticatedNyxChatUser:async()=>({firebase:{},token:{uid:'non-owner'}}),founderProfileConfig:()=>({administratorUid:'founder'})});
 const giftResponse=response();await giftHandler({body:{recipientUid:'recipient'}},giftResponse);assert.equal(giftResponse.code,403);
 const root=process.env.NYX_TEST_ASSET_ROOT||'.';
-const browser=await chromium.launch({headless:true});
+const workspace=await chromium.launch({headless:true});
 try {
   for(const width of [1280,390]) {
-    const page=await browser.newPage({viewport:{width,height:900}});
+    const page=await workspace.newPage({viewport:{width,height:900}});
     const errors=[];page.on('pageerror',e=>errors.push(e.message));
     let state='low',dashboardRole='owner',statusRequests=0,modelRules=[];const member={uid:'member123',displayName:'Test Member',username:'member',email:'member@example.test',role:'member',subscriptionStatus:'premium',profile:{}};
     await page.route('http://nyx.test/**',async route=>{
@@ -104,5 +104,5 @@ try {
     assert.deepEqual(errors,[]);
     await page.close();
   }
-} finally {await browser.close();}
+} finally {await workspace.close();}
 console.log('PASS: owner-only billing endpoint, desktop/mobile low balance, cutoff, unavailable check, refill and non-owner isolation');

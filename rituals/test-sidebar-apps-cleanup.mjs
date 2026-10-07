@@ -7,13 +7,13 @@ app.get('/healthz',(q,r)=>r.json({ok:true}));
 app.use('/api',(q,r)=>r.json({}));
 app.use(express.static(process.env.NYX_TEST_ASSET_ROOT||'.'));
 const server=app.listen(8310);
-const browser=await chromium.launch();
+const workspace=await chromium.launch();
 try{
- const page=await browser.newPage({viewport:{width:1280,height:900}});
+ const page=await workspace.newPage({viewport:{width:1280,height:900}});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.addInitScript(()=>{
   if(window!==window.top)return;
-  for(const [key,value] of Object.entries({'nyx.browserShellMode':'false','nyx.setupComplete':'true','nyx.tosAcceptedVersion':'2026-07-30','nyx.releaseNotes.2026-08-31-new-nyx.device':'2026-08-31-new-nyx'})) localStorage.setItem(key,value);
+  for(const [key,value] of Object.entries({'nyx.workspaceShellMode':'false','nyx.setupComplete':'true','nyx.tosAcceptedVersion':'2026-07-30','nyx.releaseNotes.2026-08-31-new-nyx.device':'2026-08-31-new-nyx'})) localStorage.setItem(key,value);
  });
  await page.route('**/*',r=>new URL(r.request().url()).origin==='http://localhost:8310'?r.continue():r.abort());
  await page.goto('http://localhost:8310');
@@ -49,7 +49,7 @@ try{
  await page.setViewportSize({width:390,height:844});await page.waitForTimeout(350);
  assert(await appsFrame.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  await page.screenshot({path:'.codex-artifacts/apps-cleanup-mobile.png'});
- const touch=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
+ const touch=await workspace.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
  await touch.addInitScript(()=>{for(const [k,v] of Object.entries({'nyx.setupComplete':'true','nyx.tosAcceptedVersion':'2026-07-30','nyx.releaseNotes.2026-08-31-new-nyx.device':'2026-08-31-new-nyx'}))localStorage.setItem(k,v)});
  await touch.route('**/*',r=>new URL(r.request().url()).origin==='http://localhost:8310'?r.continue():r.abort());
  await touch.goto('http://localhost:8310');await touch.waitForSelector('[data-nyx-dock-item="settings"]');
@@ -60,4 +60,4 @@ try{
  await touch.close();
  assert.deepEqual(errors,[]);
  console.log('PASS: sidebar hide/restore, resize recovery, editable slash, framed shortcut, curated Apps, four desktop columns and mobile overflow');
-}finally{await browser.close();server.close()}
+}finally{await workspace.close();server.close()}

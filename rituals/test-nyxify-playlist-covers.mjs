@@ -39,8 +39,8 @@ const seedPlaylist = { id: 'playlist_crossdevice', name: 'Cross-device cover', c
 let cloudPlaylists = [structuredClone(seedPlaylist)];
 let delayFirstLibraryRead = true;
 
-async function prepareContext(browser, localPlaylists = []) {
-  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+async function prepareContext(workspace, localPlaylists = []) {
+  const context = await workspace.newContext({ viewport: { width: 1280, height: 800 } });
   await context.addInitScript(playlists => {
     localStorage.setItem('nyx_nyxify_playlists', JSON.stringify(playlists));
   }, localPlaylists);
@@ -73,12 +73,12 @@ async function prepareContext(browser, localPlaylists = []) {
   return context;
 }
 
-let browser;
+let workspace;
 try {
   await waitForServer();
-  browser = await chromium.launch({ headless: true });
+  workspace = await chromium.launch({ headless: true });
 
-  const firstDevice = await prepareContext(browser, [seedPlaylist]);
+  const firstDevice = await prepareContext(workspace, [seedPlaylist]);
   const firstPage = await firstDevice.newPage();
   const firstErrors = [];
   firstPage.on('pageerror', error => firstErrors.push(error.message));
@@ -94,10 +94,10 @@ try {
   const savedCover = cloudPlaylists[0].cover;
   await firstPage.waitForTimeout(700);
   assert.equal(cloudPlaylists[0].cover, savedCover, 'A delayed initial load overwrote the custom cover');
-  assert.deepEqual(firstErrors, [], `First-device browser errors: ${firstErrors.join(' | ')}`);
+  assert.deepEqual(firstErrors, [], `First-device workspace errors: ${firstErrors.join(' | ')}`);
   await firstDevice.close();
 
-  const secondDevice = await prepareContext(browser);
+  const secondDevice = await prepareContext(workspace);
   const secondPage = await secondDevice.newPage();
   const secondErrors = [];
   secondPage.on('pageerror', error => secondErrors.push(error.message));
@@ -105,11 +105,11 @@ try {
   const syncedImage = secondPage.locator('.playlist-open', { hasText: seedPlaylist.name }).locator('.playlist-cover img');
   await syncedImage.waitFor();
   assert.equal(await syncedImage.getAttribute('src'), savedCover, 'The second device did not render the account-synced cover');
-  assert.deepEqual(secondErrors, [], `Second-device browser errors: ${secondErrors.join(' | ')}`);
+  assert.deepEqual(secondErrors, [], `Second-device workspace errors: ${secondErrors.join(' | ')}`);
   await secondDevice.close();
 
   console.log('Nyxify custom playlist cover two-device sync regression passed.');
 } finally {
-  await browser?.close().catch(() => {});
+  await workspace?.close().catch(() => {});
   if (server.exitCode === null) server.kill();
 }

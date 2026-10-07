@@ -58,7 +58,7 @@ void main(){vec2 coords=gl_FragCoord.xy/uResolution.xy;coords=coords*2.0-1.0;coo
     const tick=time=>{frame=0;if(!running)return;draw(time);frame=requestAnimationFrame(tick);};
     return {draw,setPointer,resetPointer,update(nextOptions){activeOptions={...defaults,...nextOptions};},start(){if(running)return;running=true;frame=requestAnimationFrame(tick);},stop(){running=false;if(frame)cancelAnimationFrame(frame);frame=0;},dispose(loseContext=true){this.stop();gl.deleteBuffer(buffer);gl.deleteProgram(program);if(loseContext)gl.getExtension('WEBGL_lose_context')?.loseContext();}};
   }
-  function shouldShow(){const external=document.body?.classList.contains('browser-content-active')&&!document.body?.classList.contains('nyx-built-in-content-active');return document.documentElement.dataset.nyxBeamWallpaper==='lineWaves'&&!document.body?.classList.contains('custom-bg-active')&&!document.body?.classList.contains('three-d-backgrounds')&&!external;}
+  function shouldShow(){const external=document.body?.classList.contains('workspace-content-active')&&!document.body?.classList.contains('nyx-built-in-content-active');return document.documentElement.dataset.nyxBeamWallpaper==='lineWaves'&&!document.body?.classList.contains('custom-bg-active')&&!document.body?.classList.contains('three-d-backgrounds')&&!external;}
   function shouldAnimate(){return shouldShow()&&!document.hidden&&!reducedMotion.matches&&!document.body?.classList.contains('lag-reducer');}
   function syncVisibility(){
     canvas=document.getElementById('nyxLineWavesBg')||canvas;if(!canvas)return;

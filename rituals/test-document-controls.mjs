@@ -8,11 +8,11 @@ app.get('/controls.js',(_req,res)=>res.sendFile(resolve('parables/document-contr
 app.get('/controls.css',(_req,res)=>res.sendFile(resolve('vestments/document-controls.css'),{dotfiles:'allow'}));
 app.get('/assets/backgrounds/study-away-cover.png',(_req,res)=>res.sendFile(resolve('relics/backgrounds/study-away-cover.png'),{dotfiles:'allow'}));
 app.get('/apps/music/',(_req,res)=>res.send('<!doctype html><button>Music app</button>'));
-app.get('/',(_req,res)=>res.send(`<!doctype html><link rel="stylesheet" href="/controls.css"><button data-browser-shell-back disabled>Back</button><button data-browser-shell-forward disabled>Forward</button><button data-browser-shell-reload>Reload</button><button data-browser-shell-new-tab>New tab</button><button data-nyx-dock-item="settings" onclick="document.body.dataset.settings='opened'">Settings</button><input value="selection"><iframe srcdoc="<button>Inside app</button>"></iframe><script src="/controls.js" defer></script>`));
+app.get('/',(_req,res)=>res.send(`<!doctype html><link rel="stylesheet" href="/controls.css"><button data-workspace-shell-back disabled>Back</button><button data-workspace-shell-forward disabled>Forward</button><button data-workspace-shell-reload>Reload</button><button data-workspace-shell-new-tab>New tab</button><button data-nyx-dock-item="settings" onclick="document.body.dataset.settings='opened'">Settings</button><input value="selection"><iframe srcdoc="<button>Inside app</button>"></iframe><script src="/controls.js" defer></script>`));
 const server=app.listen(0,'127.0.0.1');await new Promise(resolve=>server.once('listening',resolve));
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
-  const page=await browser.newPage({viewport:{width:390,height:800}}),base=`http://127.0.0.1:${server.address().port}`;
+  const page=await workspace.newPage({viewport:{width:390,height:800}}),base=`http://127.0.0.1:${server.address().port}`;
   await page.goto(base);await page.mouse.click(380,780,{button:'right'});
   assert.equal(await page.locator('#nyxAwayCover').isVisible(),false);
   const menu=page.getByRole('menu',{name:'Nyx'});assert.equal(await menu.count(),1);
@@ -52,7 +52,7 @@ try{
   await page.keyboard.press('F12');
   assert.equal(await page.locator('body').innerHTML(),'');assert.equal(await page.locator('script,iframe,link').count(),0);
   await page.evaluate(switchVisibility,true);await page.evaluate(switchVisibility,false);
-  assert.equal(await page.locator('body').innerHTML(),'','Returning to the browser tab cannot undo F12 blanking');
+  assert.equal(await page.locator('body').innerHTML(),'','Returning to the workspace tab cannot undo F12 blanking');
   await page.mouse.click(100,100);await page.keyboard.press('Escape');await page.keyboard.press('F12');
   await page.evaluate(()=>{document.body.append(document.createElement('div'));});await page.waitForTimeout(100);
   assert.equal(await page.locator('body').innerHTML(),'');
@@ -61,4 +61,4 @@ try{
   assert.equal(await page.locator('body').innerHTML(),'');
   await page.reload();await page.keyboard.press('Control+Shift+I');assert.equal(await page.locator('body').innerHTML(),'');
   console.log('PASS Nyx menu, disabled actions, keyboard, mobile bounds, tab/window away cover, automatic return including iframe focus, blank-until-reload and iframe shortcut.');
-}finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
+}finally{await workspace.close();await new Promise(resolve=>server.close(resolve));}

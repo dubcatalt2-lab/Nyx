@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 
 const base = process.env.NYX_TEST_BASE_URL || 'http://127.0.0.1:8080';
-const browser = await chromium.launch({ channel: 'msedge', headless: true });
+const workspace = await chromium.launch({ channel: 'msedge', headless: true });
 const json = body => ({ contentType: 'application/json', body: JSON.stringify(body) });
 try {
-  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  const page = await workspace.newPage({ viewport: { width: 1440, height: 1000 } });
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.route('**/assets/games/games.json', route => route.fulfill(json({ catalogs: [
@@ -86,5 +86,5 @@ try {
   assert.deepEqual(errors, []);
   console.log('Nyx arcade: featured and random launches, filters, empty state, keyboard focus, cloud view, responsive layout, reduced motion, and shell isolation passed.');
 } finally {
-  await browser.close();
+  await workspace.close();
 }

@@ -4,9 +4,9 @@ import {chromium} from 'playwright';
 const server=express().use(express.static(process.env.NYX_TEST_BUILT==='1'?'dist':'.')).listen(0,'127.0.0.1');
 await new Promise(resolve=>server.once('listening',resolve));
 const origin=process.env.NYX_TEST_BASE_URL||`http://127.0.0.1:${server.address().port}`;
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try {
-  const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];
+  const page=await workspace.newPage({viewport:{width:1280,height:900}}),errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   let used=100,pending=0,limit=7000,signedIn=true,usageCalls=0,chatCalls=0;
   await page.route('https://www.gstatic.com/firebasejs/**/firebase-app.js',r=>r.fulfill({contentType:'text/javascript',body:'export const getApps=()=>[];export const initializeApp=()=>({});'}));
@@ -49,5 +49,5 @@ try {
   await page.setViewportSize({width:390,height:700});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
   assert.deepEqual(errors,[]);
-  console.log('PASS browser server balance, six exchanges, premium refresh, pending costs, sign-out, stale local history isolation and mobile fit');
-}finally{await browser.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+  console.log('PASS workspace server balance, six exchanges, premium refresh, pending costs, sign-out, stale local history isolation and mobile fit');
+}finally{await workspace.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

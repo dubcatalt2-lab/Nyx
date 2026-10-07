@@ -6,10 +6,10 @@ const emojiData=createRequire(import.meta.url)('@emoji-mart/data');
 import {chromium} from 'playwright';
 const fixture=readFileSync(sourceFile('scripts/test-account-controls.mjs'),'utf8'),moduleText=name=>fixture.match(new RegExp('const '+name+'=`([\\s\\S]*?)`;'))[1];
 const url='https://example.com/watch?v=test&list=123&foo=bar&color=red&k=1&r=2';
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try {
   for(const role of ['member','moderator','owner']) {
-    const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];let reactionEmoji=null,locked=true,posts=0,lockCalls=0,limited=true;
+    const page=await workspace.newPage({viewport:{width:1280,height:900}}),errors=[];let reactionEmoji=null,locked=true,posts=0,lockCalls=0,limited=true;
     page.on('pageerror',e=>errors.push(e.message));
     for(const [file,module] of [['firebase-app.js','firebaseAppModule'],['firebase-auth.js','firebaseAuthModule']])await page.route('https://www.gstatic.com/firebasejs/11.10.0/'+file,r=>r.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:moduleText(module)}));
     await page.route('**/apps/chat/emoji-catalog.js*',r=>r.fulfill({contentType:'text/javascript',body:'globalThis.NYX_REACTION_EMOJIS='+JSON.stringify(Object.values(emojiData.emojis).flatMap(e=>e.skins.map((skin,i)=>({emoji:skin.native,name:e.id+(i?' skin tone '+i:'')}))))}));
@@ -62,4 +62,4 @@ try {
     await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);await page.close();
   }
   console.log('PASS literal URL ampersands and surrounding formatting; member read-only view, live lock refresh, draft restoration and cooldown, moderator /lock and /unlock without channel-manager access, no visibility mutation and mobile bounds');
-}finally{await browser.close();}
+}finally{await workspace.close();}

@@ -3,10 +3,10 @@ import {chromium} from 'playwright';
 import {readFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 const source=readFileSync(sourceFile('script.js'),'utf8');const start=source.indexOf('  function toast(msg,kind){');const end=source.indexOf('\n  }',start)+4;
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try {
- const page=await browser.newPage({viewport:{width:1280,height:800}});
- await page.addInitScript(()=>{localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.browserShellMode','true');localStorage.setItem('nyx.homeDesign','redesigned');});
+ const page=await workspace.newPage({viewport:{width:1280,height:800}});
+ await page.addInitScript(()=>{localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.workspaceShellMode','true');localStorage.setItem('nyx.homeDesign','redesigned');});
  await page.goto('http://localhost:8080/');
  await page.locator('#nyxStudyHubStartup').waitFor({state:'hidden'});
  await page.evaluate(code=>{window.testToast=new Function('$',code+';return toast')(id=>document.getElementById(id));},source.slice(start,end));
@@ -31,4 +31,4 @@ try {
  await page.clock.runFor(1400);
  assert.equal(await page.locator('#toast').evaluate(e=>e.classList.contains('show')),false);
  console.log('PASS toast icon, safe mention text, replacement timer, two-second dismissal and mobile bounds');
-} finally {await browser.close()}
+} finally {await workspace.close()}

@@ -1,4 +1,4 @@
-html body.browser-shell .browser-window .browser-body > .nyx-eruda-host{
+html body.workspace-shell .workspace-window .workspace-body > .nyx-eruda-host{
   position:absolute;
   inset:0;
   z-index:90;
@@ -6,18 +6,18 @@ html body.browser-shell .browser-window .browser-body > .nyx-eruda-host{
   background:#0b0d12;
 }
 
-html body.browser-shell .browser-window .browser-body > .nyx-eruda-host[hidden]{
+html body.workspace-shell .workspace-window .workspace-body > .nyx-eruda-host[hidden]{
   display:none!important;
 }
 
-html body.browser-shell .nyx-eruda-host > #eruda{
+html body.workspace-shell .nyx-eruda-host > #eruda{
   position:absolute!important;
   inset:0!important;
   width:100%!important;
   height:100%!important;
 }
 
-html body.browser-shell .nyx-eruda-loading{
+html body.workspace-shell .nyx-eruda-loading{
   position:absolute;
   inset:0;
   z-index:2;
@@ -32,7 +32,7 @@ html body.browser-shell .nyx-eruda-loading{
   text-align:center;
 }
 
-html body.browser-shell .nyx-eruda-loading.error{color:#ff9aa7}
+html body.workspace-shell .nyx-eruda-loading.error{color:#ff9aa7}
 
 html body .window.nyx-utility-window{
   min-width:min(340px,calc(100vw - 24px));

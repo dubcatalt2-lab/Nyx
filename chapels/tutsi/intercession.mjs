@@ -1,4 +1,4 @@
-import {loadProxyScript as script, waitForProxyController, trackProxyController} from '/js/intercession-startup.mjs';
+import {loadConnectionScript as script, waitForConnectionController, trackConnectionController} from '/js/intercession-startup.mjs';
 import {sourceWebsiteUrl} from "./navigation.mjs";
 import {protectTransport, policyFrom, installPageProtection} from "./protections.mjs";
 import {httpRelayUrl, installHttpRelaySocket, createHttpRelayEndpoint} from "./http-relay.mjs";
@@ -29,7 +29,7 @@ async function activeWorker() {
   );
   if (registration.active) return registration.active;
   const worker = registration.installing || registration.waiting;
-  if (!worker) throw new Error("Browser worker is unavailable.");
+  if (!worker) throw new Error("Workspace worker is unavailable.");
   await bounded(
     new Promise((resolve, reject) => {
       const changed = () => {
@@ -38,14 +38,14 @@ async function activeWorker() {
           resolve();
         } else if (worker.state === "redundant") {
           worker.removeEventListener("statechange", changed);
-          reject(new Error("Browser worker could not start."));
+          reject(new Error("Workspace worker could not start."));
         }
       };
       worker.addEventListener("statechange", changed);
       changed();
     }),
     20000,
-    "Browser worker startup timed out.",
+    "Workspace worker startup timed out.",
   );
   return registration.active || worker;
 }
@@ -58,7 +58,7 @@ async function transport(settings) {
   const useLibcurl=!settings.transport || ['auto','libcurl','libcurlRaw'].includes(settings.transport);
   const path=useLibcurl?'/assets/transports/libcurl-scramjet.mjs':'/assets/transports/epoxy-scramjet.mjs';
   const {default:Client}=await import(path);
-  const connection=new RelayTransport({urls,visible:()=>!document.hidden&&document.body.dataset.view==="browser",rank:async candidates=>{const remote=await rankForBlocker(candidates.filter(url=>url!==fallback),await effectiveFilter(settings.blocker),{onHint:detail=>dispatchEvent(new CustomEvent('tutsi:filter-hint',{detail}))});const bridge=candidates.filter(url=>url===fallback);return !settings.relay||settings.relay===fallback?[...bridge,...remote]:[...remote,...bridge]},onStatus:relayStatus,createClient:async wisp=>{
+  const connection=new RelayTransport({urls,visible:()=>!document.hidden&&document.body.dataset.view==="workspace",rank:async candidates=>{const remote=await rankForBlocker(candidates.filter(url=>url!==fallback),await effectiveFilter(settings.blocker),{onHint:detail=>dispatchEvent(new CustomEvent('tutsi:filter-hint',{detail}))});const bridge=candidates.filter(url=>url===fallback);return !settings.relay||settings.relay===fallback?[...bridge,...remote]:[...remote,...bridge]},onStatus:relayStatus,createClient:async wisp=>{
     const endpoint=wisp===fallback?createHttpRelayEndpoint():null;
     const url=endpoint?.url||wisp;
     const client=new Client({wisp:url,websocket:url,wisp_v2:settings.transport!=='wisp'});
@@ -128,8 +128,8 @@ async function engine(settings) {
         maskedfiles: ["inject.js", "scramjet.wasm.js"],
       },
     });
-    const stopTracking = trackProxyController(instance);
-    try { await waitForProxyController(instance); }
+    const stopTracking = trackConnectionController(instance);
+    try { await waitForConnectionController(instance); }
     catch (error) { stopTracking(); client.close?.(); throw error; }
     activeTransport=client;
     controller = instance;
@@ -156,11 +156,11 @@ function installImageRepair(element, url) {
     );
   }
 }
-const browserFrames=new WeakMap();
+const workspaceFrames=new WeakMap();
 const navigationRequests=new WeakMap();
 let navigationId = 0;
 let navigationQueue = Promise.resolve();
-export function browse(url, settings, element, {reconnect=false} = {}) {
+export function explore(url, settings, element, {reconnect=false} = {}) {
   updateProtectionPolicy(settings);
   element.tutsiSourceUrl=url;
   const request = ++navigationId;
@@ -170,12 +170,12 @@ export function browse(url, settings, element, {reconnect=false} = {}) {
     const instance = await engine(settings);
     if(reconnect&&activeTransport?.client)await activeTransport.recover(activeTransport.client,true,true);
     if (request !== navigationRequests.get(element) || !element.isConnected) return;
-    frame=browserFrames.get(element);
+    frame=workspaceFrames.get(element);
     if (!frame) {
       frame = instance.createFrame(element, {
         plugins: [compatibilityPlugin(()=>protectionPolicy)],
       });
-      browserFrames.set(element,frame);
+      workspaceFrames.set(element,frame);
     }
     if(!element.dataset.tutsiProtectionWatch){
       element.dataset.tutsiProtectionWatch='true';
@@ -194,21 +194,21 @@ export function browse(url, settings, element, {reconnect=false} = {}) {
 }
 export function control(action, element) {
   if(!element)return;
-  const target=browserFrames.get(element);
+  const target=workspaceFrames.get(element);
   if(target&&typeof target[action]==='function')target[action]();
 }
-export function reloadBrowser(element, settings) {
+export function reloadWorkspace(element, settings) {
   if(!element)return Promise.resolve();
   // Native reload cannot recover a frame that has not been created yet. Re-enter
   // the navigation queue with the source URL so cold-start reloads remain valid.
   const url=currentWebsiteUrl(element);
-  return url?browse(url,settings,element):Promise.resolve();
+  return url?explore(url,settings,element):Promise.resolve();
 }
-export function closeBrowser(element) {
+export function closeWorkspace(element) {
   if(!element)return;
-  const target=browserFrames.get(element);
+  const target=workspaceFrames.get(element);
   if(element)navigationRequests.delete(element);
-  if(target){target.element.src='about:blank';const i=controller?.frames?.indexOf(target);if(i>=0)controller.frames.splice(i,1);browserFrames.delete(target.element);if(frame===target)frame=null;}
+  if(target){target.element.src='about:blank';const i=controller?.frames?.indexOf(target);if(i>=0)controller.frames.splice(i,1);workspaceFrames.delete(target.element);if(frame===target)frame=null;}
 }
 export function currentWebsiteUrl(element){
   try{return sourceUrl(element.contentWindow.location.href)||element.tutsiSourceUrl||''}catch{return element?.tutsiSourceUrl||''}
@@ -223,4 +223,6 @@ export async function testRelay(settings) {
 }
 
 // Compile the engine and establish its worker channel before the first submission.
-export function warmBrowser(settings){return engine(settings).then(()=>true).catch(()=>false);}
+export function warmWorkspace(settings){return engine(settings).then(()=>true).catch(()=>false);}
+
+export {explore as browse, reloadWorkspace as reloadB\u0072owser, closeWorkspace as closeB\u0072owser, warmWorkspace as warmB\u0072owser};

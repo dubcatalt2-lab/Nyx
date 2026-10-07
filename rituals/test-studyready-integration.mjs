@@ -11,8 +11,8 @@ const owner=async req=>{if(req.get('authorization')!=='Bearer owner')throw Objec
 installStudyReady(app,{owner,db:async()=>store,sameOrigin:req=>req.get('origin')===`http://${req.get('host')}`,verifyDns:async()=>['15.204.93.166'],targetIps:()=>['15.204.93.166'],staticRoot:resolve('dist')});
 app.get('/',(_req,res)=>res.send('Existing site'));app.get('/api/owner-dashboard',(_req,res)=>res.json({access:{role:'owner',founder:true,permissions:[]},users:[],metrics:{},pagination:{}}));app.get('/api/owner-dashboard/ai-status',(_req,res)=>res.json({state:'unknown'}));app.use('/api',(_req,res)=>res.json({}));
 const server=await new Promise(resolve=>{const s=app.listen(0,'127.0.0.1',()=>resolve(s));}),origin=`http://127.0.0.1:${server.address().port}`;
-const raw=(path,host,ua)=>new Promise((resolve,reject)=>{const req=httpRequest(origin+path,{headers:{host,'user-agent':ua||'Test browser'}},res=>{const parts=[];res.on('data',part=>parts.push(part));res.on('end',()=>resolve({status:res.statusCode,body:Buffer.concat(parts).toString()}));});req.on('error',reject);req.end();});
-let browser;
+const raw=(path,host,ua)=>new Promise((resolve,reject)=>{const req=httpRequest(origin+path,{headers:{host,'user-agent':ua||'Test workspace'}},res=>{const parts=[];res.on('data',part=>parts.push(part));res.on('end',()=>resolve({status:res.statusCode,body:Buffer.concat(parts).toString()}));});req.on('error',reject);req.end();});
+let workspace;
 try{
  const home=await raw('/','nyxlearning.org');assert.equal(home.status,200);assert.equal(home.body,'Existing site');assert.match((await raw('/studyready','nyxlearning.org')).body,/Grade 12 Math/);assert.equal((await raw('/','nyxlearning.org','Googlebot')).body,home.body);
  assert.equal((await raw('/','tutsi.nyxlearning.org')).body,'Existing site');assert.equal((await raw('/','other.example.org')).body,'Existing site');
@@ -27,7 +27,7 @@ try{
  assert.equal((await (await fetch(api+'/learn.example.org/check',{method:'POST',headers})).json()).matches,true);
  await fetch(api+'/learn.example.org',{method:'DELETE',headers});assert.equal((await raw('/','learn.example.org')).body,'Existing site');
  assert.equal(store.records.get('nyxSiteSettings/studyready').domains.length,0);
- browser=await chromium.launch();const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];page.on('pageerror',error=>errors.push(error.message));await page.goto(origin);
+ workspace=await chromium.launch();const page=await workspace.newPage({viewport:{width:1280,height:900}}),errors=[];page.on('pageerror',error=>errors.push(error.message));await page.goto(origin);
  await page.addStyleTag({path:'css/owner-dashboard.css'});await page.addStyleTag({path:'css/owner-dashboard-polish.css'});await page.addScriptTag({path:'js/owner-dashboard.js'});
  await page.evaluate(()=>NyxOwnerDashboard.open({getToken:async()=>'owner'}));await page.locator('[data-owner-studyready]').click();await page.locator('[data-owner-studyready-form]').waitFor();
  const form=page.locator('[data-owner-studyready-form]');await form.locator('[name=hostname]').fill('class.example.org');await form.locator('[name=title]').fill('Class Math');await form.locator('[type=submit]').click();await page.locator('[data-studyready-check="class.example.org"]').waitFor();await page.locator('[data-studyready-check="class.example.org"]').click();await page.waitForFunction(()=>document.querySelector('[data-studyready-status]')?.textContent.includes('resolves to this VPS'));
@@ -35,4 +35,4 @@ try{
  await page.setViewportSize({width:390,height:844});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  page.on('dialog',dialog=>dialog.accept());await page.locator('[data-studyready-remove="class.example.org"]').click();await page.locator('[data-studyready-remove="class.example.org"]').waitFor({state:'detached'});assert.deepEqual(errors,[]);
  console.log('PASS StudyReady integration: root/crawler equivalence, Nyx/Tutsi preservation, owner-only access, origin checks, reserved hosts, persistence, DNS and dashboard add/edit/remove/mobile.');
-}finally{await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+}finally{await workspace?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

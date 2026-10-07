@@ -1,8 +1,8 @@
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
-const browser=await chromium.launch();
+const workspace=await chromium.launch();
 try{
- const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];
+ const page=await workspace.newPage({viewport:{width:1280,height:900}}),errors=[];
  page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://localhost:9091/tutsi');
  const wizard=page.locator('#customize-dialog');await wizard.waitFor();
@@ -25,8 +25,8 @@ try{
  await page.locator('#customize-next').click();await wizard.waitFor({state:'hidden'});
  assert.equal(await page.locator('#blocker').inputValue(),'goguardian');
  assert.deepEqual(errors,[]);
- const old=await browser.newPage();await old.addInitScript(()=>localStorage.setItem('tutsi.settings.v1',JSON.stringify({theme:'frappe',closePrevention:false,transport:'libcurl'})));await old.goto('http://localhost:9091/tutsi');assert(!(await old.locator('#customize-dialog').isVisible()));assert.equal(await old.locator('html').getAttribute('data-theme'),'frappe');
- const fresh=await browser.newPage();await fresh.goto('http://localhost:9091/tutsi');
+ const old=await workspace.newPage();await old.addInitScript(()=>localStorage.setItem('tutsi.settings.v1',JSON.stringify({theme:'frappe',closePrevention:false,transport:'libcurl'})));await old.goto('http://localhost:9091/tutsi');assert(!(await old.locator('#customize-dialog').isVisible()));assert.equal(await old.locator('html').getAttribute('data-theme'),'frappe');
+ const fresh=await workspace.newPage();await fresh.goto('http://localhost:9091/tutsi');
  await fresh.locator('#customize-dialog').waitFor();
  assert(!(await fresh.locator('#customize-dismiss').isVisible()));
  await fresh.keyboard.press('Escape');
@@ -40,4 +40,4 @@ try{
  await fresh.reload();await fresh.locator('#studyready-startup').waitFor({state:'detached',timeout:10000});
  assert(!(await fresh.locator('#customize-dialog').isVisible()));
  console.log('Customization: first visit, draft isolation, back/save, persisted preferences, cancel, required filter, existing users and mobile passed.');
-}finally{await browser.close()}
+}finally{await workspace.close()}

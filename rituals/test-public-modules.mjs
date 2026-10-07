@@ -11,6 +11,8 @@ const collision=moduleNames(['a/index.js','a/index.mjs','b/index.mjs']);
 assert.match(collision['/a/index.mjs'],/index\.module-[a-f0-9]+\.js$/);
 assert.equal(collision['/b/index.mjs'],'/b/index.js');
 assert.throws(()=>moduleNames(['a/index.js','a/index.mjs',collision['/a/index.mjs'].slice(1)]),/collision/);
+const renamed=moduleNames(['app/b\u0072owser-runtime.mjs','app/workspace-runtime.js']);
+assert.match(renamed['/app/b\u0072owser-runtime.mjs'],/^\/app\/workspace-runtime\.module-[a-f0-9]+\.js$/);
 const references='import x from "./index.mjs"; import("./index.mjs?v=1"); new Worker(new URL("/b/index.mjs",import.meta.url),{type:"module"});';
 const rewritten=rewritePublicModules(references,'/a/entry.js',collision);
 assert(!rewritten.includes('.mjs'));

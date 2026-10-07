@@ -36,9 +36,9 @@ window.calls=[];window.dispose=loremDesktop({screen:document.querySelector('#scr
 if(scenario==='disposed')dispose();
 </script>`));
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
-  const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  const page=await workspace.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.route('https://loremgroup.org/**',r=>r.fulfill({contentType:'text/html',body:'<h1>Fixture desktop</h1>'}));
   for(const scenario of ['new','existing','stopped','queued','disposed']){
     await page.goto('http://127.0.0.1:'+server.address().port+'/?case='+scenario);
@@ -83,4 +83,4 @@ try{
   await page.getByText('This desktop assignment could not be verified.',{exact:true}).first().waitFor();
   console.log('PASS public VMs tile, automatic create/reuse/start/queue, stale-response cleanup, countdown expiry and revoked-assignment viewer removal');
 
-}finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}
+}finally{await workspace.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

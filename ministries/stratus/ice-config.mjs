@@ -1,4 +1,4 @@
-// Serialized into the browser player by launcher.mjs; keep this function self-contained.
+// Serialized into the workspace player by launcher.mjs; keep this function self-contained.
 export function cloudIceConfig(iceServers, restricted = false) {
   if (!restricted) return { iceServers };
   const relays = (Array.isArray(iceServers) ? iceServers : []).flatMap(server => {

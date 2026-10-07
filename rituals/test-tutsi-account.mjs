@@ -1,9 +1,9 @@
 ﻿import { chromium } from "playwright";
 import assert from "node:assert/strict";
 const base = process.env.TUTSI_TEST_URL || "http://localhost:9091/tutsi";
-const browser = await chromium.launch();
+const workspace = await chromium.launch();
 try {
-  const page = await browser.newPage();
+  const page = await workspace.newPage();
   await page.route("**/api/founder-profile/auth-config", (r) =>
     r.fulfill({
       json: { enabled: true, apiKey: "fixture", projectId: "fixture" },
@@ -51,7 +51,7 @@ try {
   });
   await page.goto(base);
   if(await page.locator("#customize-dialog").isVisible())await page.locator("#customize-dismiss").click();
-  if(await page.locator("#browser-home").isVisible()) await page.locator("#browser-home").click();
+  if(await page.locator("#workspace-home").isVisible()) await page.locator("#workspace-home").click();
   await page.locator("#account-button").click();
   await page.fill("#identifier", "test-user");
   await page.fill("#password", "fixture-password");
@@ -106,7 +106,7 @@ try {
   console.log(
     "Mocked account sign-in, authenticated AI streaming, Tutsi response label and unregistered-frame token rejection passed. No paid generation.",
   );
-  if(await page.locator("#browser-home").isVisible()) await page.locator("#browser-home").click();
+  if(await page.locator("#workspace-home").isVisible()) await page.locator("#workspace-home").click();
   await page.locator("#account-button").click();
   await page.locator("#sign-out").click();
   await page.locator("#auth-mode").click();
@@ -127,7 +127,7 @@ try {
   console.log(
     "Tutsi registration uses the shared Nyx endpoint with optional email and signs in. No real account created.",
   );
-  const clockPage = await browser.newPage();
+  const clockPage = await workspace.newPage();
   await clockPage.clock.install({ time: new Date("2026-09-16T19:59:58") });
   await clockPage.goto(base);
   await clockPage.clock.runFor(1000);
@@ -150,5 +150,5 @@ try {
     "Clock digit changes, hour rollover, animation completion and reduced motion passed.",
   );
 } finally {
-  await browser.close();
+  await workspace.close();
 }

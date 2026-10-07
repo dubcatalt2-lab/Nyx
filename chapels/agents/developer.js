@@ -25,7 +25,7 @@ export function setupDeveloper({account,user,nook,secret,refresh}){
   for(const model of next.catalog||[]){const option=document.createElement('option');option.value=model.id;option.textContent=model.label||model.id;$('playModel').append(option);}
   if([...$('playModel').options].some(o=>o.value===chosen))$('playModel').value=chosen;
   $('modelAccess').textContent=(next.models?.length||0)+' models · same access as your account';
-  usage(next.usage);$('otherBrowserUsage').hidden=!next.currentBrowserUsage;if(next.currentBrowserUsage)usage(next.currentBrowserUsage,'current');
+  usage(next.usage);$('otherWorkspaceUsage').hidden=!next.currentWorkspaceUsage;if(next.currentWorkspaceUsage)usage(next.currentWorkspaceUsage,'current');
   const haiku=next.usage?.haiku;
   if(haiku){
    $('usageHaiku').textContent=haiku.limitUsd===null?'Unlimited':`$${haiku.remainingUsd.toFixed(4)} / $${haiku.limitUsd.toFixed(2)} left`;
@@ -33,7 +33,7 @@ export function setupDeveloper({account,user,nook,secret,refresh}){
    $('haikuReset').textContent=haiku.limitUsd===null?'No account usage cap':haiku.resetAt?'Resets '+new Date(haiku.resetAt).toLocaleString():'Per account, every four days. Starts with your first Haiku request.';
   }
   const requests=next.usage?.requestsToday||0;$('usageRequests').textContent=requests.toLocaleString()+(requests===1?' request today':' requests today')+(next.usage?.pending?' · request in progress':'');
-  $('usageScope').textContent=next.key&&next.key.app!=='nook'?'Your existing key uses the older API allowance. In Keys, choose “Use Nook models and allowance” to share the pool shown here.':next.keyUsesCurrentBrowser?'Chat and Nook keys share this browser’s allowance.':'Your key uses the browser allowance it was first created with. This browser’s chat allowance is shown separately.';
+  $('usageScope').textContent=next.key&&next.key.app!=='nook'?'Your existing key uses the older API allowance. In Keys, choose “Use Nook models and allowance” to share the pool shown here.':next.keyUsesCurrentWorkspace?'Chat and Nook keys share this workspace’s allowance.':'Your key uses the workspace allowance it was first created with. This workspace’s chat allowance is shown separately.';
   example();
  }
  function example(){const model=$('playModel').value||'MODEL_ID';$('nodeExample').textContent=`const key = process.env.NOOK_API_KEY;

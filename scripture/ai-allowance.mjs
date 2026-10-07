@@ -147,7 +147,7 @@ export function createAiAllowance({db,config,now=Date.now}) {
     if(unlimited)actor={...actor,owner:true};
     else if(hasAppAiAllowance(actor))actor={...actor,owner:false};
     if(!actor?.uid)throw failure('Sign in to use shared Nyx AI.',401);
-    if(actor.app==='nook'&&!actor.apiVerified&&!actor.device)throw failure('Your browser ID is unavailable. Reload Nook and try again.',503);
+    if(actor.app==='nook'&&!actor.apiVerified&&!actor.device)throw failure('Your workspace ID is unavailable. Reload Nook and try again.',503);
     if(actor.blocked)throw failure('Shared AI access is restricted for this account.',403);
     if(actor.requestedModel&&!aiModelAllowed(actor.requestedModel,actor))throw failure('This AI model is not enabled for your account.',403);
     const free=isFreeAiModel(actor.freeModel);
@@ -281,7 +281,7 @@ export function createAiAllowance({db,config,now=Date.now}) {
         const totalLeft=NOOK_DEVICE_TOKENS-devicePool.used,expensiveLeft=NOOK_EXPENSIVE_TOKENS-devicePool.expensiveUsed;
         const remaining=Math.min(totalLeft,expensive?expensiveLeft:Infinity);
         const output=Math.floor((remaining-cost.inputTokens)/cost.passes);
-        if(output<1)throw failure(`This browser's shared Nook ${expensive&&expensiveLeft<totalLeft?'1,000-token expensive-model':'7,000-token'} pool has ${Math.max(0,remaining)} tokens remaining. It resets on ${new Date(devicePool.resetAt).toISOString()}.`,429,Math.max(1,Math.ceil((devicePool.resetAt-now())/1000)),'token_limit');
+        if(output<1)throw failure(`This workspace's shared Nook ${expensive&&expensiveLeft<totalLeft?'1,000-token expensive-model':'7,000-token'} pool has ${Math.max(0,remaining)} tokens remaining. It resets on ${new Date(devicePool.resetAt).toISOString()}.`,429,Math.max(1,Math.ceil((devicePool.resetAt-now())/1000)),'token_limit');
         const field='max_completion_tokens' in payload?'max_completion_tokens':'max_tokens';
         if(payload[field]>output){payload[field]=output;Object.assign(cost,estimate(session,provider,payload,catalogPrice));}
       }
@@ -404,7 +404,7 @@ export function createAiAllowance({db,config,now=Date.now}) {
       const d=ref(`signup-device-${hash(deviceId)}`),n=ref(`signup-network-${hash(networkId)}`);
       const [ds,ns]=await Promise.all([tx.get(d),tx.get(n)]),dv=state(ds.data()),nv=ns.data()||{};
       const times=(nv.times||[]).filter(t=>t>now()-3600000&&t<=now());
-      if(count(dv.requests)>=3)throw failure('This browser has reached its account creation limit for today.',429,3600);
+      if(count(dv.requests)>=3)throw failure('This workspace has reached its account creation limit for today.',429,3600);
       if(times.length>=100)throw failure('Too many accounts are being created on this network. Please try again later.',429,600);
       tx.set(d,{...dv,requests:count(dv.requests)+1,updatedAt:now()});tx.set(n,{times:[...times,now()],updatedAt:now()});
     });
@@ -437,7 +437,7 @@ export function createAiAllowance({db,config,now=Date.now}) {
     const money=claudeWindow(c.data(),now()),haiku=claudeWindow(h.data(),now());
     const metric=(cap,spent,resetAt)=>({limit:unlimited?null:cap,used:spent,remaining:unlimited?null:Math.max(0,cap-spent),resetAt});
     const resetAt=nook?(deviceActive?device.resetAt:null):(ledger.pool?.start===pool.start||!ledger.pool&&pool.used?pool.resetAt:null);
-    return {scope:nook?'browser':hasAppAiAllowance(actor)?'expensive-models':'account',tier:unlimited?'owner':actor.premium?'premium':'regular',unlimited,periodDays:4,
+    return {scope:nook?'workspace':hasAppAiAllowance(actor)?'expensive-models':'account',tier:unlimited?'owner':actor.premium?'premium':'regular',unlimited,periodDays:4,
       tokens:{limit,used:Math.max(0,used-pendingTokens),pending:pendingTokens,uncertain:uncertainTokens,remaining:unlimited?null:Math.max(0,limit-used)},resetAt,
       pendingCostsUsd:receipts.filter(r=>r.day.slice(0,7)===day().slice(0,7)).reduce((sum,r)=>sum+count(r.reserved),0)/USD,
       modelCaps:{claude:{...metric(CLAUDE_SITE_LIMIT_USD,money.used/USD,c.data()?.start===money.start?money.start+4*DAY:null),unit:'USD'},

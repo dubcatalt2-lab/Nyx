@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {readFile} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
  let replies=0;const longReply='Long reply paragraph.\n'.repeat(1300)+'END OF LONG REPLY';
- const page=await browser.newPage({viewport:{width:2048,height:1148}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const page=await workspace.newPage({viewport:{width:2048,height:1148}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  if(process.env.DROP_TEST_DIST)await page.route('http://localhost:6767/**',async route=>{const path=new URL(route.request().url()).pathname;try{const file=resolve('dist','.'+decodeURIComponent(path)+(path.endsWith('/')?'index.html':''));if(!file.startsWith(resolve('dist')+'\\'))throw Error('Invalid path');await route.fulfill({body:await readFile(sourceFile(file)),contentType:({'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.woff2':'font/woff2'})[extname(file)]||'application/octet-stream'});}catch{await route.continue();}});
  await page.route('https://www.gstatic.com/firebasejs/**/firebase-app.js',r=>r.fulfill({contentType:'text/javascript',body:'export const getApps=()=>[];export const initializeApp=()=>({});'}));
  await page.route('https://www.gstatic.com/firebasejs/**/firebase-auth.js',r=>r.fulfill({contentType:'text/javascript',body:'const auth={currentUser:{uid:"fixture-user",getIdToken:async()=>"fixture"}};export const getAuth=()=>auth;export const browserLocalPersistence={};export const setPersistence=async()=>{};export const onAuthStateChanged=(a,f)=>f(a.currentUser);export const signOut=async()=>{};'}));
@@ -22,4 +22,4 @@ try{
  await page.setViewportSize({width:390,height:844});if(await page.locator('#collapse').getAttribute('aria-expanded')==='true')await page.locator('#collapse').click();await page.waitForTimeout(350);assert((await reply.boundingBox()).width>200,JSON.stringify(await reply.boundingBox()));assert(await ai.locator('#feed').evaluate(el=>el.scrollWidth<=el.clientWidth+1));
  await ai.getByRole('button',{name:'Continue response'}).last().click();await ai.locator('.message.assistant').nth(1).waitFor();assert((await ai.locator('.message.assistant').last().innerText()).includes('END OF LONG REPLY'));await ai.locator('#dropHistory').click();await ai.locator('.saved-chat button').first().click();assert((await ai.locator('.message.assistant').last().innerText()).includes('END OF LONG REPLY'));assert(await page.evaluate(()=>localStorage.getItem('agents.chats.v1.fixture-user').includes('END OF LONG REPLY')));
  assert.deepEqual(errors,[]);console.log('PASS Drop AI reply width on desktop/mobile and original company logo colors');
-}finally{await browser.close();}
+}finally{await workspace.close();}

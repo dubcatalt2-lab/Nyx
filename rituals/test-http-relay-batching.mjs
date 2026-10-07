@@ -53,7 +53,7 @@ try{
  assert.equal(socket.bufferedAmount,0);assert.equal(requests,2,'Length headers count toward the 1 MiB envelope limit');
  assert.deepEqual(received.map(frame=>[frame.length,frame[0],frame.at(-1)]),Array.from({length:4},(_,i)=>[262144,i,i]));
  socket.close();
- // New browser code must still work against a server that has not advertised batching.
+ // New workspace code must still work against a server that has not advertised batching.
  globalThis.fetch=async(url,options={})=>{const response=await nativeFetch(new URL(url,`http://127.0.0.1:${port}`),{...options,headers:{...options.headers,Origin:'https://fixture.test'}});if(String(url).endsWith('/sessions')){const data=await response.json();return Response.json({token:data.token});}return response;};
  received.length=0;requests=0;
  socket=new HttpRelaySocket('ws://fixture.test/');socket.binaryType='arraybuffer';

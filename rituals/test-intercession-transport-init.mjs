@@ -7,9 +7,9 @@ import {parse} from 'acorn';
 const source=readFileSync(sourceFile('script.js'),'utf8');let create='',normalize='',defaultTransport='';
 function visit(node){
   if(!node || typeof node!=='object')return;
-  if(node.type==='FunctionDeclaration' && node.id?.name==='createScramjetTransport')create=source.slice(node.start,node.end);
-  if(node.type==='FunctionDeclaration' && node.id?.name==='normalizeBrowserTransportName')normalize=source.slice(node.start,node.end);
-  if(node.type==='VariableDeclarator' && node.id?.name==='DEFAULT_BROWSER_TRANSPORT')defaultTransport=node.init.value;
+  if(node.type==='FunctionDeclaration' && node.id?.name==='createStudyjetTransport')create=source.slice(node.start,node.end);
+  if(node.type==='FunctionDeclaration' && node.id?.name==='normalizeWorkspaceTransportName')normalize=source.slice(node.start,node.end);
+  if(node.type==='VariableDeclarator' && node.id?.name==='DEFAULT_WORKSPACE_TRANSPORT')defaultTransport=node.init.value;
   for(const value of Object.values(node)){if(Array.isArray(value))value.forEach(visit);else if(value&&typeof value==='object')visit(value);}
 }
 visit(parse(source,{ecmaVersion:'latest'}));assert(create);
@@ -20,11 +20,11 @@ const fakeModule='data:text/javascript,'+encodeURIComponent(`export default clas
 create=create.replace("'/assets/transports/libcurl-pilgrim.mjs'",JSON.stringify(fakeModule));
 const relayModule='data:text/javascript,'+encodeURIComponent("import {RelayTransport as Base} from "+JSON.stringify(pathToFileURL(sourceFile(new URL('../apps/tutsi/relay.mjs',import.meta.url))).href)+";export class RelayTransport extends Base {constructor(options){super({...options,probe:async()=>true,online:()=>true});}}");
 create=create.replace("'/chapels/tutsi/relay.mjs'",JSON.stringify(relayModule));
-const normalizeName=new Function('DEFAULT_BROWSER_TRANSPORT',`${normalize};return normalizeBrowserTransportName;`)(defaultTransport);
+const normalizeName=new Function('DEFAULT_WORKSPACE_TRANSPORT',`${normalize};return normalizeWorkspaceTransportName;`)(defaultTransport);
 assert.equal(defaultTransport,'libcurlRaw');
-const make=new Function('selectWispRelay','normalizeBrowserTransportName','store','wispUrl','setTimeout',`
-  let browserTransportOverride='',scramjetTransport=null,scramjetTransportKey='',scramjetTransportPending=null;
-  const browserHttpRelayUrl=()=> 'wss://fixture.test/api/tutsi-relay/socket/'; const DEFAULT_BROWSER_TRANSPORT=${JSON.stringify(defaultTransport)};${create};return createScramjetTransport;
+const make=new Function('selectWispRelay','normalizeWorkspaceTransportName','store','wispUrl','setTimeout',`
+  let workspaceTransportOverride='',studyjetTransport=null,studyjetTransportKey='',studyjetTransportPending=null;
+  const workspaceHttpRelayUrl=()=> 'wss://fixture.test/api/tutsi-relay/socket/'; const DEFAULT_WORKSPACE_TRANSPORT=${JSON.stringify(defaultTransport)};${create};return createStudyjetTransport;
 `);
 function state(){
   let entered,resolve,reject;

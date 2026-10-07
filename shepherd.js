@@ -22,7 +22,7 @@ import {publishSurgeLink,validateSurgeToken} from './scripture/surge-publisher.m
 import {createGameReports} from './scripture/game-reports.mjs';
 import {gameResourceTarget} from "./relics/games/game-cdn.js";
 import {gameResourceEdit} from './scripture/game-resource-repairs.mjs';
-import {createGameProxy} from './scripture/game-intercession-stream.mjs';
+import {createGameProxy as createGameConnection} from './scripture/game-intercession-stream.mjs';
 import { exchangeVoiceAudio, createVoiceAudioAccess, cleanupVoiceAudio } from './scripture/chat-voice-relay.mjs';
 import {recordAiExchange,readAiActivity} from './scripture/ai-history.mjs';
 import {assignableAiModels,validateAiModelRules} from './scripture/ai-model-policy.mjs';
@@ -78,10 +78,10 @@ import { createMetingBackend } from "./scripture/nyxify-meting.mjs";
 const __dirname = resolve(process.env.NYX_PROJECT_ROOT || process.cwd());
 const staticRoot = resolve(process.env.NYX_STATIC_ROOT || __dirname);
 const require = createRequire(join(__dirname, "package.json"));
-const { baremuxPath } = require("@mercuryworkshop/bare-mux/node");
-const { scramjetPath } = require("@mercuryworkshop/scramjet/path");
-const { scramjetPath: scramjetV1Path } = require("@mercuryworkshop/scramjet-v1/path");
-const scramjetControllerPath = dirname(require.resolve("@mercuryworkshop/scramjet-controller"));
+const { baremuxPath:bookmuxPath } = require("@mercuryworkshop/bare-mux/node");
+const { scramjetPath:studyjetPath } = require("@mercuryworkshop/scramjet/path");
+const { scramjetPath: studyjetV1Path } = require("@mercuryworkshop/scramjet-v1/path");
+const studyjetControllerPath = dirname(require.resolve("@mercuryworkshop/scramjet-controller"));
 const epoxyPath = join(dirname(require.resolve("@mercuryworkshop/epoxy-transport")), "..", "dist");
 const libcurlPath = dirname(require.resolve("@mercuryworkshop/libcurl-transport"));
 const erudaPath = require.resolve("eruda");
@@ -110,8 +110,8 @@ const nyxCustomRoleLabelLimit = 64;
 const app = express();
 const appTraffic = createAppTraffic({file:process.env.NYX_TRAFFIC_FILE || (process.platform === 'win32' ? join(process.env.TEMP || __dirname, 'nyx-app-traffic.json') : '/var/lib/nyx/app-traffic.json')});
 app.use(appTraffic.middleware);
-const gameProxy = createGameProxy();
-startMemoryMonitor({details: () => ({gameProxy: gameProxy.stats()})});
+const gameConnection = createGameConnection();
+startMemoryMonitor({details: () => ({gameProxy: gameConnection.stats()})});
 const dropOwnerScope=createDropOwnerScope({verify:async token=>(await linkGeneratorFirebase()).auth.verifyIdToken(token,true)});
 app.use(dropOwnerScope.middleware);
 app.get(['/agents','/agents/'],(_req,res)=>res.redirect(302,'/apps/agents/'));
@@ -606,7 +606,7 @@ function cacheNyxCustomHostnameDecision(hostname, allowed) {
 async function nyxCustomHostnameAllowed(hostname) {
   const normalized = normalizeNyxCustomHostname(hostname);
   if (!normalized) return false;
-  if(['nook.nyxlearning.org','nook.donateyourboat.us','robotics.ridgewoodstem.org','drop.ridgewoodstem.org'].includes(normalized))return true;
+  if(['nook.nyxlearning.org','nook.donateyourboat.us','robotics.ridgewoodstem.org','drop.ridgewoodstem.org','nyx.ridgewoodstem.org'].includes(normalized))return true;
   const configuredHostnames = [...embeddedWispAllowedOrigins, process.env.NYX_PUBLIC_ORIGIN, ...tutsiHostnames]
     .map(value => normalizeNyxCustomHostname(value))
     .filter(Boolean);
@@ -756,8 +756,8 @@ async function nyxIpBanGuard(req, res, next) {
 }
 
 app.use(nyxIpBanGuard);
-const baremuxIndexPath = join(baremuxPath, "index.mjs");
-const scramjetRuntimePath = join(scramjetPath, "scramjet.js");
+const bookmuxIndexPath = join(bookmuxPath, "index.mjs");
+const studyjetRuntimePath = join(studyjetPath, "scramjet.js");
 
 app.use((req, res, next) => {
   const noStorePaths = new Set([
@@ -777,8 +777,8 @@ app.use((req, res, next) => {
     "/nyx-scramjet-runtime-guard.js"
   ]);
   const noStorePrefix = /^\/(?:assets\/(?:gms-games|reds-misc)\/|gms-games-|reds-misc-)/i.test(req.path);
-  const opaqueProxyAsset = /^\/(?:(?:scramjet|studyjet)(?:-v1)?\/|controller\/|epoxy\/|atlas\/|libcurl\/|textlib\/|baremux\/|uv\/|assets\/transports\/|apps\/tutsi\/)?@?r[0-9a-f]{24}!?\.(?:js|mjs|wasm)$/.test(req.path);
-  if (noStorePaths.has(req.path) || noStorePrefix || opaqueProxyAsset) {
+  const opaqueConnectionAsset = /^\/(?:(?:scramjet|studyjet)(?:-v1)?\/|controller\/|epoxy\/|atlas\/|libcurl\/|textlib\/|baremux\/|uv\/|assets\/transports\/|apps\/tutsi\/)?@?r[0-9a-f]{24}!?\.(?:js|mjs|wasm)$/.test(req.path);
+  if (noStorePaths.has(req.path) || noStorePrefix || opaqueConnectionAsset) {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
@@ -888,7 +888,7 @@ app.get("/api/search-suggestions", async (req, res) => {
   }
   try {
     const upstream = await fetch(`https://duckduckgo.com/ac/?q=${encodeURIComponent(query)}&type=list`, {
-      headers: { accept: "application/json, application/javascript", "user-agent": "Nyx browser search assistance/1.0" },
+      headers: { accept: "application/json, application/javascript", "user-agent": "Nyx workspace search assistance/1.0" },
       signal: AbortSignal.timeout(2_500)
     });
     if (!upstream.ok) throw new Error(`Suggestion service returned ${upstream.status}`);
@@ -1360,8 +1360,8 @@ app.get("/catalog-game-cover", async (req, res) => {
 
 
 
-function patchedBareMuxIndex() {
-  return readFileSync(baremuxIndexPath, "utf8")
+function patchedBookmuxIndex() {
+  return readFileSync(bookmuxIndexPath, "utf8")
     .replace(
       'const e=(await self.clients.matchAll({type:"window",includeUncontrolled:!0})).map',
       'const e=(await self.clients.matchAll({type:"window",includeUncontrolled:!0})).filter((e=>{try{const t=new URL(e.url);return t.origin===self.location.origin&&!t.pathname.startsWith("/service/")&&!t.pathname.startsWith("/~/sj/")}catch{return!1}})).map'
@@ -1374,8 +1374,8 @@ function patchedBareMuxIndex() {
 
 
 
-function patchedScramjetControllerAsset(name) {
-  let source = readFileSync(join(scramjetControllerPath, name), "utf8");
+function patchedStudyjetControllerAsset(name) {
+  let source = readFileSync(join(studyjetControllerPath, name), "utf8");
   if (name === "controller.sw.js") {
     const clientsOriginal = 'sendSetCookie:async({cookies:e,options:r})=>{let o=await self.clients.matchAll()';
     const clientsPatched = 'sendSetCookie:async({cookies:e,options:r})=>{let o=await self.clients.matchAll({type:"window",includeUncontrolled:!0})';
@@ -1402,8 +1402,8 @@ function patchedScramjetControllerAsset(name) {
   return source;
 }
 
-function patchedScramjetRuntime() {
-  const source = readFileSync(scramjetRuntimePath, "utf8");
+function patchedStudyjetRuntime() {
+  const source = readFileSync(studyjetRuntimePath, "utf8");
   const original = 'if(u.origin===new i.xP(e.rawUrl).origin)throw new i.$D("attempted to fetch from same origin - this means the site has obtained a reference to the real origin, aborting");';
   const patched = 'if(u.origin===new i.xP(e.rawUrl).origin&&u.pathname.startsWith(t.context.prefix.pathname))u=new i.xP((0,n.v2)(u,t.context));else if(u.origin===new i.xP(e.rawUrl).origin)throw new i.$D("attempted to fetch from same origin - this means the site has obtained a reference to the real origin, aborting");';
   const historyOriginal = 'apply(t){let r=e.box.histories.get(t.this),s=(0,n.Qf)(t.args[2]);';
@@ -1415,7 +1415,7 @@ function patchedScramjetRuntime() {
     .replace(historyOriginal, historyPatched);
 }
 
-function scramjetRuntimeGuard() {
+function studyjetRuntimeGuard() {
   return `(() => {
   if (typeof window === "undefined" || window.__nyxScramjetGuards) return;
   window.__nyxScramjetGuards = true;
@@ -1576,7 +1576,7 @@ function scramjetRuntimeGuard() {
   };
   const opennyxPopupWarning = () => {
     // Popup protection must never create a real popup just to display a
-    // warning. Return a browser-like inert handle to the calling site.
+    // warning. Return a workspace-like inert handle to the calling site.
     const popup = null;
     return {
       closed: false,
@@ -1894,26 +1894,26 @@ app.get("/gn-math-asset", async (req, res) => {
     return;
   }
   try {
-    await gameProxy.send(req, res, {
+    await gameConnection.send(req, res, {
       candidates: [new URL(`https://raw.githubusercontent.com/${gnMathOwner}/${repo}/main/${path}`)],
       cacheControl: 'public, max-age=3600'
     });
-  } catch (error) { gameProxyError(res, error, 'GN Math asset network error'); }
+  } catch (error) { gameConnectionError(res, error, 'GN Math asset network error'); }
 
 });
 
-const gnMathProxyHosts = new Set([
+const gnMathConnectionHosts = new Set([
   "cdn.jsdelivr.net",
   "raw.githubusercontent.com",
   "rawcdn.githack.com",
   "raw.githack.com"
 ]);
 
-function safeGnMathProxyUrl(value) {
+function safeGnMathConnectionUrl(value) {
   try {
     const url = new URL(String(value || ""));
     if (url.protocol !== "https:" && url.protocol !== "http:") return null;
-    if (!gnMathProxyHosts.has(url.hostname)) return null;
+    if (!gnMathConnectionHosts.has(url.hostname)) return null;
     if (/(?:googletagmanager|google-analytics|googlesyndication|doubleclick|facebook|recaptcha|pagead|cdn\.r9x\.in)/i.test(url.href)) return null;
     return url;
   } catch {
@@ -1921,17 +1921,17 @@ function safeGnMathProxyUrl(value) {
   }
 }
 
-function gameProxyError(res, error, label) {
+function gameConnectionError(res, error, label) {
   if (res.destroyed) return;
   if (res.headersSent) { res.destroy(); return; }
   if (error?.status === 503) res.setHeader('Retry-After', '3');
   res.status(error?.status || 502).type('text/plain').send(`${label}: ${error?.message || 'upstream unavailable'}`);
 }
-function validateGameProxy(url, result) {
-  if (isHtmlProxyPayload(url, result)) throw Object.assign(new Error('upstream returned HTML for a game resource'), {status: 502});
+function validateGameConnection(url, result) {
+  if (isHtmlConnectionPayload(url, result)) throw Object.assign(new Error('upstream returned HTML for a game resource'), {status: 502});
 }
 
-function isHtmlProxyPayload(url, result) {
+function isHtmlConnectionPayload(url, result) {
   const pathname = String(url?.pathname || "").toLowerCase();
   const executable = /\.(?:js|mjs|cjs|json|wasm|data|unityweb|mem|symbols\.json)(?:$|[?#])/i.test(pathname);
   if (!executable) return false;
@@ -1941,7 +1941,7 @@ function isHtmlProxyPayload(url, result) {
   return /^(?:<!doctype\s+html|<html\b|<head\b|<body\b)/i.test(start);
 }
 
-function gnMathProxyCandidates(url) {
+function gnMathConnectionCandidates(url) {
   const candidates = [url];
 
 
@@ -2000,7 +2000,7 @@ function rewriteGnMathJsonAssets(url, result) {
       ) return value;
       if (/^(?:data|blob|javascript|about):/i.test(value)) return value;
       const asset = new URL(value, url);
-      return safeGnMathProxyUrl(asset)
+      return safeGnMathConnectionUrl(asset)
 
 
 
@@ -2019,18 +2019,18 @@ function rewriteGnMathJsonAssets(url, result) {
 
 app.get("/gn-math-proxy", async (req, res) => {
   setGnMathCors(req, res);
-  const url = safeGnMathProxyUrl(req.query.url);
+  const url = safeGnMathConnectionUrl(req.query.url);
   if (!url) {
     res.status(400).type("text/plain").send("Invalid GN Math proxy URL");
     return;
   }
   try {
-    await gameProxy.send(req, res, {
-      candidates: gnMathProxyCandidates(url), validate: validateGameProxy, contentType: gnMathResourceContentType,
+    await gameConnection.send(req, res, {
+      candidates: gnMathConnectionCandidates(url), validate: validateGameConnection, contentType: gnMathResourceContentType,
       transform: (candidate, type) => /\.json$/i.test(candidate.pathname)
         ? body => rewriteGnMathJsonAssets(candidate, {body, contentType: type}).body : null
     });
-  } catch (error) { gameProxyError(res, error, 'GN Math proxy error'); }
+  } catch (error) { gameConnectionError(res, error, 'GN Math proxy error'); }
 
 });
 
@@ -2038,18 +2038,18 @@ app.options(/^\/gn-math-resource\//, (req, res) => { setGnMathCors(req, res); re
 app.get(/^\/gn-math-resource\//, async (req, res) => {
   setGnMathCors(req, res);
   const target = gameResourceTarget(req.originalUrl);
-  if (!target || !safeGnMathProxyUrl(target.href)) return res.status(400).type('text/plain').send('Invalid game resource URL');
+  if (!target || !safeGnMathConnectionUrl(target.href)) return res.status(400).type('text/plain').send('Invalid game resource URL');
   try {
-    await gameProxy.send(req, res, {
-      candidates: gnMathProxyCandidates(target), validate: validateGameProxy, contentType: gnMathResourceContentType,
+    await gameConnection.send(req, res, {
+      candidates: gnMathConnectionCandidates(target), validate: validateGameConnection, contentType: gnMathResourceContentType,
 
       transform: (_candidate, _type, prefix) => gameResourceEdit(target, prefix)
     });
-  } catch (error) { gameProxyError(res, error, 'Game resource error'); }
+  } catch (error) { gameConnectionError(res, error, 'Game resource error'); }
 
 });
 
-const redsMiscProxyHosts = new Set([
+const redsMiscConnectionHosts = new Set([
   "raw.githubusercontent.com",
   "cdn.jsdelivr.net",
   "rawcdn.githack.com",
@@ -2066,12 +2066,12 @@ function safeRedsMiscPath(path) {
   return clean;
 }
 
-function safeRedsMiscProxyUrl(value) {
+function safeRedsMiscConnectionUrl(value) {
   try {
     const url = new URL(String(value || ""));
     if (url.protocol !== "https:" && url.protocol !== "http:") return null;
     const isGithubPages = url.hostname === "github.io" || url.hostname.endsWith(".github.io");
-    if (!redsMiscProxyHosts.has(url.hostname) && !isGithubPages) return null;
+    if (!redsMiscConnectionHosts.has(url.hostname) && !isGithubPages) return null;
     if (url.hostname === "raw.githubusercontent.com") {
       const allowed = /^\/isaacduh123\/reds-exploit-corner\/main\//i.test(url.pathname);
       if (!allowed) return null;
@@ -2103,29 +2103,29 @@ async function handleGmsGamesFetch(req, res) {
   }
   try {
     const url = new URL(`https://raw.githubusercontent.com/isaacduh123/reds-exploit-corner/main/${path}`);
-    await gameProxy.send(req, res, {candidates: [url], contentType: () => 'text/html; charset=utf-8'});
-  } catch (error) { gameProxyError(res, error, 'GMS network error'); }
+    await gameConnection.send(req, res, {candidates: [url], contentType: () => 'text/html; charset=utf-8'});
+  } catch (error) { gameConnectionError(res, error, 'GMS network error'); }
 }
 
-async function handleGmsGamesProxy(req, res) {
-  const url = safeRedsMiscProxyUrl(req.query.url);
+async function handleGmsGamesConnection(req, res) {
+  const url = safeRedsMiscConnectionUrl(req.query.url);
   if (!url) {
     res.status(400).type("text/plain").send("Invalid GMS proxy URL");
     return;
   }
   try {
-    await gameProxy.send(req, res, {
+    await gameConnection.send(req, res, {
       candidates: [url], contentType: gnMathResourceContentType,
       transform: (candidate, type) => /text\/css/i.test(type) || /\.css$/i.test(candidate.pathname)
         ? body => rewriteGmsCssUrls(body, candidate.href) : null
     });
-  } catch (error) { gameProxyError(res, error, 'GMS proxy error'); }
+  } catch (error) { gameConnectionError(res, error, 'GMS proxy error'); }
 }
 
 app.get("/gms-games-fetch", handleGmsGamesFetch);
-app.get("/gms-games-proxy", handleGmsGamesProxy);
+app.get("/gms-games-proxy", handleGmsGamesConnection);
 app.get("/reds-misc-fetch", handleGmsGamesFetch);
-app.get("/reds-misc-proxy", handleGmsGamesProxy);
+app.get("/reds-misc-proxy", handleGmsGamesConnection);
 
 const nyxAiModels = {};
 
@@ -2739,7 +2739,7 @@ app.get('/api/nyx-ai/models',async(req,res)=>{
   if(!credential.key)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
   const models=await nyxAiAvailableModels(credential.key,false,credential.provider,entitlement);
   if(!models.length)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
-  res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement,aiCatalogPrice(model))).map(model=>hasAppAiAllowance(entitlement)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'No token quota':entitlement.app==='nook'?(nookModelIsExpensive(aiCatalogPrice(model))?'1,000 expensive / browser / 4 days':'7,000 / browser / 4 days'):dropModelIsExpensive(aiCatalogPrice(model),model.id)?'500 shared / 4 days':'No token quota'}:model).map(model=>nookHaikuModel(model.id,entitlement.app)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'Unlimited':`${model.allowanceLabel} \u00b7 $${nookHaikuLimitUsd(entitlement).toFixed(2)} Haiku / account / 4 days`}:model).map(model=>!hasFullAiCatalog(entitlement)&&expensiveClaudeModel(model.id,aiCatalogPrice(model))?{...model,allowanceLabel:[model.allowanceLabel,'$0.05 Claude / account / site / 4 days'].filter(Boolean).join(' · ')}:model),credential:'shared',ownerMediaAccess:hasFullAiCatalog(entitlement)});
+  res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement,aiCatalogPrice(model))).map(model=>hasAppAiAllowance(entitlement)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'No token quota':entitlement.app==='nook'?(nookModelIsExpensive(aiCatalogPrice(model))?'1,000 expensive / workspace / 4 days':'7,000 / workspace / 4 days'):dropModelIsExpensive(aiCatalogPrice(model),model.id)?'500 shared / 4 days':'No token quota'}:model).map(model=>nookHaikuModel(model.id,entitlement.app)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'Unlimited':`${model.allowanceLabel} \u00b7 $${nookHaikuLimitUsd(entitlement).toFixed(2)} Haiku / account / 4 days`}:model).map(model=>!hasFullAiCatalog(entitlement)&&expensiveClaudeModel(model.id,aiCatalogPrice(model))?{...model,allowanceLabel:[model.allowanceLabel,'$0.05 Claude / account / site / 4 days'].filter(Boolean).join(' · ')}:model),credential:'shared',ownerMediaAccess:hasFullAiCatalog(entitlement)});
 });
 
 function nyxMediaUsage(usage) {
@@ -3083,7 +3083,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       await settleNyxAiNavyTokens(navyReservation, nyxAiCompletionTokens(data) || nyxAiEstimatedTokens(text));
       navyReservationSettled = true;
     }
-    if(generateAudio&&!data.voiceAudio)return res.status(502).json({error:"The voice model did not return audio. No browser voice was substituted."});
+    if(generateAudio&&!data.voiceAudio)return res.status(502).json({error:"The voice model did not return audio. No workspace voice was substituted."});
     const images=generateImage?aiOutputImages(data):[];
     if(generateImage&&!images.length&&!String(text||'').trim())return res.status(502).json({error:'The model returned no image or explanation. Please try another prompt.'});
     res.json({ ...(generateAudio?{audio:data.voiceAudio}:{}), text: String(text || "").trim(), model:typeof data.model==='string'&&/^~?[a-z0-9][a-z0-9._:/-]{0,199}$/i.test(data.model)?data.model:model, ...(!codeEdit&&!generateImage?{metadata:aiResponseMetadata(data)}:{}), ...(generateImage?{images}:{}), finishReason:data?.choices?.[0]?.finish_reason||null });
@@ -3688,14 +3688,14 @@ app.get("/runtime-config.js", (_req, res) => {
 });
 
 app.get("/baremux/index.mjs", (_req, res) => {
-  res.type("application/javascript").send(patchedBareMuxIndex());
+  res.type("application/javascript").send(patchedBookmuxIndex());
 });
 app.get("/scramjet/scramjet.js", (_req, res) => {
-  res.type("application/javascript").send(patchedScramjetRuntime());
+  res.type("application/javascript").send(patchedStudyjetRuntime());
 });
 app.get("/nyx-scramjet-runtime-guard.js", (_req, res) => {
   res.setHeader("Cache-Control", "no-store");
-  res.type("application/javascript").send(scramjetRuntimeGuard());
+  res.type("application/javascript").send(studyjetRuntimeGuard());
 });
 app.get("/nyx-compat/cineby-app.js", async (_req, res) => {
   try {
@@ -4114,7 +4114,7 @@ const founderProfileDefaults = Object.freeze({
 });
 app.get(/^\/controller\/(controller\.(?:api|inject|sw)\.js)$/, (req, res) => {
   res.setHeader("Cache-Control", "no-store");
-  res.type("application/javascript").send(patchedScramjetControllerAsset(req.params[0]));
+  res.type("application/javascript").send(patchedStudyjetControllerAsset(req.params[0]));
 });
 
 const nyxProfileEffectValues = Object.freeze(["none","blooming-roses","fx-cosmic-vortex","fx-nebula-storm","fx-stellar-burst","fx-ethereal-flame","fx-quantum-rift","fx-astral-cascade","fx-plasma-wave","fx-supernova-flash","fx-void-shards","fx-prismatic-spark","fx-arcane-pulse","fx-solar-surge","fx-neon-eclipse","fx-celestial-drift","fx-shadow-aura","fx-hyper-aura","fx-starlight-bloom","fx-galaxy-shimmer","fx-cyber-lattice","fx-abyssal-ring","fx-dimension-rift","fx-chrono-spark","fx-zenith-glow","fx-infrared-pulse","fx-glitch-storm","fx-phantom-flame","fx-vortex-surge","fx-nebula-spark","fx-starlight-echo","fx-spectral-surge","fx-cyber-matrix","fx-dark-void","fx-nebula-rift","fx-solar-flare","fx-sakura-blossom","fx-arcane-prism","fx-abyssal-pulse","fx-neon-stardust","fx-retro-wave","fx-glitch-mirage","fx-celestial-shine","fx-phantom-mist","fx-hyperdrive","fx-quantum-bloom","fx-prismatic-aura","fx-astral-spark","fx-thunderstorm","fx-crimson-eclipse","fx-electric-dream","fx-frozen-shards","fx-vortex-horizon","fx-nova-beam","fx-cybernetic-pulse","fx-radiant-orbit"]);
@@ -8818,7 +8818,7 @@ async function googleSafeBrowsingLookup(url) {
       signal: controller.signal,
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        client: { clientId: "nyx-browser", clientVersion: "1.0.0" },
+        client: { clientId: "nyx-workspace", clientVersion: "1.0.0" },
         threatInfo: {
           threatTypes: ["MALWARE", "SOCIAL_ENGINEERING", "UNWANTED_SOFTWARE", "POTENTIALLY_HARMFUL_APPLICATION"],
           platformTypes: ["ANY_PLATFORM"],
@@ -14203,12 +14203,12 @@ app.use((error, req, res, next) => {
 
 
 
-const scramjetV1Bundle = readFileSync(join(scramjetV1Path, "scramjet.all.js"), "utf8")
+const studyjetV1Bundle = readFileSync(join(studyjetV1Path, "scramjet.all.js"), "utf8")
   .replaceAll('"$scramjet"', '"$nyx_scramjet_v1_v4"');
 app.get("/scramjet-v1/scramjet.all.js", (_req, res) => {
   res.type("application/javascript");
   res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-  res.send(scramjetV1Bundle);
+  res.send(studyjetV1Bundle);
 });
 app.get(["/tutsi", "/tutsi/"], (_req, res) => {
   res.set("Cache-Control", "no-cache");
@@ -14232,10 +14232,10 @@ if(staticRoot===__dirname)app.use((req,res,next)=>{
 app.use(express.static(staticRoot));
 app.use("/assets/vendor/katex/", express.static(katexPath));
 app.use('/assets/vendor/novnc/',express.static(dirname(dirname(require.resolve('@novnc/novnc')))));
-app.use("/scramjet/", express.static(scramjetPath));
-app.use("/scramjet-v1/", express.static(scramjetV1Path));
-app.use("/controller/", express.static(scramjetControllerPath));
-app.use("/baremux/", express.static(baremuxPath));
+app.use("/scramjet/", express.static(studyjetPath));
+app.use("/scramjet-v1/", express.static(studyjetV1Path));
+app.use("/controller/", express.static(studyjetControllerPath));
+app.use("/baremux/", express.static(bookmuxPath));
 app.use("/epoxy/", express.static(epoxyPath));
 app.use("/libcurl/", express.static(libcurlPath));
 

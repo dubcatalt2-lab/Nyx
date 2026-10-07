@@ -6,18 +6,18 @@ import { parse } from 'acorn';
 import { chromium } from 'playwright';
 
 const source=readFileSync(sourceFile('script.js'),'utf8');
-const wanted=new Set(['browserAdResourceSignature','browserAdElementSelector','browserAdBlockRuntimeSource']),declarations=[];
+const wanted=new Set(['workspaceAdResourceSignature','workspaceAdElementSelector','workspaceAdBlockRuntimeSource']),declarations=[];
 function visit(node){
   if(!node||typeof node!=='object')return;
   if(node.type==='VariableDeclarator'&&wanted.has(node.id?.name))declarations.push('const '+source.slice(node.start,node.end)+';');
   for(const value of Object.values(node))if(Array.isArray(value))value.forEach(visit);else if(value&&typeof value==='object')visit(value);
 }
 visit(parse(source,{ecmaVersion:'latest'}));
-const runtime=vm.runInNewContext(declarations.join('\n')+'browserAdBlockRuntimeSource;');
-const browser=await chromium.launch();
-const deadline=setTimeout(()=>void browser.close(),15000);
+const runtime=vm.runInNewContext(declarations.join('\n')+'workspaceAdBlockRuntimeSource;');
+const workspace=await chromium.launch();
+const deadline=setTimeout(()=>void workspace.close(),15000);
 try{
-  const page=await browser.newPage();
+  const page=await workspace.newPage();
   await page.route('**/*',route=>route.fulfill({contentType:'text/html',body:'<!doctype html><html><head></head><body></body></html>'}));
   await page.goto('http://fixture.test/');
   await page.evaluate(code=>window.eval(code),runtime);
@@ -40,4 +40,4 @@ try{
   await page.evaluate(()=>{const ad=document.createElement('div');ad.id='ad-container-later';document.body.append(ad);});
   await page.waitForFunction(()=>!document.getElementById('ad-container-later'));
   console.log('PASS proxy cleanup yields during large DOM updates, avoids repeated subtree scans, removes late ads and preserves games/network blocking.');
-}finally{clearTimeout(deadline);await browser.close();}
+}finally{clearTimeout(deadline);await workspace.close();}

@@ -18,7 +18,7 @@ const child = fork(new URL('../shepherd.js', import.meta.url), [], {
 child.stdout.resume();
 let stderr = '';
 child.stderr.on('data', data => { stderr = (stderr + data).slice(-4000); });
-let browser;
+let workspace;
 try {
   const port = await new Promise((resolve, reject) => {
     const timeout = setTimeout(() => reject(new Error('Server startup timeout')), 20000);
@@ -29,10 +29,10 @@ try {
   const base = `http://127.0.0.1:${port}`;
   const health = await (await fetch(base + '/healthz')).json();
   assert.equal(health.wispImplementation, 'external');
-  browser = await chromium.launch({ channel: 'msedge', headless: true });
+  workspace = await chromium.launch({ channel: 'msedge', headless: true });
 
   for(const [width,mode] of [[390,'load'],[768,'load'],[390,'error'],[390,'timeout']]) {
-    const context=await browser.newContext({viewport:{width,height:844}});
+    const context=await workspace.newContext({viewport:{width,height:844}});
     try {
       await context.route('**/api/**',r=>r.fulfill({contentType:'application/json',body:'{}'}));
       await context.addInitScript(()=>{
@@ -56,7 +56,7 @@ try {
       console.log(`Tutsi ${width}px: ${mode}: initial app waits for theme CSS and reveals without getting stuck`);
     } finally {await context.close();}
   }
-  const context=await browser.newContext({viewport:{width:390,height:844}});
+  const context=await workspace.newContext({viewport:{width:390,height:844}});
   try {
     const aiHtml=await (await fetch(base+'/ai.html')).text();
     const aiScript=[...aiHtml.matchAll(/<script\b[^>]*\bsrc="([^"]+)"[^>]*>/g)].at(-1)?.[1];
@@ -82,7 +82,7 @@ try {
     console.log('Nyx mobile: waits for deferred app initialization, then reveals layout');
   } finally {await context.close();}
 } finally {
-  await browser?.close();
+  await workspace?.close();
   if (child.exitCode === null && child.signalCode === null) {
     const closed = once(child, 'exit'); child.disconnect();
     const timeout = setTimeout(() => child.kill('SIGKILL'), 12000);

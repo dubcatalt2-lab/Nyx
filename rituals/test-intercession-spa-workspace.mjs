@@ -23,7 +23,7 @@ const child=fork(new URL('../shepherd.js',import.meta.url),[],{
   env:{...env,PORT:'0',WISP_URL:'wss://example.com/wisp/',NYX_STATIC_ROOT:staticRoot,NYX_YOUTUBE_NATIVE_ENABLED:'0'},silent:true
 });
 child.stdout.resume();child.stderr.resume();
-let browser,fixtureServer;
+let workspace,fixtureServer;
 try{
   const port=await new Promise((resolve,reject)=>{
     const timeout=setTimeout(()=>reject(new Error('Fixture backend startup timed out')),20000);
@@ -87,7 +87,7 @@ try{
   });
   await new Promise(resolve=>fixtureServer.listen(0,'127.0.0.1',resolve));
   const base=`http://127.0.0.1:${fixtureServer.address().port}`;
-  browser=await chromium.launch({channel:'msedge',headless:true});
+  workspace=await chromium.launch({channel:'msedge',headless:true});
   for(const [brand,mode,delay,transportName='epoxy'] of [
     ['nyx','auto',0],['nyx','auto',3000],['nyx','scramjet',0],['tutsi','scramjet',0],
     ['nyx','scramjet',0,'libcurlRaw'],['tutsi','scramjet',0,'libcurl'],
@@ -97,7 +97,7 @@ try{
     if((process.argv.includes('--worker-loss')||process.argv.includes('--repair')) && !(brand==='nyx'&&mode==='scramjet'&&transportName==='epoxy'&&delay===0))continue;
     if(process.argv.includes('--presentation') && !(brand==='nyx'&&delay===3000))continue;
     if(process.argv.includes('--legacy') && !['scramjet-v1','ultraviolet'].includes(mode))continue;
-    const context=await browser.newContext();
+    const context=await workspace.newContext();
     await context.routeWebSocket('wss://fixture.test/wisp/',ws=>setTimeout(()=>ws.send(Buffer.from([3,0,0,0,0,255,255,0,0])),20));
     await context.route('**/api/**',route=>route.fulfill({contentType:'application/json',body:'{}'}));
     if(sourceMode) await context.route(url=>url.pathname===aliases['/script.js'],route=>route.fulfill({contentType:'text/javascript',body:shell}));
@@ -106,7 +106,7 @@ try{
     await context.addInitScript(({mode,transportName})=>{
       localStorage.setItem('nyx.releaseNotes.2026-09-26-nyx-1.3.6.7.seen','2026-09-26-nyx-1.3.6.7');
       localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');
-      localStorage.setItem('nyx.browserShellMode','true');localStorage.setItem('nyx.browserMode',mode);
+      localStorage.setItem('nyx.workspaceShellMode','true');localStorage.setItem('nyx.workspaceMode',mode);
       localStorage.setItem('nyx.transport',transportName);localStorage.setItem('nyx.wispUrl','wss://fixture.test/wisp/');
       localStorage.setItem('nyx.httpBridge','false');
       localStorage.setItem('tutsi.customize.seen','1');
@@ -120,11 +120,11 @@ try{
     }
     await page.goto(base+'/'+brand);
     if(brand==='nyx'){
-      await page.locator('[data-browser-shell-url]').waitFor({state:'attached'});
+      await page.locator('[data-workspace-shell-url]').waitFor({state:'attached'});
       await page.getByRole('button',{name:'Got it',exact:true}).click();
       await page.locator('#nyxStudyHubStartup').waitFor({state:'detached'});
-      await page.locator('[data-browser-shell-search]').evaluate((form,handshake)=>{
-        form.querySelector('[data-browser-shell-url]').value=handshake?'https://duckduckgo.com/?q=nyx':'https://discord.com/app';
+      await page.locator('[data-workspace-shell-search]').evaluate((form,handshake)=>{
+        form.querySelector('[data-workspace-shell-url]').value=handshake?'https://duckduckgo.com/?q=nyx':'https://discord.com/app';
         form.requestSubmit();
       },process.argv.includes('--handshake'));
     }else{
@@ -132,7 +132,7 @@ try{
       await page.locator('#studyready-startup').waitFor({state:'detached'});
       await page.fill('#query','https://discord.com/app');await page.locator('#search button').click();
     }
-    const frame=page.frameLocator(brand==='nyx'?'iframe.view.active':'#browser-stage iframe:not([hidden])');
+    const frame=page.frameLocator(brand==='nyx'?'iframe.view.active':'#workspace-stage iframe:not([hidden])');
     await frame.locator('#channel-b').waitFor();
     if(process.argv.includes('--repair')){
       await frame.locator('#accept-cookies').evaluate(button=>button.click());
@@ -162,8 +162,8 @@ try{
       await page.evaluate(async()=>{
         for(const registration of await navigator.serviceWorker.getRegistrations())await registration.unregister();
       });
-      await page.locator('[data-browser-shell-search]').evaluate(form=>{
-        form.querySelector('[data-browser-shell-url]').value='https://duckduckgo.com/?q=worker-recovery';
+      await page.locator('[data-workspace-shell-search]').evaluate(form=>{
+        form.querySelector('[data-workspace-shell-url]').value='https://duckduckgo.com/?q=worker-recovery';
         form.requestSubmit();
       });
       await page.waitForTimeout(3000);
@@ -177,8 +177,8 @@ try{
           return registration;
         };
       });
-      await page.locator('[data-browser-shell-search]').evaluate(form=>{
-        form.querySelector('[data-browser-shell-url]').value='https://duckduckgo.com/?q=worker-race';
+      await page.locator('[data-workspace-shell-search]').evaluate(form=>{
+        form.querySelector('[data-workspace-shell-url]').value='https://duckduckgo.com/?q=worker-race';
         form.requestSubmit();
       });
       await page.waitForTimeout(3000);
@@ -229,7 +229,7 @@ try{
     await context.close();
   }
 }finally{
-  await browser?.close();
+  await workspace?.close();
   if(fixtureServer){fixtureServer.closeAllConnections();await new Promise(resolve=>fixtureServer.close(resolve));}
   if(child.exitCode===null && child.signalCode===null){
     const closed=once(child,'exit');child.disconnect();

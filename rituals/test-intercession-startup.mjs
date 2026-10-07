@@ -12,10 +12,10 @@ const server=createServer((req,res)=>{
   res.end('<!doctype html><title>Startup fixture</title>');
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
-const browser=await chromium.launch();
+const workspace=await chromium.launch();
 try{
-  const page=await browser.newPage();await page.goto(`http://127.0.0.1:${server.address().port}/`);
-  await page.evaluate(async()=>{window.loader=await import('/loader.mjs');await Promise.all(Array.from({length:20},()=>loader.loadProxyScript('/engine.js',()=>window.engineReady)));});
+  const page=await workspace.newPage();await page.goto(`http://127.0.0.1:${server.address().port}/`);
+  await page.evaluate(async()=>{window.loader=await import('/loader.mjs'); for(const [oldName,newName] of [['loadProxyScript','loadConnectionScript'],['waitForProxyController','waitForConnectionController'],['trackProxyController','trackConnectionController']]){if(loader[oldName]!==loader[newName])throw Error('Legacy alias mismatch: '+oldName)}await Promise.all(Array.from({length:20},()=>loader.loadProxyScript('/engine.js',()=>window.engineReady)));});
   assert.equal(requests,2,'Concurrent startup shares one bounded retry after a failed script');
   assert.equal(await page.locator('script[src="/engine.js"]').count(),1,'Failed script removed');
   const incomplete=await page.evaluate(async()=>{try{await loader.loadProxyScript('/incomplete.js',()=>false)}catch(e){return e.message}});
@@ -23,4 +23,4 @@ try{
   await page.evaluate(async()=>{await loader.waitForProxyController({wait:()=>new Promise(r=>setTimeout(r,5500))});});
   assert.match(await page.evaluate(async()=>{try{await loader.waitForProxyController({wait:()=>new Promise(()=>{})},25)}catch(e){return e.message}}),/too long/);
   console.log('PASS shared proxy startup: script failure recovery, deduplication, cleanup, slow controller and bounded timeout.');
-}finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}
+}finally{await workspace.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

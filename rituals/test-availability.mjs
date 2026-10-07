@@ -1,8 +1,8 @@
 import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
-const browser=await chromium.launch({channel:'msedge'});
+const workspace=await chromium.launch({channel:'msedge'});
 try{
-  const page=await browser.newPage({viewport:{width:1366,height:900}});
+  const page=await workspace.newPage({viewport:{width:1366,height:900}});
   await page.setContent('<body></body>');
   await page.clock.install();
   await page.evaluate(()=>{
@@ -59,4 +59,4 @@ try{
   await page.evaluate(()=>{window.online=true;dispatchEvent(new Event('online'))});
   assert(await warning.isHidden());
   console.log('PASS: transient failure suppression, sustained outage, recovery, default/custom relay failures, offline separation, responsive warning.');
-}finally{await browser.close()}
+}finally{await workspace.close()}

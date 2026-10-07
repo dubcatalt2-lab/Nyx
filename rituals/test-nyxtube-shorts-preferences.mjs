@@ -12,9 +12,9 @@ const cats=[video('CAT00000001',3),video('CAT00000002',3),video('CAT00000003',1)
 const requests=[],errors=[];let releaseSlow,sawSlow;
 const slowStarted=new Promise(resolve=>{sawSlow=resolve;});
 const slowGate=new Promise(resolve=>{releaseSlow=resolve;});
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
-  const context=await browser.newContext({viewport:{width:1280,height:900}});
+  const context=await workspace.newContext({viewport:{width:1280,height:900}});
   await context.route(base+'/**',async route=>{
     const url=new URL(route.request().url());let path=url.pathname;
     if(path.startsWith('/api/')){
@@ -105,4 +105,4 @@ try{
   await host.close();
   assert.deepEqual(errors,[]);
   console.log('PASS Shorts search, mobile controls, hearts/weighted-discovery requests, uninterrupted playback, persisted likes/hides, reset and stale-search cancellation');
-}finally{releaseSlow();await browser.close();}
+}finally{releaseSlow();await workspace.close();}

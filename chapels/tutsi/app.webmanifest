@@ -2,7 +2,7 @@
   "id": "/tutsi",
   "name": "Tutsi Math",
   "short_name": "Tutsi Math",
-  "description": "Tutsi Math browser and apps.",
+  "description": "Tutsi Math workspace and apps.",
   "start_url": "/tutsi?source=installed-app",
   "scope": "/",
   "display": "standalone",

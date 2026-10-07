@@ -7,16 +7,16 @@ const key = 'nyx.publisher.home.v1';
 const lockName = 'nyx.publisher.home';
 
 function visibleHome(target) {
-  if (document.hidden || !document.body.classList.contains('browser-shell') || document.body.classList.contains('nyx-loading-active')) return null;
-  const home = target?.closest?.('.browser-home.nyx-minimal-home:not(.hidden)');
-  if (!home?.isConnected || !home.getClientRects().length || !home.closest('.browser-window.browser-blank')) return null;
+  if (document.hidden || !document.body.classList.contains('workspace-shell') || document.body.classList.contains('nyx-loading-active')) return null;
+  const home = target?.closest?.('.workspace-home.nyx-minimal-home:not(.hidden)');
+  if (!home?.isConnected || !home.getClientRects().length || !home.closest('.workspace-window.workspace-blank')) return null;
   if (getComputedStyle(home).visibility !== 'visible') return null;
   return home;
 }
 
 function visibleSurface(target, frame) {
   if (publisherMode() !== 'adkid') return frame ? null : visibleHome(target);
-  if (document.hidden || !document.body.classList.contains('browser-shell') || document.body.classList.contains('nyx-loading-active')) return null;
+  if (document.hidden || !document.body.classList.contains('workspace-shell') || document.body.classList.contains('nyx-loading-active')) return null;
   const surface = frame || target;
   if (!surface?.isConnected || !surface.getClientRects().length || getComputedStyle(surface).visibility !== 'visible') return null;
   if (frame && !firstPartyApp(frame)) return null;

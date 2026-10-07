@@ -29,9 +29,9 @@ try{
 const fixture=readFileSync(sourceFile('scripts/test-account-controls.mjs'),'utf8');const moduleText=name=>fixture.match(new RegExp('const '+name+'=`([\\s\\S]*?)`;'))[1];
 const web=express();web.use(express.static(process.env.NYX_TEST_STATIC_ROOT||'.'));const webServer=web.listen(0,'127.0.0.1');await new Promise(r=>webServer.once('listening',r));
 const base=process.env.NYX_TEST_BASE_URL||'http://127.0.0.1:'+webServer.address().port;
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
- const page=await browser.newPage({viewport:{width:1365,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const page=await workspace.newPage({viewport:{width:1365,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
  for(const [file,name] of [['firebase-app.js','firebaseAppModule'],['firebase-auth.js','firebaseAuthModule']])await page.route('https://www.gstatic.com/firebasejs/11.10.0/'+file,r=>r.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:moduleText(name)}));
  let channels=[{id:'announcements-91ac52',name:'Announcements',minimumRole:'moderator'},{id:'general',name:'General',minimumRole:'member'},{id:'rules',name:'Rules',minimumRole:'member'},{id:'links-cb70af',name:'Links',minimumRole:'moderator'}],saved;
  await page.route('**/socket.io/**',r=>r.abort());
@@ -55,4 +55,4 @@ try{
  await page.keyboard.press('Escape');await page.screenshot({path:'.codex-artifacts/chat-social/channel-sections.png'});
  await page.setViewportSize({width:390,height:700});await page.getByRole('button',{name:'Show channels'}).click();await page.locator('[data-channel-id="links-cb70af"]').click();await page.waitForFunction(()=>document.querySelector('[data-channel-title]').textContent==='Links');assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert.deepEqual(errors,[]);
  console.log('PASS channel grouping, custom IDs, collapse/unread state, section editor, legacy updates, preserved access/history IDs, auth and mobile navigation');
-}finally{await browser.close();webServer.closeAllConnections();await new Promise(r=>webServer.close(r));}
+}finally{await workspace.close();webServer.closeAllConnections();await new Promise(r=>webServer.close(r));}

@@ -13,11 +13,11 @@ const context=vm.createContext({app,authenticatedNyxChatUser:async req=>{if(req.
 const route=ast.body.find(n=>n.type==='ExpressionStatement'&&n.expression?.callee?.object?.name==='app'&&n.expression?.arguments?.[0]?.value==='/api/chat/members');vm.runInContext(source.slice(route.start,route.end),context);
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
 try{const base=`http://127.0.0.1:${server.address().port}/api/chat/members`;assert.equal((await fetch(base+'?search=member')).status,401);assert.equal((await fetch(base+'?search=%25',{headers:{authorization:'fixture'}})).status,400);const result=await (await fetch(base+'?search=member399',{headers:{authorization:'fixture'}})).json();assert.equal(result.members[0].uid,'member-399');assert.equal(result.members[0].email,undefined);assert.equal((await (await fetch(base+'?search=member',{headers:{authorization:'fixture'}})).json()).members.length,20);console.log('PASS authenticated bounded username lookup finds member beyond bootstrap/directory limits without an email.');}finally{server.closeAllConnections();await new Promise(r=>server.close(r))}
-const browser=await chromium.launch();
+const workspace=await chromium.launch();
 try{
  const fixture=readFileSync(sourceFile('scripts/test-account-controls.mjs'),'utf8'),moduleText=name=>fixture.match(new RegExp('const '+name+'=`([\\s\\S]*?)`;'))[1];
  for(const theme of ['', '?tutsi=1']){
-  const page=await browser.newPage();let bans=[];
+  const page=await workspace.newPage();let bans=[];
   for(const [file,module] of [['firebase-app.js','firebaseAppModule'],['firebase-auth.js','firebaseAuthModule']])await page.route('**/'+file,r=>r.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:moduleText(module)}));
   await page.route('**/socket.io/**',r=>r.abort());
   await page.route('**/api/**',r=>{
@@ -38,4 +38,4 @@ try{
   assert.deepEqual(bans,[{action:'ban',reason:'Fixture reason'}]);await page.close();
  }
  console.log('PASS Nyx/Tutsi Chat remote username suggestions and ban-by-UID submission (fixtures only).');
-}finally{await browser.close()}
+}finally{await workspace.close()}

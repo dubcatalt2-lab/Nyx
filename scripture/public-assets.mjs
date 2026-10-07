@@ -17,7 +17,7 @@ export function publicAssetBoundary(root) {
   try { aliases = JSON.parse(readFileSync(join(root, 'public-modules.json'), 'utf8')).aliases; published = true; }
   catch (error) { if (error.code !== 'ENOENT') throw error; }
   for (const [from, to] of Object.entries(aliases)) {
-    if (!from.startsWith('/') || !from.endsWith('.mjs') || !to.startsWith('/') || !to.endsWith('.js') || privateSourcePath(from) || privateSourcePath(to)) throw Error('Invalid public module mapping');
+    if (!from.startsWith('/') || !/\.(?:mjs|js)$/.test(from) || !to.startsWith('/') || !to.endsWith('.js') || privateSourcePath(from) || privateSourcePath(to)) throw Error('Invalid public module mapping');
   }
   return (req, res, next) => {
     if (privateSourcePath(req.path)) return res.status(404).end();

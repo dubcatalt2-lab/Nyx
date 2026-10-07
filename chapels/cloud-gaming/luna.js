@@ -44,7 +44,7 @@
       if (document.fullscreenElement === dialog) await document.exitFullscreen();
       else await dialog.requestFullscreen();
     } catch {
-      status.textContent = 'Fullscreen is unavailable in this browser.';
+      status.textContent = 'Fullscreen is unavailable in this workspace.';
     }
   });
   if (new URLSearchParams(location.search).get('provider') !== 'stratus') opener.click();

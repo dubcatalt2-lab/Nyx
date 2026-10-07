@@ -6,9 +6,9 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-const browser = await chromium.launch({ headless: true });
+const workspace = await chromium.launch({ headless: true });
 try {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const page = await workspace.newPage({ viewport: { width: 1280, height: 900 } });
   page.setDefaultTimeout(10_000);
   const errors = [];
   const requests = [];
@@ -123,7 +123,7 @@ try {
   const preview = page.frameLocator("[data-preview]");
   await preview.getByText("Hello, Nyx").waitFor();
   assert((await page.locator("[data-preview]").boundingBox()).height > 120, "Preview frame is not visibly sized");
-  assert(await page.locator("[data-output]").isHidden(), "Text output layer covered the live browser preview");
+  assert(await page.locator("[data-output]").isHidden(), "Text output layer covered the live workspace preview");
   assert(await page.locator("[data-preview]").getAttribute("sandbox") === "allow-scripts", "Web preview is not isolated in the expected sandbox");
   assert(await page.locator("[data-refresh-preview]").isEnabled(), "Preview refresh control did not enable after a run");
   await page.locator("[data-refresh-preview]").click();
@@ -183,7 +183,7 @@ try {
   assert(requests.length === 1 && requests[0].provider === "shared", 'Code helper must use the active shared provider');
   assert(requests[0].payload.messages?.[0]?.content.includes("main.py"), 'Code helper must include the current file');
 
-  const shellPage = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const shellPage = await workspace.newPage({ viewport: { width: 1280, height: 900 } });
   shellPage.setDefaultTimeout(12_000);
   const shellErrors = [];
   shellPage.on("pageerror", error => shellErrors.push(error.message));
@@ -191,7 +191,7 @@ try {
     localStorage.setItem("nyx.setupComplete", "true");
     localStorage.setItem("nyx.tosAcceptedVersion", "2026-07-30");
     localStorage.setItem("nyx.releaseNotes.2026-08-31-new-nyx.seen", "2026-08-31-new-nyx");
-    localStorage.setItem("nyx.browserShellMode", "true");
+    localStorage.setItem("nyx.workspaceShellMode", "true");
     localStorage.setItem("nyx.homeDesign", "redesigned");
     if (!localStorage.getItem("nyx.theme")) localStorage.setItem("nyx.theme", "ruby");
     localStorage.setItem("nyx.popupProtection", "true");
@@ -200,21 +200,21 @@ try {
   await shellPage.locator("#nyxStudyHubStartup").waitFor({ state: "hidden" });
   await shellPage.evaluate(() => {
     const box = document.createElement("div");
-    box.id = "browserSearchSuggestions";
-    box.className = "browser-search-suggestions show";
-    box.innerHTML = '<button class="browser-search-suggestion active" type="button">example</button><button class="browser-search-suggestion" type="button">reddit</button>';
+    box.id = "workspaceSuggestions";
+    box.className = "workspace-search-suggestions show";
+    box.innerHTML = '<button class="workspace-search-suggestion active" type="button">example</button><button class="workspace-search-suggestion" type="button">reddit</button>';
     document.body.appendChild(box);
   });
-  const suggestionBox = shellPage.locator(".browser-search-suggestions.show");
+  const suggestionBox = shellPage.locator(".workspace-search-suggestions.show");
   await suggestionBox.waitFor();
   const rubySuggestions = await suggestionBox.evaluate(box => ({
     background: getComputedStyle(box).backgroundColor,
     border: getComputedStyle(box).borderTopColor,
-    row: getComputedStyle(box.querySelector(".browser-search-suggestion.active")).backgroundColor,
-    text: getComputedStyle(box.querySelector(".browser-search-suggestion.active")).color,
-    selection: getComputedStyle(document.querySelector("[data-browser-shell-url]"), "::selection").backgroundColor
+    row: getComputedStyle(box.querySelector(".workspace-search-suggestion.active")).backgroundColor,
+    text: getComputedStyle(box.querySelector(".workspace-search-suggestion.active")).color,
+    selection: getComputedStyle(document.querySelector("[data-workspace-shell-url]"), "::selection").backgroundColor
   }));
-  assert(rubySuggestions.background === "rgba(3, 6, 11, 0.9)" && rubySuggestions.border === "rgba(218, 233, 255, 0.14)" && rubySuggestions.row === "rgba(255, 255, 255, 0.075)" && rubySuggestions.text === "rgb(232, 235, 242)" && rubySuggestions.selection === "rgba(145, 172, 210, 0.34)", `Ruby recolored the browser suggestions (${JSON.stringify(rubySuggestions)})`);
+  assert(rubySuggestions.background === "rgba(3, 6, 11, 0.9)" && rubySuggestions.border === "rgba(218, 233, 255, 0.14)" && rubySuggestions.row === "rgba(255, 255, 255, 0.075)" && rubySuggestions.text === "rgb(232, 235, 242)" && rubySuggestions.selection === "rgba(145, 172, 210, 0.34)", `Ruby recolored the workspace suggestions (${JSON.stringify(rubySuggestions)})`);
   await shellPage.evaluate(() => {
     localStorage.setItem("nyx.customThemeColor", "#ff8800");
     localStorage.setItem("nyx.theme", "custom");
@@ -223,21 +223,21 @@ try {
   const customSuggestions = await suggestionBox.evaluate(box => ({
     background: getComputedStyle(box).backgroundColor,
     border: getComputedStyle(box).borderTopColor,
-    row: getComputedStyle(box.querySelector(".browser-search-suggestion.active")).backgroundColor,
-    text: getComputedStyle(box.querySelector(".browser-search-suggestion.active")).color,
-    selection: getComputedStyle(document.querySelector("[data-browser-shell-url]"), "::selection").backgroundColor
+    row: getComputedStyle(box.querySelector(".workspace-search-suggestion.active")).backgroundColor,
+    text: getComputedStyle(box.querySelector(".workspace-search-suggestion.active")).color,
+    selection: getComputedStyle(document.querySelector("[data-workspace-shell-url]"), "::selection").backgroundColor
   }));
-  assert(JSON.stringify(customSuggestions) === JSON.stringify(rubySuggestions), `Custom theme recolored the browser suggestions (${JSON.stringify(customSuggestions)})`);
+  assert(JSON.stringify(customSuggestions) === JSON.stringify(rubySuggestions), `Custom theme recolored the workspace suggestions (${JSON.stringify(customSuggestions)})`);
   await shellPage.evaluate(() => {
     localStorage.setItem("nyx.theme", "ruby");
     dispatchEvent(new StorageEvent("storage", { key: "nyx.theme" }));
-    document.querySelector("#browserSearchSuggestions")?.remove();
+    document.querySelector("#workspaceSuggestions")?.remove();
   });
   const shellSelections = await shellPage.evaluate(async () => {
     const themes = ["default", "midnight", "ruby", "emerald", "sakura", "fresh", "custom"];
     const selectors = [
-      "[data-browser-shell-url]",
-      ".browser-window.browser-home-page [data-browser-blank-input]",
+      "[data-workspace-shell-url]",
+      ".workspace-window.workspace-home-page [data-workspace-blank-input]",
       ".nyx-minimal-utility-links a",
       "[data-nyx-visual-dock] button"
     ];
@@ -279,12 +279,12 @@ try {
   const discordPopup = await discordPopupPromise;
   assert(discordPopup.url().includes("discord.gg/cAdjYAJs3u"), "Trusted Discord link did not open the invite in a popup tab");
   await discordPopup.close();
-  const customHomePage = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  const customHomePage = await workspace.newPage({ viewport: { width: 1280, height: 900 } });
   await customHomePage.addInitScript(() => {
     localStorage.setItem("nyx.setupComplete", "true");
     localStorage.setItem("nyx.tosAcceptedVersion", "2026-07-30");
     localStorage.setItem("nyx.releaseNotes.2026-08-31-new-nyx.seen", "2026-08-31-new-nyx");
-    localStorage.setItem("nyx.browserShellMode", "true");
+    localStorage.setItem("nyx.workspaceShellMode", "true");
     localStorage.setItem("nyx.homeDesign", "redesigned");
     localStorage.setItem("nyx.customThemeColor", "#22cc88");
     localStorage.setItem("nyx.theme", "custom");
@@ -293,7 +293,7 @@ try {
   await customHomePage.locator("#nyxStudyHubStartup").waitFor({ state: "hidden" });
   await customHomePage.locator('#nyxBeamsBg[data-light-color="#76dfb5"]').waitFor();
   assert((await customHomePage.locator("#nyxBeamsBg").getAttribute("data-light-color")) !== "#a98cff", "Custom theme remained locked to the Violet Beams color");
-  const homeSelection = await customHomePage.locator(".browser-window.browser-home-page [data-browser-blank-input]").evaluate(input => {
+  const homeSelection = await customHomePage.locator(".workspace-window.workspace-home-page [data-workspace-blank-input]").evaluate(input => {
     const style = getComputedStyle(input, "::selection");
     input.focus();
     input.value = "Search DuckDuckGo or type a URL";
@@ -333,16 +333,16 @@ try {
     hoverAccent: getComputedStyle(body).getPropertyValue("--studio-theme-hover-accent").trim()
   }));
   assert(embeddedStudioTheme.background === "rgb(7, 9, 13)" && embeddedStudioTheme.hoverAccent === "#e8a3b4", `Embedded Code Sandbox did not keep neutral surfaces with the Ruby hover color (${JSON.stringify(embeddedStudioTheme)})`);
-  await shellPage.locator("[data-browser-shell-url]").focus();
+  await shellPage.locator("[data-workspace-shell-url]").focus();
   await shellPage.evaluate(() => {
     const box = document.createElement("div");
-    box.id = "browserSearchSuggestions";
-    box.className = "browser-search-suggestions show";
-    box.innerHTML = '<button class="browser-search-suggestion active" type="button">https://duckduckgo.com/?q=nyx</button>';
+    box.id = "workspaceSuggestions";
+    box.className = "workspace-search-suggestions show";
+    box.innerHTML = '<button class="workspace-search-suggestion active" type="button">https://duckduckgo.com/?q=nyx</button>';
     document.body.appendChild(box);
   });
   await shellPage.frameLocator('iframe.view[src*="/apps/code-studio/"]').locator("[data-code-input]").click({ position: { x: 30, y: 30 } });
-  await shellPage.waitForFunction(() => !document.querySelector("#browserSearchSuggestions")?.classList.contains("show"));
+  await shellPage.waitForFunction(() => !document.querySelector("#workspaceSuggestions")?.classList.contains("show"));
 
   await page.setViewportSize({ width: 1024, height: 768 });
   let hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
@@ -357,8 +357,8 @@ try {
   assert(await page.locator(".editor-card").isVisible(), "Closing mobile AI did not return to the editor");
   hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   assert(!hasOverflow, "Code Studio has horizontal overflow on mobile");
-  assert(errors.length === 0, `Browser errors: ${errors.join(" | ")}`);
+  assert(errors.length === 0, `Workspace errors: ${errors.join(" | ")}`);
   console.log("Code Sandbox test: all 16 language paths, AI suggestions, preview, and mobile layout passed");
 } finally {
-  await browser.close();
+  await workspace.close();
 }

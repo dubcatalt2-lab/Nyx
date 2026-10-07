@@ -5,19 +5,19 @@ import {createAiAllowance,aiAllowanceConfig} from '../scripture/ai-allowance.mjs
 import {fullCatalogUid} from '../scripture/ai-owner-catalog.mjs';
 import {memoryFirestore} from './test-ai-allowance.mjs';
 const db=memoryFirestore();let time=Date.now();const store=createKeyStore(db,()=>time);
-const old=await store.issue('member','browser-original','Existing',true);
+const old=await store.issue('member','workspace-original','Existing',true);
 assert.equal((await store.authenticate(old.key)).app,undefined);
-await store.enableNook('member','browser-original');
-await store.enableNook('member','browser-other');
-assert.equal((await store.authenticate(old.key)).device,'browser-original');
+await store.enableNook('member','workspace-original');
+await store.enableNook('member','workspace-other');
+assert.equal((await store.authenticate(old.key)).device,'workspace-original');
 await store.revoke('member');time+=61000;
-const replacement=await store.issue('member','browser-other','Replacement',true,'nook');
-assert.equal((await store.authenticate(replacement.key)).device,'browser-original','Rotation must preserve the original shared pool');
+const replacement=await store.issue('member','workspace-other','Replacement',true,'nook');
+assert.equal((await store.authenticate(replacement.key)).device,'workspace-original','Rotation must preserve the original shared pool');
 await assert.rejects(store.authenticate(old.key),/revoked/);
-await assert.rejects(store.issue('missing',null,'Missing',true,'nook'),/browser allowance/);
-await assert.rejects(store.enableNook('unknown','browser'),/Create a key/);
+await assert.rejects(store.issue('missing',null,'Missing',true,'nook'),/workspace allowance/);
+await assert.rejects(store.enableNook('unknown','workspace'),/Create a key/);
 const allowance=createAiAllowance({db,config:aiAllowanceConfig({}),now:()=>time});
-const ownerUsage=await allowance.nookUsage({uid:fullCatalogUid,app:'nook',device:'browser'});
+const ownerUsage=await allowance.nookUsage({uid:fullCatalogUid,app:'nook',device:'workspace'});
 assert.equal(ownerUsage.unlimited,true);assert.equal(ownerUsage.total.limit,null);
 const fixture={id:'vendor/new',pricing:{prompt:'0.000001',completion:'0.000001'}};
 let providerCalls=0;
@@ -26,6 +26,6 @@ db.records.set('nyxUserAdministration/member',{aiModelRules:[{model:'vendor/new'
 // Use the real policy schema for an explicit denial.
 const {aiModelRule}=await import('../scripture/ai-model-policy.mjs');
 const rules=[{model:'vendor/new',access:'deny'}];assert.equal(aiModelRule({modelRules:rules},'vendor/new')?.access,'deny');
-await assert.rejects(nook.send({body:{model:'vendor/new',messages:[{role:'user',content:'Hi'}]}},{},{uid:'member',firebase:{firestore:db},key:{device:'browser-original'}}),/available to your Nook account/);
+await assert.rejects(nook.send({body:{model:'vendor/new',messages:[{role:'user',content:'Hi'}]}},{},{uid:'member',firebase:{firestore:db},key:{device:'workspace-original'}}),/available to your Nook account/);
 assert.equal(providerCalls,0);
 console.log('PASS existing-key migration, persistent device binding across rotation, revocation, missing-device rejection, owner exemption and current model restrictions');

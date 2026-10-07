@@ -28,9 +28,9 @@ export function startHomeSponsors() {
       rail.className = 'nyx-adkid-sponsors';
       document.body.append(rail);
     } else if (mode !== 'adkid' && rail) {rail.remove();rail = null;}
-    const homes = [...document.querySelectorAll('.browser-home.nyx-minimal-home')];
+    const homes = [...document.querySelectorAll('.workspace-home.nyx-minimal-home')];
     if (rail) {
-      const shell = document.querySelector('.browser-window');
+      const shell = document.querySelector('.workspace-window');
       if (shell) rail.style.left = Math.max(0, shell.getBoundingClientRect().left) + 'px';
       homes.push(rail);
     }
@@ -40,7 +40,7 @@ export function startHomeSponsors() {
       const rect = home.getBoundingClientRect();
       const available = eligible && (mode !== 'adkid' || home === rail);
       const visible = available && !document.hidden && !home.classList.contains('hidden') &&
-        (home === rail || home.closest('.browser-window.browser-blank')) && rect.width >= 900 && rect.height >= 520 &&
+        (home === rail || home.closest('.workspace-window.workspace-blank')) && rect.width >= 900 && rect.height >= 520 &&
         getComputedStyle(home).visibility !== 'hidden' && !document.body.classList.contains('nyx-loading-active');
       if (!available) {clear(state);state.attempted = false;continue;}
       for (const slot of state.slots) slot.host.hidden = !visible || slot.failed;

@@ -18,7 +18,7 @@ for(const [uid,premium,limit] of [['member',false,.05],['premium',true,.5]]){
  const again=await a.begin(who),request=payload(),fitted=await a.reserve(again,'shared',request,price);
  assert(request.max_tokens>0&&request.max_tokens<1200);assert(db.records.get(again.refs.haiku.path).used<=limit*1e6);
  await a.settle(fitted,{input:1,output:1,cost:.001});await a.finish(again,true);now+=61000;
- const exhausted=await a.begin({...who,device:uid+'-another-browser'});
+ const exhausted=await a.begin({...who,device:uid+'-another-workspace'});
  await assert.rejects(a.reserve(exhausted,'shared',payload(),price),error=>error.status===429&&error.message.includes('$'+limit.toFixed(2)));
  await a.finish(exhausted);
  const usage=await a.nookUsage(who);assert.equal(usage.haiku.limitUsd,limit);assert.equal(usage.haiku.remainingUsd,0);

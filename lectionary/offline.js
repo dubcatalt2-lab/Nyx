@@ -1,7 +1,7 @@
 (()=>{
   const config=globalThis.__NYX_STATIC_CONFIG__;
   globalThis.__NYX_RUNTIME_CONFIG__=Object.freeze({wispUrl:config.wisp,wispUrls:[config.wisp],presenceUrl:'',publicOrigin:location.origin,publisherAdsEnabled:false});
-  try{localStorage.setItem('nyx.httpBridge','false');localStorage.setItem('nyx.browserMode','scramjet');}catch{}
+  try{localStorage.setItem('nyx.httpBridge','false');localStorage.setItem('nyx.workspaceMode','scramjet');}catch{}
   const original=globalThis.fetch;
   globalThis.fetch=function(input,options){let url;try{url=new URL(typeof input==='string'?input:input.url,location.href);}catch{return original.call(this,input,options);}if(url.origin===location.origin&&(/\/api\//.test(url.pathname)||/\/socket.io\//.test(url.pathname)||/\/healthz$/.test(url.pathname)))return Promise.resolve(new Response(JSON.stringify({enabled:false,available:false,error:'This feature needs a Nyx backend.'}),{status:503,headers:{'content-type':'application/json'}}));return original.call(this,input,options);};
   const style=document.createElement('style');

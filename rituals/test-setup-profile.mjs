@@ -2,9 +2,9 @@
 import express from 'express';
 import assert from 'node:assert/strict';
 const app=express();app.use(express.static('.'));const server=app.listen(8301);
-const browser=await chromium.launch();
+const workspace=await chromium.launch();
 try{
- const page=await browser.newPage({viewport:{width:1280,height:900}});
+ const page=await workspace.newPage({viewport:{width:1280,height:900}});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.addInitScript(()=>{localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.releaseNotes.2026-08-31-new-nyx.device','2026-08-31-new-nyx')});
  await page.route('https://www.gstatic.com/firebasejs/**/firebase-app.js',r=>r.fulfill({contentType:'text/javascript',body:'export const getApps=()=>[];export const initializeApp=()=>({});'}));
@@ -20,6 +20,6 @@ try{
  await editor.waitFor({state:'detached'});assert(saved);assert.equal(profile.displayName,'My new profile');assert.equal(await page.locator('[data-setup-step="3"].active').count(),1);
  await next.click();assert.equal(await page.locator('[data-setup-step="4"].active').count(),1);
  await page.setViewportSize({width:390,height:844});await page.locator('[data-setup-back]').click();assert.equal(await page.locator('[data-setup-step="3"].active').count(),1);assert(await page.locator('[data-setup-edit-profile]').isVisible());
- const guest=await browser.newPage();await guest.addInitScript(()=>{localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.releaseNotes.2026-08-31-new-nyx.device','2026-08-31-new-nyx')});await guest.goto('http://localhost:8301');await guest.locator('#setupScreen.show').waitFor();await guest.waitForTimeout(1500);await guest.locator('[data-setup-next]').click();await guest.locator('#setupName').fill('');await guest.locator('[data-setup-next]').click();await guest.locator('[data-setup-next]').click();assert.equal(await guest.locator('[data-setup-step="4"].active').count(),1);await guest.locator('[data-setup-back]').click();assert.equal(await guest.locator('[data-setup-step="2"].active').count(),1);
+ const guest=await workspace.newPage();await guest.addInitScript(()=>{localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.releaseNotes.2026-08-31-new-nyx.device','2026-08-31-new-nyx')});await guest.goto('http://localhost:8301');await guest.locator('#setupScreen.show').waitFor();await guest.waitForTimeout(1500);await guest.locator('[data-setup-next]').click();await guest.locator('#setupName').fill('');await guest.locator('[data-setup-next]').click();await guest.locator('[data-setup-next]').click();assert.equal(await guest.locator('[data-setup-step="4"].active').count(),1);await guest.locator('[data-setup-back]').click();assert.equal(await guest.locator('[data-setup-step="2"].active').count(),1);
  assert.deepEqual(errors,[]);console.log('PASS: signup to profile step, keyboard editor opening/save, saved profile, wizard resume, mobile and guest skip/back.');
-}finally{await browser.close();server.close()}
+}finally{await workspace.close();server.close()}

@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
 import {chromium} from 'playwright';
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try {
- const context=await browser.newContext();
+ const context=await workspace.newContext();
  await context.route('http://localhost:9765/**',async r=>{
   const path=new URL(r.request().url()).pathname;
   if(path.startsWith('/api/'))return r.fulfill({json:{}});
@@ -27,4 +27,4 @@ try {
  await p.frameLocator('#studyready-startup').getByRole('heading',{name:'My courses',exact:true}).click();
  await p.waitForTimeout(3400);assert(await cover.isVisible());assert.equal(await cover.getAttribute('data-staying'),'true');
  console.log('PASS built Drop study screen, three-second reveal, title restore and interaction retains lessons');
-} finally {await browser.close();}
+} finally {await workspace.close();}

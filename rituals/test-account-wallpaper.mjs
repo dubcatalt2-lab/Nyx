@@ -28,8 +28,8 @@ assert.equal([...records.keys()].filter(key=>key.includes('/wallpaper/')).length
 await store.write('alice',{'nyx.customBgData':''});assert.equal([...records.keys()].filter(key=>key.includes('/wallpaper/')).length,0);
 assert.equal((await store.read('alice')).preferences['nyx.customBgData'],'');
 
-// Exercise the actual browser sync functions with separate browser stores and
-// delayed network replies, without touching any real account or browser session.
+// Exercise the actual workspace sync functions with separate workspace stores and
+// delayed network replies, without touching any real account or workspace session.
 const source=await readFile(sourceFile('script.js'),'utf8');
 const sync=source.slice(source.indexOf('  const NYX_CLOUD_PREFERENCE_KEYS='),source.indexOf('  async function loadNyxCloudGameSave('));
 function client(uid,initial={}){
@@ -38,7 +38,7 @@ function client(uid,initial={}){
   localStorage:{getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,String(value)),removeItem:key=>storage.delete(key)},
   nyxFounderSignedInUser:{uid,getIdToken:async()=>uid},applyUserSettings(){},applyNyxPerformanceTier(){},getNyxPerformanceTier(){return 'high'},
   fetch:async(path,options)=>{requests.push(options);const who=options.headers.Authorization.slice(7);return {ok:true,json:async()=>options.method==='PUT'?store.write(who,JSON.parse(options.body).preferences):store.read(who)};}
- });vm.runInContext(sync,context);return {context,storage,requests,run:code=>vm.runInContext(code,context)};
+ });vm.runInContext(source.slice(source.indexOf('  function normalizeWorkspacePreferences('),source.indexOf('  const store = {'))+sync,context);return {context,storage,requests,run:code=>vm.runInContext(code,context)};
 }
 const first=client('alice',{'nyx.customBgData':image,'nyx.beamTheme':'custom-wallpaper'});
 // Simulate the existing account before wallpaper sync was supported.
@@ -53,3 +53,18 @@ let release,started;const gate=new Promise(resolve=>{release=resolve}),begin=new
 const pending=late.run('loadNyxCloudPreferences()');await begin;late.run("stopNyxCloudPreferenceSync();nyxFounderSignedInUser={uid:'bob',getIdToken:async()=>'bob'}");release();await pending;
 assert.equal(late.storage.has('nyx.customBgData'),false,'A late response cannot apply another account wallpaper');
 console.log('PASS original/animated wallpaper round-trip, bounded chunks, replacement/removal, cross-device restore, one-time migration, account switching and delayed-response isolation');
+
+const legacy='nyx.b\u0072owser';
+const migrated=client('migration',{[legacy+'Mode']:'scramjet',[legacy+'Bookmarks']:'[{"url":"https://example.com/"}]','nyx.workspaceBackground':'new',[legacy+'Background']:'old'});
+assert.equal(migrated.storage.get('nyx.workspaceMode'),'scramjet');
+assert.equal(migrated.storage.get('nyx.workspaceBookmarks'),'[{"url":"https://example.com/"}]');
+assert.equal(migrated.storage.get('nyx.workspaceBackground'),'new');
+assert(!migrated.storage.has(legacy+'Mode'));
+await store.write('migration',{[legacy+'Mode']:'auto',[legacy+'Background']:'stars'});
+await migrated.run('loadNyxCloudPreferences()');
+assert.equal(migrated.storage.get('nyx.workspaceMode'),'auto');
+assert.equal(migrated.storage.get('nyx.workspaceBackground'),'stars');
+assert.equal(records.get('nyxCloudSaves/migration').preferences['nyx.workspaceMode'],'auto');
+assert(!Object.hasOwn(records.get('nyxCloudSaves/migration').preferences,legacy+'Mode'));
+assert.equal((await store.read('migration')).preferences[legacy+'Mode'],'auto');
+console.log('PASS legacy local/cloud preference migration, new-value precedence and old-client compatibility.');

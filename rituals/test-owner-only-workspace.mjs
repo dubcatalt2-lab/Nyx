@@ -5,10 +5,10 @@ import express from 'express';
 import {chromium} from 'playwright';
 const fixture=readFileSync(sourceFile('scripts/test-account-controls.mjs'),'utf8'),moduleText=name=>fixture.match(new RegExp('const '+name+'=`([\\s\\S]*?)`;'))[1];
 const app=express();app.use(express.static(process.env.NYX_TEST_STATIC_ROOT||'dist'));const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{for(const role of ['admin','owner']){
- const page=await browser.newPage();let dashboardRequests=0;const founder=role==='owner';
- await page.addInitScript(()=>{for(const [k,v] of Object.entries({'nyx.setupComplete':'true','nyx.tosAcceptedVersion':'2026-07-30','nyx.releaseNotes.2026-09-14-nyx-1.0.3.seen':'2026-09-14-nyx-1.0.3','nyx.browserShellMode':'true','nyx.homeDesign':'redesigned'}))localStorage.setItem(k,v)});
+ const page=await workspace.newPage();let dashboardRequests=0;const founder=role==='owner';
+ await page.addInitScript(()=>{for(const [k,v] of Object.entries({'nyx.setupComplete':'true','nyx.tosAcceptedVersion':'2026-07-30','nyx.releaseNotes.2026-09-14-nyx-1.0.3.seen':'2026-09-14-nyx-1.0.3','nyx.workspaceShellMode':'true','nyx.homeDesign':'redesigned'}))localStorage.setItem(k,v)});
  for(const [file,module] of [['firebase-app.js','firebaseAppModule'],['firebase-auth.js','firebaseAuthModule']])await page.route('https://www.gstatic.com/firebasejs/11.10.0/'+file,r=>r.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:moduleText(module)}));
  await page.route('**/api/**',r=>{const path=new URL(r.request().url()).pathname;
  if(path==='/api/founder-profile/auth-config')return r.fulfill({json:{enabled:true,projectId:'nyx-test',apiKey:'test',ownerConfigured:true}});
@@ -25,4 +25,4 @@ try{for(const role of ['admin','owner']){
  if(founder){await entry.click();await page.locator('.nyx-owner-dashboard-overlay').waitFor();await page.waitForFunction(()=>document.querySelector('.nyx-owner-dashboard-overlay')?.textContent.includes('Fixture dashboard'));assert(dashboardRequests>0);}else assert.equal(dashboardRequests,0);
  await page.close();
 }console.log('PASS built shell hides Owner Dashboard from staff even with stale dashboard grants; owner entry opens dashboard');
-}finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}
+}finally{await workspace.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

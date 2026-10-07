@@ -4,9 +4,9 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { chromium } from 'playwright';
 
-const browser = await chromium.launch({ headless: true });
+const workspace = await chromium.launch({ headless: true });
 try {
-  const page = await browser.newPage();
+  const page = await workspace.newPage();
   await page.route('https://nyx.test/**', async route => {
     const pathname = new URL(route.request().url()).pathname;
     if (pathname === '/') return route.fulfill({ contentType: 'text/html', body: '<h1>Storage fixture</h1>' });
@@ -44,4 +44,4 @@ try {
   assert.match(after.chunks.join(''), /fastly.jsdelivr.net/);
   assert.ok(!JSON.stringify(after).includes('not-stored'));
   console.log('IndexedDB reload preserved pending batch identity, atomic progress and download data without credentials.');
-} finally { await browser.close(); }
+} finally { await workspace.close(); }

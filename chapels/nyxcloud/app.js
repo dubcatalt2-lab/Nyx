@@ -73,7 +73,7 @@ $('disconnect').onclick=()=>{
   const panel=document.createElement('div');panel.className='vm-loading';panel.innerHTML='<section class="boot-card"><p class="boot-eyebrow">NYXCLOUD</p><h1>Desktop disconnected</h1><p class="boot-message">Your desktop follows its normal inactivity limits.</p><button class="boot-retry">Open desktop</button></section>';
   panel.querySelector('button').onclick=connect;$('screen').append(panel);
 };
-$('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('screen').requestFullscreen();}catch{status('Fullscreen is unavailable in this browser.');}};
+$('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('screen').requestFullscreen();}catch{status('Fullscreen is unavailable in this workspace.');}};
 window.addEventListener('pagehide',()=>{wanted=false;stop();});
 async function initialize(){try{
   const response=await fetch('/api/founder-profile/auth-config',{cache:'no-store'});if(!response.ok)throw Error('Account service unavailable.');const config=await response.json();

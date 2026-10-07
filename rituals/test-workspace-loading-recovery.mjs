@@ -9,13 +9,13 @@ app.use((req,res,next)=>{res.set('Service-Worker-Allowed','/');next();});
 app.use(express.static(root));app.use(express.static('dist'));
 const server=app.listen(0,'127.0.0.1');await new Promise(resolve=>server.once('listening',resolve));const base='http://127.0.0.1:'+server.address().port;
 const aliases=root==='dist'?JSON.parse(await readFile(sourceFile('dist/frontend-assets.json'),'utf8')).aliases:{};
-const browser=await chromium.launch({channel:'msedge'});
+const workspace=await chromium.launch({channel:'msedge'});
 try{for(const brand of (process.env.NYX_TEST_BRANDS||'tutsi,drop,nyx').split(',')){
- const context=await browser.newContext();
+ const context=await workspace.newContext();
  await context.addInitScript(()=>{
  localStorage.setItem('tutsi.customize.seen','1');localStorage.setItem('tutsi.settings.v1',JSON.stringify({closePrevention:false,httpBridge:true,transport:'epoxy'}));
  localStorage.setItem('drop.setupComplete','1');localStorage.setItem('drop.settings',JSON.stringify({connection:'bridge',restore:false}));
- localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.releaseNotes.2026-09-26-nyx-1.3.6.7.seen','2026-09-26-nyx-1.3.6.7');localStorage.setItem('nyx.browserMode','scramjet');localStorage.setItem('nyx.transport','epoxy');
+ localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.releaseNotes.2026-09-26-nyx-1.3.6.7.seen','2026-09-26-nyx-1.3.6.7');localStorage.setItem('nyx.workspaceMode','scramjet');localStorage.setItem('nyx.transport','epoxy');
  });
  await context.route('**/api/**',r=>r.fulfill({json:{}}));
  await context.route('**/api/tutsi-relay/sessions',r=>r.fulfill({json:{token:'fixture'}}));
@@ -25,20 +25,20 @@ try{for(const brand of (process.env.NYX_TEST_BRANDS||'tutsi,drop,nyx').split(','
  if(brand!=='nyx')await context.route(url=>url.pathname==='/apps/tutsi/frame-navigation.mjs'||url.pathname===aliases['/apps/tutsi/frame-navigation.mjs'],async r=>{const text=await readFile(sourceFile('apps/tutsi/frame-navigation.mjs'),'utf8');await r.fulfill({contentType:'text/javascript',body:text.replace('timeoutMs=25000','timeoutMs=2000')});});
  const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.goto(base+(brand==='nyx'?'/index.html':'/apps/'+brand+'/'));await page.waitForTimeout(8500);
- const query=page.locator(brand==='nyx'?'[data-browser-blank-input]:visible':'#query').first();
+ const query=page.locator(brand==='nyx'?'[data-workspace-blank-input]:visible':'#query').first();
  assert.match(await query.getAttribute('placeholder'),/S3ARC4/);
  await query.fill('https://fixture.test/recovered');await query.press('Enter');
- const selector=brand==='nyx'?'.browser-body iframe.view.active':brand==='tutsi'?'#browser-stage iframe:not([hidden])':'#stage iframe:not([hidden])';
+ const selector=brand==='nyx'?'.workspace-body iframe.view.active':brand==='tutsi'?'#workspace-stage iframe:not([hidden])':'#stage iframe:not([hidden])';
  const frame=()=>page.frameLocator(selector);
  try{await frame().getByRole('heading',{name:'/recovered',exact:true}).waitFor({timeout:25000});}catch(e){console.log(brand,'errors',errors,'body',(await page.locator('body').innerText()).slice(-600));throw e;}
  if(brand!=='nyx'){
   const address=page.locator('#address');await address.fill('https://fixture.test/empty');await address.press('Enter');
-  const retry=brand==='tutsi'?page.locator('.browser-status:visible button'):page.locator('#retryPage');
+  const retry=brand==='tutsi'?page.locator('.workspace-status:visible button'):page.locator('#retryPage');
   await frame().getByRole('heading',{name:'/empty',exact:true}).waitFor({timeout:15000});assert.equal(await retry.isVisible(),false,'Recovery must not require a retry page');
   await page.locator('#reload').click();await frame().getByRole('heading',{name:'/empty',exact:true}).waitFor();
  }
  if(brand==='nyx'){
-  const address=page.locator('[data-browser-shell-url]:visible').first();await address.fill('https://fixture.test/consent');await address.press('Enter');
+  const address=page.locator('[data-workspace-shell-url]:visible').first();await address.fill('https://fixture.test/consent');await address.press('Enter');
   const accept=frame().getByRole('button',{name:'Accept cookies'});await accept.waitFor();
   await frame().locator('body').evaluate(body=>body.dataset.instance='preserve');
   await page.waitForTimeout(13000);
@@ -48,4 +48,4 @@ try{for(const brand of (process.env.NYX_TEST_BRANDS||'tutsi,drop,nyx').split(','
  }
  assert.deepEqual(errors,[]);console.log('PASS',brand,'stale connection recovered; labels work; automatic empty-page recovery and reload checked where applicable');
  await context.close();
-}}finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
+}}finally{await workspace.close();await new Promise(resolve=>server.close(resolve));}

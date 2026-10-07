@@ -4,7 +4,7 @@
   --bg:url("../assets/backgrounds/nyx-blue-light-trails.jpg");
   --bg-render:var(--bg);
   --bg-enhanced-render:var(--bg-render);
-  --browser-bg-render:url("../assets/backgrounds/nyx-blue-light-trails.jpg");
+  --workspace-bg-render:url("../assets/backgrounds/nyx-blue-light-trails.jpg");
   --glass:rgba(8,7,13,.82);
   --glass2:rgba(190,148,255,.08);
   --glass-panel:rgba(8,7,13,.54);
@@ -86,7 +86,7 @@ body::before{
   pointer-events:none;
   user-select:none;
 }
-body.browser-content-active .nyx-wave-bg,
+body.workspace-content-active .nyx-wave-bg,
 body.custom-bg-active .nyx-wave-bg{
   display:none;
 }
@@ -176,24 +176,24 @@ body.theme-ruby .custom-bg-image,
 body.theme-emerald .custom-bg-image,
 body.theme-sakura .custom-bg-image,
 body.theme-fresh .custom-bg-image{display:none!important}
-body:not(.browser-shell).theme-ruby .glass-card,
-body:not(.browser-shell).theme-ruby .quick-tile,
-body:not(.browser-shell).theme-ruby .settings-card{background:linear-gradient(145deg,rgba(248,113,113,.28),rgba(127,29,29,.42))}
-body:not(.browser-shell).theme-emerald .glass-card,
-body:not(.browser-shell).theme-emerald .quick-tile,
-body:not(.browser-shell).theme-emerald .settings-card{background:linear-gradient(145deg,rgba(52,211,153,.28),rgba(6,78,59,.42))}
-body:not(.browser-shell).theme-sakura .glass-card,
-body:not(.browser-shell).theme-sakura .quick-tile,
-body:not(.browser-shell).theme-sakura .settings-card{background:linear-gradient(145deg,rgba(249,168,212,.3),rgba(190,24,93,.38))}
-body:not(.browser-shell).theme-ruby .browser-mode-menu,
-body:not(.browser-shell).theme-ruby .window,
-body:not(.browser-shell).theme-ruby .settings-panel{background:linear-gradient(145deg,rgba(254,202,202,.38),rgba(239,68,68,.28),rgba(127,29,29,.42))!important}
-body:not(.browser-shell).theme-emerald .browser-mode-menu,
-body:not(.browser-shell).theme-emerald .window,
-body:not(.browser-shell).theme-emerald .settings-panel{background:linear-gradient(145deg,rgba(187,247,208,.34),rgba(16,185,129,.28),rgba(6,95,70,.42))!important}
-body:not(.browser-shell).theme-sakura .browser-mode-menu,
-body:not(.browser-shell).theme-sakura .window,
-body:not(.browser-shell).theme-sakura .settings-panel{background:linear-gradient(145deg,rgba(252,231,243,.36),rgba(244,114,182,.3),rgba(190,24,93,.4))!important}
+body:not(.workspace-shell).theme-ruby .glass-card,
+body:not(.workspace-shell).theme-ruby .quick-tile,
+body:not(.workspace-shell).theme-ruby .settings-card{background:linear-gradient(145deg,rgba(248,113,113,.28),rgba(127,29,29,.42))}
+body:not(.workspace-shell).theme-emerald .glass-card,
+body:not(.workspace-shell).theme-emerald .quick-tile,
+body:not(.workspace-shell).theme-emerald .settings-card{background:linear-gradient(145deg,rgba(52,211,153,.28),rgba(6,78,59,.42))}
+body:not(.workspace-shell).theme-sakura .glass-card,
+body:not(.workspace-shell).theme-sakura .quick-tile,
+body:not(.workspace-shell).theme-sakura .settings-card{background:linear-gradient(145deg,rgba(249,168,212,.3),rgba(190,24,93,.38))}
+body:not(.workspace-shell).theme-ruby .workspace-mode-menu,
+body:not(.workspace-shell).theme-ruby .window,
+body:not(.workspace-shell).theme-ruby .settings-panel{background:linear-gradient(145deg,rgba(254,202,202,.38),rgba(239,68,68,.28),rgba(127,29,29,.42))!important}
+body:not(.workspace-shell).theme-emerald .workspace-mode-menu,
+body:not(.workspace-shell).theme-emerald .window,
+body:not(.workspace-shell).theme-emerald .settings-panel{background:linear-gradient(145deg,rgba(187,247,208,.34),rgba(16,185,129,.28),rgba(6,95,70,.42))!important}
+body:not(.workspace-shell).theme-sakura .workspace-mode-menu,
+body:not(.workspace-shell).theme-sakura .window,
+body:not(.workspace-shell).theme-sakura .settings-panel{background:linear-gradient(145deg,rgba(252,231,243,.36),rgba(244,114,182,.3),rgba(190,24,93,.4))!important}
 body.theme-ruby{
   --weather-text:#fff1f2;
   --weather-muted:#ffe4e6;
@@ -213,108 +213,108 @@ body.theme-sakura{
   --weather-control-border:rgba(249,168,212,.36);
 }
 
-body:not(.browser-shell).theme-ruby button,
-body:not(.browser-shell).theme-ruby select,
-body:not(.browser-shell).theme-ruby input{border-color:rgba(248,113,113,.38)}
-body:not(.browser-shell).theme-emerald button,
-body:not(.browser-shell).theme-emerald select,
-body:not(.browser-shell).theme-emerald input{border-color:rgba(52,211,153,.38)}
-body:not(.browser-shell).theme-sakura button,
-body:not(.browser-shell).theme-sakura select,
-body:not(.browser-shell).theme-sakura input{border-color:rgba(249,168,212,.42)}
-body:not(.browser-shell).theme-ruby .window button,
-body:not(.browser-shell).theme-ruby .quick-tile,
-body:not(.browser-shell).theme-ruby .settings-action{background:linear-gradient(145deg,rgba(248,113,113,.42),rgba(127,29,29,.76))!important}
-body:not(.browser-shell).theme-emerald .window button,
-body:not(.browser-shell).theme-emerald .quick-tile,
-body:not(.browser-shell).theme-emerald .settings-action{background:linear-gradient(145deg,rgba(52,211,153,.42),rgba(6,78,59,.76))!important}
-body:not(.browser-shell).theme-sakura .window button,
-body:not(.browser-shell).theme-sakura .quick-tile,
-body:not(.browser-shell).theme-sakura .settings-action{background:linear-gradient(145deg,rgba(249,168,212,.48),rgba(157,23,77,.68))!important}
-body:not(.browser-shell).theme-ruby h1,
-body:not(.browser-shell).theme-ruby h2,
-body:not(.browser-shell).theme-ruby h3,
-body:not(.browser-shell).theme-ruby .home-heading,
-body:not(.browser-shell).theme-ruby .titlebar-title,
-body:not(.browser-shell).theme-ruby .desktop-center-clock,
-body:not(.browser-shell).theme-ruby .browser-shell-clock{background:linear-gradient(90deg,#fecaca,#fb7185,#991b1b);-webkit-background-clip:text;background-clip:text;color:transparent!important}
-body:not(.browser-shell).theme-emerald h1,
-body:not(.browser-shell).theme-emerald h2,
-body:not(.browser-shell).theme-emerald h3,
-body:not(.browser-shell).theme-emerald .home-heading,
-body:not(.browser-shell).theme-emerald .titlebar-title,
-body:not(.browser-shell).theme-emerald .desktop-center-clock,
-body:not(.browser-shell).theme-emerald .browser-shell-clock{background:linear-gradient(90deg,#bbf7d0,#34d399,#065f46);-webkit-background-clip:text;background-clip:text;color:transparent!important}
-body:not(.browser-shell).theme-sakura h1,
-body:not(.browser-shell).theme-sakura h2,
-body:not(.browser-shell).theme-sakura h3,
-body:not(.browser-shell).theme-sakura .home-heading,
-body:not(.browser-shell).theme-sakura .titlebar-title,
-body:not(.browser-shell).theme-sakura .desktop-center-clock,
-body:not(.browser-shell).theme-sakura .browser-shell-clock{background:linear-gradient(90deg,#fce7f3,#f9a8d4,#be185d);-webkit-background-clip:text;background-clip:text;color:transparent!important}
-body:not(.browser-shell).theme-ruby .home-sub,
-body:not(.browser-shell).theme-ruby .settings-main p,
-body:not(.browser-shell).theme-ruby .settings-block label,
-body:not(.browser-shell).theme-ruby .quick-tile span,
-body:not(.browser-shell).theme-ruby .browser-mode-menu button{background:linear-gradient(90deg,#fee2e2,#fb7185);-webkit-background-clip:text;background-clip:text;color:transparent!important}
-body:not(.browser-shell).theme-emerald .home-sub,
-body:not(.browser-shell).theme-emerald .settings-main p,
-body:not(.browser-shell).theme-emerald .settings-block label,
-body:not(.browser-shell).theme-emerald .quick-tile span,
-body:not(.browser-shell).theme-emerald .browser-mode-menu button{background:linear-gradient(90deg,#dcfce7,#34d399);-webkit-background-clip:text;background-clip:text;color:transparent!important}
-body:not(.browser-shell).theme-sakura .home-sub,
-body:not(.browser-shell).theme-sakura .settings-main p,
-body:not(.browser-shell).theme-sakura .settings-block label,
-body:not(.browser-shell).theme-sakura .quick-tile span,
-body:not(.browser-shell).theme-sakura .browser-mode-menu button{background:linear-gradient(90deg,#fce7f3,#f9a8d4);-webkit-background-clip:text;background-clip:text;color:transparent!important}
-body:not(.browser-shell).theme-ruby .urlbar,
-body:not(.browser-shell).theme-ruby select,
-body:not(.browser-shell).theme-ruby input{background:linear-gradient(145deg,rgba(127,29,29,.38),rgba(15,7,9,.74));color:#fee2e2}
-body:not(.browser-shell).theme-emerald .urlbar,
-body:not(.browser-shell).theme-emerald select,
-body:not(.browser-shell).theme-emerald input{background:linear-gradient(145deg,rgba(6,78,59,.38),rgba(5,13,10,.74));color:#dcfce7}
-body:not(.browser-shell).theme-sakura .urlbar,
-body:not(.browser-shell).theme-sakura select,
-body:not(.browser-shell).theme-sakura input{background:linear-gradient(145deg,rgba(157,23,77,.35),rgba(17,8,13,.74));color:#fce7f3}
-body:not(.browser-shell).theme-ruby .browser-mode-menu button,
-body:not(.browser-shell).theme-emerald .browser-mode-menu button,
-body:not(.browser-shell).theme-sakura .browser-mode-menu button,
-body:not(.browser-shell).theme-ruby .browser-bookmark-panel button,
-body:not(.browser-shell).theme-emerald .browser-bookmark-panel button,
-body:not(.browser-shell).theme-sakura .browser-bookmark-panel button{
+body:not(.workspace-shell).theme-ruby button,
+body:not(.workspace-shell).theme-ruby select,
+body:not(.workspace-shell).theme-ruby input{border-color:rgba(248,113,113,.38)}
+body:not(.workspace-shell).theme-emerald button,
+body:not(.workspace-shell).theme-emerald select,
+body:not(.workspace-shell).theme-emerald input{border-color:rgba(52,211,153,.38)}
+body:not(.workspace-shell).theme-sakura button,
+body:not(.workspace-shell).theme-sakura select,
+body:not(.workspace-shell).theme-sakura input{border-color:rgba(249,168,212,.42)}
+body:not(.workspace-shell).theme-ruby .window button,
+body:not(.workspace-shell).theme-ruby .quick-tile,
+body:not(.workspace-shell).theme-ruby .settings-action{background:linear-gradient(145deg,rgba(248,113,113,.42),rgba(127,29,29,.76))!important}
+body:not(.workspace-shell).theme-emerald .window button,
+body:not(.workspace-shell).theme-emerald .quick-tile,
+body:not(.workspace-shell).theme-emerald .settings-action{background:linear-gradient(145deg,rgba(52,211,153,.42),rgba(6,78,59,.76))!important}
+body:not(.workspace-shell).theme-sakura .window button,
+body:not(.workspace-shell).theme-sakura .quick-tile,
+body:not(.workspace-shell).theme-sakura .settings-action{background:linear-gradient(145deg,rgba(249,168,212,.48),rgba(157,23,77,.68))!important}
+body:not(.workspace-shell).theme-ruby h1,
+body:not(.workspace-shell).theme-ruby h2,
+body:not(.workspace-shell).theme-ruby h3,
+body:not(.workspace-shell).theme-ruby .home-heading,
+body:not(.workspace-shell).theme-ruby .titlebar-title,
+body:not(.workspace-shell).theme-ruby .desktop-center-clock,
+body:not(.workspace-shell).theme-ruby .workspace-shell-clock{background:linear-gradient(90deg,#fecaca,#fb7185,#991b1b);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+body:not(.workspace-shell).theme-emerald h1,
+body:not(.workspace-shell).theme-emerald h2,
+body:not(.workspace-shell).theme-emerald h3,
+body:not(.workspace-shell).theme-emerald .home-heading,
+body:not(.workspace-shell).theme-emerald .titlebar-title,
+body:not(.workspace-shell).theme-emerald .desktop-center-clock,
+body:not(.workspace-shell).theme-emerald .workspace-shell-clock{background:linear-gradient(90deg,#bbf7d0,#34d399,#065f46);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+body:not(.workspace-shell).theme-sakura h1,
+body:not(.workspace-shell).theme-sakura h2,
+body:not(.workspace-shell).theme-sakura h3,
+body:not(.workspace-shell).theme-sakura .home-heading,
+body:not(.workspace-shell).theme-sakura .titlebar-title,
+body:not(.workspace-shell).theme-sakura .desktop-center-clock,
+body:not(.workspace-shell).theme-sakura .workspace-shell-clock{background:linear-gradient(90deg,#fce7f3,#f9a8d4,#be185d);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+body:not(.workspace-shell).theme-ruby .home-sub,
+body:not(.workspace-shell).theme-ruby .settings-main p,
+body:not(.workspace-shell).theme-ruby .settings-block label,
+body:not(.workspace-shell).theme-ruby .quick-tile span,
+body:not(.workspace-shell).theme-ruby .workspace-mode-menu button{background:linear-gradient(90deg,#fee2e2,#fb7185);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+body:not(.workspace-shell).theme-emerald .home-sub,
+body:not(.workspace-shell).theme-emerald .settings-main p,
+body:not(.workspace-shell).theme-emerald .settings-block label,
+body:not(.workspace-shell).theme-emerald .quick-tile span,
+body:not(.workspace-shell).theme-emerald .workspace-mode-menu button{background:linear-gradient(90deg,#dcfce7,#34d399);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+body:not(.workspace-shell).theme-sakura .home-sub,
+body:not(.workspace-shell).theme-sakura .settings-main p,
+body:not(.workspace-shell).theme-sakura .settings-block label,
+body:not(.workspace-shell).theme-sakura .quick-tile span,
+body:not(.workspace-shell).theme-sakura .workspace-mode-menu button{background:linear-gradient(90deg,#fce7f3,#f9a8d4);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+body:not(.workspace-shell).theme-ruby .urlbar,
+body:not(.workspace-shell).theme-ruby select,
+body:not(.workspace-shell).theme-ruby input{background:linear-gradient(145deg,rgba(127,29,29,.38),rgba(15,7,9,.74));color:#fee2e2}
+body:not(.workspace-shell).theme-emerald .urlbar,
+body:not(.workspace-shell).theme-emerald select,
+body:not(.workspace-shell).theme-emerald input{background:linear-gradient(145deg,rgba(6,78,59,.38),rgba(5,13,10,.74));color:#dcfce7}
+body:not(.workspace-shell).theme-sakura .urlbar,
+body:not(.workspace-shell).theme-sakura select,
+body:not(.workspace-shell).theme-sakura input{background:linear-gradient(145deg,rgba(157,23,77,.35),rgba(17,8,13,.74));color:#fce7f3}
+body:not(.workspace-shell).theme-ruby .workspace-mode-menu button,
+body:not(.workspace-shell).theme-emerald .workspace-mode-menu button,
+body:not(.workspace-shell).theme-sakura .workspace-mode-menu button,
+body:not(.workspace-shell).theme-ruby .workspace-bookmark-panel button,
+body:not(.workspace-shell).theme-emerald .workspace-bookmark-panel button,
+body:not(.workspace-shell).theme-sakura .workspace-bookmark-panel button{
   color:var(--theme-strong)!important;
   -webkit-text-fill-color:var(--theme-strong)!important;
   background-clip:border-box!important;
   -webkit-background-clip:border-box!important;
   text-shadow:0 1px 8px rgba(0,0,0,.48);
 }
-body:not(.browser-shell).theme-ruby .browser-mode-menu,
-body:not(.browser-shell).theme-emerald .browser-mode-menu,
-body:not(.browser-shell).theme-sakura .browser-mode-menu,
-body:not(.browser-shell).theme-ruby .browser-bookmark-panel,
-body:not(.browser-shell).theme-emerald .browser-bookmark-panel,
-body:not(.browser-shell).theme-sakura .browser-bookmark-panel{
+body:not(.workspace-shell).theme-ruby .workspace-mode-menu,
+body:not(.workspace-shell).theme-emerald .workspace-mode-menu,
+body:not(.workspace-shell).theme-sakura .workspace-mode-menu,
+body:not(.workspace-shell).theme-ruby .workspace-bookmark-panel,
+body:not(.workspace-shell).theme-emerald .workspace-bookmark-panel,
+body:not(.workspace-shell).theme-sakura .workspace-bookmark-panel{
   background:linear-gradient(145deg,color-mix(in srgb,var(--theme-b) 76%,#05070d),color-mix(in srgb,var(--theme-a) 32%,#05070d))!important;
   border-color:color-mix(in srgb,var(--theme-a) 52%,rgba(255,255,255,.22))!important;
 }
-body:not(.browser-shell).theme-ruby .quick-tile:not(:hover),
-body:not(.browser-shell).theme-emerald .quick-tile:not(:hover),
-body:not(.browser-shell).theme-sakura .quick-tile:not(:hover){
+body:not(.workspace-shell).theme-ruby .quick-tile:not(:hover),
+body:not(.workspace-shell).theme-emerald .quick-tile:not(:hover),
+body:not(.workspace-shell).theme-sakura .quick-tile:not(:hover){
   background:transparent!important;
   border-color:transparent!important;
   box-shadow:none!important;
   backdrop-filter:none!important;
 }
-body:not(.browser-shell).theme-ruby .quick-tile:hover,
-body:not(.browser-shell).theme-emerald .quick-tile:hover,
-body:not(.browser-shell).theme-sakura .quick-tile:hover{
+body:not(.workspace-shell).theme-ruby .quick-tile:hover,
+body:not(.workspace-shell).theme-emerald .quick-tile:hover,
+body:not(.workspace-shell).theme-sakura .quick-tile:hover{
   background:linear-gradient(145deg,color-mix(in srgb,var(--theme-a) 34%,rgba(255,255,255,.16)),color-mix(in srgb,var(--theme-b) 48%,rgba(7,10,16,.7)))!important;
   border-color:color-mix(in srgb,var(--theme-a) 45%,rgba(255,255,255,.22))!important;
 }
-body:not(.browser-shell).theme-ruby select option,
-body:not(.browser-shell).theme-emerald select option,
-body:not(.browser-shell).theme-sakura select option,
-body:not(.browser-shell).theme-fresh select option{
+body:not(.workspace-shell).theme-ruby select option,
+body:not(.workspace-shell).theme-emerald select option,
+body:not(.workspace-shell).theme-sakura select option,
+body:not(.workspace-shell).theme-fresh select option{
   color:#f8fafc!important;
   background:#111827!important;
 }
@@ -333,14 +333,14 @@ body::after{
   overflow:hidden;
   display:none;
 }
-body.browser-shell .quick-tile,
-body.browser-shell .settings-action,
-body.browser-shell .settings-preset,
-body.browser-shell .settings-side button{
+body.workspace-shell .quick-tile,
+body.workspace-shell .settings-action,
+body.workspace-shell .settings-preset,
+body.workspace-shell .settings-side button{
   border-radius:24px;
 }
-body.browser-shell .quick-icon,
-body.browser-shell .settings-preset .quick-icon{
+body.workspace-shell .quick-icon,
+body.workspace-shell .settings-preset .quick-icon{
   border-radius:22px;
 }
 video::cue{
@@ -473,25 +473,25 @@ body.effect-amount-medium #visualEffects i:nth-child(n+11){display:none}
 .top-fullscreen{height:22px;min-width:28px;border:1px solid rgba(255,255,255,.16);border-radius:7px;background:var(--glass-control);color:white;padding:0 8px;font-size:0;position:relative}
 .top-fullscreen::before{content:"";position:absolute;left:50%;top:50%;width:11px;height:9px;border:1.8px solid currentColor;transform:translate(-50%,-50%);border-radius:1px}
 .top-fullscreen:hover{background:rgba(255,255,255,.16)}
-body.browser-shell{
+body.workspace-shell{
   --safe-bottom:12px;
 }
-body.browser-shell .brand-button,
-body.browser-shell .user-chip{
+body.workspace-shell .brand-button,
+body.workspace-shell .user-chip{
   color:#eaf2ff;
 }
-body.browser-shell .brand-button{
+body.workspace-shell .brand-button{
   display:none;
 }
-body.browser-shell .user-chip{
+body.workspace-shell .user-chip{
   display:none;
 }
-body.browser-shell .top-fullscreen{
+body.workspace-shell .top-fullscreen{
   background:#060b22;
   color:#dbeafe;
   border-color:rgba(63,105,190,.48);
 }
-body.browser-shell .browser-mode-menu{
+body.workspace-shell .workspace-mode-menu{
   position:fixed;
   right:0;
   top:132px;
@@ -511,12 +511,12 @@ body.browser-shell .browser-mode-menu{
   transform-origin:top right;
   transition:opacity .18s ease,transform .18s cubic-bezier(.2,.8,.2,1);
 }
-body.browser-shell.menu-open .browser-mode-menu{
+body.workspace-shell.menu-open .workspace-mode-menu{
   opacity:1;
   pointer-events:auto;
   transform:translateY(0) scale(1);
 }
-body.browser-shell .browser-mode-menu button{
+body.workspace-shell .workspace-mode-menu button{
   width:100%;
   min-height:52px;
   border:0;
@@ -531,80 +531,80 @@ body.browser-shell .browser-mode-menu button{
   font-size:20px;
   font-weight:700;
 }
-body.browser-shell .browser-mode-menu button:hover{
+body.workspace-shell .workspace-mode-menu button:hover{
   background:rgba(255,255,255,.1);
 }
-body.browser-shell .browser-mode-menu hr{
+body.workspace-shell .workspace-mode-menu hr{
   border:0;
   border-top:1px solid rgba(255,255,255,.18);
   margin:0;
 }
-body.browser-shell .desktop-center-clock,
-body.browser-shell .desktop-search{
+body.workspace-shell .desktop-center-clock,
+body.workspace-shell .desktop-search{
   display:none!important;
 }
-body.browser-shell .window.maximized{
+body.workspace-shell .window.maximized{
   inset:var(--bar) 0 0 0!important;
   top:var(--bar)!important;
   height:calc(100dvh - var(--bar))!important;
 }
-body.browser-shell .window:not(.maximized){
+body.workspace-shell .window:not(.maximized){
   border-radius:0 0 8px 8px;
 }
-body.browser-shell{--safe-bottom:12px}
-body.browser-shell .browser-mode-menu{top:96px;right:12px;width:230px;background:#47515f;border-radius:16px}
-body.browser-shell .browser-mode-menu button{min-height:38px;gap:10px;padding:0 13px;font-size:15px}
-body.browser-shell .weather-panel{top:112px}
-body.browser-shell .weather-restore{top:104px;bottom:auto}
-body.browser-shell .window,
-body.browser-shell .glass-card,
-body.browser-shell .settings-card{
+body.workspace-shell{--safe-bottom:12px}
+body.workspace-shell .workspace-mode-menu{top:96px;right:12px;width:230px;background:#47515f;border-radius:16px}
+body.workspace-shell .workspace-mode-menu button{min-height:38px;gap:10px;padding:0 13px;font-size:15px}
+body.workspace-shell .weather-panel{top:112px}
+body.workspace-shell .weather-restore{top:104px;bottom:auto}
+body.workspace-shell .window,
+body.workspace-shell .glass-card,
+body.workspace-shell .settings-card{
   background:linear-gradient(145deg,rgba(55,65,81,.58),rgba(17,24,39,.72));
   border-color:rgba(148,163,184,.22);
 }
-body.browser-shell .titlebar,
-body.browser-shell .browser-tabs,
-body.browser-shell .browser-tools{
+body.workspace-shell .titlebar,
+body.workspace-shell .workspace-tabs,
+body.workspace-shell .workspace-tools{
   background:linear-gradient(180deg,rgba(55,65,81,.82),rgba(17,24,39,.92));
   border-color:rgba(148,163,184,.2);
 }
-body.browser-shell .browser-window.maximized .titlebar,
-body.browser-shell .browser-window.maximized .browser-tabs,
-body.browser-shell .browser-window.maximized .browser-tools{
+body.workspace-shell .workspace-window.maximized .titlebar,
+body.workspace-shell .workspace-window.maximized .workspace-tabs,
+body.workspace-shell .workspace-window.maximized .workspace-tools{
   display:none!important;
 }
-body.browser-shell .browser-window.maximized .browser-body{
+body.workspace-shell .workspace-window.maximized .workspace-body{
   height:100%!important;
   top:0!important;
   background:transparent!important;
 }
-body.browser-shell .browser-window.maximized iframe.view{
+body.workspace-shell .workspace-window.maximized iframe.view{
   height:100%!important;
 }
-body.browser-shell .browser-window.maximized.browser-blank{
+body.workspace-shell .workspace-window.maximized.workspace-blank{
   background:transparent!important;
   border-color:transparent!important;
   box-shadow:none!important;
   backdrop-filter:none!important;
 }
-body.browser-shell .browser-window.maximized.browser-blank::before,
-body.browser-shell .browser-window.maximized.browser-blank::after{
+body.workspace-shell .workspace-window.maximized.workspace-blank::before,
+body.workspace-shell .workspace-window.maximized.workspace-blank::after{
   display:none!important;
 }
-body.browser-shell .weather-panel{
+body.workspace-shell .weather-panel{
   background:linear-gradient(145deg,rgba(71,85,105,.74),rgba(15,23,42,.78));
   border-color:rgba(203,213,225,.2);
 }
-body.browser-shell.custom-bg-active .custom-bg-image{
+body.workspace-shell.custom-bg-active .custom-bg-image{
   display:none!important;
 }
-body.browser-shell .browser-mode-menu button{
+body.workspace-shell .workspace-mode-menu button{
   transition:transform .18s cubic-bezier(.2,.8,.2,1),background .18s ease,border-color .18s ease,box-shadow .18s ease;
 }
-body.browser-shell .browser-mode-menu button:hover{
+body.workspace-shell .workspace-mode-menu button:hover{
   transform:scale(1.06);
 }
-@keyframes browserShellTabOpen{
+@keyframes workspaceShellTabOpen{
   0%{
     opacity:0;
     flex-basis:0;
@@ -628,19 +628,19 @@ body.browser-shell .browser-mode-menu button:hover{
     filter:blur(0);
   }
 }
-@keyframes browserShellTabClose{
+@keyframes workspaceShellTabClose{
   0%{transform:translateX(0) scale(1);opacity:1;filter:none;max-width:180px}
   36%{transform:translateX(30px) rotate(2deg) scale(.99);opacity:1;max-width:180px}
   78%{transform:translateX(-76px) rotate(-4deg) scale(.86);opacity:.72;max-width:180px}
   100%{transform:translateX(-150px) rotate(-5deg) scale(.7);opacity:0;filter:blur(2px);max-width:0;min-width:0;width:0;padding-left:0;padding-right:0;margin-left:-8px}
 }
-@keyframes browserShellPageReveal{
+@keyframes workspaceShellPageReveal{
   0%{opacity:0;transform:translateY(12px) scale(.985);filter:blur(10px)}
   62%{opacity:1;transform:translateY(-2px) scale(1.006);filter:blur(0)}
   100%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}
 }
-body.browser-shell .browser-window.maximized iframe.view.tab-opening{
-  animation:browserShellPageReveal .44s cubic-bezier(.16,.86,.2,1) both;
+body.workspace-shell .workspace-window.maximized iframe.view.tab-opening{
+  animation:workspaceShellPageReveal .44s cubic-bezier(.16,.86,.2,1) both;
   transform-origin:50% 18%;
 }
 .tool-btn[data-reload]{
@@ -729,7 +729,7 @@ body.browser-shell .browser-window.maximized iframe.view.tab-opening{
 .tool-btn[data-reload]:active::before{
   transform:translate(-50%,-50%) rotate(48deg) scale(.92);
 }
-body.browser-shell .browser-bookmark-panel{
+body.workspace-shell .workspace-bookmark-panel{
   position:fixed;
   right:64px;
   top:calc(var(--bar) - 2px);
@@ -744,10 +744,10 @@ body.browser-shell .browser-bookmark-panel{
   box-shadow:0 22px 60px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.12);
   backdrop-filter:blur(14px);
   transform-origin:top right;
-  animation:browserMenuIn .18s cubic-bezier(.2,.8,.2,1) both;
+  animation:workspaceMenuIn .18s cubic-bezier(.2,.8,.2,1) both;
 }
-body.browser-shell .browser-bookmark-panel[hidden]{display:none!important}
-body.browser-shell .browser-bookmark-row{
+body.workspace-shell .workspace-bookmark-panel[hidden]{display:none!important}
+body.workspace-shell .workspace-bookmark-row{
   width:100%;
   display:grid;
   grid-template-columns:1fr 30px;
@@ -755,14 +755,14 @@ body.browser-shell .browser-bookmark-row{
   align-items:center;
   margin:4px 0;
 }
-body.browser-shell .browser-bookmark-open{
+body.workspace-shell .workspace-bookmark-open{
   min-width:0;
   text-align:left;
   border-radius:12px!important;
   padding:10px 12px!important;
   color:#f8fafc;
 }
-body.browser-shell .browser-bookmark-open small{
+body.workspace-shell .workspace-bookmark-open small{
   display:block;
   overflow:hidden;
   text-overflow:ellipsis;
@@ -771,105 +771,105 @@ body.browser-shell .browser-bookmark-open small{
   font-size:11px;
   margin-top:2px;
 }
-body.browser-shell .browser-bookmark-remove{
+body.workspace-shell .workspace-bookmark-remove{
   width:30px!important;
   height:30px!important;
   border-radius:999px!important;
   font-size:15px!important;
 }
-body.browser-shell .browser-bookmark-empty{
+body.workspace-shell .workspace-bookmark-empty{
   margin:4px;
   color:#dbe4f0;
   font-weight:800;
 }
-body.browser-shell .browser-mode-menu{
+body.workspace-shell .workspace-mode-menu{
   top:78px;
 }
-body.browser-shell .window.maximized{
+body.workspace-shell .window.maximized{
   top:78px!important;
   height:calc(100dvh - 78px)!important;
 }
-body.browser-shell .weather-panel{top:92px}
-body.browser-shell .weather-restore{top:84px;bottom:auto}
-body.browser-shell .browser-mode-weather{
+body.workspace-shell .weather-panel{top:92px}
+body.workspace-shell .weather-restore{top:84px;bottom:auto}
+body.workspace-shell .workspace-mode-weather{
   font-size:15px!important;
   color:#f8fafc!important;
   position:relative;
 }
-body.browser-shell .browser-mode-weather::before,
-body.browser-shell .browser-mode-weather::after{content:none!important}
-body.browser-shell #weatherRestore{
+body.workspace-shell .workspace-mode-weather::before,
+body.workspace-shell .workspace-mode-weather::after{content:none!important}
+body.workspace-shell #weatherRestore{
   display:none!important;
 }
-body.browser-shell [data-weather-minimize]{
+body.workspace-shell [data-weather-minimize]{
   display:none!important;
 }
-body.browser-shell .browser-mode-menu{
+body.workspace-shell .workspace-mode-menu{
   background:#5b6470;
   border-color:rgba(226,232,240,.28);
 }
-body.browser-shell .browser-mode-menu{
+body.workspace-shell .workspace-mode-menu{
   border-radius:18px;
   transform-origin:top right;
   transition:opacity .2s ease,transform .22s cubic-bezier(.2,.8,.2,1),filter .2s ease;
 }
-body.browser-shell .browser-mode-menu:not(:hover){
+body.workspace-shell .workspace-mode-menu:not(:hover){
   filter:saturate(.96);
 }
-body.browser-shell .browser-mode-menu{
+body.workspace-shell .workspace-mode-menu{
   width:176px!important;
   border-radius:10px!important;
 }
-body.browser-shell .browser-mode-menu button{
+body.workspace-shell .workspace-mode-menu button{
   min-height:28px!important;
   gap:7px!important;
   padding:0 10px!important;
   font-size:12px!important;
   font-weight:700!important;
 }
-body.browser-shell .browser-mode-menu hr{
+body.workspace-shell .workspace-mode-menu hr{
   margin:2px 0!important;
 }
-body.browser-shell .browser-mode-menu{
+body.workspace-shell .workspace-mode-menu{
   top:64px!important;
   right:8px!important;
   width:146px!important;
   border-radius:8px!important;
 }
-body.browser-shell .browser-mode-menu button{
+body.workspace-shell .workspace-mode-menu button{
   min-height:23px!important;
   gap:5px!important;
   padding:0 8px!important;
   font-size:10px!important;
 }
-body.browser-shell .browser-mode-menu,
-body.browser-shell .browser-mode-menu button{
+body.workspace-shell .workspace-mode-menu,
+body.workspace-shell .workspace-mode-menu button{
   border-radius:0!important;
 }
-body.browser-shell .window.maximized{
+body.workspace-shell .window.maximized{
   top:64px!important;
   height:calc(100dvh - 64px)!important;
 }
-body.browser-shell .weather-panel{top:76px!important}
-body.browser-shell .weather-restore{top:70px!important}
-@keyframes browserShellTabIn{
+body.workspace-shell .weather-panel{top:76px!important}
+body.workspace-shell .weather-restore{top:70px!important}
+@keyframes workspaceShellTabIn{
   from{opacity:0;transform:translateY(8px) scale(.94)}
   to{opacity:1;transform:translateY(0) scale(1)}
 }
-body.browser-shell .settings-backgrounds{
+body.workspace-shell .settings-backgrounds{
   opacity:.44;
   pointer-events:none;
   filter:grayscale(1);
 }
-body.browser-shell .settings-backgrounds::after{
-  content:"Browser Mode uses your selected theme background.";
+body.workspace-shell .settings-backgrounds::after{
+  content:"Workspace Mode uses your selected theme background.";
   display:block;
   margin-top:10px;
   color:#e5e7eb;
   font-size:13px;
 }
 
-.browser-shell-logo{
+.workspace-shell-logo{
   width:clamp(104px,11vw,152px);
   height:clamp(104px,11vw,152px);
   border-radius:0;
@@ -879,14 +879,14 @@ body.browser-shell .settings-backgrounds::after{
   object-fit:contain;
   filter:brightness(1.5) contrast(1.45) drop-shadow(0 0 2px rgba(255,255,255,.96)) drop-shadow(0 0 14px rgba(255,255,255,.66)) drop-shadow(0 22px 42px rgba(0,0,0,.54));
 }
-.browser-shell-clock{
+.workspace-shell-clock{
   font-size:clamp(48px,8vw,112px);
   font-weight:900;
   line-height:1;
   font-variant-numeric:tabular-nums;
   text-shadow:0 18px 60px rgba(0,0,0,.45);
 }
-.browser-top-clock{
+.workspace-top-clock{
   position:absolute;
   right:12px;
   top:5px;
@@ -1068,19 +1068,19 @@ body.theme-sakura .shell-page{
   background:linear-gradient(145deg,color-mix(in srgb,var(--theme-b) 68%,#080a12),color-mix(in srgb,var(--theme-a) 24%,#10131d))!important;
 }
 .shell-page,
-.browser-shell-page{
+.workspace-shell-page{
   background:radial-gradient(circle at 18% 10%,rgba(255,255,255,.52),transparent 28%),linear-gradient(135deg,#d6dbe1 0%,#9199a4 48%,#46505c 100%)!important;
 }
 body.theme-ruby .shell-page,
-body.theme-ruby .browser-shell-page{
+body.theme-ruby .workspace-shell-page{
   background:radial-gradient(circle at 18% 10%,color-mix(in srgb,var(--theme-a) 28%,transparent),transparent 30%),linear-gradient(135deg,color-mix(in srgb,var(--theme-a) 28%,#ffffff),color-mix(in srgb,var(--theme-b) 38%,#cbd5e1) 58%,color-mix(in srgb,var(--theme-b) 48%,#64748b))!important;
 }
 body.theme-emerald .shell-page,
-body.theme-emerald .browser-shell-page{
+body.theme-emerald .workspace-shell-page{
   background:radial-gradient(circle at 18% 10%,color-mix(in srgb,var(--theme-a) 28%,transparent),transparent 30%),linear-gradient(135deg,color-mix(in srgb,var(--theme-a) 26%,#ffffff),color-mix(in srgb,var(--theme-b) 34%,#cbd5e1) 58%,color-mix(in srgb,var(--theme-b) 46%,#64748b))!important;
 }
 body.theme-sakura .shell-page,
-body.theme-sakura .browser-shell-page{
+body.theme-sakura .workspace-shell-page{
   background:radial-gradient(circle at 18% 10%,color-mix(in srgb,var(--theme-a) 30%,transparent),transparent 30%),linear-gradient(135deg,color-mix(in srgb,var(--theme-a) 30%,#ffffff),color-mix(in srgb,var(--theme-b) 34%,#d1d5db) 58%,color-mix(in srgb,var(--theme-b) 42%,#64748b))!important;
 }
 body.theme-ruby .settings-main,
@@ -1202,7 +1202,7 @@ body.effect-emeralds #visualEffects i::before{
 .desktop-app:active{cursor:grabbing}
 .desktop-app img{width:var(--desktop-icon-size);height:var(--desktop-icon-size);object-fit:contain;filter:drop-shadow(0 10px 22px rgba(0,0,0,.35))}
 .desktop-app span{font-size:clamp(11px,calc(13px * var(--ui-scale)),14px);font-weight:750;line-height:1.05}
-body.browser-shell #desktop .desktop-app{
+body.workspace-shell #desktop .desktop-app{
   display:none!important;
   pointer-events:none!important;
 }
@@ -1321,47 +1321,47 @@ body.browser-shell #desktop .desktop-app{
 .window-controls [data-close]::after{width:13px;height:1.7px;background:currentColor;transform:translate(-50%,-50%) rotate(-45deg)}
 .window-controls [data-close]:hover::before{transform:translate(-50%,-50%) rotate(90deg)}
 .window-controls [data-close]:hover::after{transform:translate(-50%,-50%) rotate(0deg)}
-.browser-window{left:31vw;top:170px;width:45vw;height:420px}
-.browser-window{--tab-width:150px}
-.browser-tabs{height:48px;display:flex;align-items:center;gap:6px;padding:6px 8px;background:#050505;cursor:grab;overflow:hidden}
-.browser-tab{height:30px;width:var(--tab-width);min-width:92px;max-width:260px;display:flex;align-items:center;justify-content:space-between;gap:7px;padding:0 9px;border-radius:8px;background:rgba(255,255,255,.08);font-size:13px;color:#dbeafe;animation:tabIn .42s cubic-bezier(.16,.86,.2,1) both;transform-origin:left center}
+.workspace-window{left:31vw;top:170px;width:45vw;height:420px}
+.workspace-window{--tab-width:150px}
+.workspace-tabs{height:48px;display:flex;align-items:center;gap:6px;padding:6px 8px;background:#050505;cursor:grab;overflow:hidden}
+.workspace-tab{height:30px;width:var(--tab-width);min-width:92px;max-width:260px;display:flex;align-items:center;justify-content:space-between;gap:7px;padding:0 9px;border-radius:8px;background:rgba(255,255,255,.08);font-size:13px;color:#dbeafe;animation:tabIn .42s cubic-bezier(.16,.86,.2,1) both;transform-origin:left center}
 @keyframes tabIn{0%{opacity:0;max-width:0;min-width:0;width:0;padding-left:0;padding-right:0;transform:translateX(-18px) translateY(5px) scale(.86);filter:blur(8px)}58%{opacity:1;max-width:260px;min-width:92px;width:var(--tab-width);transform:translateX(3px) translateY(-2px) scale(1.035);filter:blur(0);box-shadow:0 0 22px rgba(147,197,253,.20)}100%{opacity:1;max-width:260px;min-width:92px;width:var(--tab-width);transform:translateX(0) translateY(0) scale(1);filter:blur(0)}}
-.browser-tab.tab-closing{pointer-events:none;animation:none!important;display:none!important}
+.workspace-tab.tab-closing{pointer-events:none;animation:none!important;display:none!important}
 @keyframes tabOut{to{opacity:0;transform:translateY(-8px) scale(.86);max-width:0;min-width:0;width:0;padding-left:0;padding-right:0;margin-left:-6px}}
-.browser-tab.active{background:rgba(255,255,255,.17)}
-.browser-tab.chat-unread{position:relative}
-.browser-tab.chat-unread::after{content:"";position:absolute;z-index:2;right:4px;top:3px;width:7px;height:7px;border-radius:50%;background:#f0445c;box-shadow:0 0 0 2px rgba(240,68,92,.18),0 0 8px rgba(240,68,92,.7);pointer-events:none}
-.browser-tab span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.browser-tab button,.new-tab{border:0;background:transparent;color:#cbd5e1}
-.browser-tab button{position:relative;color:transparent;font-size:0;transition:transform .58s cubic-bezier(.16,.86,.2,1),background .26s ease,color .26s ease}
-.browser-tab button::before{content:"\00d7";color:#cbd5e1;display:grid;place-items:center;font-size:16px;transform:rotate(0deg);transition:transform .58s cubic-bezier(.16,.86,.2,1),color .26s ease}
-.browser-tab button:hover{transform:scale(1.08)}
-.browser-tab button:hover::before{color:#fff;transform:rotate(45deg)}
+.workspace-tab.active{background:rgba(255,255,255,.17)}
+.workspace-tab.chat-unread{position:relative}
+.workspace-tab.chat-unread::after{content:"";position:absolute;z-index:2;right:4px;top:3px;width:7px;height:7px;border-radius:50%;background:#f0445c;box-shadow:0 0 0 2px rgba(240,68,92,.18),0 0 8px rgba(240,68,92,.7);pointer-events:none}
+.workspace-tab span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.workspace-tab button,.new-tab{border:0;background:transparent;color:#cbd5e1}
+.workspace-tab button{position:relative;color:transparent;font-size:0;transition:transform .58s cubic-bezier(.16,.86,.2,1),background .26s ease,color .26s ease}
+.workspace-tab button::before{content:"\00d7";color:#cbd5e1;display:grid;place-items:center;font-size:16px;transform:rotate(0deg);transition:transform .58s cubic-bezier(.16,.86,.2,1),color .26s ease}
+.workspace-tab button:hover{transform:scale(1.08)}
+.workspace-tab button:hover::before{color:#fff;transform:rotate(45deg)}
 .quick-tile .icon-window{display:inline-block;width:22px;height:16px;border:2px solid currentColor;border-radius:2px}
 .new-tab{position:relative;width:30px;height:30px;border-radius:999px;font-size:0;color:transparent;transition:transform .58s cubic-bezier(.16,.86,.2,1),background .26s ease,box-shadow .26s ease}
 .new-tab::before{content:"+";color:#cbd5e1;display:grid;place-items:center;font-size:20px;transform:rotate(0deg);transition:transform .58s cubic-bezier(.16,.86,.2,1),color .26s ease}
 .new-tab:hover{background:rgba(255,255,255,.12);transform:translateY(-1px) scale(1.08);box-shadow:0 8px 20px rgba(0,0,0,.22)}
 .new-tab:hover::before{color:#fff;transform:rotate(45deg)}
 .new-tab:active{transform:translateY(0) scale(.94)}
-.browser-tools{height:48px;display:grid;grid-template-columns:104px minmax(220px,1fr);gap:10px;align-items:center;padding:7px 12px;background:#171717;border-bottom:1px solid rgba(255,255,255,.08);position:relative}
+.workspace-tools{height:48px;display:grid;grid-template-columns:104px minmax(220px,1fr);gap:10px;align-items:center;padding:7px 12px;background:#171717;border-bottom:1px solid rgba(255,255,255,.08);position:relative}
 .tool-group{display:flex;gap:4px}
 .tool-btn{width:30px;height:30px;border:0;border-radius:8px;background:transparent;color:#d8dee9;font-size:16px}
 .tool-btn:hover{background:rgba(255,255,255,.1)}
 .urlbar{width:100%;min-width:0;height:34px;border:0;border-radius:999px;background:#070707;color:white;padding:0 44px 0 44px;outline:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
-.browser-tools::before{content:none;display:none}
+.workspace-tools::before{content:none;display:none}
 .go-btn{display:none}
 .menu-btn{position:absolute;right:15px;top:50%;height:30px;border:0;border-radius:9px;background:transparent;color:#b8b8b8;padding:0;width:38px;font-size:20px;transform:translateY(-50%)}
 .go-btn:hover,.menu-btn:hover{background:rgba(255,255,255,.18)}
-.browser-body{position:absolute;left:0;right:0;top:128px;bottom:0;background:rgba(255,255,255,.05)}
+.workspace-body{position:absolute;left:0;right:0;top:128px;bottom:0;background:rgba(255,255,255,.05)}
 .view{position:absolute;inset:0;width:100%;height:100%;border:0;display:none;background:white}
 .view.transparent-internal-page{background:transparent!important;background-color:transparent!important}
 .view.transparent-internal-page.active{background:transparent!important;background-color:transparent!important}
-.browser-window.internal-clear .browser-body{
+.workspace-window.internal-clear .workspace-body{
   background:transparent!important;
   background-color:transparent!important;
   background-image:none!important;
 }
-.browser-window.internal-clear .view{
+.workspace-window.internal-clear .view{
   background:transparent!important;
   background-color:transparent!important;
 }
@@ -1658,19 +1658,19 @@ body.browser-shell #desktop .desktop-app{
 .panel h1{margin:0 0 22px;font-size:34px}
 .glass-grid{display:grid;grid-template-columns:repeat(2,minmax(260px,1fr));gap:20px}
 .glass-card{min-height:150px;padding:20px;border:1px solid rgba(255,255,255,.16);border-radius:14px;background:linear-gradient(145deg,var(--glass-card-a),var(--glass-card-b));backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-saturate));box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 24px 70px rgba(0,0,0,.25)}
-.glass-card:hover,.titlebar:hover,.browser-tabs:hover,.browser-tools:hover,.weather-panel:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 24px 70px rgba(0,0,0,.25)}
+.glass-card:hover,.titlebar:hover,.workspace-tabs:hover,.workspace-tools:hover,.weather-panel:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 24px 70px rgba(0,0,0,.25)}
 .glass-card h2{margin:0 0 10px;font-size:20px;font-weight:500}
 .glass-card p{margin:0 0 16px;color:#cbd5e1;line-height:1.45}
 .glass-card button,.seg button{height:34px;border:1px solid rgba(255,255,255,.16);border-radius:9px;background:var(--glass-control);color:white;padding:0 12px;margin:4px 6px 0 0;backdrop-filter:blur(calc(var(--glass-blur) * .55))}
-.window.compact .browser-tabs{gap:4px;padding-inline:6px}
-.window.compact .browser-tab{min-width:70px;width:110px;font-size:11px;padding-inline:7px}
-.window.compact .browser-tools{grid-template-columns:88px minmax(160px,1fr);gap:7px;padding-inline:8px}
+.window.compact .workspace-tabs{gap:4px;padding-inline:6px}
+.window.compact .workspace-tab{min-width:70px;width:110px;font-size:11px;padding-inline:7px}
+.window.compact .workspace-tools{grid-template-columns:88px minmax(160px,1fr);gap:7px;padding-inline:8px}
 .window.compact .menu-btn{display:none}
 .window.compact .tool-group{gap:2px}
 .window.compact .tool-btn{width:26px}
 .window.compact .go-btn{padding:0 9px}
 .window.compact .urlbar{padding:0 40px 0 38px;font-size:13px}
-.window.compact .browser-tools::before{left:110px}
+.window.compact .workspace-tools::before{left:110px}
 .window.compact .quick-grid{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
 .window.compact .quick-tile{height:96px;font-size:12px}
 .window.compact .panel{padding:16px}
@@ -2137,10 +2137,10 @@ body.theme-fresh .weather-status,
 body.theme-fresh .weather-restore::after{
   color:#247f91!important;
 }
-.browser-search-suggestions{position:fixed;z-index:2147482600;display:none;min-width:240px;max-width:calc(100vw - 28px);max-height:320px;overflow:auto;padding:6px;border:1px solid var(--obsidian-line);border-radius:10px;background:var(--obsidian-panel);box-shadow:0 14px 32px #0004;backdrop-filter:blur(22px)}
-.browser-search-suggestions.show{display:grid}
-.browser-search-suggestion{min-height:36px;border:0;border-radius:6px;background:transparent;color:var(--obsidian-muted);text-align:left;padding:0 12px;font-size:12px;transition:background-color 140ms,color 140ms}
-.browser-search-suggestion:hover,.browser-search-suggestion.active{background:var(--obsidian-hover);color:var(--obsidian-text)}
+.workspace-search-suggestions{position:fixed;z-index:2147482600;display:none;min-width:240px;max-width:calc(100vw - 28px);max-height:320px;overflow:auto;padding:6px;border:1px solid var(--obsidian-line);border-radius:10px;background:var(--obsidian-panel);box-shadow:0 14px 32px #0004;backdrop-filter:blur(22px)}
+.workspace-search-suggestions.show{display:grid}
+.workspace-search-suggestion{min-height:36px;border:0;border-radius:6px;background:transparent;color:var(--obsidian-muted);text-align:left;padding:0 12px;font-size:12px;transition:background-color 140ms,color 140ms}
+.workspace-search-suggestion:hover,.workspace-search-suggestion.active{background:var(--obsidian-hover);color:var(--obsidian-text)}
 .switch{width:46px;height:24px;border:0;border-radius:999px;background:#111;position:relative;padding:2px}
 .switch::before{content:"";display:block;width:20px;height:20px;border-radius:50%;background:white;transition:transform .18s}
 .switch.on{background:#16a34a}
@@ -2174,11 +2174,11 @@ body.theme-fresh .weather-restore::after{
 .setting-field label{color:#e5e7eb;font-size:13px}
 .setting-field input,.setting-field select{height:36px;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:rgba(0,0,0,.36);color:white;padding:0 12px;outline:0}
 .setting-field input[type="range"]{padding:0;accent-color:var(--good);background:transparent}
-.browser-message{position:absolute;inset:0;display:grid;place-items:center;background:#111827;color:white;padding:24px}
-.browser-message-box{width:min(520px,92%);border:1px solid rgba(255,255,255,.14);border-radius:14px;background:var(--glass-panel);backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-saturate));padding:18px;box-shadow:0 18px 54px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.12)}
-.browser-message-box h2{margin:0 0 8px}
-.browser-message-box p{color:#cbd5e1;line-height:1.4}
-.browser-message-box button{height:34px;border:0;border-radius:9px;background:rgba(255,255,255,.14);color:white;padding:0 12px;margin-right:8px}
+.workspace-message{position:absolute;inset:0;display:grid;place-items:center;background:#111827;color:white;padding:24px}
+.workspace-message-box{width:min(520px,92%);border:1px solid rgba(255,255,255,.14);border-radius:14px;background:var(--glass-panel);backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-saturate));padding:18px;box-shadow:0 18px 54px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.12)}
+.workspace-message-box h2{margin:0 0 8px}
+.workspace-message-box p{color:#cbd5e1;line-height:1.4}
+.workspace-message-box button{height:34px;border:0;border-radius:9px;background:rgba(255,255,255,.14);color:white;padding:0 12px;margin-right:8px}
 .setup-screen{position:fixed;inset:0;z-index:4500;display:none;place-items:center;padding:22px;background:rgba(0,0,0,.82);backdrop-filter:blur(18px);opacity:0}
 .setup-screen.show{display:grid;animation:setupBackdropIn .38s cubic-bezier(.2,.72,.2,1) both}
 .setup-panel{width:min(760px,calc(100vw - 28px));min-height:min(520px,calc(100vh - 44px));max-height:calc(100vh - 44px);overflow:hidden;display:grid;grid-template-rows:auto minmax(0,1fr) auto;border:1px solid rgba(255,255,255,.18);border-radius:18px;background:rgba(10,12,15,.82);box-shadow:0 30px 90px rgba(0,0,0,.55);padding:28px;backdrop-filter:blur(18px) saturate(1.12);transform-origin:50% 54%;animation:setupPanelIn .54s cubic-bezier(.16,.86,.18,1) both}
@@ -2536,7 +2536,7 @@ body.hosted-cloak-entry #toast{display:none!important}
   background-repeat:no-repeat;
   background-position:left center;
 }
-body.browser-shell .settings-panel::before{
+body.workspace-shell .settings-panel::before{
   content:"nyx\A Settings";
   white-space:pre-line;
   position:fixed;
@@ -2555,8 +2555,8 @@ body.browser-shell .settings-panel::before{
   box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 24px 70px rgba(0,0,0,.32);
   backdrop-filter:blur(calc(var(--glass-blur) * .8)) saturate(var(--glass-saturate));
 }
-body.browser-shell .settings-panel::after{
-  content:"Cloak\A Appearance\A Effects\A Browser\A Backgrounds";
+body.workspace-shell .settings-panel::after{
+  content:"Cloak\A Appearance\A Effects\A Workspace\A Backgrounds";
   white-space:pre-line;
   position:fixed;
   left:calc(3vw + 46px);
@@ -2567,23 +2567,23 @@ body.browser-shell .settings-panel::after{
   line-height:2.7;
   opacity:.88;
 }
-body.browser-shell .settings-panel h1{
+body.workspace-shell .settings-panel h1{
   margin:0 0 20px;
   font-size:clamp(30px,3vw,46px);
   font-weight:900;
   text-shadow:0 16px 46px rgba(0,0,0,.35);
 }
-body.browser-shell .settings-section-title{
+body.workspace-shell .settings-section-title{
   margin:38px 0 18px;
   font-size:24px;
   font-weight:900;
   color:#e5edf8;
 }
-body.browser-shell .settings-grid{
+body.workspace-shell .settings-grid{
   grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
   gap:16px;
 }
-body.browser-shell .settings-card{
+body.workspace-shell .settings-card{
   min-height:128px;
   padding:20px;
   border-color:rgba(226,232,240,.16);
@@ -2592,31 +2592,31 @@ body.browser-shell .settings-card{
   box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 18px 48px rgba(0,0,0,.24);
   transition:transform .18s cubic-bezier(.2,.8,.2,1),border-color .18s ease,box-shadow .18s ease;
 }
-body.browser-shell .settings-card:hover{
+body.workspace-shell .settings-card:hover{
   transform:translateY(-3px);
   border-color:rgba(226,232,240,.28);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 26px 64px rgba(0,0,0,.34);
 }
-body.browser-shell .settings-card.hieroglyph-scroll:hover{
+body.workspace-shell .settings-card.hieroglyph-scroll:hover{
   transform:none;
 }
-body.browser-shell .settings-card h2{
+body.workspace-shell .settings-card h2{
   font-weight:900;
 }
-body.browser-shell .settings-card button,
-body.browser-shell .settings-card select{
+body.workspace-shell .settings-card button,
+body.workspace-shell .settings-card select{
   background:rgba(15,23,42,.42);
 }
-body.browser-shell .settings-card select{
+body.workspace-shell .settings-card select{
   max-width:100%;
   outline:0;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.1);
 }
-body.browser-shell .settings-card .seg{
+body.workspace-shell .settings-card .seg{
   grid-template-columns:repeat(auto-fit,minmax(128px,1fr));
   width:100%;
 }
-body.browser-shell .settings-effect-preview{
+body.workspace-shell .settings-effect-preview{
   display:none!important;
 }
 body.lag-reducer *,
@@ -2657,7 +2657,7 @@ body.lag-reducer .glass-card,
 body.lag-reducer .weather-panel,
 body.lag-reducer .weather-restore,
 body.lag-reducer .toast,
-body.lag-reducer .browser-message-box,
+body.lag-reducer .workspace-message-box,
 body.lag-reducer .setup-screen,
 body.lag-reducer .settings-card{
   backdrop-filter:none!important;
@@ -2766,4 +2766,4 @@ iframe[src*="/apps/code-studio/"] {
   backdrop-filter: blur(48px) saturate(.65);
 }
 
-body.browser-shell .toast{right:22px;bottom:22px;max-width:min(360px,calc(100vw - var(--nyx-sidebar-width,64px) - 44px))}
+body.workspace-shell .toast{right:22px;bottom:22px;max-width:min(360px,calc(100vw - var(--nyx-sidebar-width,64px) - 44px))}

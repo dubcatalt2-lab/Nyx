@@ -9,7 +9,7 @@ await new Promise((resolve, reject) => {
 
 const address = server.address();
 const origin = `http://127.0.0.1:${address.port}`;
-const browserHeaders = {
+const workspaceHeaders = {
   Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
   "Sec-Fetch-Dest": "document",
   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140.0.0.0 Safari/537.36"
@@ -23,7 +23,7 @@ try {
     const previewHtml = await preview.text();
     assert.equal(preview.status, 200);
     assert.match(previewHtml, /Student Learning Portal/, `${userAgent} did not receive the decoy`);
-    assert.doesNotMatch(previewHtml, /<script\b|script\.js|Nyx/i, `The decoy exposed a Nyx browser runtime to ${userAgent}`);
+    assert.doesNotMatch(previewHtml, /<script\b|script\.js|Nyx/i, `The decoy exposed a Nyx workspace runtime to ${userAgent}`);
     assert.match(preview.headers.get("x-robots-tag") || "", /noindex/i);
     assert.match(preview.headers.get("cache-control") || "", /no-store/i);
   }
@@ -47,13 +47,13 @@ try {
     assert.equal((await fetch(origin + "/robots.txt", { headers: { "User-Agent": agent } })).status, 200);
   }
 
-  const normalHome = await fetch(`${origin}/`, { headers: browserHeaders });
+  const normalHome = await fetch(`${origin}/`, { headers: workspaceHeaders });
   const normalHomeHtml = await normalHome.text();
   assert.equal(normalHome.status, 200);
   assert.match(normalHomeHtml, /script\.js/);
   assert.doesNotMatch(normalHomeHtml, /Student Learning Portal/);
 
-  const normalMusic = await fetch(`${origin}/apps/nyxify/`, { headers: browserHeaders });
+  const normalMusic = await fetch(`${origin}/apps/nyxify/`, { headers: workspaceHeaders });
   const normalMusicHtml = await normalMusic.text();
   assert.equal(normalMusic.status, 200);
   assert.match(normalMusicHtml, /Nyxify\/built in music/);

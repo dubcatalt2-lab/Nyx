@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir,readFile} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
- const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const page=await workspace.newPage({viewport:{width:1440,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.addInitScript(()=>localStorage.setItem('drop.setupComplete','1'));
  if(process.env.DROP_TEST_DIST)await page.route('http://localhost:6767/**',async route=>{const path=new URL(route.request().url()).pathname;try{const file=resolve('dist','.'+decodeURIComponent(path)+(path.endsWith('/')?'index.html':''));if(!file.startsWith(resolve('dist')+'\\'))throw Error('Invalid path');await route.fulfill({body:await readFile(sourceFile(file)),contentType:({'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.woff2':'font/woff2'})[extname(file)]||'application/octet-stream'});}catch{await route.continue();}});
  // Keep actual bundled catalog and player scripts. Exclude remote collections so
@@ -19,4 +19,4 @@ try{
  await games.locator('#closePlayer').click();await games.locator('#gamePlayer').waitFor({state:'hidden'});await games.locator('#gameSearch').fill('not-an-actual-game-123456');await games.locator('#emptyState').waitFor();await games.locator('#gameSearch').fill('');
  await page.setViewportSize({width:390,height:844});await page.locator('#collapse').click();await page.waitForTimeout(250);assert.equal(await games.locator('body').evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.screenshot({path:'.codex-artifacts/drop-games-mobile.png'});assert.deepEqual(errors,[]);
  console.log('PASS Drop shared local catalog, distinct cards, search, game runner launch/close, mobile and no runtime errors');
-}finally{await browser.close();}
+}finally{await workspace.close();}

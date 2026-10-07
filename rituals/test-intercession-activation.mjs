@@ -4,7 +4,7 @@ import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
 const source=await readFile(sourceFile('script.js'),'utf8');
-const start=source.indexOf('async function waitForServiceWorkerScript('),end=source.indexOf('async function refreshScramjetServiceWorker(',start);
+const start=source.indexOf('async function waitForServiceWorkerScript('),end=source.indexOf('async function refreshStudyjetServiceWorker(',start);
 assert(start>0&&end>start);
 const server=createServer((req,res)=>{
  if(req.url.startsWith('/worker.js')){
@@ -15,9 +15,9 @@ const server=createServer((req,res)=>{
  res.setHeader('Content-Type','text/html');res.end('<!doctype html><title>Activation test</title>');
 });
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
-const browser=await chromium.launch({headless:true});
+const workspace=await chromium.launch({headless:true});
 try {
- const page=await browser.newPage();await page.goto('http://127.0.0.1:'+server.address().port);
+ const page=await workspace.newPage();await page.goto('http://127.0.0.1:'+server.address().port);
  await page.addScriptTag({content:source.slice(start,end)});
  await page.evaluate(async()=>{await navigator.serviceWorker.register('/worker.js?version=one',{scope:'/proxy/'});});
  await page.evaluate(async()=>{
@@ -46,4 +46,4 @@ try {
  });
  assert.match(await page.evaluate(async()=>{const r=await navigator.serviceWorker.getRegistration('/proxy/');return (await waitForServiceWorkerScript(r,'/worker.js?version=two','/proxy/'))?.scriptURL||'';}),/version=two/);
  console.log('PASS real service-worker update: current compatible worker stays usable while a slow update activates, then switches to the new worker.');
-}finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}
+}finally{await workspace.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

@@ -6,8 +6,8 @@ import { chromium } from 'playwright';
 
 // All API calls are fixtures: this test never creates real links or accounts.
 const root = resolve(process.env.NYX_TEST_STATIC_ROOT || '.');
-const browser = await chromium.launch({ headless: true });
-const context = await browser.newContext();
+const workspace = await chromium.launch({ headless: true });
+const context = await workspace.newContext();
 const requests = [], errors = [];
 let failPublish = false, parentToken = 'fixture-host-token';
 const json = (route, value, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(value) });
@@ -129,4 +129,4 @@ try {
   assert.equal(new Set(palettes).size, 3, 'Cards must follow the shared theme palette');
   assert.deepEqual(errors, []);
   console.log('Simple link flow passed: host/standalone sign-in, Nyx/P2P, one-link requests, validation, retries, sign-out, desktop/mobile. No external writes.');
-} finally { await browser.close(); }
+} finally { await workspace.close(); }

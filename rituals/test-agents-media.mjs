@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
- const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];let payload,htmlFailure=false;
+ const page=await workspace.newPage({viewport:{width:1440,height:900}}),errors=[];let payload,htmlFailure=false;
  page.on('pageerror',error=>errors.push(error.message));
  await page.addInitScript(()=>{
   window.SpeechRecognition=class {start(){window.__recognition=this;}stop(){this.onend?.();}abort(){this.onend?.();}};
@@ -48,4 +48,4 @@ try{
  await page.screenshot({path:'.codex-artifacts/agents-empty-chat.png'});
  await page.locator('#modelTrigger').click();await page.locator('#modelSearch').fill('');assert.deepEqual(await page.locator('.ai-model-group[aria-label=OpenAI] .ai-model-option').evaluateAll(nodes=>nodes.map(node=>node.dataset.id)),['openai/test','openai/legacy']);await page.screenshot({path:'.codex-artifacts/agents-model-picker.png'});assert.deepEqual(errors,[]);await page.keyboard.press('Escape');htmlFailure=true;await page.locator('#prompt').fill('Test gateway failure');await page.locator('#send').click();await page.getByText('The AI service is temporarily unavailable (502). Please retry in a moment.',{exact:true}).waitFor();assert.doesNotMatch(await page.locator('body').innerText(),/Unexpected token/);
  console.log('PASS picker search/selection, branding, image preview/removal/request, dictation, spoken turn, stop and permission denial');
-}finally{await browser.close();}
+}finally{await workspace.close();}

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 const base=process.env.NYX_TEST_BASE_URL||'http://127.0.0.1:8199';
-const browser=await chromium.launch();
+const workspace=await chromium.launch();
 try{
- const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];page.setDefaultTimeout(15000);
+ const page=await workspace.newPage({viewport:{width:1280,height:900}}),errors=[];page.setDefaultTimeout(15000);
  page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/api/founder-profile/auth-config',r=>r.fulfill({json:{}}));
  await page.route('**/api/nyx-ai/providers',r=>r.fulfill({json:{providers:[{id:'shared',label:'OpenRouter'}]}}));
@@ -30,4 +30,4 @@ try{
  await page.locator('#input').fill('Search again');await page.locator('#form').evaluate(f=>f.requestSubmit());await page.locator('.ai-message-error').getByText('Search unavailable',{exact:true}).waitFor();
  await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
  assert.deepEqual(errors,[]);console.log('PASS inline AI web UI: sources and expandable summary inside message, safe/deduplicated links, saved reload, conversation separation and mobile bounds');
-}finally{await browser.close();}
+}finally{await workspace.close();}

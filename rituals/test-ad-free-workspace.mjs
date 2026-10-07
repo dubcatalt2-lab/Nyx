@@ -5,10 +5,10 @@ const app=express();
 app.get('/adfree-fixture',(_,res)=>res.send('<!doctype html><html><body style="background:#111;color:#eee"><button id="launch">Account</button></body></html>'));
 app.use(express.static(process.env.NYX_TEST_STATIC_ROOT || '.'));
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 const base=`http://127.0.0.1:${server.address().port}`;
 try {
- const page=await browser.newPage({viewport:{width:1280,height:850}});
+ const page=await workspace.newPage({viewport:{width:1280,height:850}});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  let row=null;
  await page.route('**/api/owner-dashboard/ad-free-keys**',async route=>{
@@ -57,4 +57,4 @@ try {
  await page.screenshot({path:'.codex-artifacts/ad-free-access-preview.png'});
  assert.deepEqual(errors,[]);
  console.log('PASS owner key UI creation, one-time reveal, assignment, revocation, label escaping; account redemption errors/success and immediate policy callback; mobile bounds and Escape cleanup.');
-} finally {await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}
+} finally {await workspace.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

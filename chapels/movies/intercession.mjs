@@ -10,26 +10,26 @@ function standaloneSettings() {
     adBlock:read('nyx.popupProtection')!=='false',popupBlock:true,downloadBlock:true};
 }
 
-export async function launchMovieProxy(frame, url, signal, {recover=false}={}) {
+export async function launchMovieConnection(frame, url, signal, {recover=false}={}) {
   abort(signal);
-  if(!movieSourceUrl(url)||frame.getAttribute('sandbox')!=='allow-scripts allow-same-origin allow-forms allow-presentation')throw Error('Invalid movie proxy request.');
+  if(!movieSourceUrl(url)||frame.getAttribute('sandbox')!=='allow-scripts allow-same-origin allow-forms allow-presentation')throw Error('Invalid movie playback request.');
   if (window.parent !== window && typeof parent.nyxLaunchMovieFrame === 'function') {
     await parent.nyxLaunchMovieFrame(frame, url, {signal, recover});
     return;
   }
-  const {loadProxyScript}=await import('/js/intercession-startup.mjs');
-  if(!globalThis.__NYX_RUNTIME_CONFIG__)await loadProxyScript('/runtime-config.js',()=>!!globalThis.__NYX_RUNTIME_CONFIG__);
-  const {browse,closeBrowser}=await import('/chapels/tutsi/intercession.mjs');
+  const {loadConnectionScript}=await import('/js/intercession-startup.mjs');
+  if(!globalThis.__NYX_RUNTIME_CONFIG__)await loadConnectionScript('/runtime-config.js',()=>!!globalThis.__NYX_RUNTIME_CONFIG__);
+  const {explore,closeWorkspace}=await import('/chapels/tutsi/intercession.mjs');
   abort(signal);
   if (!frame.isConnected) return;
-  if(recover)closeBrowser(frame);
-  const cancel=()=>closeBrowser(frame);
+  if(recover)closeWorkspace(frame);
+  const cancel=()=>closeWorkspace(frame);
   signal?.addEventListener('abort',cancel,{once:true});
-  try { await browse(url,standaloneSettings(),frame); abort(signal); }
+  try { await explore(url,standaloneSettings(),frame); abort(signal); }
   catch(error){signal?.removeEventListener('abort',cancel);cancel();throw error;}
 }
 
-export function inspectMovieProxy(frame) {
+export function inspectMovieConnection(frame) {
   const queue = [{frame, depth: 0, frames: [frame]}]; let examined = 0, failure = false;
   while (queue.length && examined++ < 16) {
     const current = queue.shift();
@@ -102,10 +102,12 @@ function movieStartAction(frame) {
   return null;
 }
 
-export function canStartMovieProxy(frame) { return Boolean(movieStartAction(frame)); }
+export function canStartMovieConnection(frame) { return Boolean(movieStartAction(frame)); }
 
-export async function startMovieProxy(frame) {
+export async function startMovieConnection(frame) {
   const action = movieStartAction(frame);
   if (action) await action();
   else throw Error('The player is still loading.');
 }
+
+export {launchMovieConnection as launchMovieProxy, inspectMovieConnection as inspectMovieProxy, canStartMovieConnection as canStartMovieProxy, startMovieConnection as startMovieProxy};

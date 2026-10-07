@@ -12,11 +12,11 @@ const timers=[],loads=[],failures=[];
 const tab={frame:{addEventListener(){}},navigationIntent:'first'};
 const api=vm.runInNewContext(functions.join('\n')+';({tlsCertificateErrorText,retrySearchHandshake,watchFrameTransportErrors})',{
  engines:{duck:'https://duckduckgo.com/?q=',google:'https://www.google.com/search?q='},
- proxyTransportName:()=>transport,setBrowserTransportOverride:value=>{transport=value},
- loadScramjetTab:(...args)=>loads.push(args),state:{tabs:[tab]},
- store:{text:()=> 'scramjet'},DEFAULT_BROWSER_MODE:'scramjet',normalizeBrowserModeName:value=>value,
- browserFrameStillAtSource:()=>true,inspectFrameHealth:()=>({hasErrorText:true,visibleText:reason}),
- setBrowserTabSecurityState:()=>{},loadSelectedSearchFallback:(...args)=>failures.push(args),
+ connectionTransportName:()=>transport,setWorkspaceTransportOverride:value=>{transport=value},
+ loadStudyjetTab:(...args)=>loads.push(args),state:{tabs:[tab]},
+ store:{text:()=> 'scramjet'},DEFAULT_WORKSPACE_MODE:'scramjet',normalizeWorkspaceModeName:value=>value,
+ workspaceFrameStillAtSource:()=>true,inspectFrameHealth:()=>({hasErrorText:true,visibleText:reason}),
+ setWorkspaceTabSecurityState:()=>{},loadSelectedSearchFallback:(...args)=>failures.push(args),
  setTimeout:fn=>timers.push(fn)
 });
 const url='https://duckduckgo.com/?q=nyx';

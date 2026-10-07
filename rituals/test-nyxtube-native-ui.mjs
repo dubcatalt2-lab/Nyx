@@ -8,7 +8,7 @@ import { promisify } from 'node:util';
 import { execFile } from 'node:child_process';
 import { createRequire } from 'node:module';
 const root=await mkdtemp(join(tmpdir(),'nyx-native-ui-'));
-let server,browser;
+let server,workspace;
 try {
   const file=join(root,'fixture.mp4');
   await promisify(execFile)(process.env.NYX_FFMPEG_BIN||'ffmpeg',['-nostdin','-v','error','-f','lavfi','-i','color=c=blue:s=640x360:r=24','-f','lavfi','-i','sine=frequency=440:sample_rate=44100','-t','30','-c:v','libx264','-pix_fmt','yuv420p','-c:a','aac','-movflags','+faststart',file]);
@@ -36,8 +36,8 @@ try {
     return res.json({access:{role:ownerRole,founder:ownerRole==='owner',permissions:[]},users:[],metrics:{},pagination:{total:0,page:1,pages:1},recentActivity:[]});
   });
   app.use(express.static(process.env.NYX_TEST_STATIC_ROOT||process.cwd()));server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base=`http://127.0.0.1:${server.address().port}`;
-  browser=await chromium.launch({headless:true,args:['--autoplay-policy=no-user-gesture-required']});
-  const page=await browser.newPage({viewport:{width:1280,height:900}}),errors=[];page.on('pageerror',e=>{errors.push(e.message);console.log('Page error:',e.message);});
+  workspace=await chromium.launch({headless:true,args:['--autoplay-policy=no-user-gesture-required']});
+  const page=await workspace.newPage({viewport:{width:1280,height:900}}),errors=[];page.on('pageerror',e=>{errors.push(e.message);console.log('Page error:',e.message);});
   await page.addInitScript(()=>{window.YT={PlayerState:{PLAYING:1,PAUSED:2},Player:class{
     constructor(id,o){this.options=o;this.node=document.getElementById(id);this.node.innerHTML='<div data-test-embed style="height:100%">YouTube fallback</div>';setTimeout(()=>o.events.onReady({target:this}),0);}
     seekTo(){}setVolume(){}setPlaybackRate(){}mute(){}playVideo(){}pauseVideo(){}getPlayerState(){return 2;}getCurrentTime(){return 0;}getDuration(){return 30;}getAvailablePlaybackRates(){return [1];}getPlaybackRate(){return 1;}destroy(){this.node.replaceChildren();}
@@ -121,4 +121,4 @@ try {
   await page.setViewportSize({width:390,height:844});assert.ok(await page.locator('[data-owner-tube-status]').evaluate(el=>el.scrollWidth<=el.clientWidth+1));
   ownerRole='admin';await page.locator('[data-owner-refresh]').first().click();await page.locator('[data-owner-tube-status]').waitFor({state:'hidden'});
   assert.deepEqual(errors,[]);console.log('Native UI: real video playback, seek, fullscreen, quality state restoration, fallback, cancellation, 320/390px layout and Owner status passed.');
-}finally{await browser?.close();await new Promise(r=>server?server.close(r):r());await rm(root,{recursive:true,force:true});}
+}finally{await workspace?.close();await new Promise(r=>server?server.close(r):r());await rm(root,{recursive:true,force:true});}

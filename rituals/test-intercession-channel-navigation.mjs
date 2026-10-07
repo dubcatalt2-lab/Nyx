@@ -25,13 +25,13 @@ window.fixtureTransition=()=>{
  setTimeout(()=>body.append(...nodes),6000);
 };`;
 const transport=`export default class {ready=false;async init(){this.ready=true}close(){}connect(){return [()=>{},()=>{}]}async request(raw){const script=new URL(String(raw)).pathname==='/fixture.js';return {status:200,statusText:'OK',headers:[['content-type',script?'text/javascript':'text/html']],body:new Response(script?${JSON.stringify(fixture)}:${JSON.stringify(html)}).body};}}`;
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{for(const brand of (process.env.NYX_TEST_BRANDS||'nyx,tutsi,drop').split(',')){
- const context=await browser.newContext();
+ const context=await workspace.newContext();
  await context.addInitScript(()=>{
   localStorage.setItem('tutsi.customize.seen','1');localStorage.setItem('tutsi.settings.v1',JSON.stringify({closePrevention:false,httpBridge:true}));
   localStorage.setItem('drop.setupComplete','1');localStorage.setItem('drop.settings',JSON.stringify({connection:'bridge',restore:false}));
-  localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.releaseNotes.2026-10-02-nyx-1.6.8.seen','2026-10-02-nyx-1.6.8');localStorage.setItem('nyx.browserMode','scramjet');
+  localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.releaseNotes.2026-10-02-nyx-1.6.8.seen','2026-10-02-nyx-1.6.8');localStorage.setItem('nyx.workspaceMode','scramjet');
  });
  await context.route('**/api/**',r=>r.fulfill({json:{}}));
  await context.route('**/api/tutsi-relay/sessions',r=>r.fulfill({json:{token:'fixture'}}));
@@ -48,9 +48,9 @@ try{for(const brand of (process.env.NYX_TEST_BRANDS||'nyx,tutsi,drop').split(','
  if(process.argv.includes('--debug')){page.on('framenavigated',f=>console.log('NAV',f.url()));page.on('console',m=>{if(m.type()==='error')console.log('ERROR',m.text().slice(0,300));});}
  await page.goto(base+(brand==='nyx'?'/index.html':'/apps/'+brand+'/'));await page.waitForTimeout(8500);
  assert.ok(await page.locator('svg rect[x="2"][y="6"][width="20"][height="13"]').count(),brand+' uses the requested rectangular Games controller');
- const query=page.locator(brand==='nyx'?'[data-browser-blank-input]:visible':'#query').first();
+ const query=page.locator(brand==='nyx'?'[data-workspace-blank-input]:visible':'#query').first();
  await query.fill('https://discord.com/app');await query.press('Enter');
- const selector=brand==='nyx'?'.browser-body iframe.view.active':brand==='tutsi'?'#browser-stage iframe:not([hidden])':'#stage iframe:not([hidden])';
+ const selector=brand==='nyx'?'.workspace-body iframe.view.active':brand==='tutsi'?'#workspace-stage iframe:not([hidden])':'#stage iframe:not([hidden])';
  const frame=page.frameLocator(selector);
  try{
   await frame.locator('#b').waitFor({timeout:25000});
@@ -59,7 +59,7 @@ try{for(const brand of (process.env.NYX_TEST_BRANDS||'nyx,tutsi,drop').split(','
   await frame.locator('#draft').fill('Keep this draft');
   await frame.locator('#b').click();
   assert.equal(await frame.locator('#channel').innerText(),'B');
-  const address=page.locator(brand==='nyx'?'[data-browser-shell-url]:visible':'#address').first();
+  const address=page.locator(brand==='nyx'?'[data-workspace-shell-url]:visible':'#address').first();
   await page.waitForTimeout(1000);
   assert.match(await address.inputValue(),/discord\.com\/channels\/100\/200/,'Shell address must follow the channel without navigation');
   await page.waitForTimeout(13000);
@@ -83,4 +83,4 @@ try{for(const brand of (process.env.NYX_TEST_BRANDS||'nyx,tutsi,drop').split(','
   console.log('PASS',root,brand,'channel changes preserve document and draft');
  }catch(error){console.log(brand,errors,(await page.locator('body').innerText()).slice(-1500));throw error;}
  await context.close();
-}}finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
+}}finally{await workspace.close();await new Promise(resolve=>server.close(resolve));}

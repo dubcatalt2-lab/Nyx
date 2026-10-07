@@ -361,7 +361,7 @@ async function playlistdirectauth() {
   playlistAuthPromise = (async () => {
     const config = await nyxifyjson('/api/founder-profile/auth-config');
     if (!config?.enabled) return null;
-    const [{ initializeApp, getApps }, { getAuth, setPersistence, browserLocalPersistence }] = await Promise.all([
+    const [{ initializeApp, getApps }, { getAuth, setPersistence, browserLocalPersistence:workspaceLocalPersistence }] = await Promise.all([
       import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),
       import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')
     ]);
@@ -371,7 +371,7 @@ async function playlistdirectauth() {
       projectId: config.projectId
     }, 'nyx-founder-owner');
     const auth = getAuth(app);
-    try { await setPersistence(auth, browserLocalPersistence); } catch (_) {}
+    try { await setPersistence(auth, workspaceLocalPersistence); } catch (_) {}
     if (typeof auth.authStateReady === 'function') await auth.authStateReady();
     return auth;
   })();

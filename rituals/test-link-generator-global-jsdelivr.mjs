@@ -76,21 +76,21 @@ function routeJson(route, value) {
   return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(value) });
 }
 
-let browser;
+let workspace;
 try {
   await waitForNyx();
   const status = await (await fetch(`${origin}/api/link-generator/status`)).json();
   assert.equal(status.globalPublisherConfigured, true, 'The global publisher was not reported as configured');
 
-  browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage({ viewport: { width: 1_280, height: 900 } });
+  workspace = await chromium.launch({ headless: true });
+  const page = await workspace.newPage({ viewport: { width: 1_280, height: 900 } });
   const pageErrors = [];
-  let p2pBrowserRequest = null;
+  let p2pWorkspaceRequest = null;
   let p2pFilterCheckRequests = 0;
   page.on('pageerror', error => pageErrors.push(error.message));
   page.on('request', request => {
     if (request.method() === 'POST' && new URL(request.url()).pathname === '/api/link-generator') {
-      p2pBrowserRequest = JSON.parse(request.postData() || '{}');
+      p2pWorkspaceRequest = JSON.parse(request.postData() || '{}');
     }
   });
   await page.route('**/api/link-checker/vendors', route => routeJson(route, { vendors: [{ key: 'goguardian', label: 'GoGuardian' }] }));
@@ -112,8 +112,8 @@ try {
   await page.locator('[data-result-card]:not([hidden])').waitFor({ state: 'visible' });
 
   assert.equal(new URL(page.url()).pathname, '/apps/link-generator/bulk.html', 'P2P redirected to the personal-token publisher');
-  assert.equal(p2pBrowserRequest?.method, 'p2p', 'The browser did not request direct P2P publishing');
-  assert.equal(p2pBrowserRequest?.amount, 2, 'The browser did not send the selected P2P amount');
+  assert.equal(p2pWorkspaceRequest?.method, 'p2p', 'The workspace did not request direct P2P publishing');
+  assert.equal(p2pWorkspaceRequest?.amount, 2, 'The workspace did not send the selected P2P amount');
   const links = (await page.locator('[data-result-url]').inputValue()).trim().split('\n');
   assert.equal(links.length, 2, 'The global publisher did not return the requested number of links');
   links.forEach(link => assert.match(link, /^https:\/\/cdn\.jsdelivr\.net\/gh\/dubcatalt2-lab\/nyx-jsdelivr-links@main\/study-room-learning-[a-f0-9]{32}\.svg$/));
@@ -121,7 +121,7 @@ try {
   await page.locator('[data-filter-check-state]', { hasText: '2 allowed' }).waitFor();
   assert.equal(p2pFilterCheckRequests, 1, 'Identical generated JSDelivr links were checked separately');
   assert.match(await page.locator('[data-filter-check-detail]').textContent(), /one representative check covered all 2 identical Nyx SVG links/i, 'The representative batch-check explanation was not shown');
-  assert.deepEqual(pageErrors, [], `Link Generator browser errors: ${pageErrors.join(' | ')}`);
+  assert.deepEqual(pageErrors, [], `Link Generator workspace errors: ${pageErrors.join(' | ')}`);
 
   const treeRequest = githubRequests.findLast(request => request.method === 'POST' && request.url.endsWith('/git/trees'));
   assert.ok(treeRequest, 'The server did not create a Git tree');
@@ -131,8 +131,8 @@ try {
   assert.ok(tree.tree.filter(entry => entry.type === 'blob').every(entry => entry.content.includes('nyx-static/Nyx.svg') && !entry.content.includes('<iframe')), 'The server did not publish static launchers');
   assert.ok(tree.tree.some(entry => entry.path === 'nyx-static' && entry.type === 'tree'), 'Package missing from atomic commit');
   assert.ok(githubRequests.every(request => request.authorization === 'Bearer github_pat_server_only_test'), 'A server-side GitHub request omitted the configured token');
-  const browserState = await page.evaluate(() => `${document.documentElement.innerHTML}\n${JSON.stringify({ ...localStorage, ...sessionStorage })}`);
-  assert.doesNotMatch(browserState, /github_pat_server_only_test/, 'The global GitHub token reached the browser');
+  const workspaceState = await page.evaluate(() => `${document.documentElement.innerHTML}\n${JSON.stringify({ ...localStorage, ...sessionStorage })}`);
+  assert.doesNotMatch(workspaceState, /github_pat_server_only_test/, 'The global GitHub token reached the workspace');
 
   const oneLinkRequestStart = githubRequests.length;
   const oneLinkResponse = await fetch(`${origin}/api/link-generator`, {
@@ -147,14 +147,14 @@ try {
   const oneLinkTree = githubRequests.slice(oneLinkRequestStart).findLast(request => request.method === 'POST' && request.url.endsWith('/git/trees'));
   assert.equal(JSON.parse(oneLinkTree?.body || '{}').tree?.filter(entry => entry.type === 'blob').length, 1, 'The exact one-link generation request did not publish one SVG');
 
-  const shellContext = await browser.newContext({ viewport: { width: 1_280, height: 900 } });
+  const shellContext = await workspace.newContext({ viewport: { width: 1_280, height: 900 } });
   await shellContext.addInitScript(() => {
     if (window.top !== window) return;
     localStorage.setItem('nyx.setupComplete', 'true');
     localStorage.setItem('nyx.releaseNotes.2026-10-02-nyx-1.6.8.seen', '2026-10-02-nyx-1.6.8');
     localStorage.setItem('nyx.homeDesign', 'redesigned');
     localStorage.setItem('nyx.popupProtection', 'true');
-    localStorage.setItem('nyx.browserShellMode', 'true');
+    localStorage.setItem('nyx.workspaceShellMode', 'true');
     localStorage.setItem('nyx.tosAcceptedVersion', '2026-07-30');
   });
   await shellContext.route('**/api/link-checker/vendors', route => routeJson(route, { vendors: [{ key: 'goguardian', label: 'GoGuardian' }] }));
@@ -172,8 +172,8 @@ try {
   await shellPage.frameLocator('iframe.view.active').locator('[data-app-url="/apps/link-generator/"]').click();
   const shellFrameElement = shellPage.locator('iframe.view.active');
   await shellFrameElement.waitFor({ state: 'attached' });
-  await shellFrameElement.evaluate(frame => frame.closest('.browser-window')?.setAttribute('data-popup-test-host', 'true'));
-  const popupTestHost = shellPage.locator('.browser-window[data-popup-test-host="true"]');
+  await shellFrameElement.evaluate(frame => frame.closest('.workspace-window')?.setAttribute('data-popup-test-host', 'true'));
+  const popupTestHost = shellPage.locator('.workspace-window[data-popup-test-host="true"]');
   const shellFrame = shellPage.frameLocator('iframe.view.active');
   await shellFrame.locator('[data-filter-select]:not([disabled])').waitFor({ state: 'attached' });
   await shellFrame.locator('html[data-nyx-popup-bridge="true"]').waitFor({ state: 'attached' });
@@ -193,24 +193,24 @@ try {
   const hostViewsBeforeOpen = await popupTestHost.locator('iframe.view').count();
   await shellFrame.locator('[data-open]').dispatchEvent('click');
   await shellPage.waitForFunction(({ url, count }) => {
-    const host = document.querySelector('.browser-window[data-popup-test-host="true"]');
+    const host = document.querySelector('.workspace-window[data-popup-test-host="true"]');
     return host?.querySelectorAll('iframe.view').length === count + 1 && host.querySelector('.urlbar')?.value === url;
   }, { url: popupBridgeUrl, count: hostViewsBeforeOpen });
-  assert.equal(await popupTestHost.locator('iframe.view').count(), hostViewsBeforeOpen + 1, 'Open first did not create a Nyx browser tab');
+  assert.equal(await popupTestHost.locator('iframe.view').count(), hostViewsBeforeOpen + 1, 'Open first did not create a Nyx workspace tab');
   assert.equal(await popupTestHost.locator('.urlbar').inputValue(), popupBridgeUrl, 'Open first did not navigate the new Nyx tab to the generated JSDelivr link');
   assert.equal(await shellPage.locator('iframe[src="nyx://blocked67haha"]').count(), 0, 'Open first was routed into the malware popup blocker');
   const signedOutProfileSymbol = shellPage.locator('#nyxAccountButton.nyx-account-button-default > span');
   await signedOutProfileSymbol.waitFor({ state: 'attached' });
   const signedOutProfileSize = await signedOutProfileSymbol.evaluate(symbol => Number.parseFloat(getComputedStyle(symbol).width));
   assert.ok(signedOutProfileSize >= 18, `The signed-out profile symbol remained too small (${signedOutProfileSize}px)`);
-  assert.deepEqual(shellErrors, [], `Link Generator shell browser errors: ${shellErrors.join(' | ')}`);
+  assert.deepEqual(shellErrors, [], `Link Generator shell workspace errors: ${shellErrors.join(' | ')}`);
   await shellContext.close();
 
   await page.setViewportSize({ width: 390, height: 844 });
   const overflow = await page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth);
   assert.ok(overflow <= 1, `Global results caused ${overflow}px of mobile overflow`);
 
-  const regularPage = await browser.newPage({ viewport: { width: 1_280, height: 900 } });
+  const regularPage = await workspace.newPage({ viewport: { width: 1_280, height: 900 } });
   const regularErrors = [];
   let regularRequest = null;
   regularPage.on('pageerror', error => regularErrors.push(error.message));
@@ -271,7 +271,7 @@ try {
   assert.equal(regularRequest?.amount, 73, 'The regular-account batch amount was not sent to the server');
   await regularPage.locator('[data-notice]', { hasText: '27 links remaining' }).waitFor();
   assert.match(await regularPage.locator('[data-notice]').textContent(), /27 links remaining in your current hourly window/i, 'The regular-account hourly remainder was not shown');
-  assert.deepEqual(regularErrors, [], `Regular-account batch browser errors: ${regularErrors.join(' | ')}`);
+  assert.deepEqual(regularErrors, [], `Regular-account batch workspace errors: ${regularErrors.join(' | ')}`);
   await regularPage.close();
 
   const thousandLinkRequestStart = githubRequests.length;
@@ -287,7 +287,7 @@ try {
   const thousandLinkTree = githubRequests.slice(thousandLinkRequestStart).findLast(request => request.method === 'POST' && request.url.endsWith('/git/trees'));
   assert.equal(JSON.parse(thousandLinkTree?.body || '{}').tree?.filter(entry => entry.type === 'blob').length, 1000, 'The P2P Git tree did not contain 1,000 Nyx SVGs');
 
-  const thousandLinkPage = await browser.newPage({ viewport: { width: 1_280, height: 900 } });
+  const thousandLinkPage = await workspace.newPage({ viewport: { width: 1_280, height: 900 } });
   let thousandLinkFilterChecks = 0;
   await thousandLinkPage.route('**/api/link-checker/vendors', route => routeJson(route, { vendors: [{ key: 'lightspeed', label: 'Lightspeed' }] }));
   await thousandLinkPage.route('**/api/link-checker/check', route => {
@@ -325,7 +325,7 @@ try {
 
   console.log('Direct 1,000-link P2P and managed JSDelivr publishing, token isolation, protected tab opening, filter checking, results, and mobile regressions passed.');
 } finally {
-  await browser?.close().catch(() => {});
+  await workspace?.close().catch(() => {});
   if (nyx.exitCode === null) nyx.kill();
   await new Promise(resolve => github.close(resolve));
 }

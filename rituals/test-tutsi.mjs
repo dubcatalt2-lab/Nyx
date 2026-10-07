@@ -1,9 +1,9 @@
 ﻿import { chromium } from "playwright";
 import assert from "node:assert/strict";
 const base = process.env.TUTSI_TEST_URL || "http://localhost:9091/tutsi";
-const browser = await chromium.launch({ headless: true });
+const workspace = await chromium.launch({ headless: true });
 try {
-  const page = await browser.newPage({
+  const page = await workspace.newPage({
     viewport: { width: 1440, height: 1000 },
   });
   const errors = [];
@@ -68,10 +68,10 @@ try {
     await page.fill("#query", "https://example.com");
     await page.locator("#search button").click();
     await page
-      .frameLocator("#browser-stage iframe")
+      .frameLocator("#workspace-stage iframe")
       .getByRole("heading", { name: "Example Domain" })
       .waitFor({ timeout: 30000 });
-    await page.locator("#close-browser").click();
+    await page.locator("#close-workspace").click();
     console.log(transport + " real proxy navigation passed");
   }
   await page.goto(base + "#games");
@@ -106,5 +106,5 @@ try {
     "Tutsi UI: 16 apps, mobile, themes, tab presets, native close dialog, three proxy transports and shared app shells passed.",
   );
 } finally {
-  await browser.close();
+  await workspace.close();
 }

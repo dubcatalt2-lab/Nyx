@@ -1,6 +1,6 @@
-body:not(.browser-shell).custom-bg-active.theme-ruby .custom-bg-image,
-body:not(.browser-shell).custom-bg-active.theme-emerald .custom-bg-image,
-body:not(.browser-shell).custom-bg-active.theme-sakura .custom-bg-image{
+body:not(.workspace-shell).custom-bg-active.theme-ruby .custom-bg-image,
+body:not(.workspace-shell).custom-bg-active.theme-emerald .custom-bg-image,
+body:not(.workspace-shell).custom-bg-active.theme-sakura .custom-bg-image{
   display:block!important;
 }
 body.theme-ruby input[type="file"].settings-input::file-selector-button,
@@ -14,18 +14,18 @@ body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
   -webkit-text-fill-color:#f8fafc!important;
 }
 
-body.browser-shell .browser-window.maximized.browser-blank{
+body.workspace-shell .workspace-window.maximized.workspace-blank{
   background:transparent!important;
   border-color:transparent!important;
   box-shadow:none!important;
   backdrop-filter:none!important;
 }
-body.browser-shell .browser-shell-logo{
+body.workspace-shell .workspace-shell-logo{
   width:clamp(104px,11vw,152px)!important;
   height:clamp(104px,11vw,152px)!important;
   filter:brightness(1.5) contrast(1.45) drop-shadow(0 0 2px rgba(255,255,255,.96)) drop-shadow(0 0 14px rgba(255,255,255,.66)) drop-shadow(0 22px 42px rgba(0,0,0,.54))!important;
 }
-.browser-tab-icon{
+.workspace-tab-icon{
   width:16px!important;
   height:16px!important;
   object-fit:contain!important;
@@ -50,9 +50,9 @@ img[src$="firefly-tab-logo-bold.png"]{
   padding:0!important;
   border-radius:16px!important;
 }
-.browser-tab-icon[src$="firefly-tab-logo.png"],
-.browser-tab-icon[src$="firefly-tab-logo-cropped.png"],
-.browser-tab-icon[src$="firefly-tab-logo-bold.png"]{
+.workspace-tab-icon[src$="firefly-tab-logo.png"],
+.workspace-tab-icon[src$="firefly-tab-logo-cropped.png"],
+.workspace-tab-icon[src$="firefly-tab-logo-bold.png"]{
   width:32px!important;
   height:32px!important;
   min-width:32px!important;
@@ -63,85 +63,85 @@ img[src$="firefly-tab-logo-bold.png"]{
   transform:scale(1.18)!important;
   transform-origin:center!important;
 }
-body:not(.browser-shell) .browser-tab-icon{
+body:not(.workspace-shell) .workspace-tab-icon{
   display:none!important;
 }
-.browser-tab{
+.workspace-tab{
   display:inline-flex!important;
   align-items:center!important;
   gap:0!important;
 }
-.browser-tab span{
+.workspace-tab span{
   min-width:0!important;
   overflow:hidden!important;
   text-overflow:ellipsis!important;
 }
 
 :root{--theme-border:rgba(226,232,240,.26)}
-body.browser-shell,
-body.browser-shell button,
-body.browser-shell input,
-body.browser-shell select,
-body.browser-shell textarea{
+body.workspace-shell,
+body.workspace-shell button,
+body.workspace-shell input,
+body.workspace-shell select,
+body.workspace-shell textarea{
   font-family:var(--nyx-font,Inter),Arial,sans-serif!important;
   font-weight:400!important;
 }
-body.browser-shell *:not(.nyx-styled-display-name){
+body.workspace-shell *:not(.nyx-styled-display-name){
   font-family:var(--nyx-font,Inter),Arial,sans-serif!important;
   font-weight:400!important;
   text-shadow:none!important;
 }
 
-body.browser-shell .browser-window.internal-clear,
-body.browser-shell .browser-window.internal-clear .browser-body{
+body.workspace-shell .workspace-window.internal-clear,
+body.workspace-shell .workspace-window.internal-clear .workspace-body{
   background:transparent!important;
   background-color:transparent!important;
   background-image:none!important;
 }
-body.browser-shell .browser-window.internal-clear iframe.view.transparent-internal-page{
+body.workspace-shell .workspace-window.internal-clear iframe.view.transparent-internal-page{
   background:transparent!important;
   background-color:transparent!important;
 }
 
-body.browser-shell .lion-ai-form{
+body.workspace-shell .lion-ai-form{
   background:#fff!important;
   background-color:#fff!important;
   border-color:rgba(255,255,255,.86)!important;
   color:#111827!important;
 }
-body.browser-shell .lion-ai-input{
+body.workspace-shell .lion-ai-input{
   background:transparent!important;
   background-color:transparent!important;
   color:#111827!important;
   -webkit-text-fill-color:#111827!important;
 }
-body.browser-shell .lion-ai-input::placeholder{
+body.workspace-shell .lion-ai-input::placeholder{
   color:#6b7280!important;
   -webkit-text-fill-color:#6b7280!important;
 }
-body.browser-shell .nyx-prompt-input{
+body.workspace-shell .nyx-prompt-input{
   background:#fff!important;
   background-color:#fff!important;
   color:#000!important;
   -webkit-text-fill-color:#000!important;
 }
-body.browser-shell .nyx-prompt-ok{
+body.workspace-shell .nyx-prompt-ok{
   background:#fff!important;
   background-color:#fff!important;
   color:#000!important;
   -webkit-text-fill-color:#000!important;
 }
-body.browser-shell .nyx-prompt-cancel{
+body.workspace-shell .nyx-prompt-cancel{
   background:#fff!important;
   background-color:#fff!important;
   color:#000!important;
   -webkit-text-fill-color:#000!important;
 }
 
-body.browser-shell .apps-panel .quick-tile span,
-body.browser-shell.theme-ruby .apps-panel .quick-tile span,
-body.browser-shell.theme-emerald .apps-panel .quick-tile span,
-body.browser-shell.theme-sakura .apps-panel .quick-tile span{
+body.workspace-shell .apps-panel .quick-tile span,
+body.workspace-shell.theme-ruby .apps-panel .quick-tile span,
+body.workspace-shell.theme-emerald .apps-panel .quick-tile span,
+body.workspace-shell.theme-sakura .apps-panel .quick-tile span{
   display:block!important;
   opacity:1!important;
   visibility:visible!important;
@@ -156,18 +156,18 @@ body.browser-shell.theme-sakura .apps-panel .quick-tile span{
 body.theme-ruby .apps-panel,
 body.theme-emerald .apps-panel,
 body.theme-sakura .apps-panel,
-body.browser-shell.theme-ruby .apps-panel,
-body.browser-shell.theme-ruby .panel.apps-panel,
-body.browser-shell.theme-emerald .apps-panel,
-body.browser-shell.theme-emerald .panel.apps-panel,
-body.browser-shell.theme-sakura .apps-panel,
-body.browser-shell.theme-sakura .panel.apps-panel{
+body.workspace-shell.theme-ruby .apps-panel,
+body.workspace-shell.theme-ruby .panel.apps-panel,
+body.workspace-shell.theme-emerald .apps-panel,
+body.workspace-shell.theme-emerald .panel.apps-panel,
+body.workspace-shell.theme-sakura .apps-panel,
+body.workspace-shell.theme-sakura .panel.apps-panel{
   background:linear-gradient(rgba(0,0,0,.10),rgba(0,0,0,.20)),var(--theme-bg)!important;
   background-size:cover!important;
   background-position:center!important;
   background-repeat:no-repeat!important;
 }
-body.browser-shell input[type=file].settings-input::file-selector-button,body.browser-shell.theme-ruby input[type=file].settings-input::file-selector-button,body.browser-shell.theme-emerald input[type=file].settings-input::file-selector-button,body.browser-shell.theme-sakura input[type=file].settings-input::file-selector-button{
+body.workspace-shell input[type=file].settings-input::file-selector-button,body.workspace-shell.theme-ruby input[type=file].settings-input::file-selector-button,body.workspace-shell.theme-emerald input[type=file].settings-input::file-selector-button,body.workspace-shell.theme-sakura input[type=file].settings-input::file-selector-button{
   background:transparent!important;
   background-color:transparent!important;
   background-image:none!important;
@@ -175,7 +175,7 @@ body.browser-shell input[type=file].settings-input::file-selector-button,body.br
   filter:none!important;
   text-shadow:none!important;
 }
-body.browser-shell input[type=file].settings-input:hover::file-selector-button,body.browser-shell.theme-ruby input[type=file].settings-input:hover::file-selector-button,body.browser-shell.theme-emerald input[type=file].settings-input:hover::file-selector-button,body.browser-shell.theme-sakura input[type=file].settings-input:hover::file-selector-button{
+body.workspace-shell input[type=file].settings-input:hover::file-selector-button,body.workspace-shell.theme-ruby input[type=file].settings-input:hover::file-selector-button,body.workspace-shell.theme-emerald input[type=file].settings-input:hover::file-selector-button,body.workspace-shell.theme-sakura input[type=file].settings-input:hover::file-selector-button{
   background:transparent!important;
   background-color:transparent!important;
   background-image:none!important;
@@ -184,7 +184,7 @@ body.browser-shell input[type=file].settings-input:hover::file-selector-button,b
   transform:scale(1.015)!important;
 }
 
-body.browser-shell .settings-panel{
+body.workspace-shell .settings-panel{
   width:min(760px,calc(100vw - 34px))!important;
   height:auto!important;
   min-height:0!important;
@@ -197,13 +197,13 @@ body.browser-shell .settings-panel{
   box-shadow:none!important;
   backdrop-filter:none!important;
 }
-body.browser-shell .settings-grid{
+body.workspace-shell .settings-grid{
   display:grid!important;
   grid-template-columns:1fr!important;
   gap:14px!important;
 }
-body.browser-shell .settings-panel h1,
-body.browser-shell .settings-section-title{
+body.workspace-shell .settings-panel h1,
+body.workspace-shell .settings-section-title{
   margin:12px 0 10px!important;
   padding:0 2px!important;
   font-size:16px!important;
@@ -211,7 +211,7 @@ body.browser-shell .settings-section-title{
   color:rgba(248,250,252,.9)!important;
   -webkit-text-fill-color:rgba(248,250,252,.9)!important;
 }
-body.browser-shell .settings-card{
+body.workspace-shell .settings-card{
   min-height:0!important;
   padding:16px 18px!important;
   border:1px solid color-mix(in srgb,var(--theme-border,#8b5cf6) 38%,rgba(255,255,255,.18))!important;
@@ -221,21 +221,21 @@ body.browser-shell .settings-card{
   box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 14px 38px rgba(0,0,0,.2)!important;
   backdrop-filter:blur(7px) saturate(1.08)!important;
 }
-body.browser-shell .settings-card h2{
+body.workspace-shell .settings-card h2{
   margin:0 0 10px!important;
   font-size:14px!important;
   font-weight:700!important;
   color:rgba(248,250,252,.88)!important;
   -webkit-text-fill-color:rgba(248,250,252,.88)!important;
 }
-body.browser-shell .settings-card p{
+body.workspace-shell .settings-card p{
   margin:0 0 12px!important;
   font-size:12px!important;
   line-height:1.35!important;
   color:rgba(226,232,240,.72)!important;
   -webkit-text-fill-color:rgba(226,232,240,.72)!important;
 }
-body.browser-shell .settings-card :is(input:not([type="range"]),select,.settings-input,.settings-select),body.browser-shell .panic-key-display{
+body.workspace-shell .settings-card :is(input:not([type="range"]),select,.settings-input,.settings-select),body.workspace-shell .panic-key-display{
   min-height:38px!important;
   border:1px solid rgba(255,255,255,.12)!important;
   border-radius:10px!important;
@@ -245,7 +245,7 @@ body.browser-shell .settings-card :is(input:not([type="range"]),select,.settings
   -webkit-text-fill-color:#f8fafc!important;
   box-shadow:none!important;
 }
-body.browser-shell .panic-key-display{
+body.workspace-shell .panic-key-display{
   display:inline-flex;
   align-items:center;
   min-width:150px;
@@ -253,7 +253,7 @@ body.browser-shell .panic-key-display{
   font-size:15px;
   justify-content:center;
 }
-body.browser-shell .settings-card :is(button,.settings-action),body.browser-shell .settings-card input[type=file]::file-selector-button{
+body.workspace-shell .settings-card :is(button,.settings-action),body.workspace-shell .settings-card input[type=file]::file-selector-button{
   min-height:34px!important;
   border:1px solid rgba(255,255,255,.14)!important;
   border-radius:999px!important;
@@ -263,12 +263,12 @@ body.browser-shell .settings-card :is(button,.settings-action),body.browser-shel
   -webkit-text-fill-color:#f8fafc!important;
   box-shadow:none!important;
 }
-body.browser-shell .settings-card :is(button,.settings-action):hover,body.browser-shell .settings-card input[type=file]::file-selector-button:hover{
+body.workspace-shell .settings-card :is(button,.settings-action):hover,body.workspace-shell .settings-card input[type=file]::file-selector-button:hover{
   background:rgba(255,255,255,.16)!important;
   border-color:var(--theme-border,#8b5cf6)!important;
   transform:scale(1.015)!important;
 }
-body.browser-shell .settings-card .switch{
+body.workspace-shell .settings-card .switch{
   width:44px!important;
   min-height:24px!important;
   padding:2px!important;
@@ -343,16 +343,16 @@ textarea,
   font-family:var(--nyx-font,Inter),Arial,sans-serif!important;
 }
 
-body.browser-shell .browser-mode-weather,
-body.browser-shell #weatherRestore{
+body.workspace-shell .workspace-mode-weather,
+body.workspace-shell #weatherRestore{
   font-size:0!important;
   color:#edf2ff!important;
   display:inline-grid!important;
   place-items:center!important;
   overflow:visible!important;
 }
-body.browser-shell .browser-mode-weather::before,
-body.browser-shell #weatherRestore::before{
+body.workspace-shell .workspace-mode-weather::before,
+body.workspace-shell #weatherRestore::before{
   content:""!important;
   width:17px!important;
   height:9px!important;
@@ -365,8 +365,8 @@ body.browser-shell #weatherRestore::before{
   position:relative!important;
   transform:translateY(2px)!important;
 }
-body.browser-shell .browser-mode-weather::after,
-body.browser-shell #weatherRestore::after{
+body.workspace-shell .workspace-mode-weather::after,
+body.workspace-shell #weatherRestore::after{
   content:""!important;
   width:10px!important;
   height:10px!important;
@@ -378,10 +378,10 @@ body.browser-shell #weatherRestore::after{
   transform:translate(-3px,-3px)!important;
 }
 
-body.browser-shell #weatherRestore{
+body.workspace-shell #weatherRestore{
   display:none!important;
 }
-body.browser-shell .browser-mode-weather{
+body.workspace-shell .workspace-mode-weather{
   font-size:0!important;
   color:#edf2ff!important;
   background:
@@ -398,14 +398,14 @@ body.browser-shell .browser-mode-weather{
   line-height:0!important;
   overflow:hidden!important;
 }
-body.browser-shell .browser-mode-weather::before,
-body.browser-shell .browser-mode-weather::after,
-body.browser-shell #weatherRestore::before,
-body.browser-shell #weatherRestore::after{
+body.workspace-shell .workspace-mode-weather::before,
+body.workspace-shell .workspace-mode-weather::after,
+body.workspace-shell #weatherRestore::before,
+body.workspace-shell #weatherRestore::after{
   content:none!important;
   display:none!important;
 }
-body.browser-shell .weather-cloud-icon{
+body.workspace-shell .weather-cloud-icon{
   position:relative!important;
   width:22px!important;
   height:22px!important;
@@ -415,11 +415,11 @@ body.browser-shell .weather-cloud-icon{
   pointer-events:none!important;
 }
 .weather-restore,
-.browser-mode-weather{
+.workspace-mode-weather{
   font-size:0!important;
 }
 .weather-restore .weather-cloud-icon,
-.browser-mode-weather .weather-cloud-icon{
+.workspace-mode-weather .weather-cloud-icon{
   width:22px!important;
   height:22px!important;
   display:block!important;
@@ -432,7 +432,7 @@ body.browser-shell .weather-cloud-icon{
   margin:auto!important;
   transform:none!important;
 }
-body.browser-shell .weather-cloud-icon::before{
+body.workspace-shell .weather-cloud-icon::before{
   content:""!important;
   position:absolute!important;
   left:2px!important;
@@ -444,7 +444,7 @@ body.browser-shell .weather-cloud-icon::before{
   box-shadow:none!important;
   display:block!important;
 }
-body.browser-shell .weather-cloud-icon::after{
+body.workspace-shell .weather-cloud-icon::after{
   content:""!important;
   position:absolute!important;
   left:5px!important;
@@ -456,11 +456,11 @@ body.browser-shell .weather-cloud-icon::after{
   box-shadow:7px 3px 0 -2px #fff!important;
   display:block!important;
 }
-body.browser-shell .browser-mode-weather{
+body.workspace-shell .workspace-mode-weather{
   overflow:visible!important;
 }
-body.browser-shell .browser-mode-weather > .weather-cloud-icon,
-body.browser-shell #weatherRestore > .weather-cloud-icon{
+body.workspace-shell .workspace-mode-weather > .weather-cloud-icon,
+body.workspace-shell #weatherRestore > .weather-cloud-icon{
   flex:0 0 22px!important;
   min-width:22px!important;
   min-height:22px!important;
@@ -470,13 +470,13 @@ body.browser-shell #weatherRestore > .weather-cloud-icon{
 }
 .weather-restore::before,
 .weather-restore::after,
-.browser-mode-weather::before,
-.browser-mode-weather::after{
+.workspace-mode-weather::before,
+.workspace-mode-weather::after{
   content:none!important;
   display:none!important;
 }
 
-body.browser-shell .window.settings-window{
+body.workspace-shell .window.settings-window{
   left:50%!important;
   top:74px!important;
   width:min(560px,calc(100vw - 44px))!important;
@@ -491,7 +491,7 @@ body.browser-shell .window.settings-window{
   -webkit-backdrop-filter:blur(12px) saturate(1.08)!important;
   overflow:hidden!important;
 }
-body.browser-shell .window.settings-window .titlebar{
+body.workspace-shell .window.settings-window .titlebar{
   height:34px!important;
   min-height:34px!important;
   background:rgba(28,17,48,.54)!important;
@@ -500,40 +500,40 @@ body.browser-shell .window.settings-window .titlebar{
   backdrop-filter:blur(10px)!important;
   -webkit-backdrop-filter:blur(10px)!important;
 }
-body.browser-shell .window.settings-window .titlebar-title{
+body.workspace-shell .window.settings-window .titlebar-title{
   font-size:12px!important;
   font-weight:500!important;
 }
-body.browser-shell .settings-window .settings-panel{
+body.workspace-shell .settings-window .settings-panel{
   height:calc(100% - 34px)!important;
   padding:18px 18px 26px!important;
   overflow:auto!important;
   background:transparent!important;
   background-image:none!important;
 }
-body.browser-shell .settings-window .settings-panel::before,
-body.browser-shell .settings-window .settings-panel::after{
+body.workspace-shell .settings-window .settings-panel::before,
+body.workspace-shell .settings-window .settings-panel::after{
   display:none!important;
   content:none!important;
 }
-body.browser-shell .settings-window .settings-panel h1{
+body.workspace-shell .settings-window .settings-panel h1{
   margin:0 0 14px!important;
   font-size:22px!important;
   line-height:1.1!important;
   font-weight:500!important;
   text-shadow:none!important;
 }
-body.browser-shell .settings-window .settings-section-title{
+body.workspace-shell .settings-window .settings-section-title{
   margin:18px 0 10px!important;
   font-size:14px!important;
   font-weight:500!important;
   color:rgba(248,250,252,.86)!important;
 }
-body.browser-shell .settings-window .settings-grid{
+body.workspace-shell .settings-window .settings-grid{
   grid-template-columns:1fr!important;
   gap:10px!important;
 }
-body.browser-shell .settings-window .settings-card{
+body.workspace-shell .settings-window .settings-card{
   min-height:0!important;
   padding:12px 14px!important;
   border-radius:10px!important;
@@ -544,44 +544,44 @@ body.browser-shell .settings-window .settings-card{
   backdrop-filter:blur(7px) saturate(1.08)!important;
   -webkit-backdrop-filter:blur(7px) saturate(1.08)!important;
 }
-body.browser-shell .settings-window .settings-card:hover{
+body.workspace-shell .settings-window .settings-card:hover{
   transform:scale(1.008)!important;
   border-color:color-mix(in srgb,var(--theme-border,#8b5cf6) 72%,rgba(255,255,255,.18))!important;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 12px 30px rgba(0,0,0,.20)!important;
 }
-body.browser-shell .settings-window .settings-card h2{
+body.workspace-shell .settings-window .settings-card h2{
   margin:0 0 6px!important;
   font-size:13px!important;
   font-weight:500!important;
 }
-body.browser-shell .settings-window .settings-card p,
-body.browser-shell .settings-window .settings-card label,
-body.browser-shell .settings-window .settings-row{
+body.workspace-shell .settings-window .settings-card p,
+body.workspace-shell .settings-window .settings-card label,
+body.workspace-shell .settings-window .settings-row{
   font-size:11px!important;
   line-height:1.35!important;
 }
-body.browser-shell .settings-window .settings-card:has([data-cloak-type]){
+body.workspace-shell .settings-window .settings-card:has([data-cloak-type]){
   display:grid!important;
   gap:12px!important;
 }
-body.browser-shell .settings-window .settings-card:has([data-cloak-type]) .settings-row{
+body.workspace-shell .settings-window .settings-card:has([data-cloak-type]) .settings-row{
   display:grid!important;
   grid-template-columns:minmax(0,1fr) auto!important;
   gap:10px!important;
   align-items:center!important;
   margin:0!important;
 }
-body.browser-shell .settings-window .settings-card:has([data-cloak-type]) .settings-actions{
+body.workspace-shell .settings-window .settings-card:has([data-cloak-type]) .settings-actions{
   display:grid!important;
   grid-template-columns:1fr 1fr!important;
   gap:10px!important;
   margin:0!important;
 }
-body.browser-shell .settings-window .settings-card:has([data-cloak-type]) :is(button,input,select){
+body.workspace-shell .settings-window .settings-card:has([data-cloak-type]) :is(button,input,select){
   width:100%!important;
   min-width:0!important;
 }
-body.browser-shell .settings-window :is(button,input,select,textarea,.settings-input,.settings-select,.panic-key-display){
+body.workspace-shell .settings-window :is(button,input,select,textarea,.settings-input,.settings-select,.panic-key-display){
   min-height:32px!important;
   border-radius:9px!important;
   background:rgba(8,7,14,.46)!important;
@@ -589,13 +589,13 @@ body.browser-shell .settings-window :is(button,input,select,textarea,.settings-i
   border:1px solid rgba(255,255,255,.14)!important;
   box-shadow:none!important;
 }
-body.browser-shell .settings-window :is(button,.settings-action):hover{
+body.workspace-shell .settings-window :is(button,.settings-action):hover{
   transform:scale(1.015)!important;
   background:rgba(115,74,170,.22)!important;
   border-color:var(--theme-border,#8b5cf6)!important;
 }
 
-body.browser-shell .browser-shell-settings-close{
+body.workspace-shell .workspace-shell-settings-close{
   position:sticky;
   top:8px;
   left:auto;
@@ -618,37 +618,37 @@ body.browser-shell .browser-shell-settings-close{
   box-shadow:0 8px 20px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.1);
   transition:transform .58s cubic-bezier(.16,.86,.2,1),background .26s ease,border-color .26s ease,box-shadow .26s ease,filter .26s ease;
 }
-body.browser-shell .browser-shell-settings-close::before{
+body.workspace-shell .workspace-shell-settings-close::before{
   content:"\00d7";
   color:#f8fafc;
   font-size:16px;
   transform:rotate(0deg);
   transition:transform .58s cubic-bezier(.16,.86,.2,1),color .26s ease;
 }
-body.browser-shell .browser-shell-settings-close:hover{
+body.workspace-shell .workspace-shell-settings-close:hover{
   transform:scale(1.06)!important;
   background:rgba(115,74,170,.34)!important;
   border-color:var(--theme-border,#8b5cf6)!important;
   box-shadow:0 12px 28px rgba(0,0,0,.30),0 0 16px color-mix(in srgb,var(--theme-border,#8b5cf6) 34%,transparent);
 }
-body.browser-shell .browser-shell-settings-close:hover::before{
+body.workspace-shell .workspace-shell-settings-close:hover::before{
   transform:rotate(45deg);
 }
-body.browser-shell .browser-shell-settings-close:active{
+body.workspace-shell .workspace-shell-settings-close:active{
   transform:scale(.94)!important;
   filter:brightness(.9);
 }
-body.browser-shell .home-shortcut-add b{
+body.workspace-shell .home-shortcut-add b{
   display:inline-grid;
   place-items:center;
   transform:rotate(0deg);
   transition:transform .58s cubic-bezier(.16,.86,.2,1);
 }
-body.browser-shell .home-shortcut-add:hover b{
+body.workspace-shell .home-shortcut-add:hover b{
   transform:rotate(45deg);
 }
 .cloak-launch-screen .cloak-input,
-body.browser-shell .cloak-launch-screen .cloak-input{
+body.workspace-shell .cloak-launch-screen .cloak-input{
   background:#fff!important;
   background-image:none!important;
   color:#000!important;
@@ -657,12 +657,12 @@ body.browser-shell .cloak-launch-screen .cloak-input{
   box-shadow:inset 0 1px 0 rgba(17,24,39,.04),0 0 0 1px rgba(17,24,39,.04)!important;
 }
 .cloak-launch-screen .cloak-input:focus,
-body.browser-shell .cloak-launch-screen .cloak-input:focus{
+body.workspace-shell .cloak-launch-screen .cloak-input:focus{
   background:#fff!important;
   border-color:#000!important;
 }
 .cloak-launch-screen .cloak-launch-panel button,
-body.browser-shell .cloak-launch-screen .cloak-launch-panel button{
+body.workspace-shell .cloak-launch-screen .cloak-launch-panel button{
   background:#fff!important;
   background-image:none!important;
   color:#000!important;
@@ -671,12 +671,12 @@ body.browser-shell .cloak-launch-screen .cloak-launch-panel button{
   box-shadow:0 2px 6px rgba(0,0,0,.06)!important;
 }
 .cloak-launch-screen .cloak-launch-panel button:hover,
-body.browser-shell .cloak-launch-screen .cloak-launch-panel button:hover{
+body.workspace-shell .cloak-launch-screen .cloak-launch-panel button:hover{
   background:#f8fafc!important;
   border-color:#cbd5e1!important;
 }
 .cloak-launch-screen .cloak-submit-actions .primary,
-body.browser-shell .cloak-launch-screen .cloak-submit-actions .primary{
+body.workspace-shell .cloak-launch-screen .cloak-submit-actions .primary{
   background:#fff!important;
   color:#000!important;
   -webkit-text-fill-color:#000!important;
@@ -764,9 +764,9 @@ html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
   font-weight:800!important;
 }
 
-body.browser-shell .browser-window .titlebar,
-body.browser-shell .browser-window .browser-tabs,
-body.browser-shell .browser-window .browser-tools{
+body.workspace-shell .workspace-window .titlebar,
+body.workspace-shell .workspace-window .workspace-tabs,
+body.workspace-shell .workspace-window .workspace-tools{
   display:none!important;
   visibility:hidden!important;
   height:0!important;
@@ -774,24 +774,24 @@ body.browser-shell .browser-window .browser-tools{
   overflow:hidden!important;
   pointer-events:none!important;
 }
-body.browser-shell .browser-window{
+body.workspace-shell .workspace-window{
   top:72px!important;
   height:calc(100dvh - 72px)!important;
 }
-body.browser-shell .window.maximized{
+body.workspace-shell .window.maximized{
   top:72px!important;
   height:calc(100dvh - 72px)!important;
 }
-body.browser-shell .browser-mode-menu{
+body.workspace-shell .workspace-mode-menu{
   top:72px!important;
 }
-body.browser-shell .weather-panel{
+body.workspace-shell .weather-panel{
   top:84px!important;
 }
-body.browser-shell .weather-restore{
+body.workspace-shell .weather-restore{
   top:78px!important;
 }
-body.browser-shell .browser-mode-weather > .weather-cloud-icon{
+body.workspace-shell .workspace-mode-weather > .weather-cloud-icon{
   text-indent:0!important;
   color:#fff!important;
   -webkit-text-fill-color:#fff!important;
@@ -836,7 +836,7 @@ body.browser-shell .browser-mode-weather > .weather-cloud-icon{
   height:3.5px!important;
   box-shadow:0 -6px 0 #f8fafc,0 6px 0 #f8fafc!important;
 }
-body.browser-shell .browser-mode-weather > .weather-cloud-icon{
+body.workspace-shell .workspace-mode-weather > .weather-cloud-icon{
   position:absolute!important;
   left:50%!important;
   top:50%!important;
@@ -844,44 +844,44 @@ body.browser-shell .browser-mode-weather > .weather-cloud-icon{
   transform:translate(-50%,-50%)!important;
 }
 
-body.browser-shell .tool-btn[data-back]::before{
+body.workspace-shell .tool-btn[data-back]::before{
   content:"\2B05"!important;
   transform:translate(-50%,-50%)!important;
 }
-body.browser-shell .tool-btn[data-forward]::before{
+body.workspace-shell .tool-btn[data-forward]::before{
   content:"\279C"!important;
 }
-body.browser-shell .tool-btn[data-reload]::before{
+body.workspace-shell .tool-btn[data-reload]::before{
   content:"\1F5D8"!important;
   font-size:21px!important;
 }
 
-body.browser-shell .browser-body,
-body.browser-shell .browser-window,
-body.browser-shell .home-shortcut-grid{
+body.workspace-shell .workspace-body,
+body.workspace-shell .workspace-window,
+body.workspace-shell .home-shortcut-grid{
   overflow:visible!important;
 }
-body.browser-shell .home-shortcut-grid{
+body.workspace-shell .home-shortcut-grid{
   position:relative!important;
   z-index:20!important;
 }
-body.browser-shell .home-shortcut{
+body.workspace-shell .home-shortcut{
   position:relative!important;
   z-index:1!important;
   isolation:auto!important;
 }
-body.browser-shell .home-shortcut:has(.home-shortcut-menu:hover),
-body.browser-shell .home-shortcut.menu-open{
+body.workspace-shell .home-shortcut:has(.home-shortcut-menu:hover),
+body.workspace-shell .home-shortcut.menu-open{
   z-index:5000!important;
 }
-body.browser-shell .home-shortcut.menu-open .home-shortcut-open{
+body.workspace-shell .home-shortcut.menu-open .home-shortcut-open{
   position:relative!important;
   z-index:1!important;
 }
-body.browser-shell .home-shortcut-menu-btn{
+body.workspace-shell .home-shortcut-menu-btn{
   z-index:5001!important;
 }
-body.browser-shell .home-shortcut-menu{
+body.workspace-shell .home-shortcut-menu{
   z-index:5002!important;
   top:34px!important;
   right:0!important;
@@ -891,7 +891,7 @@ body.browser-shell .home-shortcut-menu{
   box-shadow:0 18px 46px rgba(0,0,0,.48),0 0 0 1px var(--obsidian-line)!important;
 }
 
-body.browser-shell .browser-shell-settings-close{
+body.workspace-shell .workspace-shell-settings-close{
   position:absolute!important;
   display:grid!important;
   place-items:center!important;
@@ -903,7 +903,7 @@ body.browser-shell .browser-shell-settings-close{
   line-height:0!important;
   text-indent:-9999px!important;
 }
-body.browser-shell .browser-shell-settings-close::before{
+body.workspace-shell .workspace-shell-settings-close::before{
   position:absolute!important;
   left:50%!important;
   top:50%!important;
@@ -917,7 +917,7 @@ body.browser-shell .browser-shell-settings-close::before{
   text-indent:0!important;
   transform:translate(-50%,-50%) rotate(0deg)!important;
 }
-body.browser-shell .browser-shell-settings-close{
+body.workspace-shell .workspace-shell-settings-close{
   top:12px!important;
   right:12px!important;
   left:auto!important;
@@ -928,19 +928,19 @@ body.browser-shell .browser-shell-settings-close{
   min-height:28px!important;
   transform:none!important;
 }
-body.browser-shell .browser-shell-settings-close::before{
+body.workspace-shell .workspace-shell-settings-close::before{
   content:"\00d7"!important;
   font-size:18px!important;
 }
-body.browser-shell .browser-shell-settings-close:hover{
+body.workspace-shell .workspace-shell-settings-close:hover{
   transform:scale(1.06)!important;
 }
-body.browser-shell .browser-shell-settings-close:hover::before{
+body.workspace-shell .workspace-shell-settings-close:hover::before{
   transform:translate(-50%,-50%) rotate(45deg)!important;
 }
 
-body.browser-shell .browser-mode-weather,
-body.browser-shell #weatherRestore{
+body.workspace-shell .workspace-mode-weather,
+body.workspace-shell #weatherRestore{
   font-size:0!important;
   line-height:0!important;
   color:#fff!important;
@@ -948,17 +948,17 @@ body.browser-shell #weatherRestore{
   text-indent:0!important;
   overflow:hidden!important;
 }
-body.browser-shell .browser-mode-weather::before,
-body.browser-shell .browser-mode-weather::after,
-body.browser-shell #weatherRestore::before,
-body.browser-shell #weatherRestore::after,
-body.browser-shell .weather-cloud-icon::before,
-body.browser-shell .weather-cloud-icon::after{
+body.workspace-shell .workspace-mode-weather::before,
+body.workspace-shell .workspace-mode-weather::after,
+body.workspace-shell #weatherRestore::before,
+body.workspace-shell #weatherRestore::after,
+body.workspace-shell .weather-cloud-icon::before,
+body.workspace-shell .weather-cloud-icon::after{
   content:none!important;
   display:none!important;
 }
-body.browser-shell .browser-mode-weather > .weather-cloud-icon,
-body.browser-shell #weatherRestore > .weather-cloud-icon{
+body.workspace-shell .workspace-mode-weather > .weather-cloud-icon,
+body.workspace-shell #weatherRestore > .weather-cloud-icon{
   position:relative!important;
   width:22px!important;
   height:22px!important;

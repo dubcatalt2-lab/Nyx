@@ -26,9 +26,9 @@ host.on('message',(data,binary)=>{
  if(stage===2&&pending.length>=1){pending=pending.subarray(1);host.send(serverInit());stage++;}
  while(stage===3&&pending.length){const type=pending[0];let size=({0:20,3:10,4:8,5:6})[type];if(type===2){if(pending.length<4)return;size=4+pending.readUInt16BE(2)*4;}if(!size||pending.length<size)return;if(type===5)lastPointer={x:pending.readUInt16BE(2),y:pending.readUInt16BE(4)};pending=pending.subarray(size);if(type===4)keys++;if(type===5)pointers++;if(type===3&&!frames++){const frame=Buffer.alloc(16+320*200*4);frame.writeUInt16BE(1,2);frame.writeUInt16BE(320,8);frame.writeUInt16BE(200,10);frame.fill(Buffer.from([40,80,40,0]),16);host.send(frame);}}
 });
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
- const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const page=await workspace.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('https://www.gstatic.com/firebasejs/**/firebase-app.js',r=>r.fulfill({contentType:'text/javascript',body:'export const getApps=()=>[];export const initializeApp=()=>({});'}));
  await page.route('https://www.gstatic.com/firebasejs/**/firebase-auth.js',r=>r.fulfill({contentType:'text/javascript',body:'const user={getIdToken:async()=>"owner"};export const getAuth=()=>({currentUser:user});export const browserLocalPersistence={};export const setPersistence=async()=>{};export const onAuthStateChanged=(a,f)=>f(user);'}));
  let accessFailed=false,connectFailed=false;
@@ -42,4 +42,4 @@ try{
 
 assert(frames>0);assert(await page.locator('#secureAttention').isVisible());const connectedCount=connections;host.send(JSON.stringify({type:'ended'}));await page.locator('#cancelReconnect').waitFor({state:'visible'});await page.locator('#cancelReconnect').click();await page.waitForTimeout(3500);assert.equal(connections,connectedCount,'Stop reconnecting must cancel the queued attempt');assert(await page.locator('#setup').isVisible());assert(stopped);assert.deepEqual(errors,[]);
  console.log('PASS: noVNC RFB handshake, framebuffer, mouse/keyboard over owner-authenticated binary relay; session teardown. Native Windows service installation still requires administrator approval.');
-}finally{await browser.close();gateway?.closeAllConnections();gateway?.close();host.close();remote.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}
+}finally{await workspace.close();gateway?.closeAllConnections();gateway?.close();host.close();remote.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

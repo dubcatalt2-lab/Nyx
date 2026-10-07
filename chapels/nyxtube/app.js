@@ -706,7 +706,7 @@
     likedShorts=new Map([...likedShorts].slice(-500));
     try {
       localStorage.setItem(shortPreferenceKey,JSON.stringify({videos:[...hiddenShorts],channels:[...hiddenShortChannels],likes:[...likedShorts.values()]}));
-      refs.shortPreferencesStatus.textContent=message+' Saved in this browser.';
+      refs.shortPreferencesStatus.textContent=message+' Saved in this workspace.';
     } catch { refs.shortPreferencesStatus.textContent=message+' Saved for this session only.'; }
   }
   function resetShortFeed(query='',topic='discover') {

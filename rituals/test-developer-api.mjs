@@ -36,7 +36,7 @@ const collection=routeDb.collection;
 routeDb.collection=name=>{const base=collection(name);return {...base,doc(id){const r=base.doc(id);return {...r,async set(value,options){routeDb.records.set(r.path,options?.merge?{...routeDb.records.get(r.path),...value}:value)}};},orderBy(){let lower='',upper='~',after='',limit=100;const q={endAt(v){upper=v;return q},startAt(v){lower=v;return q},startAfter(v){after=v;return q},limit(v){limit=v;return q},async get(){return {docs:[...routeDb.records].filter(([k])=>k.startsWith(name+'/')).map(([k,v])=>({id:k.slice(name.length+1),data:()=>v})).filter(d=>d.id>=lower&&d.id<=upper&&d.id>after).sort((a,b)=>a.id.localeCompare(b.id)).slice(0,limit)}}};return q;}};};
 const firebase={firestore:routeDb,auth:{getUser:async uid=>{if(!users.has(uid))throw Error('Missing user');return users.get(uid);}}};
 const app=express();app.use(express.json());let calls=0,mode='ok';
-installDeveloperApi(app,{firebase:async()=>firebase,authenticate:async req=>{const uid=req.get('authorization')?.replace('Bearer ','');if(!users.has(uid))throw Object.assign(Error('Sign in'),{status:401});return {firebase,token:{uid,firebase:{sign_in_provider:req.get('x-test-anonymous')?'anonymous':'password'}}};},ownerUid:()=> 'owner',passwordHash:()=>digest,sameOrigin:req=>req.get('origin')!=='https://evil.test',device:async req=>req.get('x-test-device')||'browser',configured:()=>true,page:(_req,res)=>res.send('public API page'),send:async(req,payload)=>{
+installDeveloperApi(app,{firebase:async()=>firebase,authenticate:async req=>{const uid=req.get('authorization')?.replace('Bearer ','');if(!users.has(uid))throw Object.assign(Error('Sign in'),{status:401});return {firebase,token:{uid,firebase:{sign_in_provider:req.get('x-test-anonymous')?'anonymous':'password'}}};},ownerUid:()=> 'owner',passwordHash:()=>digest,sameOrigin:req=>req.get('origin')!=='https://evil.test',device:async req=>req.get('x-test-device')||'workspace',configured:()=>true,page:(_req,res)=>res.send('public API page'),send:async(req,payload)=>{
   if(mode==='presend')throw Object.assign(Error('budget reached'),{status:429});
   req.nyxApiSent=true;calls++;assert.equal(payload.model,GEMINI);
   if(mode==='timeout')throw Error('timeout');
@@ -108,16 +108,16 @@ console.log('PASS: email-free API access, per-user key limits, non-renewing gran
 
 // Free grants are bounded atomically across new accounts, not by school IP.
 const abuseDb=memoryFirestore();let grantTime=Date.now();const grants=createKeyStore(abuseDb,()=>grantTime);
-const burst=await Promise.allSettled(Array.from({length:8},(_,i)=>grants.issue('burst'+i,'same-browser','Test')));
+const burst=await Promise.allSettled(Array.from({length:8},(_,i)=>grants.issue('burst'+i,'same-workspace','Test')));
 assert.equal(burst.filter(r=>r.status==='fulfilled').length,3);
 assert.equal((await grants.details('burst0')).balance,1000);
 await grants.revoke('burst0');grantTime+=61000;
-await grants.issue('burst0','same-browser','Replacement');
+await grants.issue('burst0','same-workspace','Replacement');
 assert.equal((await grants.details('burst0')).balance,1000,'Replacement does not refill or consume another grant');
-for(let i=0;i<27;i++)await grants.issue('global'+i,'browser'+i,'Test');
-await assert.rejects(grants.issue('over','new-browser','Test'),/signups have reached/);
-await grants.issue('paid','same-browser','Premium',true);
+for(let i=0;i<27;i++)await grants.issue('global'+i,'workspace'+i,'Test');
+await assert.rejects(grants.issue('over','new-workspace','Test'),/signups have reached/);
+await grants.issue('paid','same-workspace','Premium',true);
 grantTime+=86400000;
-await grants.issue('tomorrow','same-browser','Test');
+await grants.issue('tomorrow','same-workspace','Test');
 assert.equal((await grants.details('tomorrow')).balance,1000);
-console.log('PASS: concurrent browser grant cap, global grant cap, rotation, paid exemptions and UTC reset');
+console.log('PASS: concurrent workspace grant cap, global grant cap, rotation, paid exemptions and UTC reset');

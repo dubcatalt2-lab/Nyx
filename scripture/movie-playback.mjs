@@ -79,7 +79,7 @@ export function installMoviePlayback(app,{clientId=req=>req.ip,resolveStream=res
    await validateMovie(req.params.id);
    const source=await resolveStream(req.params.id,AbortSignal.any([abort.signal,AbortSignal.timeout(20000)]),provider);
    if(abort.signal.aborted)return;
-   // Each browser can retain at most two sessions, including an old player during renewal.
+   // Each workspace can retain at most two sessions, including an old player during renewal.
    const owned=[...sessions].filter(([,s])=>s.owner===owner);while(owned.length>=2)sessions.delete(owned.shift()[0]);
    const id=randomBytes(24).toString('base64url');
    const session={client,owner,provider,expires:source.expires,last:Date.now(),targets:new Map(),reverse:new Map(),active:0};

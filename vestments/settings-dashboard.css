@@ -1,13 +1,13 @@
-html body.browser-shell .browser-shell-settings-panel [data-settings-category="browser"] .nyx-settings-group{display:grid!important;gap:16px!important;background:transparent!important;overflow:visible!important}
-html body.browser-shell .browser-shell-settings-panel .nyx-settings-group > .nyx-browser-settings-card{--nyx-settings-columns:minmax(0,1fr);min-width:0!important;grid-template-columns:var(--nyx-settings-columns)!important;align-items:start!important;gap:16px!important;padding:22px!important;border:1px solid var(--theme-border,rgba(255,255,255,.1))!important;border-radius:16px!important}
-html body.browser-shell .browser-shell-settings-panel .nyx-browser-settings-card .nyx-settings-control{display:grid!important;width:100%!important;min-width:0!important;gap:14px!important;justify-self:stretch!important}
-html body.browser-shell .browser-shell-settings-panel .nyx-browser-settings-card .settings-form-row{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important;margin:0!important}
-html body.browser-shell .browser-shell-settings-panel .nyx-browser-settings-card .nyx-browser-setting-field{display:grid!important;min-width:0!important;gap:7px!important;font-size:12px!important}
-html body.browser-shell .browser-shell-settings-panel .nyx-browser-settings-card .nyx-browser-setting-field input{width:100%!important;min-width:0!important;box-sizing:border-box!important}
-html body.browser-shell .browser-shell-settings-panel .nyx-browser-settings-card .nyx-browser-setting-toggles{display:grid!important;gap:0!important;padding:0 14px!important;border:1px solid rgba(255,255,255,.08)!important;border-radius:8px!important}
-html body.browser-shell .browser-shell-settings-panel .nyx-browser-settings-card .settings-row{min-width:0!important;gap:16px!important;padding:12px 0!important;margin:0!important}
-html body.browser-shell .browser-shell-settings-panel .nyx-browser-settings-card .settings-actions{display:flex!important;flex-wrap:wrap!important;gap:8px!important;margin:0!important}
-html body.browser-shell .browser-shell-settings-overlay{
+html body.workspace-shell .workspace-shell-settings-panel [data-settings-category="workspace"] .nyx-settings-group{display:grid!important;gap:16px!important;background:transparent!important;overflow:visible!important}
+html body.workspace-shell .workspace-shell-settings-panel .nyx-settings-group > .nyx-workspace-settings-card{--nyx-settings-columns:minmax(0,1fr);min-width:0!important;grid-template-columns:var(--nyx-settings-columns)!important;align-items:start!important;gap:16px!important;padding:22px!important;border:1px solid var(--theme-border,rgba(255,255,255,.1))!important;border-radius:16px!important}
+html body.workspace-shell .workspace-shell-settings-panel .nyx-workspace-settings-card .nyx-settings-control{display:grid!important;width:100%!important;min-width:0!important;gap:14px!important;justify-self:stretch!important}
+html body.workspace-shell .workspace-shell-settings-panel .nyx-workspace-settings-card .settings-form-row{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important;margin:0!important}
+html body.workspace-shell .workspace-shell-settings-panel .nyx-workspace-settings-card .nyx-workspace-setting-field{display:grid!important;min-width:0!important;gap:7px!important;font-size:12px!important}
+html body.workspace-shell .workspace-shell-settings-panel .nyx-workspace-settings-card .nyx-workspace-setting-field input{width:100%!important;min-width:0!important;box-sizing:border-box!important}
+html body.workspace-shell .workspace-shell-settings-panel .nyx-workspace-settings-card .nyx-workspace-setting-toggles{display:grid!important;gap:0!important;padding:0 14px!important;border:1px solid rgba(255,255,255,.08)!important;border-radius:8px!important}
+html body.workspace-shell .workspace-shell-settings-panel .nyx-workspace-settings-card .settings-row{min-width:0!important;gap:16px!important;padding:12px 0!important;margin:0!important}
+html body.workspace-shell .workspace-shell-settings-panel .nyx-workspace-settings-card .settings-actions{display:flex!important;flex-wrap:wrap!important;gap:8px!important;margin:0!important}
+html body.workspace-shell .workspace-shell-settings-overlay{
   position:fixed!important;
   inset:var(--nyx-interface-bar) 0 0!important;
   z-index:2200!important;
@@ -26,12 +26,12 @@ html body.browser-shell .browser-shell-settings-overlay{
   -webkit-backdrop-filter:none!important;
 }
 
-html body.browser-shell .browser-shell-settings-overlay,
-html body.browser-shell .browser-shell-settings-overlay *{
+html body.workspace-shell .workspace-shell-settings-overlay,
+html body.workspace-shell .workspace-shell-settings-overlay *{
   font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif!important;
 }
 
-html body.browser-shell.browser-shell .browser-shell-settings-panel.browser-shell-settings-panel{
+html body.workspace-shell.workspace-shell .workspace-shell-settings-panel.workspace-shell-settings-panel{
   position:relative!important;
   inset:auto!important;
   width:100%!important;
@@ -47,7 +47,7 @@ html body.browser-shell.browser-shell .browser-shell-settings-panel.browser-shel
   box-shadow:none!important;
 }
 
-html body.browser-shell .browser-shell-settings-panel > .browser-shell-settings-close{
+html body.workspace-shell .workspace-shell-settings-panel > .workspace-shell-settings-close{
   position:absolute!important;
   top:22px!important;
   right:28px!important;
@@ -68,7 +68,7 @@ html body.browser-shell .browser-shell-settings-panel > .browser-shell-settings-
   transform:none!important;
 }
 
-html body.browser-shell.browser-shell .browser-shell-settings-panel .settings-app.nyx-settings-dashboard{
+html body.workspace-shell.workspace-shell .workspace-shell-settings-panel .settings-app.nyx-settings-dashboard{
   display:grid!important;
   grid-template-columns:208px minmax(0,1fr)!important;
   width:100%!important;
@@ -81,7 +81,7 @@ html body.browser-shell.browser-shell .browser-shell-settings-panel .settings-ap
   box-shadow:none!important;
 }
 
-html body.browser-shell .nyx-settings-side{
+html body.workspace-shell .nyx-settings-side{
   min-width:0!important;
   padding:24px 14px!important;
   overflow:auto!important;
@@ -89,7 +89,7 @@ html body.browser-shell .nyx-settings-side{
   background:var(--obsidian-bg)!important;
 }
 
-html body.browser-shell .nyx-settings-filter{
+html body.workspace-shell .nyx-settings-filter{
   display:flex!important;
   align-items:center!important;
   width:calc(100% - 15px)!important;
@@ -104,7 +104,7 @@ html body.browser-shell .nyx-settings-filter{
   box-shadow:none!important;
 }
 
-html body.browser-shell .nyx-settings-filter > svg{
+html body.workspace-shell .nyx-settings-filter > svg{
   width:16px!important;
   height:16px!important;
   flex:0 0 16px!important;
@@ -115,7 +115,7 @@ html body.browser-shell .nyx-settings-filter > svg{
   stroke-linejoin:round!important;
 }
 
-html body.browser-shell.browser-shell .browser-shell-settings-panel .nyx-settings-filter input{
+html body.workspace-shell.workspace-shell .workspace-shell-settings-panel .nyx-settings-filter input{
   width:100%!important;
   min-width:0!important;
   height:20px!important;
@@ -133,17 +133,17 @@ html body.browser-shell.browser-shell .browser-shell-settings-panel .nyx-setting
   transform:none!important;
 }
 
-html body.browser-shell .nyx-settings-filter input::placeholder{
+html body.workspace-shell .nyx-settings-filter input::placeholder{
   color:var(--obsidian-text)!important;
   opacity:1!important;
 }
 
-html body.browser-shell .nyx-settings-nav{
+html body.workspace-shell .nyx-settings-nav{
   display:grid!important;
   gap:6px!important;
 }
 
-html body.browser-shell.browser-shell .browser-shell-settings-panel .nyx-settings-nav button{
+html body.workspace-shell.workspace-shell .workspace-shell-settings-panel .nyx-settings-nav button{
   display:flex!important;
   align-items:center!important;
   justify-content:flex-start!important;
@@ -163,7 +163,7 @@ html body.browser-shell.browser-shell .browser-shell-settings-panel .nyx-setting
   transition:background-color .16s ease,color .16s ease!important;
 }
 
-html body.browser-shell .nyx-settings-nav button > span{
+html body.workspace-shell .nyx-settings-nav button > span{
   display:grid!important;
   place-items:center!important;
   width:20px!important;
@@ -171,7 +171,7 @@ html body.browser-shell .nyx-settings-nav button > span{
   flex:0 0 20px!important;
 }
 
-html body.browser-shell .nyx-settings-nav button svg{
+html body.workspace-shell .nyx-settings-nav button svg{
   width:20px!important;
   height:20px!important;
   fill:none!important;
@@ -181,7 +181,7 @@ html body.browser-shell .nyx-settings-nav button svg{
   stroke-linejoin:round!important;
 }
 
-html body.browser-shell.browser-shell .browser-shell-settings-panel .nyx-settings-nav button:is(:hover,.active){
+html body.workspace-shell.workspace-shell .workspace-shell-settings-panel .nyx-settings-nav button:is(:hover,.active){
   background:var(--obsidian-hover)!important;
   color:var(--obsidian-text)!important;
   -webkit-text-fill-color:var(--obsidian-text)!important;
@@ -189,7 +189,7 @@ html body.browser-shell.browser-shell .browser-shell-settings-panel .nyx-setting
   transform:none!important;
 }
 
-html body.browser-shell .browser-shell-settings-panel .nyx-settings-dashboard > .settings-main{
+html body.workspace-shell .workspace-shell-settings-panel .nyx-settings-dashboard > .settings-main{
   width:auto!important;
   height:100%!important;
   min-width:0!important;
@@ -201,20 +201,20 @@ html body.browser-shell .browser-shell-settings-panel .nyx-settings-dashboard > 
   box-shadow:none!important;
 }
 
-html body.browser-shell .nyx-settings-header,
-html body.browser-shell .nyx-settings-category{
+html body.workspace-shell .nyx-settings-header,
+html body.workspace-shell .nyx-settings-category{
   width:100%!important;
   max-width:980px!important;
   margin-inline:auto!important;
 }
 
-html body.browser-shell .nyx-settings-header{
+html body.workspace-shell .nyx-settings-header{
   height:auto!important;
   margin:0 auto 26px!important;
   padding:0 4px!important;
 }
 
-html body.browser-shell .nyx-settings-header h1{
+html body.workspace-shell .nyx-settings-header h1{
   margin:0!important;
   padding:0!important;
   color:var(--obsidian-text)!important;
@@ -224,7 +224,7 @@ html body.browser-shell .nyx-settings-header h1{
   text-transform:none!important;
 }
 
-html body.browser-shell .nyx-settings-header p{
+html body.workspace-shell .nyx-settings-header p{
   display:block!important;
   margin:3px 0 0!important;
   color:var(--obsidian-muted)!important;
@@ -232,11 +232,11 @@ html body.browser-shell .nyx-settings-header p{
   font:500 13px/19px Inter,ui-sans-serif,system-ui,sans-serif!important;
 }
 
-html body.browser-shell .nyx-settings-category-title{display:none!important}
-html body.browser-shell .nyx-settings-category[hidden],
-html body.browser-shell .nyx-settings-category .settings-block[hidden]{display:none!important}
+html body.workspace-shell .nyx-settings-category-title{display:none!important}
+html body.workspace-shell .nyx-settings-category[hidden],
+html body.workspace-shell .nyx-settings-category .settings-block[hidden]{display:none!important}
 
-html body.browser-shell .nyx-settings-group{
+html body.workspace-shell .nyx-settings-group{
   overflow:hidden!important;
   border:0!important;
   border-radius:12px!important;
@@ -244,7 +244,7 @@ html body.browser-shell .nyx-settings-group{
   box-shadow:none!important;
 }
 
-html body.browser-shell .browser-shell-settings-panel .nyx-settings-group > .settings-block{
+html body.workspace-shell .workspace-shell-settings-panel .nyx-settings-group > .settings-block{
   display:grid!important;
   grid-template-columns:minmax(160px,.75fr) minmax(0,1.35fr)!important;
   align-items:start!important;
@@ -263,25 +263,25 @@ html body.browser-shell .browser-shell-settings-panel .nyx-settings-group > .set
   animation:none!important;
 }
 
-html body.browser-shell .browser-shell-settings-panel .nyx-settings-group > .settings-block:last-child{
+html body.workspace-shell .workspace-shell-settings-panel .nyx-settings-group > .settings-block:last-child{
   border-bottom:0!important;
 }
 
-html body.browser-shell .browser-shell-settings-panel .nyx-settings-group > .settings-block:first-child{
+html body.workspace-shell .workspace-shell-settings-panel .nyx-settings-group > .settings-block:first-child{
   border-radius:12px 12px 0 0!important;
 }
 
-html body.browser-shell .browser-shell-settings-panel .nyx-settings-group > .settings-block:last-child{
+html body.workspace-shell .workspace-shell-settings-panel .nyx-settings-group > .settings-block:last-child{
   border-radius:0 0 12px 12px!important;
 }
 
-html body.browser-shell .browser-shell-settings-panel .nyx-settings-group > .settings-block:only-child{
+html body.workspace-shell .workspace-shell-settings-panel .nyx-settings-group > .settings-block:only-child{
   border-radius:12px!important;
 }
 
-html body.browser-shell .browser-shell-settings-panel .nyx-settings-group > .settings-block[hidden]{display:none!important}
+html body.workspace-shell .workspace-shell-settings-panel .nyx-settings-group > .settings-block[hidden]{display:none!important}
 
-html body.browser-shell .browser-shell-settings-panel .nyx-settings-group > .settings-block:hover{
+html body.workspace-shell .workspace-shell-settings-panel .nyx-settings-group > .settings-block:hover{
   background:var(--obsidian-panel)!important;
   border-color:rgba(255,255,255,.05)!important;
   box-shadow:none!important;
@@ -289,17 +289,17 @@ html body.browser-shell .browser-shell-settings-panel .nyx-settings-group > .set
   animation:none!important;
 }
 
-html body.browser-shell .browser-shell-settings-panel :is(.settings-block,.settings-card){
+html body.workspace-shell .workspace-shell-settings-panel :is(.settings-block,.settings-card){
   transition:none!important;
 }
 
-html body.browser-shell .browser-shell-settings-panel :is(.settings-block,.settings-card):hover{
+html body.workspace-shell .workspace-shell-settings-panel :is(.settings-block,.settings-card):hover{
   transform:none!important;
   animation:none!important;
   box-shadow:none!important;
 }
 
-html body.browser-shell .nyx-settings-copy h2{
+html body.workspace-shell .nyx-settings-copy h2{
   margin:0!important;
   color:var(--obsidian-text)!important;
   -webkit-text-fill-color:var(--obsidian-text)!important;
@@ -308,27 +308,27 @@ html body.browser-shell .nyx-settings-copy h2{
   text-transform:none!important;
 }
 
-html body.browser-shell .nyx-settings-copy p{
+html body.workspace-shell .nyx-settings-copy p{
   margin:2px 0 0!important;
   color:var(--obsidian-muted)!important;
   -webkit-text-fill-color:var(--obsidian-muted)!important;
   font:400 12px/1.7 Inter,Arial,sans-serif!important;
 }
 
-html body.browser-shell .nyx-settings-control{
+html body.workspace-shell .nyx-settings-control{
   width:100%!important;
   min-width:0!important;
   justify-self:end!important;
 }
 
-html body.browser-shell .settings-block:has(.nyx-settings-control > .settings-select:only-child) .nyx-settings-control{
+html body.workspace-shell .settings-block:has(.nyx-settings-control > .settings-select:only-child) .nyx-settings-control{
   width:192px!important;
 }
 
-html body.browser-shell .nyx-settings-control > :first-child{margin-top:0!important}
-html body.browser-shell .nyx-settings-control > :last-child{margin-bottom:0!important}
+html body.workspace-shell .nyx-settings-control > :first-child{margin-top:0!important}
+html body.workspace-shell .nyx-settings-control > :last-child{margin-bottom:0!important}
 
-html body.browser-shell .nyx-settings-control :is(.settings-input,.settings-select,input:not([type="range"]),select,textarea,.panic-key-display){
+html body.workspace-shell .nyx-settings-control :is(.settings-input,.settings-select,input:not([type="range"]),select,textarea,.panic-key-display){
   width:100%!important;
   min-height:42px!important;
   margin:0!important;
@@ -343,14 +343,14 @@ html body.browser-shell .nyx-settings-control :is(.settings-input,.settings-sele
   transform:none!important;
 }
 
-html body.browser-shell .nyx-settings-control input[type="file"]{padding:8px 12px!important}
+html body.workspace-shell .nyx-settings-control input[type="file"]{padding:8px 12px!important}
 
-html body.browser-shell .nyx-settings-control .settings-form-row{
+html body.workspace-shell .nyx-settings-control .settings-form-row{
   display:flex!important;
   gap:8px!important;
 }
 
-html body.browser-shell .nyx-settings-control .settings-row{
+html body.workspace-shell .nyx-settings-control .settings-row{
   display:grid!important;
   grid-template-columns:minmax(0,1fr) auto!important;
   align-items:center!important;
@@ -359,20 +359,20 @@ html body.browser-shell .nyx-settings-control .settings-row{
   margin:0!important;
 }
 
-html body.browser-shell .nyx-settings-control .settings-row > span{
+html body.workspace-shell .nyx-settings-control .settings-row > span{
   color:var(--obsidian-text)!important;
   -webkit-text-fill-color:var(--obsidian-text)!important;
   font:500 14px/20px Inter,ui-sans-serif,system-ui,sans-serif!important;
 }
 
-html body.browser-shell .nyx-settings-control .settings-actions{
+html body.workspace-shell .nyx-settings-control .settings-actions{
   display:flex!important;
   justify-content:flex-end!important;
   gap:8px!important;
   margin-top:10px!important;
 }
 
-html body.browser-shell .nyx-settings-control :is(button,.settings-action){
+html body.workspace-shell .nyx-settings-control :is(button,.settings-action){
   min-height:38px!important;
   border:1px solid var(--obsidian-line)!important;
   border-radius:10px!important;
@@ -384,14 +384,14 @@ html body.browser-shell .nyx-settings-control :is(button,.settings-action){
   transform:none!important;
 }
 
-html body.browser-shell .nyx-settings-control :is(button,.settings-action):hover{
+html body.workspace-shell .nyx-settings-control :is(button,.settings-action):hover{
   background:var(--obsidian-hover)!important;
   box-shadow:none!important;
   transform:none!important;
 }
 
-html body.browser-shell .nyx-settings-control [data-switch],
-html body.browser-shell .nyx-settings-control [data-popup-protection]{
+html body.workspace-shell .nyx-settings-control [data-switch],
+html body.workspace-shell .nyx-settings-control [data-popup-protection]{
   width:56px!important;
   min-width:56px!important;
   height:28px!important;
@@ -409,7 +409,7 @@ html body.browser-shell .nyx-settings-control [data-popup-protection]{
   position:relative!important;
 }
 
-html body.browser-shell .nyx-settings-control > p{
+html body.workspace-shell .nyx-settings-control > p{
   margin:10px 0 0!important;
   color:var(--obsidian-muted)!important;
   -webkit-text-fill-color:var(--obsidian-muted)!important;
@@ -417,14 +417,14 @@ html body.browser-shell .nyx-settings-control > p{
   text-shadow:none!important;
 }
 
-html body.browser-shell .nyx-settings-control > p span{
+html body.workspace-shell .nyx-settings-control > p span{
   color:var(--obsidian-text)!important;
   -webkit-text-fill-color:var(--obsidian-text)!important;
   text-shadow:none!important;
 }
 
-html body.browser-shell .nyx-settings-control [data-switch]::after,
-html body.browser-shell .nyx-settings-control [data-popup-protection]::after{
+html body.workspace-shell .nyx-settings-control [data-switch]::after,
+html body.workspace-shell .nyx-settings-control [data-popup-protection]::after{
   content:""!important;
   position:absolute!important;
   top:4px!important;
@@ -436,62 +436,62 @@ html body.browser-shell .nyx-settings-control [data-popup-protection]::after{
   transition:transform .18s ease!important;
 }
 
-html body.browser-shell .nyx-settings-control [data-switch].on,
-html body.browser-shell .nyx-settings-control [data-popup-protection].on{
+html body.workspace-shell .nyx-settings-control [data-switch].on,
+html body.workspace-shell .nyx-settings-control [data-popup-protection].on{
   background:#637d6e!important;
 }
 
-html body.browser-shell .nyx-settings-control [data-switch].on::after,
-html body.browser-shell .nyx-settings-control [data-popup-protection].on::after{
+html body.workspace-shell .nyx-settings-control [data-switch].on::after,
+html body.workspace-shell .nyx-settings-control [data-popup-protection].on::after{
   transform:translateX(28px)!important;
   background:var(--obsidian-text)!important;
 }
 
-html body.browser-shell .quick-tile[data-preset="nyx"] .quick-icon,
-html body.browser-shell .settings-preset[data-preset="nyx"] .quick-icon{
+html body.workspace-shell .quick-tile[data-preset="nyx"] .quick-icon,
+html body.workspace-shell .settings-preset[data-preset="nyx"] .quick-icon{
   transform:scale(1.05)!important;
   transform-origin:center!important;
 }
 
-html body.browser-shell .quick-tile[data-preset="nyx"]:hover .quick-icon,
-html body.browser-shell .settings-preset[data-preset="nyx"]:hover .quick-icon{transform:scale(1.05)!important}
+html body.workspace-shell .quick-tile[data-preset="nyx"]:hover .quick-icon,
+html body.workspace-shell .settings-preset[data-preset="nyx"]:hover .quick-icon{transform:scale(1.05)!important}
 
 
 @media (max-width: 900px) {
-  html body.browser-shell.browser-shell .browser-shell-settings-panel .settings-app.nyx-settings-dashboard {
+  html body.workspace-shell.workspace-shell .workspace-shell-settings-panel .settings-app.nyx-settings-dashboard {
     grid-template-columns: minmax(0, 1fr)!important;
     grid-template-rows: auto minmax(0, 1fr)!important;
   }
-  html body.browser-shell .nyx-settings-side {
+  html body.workspace-shell .nyx-settings-side {
     padding: 12px!important;
     border-right: 0!important;
     border-bottom: 1px solid var(--obsidian-line)!important;
   }
-  html body.browser-shell .nyx-settings-filter {
+  html body.workspace-shell .nyx-settings-filter {
     width: 100%!important;
     margin: 0 0 8px!important;
   }
-  html body.browser-shell .nyx-settings-nav {
+  html body.workspace-shell .nyx-settings-nav {
     display: flex!important;
     overflow-x: auto;
   }
-  html body.browser-shell.browser-shell .browser-shell-settings-panel .nyx-settings-nav button {
+  html body.workspace-shell.workspace-shell .workspace-shell-settings-panel .nyx-settings-nav button {
     width: auto!important;
     flex: 0 0 auto;
     gap: 8px!important;
     padding: 8px 12px!important;
     white-space: nowrap;
   }
-  html body.browser-shell .browser-shell-settings-panel .nyx-settings-dashboard > .settings-main {
+  html body.workspace-shell .workspace-shell-settings-panel .nyx-settings-dashboard > .settings-main {
     min-height: 0;
     padding: 20px 12px 40px!important;
   }
-  html body.browser-shell .browser-shell-settings-panel .nyx-settings-group > .settings-block {
+  html body.workspace-shell .workspace-shell-settings-panel .nyx-settings-group > .settings-block {
     grid-template-columns: minmax(0, 1fr)!important;
     gap: 16px!important;
     padding: 16px!important;
   }
-  html body.browser-shell .nyx-settings-control :is(.nyx-color-theme-grid, .nyx-wallpaper-grid) {
+  html body.workspace-shell .nyx-settings-control :is(.nyx-color-theme-grid, .nyx-wallpaper-grid) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

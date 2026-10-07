@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
-const browser = await chromium.launch();
+const workspace = await chromium.launch();
 try {
   for (const width of [1600, 390]) {
-    const page = await browser.newPage({ viewport: { width, height: 950 } });
+    const page = await workspace.newPage({ viewport: { width, height: 950 } });
     await page.goto((process.env.NYX_TEST_BASE_URL || 'http://127.0.0.1:8080') + '/apps/code-studio/');
     await page.evaluate(() => document.fonts.ready);
     const line = '    document.getElementById("siteFrame").src =    ';
@@ -48,4 +48,4 @@ try {
     console.log('PASS editor alignment, line 76 trailing-space deletion and navigation:', width);
     await page.close();
   }
-} finally { await browser.close(); }
+} finally { await workspace.close(); }

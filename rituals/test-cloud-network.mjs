@@ -86,10 +86,10 @@ try {
   assert.equal(cloudIceConfig(servers).iceServers,servers);
   assert.equal(cloudIceConfig(servers,true).iceServers[0].urls.length,2);
   assert.throws(()=>cloudIceConfig([{urls:'stun:relay.example'}],true),/No TCP/);
-  const browser=await chromium.launch({headless:true});
+  const workspace=await chromium.launch({headless:true});
   try {
     for(const mode of ['auto','restricted']) {
-      const page=await browser.newPage();
+      const page=await workspace.newPage();
       await page.route('**/cloud/v1/embed-data?**',r=>r.fulfill({json:{ice_servers:servers,signaling_ws:'ws://fixture.invalid'}}));
       await page.addInitScript(()=>{
         window.WebSocket=class{constructor(){setTimeout(()=>this.onmessage?.({data:JSON.stringify({type:'game_ready'})}),20)}send(){}close(){}};
@@ -102,8 +102,8 @@ try {
       assert.equal(config.iceServers[0].urls.length,mode==='restricted'?2:4);
       await page.close();
     }
-  } finally {await browser.close();}
-  console.log('Browser verified generated Stratus player: Automatic preserves ICE; Restricted uses TCP/TLS relay only.');
+  } finally {await workspace.close();}
+  console.log('Workspace verified generated Stratus player: Automatic preserves ICE; Restricted uses TCP/TLS relay only.');
 
   const unauthenticated = await request("/cloud/v1/createSession", {
     method: "POST",

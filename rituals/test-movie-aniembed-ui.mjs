@@ -5,10 +5,10 @@ import express from 'express';
 import {chromium} from 'playwright';
 const root=process.env.NYX_TEST_ASSET_ROOT||'.',app=express();app.use(express.static(root));
 const server=app.listen(0);await new Promise(r=>server.once('listening',r));
-const origin='http://localhost:'+server.address().port,browser=await chromium.launch();
+const origin='http://localhost:'+server.address().port,workspace=await chromium.launch();
 const sources=[{id:'aniembed',name:'AniEmbed',url:'https://aniembed.se/e/154587/1?lang=sub&autoplay=1&t=0'},{id:'rive',name:'Rive',url:'https://watch.rivestream.app/embed?type=tv&id=209867&season=1&episode=1'}];
 try{
- const p=await browser.newPage();await p.clock.install();let external=0;
+ const p=await workspace.newPage();await p.clock.install();let external=0;
  await p.addInitScript(()=>localStorage.setItem('nyx.movies.preferredSource','aniembed'));
  await p.route('**/*',r=>{
   const u=new URL(r.request().url());
@@ -30,7 +30,7 @@ try{
  await frame.evaluate(()=>{const v=document.createElement('video');for(const [key,value] of Object.entries({videoWidth:1280,videoHeight:720,readyState:4,paused:false,duration:120}))Object.defineProperty(v,key,{get:()=>value});Object.defineProperty(v,'currentTime',{get:()=>performance.now()/1000});document.body.append(v);});
  await p.clock.runFor(2200);
  await p.waitForFunction(()=>document.querySelector('[data-provider=aniembed]').closest('li').dataset.state==='Playing');
- assert(await p.locator('#watch-area').evaluate(e=>e.classList.contains('proxy-ready')),'Nyx video layout binds to the proxied video');
+ assert(await p.locator('#watch-area').evaluate(e=>e.classList.contains('connection-ready')),'Nyx video layout binds to the proxied video');
  assert.equal(await p.locator('#toggle-play').isEnabled(),true);assert.equal(await p.locator('#seek').isEnabled(),true);
  await p.clock.fastForward(46000);assert.equal((await p.evaluate(()=>window.proxyTargets)).length,1,'Measured playback cancels startup timeout');
  await frame.evaluate(()=>document.body.textContent='No sources found');await p.clock.runFor(1200);
@@ -52,4 +52,4 @@ try{
  await p.waitForFunction(()=>window.blocked);assert.equal(external,0,'Direct AniEmbed frames never reach the network');
  await p.locator('#close-player').click({force:true});assert.equal(await p.locator('#player iframe').count(),0);
  console.log('PASS AniEmbed proxy-only selection, Nyx layout/controls, sandbox, failed/no-play fallback, direct-frame CSP and cleanup');
-}finally{await browser.close();await new Promise(r=>server.close(r));}
+}finally{await workspace.close();await new Promise(r=>server.close(r));}

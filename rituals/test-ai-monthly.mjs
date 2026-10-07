@@ -52,8 +52,8 @@ assert.equal(aiTokenPoolUsage(oldPool,{},member,start+4*day).used,0);
 assert.equal(aiTokenPoolUsage(oldPool,{},member,start+4*day).images,0);
 console.log('PASS: existing 14-day windows shorten from original start, preserve usage, and reset after four days.');
 
-const independent={...member,uid:'independent',device:'same-browser',network:'same-school'};
-const exhausted={...member,uid:'exhausted',device:'same-browser',network:'same-school'};
+const independent={...member,uid:'independent',device:'same-workspace',network:'same-school'};
+const exhausted={...member,uid:'exhausted',device:'same-workspace',network:'same-school'};
 await call(exhausted,gemini);db.records.get(path(exhausted)).pool.used=7000;
 const resetBefore=db.records.get(path(exhausted)).pool.resetAt;
 await assert.rejects(call(exhausted,gemini),/account's 7,000-token allowance/);

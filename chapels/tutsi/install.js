@@ -21,7 +21,7 @@
     if (/Safari/i.test(agent) && !/Chrome|Chromium|Edg/i.test(agent)) {
       return "In Safari, choose File, then Add to Dock.";
     }
-    return "Use the install icon in the browser address bar, or open the browser menu and choose Install Tutsi.";
+    return "Use the install icon in the workspace address bar, or open the workspace menu and choose Install Tutsi.";
   }
 
   function installCard(kind) {

@@ -2,12 +2,12 @@ import assert from 'node:assert/strict';
 import express from 'express';
 import {chromium} from 'playwright';
 const app=express();app.use(express.static(process.env.NYX_TEST_STATIC_ROOT||'dist'));const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base='http://127.0.0.1:'+server.address().port;
-const browser=await chromium.launch({channel:'msedge',headless:true});let preferences={},writes=0,failWrites=false,holdRead=null;const errors=[];
+const workspace=await chromium.launch({channel:'msedge',headless:true});let preferences={},writes=0,failWrites=false,holdRead=null;const errors=[];
 async function client(){
- const context=await browser.newContext({viewport:{width:1366,height:900}}),page=await context.newPage();
+ const context=await workspace.newContext({viewport:{width:1366,height:900}}),page=await context.newPage();
  page.on('pageerror',error=>errors.push(error.message));
  await page.addInitScript(()=>{
-  localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.browserShellMode','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');
+  localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.workspaceShellMode','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');
  });
  await page.route('https://www.gstatic.com/firebasejs/**/firebase-app.js',r=>r.fulfill({contentType:'text/javascript',body:'export const getApps=()=>[];export const initializeApp=()=>({});'}));
  await page.route('https://www.gstatic.com/firebasejs/**/firebase-auth.js',r=>r.fulfill({contentType:'text/javascript',body:'const user={uid:"wallpaper-fixture",email:"fixture@example.com",getIdToken:async()=>"fixture",reload:async()=>{}};const auth={currentUser:user};export const getAuth=()=>auth;export const browserLocalPersistence={};export const setPersistence=async()=>{};export const onAuthStateChanged=(a,f)=>{queueMicrotask(()=>f(a.currentUser));return ()=>{}};'}));
@@ -56,14 +56,14 @@ try{
  holdRead=new Promise(resolve=>release=resolve);
  const restoring=page.waitForRequest(r=>new URL(r.url()).pathname==='/api/account/cloud-preferences'&&r.method()==='GET');
  await page.reload();await restoring;
- await page.waitForFunction(()=>document.body?.classList.contains('browser-shell')&&!document.body.classList.contains('nyx-loading-active'));
+ await page.waitForFunction(()=>document.body?.classList.contains('workspace-shell')&&!document.body.classList.contains('nyx-loading-active'));
  await page.locator('[data-nyx-dock-item="settings"]').click();
  assert.equal(await page.locator('[data-nyx-theme-card][aria-pressed="true"]').getAttribute('data-nyx-theme-card'),'custom');
  release();holdRead=null;
  await page.waitForFunction(()=>document.documentElement.dataset.nyxTheme==='halloween');
- assert.equal(await page.locator('.browser-shell-settings-overlay [data-theme-value]').inputValue(),'halloween');
+ assert.equal(await page.locator('.workspace-shell-settings-overlay [data-theme-value]').inputValue(),'halloween');
  assert.equal(await page.locator('[data-nyx-theme-card][aria-pressed="true"]').getAttribute('data-nyx-theme-card'),'halloween','open settings follow restored account theme');
  await page.screenshot({path:'.codex-artifacts/wallpaper-account-built.png'});
  assert.deepEqual(errors,[]);
  console.log('PASS UI: account wallpaper restore/reset, sidebar YouTube, custom theme survives failed save/reopen and late cloud read without default-theme overlap');
-}finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}
+}finally{await workspace.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

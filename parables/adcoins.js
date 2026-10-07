@@ -39,7 +39,7 @@ export function startAdcoins() {
   const style = document.createElement('style');
   style.textContent = '.nyx-adcoins{position:absolute;bottom:48px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;max-width:calc(100% - 32px);padding:8px 12px;border:1px solid #ffffff14;border-radius:14px;background:var(--obsidian-surface,#151515);color:var(--obsidian-muted,#aaa);font-family:inherit;font-size:12px;line-height:1.4;white-space:nowrap;pointer-events:none}.nyx-adcoins svg{width:16px;height:16px;flex:none}.nyx-adcoins[hidden]{display:none}.nyx-adcoins[data-free="true"]{color:var(--obsidian-text,#eee)}';
   document.head.append(style);
-  const eligible = () => ['standard', 'adkid'].includes(publisherBaseMode()) && document.body.classList.contains('browser-shell');
+  const eligible = () => ['standard', 'adkid'].includes(publisherBaseMode()) && document.body.classList.contains('workspace-shell');
   function render() {
     const now = Date.now();
     const free = state.freeUntil > now;
@@ -53,13 +53,13 @@ export function startAdcoins() {
     }
     const seconds = Math.ceil((free ? state.freeUntil - now : adcoinsPeriod - (state.progress || 0)) / 1000);
     const time = Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
-    for (const home of document.querySelectorAll('.browser-home.nyx-minimal-home')) {
+    for (const home of document.querySelectorAll('.workspace-home.nyx-minimal-home')) {
       let badge = home.querySelector('.nyx-adcoins');
       if (!badge && eligible()) {
         badge = document.createElement('div');
         badge.className = 'nyx-adcoins';
         badge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 13 3 3 5-7"/></svg><span></span>';
-        badge.title = 'Every 10 minutes with Nyx visible earns a 3-minute ad break. Shared across tabs in this browser.';
+        badge.title = 'Every 10 minutes with Nyx visible earns a 3-minute ad break. Shared across tabs in this workspace.';
         home.append(badge);
       }
       if (!badge) continue;

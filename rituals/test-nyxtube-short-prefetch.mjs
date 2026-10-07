@@ -12,9 +12,9 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-const browser = await chromium.launch({ headless: true });
+const workspace = await chromium.launch({ headless: true });
 try {
-  const page = await browser.newPage({
+  const page = await workspace.newPage({
     viewport: { width: 1280, height: 900 },
     hasTouch: true,
     userAgent: "Mozilla/5.0 (X11; CrOS x86_64 15917.65.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
@@ -148,4 +148,4 @@ try {
   assert(await page.locator('[data-short-player]').evaluate(el=>el.children.length)===0,'Short players must clean up on exit');
   assert(!pageErrors.length,'Shorts errors: '+pageErrors.join('; '));
   console.log('PASS Shorts warm player lifecycle and delayed readiness');
-} finally { await browser.close(); }
+} finally { await workspace.close(); }

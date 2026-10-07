@@ -1,9 +1,9 @@
 ﻿import {chromium} from 'playwright';
 import assert from 'node:assert/strict';
-const browser=await chromium.launch();
+const workspace=await chromium.launch();
 try{
  for(const vendors of [[],['goguardian'],['goguardian','lightspeed']]){
- const page=await browser.newPage();
+ const page=await workspace.newPage();
  await page.addInitScript(()=>localStorage.setItem('tutsi.customize.seen','1'));
  await page.addInitScript(vendors=>{const original=window.fetch;window.fetch=(url,...args)=>String(url).startsWith('chrome-extension://')?(vendors.some(v=>String(url).includes(v==='goguardian'?'haldlgldplgnggkjaafhelgiaglafanh':'adkcpkpghahmbopkjchobieckeoaoeem'))?Promise.resolve(new Response('fixture')):Promise.reject(Error('unavailable'))):original(url,...args)},vendors);
  await page.goto('http://localhost:9091/tutsi#settings');
@@ -22,7 +22,7 @@ try{
  await page.locator('#close-prevention').uncheck();await page.reload();await page.waitForFunction(()=>document.querySelector('#blocker')?.value==='securly');
  await page.close();
  }
- const page=await browser.newPage({viewport:{width:390,height:844}});await page.goto('http://localhost:9091/tutsi#youtube');
+ const page=await workspace.newPage({viewport:{width:390,height:844}});await page.goto('http://localhost:9091/tutsi#youtube');
  const f=page.frameLocator('#app-host iframe:not([hidden])');await f.locator('#tutsi-embedded-style').waitFor({state:'attached'});
  await f.locator('body').evaluate(()=>{const watch=document.querySelector('[data-watch-stage]');document.body.replaceChildren(watch);watch.style.width='100%';watch.style.display='block';document.querySelector('[data-watch-time]').textContent='1:37:41 / 2:36:12';});
  const time=f.locator('[data-watch-time]');
@@ -31,4 +31,4 @@ try{
  const rect=await time.boundingBox();const toggle=await f.locator('[data-watch-toggle]').boundingBox();assert(Math.abs(rect.y+rect.height/2-toggle.y-toggle.height/2)<2);
  await page.screenshot({path:process.env.TEMP+'/tutsi-timestamp-mobile.png'});
  console.log('Filter Settings: unknown, single/multiple signals, manual override and persistence passed; mobile timestamps readable and aligned');
-}finally{await browser.close()}
+}finally{await workspace.close()}

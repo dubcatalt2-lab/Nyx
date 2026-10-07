@@ -42,7 +42,7 @@ html body:is(body,#nyx-hover-specificity) .window-controls [data-close]:hover::a
 
 
 
-html body.browser-shell:is(body,#nyx-hover-specificity) .browser-mode-menu button:hover{
+html body.workspace-shell:is(body,#nyx-hover-specificity) .workspace-mode-menu button:hover{
   transform:none!important;
   border-color:var(--nyx-hover-border)!important;
   background:var(--nyx-hover-surface)!important;

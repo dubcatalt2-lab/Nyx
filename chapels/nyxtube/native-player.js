@@ -101,7 +101,7 @@
         });
         hls.loadSource(url);hls.attachMedia(this.video);
       } else if(this.video.canPlayType('application/vnd.apple.mpegurl'))this.video.src=url;
-      else throw new Error('This browser does not support segmented video playback.');
+      else throw new Error('This workspace does not support segmented video playback.');
     }
     checkProgress(){
       if(this.controller.signal.aborted||this.failed)return;

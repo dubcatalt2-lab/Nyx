@@ -12,9 +12,9 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-const browser = await chromium.launch({ headless: true });
+const workspace = await chromium.launch({ headless: true });
 try {
-  const page = await browser.newPage({
+  const page = await workspace.newPage({
     viewport: { width: 1280, height: 900 },
     userAgent: "Mozilla/5.0 (X11; CrOS x86_64 15917.65.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
   });
@@ -236,9 +236,9 @@ try {
   console.log("NyxTube test: mobile feed rendered");
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   assert(!overflow, "NyxTube has horizontal overflow at 390px");
-  assert(pageErrors.length === 0, `Browser errors: ${pageErrors.join(" | ")}`);
+  assert(pageErrors.length === 0, `Workspace errors: ${pageErrors.join(" | ")}`);
   if (!livePlayer) {
-    const fallbackPage = await browser.newPage({
+    const fallbackPage = await workspace.newPage({
       viewport: { width: 1280, height: 900 },
       userAgent: "Mozilla/5.0 (X11; CrOS x86_64 15917.65.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
     });
@@ -256,7 +256,7 @@ try {
     await fallbackPage.close();
     console.log("NyxTube test: Chromebook blocked-script fallback passed");
 
-    const discoveryPage = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    const discoveryPage = await workspace.newPage({ viewport: { width: 1280, height: 900 } });
     await discoveryPage.addInitScript(() => {
       localStorage.setItem("nyx.setupComplete", "true");
       localStorage.setItem("nyx.homeDesign", "redesigned");
@@ -266,41 +266,41 @@ try {
     const redesignedNyxTubeDestination = discoveryPage.locator('[data-nyx-dock-item="video"][data-app-url="/apps/nyxtube/"]');
     await redesignedNyxTubeDestination.waitFor({ state: "attached" });
     await discoveryPage.evaluate(() => {
-      document.body.classList.add("browser-content-active");
+      document.body.classList.add("workspace-content-active");
       document.querySelectorAll("#nyxStudyHubStartup,#setupLaunchScreen,#setupScreen,.nyx-tos-gate").forEach(element => { element.style.pointerEvents = "none"; });
     });
-    const addressBounds = await discoveryPage.locator('form.browser-mode-address > input.browser-mode-url').boundingBox();
-    assert(addressBounds?.width > 100, `Browser address field did not have usable geometry: ${JSON.stringify(addressBounds)}`);
-    const addressBorder = discoveryPage.locator('form.browser-mode-address > .browser-mode-url-pointer-border');
+    const addressBounds = await discoveryPage.locator('form.workspace-mode-address > input.workspace-mode-url').boundingBox();
+    assert(addressBounds?.width > 100, `Workspace address field did not have usable geometry: ${JSON.stringify(addressBounds)}`);
+    const addressBorder = discoveryPage.locator('form.workspace-mode-address > .workspace-mode-url-pointer-border');
     for (let attempt = 0; attempt < 12; attempt += 1) {
       await discoveryPage.evaluate(() => {
-        const field = document.querySelector('form.browser-mode-address > input.browser-mode-url');
+        const field = document.querySelector('form.workspace-mode-address > input.workspace-mode-url');
         const bounds = field?.getBoundingClientRect();
         field?.focus();
         if (field && bounds) field.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX: bounds.left + Math.min(120, bounds.width / 2), clientY: bounds.top + bounds.height / 2 }));
       });
       await discoveryPage.mouse.move(addressBounds.x + Math.min(120, addressBounds.width / 2), addressBounds.y + addressBounds.height / 2);
       await discoveryPage.waitForTimeout(100);
-      const width = await discoveryPage.evaluate(() => document.querySelector('form.browser-mode-address > .browser-mode-url-pointer-border')?.getBoundingClientRect().width || 0);
+      const width = await discoveryPage.evaluate(() => document.querySelector('form.workspace-mode-address > .workspace-mode-url-pointer-border')?.getBoundingClientRect().width || 0);
       if (width > 100) break;
     }
     await addressBorder.waitFor({ state: "attached" });
     const addressInteraction = await discoveryPage.evaluate(() => {
-      const field = document.querySelector('form.browser-mode-address > input.browser-mode-url');
-      const border = document.querySelector('form.browser-mode-address > .browser-mode-url-pointer-border');
+      const field = document.querySelector('form.workspace-mode-address > input.workspace-mode-url');
+      const border = document.querySelector('form.workspace-mode-address > .workspace-mode-url-pointer-border');
       return {
         fieldShadow: field ? getComputedStyle(field).boxShadow : "missing",
         borderOpacity: border ? Number.parseFloat(getComputedStyle(border).opacity) : -1,
         borderWidth: border?.getBoundingClientRect().width || 0,
       };
     });
-    assert(addressInteraction.fieldShadow === "none" || addressInteraction.fieldShadow.includes("inset"), `Browser address field still uses an elevated hover glow: ${addressInteraction.fieldShadow}`);
-    assert(addressInteraction.borderWidth === 0, `Browser address pointer animation was still active: ${JSON.stringify(addressInteraction)}`);
+    assert(addressInteraction.fieldShadow === "none" || addressInteraction.fieldShadow.includes("inset"), `Workspace address field still uses an elevated hover glow: ${addressInteraction.fieldShadow}`);
+    assert(addressInteraction.borderWidth === 0, `Workspace address pointer animation was still active: ${JSON.stringify(addressInteraction)}`);
     const catalog = await discoveryPage.evaluate(() => fetch("/api/apps", { cache: "no-store" }).then(response => response.json()));
     assert(catalog.apps?.some(app => app.id === "youtube" && app.name === "NyxTube" && app.url === "/apps/nyxtube/"), "Apps API did not expose the NyxTube entry");
     await discoveryPage.close();
 
-    const migrationPage = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    const migrationPage = await workspace.newPage({ viewport: { width: 1280, height: 900 } });
     await migrationPage.addInitScript(() => {
       if (window.top !== window) return;
       localStorage.setItem("nyx.setupComplete", "true");
@@ -315,7 +315,7 @@ try {
     await migrationPage.close();
     console.log("NyxTube test: Apps and returning-profile shortcut discovery passed");
   }
-  console.log(`NyxTube browser checks passed: feed, search, ${livePlayer ? "official iframe startup" : "watch controls"}, Shorts navigation, and mobile layout.`);
+  console.log(`NyxTube workspace checks passed: feed, search, ${livePlayer ? "official iframe startup" : "watch controls"}, Shorts navigation, and mobile layout.`);
 } finally {
-  await browser.close();
+  await workspace.close();
 }

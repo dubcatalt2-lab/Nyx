@@ -20,14 +20,14 @@ assert.equal(advanceAdcoins(state,781000,782000,false).progress,1000,'hidden tab
 assert.equal(advanceAdcoins({progress:Infinity},0,1000,true).progress,1000);
 
 const app=express();
-app.get('/',(_,res)=>res.send('<body class="browser-shell"><div class="browser-window browser-blank"><main class="browser-home nyx-minimal-home" style="height:400px"></main></div><iframe class="view" src="/frame"></iframe><script type="module">import {startAdcoins} from "/parables/adcoins.js";import {publisherMode} from "/parables/publisher-config.js";window.mode=publisherMode;startAdcoins();window.ready=true;</script>'));
+app.get('/',(_,res)=>res.send('<body class="workspace-shell"><div class="workspace-window workspace-blank"><main class="workspace-home nyx-minimal-home" style="height:400px"></main></div><iframe class="view" src="/frame"></iframe><script type="module">import {startAdcoins} from "/parables/adcoins.js";import {publisherMode} from "/parables/publisher-config.js";window.mode=publisherMode;startAdcoins();window.ready=true;</script>'));
 app.get('/frame',(_,res)=>res.send('<script type="module">import {publisherMode} from "/parables/publisher-config.js";window.mode=publisherMode;</script>'));
 app.use('/parables',express.static('parables'));
 const server=app.listen(0,'127.0.0.1');
 await new Promise(resolve=>server.once('listening',resolve));
-const browser=await chromium.launch({channel:'msedge',headless:true});
+const workspace=await chromium.launch({channel:'msedge',headless:true});
 try{
- const context=await browser.newContext();
+ const context=await workspace.newContext();
  await context.addInitScript(()=>{
   window.now=1000000;Date.now=()=>window.now;
   window.__nyxPublisherMode='standard';
@@ -56,7 +56,7 @@ try{
  assert.equal(await first.evaluate(()=>JSON.parse(localStorage.getItem('nyx.adcoins.v1')).progress),0);
  await first.evaluate(()=>{window.__NYX_RUNTIME_CONFIG__={publisherAdsEnabled:false};dispatchEvent(new Event('nyx:publisher-change'));});
  await first.waitForFunction(()=>document.querySelector('.nyx-adcoins').hidden);
- await second.evaluate(()=>document.querySelector('.browser-window').classList.remove('browser-blank'));
+ await second.evaluate(()=>document.querySelector('.workspace-window').classList.remove('workspace-blank'));
  assert.equal(await second.evaluate(()=>window.mode()),'off','regular ads stop on app/search tabs');
  await second.evaluate(()=>{window.__nyxPublisherMode='adkid';});
  assert.equal(await second.evaluate(()=>window.mode()),'adkid','Adkid remains enabled outside home');
@@ -68,4 +68,4 @@ try{
  await first.evaluate(()=>{window.__nyxPublisherMode='off';dispatchEvent(new Event('nyx:publisher-change'));});
  await first.waitForFunction(()=>document.querySelector('.nyx-adcoins').hidden);
  console.log('PASS Adcoins: ten-minute union, three-minute break, hidden/suspended tabs, shared tabs and app frames, reload, expiry, disabled/premium modes, mobile.');
-}finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
+}finally{await workspace.close();await new Promise(resolve=>server.close(resolve));}

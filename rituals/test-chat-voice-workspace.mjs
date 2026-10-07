@@ -8,9 +8,9 @@ await new Promise(resolve=>fixture.listen(0,'127.0.0.1',resolve));
 const source=readFileSync(sourceFile('apps/chat/app.js'),'utf8');
 const relayChoice=source.match(/  function voiceUsesRelay[^\n]+/)[0];
 const code=relayChoice+'\n'+source.slice(source.indexOf('  async function sendVoiceSignal('),source.indexOf('  async function applyVoiceState('));
-const browser=await chromium.launch({args:['--autoplay-policy=no-user-gesture-required','--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream']});
+const workspace=await chromium.launch({args:['--autoplay-policy=no-user-gesture-required','--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream']});
 try{
- const page=await browser.newPage();page.on("console",m=>{if(m.type()==="error")console.log(m.text())});await page.goto(`http://127.0.0.1:${fixture.address().port}`+'/apps/chat/');
+ const page=await workspace.newPage();page.on("console",m=>{if(m.type()==="error")console.log(m.text())});await page.goto(`http://127.0.0.1:${fixture.address().port}`+'/apps/chat/');
  await page.evaluate(async code=>{
   window.peers={};window.held=[];window.hold=false;window.httpSignals=0;window.sequence=0;window.sent=[];
   for(const uid of ['alice000','bob00000']){
@@ -32,4 +32,4 @@ try{
  await page.evaluate(async()=>{hold=true;await Promise.all([peers.alice000.offer('bob00000',true),peers.bob00000.offer('alice000',true)]);hold=false;for(const deliver of held.splice(0))void deliver();});
  await page.waitForFunction(()=>Object.values(peers).every(p=>[...p.state.voicePeers.values()].every(e=>e.connection.signalingState==='stable'&&e.connection.connectionState==='connected')));
  console.log('PASS voice: socket timeout fallback, simultaneous offers, bidirectional real WebRTC audio packets, simultaneous ICE restart');
-}finally{await browser.close();fixture.closeAllConnections();await new Promise(resolve=>fixture.close(resolve))}
+}finally{await workspace.close();fixture.closeAllConnections();await new Promise(resolve=>fixture.close(resolve))}

@@ -7,7 +7,7 @@ import {join} from 'node:path';
 import {chromium} from 'playwright';
 import {createDomainPages,normalizeDomain} from '../ministries/domain-pages/server.mjs';
 const dataDir=await mkdtemp(join(tmpdir(),'domain-pages-test-'));
-let service,browser;
+let service,workspace;
 try{
  for(const invalid of ['https://example.org','example.org/path','*.example.org','127.0.0.1','example.org:80','localhost','a.local','a\n{bad}','tutsi.nyxlearning.org','turn.nyxlearning.org'])assert.throws(()=>normalizeDomain(invalid),undefined,invalid);
  assert.equal(normalizeDomain(' Learn.Example.org. '),'learn.example.org');
@@ -28,12 +28,12 @@ try{
  const exported=await (await fetch(admin+'/api/caddy')).text();assert.match(exported,/learn\.example\.org \{/);assert(exported.includes(':'+service.publicServer.address().port));assert(!exported.includes(':'+service.admin.address().port));
  await service.close();service=await createDomainPages({dataDir,adminPort:0,publicPort:0});admin=`http://127.0.0.1:${service.admin.address().port}`;
  assert.equal((await (await fetch(admin+'/api/domains')).json()).domains.length,1);
- browser=await chromium.launch();const tab=await browser.newPage({viewport:{width:1200,height:900}});const errors=[];tab.on('pageerror',error=>errors.push(error.message));
+ workspace=await chromium.launch();const tab=await workspace.newPage({viewport:{width:1200,height:900}});const errors=[];tab.on('pageerror',error=>errors.push(error.message));
  await tab.goto(admin);await tab.locator('#preview-lessons').waitFor();await tab.fill('#title','StudyReady');const popupPromise=tab.waitForEvent('popup');await tab.locator('#preview-lessons').click();const popup=await popupPromise;await popup.waitForLoadState();assert.equal(await popup.title(),'StudyReady');await popup.close();await tab.locator('#domains h3').waitFor();await tab.fill('#domain','math.example.org');await tab.fill('#title','Math notes');await tab.locator('#add button').click();await tab.getByRole('heading',{name:'math.example.org',exact:true}).waitFor();
  await tab.setViewportSize({width:390,height:844});assert.equal(await tab.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
  await tab.screenshot({path:join(tmpdir(),'domain-pages-admin-mobile.png'),fullPage:true});
- const preview=await browser.newPage();await preview.goto(admin+'/preview?domain=math.example.org');assert.equal(await preview.title(),'Math notes');await preview.locator('a[href="#lesson/fractions"]').first().click();await preview.locator('#lesson-fractions:not([hidden])').waitFor();assert.match(await preview.locator('#lesson-fractions').innerText(),/common denominator/);
+ const preview=await workspace.newPage();await preview.goto(admin+'/preview?domain=math.example.org');assert.equal(await preview.title(),'Math notes');await preview.locator('a[href="#lesson/fractions"]').first().click();await preview.locator('#lesson-fractions:not([hidden])').waitFor();assert.match(await preview.locator('#lesson-fractions').innerText(),/common denominator/);
  tab.on('dialog',dialog=>dialog.accept());await tab.locator('article').filter({has:tab.getByRole('heading',{name:'math.example.org',exact:true})}).getByRole('button',{name:'Remove',exact:true}).click();await tab.getByText('Domain removed.',{exact:false}).waitFor();assert.deepEqual(errors,[]);
  assert.equal((await (await fetch(admin+'/api/domains')).json()).domains.length,1);
  console.log('PASS domain pages: validation, local admin/CSRF restrictions, registry persistence, host isolation, identical crawler content, escaping, Caddy export, add/remove/preview and mobile layout.');
-}finally{await browser?.close();await service?.close();await rm(dataDir,{recursive:true,force:true});}
+}finally{await workspace?.close();await service?.close();await rm(dataDir,{recursive:true,force:true});}

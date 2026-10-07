@@ -14,7 +14,7 @@ const payload=(message='Hello')=>({model,messages:[{role:'system',content:system
 function setup(app){
  const db=memoryFirestore();let time=Date.parse('2026-09-30T12:00:00Z');
  const a=createAiAllowance({db,config:aiAllowanceConfig({NYX_AI_DAILY_BUDGET_USD:'1',NYX_AI_MODEL_PRICES_JSON:JSON.stringify({['shared:'+model]:price})}),now:()=>time});
- const actor={uid:'member',device:'browser',trusted:true,...(['drop','nook'].includes(app)?{app}:{})};
+ const actor={uid:'member',device:'workspace',trusted:true,...(['drop','nook'].includes(app)?{app}:{})};
  return {a,db,actor,advance:()=>time+=61000};
 }
 for(const app of ['nyx','tutsi','nook','drop']){

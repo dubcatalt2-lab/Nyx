@@ -17,10 +17,10 @@ const manifest = {
 };
 
 const json = body => ({ contentType: 'application/json', body: JSON.stringify(body) });
-const browser = await chromium.launch({ headless: true });
+const workspace = await chromium.launch({ headless: true });
 
 try {
-  const page = await browser.newPage({ viewport: { width: 1440, height: 940 } });
+  const page = await workspace.newPage({ viewport: { width: 1440, height: 940 } });
   const pageErrors = [];
   const blockedRequests = [];
   page.on('pageerror', error => pageErrors.push(error.message));
@@ -164,7 +164,7 @@ try {
   assert(!overflow, 'Desktop game library has horizontal overflow');
   if (process.env.NYX_TEST_GAMES_SCREENSHOT) await page.screenshot({ path: process.env.NYX_TEST_GAMES_SCREENSHOT, fullPage: true });
 
-  const progressive = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  const progressive = await workspace.newPage({ viewport: { width: 1280, height: 800 } });
   const progressiveManifest = {
     version: 1,
     catalogs: [
@@ -186,7 +186,7 @@ try {
   assert((await progressive.locator('#gameCount').textContent()).includes('library loading'), 'Progressive loading status did not report the remaining provider');
   await progressive.close();
 
-  const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  const mobile = await workspace.newPage({ viewport: { width: 390, height: 844 } });
   await mobile.addInitScript(() => {
     try { Object.defineProperty(navigator, 'hardwareConcurrency', { configurable: true, get: () => 2 }); } catch {}
     try { Object.defineProperty(navigator, 'deviceMemory', { configurable: true, get: () => 2 }); } catch {}
@@ -207,7 +207,7 @@ try {
   await mobile.close();
 
   if (process.env.NYX_TEST_REAL_GAME) {
-    const realGame = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    const realGame = await workspace.newPage({ viewport: { width: 1280, height: 800 } });
     const realAdRequests = [];
     let guardLoaded = false;
     realGame.on('request', request => {
@@ -222,8 +222,8 @@ try {
     await realGame.close();
   }
 
-  assert(pageErrors.length === 0, `Game page browser errors: ${pageErrors.join(' | ')}`);
+  assert(pageErrors.length === 0, `Game page workspace errors: ${pageErrors.join(' | ')}`);
   console.log('Game library, progressive catalog loading, adaptive optimizer, and in-frame ad protection checks passed.');
 } finally {
-  await browser.close();
+  await workspace.close();
 }

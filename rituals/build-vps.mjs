@@ -2,7 +2,7 @@ import {sourceFile,publicSourcePath,publicSourceText} from '../scripture/source-
 import {buildGameStorage} from './build-game-storage.mjs';
 import {buildPublicModules} from './build-public-modules.mjs';
 import {buildFrontendAssets} from './build-frontend-assets.mjs';
-import {opaqueIdentifiers,scrambleBrowserOutput} from './build-browser-scramble.mjs';
+import {opaqueIdentifiers,scrambleWorkspaceOutput} from './build-workspace-scramble.mjs';
 import {buildPublisherPackage} from './build-publisher-package.mjs';
 import {formatPublishedHtml} from './format-published-html.mjs';
 import { spawn, spawnSync } from "node:child_process";
@@ -262,9 +262,9 @@ function runtimeFormatOptions() {
 
 async function minifyEmbeddedScramjetGuards(source, nameCache) {
   const names = new Set([
-    "scramjetSpotifyChromeOsGuardSource",
-    "scramjetMinimalRuntimeGuardSource",
-    "scramjetHelperRuntimeGuardSource"
+    "studyjetSpotifyChromeOsGuardSource",
+    "studyjetMinimalRuntimeGuardSource",
+    "studyjetHelperRuntimeGuardSource"
   ]);
   const program = parse(source, { ecmaVersion: "latest", sourceType: "script" });
   const replacements = [];
@@ -304,7 +304,7 @@ async function minifyEmbeddedScramjetGuards(source, nameCache) {
   return transformed;
 }
 
-async function minifyFirstPartyBrowserRuntimes() {
+async function minifyFirstPartyWorkspaceRuntimes() {
   const generatedRuntimes = ["runtime-config.js", "nyx-scramjet-runtime-guard.js"];
   const trackedRuntimes = repositoryFiles().filter(relative => (
     /\.(js|mjs)$/.test(relative) &&
@@ -344,7 +344,7 @@ async function minifyFirstPartyBrowserRuntimes() {
   }
   const reduction = sourceBytes ? Math.round((1 - outputBytes / sourceBytes) * 100) : 0;
   if (transformedFiles !== targets.length) throw new Error(`Obfuscation coverage failed: ${transformedFiles}/${targets.length} runtimes transformed`);
-  console.log(`Production-obfuscated all ${transformedFiles} first-party browser runtime files (${Math.abs(reduction)}% ${reduction>=0?'smaller':'larger'}; no source maps)`);
+  console.log(`Production-obfuscated all ${transformedFiles} first-party workspace runtime files (${Math.abs(reduction)}% ${reduction>=0?'smaller':'larger'}; no source maps)`);
 }
 
 function isFirstPartyMarkupOrStyle(relative) {
@@ -450,7 +450,7 @@ async function main() {
   await copyProxyRuntimes();
   await writePatchedRuntimes(wispUrl);
   await removeUnavailableUgsEntries();
-  await minifyFirstPartyBrowserRuntimes();
+  await minifyFirstPartyWorkspaceRuntimes();
   await versionStylesheets();
   await minifyFirstPartyMarkupAndStyles();
   await buildProxyAssets(output);
@@ -458,7 +458,7 @@ async function main() {
   await buildFrontendAssets(output,repositoryFiles().filter(isStaticSource).map(file => (modules['/'+file] || '/'+file).slice(1)),learningPage());
   await writeNotFoundPage();
   await buildPublisherPackage(root, output);
-  await scrambleBrowserOutput(output);
+  await scrambleWorkspaceOutput(output);
   if (output !== join(root, 'dist')) await writeFile(join(dirname(output), 'ready.json'), JSON.stringify({format:'nyx-static-release', version:1, builtAt:new Date().toISOString()}));
   console.log(`VPS build ready in ${output}`);
   console.log(`Wisp endpoint: ${wispUrl}`);

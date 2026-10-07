@@ -7,13 +7,13 @@ import {rewriteRuntimeNames} from './build-runtime-names.mjs';
 
 // Exercise the real host watchdog with deterministic load/route timing.
 const source=readFileSync(sourceFile('script.js'),'utf8');
-const wanted=new Set(['watchProxyLoad','browserFrameStillAtSource','inspectFrameHealth']);
+const wanted=new Set(['watchConnectionLoad','workspaceFrameStillAtSource','inspectFrameHealth']);
 const functions=[];
 let sourceDecoder='';
 function visit(node){
   if(!node || typeof node!=='object') return;
   if(node.type==='FunctionDeclaration' && wanted.has(node.id?.name)) functions.push(source.slice(node.start,node.end));
-  if(node.type==='FunctionDeclaration' && node.id?.name==='browserShellSourceUrl') sourceDecoder=source.slice(node.start,node.end);
+  if(node.type==='FunctionDeclaration' && node.id?.name==='workspaceShellSourceUrl') sourceDecoder=source.slice(node.start,node.end);
   for(const value of Object.values(node)) {
     if(Array.isArray(value)) value.forEach(visit);
     else if(value && typeof value==='object') visit(value);
@@ -21,7 +21,7 @@ function visit(node){
 }
 visit(parse(source,{ecmaVersion:'latest'}));
 assert.equal(functions.length,wanted.size);
-const decode=vm.runInNewContext(sourceDecoder+';browserShellSourceUrl;',{
+const decode=vm.runInNewContext(sourceDecoder+';workspaceShellSourceUrl;',{
   URL,window:{},location:{origin:'https://nyx.test',href:'https://nyx.test/'}
 });
 const channel='https://discord.com/channels/100/200?flow=a%2Bb#message';
@@ -29,7 +29,7 @@ assert.equal(decode('https://nyx.test/~/sj-v1/'+encodeURIComponent(channel)),cha
 assert.equal(decode('https://nyx.test/~/sj-v1/'+encodeURIComponent(channel)+'#next%20message'),channel.replace('#message','#next%20message'));
 const other='https://other.test/~/sj-v1/'+encodeURIComponent(channel);
 assert.equal(decode(other),other,'Only decode local proxy paths');
-const productionDecode=vm.runInNewContext(rewriteRuntimeNames(sourceDecoder)+';browserShellSourceUrl;',{
+const productionDecode=vm.runInNewContext(rewriteRuntimeNames(sourceDecoder)+';workspaceShellSourceUrl;',{
   URL,window:{},location:{origin:'https://nyx.test',href:'https://nyx.test/'}
 });
 assert.equal(productionDecode('https://nyx.test/~/study/session/frame/'+encodeURIComponent(channel)),channel,'Production paths must decode before navigation rejection checks');
@@ -46,16 +46,16 @@ function fixture(){
   const tab={url,sourceUrl:url,frame};
   const context=vm.createContext({
     Date:{now:()=>now},Math,location:{href:'https://nyx.test/'},state:{tabs:[tab]},
-    DEFAULT_BROWSER_MODE:'scramjet',DEFAULT_BROWSER_TRANSPORT:'epoxy',
-    store:{text:()=> 'auto'},normalizeBrowserModeName:x=>x,browserShellSourceUrl:x=>x,
-    browserShellRejectFrameLocation:()=>false,isSpotifyFamilyUrl:()=>false,
-    browserHost:x=>new URL(x).hostname,hostMatches:(host,list)=>list.includes(host),
-    transportAutoEnabled:()=>true,proxyTransportName:()=> 'epoxy',transportRetryOrder:()=>['libcurlRaw'],
-    setBrowserTransportOverride:()=>{},loadScramjetTab:()=>calls.push('reload'),
-    fallbackProxyEngine:()=>calls.push('fallback'),loadSelectedSearchFallback:()=>calls.push('fallback'),
+    DEFAULT_WORKSPACE_MODE:'scramjet',DEFAULT_WORKSPACE_TRANSPORT:'epoxy',
+    store:{text:()=> 'auto'},normalizeWorkspaceModeName:x=>x,workspaceShellSourceUrl:x=>x,
+    workspaceShellRejectFrameLocation:()=>false,isSpotifyFamilyUrl:()=>false,
+    workspaceHost:x=>new URL(x).hostname,hostMatches:(host,list)=>list.includes(host),
+    transportAutoEnabled:()=>true,connectionTransportName:()=> 'epoxy',transportRetryOrder:()=>['libcurlRaw'],
+    setWorkspaceTransportOverride:()=>{},loadStudyjetTab:()=>calls.push('reload'),
+    fallbackConnectionEngine:()=>calls.push('fallback'),loadSelectedSearchFallback:()=>calls.push('fallback'),
     setTimeout:(fn,delay)=>tasks.push({fn,at:now+delay}),setInterval:()=>0,clearInterval:()=>{}
   });
-  vm.runInContext(functions.join('\n')+'\nthis.watch=watchProxyLoad;',context);
+  vm.runInContext(functions.join('\n')+'\nthis.watch=watchConnectionLoad;',context);
   context.watch(tab,url,'scramjet');
   return {tab,body,calls,
     load(){for(const fn of [...(listeners.get('load')||[])]) fn();},

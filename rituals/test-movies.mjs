@@ -15,9 +15,9 @@ let failures=0;const broken=createMovieCatalog({token:()=> 'x',fetchImpl:()=>{fa
 const app=express();installMovieApi(app,{catalog});app.use(express.static(process.env.NYX_TEST_ASSET_ROOT||'.'));const server=app.listen(0);await new Promise(r=>server.once('listening',r));const origin='http://localhost:'+server.address().port;
 let proxyAsset='/apps/movies/proxy.mjs';
 try{proxyAsset=JSON.parse(readFileSync(sourceFile((process.env.NYX_TEST_ASSET_ROOT||'.')+'/frontend-assets.json'),'utf8')).aliases[proxyAsset]||proxyAsset;}catch{}
-const browser=await chromium.launch({channel:"msedge"});
+const workspace=await chromium.launch({channel:"msedge"});
 try{
- const page=await browser.newPage({viewport:{width:1280,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const page=await workspace.newPage({viewport:{width:1280,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',r=>{if(new URL(r.request().url()).origin===origin)return r.continue();if(r.request().url().startsWith('https://vidsrcme.ru/embed/'))return r.fulfill({contentType:'text/html',body:'<button>Test player</button>'});return r.abort();});
  await page.route(url=>url.pathname===proxyAsset||url.pathname==='/apps/movies/proxy.mjs',r=>r.fulfill({contentType:'application/javascript',body:`export {inspectMovieProxy,styleMovieVideo,startMovieProxy,canStartMovieProxy} from './proxy-runtime.mjs';export async function launchMovieProxy(frame,url,signal,options={}){if(window.failAll){window.launchCount=(window.launchCount||0)+1;if(options.recover)window.recoverCount=(window.recoverCount||0)+1;throw Error('Fixture outage');}if(url.includes('vidfast.pro'))throw Error('Fixture proxy failure');if(!signal.aborted)frame.src='/service/test?target='+encodeURIComponent(url);}`}));
  await page.route('**/apps/movies/proxy-runtime.mjs',r=>r.fulfill({contentType:'application/javascript',body:readFileSync(sourceFile((process.env.NYX_TEST_ASSET_ROOT||'.')+'/apps/movies/proxy.mjs'),'utf8')}));
@@ -31,16 +31,16 @@ try{
  assert.equal(new URL(await page.locator('#player iframe').getAttribute('src'),origin).searchParams.get('target'),'https://www.vidy.st/movie/157336');
  assert.equal(await page.locator('#player iframe').getAttribute('sandbox'),'allow-scripts allow-same-origin allow-forms allow-presentation');
  assert.equal(await page.locator('#source-list [data-provider]').count(),14);
- assert.equal(await page.locator('#proxy-loading').isVisible(),true);
+ assert.equal(await page.locator('#connection-loading').isVisible(),true);
  assert.equal(await page.locator('#sources-panel').isVisible(),true,'Provider list stays visible during loading');
  assert.equal(await page.locator('#sources-panel').evaluate(e=>getComputedStyle(e).scrollbarWidth),'none');
  assert(await page.locator('#sources-panel').evaluate(e=>{e.scrollTop=100;const scrolls=e.scrollTop>0;e.scrollTop=0;return scrolls}),'Provider list remains scrollable');
- assert.equal(await page.locator('#start-proxy').isVisible(),false);
+ assert.equal(await page.locator('#start-playback').isVisible(),false);
  await page.screenshot({path:'.codex-artifacts/movies-loading-circle.png'});
  const providerFrame=await (await page.locator('#player iframe').elementHandle()).contentFrame();
  await providerFrame.locator('button').evaluate(button=>button.textContent='Play');
- await page.locator('#start-proxy').waitFor({state:'visible'});
- assert.equal(await page.locator('#proxy-loading').isVisible(),false);
+ await page.locator('#start-playback').waitFor({state:'visible'});
+ assert.equal(await page.locator('#connection-loading').isVisible(),false);
  await page.locator('#watch-area').hover({position:{x:10,y:10}});await page.locator('#choose-source').click();
  await providerFrame.evaluate(()=>{const v=document.createElement('video');for(const [key,value] of Object.entries({videoWidth:1280,videoHeight:720,readyState:4,paused:false,duration:120}))Object.defineProperty(v,key,{get:()=>value});Object.defineProperty(v,'currentTime',{get:()=>performance.now()/1000});document.body.append(v);});
  await page.waitForFunction(()=>document.querySelector('#source-list li[data-state=Playing]'));
@@ -72,4 +72,4 @@ try{
  // Metadata abuse protection remains bounded and does not reveal credentials.
  let response;for(let i=0;i<121;i++)response=await fetch(origin+'/api/movies/search?q=cache');assert.equal(response.status,429);assert.equal(response.headers.get('retry-after'),'60');
  console.log('PASS: metadata validation, credential isolation, coalescing, failures, rate limit, search/details/player controls, safe text, desktop/mobile layout.');
-}finally{await browser.close();await new Promise(r=>server.close(r));}
+}finally{await workspace.close();await new Promise(r=>server.close(r));}

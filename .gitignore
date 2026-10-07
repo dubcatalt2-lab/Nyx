@@ -100,6 +100,8 @@ relics/backgrounds/*
 !relics/backgrounds/pirate-cove.gif
 !relics/backgrounds/halloween.jpg
 !relics/backgrounds/study-away-cover.png
+!relics/backgrounds/workspace-glacier-grey.jpg
+!relics/backgrounds/workspace-leaf-grey.jpg
 *.mp4
 *.webm
 *.mov

@@ -10,7 +10,7 @@ export function opaqueIdentifiers(seed='workspace') {
 }
 
 const marker='/__NYX_STATIC_BASE__/';
-export const protectedIdentifierNames=/(?:proxy|browse|scramjet|inject|studyhub|baretransport|baremux|registersw|ultraviolet|uvserviceworker)|^uv(?:\$config|config)?$/i;
+export const protectedIdentifierNames=/(?:proxy|browse|scramjet|inject|studyhub|baretransport|baremux|registersw)/i;
 function escapedIdentifier(value) {
   return Array.from(value,character=>'\\u{'+character.codePointAt(0).toString(16)+'}').join('');
 }

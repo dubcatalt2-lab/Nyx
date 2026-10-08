@@ -96,7 +96,7 @@ try{
     if(process.argv.includes('--handshake') && !(brand==='nyx'&&mode==='scramjet'&&transportName==='libcurlRaw'))continue;
     if((process.argv.includes('--worker-loss')||process.argv.includes('--repair')) && !(brand==='nyx'&&mode==='scramjet'&&transportName==='epoxy'&&delay===0))continue;
     if(process.argv.includes('--presentation') && !(brand==='nyx'&&delay===3000))continue;
-    if(process.argv.includes('--legacy') && !['scramjet-v1','ultraviolet'].includes(mode))continue;
+    if(process.argv.includes('--legacy') && mode!=='scramjet-v1')continue;
     const context=await workspace.newContext();
     await context.routeWebSocket('wss://fixture.test/wisp/',ws=>setTimeout(()=>ws.send(Buffer.from([3,0,0,0,0,255,255,0,0])),20));
     await context.route('**/api/**',route=>route.fulfill({contentType:'application/json',body:'{}'}));
@@ -199,7 +199,7 @@ try{
       console.log('PASS real StudyJet worker: search recovers from libcurl SSL code 35 with HTTP bridge disabled; saved bridge and transport settings preserved.');
       await context.close();continue;
     }
-    if(brand==='nyx'&&mode!=='ultraviolet') assert.match(await page.locator('iframe.view.active').getAttribute('src'), /\/~\/(?:sj|study)\//, 'StudyJet must use its v2 worker');
+    if(brand==='nyx') assert.match(await page.locator('iframe.view.active').getAttribute('src'), /\/~\/(?:sj|study)\//, 'StudyJet must use its v2 worker');
     const instance=await frame.locator('body').getAttribute('data-instance');
     assert(instance,'Fixture script must initialize');
     await frame.locator('#accept-cookies').evaluate(button=>button.click());

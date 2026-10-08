@@ -7634,12 +7634,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       try{value=JSON.parse(value)}catch{value=value.slice(1,-1)}
     }
     value=String(value || 'auto').trim().toLowerCase().replace(atob('c2NyYW1qZXQ='),'scramjet').replace('studyjet','scramjet');
-    if(value==='uv' || value==='ultra' || value==='ultraviolet' || value==='stemconnect' || value==='stem-connect') return 'scramjet';
     if(value==='sj' || value==='scram' || value==='scramjet' || value==='scramjet-v2' || value==='sjv2') return 'scramjet';
     if(value==='scramjet-v1' || value==='sjv1' || value==='scram-v1') return 'scramjet';
     if(value==='rh' || value==='rammerhead') return 'rammerhead';
     if(value==='direct' || value==='iframe') return 'iframe';
-    return value || 'auto';
+    return value==='auto' ? 'auto' : 'scramjet';
   }
   function connectionTargetUrl(url){
     try{
@@ -8840,13 +8839,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   async function repairRetiredConnectionStorage(){
     if(navigator.serviceWorker){
-      await Promise.all(['/service/','/uv/'].map(unregisterConnectionScope));
+      await unregisterConnectionScope('/service/');
     }
   }
   async function repairRetiredConnectionCaches(){
     if(!window.caches?.keys) return;
     const names=await caches.keys().catch(()=>[]);
-    await Promise.all(names.filter(name=>/(ultraviolet|uv|bare|epoxy|libcurl)/i.test(name)).map(name=>caches.delete(name).catch(()=>false)));
+    await Promise.all(names.filter(name=>/(bare|epoxy|libcurl)/i.test(name)).map(name=>caches.delete(name).catch(()=>false)));
   }
   function clearNyxCookies(){
     try{
@@ -10191,7 +10190,6 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(location.protocol==='file:') return true;
     const files=[
       '/',
-      '/uv.config.js',
       '/scramjet/scramjet.js',
       '/scramjet.sw.js',
       '/baremux/index.mjs',
@@ -12039,7 +12037,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           t.privateScramjetController.setTransport(studyjetController.transport);
         }
         const existingFrameSrc=String(t.frame.getAttribute('src') || '');
-        if(existingFrameSrc.startsWith('/service/') || t.actualEngine==='ultraviolet'){
+        if(existingFrameSrc.startsWith('/service/')){
           replaceTabFrame(t);
         }
         const spotifyChromeOsCompatibility=/\bCrOS\b/i.test(String(navigator.userAgent || '')) && isSpotifyFamilyUrl(url);
@@ -12242,7 +12240,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         };
         const poll=setInterval(()=>{
           const srcdoc=String(t.frame?.getAttribute?.('srcdoc') || '');
-          if(srcdoc && /(?:Scramjet|Learning engine) did not start|Ultraviolet did not start|Page Not Found|error/i.test(srcdoc)) finish(false);
+          if(srcdoc && /(?:Scramjet|Learning engine) did not start|Page Not Found|error/i.test(srcdoc)) finish(false);
           if(hasMeaningfulContent()) finish(true);
         },420);
         const timer=setTimeout(()=>finish(false),timeout);

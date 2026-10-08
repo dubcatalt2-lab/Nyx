@@ -32,7 +32,6 @@ Allow: /
 Disallow: /api/
 Disallow: /service/
 Disallow: /scramjet/
-Disallow: /uv/
 Disallow: /wisp/
 Disallow: /apps/chat/
 Disallow: /student-resources.html

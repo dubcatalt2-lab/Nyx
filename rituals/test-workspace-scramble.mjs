@@ -50,17 +50,17 @@ assert(!mangled.code.includes('secretName'));
 const context={};vm.runInNewContext(transformWorkspaceStrings(mangled.code),context);assert.equal(context.read('a'),'avalue');
 const identifiers=String.raw`
 /*! BareMux attribution stays unchanged. */
-const browser=3,proxy=4,uv=5;
+const browser=3,proxy=4,relay=5;
 class BareTransport { #injected=2; read(){return this.#injected} }
-const BareMux={browser,proxy,uv,inject(value){return value+this.browser}};
-const self={uv$config:{enabled:true}};
+const BareMux={browser,proxy,relay,inject(value){return value+this.browser}};
+const self={settings:{enabled:true}};
 function ScramjetControlller(){return new BareTransport().read()}
-globalThis.result={browser,proxy,uv,value:BareMux.inject(7),private:ScramjetControlller(),self:self.uv$config,
+globalThis.result={browser,proxy,relay,value:BareMux.inject(7),private:ScramjetControlller(),self:self.settings,
   captured:(()=>({browser,proxy})).toString()};
 `;
 const protectedCode=transformWorkspaceStrings(identifiers);
 assert(protectedCode.includes('/*! BareMux attribution stays unchanged. */'));
-assert(!/\b(?:browser|proxy|uv|inject|BareTransport|ScramjetControlller)\b/.test(protectedCode.replace(/\/\*[\s\S]*?\*\//g,'')));
+assert(!/\b(?:browser|proxy|inject|BareTransport|ScramjetControlller)\b/.test(protectedCode.replace(/\/\*[\s\S]*?\*\//g,'')));
 const originalResult=evaluate(identifiers),protectedResult=evaluate(protectedCode);
 assert.equal(JSON.stringify({...protectedResult,captured:undefined}),JSON.stringify({...originalResult,captured:undefined}));
 assert.equal(transformWorkspaceStrings(protectedCode),protectedCode);

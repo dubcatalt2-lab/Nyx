@@ -32,8 +32,6 @@ export const sourceLayout=Object.freeze({
   "README.md": "TESTAMENT.md",
   "ai.html": "oracle.html",
   "firestore.rules": "covenant.rules",
-  "index.accidental-old-2026-07-10_17-59-36.html": "archive-chronicle.html",
-  "index.backup-before-prompt-title.html": "archive-testament.html",
   "nyx-singlefile.html": "pilgrimage.html",
   "scramjet.sw.js": "pilgrim.sw.js",
   "script.js": "gospel.js",

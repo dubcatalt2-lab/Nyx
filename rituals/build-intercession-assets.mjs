@@ -80,7 +80,7 @@ export async function buildProxyAssets(output){
     await writeFile(join(output,legacyProxyAssetNames[original].slice(1)),legacy.code);
   }
   for(const path of await walk(output)){
-    if(/^(?:scramjet(?:-v1)?|controller|epoxy|libcurl|baremux|uv)\//.test(path)){
+    if(/^(?:scramjet(?:-v1)?|controller|epoxy|libcurl|baremux)\//.test(path)){
       if(path.endsWith('.map'))await rm(join(output,path));
       continue;
     }

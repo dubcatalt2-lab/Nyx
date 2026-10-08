@@ -778,7 +778,7 @@ app.use((req, res, next) => {
     "/nyx-scramjet-runtime-guard.js"
   ]);
   const noStorePrefix = /^\/(?:assets\/(?:gms-games|reds-misc)\/|gms-games-|reds-misc-)/i.test(req.path);
-  const opaqueConnectionAsset = /^\/(?:(?:scramjet|studyjet)(?:-v1)?\/|controller\/|epoxy\/|atlas\/|libcurl\/|textlib\/|baremux\/|uv\/|assets\/transports\/|apps\/tutsi\/)?@?r[0-9a-f]{24}!?\.(?:js|mjs|wasm)$/.test(req.path);
+  const opaqueConnectionAsset = /^\/(?:(?:scramjet|studyjet)(?:-v1)?\/|controller\/|epoxy\/|atlas\/|libcurl\/|textlib\/|baremux\/|assets\/transports\/|apps\/tutsi\/)?@?r[0-9a-f]{24}!?\.(?:js|mjs|wasm)$/.test(req.path);
   if (noStorePaths.has(req.path) || noStorePrefix || opaqueConnectionAsset) {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma", "no-cache");

@@ -84,7 +84,7 @@ function html(source,file) {
 }
 const files=execFileSync('git',['ls-files','-z'],{encoding:'utf8'}).split('\0').filter(Boolean);
 for(const file of files) {
-  if(!/\.(?:js|cjs|css|html)$/.test(file)||/^(?:assets\/(?:ugs\/(?!play\.html$)|vendor\/)|services\/stratus\/upstream\/|uv\/|scramjet\/|baremux\/)/.test(file)||/^index\.(?:backup|accidental)/.test(file))continue;
+  if(!/\.(?:js|cjs|css|html)$/.test(file)||/^(?:assets\/(?:ugs\/(?!play\.html$)|vendor\/)|services\/stratus\/upstream\/|scramjet\/|baremux\/)/.test(file)||/^index\.(?:backup|accidental)/.test(file))continue;
   const source=await readFile(sourceFile(file),'utf8');
   const result=file.endsWith('.html')?html(source,file):file.endsWith('.css')?css(source,file):javascript(source,file);
   report.checked++;

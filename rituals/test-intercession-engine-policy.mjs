@@ -21,6 +21,8 @@ const api=vm.runInNewContext(functions.join('\n')+';({normalizeWorkspaceModeName
 });
 for(const mode of ['scramjet-v1','sjv1','scram-v1'])assert.equal(api.normalizeWorkspaceModeName(mode),'scramjet');
 for(const mode of ['ultraviolet','uv','ultra','"ultraviolet"','stemconnect','stem-connect'])assert.equal(api.normalizeWorkspaceModeName(mode),'scramjet');
+for(const mode of ['removed-engine','obsolete-mode'])assert.equal(api.normalizeWorkspaceModeName(mode),'scramjet');
+assert.doesNotMatch(source,/ultraviolet|__uv|uv\$config|\/uv\/|uv\.config|uv\.sw/i,'Retired runtime must not remain in the shell');
 for(const mode of ['auto','iframe','scramjet'])assert.equal(api.normalizeWorkspaceModeName(mode),mode);
 assert.equal(await api.installStudyjetV1(),false);
 for(configured of ['auto','scramjet','ultraviolet','scramjet-v1']){

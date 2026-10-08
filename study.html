@@ -257,14 +257,14 @@ html.nyx-workspace-shell-expected body:not(.workspace-shell)>:is(#customBgImage,
             <label for="setupWorkspaceMode">Workspace</label>
             <select id="setupWorkspaceMode" data-workspace-mode-select>
               <option value="auto">Auto</option>
-              <option value="scramjet" selected>StudyJet v2</option>
+              <option value="scramjet" selected>Learning engine</option>
 
             </select>
           </div>
           <div class="setup-field">
             <label for="setupEngine">S3ARC4 Engine</label>
             <select id="setupEngine" data-workspace-engine>
-              <option value="duckduckgo">DuckDuckGo</option>
+              <option value="duckduckgo">Reference Search</option>
               <option value="google">Google</option>
               <option value="bing">Bing</option>
             </select>
@@ -287,8 +287,8 @@ html.nyx-workspace-shell-expected body:not(.workspace-shell)>:is(#customBgImage,
           <div class="setup-final-list">
             <div class="setup-final-row"><span>Theme</span><strong data-setup-preview-theme>Default</strong></div>
             <div class="setup-final-row"><span>Effect</span><strong data-setup-preview-effect>None</strong></div>
-            <div class="setup-final-row"><span>Workspace</span><strong data-setup-preview-workspace>StudyJet v2</strong></div>
-            <div class="setup-final-row"><span>S3ARC4</span><strong data-setup-preview-engine>DuckDuckGo</strong></div>
+            <div class="setup-final-row"><span>Workspace</span><strong data-setup-preview-workspace>Learning engine</strong></div>
+            <div class="setup-final-row"><span>S3ARC4</span><strong data-setup-preview-engine>Reference Search</strong></div>
             <div class="setup-final-row"><span>Font</span><strong data-setup-preview-font>Outfit</strong></div>
           </div>
         </div>
@@ -296,13 +296,13 @@ html.nyx-workspace-shell-expected body:not(.workspace-shell)>:is(#customBgImage,
       <section class="setup-step" data-setup-step="9">
         <div class="setup-shortcut-page">
           <h2>Shortcuts</h2>
-          <p class="setup-shortcut-intro">Use Left Alt with these keys while browsing.</p>
+          <p class="setup-shortcut-intro">Use Left Alt with these keys in your workspace.</p>
           <div class="setup-shortcut-grid">
-            <div class="setup-shortcut-card"><span>Switch tabs left to right</span><kbd>Alt + 1-9</kbd></div>
+            <div class="setup-shortcut-card"><span>Switch pages left to right</span><kbd>Alt + 1-9</kbd></div>
             <div class="setup-shortcut-card"><span>Focus the U3L bar</span><kbd>Alt + L / D</kbd></div>
-            <div class="setup-shortcut-card"><span>Open a new tab</span><kbd>Alt + T</kbd></div>
-            <div class="setup-shortcut-card"><span>Close the current tab</span><kbd>Alt + W</kbd></div>
-            <div class="setup-shortcut-card"><span>Reload the current tab</span><kbd>Alt + R</kbd></div>
+            <div class="setup-shortcut-card"><span>Open a new page</span><kbd>Alt + T</kbd></div>
+            <div class="setup-shortcut-card"><span>Close the current page</span><kbd>Alt + W</kbd></div>
+            <div class="setup-shortcut-card"><span>Reload the current page</span><kbd>Alt + R</kbd></div>
             <div class="setup-shortcut-card"><span>Go back or forward</span><kbd>Alt + Arrows</kbd></div>
             <div class="setup-shortcut-card"><span>Select all text</span><kbd>Alt + A</kbd></div>
             <div class="setup-shortcut-card"><span>Copy, cut, paste</span><kbd>Alt + C/X/V</kbd></div>
@@ -336,13 +336,13 @@ html.nyx-workspace-shell-expected body:not(.workspace-shell)>:is(#customBgImage,
     <p>Please type one of the following:</p>
     <div class="cloak-mode-list">
       <div class="cloak-mode-row"><code>'a'</code><span>= about:blank</span></div>
-      <div class="cloak-mode-row"><code>'b'</code><span>= blob cloaking</span></div>
-      <div class="cloak-mode-row"><code>'m'</code><span>= current tab</span></div>
-      <div class="cloak-mode-row"><code>'ac'</code><span>= same tab cloak anchored</span></div>
-      <div class="cloak-mode-row"><code>'bc'</code><span>= blob cloaking anchored</span></div>
-      <div class="cloak-mode-row"><code>'mc'</code><span>= current tab anchored</span></div>
+      <div class="cloak-mode-row"><code>'b'</code><span>= document window</span></div>
+      <div class="cloak-mode-row"><code>'m'</code><span>= current page</span></div>
+      <div class="cloak-mode-row"><code>'ac'</code><span>= anchored study window</span></div>
+      <div class="cloak-mode-row"><code>'bc'</code><span>= anchored document window</span></div>
+      <div class="cloak-mode-row"><code>'mc'</code><span>= anchored current page</span></div>
     </div>
-    <input class="cloak-input" data-cloak-input autocomplete="off" spellcheck="false" aria-label="Cloak mode">
+    <input class="cloak-input" data-cloak-input autocomplete="off" spellcheck="false" aria-label="Study window mode">
     <div class="cloak-submit-actions">
       <button class="primary" data-cloak-submit>OK</button>
       <button data-cloak-cancel>Cancel</button>

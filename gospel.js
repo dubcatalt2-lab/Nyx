@@ -14815,7 +14815,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
     return '<!doctype html><title>'+esc(title)+'</title><link rel="icon" href="'+esc(nyxFaviconHref())+'"><iframe src="'+currentCloakFrameUrl()+'" style="position:fixed;inset:0;width:100%;height:100%;border:0"></iframe>';
   }
   function cloakPromptText(){
-    return "Please type one of the following:\n'a' = about:blank\n'b' = blob cloaking\n'm' = current tab iframe\n'ac' = same tab cloak\n'bc' = blob cloaking same tab\n'mc' = current tab iframe same tab";
+    return "Please type one of the following:\n'a' = about:blank\n'b' = document window\n'm' = current page frame\n'ac' = anchored study window\n'bc' = anchored document window\n'mc' = anchored current page frame";
   }
   function normalizeCloakMode(value){
     const mode=String(value || '').trim().toLowerCase();

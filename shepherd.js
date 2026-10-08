@@ -7966,10 +7966,8 @@ app.use(tubeStreamingRoutes({
     if (context.actor.uid !== founderProfileConfig().administratorUid) { const error = new Error("Only the owner can view video service status."); error.status = 403; throw error; }
     return context;
   },
-  publicVideo: async id => {
-    const [video] = await nyxTubeVideoDetails([id]);
-    if (!video) { const error = new Error("This video is unavailable."); error.status = 404; throw error; }
-  }
+  // Native validation must use the extractor too: discovery may be on backup.
+  publicVideo: id => nyxTubeCatalog.playbackInfo(id)
 }));
 app.get("/api/nyxtube/status", (_req, res) => {
   res.set("Cache-Control", "no-store").json({ configured: true, provider: "youtube", playback: nyxTubeBackend.enabled ? "native" : "official-iframe-api", nativeAvailable: nyxTubeBackend.enabled, invidiousEmbedOrigin: invidiousEmbedOrigin() });

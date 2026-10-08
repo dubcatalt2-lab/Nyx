@@ -9,6 +9,7 @@
   const labels='[data-nyx-dock-item] > span,.home-shortcut-open > span,.workspace-home-label,.nyx-discord-link > span,.quick-tile > span:not(.quick-icon),#all-apps button > span,[data-nyx-display-label]';
   const headings='h1,h2,h3,nav a,nav button,header strong,.nyxify-brand strong,.lc-brand strong,.utility-nav-item > span,.brand,.brand-title';
   const installed=new WeakSet();
+  const generatedLabels=new WeakMap();
   function install(doc){
     if(!doc?.body || installed.has(doc) || doc.__nyxDisplayLabelsInstalled) return;
     installed.add(doc);
@@ -20,7 +21,7 @@
       if(!text || (!element.matches(labels) && !names.test(text))) return;
       const next=nyxDisplayName(text);
       if(next===text) return;
-      if(!element.hasAttribute('aria-label')) element.setAttribute('aria-label',text);
+      if(!element.hasAttribute('aria-label') || element.getAttribute('aria-label')===generatedLabels.get(element)){element.setAttribute('aria-label',text);generatedLabels.set(element,text);}
       const content=nodes.find(node=>node.textContent.trim());
       if(!content)return;
       content.textContent=next;

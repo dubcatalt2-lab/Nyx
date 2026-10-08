@@ -4,7 +4,7 @@ This directory runs the optional Cloud Gaming backend as a separate, loopback-on
 
 ## Source and license
 
-`upstream/` is an unmodified snapshot of [`x8rr/stratus-api`](https://github.com/x8rr/stratus-api) at commit `bd760513ce7616e955181dfd18017e2a6c278e3c`. The upstream project is licensed under AGPL-3.0; its license is preserved in `UPSTREAM-LICENSE`.
+`upstream/` is an unmodified snapshot of [`x8rr/stratus-api`](https://github.com/x8rr/stratus-api) at commit `8783524043ac214c0f6a64d4fa0ae94360200d7c`. The upstream project is licensed under AGPL-3.0; its license is preserved in `UPSTREAM-LICENSE`.
 
 `launcher.mjs` verifies the pinned files, writes a generated runtime copy, and applies Nyx's deployment hardening there. It also updates the pinned embed client's obsolete `/api/cloud/embed-data` request to the server's active `/cloud/v1/embed-data` route. The generated copy is never committed. The public `/cloud/v1/source` endpoint identifies both the pinned upstream and the corresponding Nyx source.
 
@@ -44,3 +44,5 @@ The provider explicitly rejects temporary email addresses (confirmed by a contro
 Create and verify a regular provider account using the provider's own supported signup flow. Configure `STRATUS_PROVIDER_EMAIL` and `STRATUS_PROVIDER_PASSWORD` in the protected `/etc/nyx/stratus.env` file (or local process environment). Do not paste credentials into chat or commit them. The existing service units load that file. Restarting production remains a separate deployment action.
 
 The adapter logs into that account using a stable device identifier. It does not create accounts, request email codes, renew trial allowances, or bypass provider limits. The account must have access/credit for the selected game. One account means one simultaneous game; multiple independent users do not imply multiple provider seats. Missing settings return an immediate setup error without starting preparation. A successful authenticated stream still requires testing with a real configured account.
+
+Maintenance is opt-in with `NYX_CLOUD_GAMING_MAINTENANCE=1`. Provider account access is still required; removing maintenance does not grant streaming credit.

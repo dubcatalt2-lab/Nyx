@@ -23,7 +23,16 @@ try{
   assert(!/\b(proxy|scramjet|wisp|epoxy|libcurl|ultraviolet)\b/i.test(await category.innerText()),'Connection settings must use neutral wording');
   assert.equal(await category.locator('[data-workspace-mode-select]').count(),1);
   assert.match(await category.innerText(),/Compatibility mode/);
-  assert.match(await category.innerText(),/Connection method/);
+  assert.equal(await category.getByRole('heading',{name:'Connection method',exact:true}).count(),1);
+  await page.getByRole('button',{name:'Workspace',exact:true}).click();
+  const workspaceSettings=page.locator('[data-settings-category="workspace"]');
+  await workspaceSettings.waitFor({state:'visible'});
+  assert.equal(await workspaceSettings.locator('[data-cloak-type]').count(),1);
+  assert.equal(await workspaceSettings.getByRole('button',{name:'Save study window settings',exact:true}).count(),1);
+  for(const label of await page.locator('.nyx-settings-nav button').allTextContents())assert.notEqual(label.normalize('NFKC'),label,'Settings categories need Unicode styling');
+  await page.locator('.nyx-settings-filter input').fill('return destination');
+  assert(await workspaceSettings.isVisible(),'Plain text filtering must survive styled labels');
+  await page.getByRole('button',{name:'Connections',exact:true}).click();
   await category.locator('[data-workspace-transport]').selectOption({label:'Atlas'});
   const transport=await category.locator('[data-workspace-transport]').inputValue();
   await category.locator('[data-workspace-settings-save]').click();

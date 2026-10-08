@@ -9,7 +9,7 @@ import { cloudIceConfig } from "./ice-config.mjs";
 const serviceDir = path.dirname(fileURLToPath(import.meta.url));
 const upstreamDir = path.join(serviceDir, "upstream");
 const expectedUpstream = Object.freeze({
-  commit: "bd760513ce7616e955181dfd18017e2a6c278e3c",
+  commit: "8783524043ac214c0f6a64d4fa0ae94360200d7c",
   apiSha256: "31a82035a8da6a6dce432fcf21738233892b1829eb8ee9b11c4c7efa1be8255b",
   embedSha256: "5109aebfaab56da2328ced169939915a12c8e70b544ca91536a84fdd14528055"
 });

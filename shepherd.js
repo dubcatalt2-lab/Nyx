@@ -7377,7 +7377,7 @@ function nyxCloudGamingConfig() {
     publicBaseUrl,
     catalogUrl,
     selfHosted,
-    maintenance: process.env.NYX_CLOUD_GAMING_MAINTENANCE !== "0",
+    maintenance: process.env.NYX_CLOUD_GAMING_MAINTENANCE === "1",
     configured: Boolean(apiKey && baseUrl && publicBaseUrl && (!selfHosted || (process.env.STRATUS_PROVIDER_EMAIL?.trim() && process.env.STRATUS_PROVIDER_PASSWORD))),
     setupMessage: selfHosted ? "Cloud Gaming needs a configured provider account. Ask the owner to finish setup." : "Cloud Gaming needs a configured service API key.",
     maxActiveSessions: selfHosted ? 1 : nyxCloudGamingBoundedInteger(process.env.NYX_STRATUS_MAX_ACTIVE_SESSIONS || process.env.STRATUS_MAX_CONCURRENT_SESSIONS, 4, 1, 20),

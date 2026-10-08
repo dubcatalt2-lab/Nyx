@@ -2307,7 +2307,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const saved=String(store.text('nyx.engine','duckduckgo')).trim().toLowerCase();
     const id=Object.prototype.hasOwnProperty.call(engines,saved) ? saved : 'duckduckgo';
     const entries={
-      duckduckgo:{id:'duckduckgo',label:'DuckDuckGo',icon:appIcon('duckduckgo.com')},
+      duckduckgo:{id:'duckduckgo',label:'Reference Search',icon:appIcon('duckduckgo.com')},
       google:{id:'google',label:'Google',icon:appIcon('google.com')},
       bing:{id:'bing',label:'Bing',icon:'https://www.bing.com/favicon.ico'}
     };
@@ -2911,7 +2911,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }catch{return false}
   }
   function workspaceChromeTitle(title,url){
-    return websiteDetailsHidden() && isExternalWebsiteUrl(url) ? 'Website Hidden' : (title || titleForUrl(url));
+    const label=title || titleForUrl(url);
+    return websiteDetailsHidden() && isExternalWebsiteUrl(url) ? 'Focus page' : (/^new\s*tab$/i.test(label) ? 'New page' : label);
   }
   function workspaceChromeIcon(icon,url){
     return websiteDetailsHidden() && isExternalWebsiteUrl(url) ? favicons.nyx : (icon || iconForUrl(url));
@@ -3890,7 +3891,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function renderChromeFixed(){
     const top=document.querySelector('.top-os');
     if(top){
-      top.innerHTML="<div class=\"brand-mini\"><button class=\"workspace-mode-app-button active\" data-workspace-shell-home title=\"Current tab\"><span class=\"workspace-home-icon\" aria-hidden=\"true\"></span><span class=\"workspace-home-label\">Home</span></button><button class=\"workspace-mode-tab\" data-workspace-shell-new-tab title=\"New tab\"><span>New tab</span></button></div><span class=\"workspace-top-clock\" data-workspace-shell-clock>--:--:--</span><form class=\"workspace-mode-address\" data-workspace-shell-search><button class=\"workspace-nav-control\" data-workspace-shell-back type=\"button\" title=\"Back\" aria-label=\"Back\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m15 18-6-6 6-6\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-forward type=\"button\" title=\"Forward\" aria-label=\"Forward\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-reload type=\"button\" title=\"Reload\" aria-label=\"Reload\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 11a8 8 0 1 0-2.35 5.65\"></path><path d=\"M20 4v7h-7\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-home-nav type=\"button\" title=\"Home\" aria-label=\"Home\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m3 11 9-8 9 8\"></path><path d=\"M5 10v10h14V10\"></path><path d=\"M9 20v-6h6v6\"></path></svg></button><input class=\"workspace-mode-url\" data-workspace-shell-url placeholder=\"S3ARC4 or enter a U3L\" autocomplete=\"off\"><button class=\"workspace-mode-bookmark workspace-mode-settings\" data-workspace-shell-settings data-open=\"settings\" type=\"button\" title=\"Settings\" aria-label=\"Settings\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3\"></circle><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\"></path></svg></button><button class=\"workspace-mode-weather\" data-open=\"weather\" type=\"button\" title=\"Weather\" aria-label=\"Weather\"><span class=\"weather-cloud-icon\" aria-hidden=\"true\"></span></button><button data-workspace-shell-menu type=\"button\" title=\"Menu\"><span class=\"fresh-real-icon\" aria-hidden=\"true\">⋮</span></button></form><div class=\"workspace-bookmark-panel\" id=\"workspaceBookmarkPanel\" hidden></div><div class=\"workspace-mode-menu\" id=\"workspaceModeMenu\"><button data-workspace-shell-new-tab type=\"button\">New tab</button><button data-workspace-bookmarks-toggle type=\"button\">Bookmarks</button><button data-open=\"apps\" type=\"button\">Apps</button><hr><button data-open=\"settings\" type=\"button\">Settings</button><button data-workspace-hieroglyph-toggle type=\"button\">Hieroglyph Mode</button><button data-app-url=\"/assets/games/index.html\" type=\"button\">GAMES</button><button data-app-url=\"/apps/chat/\" type=\"button\">Chat</button><button data-app-url=\"https://discord.com/app\" type=\"button\">Discord</button><hr><button data-page-fullscreen type=\"button\">Fullscreen</button><button data-shell-about type=\"button\">Open About:Blank</button><button data-shell-about-tab type=\"button\">Open Tab in Abt:Blank</button></div>";
+      top.innerHTML="<div class=\"brand-mini\"><button class=\"workspace-mode-app-button active\" data-workspace-shell-home title=\"Current tab\"><span class=\"workspace-home-icon\" aria-hidden=\"true\"></span><span class=\"workspace-home-label\">Home</span></button><button class=\"workspace-mode-tab\" data-workspace-shell-new-course heading=\"New tab\"><span>New page</span></button></div><span class=\"workspace-top-clock\" data-workspace-shell-clock>--:--:--</span><form class=\"workspace-mode-address\" data-workspace-shell-search><button class=\"workspace-nav-control\" data-workspace-shell-back type=\"button\" title=\"Back\" aria-label=\"Back\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m15 18-6-6 6-6\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-forward type=\"button\" title=\"Forward\" aria-label=\"Forward\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-reload type=\"button\" title=\"Reload\" aria-label=\"Reload\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 11a8 8 0 1 0-2.35 5.65\"></path><path d=\"M20 4v7h-7\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-home-nav type=\"button\" title=\"Home\" aria-label=\"Home\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m3 11 9-8 9 8\"></path><path d=\"M5 10v10h14V10\"></path><path d=\"M9 20v-6h6v6\"></path></svg></button><input class=\"workspace-mode-url\" data-workspace-shell-url placeholder=\"S3ARC4 or enter a U3L\" autocomplete=\"off\"><button class=\"workspace-mode-bookmark workspace-mode-settings\" data-workspace-shell-settings data-open=\"settings\" type=\"button\" title=\"Settings\" aria-label=\"Settings\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3\"></circle><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\"></path></svg></button><button class=\"workspace-mode-weather\" data-open=\"weather\" type=\"button\" title=\"Weather\" aria-label=\"Weather\"><span class=\"weather-cloud-icon\" aria-hidden=\"true\"></span></button><button data-workspace-shell-menu type=\"button\" title=\"Menu\"><span class=\"fresh-real-icon\" aria-hidden=\"true\">⋮</span></button></form><div class=\"workspace-bookmark-panel\" id=\"workspaceBookmarkPanel\" hidden></div><div class=\"workspace-mode-menu\" id=\"workspaceModeMenu\"><button data-workspace-shell-new-tab type=\"button\">New page</button><button data-workspace-bookmarks-toggle type=\"button\">Bookmarks</button><button data-open=\"apps\" type=\"button\">Apps</button><hr><button data-open=\"settings\" type=\"button\">Settings</button><button data-workspace-hieroglyph-toggle type=\"button\">Hieroglyph Mode</button><button data-app-url=\"/assets/games/index.html\" type=\"button\">GAMES</button><button data-app-url=\"/apps/chat/\" type=\"button\">Chat</button><button data-app-url=\"https://discord.com/app\" type=\"button\">Discord</button><hr><button data-page-fullscreen type=\"button\">Fullscreen</button><button data-shell-about type=\"button\">Open About:Blank</button><button data-shell-about-tab type=\"button\">Open Tab in Abt:Blank</button></div>";
       const homeNav=top.querySelector('[data-workspace-shell-home-nav]');
       if(homeNav) homeNav.innerHTML=nyxDashboardIcon('home');
       const shellAddress=top.querySelector('form.workspace-mode-address');
@@ -4783,7 +4784,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     sidebar.id='nyxWorkspaceTabSidebar';
     sidebar.className='nyx-workspace-tab-sidebar';
     sidebar.setAttribute('aria-label','Workspace tabs');
-    sidebar.innerHTML='<header><strong>Tabs</strong><div><button type="button" data-workspace-bookmarks-toggle title="Bookmarks" aria-label="Bookmarks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h5l1.5 2H19v11H5z"></path></svg></button><button type="button" data-workspace-shell-new-tab title="New tab" aria-label="New tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></header><div class="nyx-workspace-tab-list" data-workspace-shell-tab-list role="tablist" aria-label="Open tabs"></div>';
+    sidebar.innerHTML='<header><strong>Tabs</strong><div><button type="button" data-workspace-bookmarks-toggle title="Bookmarks" aria-label="Bookmarks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h5l1.5 2H19v11H5z"></path></svg></button><button type="button" data-workspace-shell-new-course heading="New tab" aria-label="New page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></header><div class="nyx-workspace-tab-list" data-workspace-shell-tab-list role="tablist" aria-label="Open tabs"></div>';
     sidebar.querySelector('[data-workspace-shell-new-tab]')?.addEventListener('click',event=>{
       event.preventDefault();
       event.stopPropagation();
@@ -4883,7 +4884,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     add.className='nyx-visual-dock-tab-add';
     add.dataset.nyxVisualNewTab='';
     add.setAttribute('aria-label','New tab');
-    add.innerHTML='<span aria-hidden="true">+</span><strong>New tab</strong>';
+    add.innerHTML='<span aria-hidden="true">+</span><strong>New page</strong>';
     add.addEventListener('click',()=>openWorkspaceShellTab(''));
     fragment.appendChild(add);
     const activeChanged=strip.dataset.activeTab!==String(workspaceShellActiveTab);
@@ -5044,8 +5045,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         add.className='nyx-workspace-tab-add';
         add.type='button';
         add.dataset.workspaceShellNewTabAfter=tab.id;
-        add.setAttribute('aria-label',`Open a new tab after ${workspaceChromeTitle(tab.title || workspaceShellLabel(tab.url),tab.url)}`);
-        add.title='New tab';
+        add.setAttribute('aria-label',`Open a new page after ${workspaceChromeTitle(tab.title || workspaceShellLabel(tab.url),tab.url)}`);
+        add.title='New page';
         add.textContent='+';
         slot.append(item,add);
         list.appendChild(slot);
@@ -5343,7 +5344,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const effect=esc(store.text('nyx.visualEffect','none'));
     const effectSpeed=esc(store.text('nyx.visualEffectSpeed','1.1'));
     const effectAmount=esc(store.text('nyx.visualEffectAmount','16'));
-    return `<section class="settings-app settings-single-pane workspace-only-settings"><main class="settings-main"><h1>Workspace Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="deltamath" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="deltamath" ${currentPreset==='deltamath'?'selected':''}>DeltaMath</option><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original tab redirect U3L"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Auto Cloak</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>S3ARC4 Engine</h2><select class="settings-select" data-workspace-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>DuckDuckGo</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Learning engine</h2><select class="settings-select" data-workspace-mode-select><option value="auto" ${workspaceMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${workspaceMode==='scramjet'?'selected':''}>Learning engine</option></select></section><section class="settings-block"><h2>Compatibility mode</h2><p>Use the alternate connection when a network cannot open sites. Turn off for the standard connection. Reload website tabs after changing. Custom connections keep their saved choice.</p><div class="settings-row"><span>Use Compatibility mode</span><button class="settings-action ${store.get('nyx.httpBridge',true)?'on':''}" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div></section><section class="settings-block"><h2>Connection method</h2><select class="settings-select" data-workspace-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Atlas connection</option><option value="wisp" ${transport==='wisp'?'selected':''}>Relay endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Textbook connection</option></select><div class="settings-actions"><button class="settings-action" data-workspace-settings-save type="button">Save Workspace Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
+    return `<section class="settings-app settings-single-pane workspace-only-settings"><main class="settings-main"><h1>Workspace Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Course tab appearance</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Course heading"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply course appearance</button><button class="settings-action" data-preset="deltamath" type="button">Reset</button></div></section><section class="settings-block"><h2>Course presets</h2><select class="settings-select" data-preset-select><option value="deltamath" ${currentPreset==='deltamath'?'selected':''}>DeltaMath</option><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Study window</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original page return address"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Automatic study window</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Return original page after opening</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save study window settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Class shortcut</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>S3ARC4 Engine</h2><select class="settings-select" data-workspace-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>Reference Search</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Learning engine</h2><select class="settings-select" data-workspace-mode-select><option value="auto" ${workspaceMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${workspaceMode==='scramjet'?'selected':''}>Learning engine</option></select></section><section class="settings-block"><h2>Compatibility mode</h2><p>Use the alternate connection when a network cannot open sites. Turn off for the standard connection. Reload website tabs after changing. Custom connections keep their saved choice.</p><div class="settings-row"><span>Use Compatibility mode</span><button class="settings-action ${store.get('nyx.httpBridge',true)?'on':''}" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div></section><section class="settings-block"><h2>Connection method</h2><select class="settings-select" data-workspace-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Atlas connection</option><option value="wisp" ${transport==='wisp'?'selected':''}>Campus connection endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Textbook connection</option></select><div class="settings-actions"><button class="settings-action" data-workspace-settings-save type="button">Save Workspace Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
   }
   function workspaceShellPresetTiles(){
     return `<button class="quick-tile" data-preset="deltamath" type="button"><img class="quick-icon" alt="" src="${favicons.deltamath}"><span>DeltaMath tab</span></button><button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${nyxTabFavicon}"><span>ռʏӼ tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
@@ -5402,12 +5403,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const definitions=[
       ['general','General',settingsIcons.advanced,'Choose Nyx defaults and everyday behavior.',['nyx','home design','search engine']],
       ['appearance','Appearance',settingsIcons.customize,'Make Nyx feel like yours.',['theme','homepage','sidebar','custom theme','effects','wallpapers','line waves','performance']],
-      ['workspace','Workspace',settingsIcons.browsing,'Manage tabs, search, and browsing controls.',['tab cloak','preset cloak','cloaking','tab design']],
-      ['privacy','Privacy',settingsIcons.privacy,'Keep your browsing surface private and protected.',['private tabs','popup protection']],
-      ['connections','Connections',settingsIcons.browsing,'Choose how Nyx reaches the web.',['learning engine','compatibility mode','connection method','relay address']],
+      ['workspace','Workspace',settingsIcons.browsing,'Manage course tabs, reference search, and workspace controls.',['course tab appearance','course presets','study window','tab design']],
+      ['privacy','Study focus',settingsIcons.privacy,'Manage tab presentation and unwanted interruptions.',['focus tabs','popup protection']],
+      ['connections','Connections',settingsIcons.browsing,'Choose how Nyx reaches the web.',['learning engine','compatibility mode','connection method','campus connection address']],
       ['accounts','Accounts',settingsIcons.account,'Manage your identity, cloud saves, and staff tools.',['account','cloud saves','owner dashboard','founder profile']],
       ['data','Data',settingsIcons.advanced,'Move, download, or reset local Nyx data.',['data transfer','clear cache']],
-      ['advanced','Advanced',settingsIcons.advanced,'Configure power-user workspace controls.',['panic key','font']],
+      ['advanced','Advanced',settingsIcons.advanced,'Configure power-user workspace controls.',['class shortcut','font']],
       ['credits','Credits',settingsIcons.account,'Thanks to the people who help make Nyx.',[]]
     ];
     const categoryFor=title=>definitions.find(([, , , ,titles])=>titles.includes(title))?.[0] || 'advanced';
@@ -5484,7 +5485,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       if(categoryFor(title)==='workspace'){
         block.classList.add('nyx-workspace-settings-card');
-        const labels=[['[data-tab-title]','Tab title'],['[data-tab-favicon-file]','Tab icon'],['[data-cloak-type]','Open Nyx in'],['[data-cloak-redirect-url]','Redirect address']];
+        const labels=[['[data-tab-title]','Course heading'],['[data-tab-favicon-file]','Tab icon'],['[data-cloak-type]','Open Nyx in'],['[data-cloak-redirect-url]','Return destination']];
         labels.forEach(([selector,text])=>{
           const field=controls.querySelector(selector);
           if(!field)return;
@@ -5492,9 +5493,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           const caption=document.createElement('span');caption.textContent=text;
           field.replaceWith(label);label.append(caption,field);
         });
-        if(title==='tab cloak')heading.textContent='Tab appearance';
-        if(title==='preset cloak')heading.textContent='Quick presets';
-        if(title==='cloaking'){
+        if(title==='course tab appearance')heading.textContent='Course appearance';
+        if(title==='course presets')heading.textContent='Quick presets';
+        if(title==='study window'){
           heading.textContent='Launch options';
           const toggles=document.createElement('div');toggles.className='nyx-workspace-setting-toggles';
           const rows=[...controls.querySelectorAll(':scope > .settings-row')];
@@ -5518,7 +5519,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const about=document.createElement('section');
     about.className='settings-block';
     about.dataset.settingsSearch='about nyx version support reset cache';
-    about.innerHTML='<div class="nyx-settings-copy"><h2>Nyx</h2><p>Nyx Learning workspace workspace. Settings are stored on this device unless they belong to your signed-in account.</p></div><div class="nyx-settings-control"><p class="nyx-settings-version">Version 2</p><div class="settings-actions"><button class="settings-action" data-clear-nyx-cache type="button">Reset local settings</button></div></div>';
+    about.innerHTML='<div class="nyx-settings-copy"><h2>Nyx</h2><p>Nyx Learning workspace. Settings are stored on this device unless they belong to your signed-in account.</p></div><div class="nyx-settings-control"><p class="nyx-settings-version">Version 2</p><div class="settings-actions"><button class="settings-action" data-clear-nyx-cache type="button">Reset local settings</button></div></div>';
     categories.get('general').querySelector('.nyx-settings-group').appendChild(about);
 
     const credits=document.createElement('section');
@@ -5574,6 +5575,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         section.classList.toggle('active',matches>0);
       });
     });
+    app.querySelectorAll('.nyx-settings-nav button,.nyx-settings-category-title,.nyx-settings-header h1,.nyx-settings-copy > h2,.nyx-workspace-settings-card .settings-row > span,.nyx-workspace-setting-field > span,.nyx-workspace-settings-card .settings-action').forEach(element=>element.setAttribute('data-nyx-display-label',''));
     activate('appearance');
     syncFounderOwnerControls();
   }
@@ -5601,7 +5603,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       transportSelect.value=normalizeWorkspaceTransportName(store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT));
     }
     if(transportSelect){
-      const transportLabels={epoxy:'Atlas',wisp:'Relay',libcurl:'Textbook',libcurlRaw:'Textbook',auto:'Auto'};
+      const transportLabels={epoxy:'Atlas',wisp:'Campus connection',libcurl:'Textbook',libcurlRaw:'Textbook',auto:'Auto'};
       [...transportSelect.options].forEach(option=>{
         if(transportLabels[option.value]) option.textContent=transportLabels[option.value];
       });
@@ -5611,11 +5613,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const customWisp=storedCustomWispUrl();
       const wispBlock=document.createElement('section');
       wispBlock.className='settings-block nyx-wisp-setting';
-      wispBlock.innerHTML=`<h2>Relay address</h2><p>Use a custom connection relay for Nyx connections. Only use a relay you trust because it carries your website traffic.</p><div class="settings-form-row"><input class="settings-input" data-workspace-wisp-url type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(customWisp)}" placeholder="${esc(defaultWispUrl())}" aria-label="Custom Relay address"></div><p class="settings-hint" data-workspace-wisp-status>${customWisp ? `Custom relay: ${esc(customWisp)}` : `Default relay: ${esc(defaultWispUrl())}`}</p><div class="settings-actions"><button class="settings-action" data-workspace-wisp-save type="button">Save Relay address</button><button class="settings-action" data-workspace-wisp-reset type="button">Use default</button><button class="settings-action" data-workspace-connection-repair type="button">Repair connection</button></div>`;
+      wispBlock.innerHTML=`<h2>Campus connection address</h2><p>Use a custom campus connection for Nyx. Only use a connection you trust because it carries your website traffic.</p><div class="settings-form-row"><input class="settings-input" data-workspace-wisp-url type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(customWisp)}" placeholder="${esc(defaultWispUrl())}" aria-label="Custom Campus connection address"></div><p class="settings-hint" data-workspace-wisp-status>${customWisp ? `Custom campus connection: ${esc(customWisp)}` : `Default campus connection: ${esc(defaultWispUrl())}`}</p><div class="settings-actions"><button class="settings-action" data-workspace-wisp-save type="button">Save Campus connection address</button><button class="settings-action" data-workspace-wisp-reset type="button">Use default</button><button class="settings-action" data-workspace-connection-repair type="button">Repair connection</button></div>`;
       transportBlock.after(wispBlock);
       const transferBlock=document.createElement('section');
       transferBlock.className='settings-block nyx-data-transfer-setting';
-      transferBlock.innerHTML="<h2>Data Transfer</h2><p>Move supported game saves, A1 conversations, utility history, shortcuts, and safe device preferences between Nyx links. Authentication sessions, personal API keys, and custom relay credentials are never included.</p><p class=\"settings-hint\" data-nyx-data-transfer-status>Export on this link, then import the downloaded JSON backup on another Nyx link.</p><input data-nyx-data-import-file type=\"file\" accept=\"application/json,.json\" hidden><div class=\"settings-actions\"><button class=\"settings-action\" data-nyx-data-export type=\"button\">Export data</button><button class=\"settings-action\" data-nyx-data-import type=\"button\">Import data</button><button class=\"settings-action\" data-nyx-data-reload type=\"button\" hidden>Reload Nyx</button></div><p class=\"settings-hint\">Backups can contain private browsing, game, and conversation data. Keep the file private.</p>";
+      transferBlock.innerHTML="<h2>Data Transfer</h2><p>Move supported game saves, A1 conversations, utility history, shortcuts, and safe device preferences between Nyx links. Authentication sessions, personal API keys, and custom connection credentials are never included.</p><p class=\"settings-hint\" data-nyx-data-transfer-status>Export on this link, then import the downloaded JSON backup on another Nyx link.</p><input data-nyx-data-import-file type=\"file\" accept=\"application/json,.json\" hidden><div class=\"settings-actions\"><button class=\"settings-action\" data-nyx-data-export type=\"button\">Export data</button><button class=\"settings-action\" data-nyx-data-import type=\"button\">Import data</button><button class=\"settings-action\" data-nyx-data-reload type=\"button\" hidden>Reload Nyx</button></div><p class=\"settings-hint\">Backups can contain browsing, game, and conversation data. Store the file securely.</p>";
       wispBlock.after(transferBlock);
     }
     const effectBlock=overlay.querySelector('[data-effect-value]')?.closest('.settings-block');
@@ -5623,7 +5625,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const privacyBlock=document.createElement('section');
       privacyBlock.className='settings-block';
       const hideDetails=websiteDetailsHidden();
-      privacyBlock.innerHTML=`<h2>Private Tabs</h2><p>Hides your current tab names and icons from view.</p><div class="settings-row"><span>Hide Names and Icons</span><button class="settings-action ${hideDetails?'on':''}" data-switch="nyx.hideWebsiteDetails" type="button">${hideDetails?'On':'Off'}</button></div>`;
+      privacyBlock.innerHTML=`<h2>Focus tabs</h2><p>Hides your current tab names and icons from view.</p><div class="settings-row"><span>Simplify names and icons</span><button class="settings-action ${hideDetails?'on':''}" data-switch="nyx.hideWebsiteDetails" type="button">${hideDetails?'On':'Off'}</button></div>`;
       const fontBlock=document.createElement('section');
       fontBlock.className='settings-block';
       fontBlock.innerHTML=`<h2>Font</h2><select class="settings-select" data-font-value>${nyxFontOptionsMarkup()}</select>`;
@@ -5924,7 +5926,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const discordFounderProfileStyle='.nyx-founder-profile-standard{display:block!important;max-width:620px!important;margin:0 auto!important;padding:0!important;overflow:hidden!important;border:1px solid color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 42%,transparent)!important;border-radius:16px!important;background:#111827!important;box-shadow:0 16px 42px rgba(0,0,0,.32)!important}.nyx-founder-profile-standard .nyx-founder-banner{height:140px!important;margin:0!important;background:var(--nyx-founder-accent,#8fb8ff)!important}.nyx-founder-profile-standard .nyx-founder-profile-content{display:block!important;padding:0 16px 18px!important}.nyx-founder-profile-standard .nyx-founder-image-wrap{width:88px!important;height:88px!important;margin:-45px 0 0!important;border:6px solid #111827!important;border-radius:50%!important;background:#111827!important}.nyx-founder-profile-standard .nyx-founder-image{border:0!important;border-radius:50%!important;background:#172338!important}.nyx-founder-profile-standard .nyx-founder-status{right:-2px!important;bottom:-2px!important;border:4px solid #111827!important}.nyx-founder-profile-standard .nyx-founder-copy{padding-top:13px!important}.nyx-founder-name-row{display:flex!important;align-items:center!important;gap:7px!important}.nyx-founder-profile-standard .nyx-founder-copy h3{margin:0!important;color:#f8fbff!important;font-size:24px!important;font-weight:700!important;letter-spacing:-.025em!important}.nyx-founder-owner-crown{color:#f0c85c!important;font-size:18px!important;line-height:1!important}.nyx-founder-profile-standard .nyx-founder-handle{margin:2px 0 10px!important;color:#b5c2d5!important;font-size:14px!important}.nyx-founder-profile-standard .nyx-founder-role{margin:0 0 11px!important;color:#9cadc4!important;font-size:11px!important;font-weight:600!important;letter-spacing:.09em!important}.nyx-founder-role-list{display:flex!important;flex-wrap:wrap!important;gap:7px!important;margin:0 0 12px!important}.nyx-founder-role-chip{display:inline-flex!important;align-items:center!important;gap:5px!important;padding:4px 8px!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:4px!important;background:rgba(255,255,255,.08)!important;color:#d9e3f1!important;font-size:11px!important;font-weight:650!important}.nyx-founder-role-owner{border-color:color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 78%,transparent)!important;background:color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 22%,transparent)!important;color:#fff!important}.nyx-founder-role-owner span{color:#f0c85c!important}.nyx-founder-profile-standard .nyx-founder-badges{margin:0 0 14px!important}.nyx-founder-profile-standard .nyx-founder-badge{border:0!important;border-radius:4px!important;background:rgba(255,255,255,.1)!important;color:#c9d7ea!important}.nyx-founder-about{padding-top:13px!important;border-top:1px solid rgba(255,255,255,.14)!important}.nyx-founder-about>strong{display:block!important;margin-bottom:7px!important;color:#f5f8ff!important;font-size:12px!important;font-weight:700!important;text-transform:uppercase!important}.nyx-founder-profile-standard .nyx-founder-bio{color:#d5dfec!important;font-size:14px!important;line-height:1.55!important}.nyx-founder-profile-standard .nyx-founder-link{margin-top:14px!important;color:#cbd9ff!important}@media(max-width:680px){.nyx-founder-profile-standard .nyx-founder-image-wrap{width:88px!important;margin:-45px 0 0!important}.nyx-founder-profile-standard .nyx-founder-copy{text-align:left!important}.nyx-founder-profile-standard .nyx-founder-badges{justify-content:flex-start!important}}';
     const pages={
       apps:{title:'Apps',body:`<style>html,body,.apps-shell-page{background:transparent!important;background-image:none!important}</style><div class="workspace-home workspace-shell-page apps-shell-page"><h1 class="home-heading">Apps</h1><p class="home-sub">Everything in Nyx.</p><div class="quick-grid apps-launch-grid" data-nyx-global-app-grid>${quickTiles()}</div></div>`},
-      links:{title:'Bookmarks',body:`<div class="workspace-home workspace-shell-page"><h1 class="home-heading">Bookmarks</h1><p class="home-sub">Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>DuckDuckGo</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></div>`}
+      links:{title:'Bookmarks',body:`<div class="workspace-home workspace-shell-page"><h1 class="home-heading">Bookmarks</h1><p class="home-sub">Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>Reference Search</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></div>`}
     };
     const page=pages[name] || pages.apps;
     tab.url='nyx://'+name;
@@ -6051,7 +6053,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const terminalPageScript=`(()=>{const output=document.querySelector('[data-nyx-terminal-output]');const input=document.querySelector('[data-nyx-terminal-input]');const write=(text,type='')=>{const row=document.createElement('div');row.className='nyx-terminal-line'+(type?' '+type:'');row.textContent=String(text);output.appendChild(row);output.scrollTop=output.scrollHeight};const run=raw=>{const command=String(raw||'').trim();if(!command)return;write('nyx> '+command,'command');const name=command.toLowerCase();if(name==='clear'){output.textContent='';return}if(name==='help'){write('Commands: help, status, theme, origin, storage, date, clear');return}if(name==='status'){write('Nyx is '+(navigator.onLine?'online':'offline')+' · '+(navigator.platform||'workspace'));return}if(name==='theme'){write('Theme: '+(document.body.className.match(/theme-([^ ]+)/)?.[1]||'default'));return}if(name==='origin'){write('Origin: '+parent.location.origin);return}if(name==='storage'){write('Local settings entries: '+localStorage.length);return}if(name==='date'){write(new Date().toLocaleString());return}write('Unknown command: '+command+'. Type "help" for the command list.','error')};write('Nyx Developer Console');write('Type "help" to list commands. Workspace DevTools cannot be opened by a webpage.');document.querySelector('[data-nyx-terminal-form]')?.addEventListener('submit',event=>{event.preventDefault();run(input?.value);if(input)input.value=''});setTimeout(()=>input?.focus(),50)})();`;
     const pages={
       apps:{title:'Apps',body:`<style>html,body,.apps-shell-page{background:transparent!important;background-image:none!important}</style><section class="shell-page apps-shell-page"><h1>Apps</h1><p>Everything in Nyx.</p><div class="quick-grid apps-launch-grid" data-nyx-global-app-grid>${quickTiles()}</div></section>`},
-      links:{title:'Bookmarks',body:`<section class="shell-page"><h1>Bookmarks</h1><p>Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>DuckDuckGo</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></section>`},
+      links:{title:'Bookmarks',body:`<section class="shell-page"><h1>Bookmarks</h1><p>Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>Reference Search</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></section>`},
       terms:{title:'Terms Of Service',style:utilityPageStyle,body:nyxTermsPageMarkup()},
       about:{title:'About Nyx',style:utilityPageStyle+nyxCreditsPresentationStyle+nyxCreditsOwnerImageStyle,script:nyxCreditsLinkScript,body:nyxCreditsPageMarkup()},
       credits:{title:'About Nyx',style:utilityPageStyle+nyxCreditsPresentationStyle+nyxCreditsOwnerImageStyle,script:nyxCreditsLinkScript,body:nyxCreditsPageMarkup()},
@@ -7806,11 +7808,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const raw=String(value || '').trim();
     if(!raw) return '';
     let endpoint;
-    try{endpoint=new URL(raw)}catch{throw new Error('Enter a complete ws:// or wss:// Relay address.')}
-    if(endpoint.protocol!=='ws:' && endpoint.protocol!=='wss:') throw new Error('A Relay address must start with ws:// or wss://.');
-    if(endpoint.username || endpoint.password) throw new Error('Relay addresses cannot contain a username or password.');
-    if(endpoint.hash) throw new Error('Relay addresses cannot contain a # fragment.');
-    if(location.protocol==='https:' && endpoint.protocol!=='wss:') throw new Error('Secure Nyx pages require a wss:// Relay address.');
+    try{endpoint=new URL(raw)}catch{throw new Error('Enter a complete ws:// or wss:// Campus connection address.')}
+    if(endpoint.protocol!=='ws:' && endpoint.protocol!=='wss:') throw new Error('A Campus connection address must start with ws:// or wss://.');
+    if(endpoint.username || endpoint.password) throw new Error('Campus connection addresses cannot contain a username or password.');
+    if(endpoint.hash) throw new Error('Campus connection addresses cannot contain a # fragment.');
+    if(location.protocol==='https:' && endpoint.protocol!=='wss:') throw new Error('Secure Nyx pages require a wss:// Campus connection address.');
     return endpoint.href;
   }
   function defaultWispUrl(){
@@ -7868,14 +7870,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     let next='';
     try{next=reset ? '' : normalizeWispUrl(input?.value || '')}catch(error){
       input?.focus();
-      toast(error?.message || "Enter a valid Relay address.");
+      toast(error?.message || "Enter a valid Campus connection address.");
       return false;
     }
     store.setText('nyx.wispUrl',next);
     if(input) input.value=next;
-    if(status) status.textContent=next ? `Custom relay: ${next}` : `Default relay: ${defaultWispUrl()}`;
+    if(status) status.textContent=next ? `Custom campus connection: ${next}` : `Default campus connection: ${defaultWispUrl()}`;
     resetWorkspaceConnectionRuntime();
-    toast(next ? "Custom Relay address saved" : "Default Relay address restored");
+    toast(next ? "Custom Campus connection address saved" : "Default Campus connection address restored");
     return true;
   }
   const NYX_PORTABLE_BACKUP_FORMAT='nyx-portable-backup';
@@ -8936,7 +8938,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       await loadConnectionScript('/controller/controller.api.js',()=>Boolean(window.$scramjetController));
       step='loading Learning runtime guard';
       await loadStudyjetRuntimeGuardSource();
-      step="starting Learning engine relay";
+      step="starting Learning engine connection";
       const transport=await createStudyjetTransport();
       step='registering Learning service worker';
       const registration=await navigator.serviceWorker.register(studyjetServiceWorkerUrl,{scope:'/~/sj/',updateViaCache:'none'});
@@ -12571,7 +12573,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           panicCaptureArmed=false;
           store.setText('nyx.panicKey',combo);
           updatePanicKeyLabels();
-          toast('Panic key saved: '+combo);
+          toast('Class shortcut saved: '+combo);
         }
         return;
       }
@@ -13921,7 +13923,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     makeWindow({title:'Apps',left:'12vw',top:'90px',width:'600px',height:'430px',body:`<div class="panel"><h1>Apps</h1><div class="quick-grid apps-launch-grid" data-nyx-global-app-grid>${quickTiles()}</div></div>`});
   }
   function openLinks(){
-    makeWindow({title:'Links',left:'18vw',top:'100px',width:'520px',height:'380px',body:`<div class="panel"><h1>Links</h1><div class="glass-grid"><div class="glass-card"><h2>S3ARC4 Engines</h2><button data-url="https://www.google.com/">Google</button><button data-url="https://duckduckgo.com/">DuckDuckGo</button></div><div class="glass-card"><h2>School</h2><button data-url="https://docs.google.com/">Docs</button><button data-url="https://classroom.google.com/">Classroom</button></div></div></div>`});
+    makeWindow({title:'Links',left:'18vw',top:'100px',width:'520px',height:'380px',body:`<div class="panel"><h1>Links</h1><div class="glass-grid"><div class="glass-card"><h2>S3ARC4 Engines</h2><button data-url="https://www.google.com/">Google</button><button data-url="https://duckduckgo.com/">Reference Search</button></div><div class="glass-card"><h2>School</h2><button data-url="https://docs.google.com/">Docs</button><button data-url="https://classroom.google.com/">Classroom</button></div></div></div>`});
   }
   function openTermsOfService(){
     if(document.body.classList.contains('workspace-shell')) return openWorkspaceShellInternalTab('terms');
@@ -14037,29 +14039,29 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       <h1>Preferences</h1>
       <div class="settings-grid">
         <section class="settings-card">
-          <h2>AB Cloak</h2>
-          <p>super sneaky</p>
+          <h2>Study window</h2>
+          <p>Choose how your study window opens.</p>
           <div class="settings-row"><select data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><button data-save-cloak>Save</button></div>
           <div class="settings-row"><span>Redirect original</span><button class="switch ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" aria-label="Redirect original tab"></button></div>
           <div class="settings-row"><input data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Redirect U3L"><button data-launch-selected-cloak>Launch</button></div>
           <div class="settings-actions"><button data-about>Open in About:Blank</button><button data-blob>Open in Blob</button></div>
         </section>
         <section class="settings-card">
-          <h2>Auto Cloak</h2>
-          <p class="hint">Automatically launches nyx in a cloaked tab, must retoggle after each opening</p>
-          <div class="settings-row"><span>Auto Cloak</span><button class="switch" data-switch="nyx.autoCloak" aria-label="Auto cloak"></button></div>
+          <h2>Automatic study window</h2>
+          <p class="hint">Automatically opens Nyx in your selected study window. Enable again after each opening.</p>
+          <div class="settings-row"><span>Automatic study window</span><button class="switch" data-switch="nyx.autoCloak" aria-label="Automatic study window"></button></div>
         </section>
         <section class="settings-card">
           <h2>Tab Presets</h2>
-          <p>Changes the workspace tab title and icon.</p>
+          <p>Changes the workspace course heading and icon.</p>
           <div class="seg"><button data-preset="deltamath" type="button">DeltaMath</button><button data-preset="classroom" type="button">Google Classroom</button><button data-preset="drive" type="button">Google Drive</button><button data-preset="classlink" type="button">Classlink</button><button data-preset="google" type="button">Google</button><button data-preset="deltamath" type="button">Reset</button></div>
         </section>
         <section class="settings-card">
-          <h2>Custom Tab Cloak</h2>
-          <p>Cloaks your tab</p>
-          <div class="settings-row"><input data-tab-title value="${esc(store.text('nyx.tabTitle',document.title || '???'))}" placeholder="Tab title"><input class="file-input" data-tab-favicon-file type="file" accept="image/*,.ico"></div>
+          <h2>Course tab appearance</h2>
+          <p>Choose the heading and icon shown on your course tab.</p>
+          <div class="settings-row"><input data-tab-title value="${esc(store.text('nyx.tabTitle',document.title || '???'))}" placeholder="Course heading"><input class="file-input" data-tab-favicon-file type="file" accept="image/*,.ico"></div>
           <input type="hidden" data-tab-favicon value="${esc(store.text('nyx.tabFavicon',nyxFaviconHref()))}">
-          <button data-tab-cloak-apply>Apply Tab Cloak</button>
+          <button data-tab-cloak-apply>Apply course appearance</button>
         </section>
         <section class="settings-card">
           <h2>Anti-Close</h2>
@@ -14067,7 +14069,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           <button class="switch" data-anticlose aria-label="Anti-close"></button>
         </section>
         <section class="settings-card">
-          <h2>Panic Key</h2>
+          <h2>Class shortcut</h2>
           <p>Press this key combo anytime to instantly close the current tab.</p>
           <div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div>
           <div class="settings-actions"><button data-panic-capture type="button">Capture</button><button data-panic-clear type="button">Clear</button></div>
@@ -14121,9 +14123,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           <p>Makes nyx look like a Chrome page with tabs on top, an address bar, and an Apps button instead of the bottom app bar.</p>
         </section>
         <section class="settings-card">
-          <h2>Hide Website Details</h2>
+          <h2>Focus display</h2>
           <p>Replace external website names and icons in Nyx tabs with a generic hidden label.</p>
-          <div class="settings-row"><span>Hide Names and Icons</span><button class="switch ${websiteDetailsHidden()?'on':''}" data-switch="nyx.hideWebsiteDetails" aria-label="Hide website names and icons"></button></div>
+          <div class="settings-row"><span>Simplify names and icons</span><button class="switch ${websiteDetailsHidden()?'on':''}" data-switch="nyx.hideWebsiteDetails" aria-label="Simplify website names and icons"></button></div>
         </section>
         <section class="settings-card">
           <h2>Popup Protection</h2>
@@ -14172,7 +14174,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
           <select id="settingTransport">
             <option value="auto">Auto (recommended)</option>
             <option value="epoxy">Atlas</option>
-            <option value="wisp">Relay</option>
+            <option value="wisp">Campus connection</option>
             <option value="libcurlRaw">Textbook</option>
           </select>
           <button data-save-workspace>Save Workspace Settings</button><button class="settings-action" data-workspace-connection-repair type="button">Repair connection</button>
@@ -14180,7 +14182,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
         <section class="settings-card">
           <h2>Change S3ARC4 Engine</h2>
           <p>Pick the s3arc4 engine used for workspace searches.</p>
-          <select id="settingEngine" data-engine-value><option value="google">Google</option><option value="bing">Bing</option><option value="duckduckgo">DuckDuckGo</option></select>
+          <select id="settingEngine" data-engine-value><option value="google">Google</option><option value="bing">Bing</option><option value="duckduckgo">Reference Search</option></select>
         </section>
         <section class="settings-card">
           <h2>Effects</h2>
@@ -14604,7 +14606,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
           store.set('autoAbout',false);
           store.set('autoBlob',false);
           if(v) launchAutoCloak();
-          toast('Auto Cloak '+(v?'on':'off'));
+          toast('Automatic study window '+(v?'on':'off'));
         }else if(key==='nyx.hieroglyphText'){
           applyHieroglyphText();
           toast('Hieroglyph text '+(v?'on':'off'));
@@ -15083,7 +15085,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
     showCloakLaunchScreen();
     const input=$('cloakLaunchScreen')?.querySelector('[data-cloak-input]');
     if(input) input.value=mode;
-    setCloakStatus('Auto Cloak ready. If the popup is blocked, click or press any key.');
+    setCloakStatus('Automatic study window ready. If the popup is blocked, click or press any key.');
     const tryLaunch=()=>{
       if(launchAutoCloak()){
         hideCloakLaunchScreen();
@@ -15214,7 +15216,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
       panicCaptureArmed=false;
       store.setText('nyx.panicKey',combo);
       updatePanicKeyLabels();
-      toast('Panic key saved: '+combo);
+      toast('Class shortcut saved: '+combo);
       return true;
     }
     if(panicComboMatchesSaved(combo)){
@@ -15293,12 +15295,12 @@ Auto uses the learning engine with Textbook by default and can recover with anot
   function armPanicKeyCapture(){
     panicCaptureArmed=true;
     qsa('[data-panic-key-display]').forEach(el=>{el.textContent='press keys...'});
-    toast('Press the panic key combo');
+    toast('Press the class shortcut combination');
   }
   function clearPanicKey(){
     store.setText('nyx.panicKey','not set');
     updatePanicKeyLabels();
-    toast('Panic key cleared');
+    toast('Class shortcut cleared');
   }
   function isChromeOsUser(){
     const ua=String(navigator.userAgent || '');

@@ -38,8 +38,7 @@ const rootFiles = new Set([
   "startup-studyhub.html",
   "student-resources.html",
   "styles.css",
-  "scramjet.sw.js",
-  "scramjet-v1.sw.js"
+  "scramjet.sw.js"
 ]);
 const staticPrefixes = ["apps/", "assets/", "css/", "js/"];
 const blockedExtensions = /\.(?:7z|avi|mkv|mov|mp4|rar|webm|zip)$/i;
@@ -103,14 +102,12 @@ async function copyRepositoryStaticFiles() {
 async function copyProxyRuntimes() {
   const { baremuxPath } = require("@mercuryworkshop/bare-mux/node");
   const { scramjetPath } = require("@mercuryworkshop/scramjet/path");
-  const { scramjetPath: scramjetV1Path } = require("@mercuryworkshop/scramjet-v1/path");
   const controller = dirname(require.resolve("@mercuryworkshop/scramjet-controller"));
   const epoxy = join(dirname(require.resolve("@mercuryworkshop/epoxy-transport")), "..", "dist");
   const libcurl = dirname(require.resolve("@mercuryworkshop/libcurl-transport"));
   for (const [source, destination] of [
     [baremuxPath, "baremux"],
     [scramjetPath, "scramjet"],
-    [scramjetV1Path, "scramjet-v1"],
     [controller, "controller"],
     [epoxy, "epoxy"],
     [libcurl, "libcurl"]

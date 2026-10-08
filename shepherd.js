@@ -81,7 +81,6 @@ const staticRoot = resolve(process.env.NYX_STATIC_ROOT || __dirname);
 const require = createRequire(join(__dirname, "package.json"));
 const { baremuxPath:bookmuxPath } = require("@mercuryworkshop/bare-mux/node");
 const { scramjetPath:studyjetPath } = require("@mercuryworkshop/scramjet/path");
-const { scramjetPath: studyjetV1Path } = require("@mercuryworkshop/scramjet-v1/path");
 const studyjetControllerPath = dirname(require.resolve("@mercuryworkshop/scramjet-controller"));
 const epoxyPath = join(dirname(require.resolve("@mercuryworkshop/epoxy-transport")), "..", "dist");
 const libcurlPath = dirname(require.resolve("@mercuryworkshop/libcurl-transport"));
@@ -771,14 +770,10 @@ app.use((req, res, next) => {
     "/scramjet.sw.js",
     "/baremux/index.mjs",
     "/scramjet/scramjet.js",
-    "/scramjet-v1/scramjet.all.js",
-    "/scramjet-v1/scramjet.sync.js",
-    "/scramjet-v1/scramjet.wasm.wasm",
-    "/scramjet-v1.sw.js",
     "/nyx-scramjet-runtime-guard.js"
   ]);
   const noStorePrefix = /^\/(?:assets\/(?:gms-games|reds-misc)\/|gms-games-|reds-misc-)/i.test(req.path);
-  const opaqueConnectionAsset = /^\/(?:(?:scramjet|studyjet)(?:-v1)?\/|controller\/|epoxy\/|atlas\/|libcurl\/|textlib\/|baremux\/|assets\/transports\/|apps\/tutsi\/)?@?r[0-9a-f]{24}!?\.(?:js|mjs|wasm)$/.test(req.path);
+  const opaqueConnectionAsset = /^\/(?:(?:scramjet|studyjet)\/|controller\/|epoxy\/|atlas\/|libcurl\/|textlib\/|baremux\/|assets\/transports\/|apps\/tutsi\/)?@?r[0-9a-f]{24}!?\.(?:js|mjs|wasm)$/.test(req.path);
   if (noStorePaths.has(req.path) || noStorePrefix || opaqueConnectionAsset) {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma", "no-cache");
@@ -14209,13 +14204,6 @@ app.use((error, req, res, next) => {
 
 
 
-const studyjetV1Bundle = readFileSync(join(studyjetV1Path, "scramjet.all.js"), "utf8")
-  .replaceAll('"$scramjet"', '"$nyx_scramjet_v1_v4"');
-app.get("/scramjet-v1/scramjet.all.js", (_req, res) => {
-  res.type("application/javascript");
-  res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-  res.send(studyjetV1Bundle);
-});
 app.get(["/tutsi", "/tutsi/"], (_req, res) => {
   res.set("Cache-Control", "no-cache");
   res.sendFile(sourceFile(join(staticRoot, "apps", "tutsi", "index.html")), { dotfiles: 'allow' });
@@ -14243,13 +14231,12 @@ app.use(express.static(staticRoot));
 app.use("/assets/vendor/katex/", express.static(katexPath));
 app.use('/assets/vendor/novnc/',express.static(dirname(dirname(require.resolve('@novnc/novnc')))));
 app.use("/scramjet/", express.static(studyjetPath));
-app.use("/scramjet-v1/", express.static(studyjetV1Path));
 app.use("/controller/", express.static(studyjetControllerPath));
 app.use("/baremux/", express.static(bookmuxPath));
 app.use("/epoxy/", express.static(epoxyPath));
 app.use("/libcurl/", express.static(libcurlPath));
 
-app.use(["/~/sj/", "/~/study/", "/~/study-v1/"], (_req, res) => {
+app.use(["/~/sj/", "/~/study/"], (_req, res) => {
   res.set("Cache-Control", "no-store").status(200).type("html").send(`<!doctype html>
 <meta charset="utf-8">
 <meta name="nyx-route-miss" content="1">

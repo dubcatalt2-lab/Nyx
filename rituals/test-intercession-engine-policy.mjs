@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {parse} from 'acorn';
 const source=readFileSync(sourceFile('script.js'),'utf8');
-const names=new Set(['normalizeWorkspaceModeName','installStudyjetV1','fallbackConnectionEngine']);
+const names=new Set(['normalizeWorkspaceModeName','fallbackConnectionEngine']);
 const functions=[];
 function visit(node){
  if(!node||typeof node!=='object')return;
@@ -13,7 +13,7 @@ function visit(node){
 }
 visit(parse(source,{ecmaVersion:'latest'}));
 let configured='auto';const calls=[];
-const api=vm.runInNewContext(functions.join('\n')+';({normalizeWorkspaceModeName,installStudyjetV1,fallbackConnectionEngine})',{
+const api=vm.runInNewContext(functions.join('\n')+';({normalizeWorkspaceModeName,fallbackConnectionEngine})',{
  atob,
  store:{text:()=>configured},DEFAULT_WORKSPACE_MODE:'scramjet',
  loadStudyjetTab:()=>calls.push('scramjet'),loadTab:()=>calls.push('iframe'),
@@ -24,7 +24,7 @@ for(const mode of ['ultraviolet','uv','ultra','"ultraviolet"','stemconnect','ste
 for(const mode of ['removed-engine','obsolete-mode'])assert.equal(api.normalizeWorkspaceModeName(mode),'scramjet');
 assert.doesNotMatch(source,/ultraviolet|__uv|uv\$config|\/uv\/|uv\.config|uv\.sw/i,'Retired runtime must not remain in the shell');
 for(const mode of ['auto','iframe','scramjet'])assert.equal(api.normalizeWorkspaceModeName(mode),mode);
-assert.equal(await api.installStudyjetV1(),false);
+assert.doesNotMatch(source,/studyjetV1|scramjet-v1|sj-v1/i);
 for(configured of ['auto','scramjet','ultraviolet','scramjet-v1']){
  calls.length=0;api.fallbackConnectionEngine({},'https://example.com/','scramjet');assert.deepEqual(calls,['failure']);
  calls.length=0;api.fallbackConnectionEngine({},'https://example.com/','ultraviolet');assert.deepEqual(calls,['scramjet']);
@@ -35,4 +35,4 @@ for(const text of [source,readFileSync(sourceFile('index.html'),'utf8')]){
  assert.doesNotMatch(text,/<option value="iframe"/);
 }
 assert.doesNotMatch(source,/option\.value='scramjet-v1'/);
-console.log('Engine policy: Retired engine selections migrate to StudyJet, StudyJet remains default, retired v1 stays disabled, bounded fallback and selectors passed.');
+console.log('Engine policy: Retired engine selections migrate to StudyJet, StudyJet remains default, retired v1 runtime is absent, bounded fallback and selectors passed.');

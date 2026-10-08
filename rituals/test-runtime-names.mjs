@@ -1,12 +1,12 @@
 import {sourceFile} from '../scripture/source-layout.mjs';
 import assert from 'node:assert/strict';
-import {readFile} from 'node:fs/promises';
+import {readFile,access} from 'node:fs/promises';
 import {parse} from 'acorn';
 import {runtimeNames,renameRuntimeText,rewriteRuntimeNames,renameRuntimeWasm} from './build-runtime-names.mjs';
 import {proxyAssetNames,rewriteProxyReferences} from './build-intercession-assets.mjs';
 for(const [before,after] of Object.entries(runtimeNames)) assert.equal(Buffer.byteLength(before),Buffer.byteLength(after));
 assert.equal(renameRuntimeText('ScramjetController ScramjetClient libcurlClient LibcurlTransport EpoxyClient EpoxyTransport Epoxy_wbg_fetch'),'StudyJetController StudyJetClient textlibClient TextlibTransport AtlasClient AtlasTransport Atlas_wbg_fetch');
-assert.equal(rewriteRuntimeNames('/scramjet/ /~sj/ /~/sj/ /~/sj-v1/'),'/studyjet/ /~study/ /~/study/ /~/study-v1/');
+assert.equal(rewriteRuntimeNames('/scramjet/ /~sj/ /~/sj/'),'/studyjet/ /~study/ /~/study/');
 for(const pattern of [String.raw`/^\/~\/sj\/[^/]+\/[^/]+\/([^?#]*)/`,String.raw`/^\/~\/(?:sj|tm)\/[^/]+\/[^/]+\/([^?#]*)/`]){
  const regex=Function('return '+rewriteRuntimeNames(pattern))();
  assert.equal(regex.exec('/~/study/session/frame/https%3A%2F%2Ffixture.test%2Fconsent')?.[1],'https%3A%2F%2Ffixture.test%2Fconsent');
@@ -19,6 +19,8 @@ assert(linked.includes('../atlas/'));assert(!linked.includes('/epoxy/'));
 const old=/scramjet|libcurl|epoxy|\/\~sj\/|\/\~\/sj\//i;
 let binaries=0,modules=0;
 const publicModules=JSON.parse(await readFile(sourceFile('dist/public-modules.json'),'utf8')).aliases;
+for(const path of ['dist/scramjet-v1','dist/studyjet-v1','dist/scramjet-v1.sw.js','node_modules/@mercuryworkshop/scramjet-v1']) await assert.rejects(access(path));
+assert(!Object.keys(proxyAssetNames).some(path=>/scramjet-v1/i.test(path)));
 const publishedPath=value=>publicModules[value]||value;
 for(const [original,path] of Object.entries(proxyAssetNames)){
  assert(!old.test(path),path);

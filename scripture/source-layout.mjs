@@ -77,9 +77,6 @@ export const sourceFileLayout=Object.freeze({
   "mission/haproxy-turn.cfg.template": "mission/sanctuary-turn.cfg.template",
   "parables/ai-model-search.js": "parables/ai-model-discernment.js",
   "parables/proxy-startup.mjs": "parables/intercession-startup.mjs",
-  "pilgrim/scramjet.all.js": "pilgrim/pilgrim.all.js",
-  "pilgrim/scramjet.sync.js": "pilgrim/pilgrim.sync.js",
-  "pilgrim/scramjet.wasm.wasm": "pilgrim/pilgrim.wasm.wasm",
   "relics/transports/epoxy-scramjet.mjs": "relics/transports/incense-pilgrim.mjs",
   "relics/transports/libcurl-baremux.mjs": "relics/transports/libcurl-communion.mjs",
   "relics/transports/libcurl-scramjet.mjs": "relics/transports/libcurl-pilgrim.mjs",
@@ -112,7 +109,6 @@ export const sourceFileLayout=Object.freeze({
   "rituals/test-wisp-origins.mjs": "rituals/test-fellowship-origins.mjs",
   "rituals/test-wispurr-browser.mjs": "rituals/test-fellowship-workspace.mjs",
   "rituals/test-wispurr-relay.mjs": "rituals/test-fellowship-relay.mjs",
-  "scramjet-v1.sw.js": "pilgrim-v1.sw.js",
   "server-http-wisp.mjs": "fellowship-gateway.mjs",
 "server-http-fellowship.mjs": "fellowship-gateway.mjs"
 });

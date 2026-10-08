@@ -2932,9 +2932,6 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   let studyjetInstallPromise = null;
   let studyjetController = null;
   let workspaceConnectionPrewarmScheduled = false;
-  let studyjetV1InstallPromise = null;
-  let studyjetV1Controller = null;
-  let studyjetV1InstallError = '';
   let bookmuxConnection = null;
   let studyjetTransport = null;
   let studyjetTransportKey = '';
@@ -3450,10 +3447,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   })();`;
   const connectionStateVersion='nyx-proxy-state-20261005-studyjet-only-v14';
   const studyjetStateVersion='nyx-scramjet-state-20260814-private-tabs-v2';
-  const studyjetV1StateVersion='nyx-scramjet-v1-ready-before-route-v5';
   const studyjetServiceWorkerUrl='/scramjet.sw.js?v=nyx-sj-20260905-cookie-owner-v5';
-  const studyjetV1RuntimeUrl='/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-ready-before-route-v5';
-  const studyjetV1ServiceWorkerUrl='/scramjet-v1.sw.js?v=nyx-sj-v1-ready-before-route-v5';
   function installNyxConsoleDedupe(scope='top'){
     if(console.__nyxDedupeInstalled) return;
     const seen=new Map();
@@ -4020,10 +4014,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const retiredPrefix='/service/';
       const retiredStart=parsed.origin + retiredPrefix;
       const studyjetStart=parsed.origin + '/scramjet/service/';
-      const studyjetV1Prefix='/~/sj-v1/';
+      const retiredEnginePath=parsed.pathname.match(/^\/~\/(?:sj|study)-v[0-9]+\/(.*)$/);
       const studyjetV2Match=parsed.pathname.match(/^\/~\/sj\/[^/]+\/[^/]+\/([^?#]*)/);
-      if(parsed.origin===location.origin && parsed.pathname.startsWith(studyjetV1Prefix)){
-        const decoded=new URL(decodeUriPart(parsed.pathname.slice(studyjetV1Prefix.length)));
+      if(parsed.origin===location.origin && retiredEnginePath){
+        const decoded=new URL(decodeUriPart(retiredEnginePath[1]));
         if(parsed.search) decoded.search=parsed.search;
         if(parsed.hash) decoded.hash=parsed.hash;
         return decoded.href;
@@ -7635,7 +7629,6 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
     value=String(value || 'auto').trim().toLowerCase().replace(atob('c2NyYW1qZXQ='),'scramjet').replace('studyjet','scramjet');
     if(value==='sj' || value==='scram' || value==='scramjet' || value==='scramjet-v2' || value==='sjv2') return 'scramjet';
-    if(value==='scramjet-v1' || value==='sjv1' || value==='scram-v1') return 'scramjet';
     if(value==='rh' || value==='rammerhead') return 'rammerhead';
     if(value==='direct' || value==='iframe') return 'iframe';
     return value==='auto' ? 'auto' : 'scramjet';
@@ -8823,15 +8816,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
     await Promise.all(names.map(name=>deleteIndexedDb(name)));
   }
-  async function repairStudyjetV1Storage(){
-    if(navigator.serviceWorker){
-      await unregisterConnectionScope('/~/sj-v1/');
-    }
 
-
-    studyjetV1Controller?.db?.close?.();
-    await deleteIndexedDb('$nyx_scramjet_v1_v4');
-  }
   async function repairStudyjetCaches(){
     if(!window.caches?.keys) return;
     const names=await caches.keys().catch(()=>[]);
@@ -8923,45 +8908,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     studyjetTransportKey='';
     store.setText('nyx.scramjetStateVersion',studyjetStateVersion);
   }
-  async function ensureFreshStudyjetV1State(){
-    if(store.text('nyx.scramjetV1StateVersion','')===studyjetV1StateVersion) return;
-    await repairStudyjetV1Storage();
-    studyjetV1Controller=null;
-    bookmuxConnection=null;
-    store.setText('nyx.scramjetV1StateVersion',studyjetV1StateVersion);
-  }
-
-  function studyjetV1Config(){
-    return {
-      prefix:'/~/sj-v1/',
-      files:{
-        all:studyjetV1RuntimeUrl,
-        wasm:'/scramjet-v1/scramjet.wasm.wasm',
-        sync:'/scramjet-v1/scramjet.sync.js'
-      }
-    };
-  }
-  async function initializeStudyjetV1Controller(){
-    const api=window.$scramjetLoadController?.();
-    const Controller=api?.ScramjetController;
-    if(!Controller) throw new Error('Classic learning engine controller API did not load');
-    const controller=new Controller(studyjetV1Config());
 
 
 
-    studyjetV1Controller=controller;
-    await controller.init();
-    return controller;
-  }
-  async function sendStudyjetV1Config(controller,serviceworker){
-    const db=controller?.db || await controller?.openIDB?.();
-    const config=await db?.get?.('config','config');
-    if(!config) throw new Error('Classic learning engine configuration did not initialize');
-    serviceworker.postMessage({scramjet$type:'loadConfig',config});
-  }
-  function installStudyjetV1(){
-    return Promise.resolve(false);
-}
+
+
+
   function installStudyjet(){
     if(studyjetInstallPromise) return studyjetInstallPromise;
     let step="starting Learning engine";
@@ -11926,76 +11878,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       },220);
       return true;
     }
-    function loadStudyjetV1Tab(t,url,addHistory=true){
-      t.expectedEngine='scramjet-v1';
-      t.sourceUrl=url;
-      if(addHistory){
-        const currentHistory=workspaceShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
-        if(currentHistory!==url){
-          t.history=t.history.slice(0,t.index+1);
-          t.history.push(url);
-          t.index=t.history.length-1;
-        }
-      }
-      const navigationIntent=t.navigationIntent || '';
-      installStudyjetV1().then(ok=>{
-        if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-        if(!ok || !studyjetV1Controller){
-          t.url=url;
-          setTabMeta(t,url,false);
-          t.actualEngine='scramjet-v1-failed';
-          setFrameSandbox(t,true);
-          clearFrameDocument(t);
-          t.frame.removeAttribute('srcdoc');
-          return;
-        }
-        if(t.scramjetFrame && t.scramjetVersion!=='v1') replaceTabFrame(t);
-        if(!t.scramjetFrame){
-          setFrameSandbox(t,true);
-          t.frame.removeAttribute('src');
-          clearFrameDocument(t);
-          installPopupBridge(t);
-          t.scramjetFrame=studyjetV1Controller.createFrame(t.frame);
-          t.scramjetVersion='v1';
-          t.scramjetFrame.addEventListener?.('urlchange',event=>{
-            const next=workspaceShellSourceUrl(String(event.url || '')) || String(event.url || '');
-            if(!next) return;
-            const previousSource=workspaceShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
-            if(workspaceShellRejectFrameLocation(next,previousSource)) return;
-            const currentHistory=workspaceShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
-            if(t.scramjetHistoryPending){
-              t.scramjetHistoryPending=false;
-              if(t.index>=0) t.history[t.index]=next;
-            }else if(next!==currentHistory && next!==previousSource){
-              t.history=t.history.slice(0,t.index+1);
-              t.history.push(next);
-              t.index=t.history.length-1;
-            }
-            t.url=next;
-            t.sourceUrl=next;
-            t.title=titleForUrl(next);
-            t.icon=iconForUrl(next);
-            renderTabs();
-            if(t.id===state.active) win.querySelector('.urlbar').value=workspaceShellDisplayValue(next);
-            updateWorkspaceShellLocation(next,t.id);
-            setTimeout(()=>syncLoadedTabIcon(t),120);
-          });
-        }
-        setTabMeta(t,url,false);
-        t.scramjetHistoryPending=true;
-        clearFrameDocument(t);
-        try{
-          t.scramjetFrame.go(url);
-          markWorkspaceEngine(t,'scramjet-v1',String(t.frame.getAttribute('src') || url),'scramjet-v1');
-        }catch(error){
-          t.actualEngine='scramjet-v1-failed';
-          t.frame.removeAttribute('srcdoc');
-        }
-      }).catch(()=>{
-        if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-        t.actualEngine='scramjet-v1-failed';
-      });
-    }
+
     function loadStudyjetTab(t,url,addHistory=true){
       t.expectedEngine='scramjet';
       t.sourceUrl=url;
@@ -12282,8 +12165,6 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
             if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
             loadTab(t,finalUrl,true,'rammerhead',url);
           });
-        }else if(mode==='scramjet-v1'){
-          loadStudyjetV1Tab(t,url,true);
         }else if(mode==='scramjet'){
           loadStudyjetTab(t,url,true);
         }else {
@@ -12328,8 +12209,6 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
           loadTab(t,finalUrl,true,'rammerhead');
         });
-      }else if(mode==='scramjet-v1'){
-        loadStudyjetV1Tab(t,url,true);
       }else if(mode==='scramjet'){
         loadStudyjetTab(t,url,true);
       }else {
@@ -12370,9 +12249,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         }
         const source=workspaceShellSourceUrl(stored) || stored;
         const engine=selectedWorkspaceMode(source);
-        if(engine==='scramjet-v1'){
-          loadStudyjetV1Tab(t,source,false);
-        }else if(engine==='scramjet'){
+        if(engine==='scramjet'){
           loadStudyjetTab(t,source,false);
         }else {
           loadTab(t,stored,false,engine,source);

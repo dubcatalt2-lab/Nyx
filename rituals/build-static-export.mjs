@@ -38,7 +38,7 @@ const sharedTransports=new Set(['/apps/tutsi/relay.mjs','/apps/tutsi/http-relay.
 const deferredBackgrounds=new Set();
 if(mini)for(const file of await readdir(path.join(dist,'assets/backgrounds')))if(file!=='study-away-cover.png'&&(await stat(sourceFile(path.join(dist,'assets/backgrounds',file)))).size>600000)deferredBackgrounds.add(file);
 const remoteGames=new Set(['Dragonxclient.html','EaglercraftL_1.9_v0_7_0_Offline_Signed.html','EaglercraftX 1.8.8(u29).html','EaglercraftZ_1.11.2.html','eaglercraft.1.5.2.html'].map(name=>'assets/ugs/minecraft/'+name));
-const skip=relative=>(/^(?:scramjet|studyjet|controller|epoxy|atlas|libcurl|textlib|baremux)\//.test(relative)&&!currentAssets.has(relative))||/^(?:proxy-assets|frontend-assets)\.json$/.test(relative)||relative==='nyx-singlefile.html'||(relative.startsWith('apps/tutsi/')&&!sharedTransports.has(relative)&&!['apps/tutsi/studyready','apps/tutsi/studyready/learning.css'].includes(relative));
+const skip=relative=>(/^(?:scramjet|studyjet|controller|epoxy|atlas|libcurl|textlib|baremux|bookmux)\//.test(relative)&&!currentAssets.has(relative))||/^(?:proxy-assets|frontend-assets)\.json$/.test(relative)||relative==='nyx-singlefile.html'||(relative.startsWith('apps/tutsi/')&&!sharedTransports.has(relative)&&!['apps/tutsi/studyready','apps/tutsi/studyready/learning.css'].includes(relative));
 async function copy(dir=''){
   for(const item of await readdir(path.join(dist,dir),{withFileTypes:true})){
     const relative=path.posix.join(dir,item.name);if(skip(relative))continue;

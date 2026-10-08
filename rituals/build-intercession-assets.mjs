@@ -12,6 +12,7 @@ export const legacyProxyAssetNames=JSON.parse(await readFile(sourceFile(new URL(
 const previousProxyAssetNames=Object.fromEntries(Object.entries(legacyProxyAssetNames).map(([original,alias])=>[original,alias.replace(/r([0-9a-f]{24})(\.(?:js|mjs|wasm))$/, '@r$1!$2')]));
 export const proxyAssetNames=Object.fromEntries(Object.entries(legacyProxyAssetNames).map(([original,alias])=>[original,posix.join(renameRuntimeText(posix.dirname(alias)), '@r'+createHash('sha256').update('education-v1:'+original).digest('hex').slice(0,24)+'!'+posix.extname(alias))]));
 const entries=Object.entries(proxyAssetNames);
+const previousBookmuxNames=entries.map(([original,alias])=>[original,alias.replace(/^\/bookmux\//,'/baremux/')]);
 const destinations=new Set();
 for(const [original,alias] of entries){
   if(!original.startsWith('/')||original.includes('..')||renameRuntimeText(posix.dirname(original))!==posix.dirname(alias)||posix.extname(original)!==posix.extname(alias)||!/^@r[0-9a-f]{24}!\.(?:js|mjs|wasm)$/.test(posix.basename(alias))||destinations.has(alias))throw Error('Invalid proxy asset mapping');
@@ -72,6 +73,14 @@ export async function buildProxyAssets(output){
     const previous=await scrambleProxyCode(rewriteProxyReferences(bytes.toString('utf8'),original,Object.entries(previousProxyAssetNames)),{module:original.endsWith('.mjs')});
     await writeFile(join(output,previousAlias.slice(1)),previous.code);
     const transformed=await scrambleProxyCode(rewriteRuntimeNames(rewriteProxyReferences(bytes.toString('utf8'),original)),{module:original.endsWith('.mjs')});
+    // Keep the last release's module contract for already-open clients.
+    const oldBookmuxAlias=previousBookmuxNames.find(([key])=>key===original)?.[1];
+    if(oldBookmuxAlias!==alias){
+      let compatible=rewriteRuntimeNames(rewriteProxyReferences(bytes.toString('utf8'),original,previousBookmuxNames));
+      compatible=compatible.replaceAll('Bookmux','BareMux').replaceAll('bookmux','baremux').replaceAll('BOOKMUX','BAREMUX').replaceAll('book-mux','bare-mux');
+      const prior=await scrambleProxyCode(compatible,{module:original.endsWith('.mjs')});
+      await writeFile(join(output,oldBookmuxAlias.slice(1)),prior.code);
+    }
     renamed+=transformed.renamed;
     await writeFile(join(output,alias.slice(1)),transformed.code);
     // Compatibility filenames also receive mangled code, but keep their URLs.
@@ -80,7 +89,7 @@ export async function buildProxyAssets(output){
     await writeFile(join(output,legacyProxyAssetNames[original].slice(1)),legacy.code);
   }
   for(const path of await walk(output)){
-    if(/^(?:scramjet|controller|epoxy|libcurl|baremux)\//.test(path)){
+    if(/^(?:scramjet|controller|epoxy|libcurl|baremux|bookmux)\//.test(path)){
       if(path.endsWith('.map'))await rm(join(output,path));
       continue;
     }

@@ -15117,8 +15117,8 @@ Auto uses the learning engine with Textbook by default and can recover with anot
     };
   }
   function installBookmuxPortResponder(){
-    if(window.__nyxBareMuxResponderInstalled) return;
-    window.__nyxBareMuxResponderInstalled=true;
+    if(window.__nyxBarebooksResponderInstalled) return;
+    window.__nyxBarebooksResponderInstalled=true;
     window.addEventListener('message',event=>{
       if(event.data?.type!=='getPort' || !event.data.port) return;
       try{

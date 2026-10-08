@@ -1,8 +1,8 @@
 // Keep substitutions byte-for-byte the same length: the compiler's WASM data
 // segments contain runtime hook names as well as its import/export names.
-export const runtimeNames = {scramjet:'studyjet', Scramjet:'StudyJet', SCRAMJET:'STUDYJET', libcurl:'textlib', Libcurl:'Textlib', LibCurl:'TextLib', LIBCURL:'TEXTLIB', epoxy:'atlas', Epoxy:'Atlas', EPOXY:'ATLAS'};
+export const runtimeNames = {baremux:'bookmux', BareMux:'Bookmux', BAREMUX:'BOOKMUX', 'bare-mux':'book-mux',scramjet:'studyjet', Scramjet:'StudyJet', SCRAMJET:'STUDYJET', libcurl:'textlib', Libcurl:'Textlib', LibCurl:'TextLib', LIBCURL:'TEXTLIB', epoxy:'atlas', Epoxy:'Atlas', EPOXY:'ATLAS'};
 export function renameRuntimeText(source) {
-  return source.replace(/scramjet|libcurl|epoxy/gi, name => runtimeNames[name] || runtimeNames[name.toLowerCase()]);
+  return source.replace(/scramjet|libcurl|epoxy|baremux|bare-mux/gi, name => runtimeNames[name] || runtimeNames[name.toLowerCase()]);
 }
 export function renameRuntimeWasm(bytes) {
   if (!WebAssembly.validate(bytes)) throw Error('Invalid input runtime WASM');
@@ -23,7 +23,7 @@ export function rewriteRuntimeNames(source) {
   source=renameRuntimeText(source).replaceAll('/~/sj/','/~/study/').replaceAll('/~sj/','/~study/');
   // Apply to the shell and transport bundles together: SharedWorker identity
   // must agree between every client creating the same resource worker.
-  source=source.replaceAll('bare-mux-worker','ridgewood-stem-worker');
+  source=source.replaceAll('book-mux-worker','ridgewood-stem-worker');
   // Regex literals escape slashes and were missed by the plain path rewrites.
   // The shell then rejected its own renamed proxy URL and reloaded good pages;
   // the worker also failed to decode asset/consent request origins.

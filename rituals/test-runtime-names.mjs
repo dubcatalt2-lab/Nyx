@@ -13,10 +13,11 @@ for(const pattern of [String.raw`/^\/~\/sj\/[^/]+\/[^/]+\/([^?#]*)/`,String.raw`
 }
 assert.equal(rewriteRuntimeNames('/*! Scramjet license */ const ScramjetClient=1;'),'/*! Scramjet license */ const StudyJetClient=1;');
 assert.equal(rewriteRuntimeNames('"bare-mux-worker" "wisp-v2" "WebSocket"'), '"ridgewood-stem-worker" "wisp-v2" "WebSocket"');
+assert.equal(rewriteRuntimeNames('BareMuxConnection bare-mux-remote baremux'), 'BookmuxConnection book-mux-remote bookmux');
 assert.throws(()=>renameRuntimeWasm(Buffer.from('bad wasm')));
 const linked=rewriteProxyReferences('import "../epoxy/index.mjs";','/libcurl/index.mjs');
 assert(linked.includes('../atlas/'));assert(!linked.includes('/epoxy/'));
-const old=/scramjet|libcurl|epoxy|\/\~sj\/|\/\~\/sj\//i;
+const old=/baremux|bare-mux|scramjet|libcurl|epoxy|\/\~sj\/|\/\~\/sj\//i;
 let binaries=0,modules=0;
 const publicModules=JSON.parse(await readFile(sourceFile('dist/public-modules.json'),'utf8')).aliases;
 for(const path of ['dist/scramjet-v1','dist/studyjet-v1','dist/scramjet-v1.sw.js','node_modules/@mercuryworkshop/scramjet-v1']) await assert.rejects(access(path));

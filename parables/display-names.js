@@ -8,6 +8,9 @@
   const names=/^(?:(?:nyx|tutsi|drop)\s+)?(?:home|games|music|youtube|nyxtube|nyxify(?:\/built in music)?|ai|a1|duck ai|duck a1|chat|vms|apps|discord|settings|account|movies|more movie sites|tiktok|animex|cloud gaming|link generator|bulk link generator|link checker|jsdelivr publisher|code sandbox|code studio|api(?: keys)?|premium|caffeine|arcade|game library|all games|miscellaneous)$/i;
   const labels='[data-nyx-dock-item] > span,.home-shortcut-open > span,.workspace-home-label,.nyx-discord-link > span,.quick-tile > span:not(.quick-icon),#all-apps button > span,[data-nyx-display-label]';
   const headings='h1,h2,h3,nav a,nav button,header strong,.nyxify-brand strong,.lc-brand strong,.utility-nav-item > span,.brand,.brand-title';
+  const wordScopes='.nyx-release-notes,.nyx-tos-dialog,.nyx-terms-tab,.nyx-tos-document,[data-nyx-display-words]';
+  const wordElements='p,li,strong,h1,h2,h3,a,span,button';
+  const displayWords=/\b(?:link generators?|proxy|proxies|games?|gaming|AI|Discord)\b/gi;
   const installed=new WeakSet();
   const generatedLabels=new WeakMap();
   function install(doc){
@@ -27,17 +30,28 @@
       content.textContent=next;
       for(const node of nodes)if(node!==content&&node.textContent.trim())node.textContent='';
     }
+    function formatWords(element){
+      if(!element.closest(wordScopes) || element.closest('input,textarea,pre,code,[contenteditable="true"]'))return;
+      for(const node of element.childNodes){
+        if(node.nodeType!==3)continue;
+        const next=node.textContent.replace(displayWords,word=>nyxDisplayName(word));
+        if(next!==node.textContent)node.textContent=next;
+      }
+    }
     function scan(node){
       const element=node.nodeType===1 ? node : node.parentElement;
       if(!element)return;
       if(element.matches(labels+','+headings))format(element);
       element.querySelectorAll(labels+','+headings).forEach(format);
+      if(element.matches(wordElements))formatWords(element);
+      if(element.closest(wordScopes))element.querySelectorAll(wordElements).forEach(formatWords);
+      else element.querySelectorAll(wordScopes).forEach(scope=>{formatWords(scope);scope.querySelectorAll(wordElements).forEach(formatWords);});
     }
     scan(doc.body);
     new MutationObserver(records=>{
       for(const record of records){
         if(record.type==='characterData')scan(record.target);
-        else {if(record.target.matches?.(labels+','+headings))format(record.target);for(const node of record.addedNodes)scan(node);}
+        else {if(record.target.matches?.(labels+','+headings))format(record.target);if(record.target.matches?.(wordElements))formatWords(record.target);for(const node of record.addedNodes)scan(node);}
       }
     }).observe(doc.body,{childList:true,subtree:true,characterData:true});
     function frame(frame){

@@ -7586,6 +7586,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const ready=await installStudyjet();
       const controller=studyjetController;
       if(ready && controller){
+        if(signal?.aborted || !frame.isConnected) return;
         let managed=nyxManagedGameFrames.get(frame);
         if(!managed || managed.__nyxScramjetVersion!=='v2'){
           frame.removeAttribute('src');
@@ -7598,7 +7599,18 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           nyxManagedGameFrames.set(frame,managed);
         }
         if(signal?.aborted || !frame.isConnected) return;
-        managed.go(target);
+        const cancel=()=>{
+          if(nyxManagedGameFrames.get(frame)!==managed)return;
+          frame.src='about:blank';
+          const index=controller.frames?.indexOf(managed)??-1;
+          if(index>=0)controller.frames.splice(index,1);
+          nyxManagedGameFrames.delete(frame);
+        };
+        signal?.addEventListener('abort',cancel,{once:true});
+        try{
+          await managed.go(target);
+          if(signal?.aborted || !frame.isConnected){cancel();return;}
+        }catch(error){signal?.removeEventListener('abort',cancel);cancel();throw error;}
         return {managed:true,engine:'scramjet',url:target};
       }
     }

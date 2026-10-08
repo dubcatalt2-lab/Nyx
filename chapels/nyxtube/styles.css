@@ -116,3 +116,5 @@ body[data-tube-view="shorts"] .notice{position:fixed;z-index:40;left:50%;bottom:
 .short-card.invidious-player iframe{pointer-events:auto}
 
 @media(max-height:480px){.short-nav{gap:6px;flex-direction:row;width:auto;align-items:center}.short-player-group{--short-height:min(calc(100cqh - 52px),calc((100cqw - 190px)*16/9));gap:14px}.short-menu-panel{right:0;bottom:52px}}
+
+.watch-player.native-failed>.center-play{pointer-events:auto}

@@ -106,3 +106,11 @@ Stratus uses the self-hosted standalone backend refreshed directly from GitHub x
 ## Barebooks runtime naming
 
 The shell initialization guard is `__nyxBarebooksResponderInstalled`. The production runtime transformer now consistently maps BareMux/baremux to Bookmux/bookmux and bare-mux message names to book-mux; current assets use /bookmux/ URLs. Source directory remains barebooks. Worker identity stays ridgewood-stem-worker across callers. Original package coordinates and legacy compatibility paths remain for dependency resolution and already-open clients. The immediately previous opaque /baremux/ aliases are also generated with their previous export/message contract; current clients use only the renamed module. Test-runtime-names checks current active scripts/WASM, and test-bookmux-worker checks both current and previous module exports and live SharedWorker handshakes. Real navigation was verified with HTTP bridge enabled and disabled.
+
+
+## 2026-10-08 NyxTube recovery and A1 spending controls
+
+- Native NyxTube playback now calls yt-dlp independently of discovery's Invidious cooldown/cache. Native failures remain on the selected player, show the original safe error and expose an accessible retry button. Invidious remains an explicit alternative.
+- Nyx A1 reserves Astra, Claude except Haiku 4.5, and models with input or output pricing over USD 3 per million tokens for owners. Both catalog and request/reservation checks enforce this; Premium and per-user allow rules cannot bypass it. Other app policies are preserved.
+- Owner user editor supports model filtering, hidden owner-reserved rows for members, separate access/message controls and per-user/model token credit grants. Credits are consumed before the normal token pool, persist across resets, are granted idempotently and refunded with usage settlement. They do not override access, model restrictions or shared dollar budgets. One credit is one input/output token.
+- Production ads remain disabled; UV and retired SJ v1 remain excluded.

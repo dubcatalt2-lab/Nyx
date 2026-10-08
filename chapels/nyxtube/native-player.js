@@ -18,7 +18,7 @@
       this.video.addEventListener('emptied',()=>{if(this.renewing)this.setBuffering(true);});
       this.video.addEventListener('pause',()=>{if(!this.renewing)this.setBuffering(false);});
       this.video.addEventListener('ended',()=>this.setBuffering(false));
-      this.video.addEventListener('error',()=>emit('onError',900));
+      this.video.addEventListener('error',()=>this.fail('The video stream could not be loaded or decoded.'));
       this.video.addEventListener('loadedmetadata',()=>emit('onReady'),{once:true});
       this.watchdog=setInterval(()=>this.checkProgress(),2000);
       this.video.addEventListener('timeupdate',()=>{if(this.captionsEnabled)void this.updateCaptions();});
@@ -113,7 +113,7 @@
       if(this.hls&&this.recoveries++<1){this.lastProgress=Date.now();this.hls.stopLoad();this.hls.startLoad(time);this.setBuffering(true);return;}
       this.fail('Video loading stopped making progress. Try a lower quality or the embedded player.');
     }
-    fail(message){if(!this.controller.signal.aborted&&!this.failed){this.failed=true;this.failure=message;this.setBuffering(false);clearInterval(this.watchdog);this.hls?.stopLoad();this.options.events?.onError?.({target:this,data:900});}}
+    fail(message){if(!this.controller.signal.aborted&&!this.failed){this.failed=true;this.failure=message;this.setBuffering(false);clearInterval(this.watchdog);this.hls?.stopLoad();this.options.events?.onError?.({target:this,data:900,message:this.failure});}}
     async setCaptions(enabled){
       this.captionsEnabled=enabled;
       if(this.captionTrack)this.captionTrack.mode=enabled?'showing':'disabled';

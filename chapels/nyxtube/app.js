@@ -337,7 +337,7 @@
     if(state.watchTrail.length>50)state.watchTrail.shift();
     stopWatch();
     const requestGeneration = state.watchGeneration;
-    let metadataUnavailable = false;
+
     state.watchVideo = video; showView("watch"); notice(recoveryMessage);
     if (video.detailsPending) {
       refs.watchTitle.textContent = video.title || "Loading video";
@@ -356,8 +356,8 @@
         state.catalog = state.catalog.map(item => item.id === detail.id ? detail : item);
       } catch (error) {
         if (state.view !== "watch" || state.watchGeneration !== requestGeneration) return;
-        if (state.invidiousEmbedOrigin && (error.status >= 500 || error instanceof TypeError)) {
-          metadataUnavailable = true; recoveryMessage = 'Video details could not load. Opening the Invidious player.';
+        if (state.nativeAvailable && state.preferredPlayer === "native" && (error.status >= 500 || error instanceof TypeError)) {
+          recoveryMessage = 'Video details could not load. Trying yt-dlp playback.';
         } else {
           refs.watchLoading.hidden = true; notice(error.message || "Video details could not be loaded.");
           return;
@@ -383,7 +383,7 @@
     state.watchCaptions = false; refs.watchCaptions.setAttribute("aria-pressed", "false"); refs.watchCaptionOption.querySelector("span").textContent = "Off";
     refs.watchLoading.hidden = false; refs.watchCenterPlay.hidden = true; refs.watchProgress.value = "0";
     refs.watchTime.textContent = `0:00 / ${duration(video.durationSeconds)}`;
-    createWatch(video,false,false,null,metadataUnavailable?"invidious":"").catch(error => { refs.watchLoading.hidden = true; notice(error.message || "The video player could not be started."); });
+    createWatch(video).catch(error => { refs.watchLoading.hidden = true; notice(error.message || "The video player could not be started."); });
   }
   function updatePlayerSwitch(native, backup = false) {
     refs.watchEngine.value = backup ? "invidious" : native ? "native" : "youtube";
@@ -398,6 +398,8 @@
     const native = !backup && state.nativeAvailable && state.preferredPlayer === "native" && !forceDirect && !fallback;
     updatePlayerSwitch(native, backup);
     clearInterval(state.watchTimer); state.watchTimer = 0;
+    refs.watchStage.classList.remove('native-failed');
+    refs.watchCenterPlay.setAttribute('aria-label','Play video');
     refs.watchStage.classList.toggle('invidious-player', backup);
     refs.watchQuality.closest('label').hidden = backup;
     refs.watchCaptionOption.hidden = backup;
@@ -447,7 +449,14 @@
       },
       onError: event => {
         if(generation !== state.watchGeneration || state.view !== "watch") return;
-        if(native) { notice(state.invidiousEmbedOrigin ? "Opening the Invidious player. Use the controls inside the video." : "Native playback is unavailable. Opening the YouTube player."); createWatch(video, false, true, {time:event.target.getCurrentTime()||restore?.time||0,volume:event.target.getVolume(),rate:event.target.getPlaybackRate(),muted:event.target.isMuted(),paused:event.target.getCurrentTime()>0?event.target.video.paused:(restore?.paused??false)}, state.invidiousEmbedOrigin ? "invidious" : "").catch(()=>notice("The video player could not start.")); }
+        if(native) {
+          refs.watchStage.classList.add('native-failed');
+          refs.watchCenterPlay.setAttribute('aria-label','Retry video');
+          refs.watchLoading.hidden = true;
+          refs.watchCenterPlay.hidden = false;
+          updateToggle(refs.watchToggle, false);
+          notice(`${event.message || event.target.failure || 'yt-dlp playback failed.'} Press Play to retry, or choose another player.`);
+        }
         else recoverWatch(video, Number(event?.data), YT === directYoutubeApi);
       },
     };
@@ -596,6 +605,11 @@
     closeWatchSettings(); state.watchPlayer?.destroy?.(); state.watchPlayer = null; refs.watchPlayer.replaceChildren();
   }
   function toggleWatch() {
+    if (state.watchPlayer?.isNative && state.watchPlayer.failed) {
+      notice("");
+      void createWatch(state.watchVideo).catch(error => { refs.watchLoading.hidden = true; notice(error.message); });
+      return;
+    }
     if (!ready(state.watchPlayer)) return;
     state.watchPlayer.getPlayerState() === 1 ? state.watchPlayer.pauseVideo() : state.watchPlayer.playVideo();
   }

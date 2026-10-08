@@ -41,9 +41,17 @@ export function premiumOnlyAiModel(model,price=null,app=null) {
   price=price||additionalPrices[`shared:${model}`];
   return !!price&&(app==='nook'?(price.inputPerMillion>5||price.outputPerMillion>5):(price.inputPerMillion>=10||price.outputPerMillion>=10));
 }
+export function ownerOnlyNyxModel(model, price=null) {
+  if (/^~?anthropic\/claude-haiku-4\.5(?:$|[-:])/.test(model)) return false;
+  if (/^~?anthropic\/claude(?:-|$)/i.test(model) || /^~?openai\/gpt-(?:\d+(?:\.\d+)?-)?astra(?:-|$)/i.test(model)) return true;
+  price = price || additionalPrices[`shared:${model}`];
+  return !!price && (price.inputPerMillion > 3 || price.outputPerMillion > 3);
+}
+
 export function aiModelAllowed(model, actor={},price=null) {
   if(hasFullAiCatalog(actor))return true;
   if(actor.blocked)return false;
+  if((!actor.app || actor.app==='nyx') && actor.owner!==true && ownerOnlyNyxModel(model,price))return false;
   if(premiumOnlyAiModel(model,price,actor.app)&&actor.owner!==true&&actor.premium!==true)return false;
   if(hasAppAiAllowance(actor))return !actor.blocked&&aiModelRule(actor,model)?.access!=='deny';
   const rule=aiModelRule(actor,model);
@@ -254,6 +262,8 @@ export function createAiAllowance({db,config,now=Date.now}) {
       if(session.day!==day())throw failure('The daily AI allowance reset. Please send your message again.',429);
       const modelLedger=m.data()?.month===month?m.data().tokens||{}:{};
       const tokenPool=aiTokenPoolUsage(m.data(),p.data(),session.actor,now());
+      const creditBalance=(!session.actor.app||session.actor.app==='nyx')&&!session.actor.owner?count(m.data()?.credits?.[payload.model]):0;
+      const quotaCap=modelCap===null?null:modelCap+creditBalance;
       const claudePool=aiOwnerClaudeUsage(m.data(),now());
       const dailyOwnerUsed=m.data()?.ownerDailyPool?.day===day()?count(m.data().ownerDailyPool.used):0;
       if(dailyOwner&&dailyOwnerUsed+cost.tokens>ownerDailyTokenLimit)throw failure('Your shared 10,000-token daily allowance for GPT-6 Astra and Claude Fable 5.1 resets at 00:00 UTC. Shorten the conversation or choose another model.',429,Math.max(1,Math.ceil((Date.parse(day()+'T00:00:00Z')+DAY-now())/1000)));
@@ -261,8 +271,8 @@ export function createAiAllowance({db,config,now=Date.now}) {
       if(!drop&&!session.actor.owner&&payload.model==='anthropic/claude-opus-5.5'&&count(tokenPool.opus55Tokens)+cost.tokens>5000)throw failure(`This request exceeds your remaining Claude Opus 5.5 allowance of 5,000 tokens within your account's pool. It resets on ${new Date(tokenPool.resetAt).toISOString().slice(0,10)} (UTC).`,429,Math.max(1,Math.ceil((tokenPool.resetAt-now())/1000)));
       if(imageRequest&&tokenPool.images>=2)throw failure(`Your 2-image Nano Banana allowance is used. It resets on ${new Date(tokenPool.resetAt).toISOString().slice(0,10)} (UTC).`,429,Math.max(1,Math.ceil((tokenPool.resetAt-now())/1000)));
       const used=drop?tokenPool.used:session.actor.owner?count(modelLedger[payload.model]):tokenPool.used;
-      if(!drop&&!session.actor.owner&&modelCap!==null&&used+cost.tokens>modelCap){
-        const remaining=Math.max(0,modelCap-used),output=Math.floor((remaining-cost.inputTokens)/cost.passes);
+      if(!drop&&!session.actor.owner&&modelCap!==null&&used+cost.tokens>quotaCap){
+        const remaining=Math.max(0,quotaCap-used),output=Math.floor((remaining-cost.inputTokens)/cost.passes);
         if(output<1)throw failure(remaining===0?`Your account's ${modelCap.toLocaleString('en-US')}-token allowance is used. It resets on ${new Date(tokenPool.resetAt).toISOString()}.`:`Your account's ${modelCap.toLocaleString('en-US')}-token allowance still has ${remaining.toLocaleString('en-US')} tokens available, but this conversation needs about ${cost.inputTokens.toLocaleString('en-US')} input tokens before the reply. Start a shorter chat.`,429,Math.max(1,Math.ceil((tokenPool.resetAt-now())/1000)),'token_limit');
         const field='max_completion_tokens' in payload?'max_completion_tokens':'max_tokens';
         payload[field]=output;Object.assign(cost,estimate(session,provider,payload,catalogPrice));
@@ -296,7 +306,7 @@ export function createAiAllowance({db,config,now=Date.now}) {
         if(payload[field]>maximum){payload[field]=maximum;Object.assign(cost,estimate(session,provider,payload,catalogPrice));}
         claudeReserved=Math.ceil(cost.inputTokens*claudePrice.inputPerMillion+payload[field]*cost.passes*claudePrice.outputPerMillion+fixed);
       }
-      if(modelCap!==null&&used+cost.tokens>modelCap)throw failure(session.actor.owner?'This request exceeds your remaining monthly Sol Pro tokens.':`This request exceeds your account's ${tokenPool.limit.toLocaleString('en-US')}-token allowance (${Math.max(0,modelCap-used).toLocaleString('en-US')} remaining; this request reserves about ${cost.tokens.toLocaleString('en-US')}). Shorten the conversation or start a new chat. It resets on ${new Date(tokenPool.resetAt).toISOString().slice(0,10)} (UTC).`,429,3600,'token_limit');
+      if(modelCap!==null&&used+cost.tokens>quotaCap)throw failure(session.actor.owner?'This request exceeds your remaining monthly Sol Pro tokens.':`This request exceeds your account's ${tokenPool.limit.toLocaleString('en-US')}-token allowance (${Math.max(0,modelCap-used).toLocaleString('en-US')} remaining; this request reserves about ${cost.tokens.toLocaleString('en-US')}). Shorten the conversation or start a new chat. It resets on ${new Date(tokenPool.resetAt).toISOString().slice(0,10)} (UTC).`,429,3600,'token_limit');
       const premium=p.data()||{},premiumUsed=premium.month===month?count(premium.tokens):0;
       const modelKey=premiumModelKey(payload.model),modelUsage=premiumModelUsage(premium,month);
       const pool=Math.floor(config.dailyUsd*share(session.tier));
@@ -307,9 +317,10 @@ export function createAiAllowance({db,config,now=Date.now}) {
       // window can still be reconciled, including late media responses.
       const receipts=(raw.receipts||[]).filter(r=>r.day>=new Date(now()-35*DAY).toISOString().slice(0,10));
       if(receipts.length>=256)throw failure('Provider usage is still being confirmed. Please try again later.',503,60,'usage_pending');
-      tx.set(session.refs.account,{...raw,...account,money:count(account.money)+cost.reserved,tokens:count(account.tokens)+cost.tokens,receipts:[...receipts,{id,reserved:cost.reserved,tokens:cost.tokens,claudeStart:claudeMoneyPool?.start??null,claudeReserved,day:day(),devicePoolStart:devicePool?.start??null,deviceExpensive:!!devicePool&&expensive,premium:trackPremium,modelKey,imageRequest,ownerClaudeStart:ownerClaude?claudePool.start:null,ownerDailyDay:dailyOwner?day():null,quotaModel:modelCap!==null||ownerClaude||dailyOwner?payload.model:null,poolStart:!session.actor.owner?tokenPool.start:null,tier:session.tier,until:now()+(media?86400000:180000)}]});
+      const creditSpent=Math.min(creditBalance,cost.tokens);
+      tx.set(session.refs.account,{...raw,...account,money:count(account.money)+cost.reserved,tokens:count(account.tokens)+cost.tokens,receipts:[...receipts,{id,reserved:cost.reserved,tokens:cost.tokens,creditSpent,claudeStart:claudeMoneyPool?.start??null,claudeReserved,day:day(),devicePoolStart:devicePool?.start??null,deviceExpensive:!!devicePool&&expensive,premium:trackPremium,modelKey,imageRequest,ownerClaudeStart:ownerClaude?claudePool.start:null,ownerDailyDay:dailyOwner?day():null,quotaModel:modelCap!==null||ownerClaude||dailyOwner?payload.model:null,poolStart:!session.actor.owner?tokenPool.start:null,tier:session.tier,until:now()+(media?86400000:180000)}]});
       if(claudeMoneyPool)tx.set(claudeRef,{...claudeMoneyPool,used:claudeMoneyPool.used+claudeReserved});
-      if(modelCap!==null||ownerClaude||dailyOwner)tx.set(session.refs.models,{...m.data(),month,...(dailyOwner?{ownerDailyPool:{day:day(),used:dailyOwnerUsed+cost.tokens}}:{}),...(ownerClaude?{ownerClaudePool:{...claudePool,used:claudePool.used+cost.tokens}}:{}),...(!session.actor.owner?{pool:{start:tokenPool.start,resetAt:tokenPool.resetAt,period:tokenPool.period,used:tokenPool.used+cost.tokens,images:tokenPool.images+(imageRequest?1:0),luna6Tokens:count(tokenPool.luna6Tokens)+(isLuna6(payload.model)?cost.tokens:0),opus55Tokens:count(tokenPool.opus55Tokens)+(payload.model==='anthropic/claude-opus-5.5'?cost.tokens:0)}}:{}),tokens:{...modelLedger,[payload.model]:count(modelLedger[payload.model])+cost.tokens}});
+      if(modelCap!==null||ownerClaude||dailyOwner)tx.set(session.refs.models,{...m.data(),month,...(creditSpent?{credits:{...m.data()?.credits,[payload.model]:creditBalance-creditSpent}}:{}),...(dailyOwner?{ownerDailyPool:{day:day(),used:dailyOwnerUsed+cost.tokens}}:{}),...(ownerClaude?{ownerClaudePool:{...claudePool,used:claudePool.used+cost.tokens}}:{}),...(!session.actor.owner?{pool:{start:tokenPool.start,resetAt:tokenPool.resetAt,period:tokenPool.period,used:tokenPool.used+cost.tokens-creditSpent,images:tokenPool.images+(imageRequest?1:0),luna6Tokens:count(tokenPool.luna6Tokens)+(isLuna6(payload.model)?cost.tokens:0),opus55Tokens:count(tokenPool.opus55Tokens)+(payload.model==='anthropic/claude-opus-5.5'?cost.tokens:0)}}:{}),tokens:{...modelLedger,[payload.model]:count(modelLedger[payload.model])+cost.tokens}});
       if(devicePool)tx.set(session.refs.device,{pool:{...devicePool,used:devicePool.used+cost.tokens,pendingTokens:count(devicePool.pendingTokens)+cost.tokens,expensiveUsed:devicePool.expensiveUsed+(expensive?cost.tokens:0)}});
       if(trackPremium)tx.set(session.refs.premium,{month,tokens:Math.min(Number.MAX_SAFE_INTEGER,premiumUsed+cost.tokens),legacyTokens:modelUsage.legacy,modelTokens:{luna:modelUsage.luna-modelUsage.legacy+(modelKey==='luna'?cost.tokens:0),gemini:modelUsage.gemini-modelUsage.legacy+(modelKey==='gemini'?cost.tokens:0)}},{merge:true});
       tx.set(session.refs.global,{...global,month,monthMoney:spentMonth+cost.reserved,[moneyKey]:count(global[moneyKey])+cost.reserved,...(paced?{newMoneyBucket:paced}:{})});
@@ -348,6 +359,8 @@ export function createAiAllowance({db,config,now=Date.now}) {
         tx.set(session.refs[reservation.claudePool||'claude'],{...c.data(),used:Math.min(Number.MAX_SAFE_INTEGER,Math.max(0,count(c.data().used)+actual-receipt.claudeReserved))});
       }
       const tokenDifference=chargedTokens-count(receipt.tokens);
+      const creditRefund=Math.max(0,count(receipt.creditSpent)-chargedTokens);
+      const poolDifference=tokenDifference+creditRefund;
       const devicePool=d?.data()?.pool;
       if(session.refs.device&&receipt.devicePoolStart!=null&&receipt.devicePoolStart===devicePool?.start)tx.set(session.refs.device,{pool:{...devicePool,used:Math.min(Number.MAX_SAFE_INTEGER,Math.max(0,count(devicePool.used)+tokenDifference)),
         pendingTokens:Math.max(0,count(devicePool.pendingTokens)-count(receipt.tokens)+(uncertain?chargedTokens:0)),
@@ -356,10 +369,11 @@ export function createAiAllowance({db,config,now=Date.now}) {
       const ledger=m.data();
       if(ledger&&receipt.quotaModel){
         const updated={...ledger};
+        if(creditRefund)updated.credits={...ledger.credits,[receipt.quotaModel]:count(ledger.credits?.[receipt.quotaModel])+creditRefund};
         if(receipt.ownerDailyDay&&receipt.ownerDailyDay===ledger.ownerDailyPool?.day)updated.ownerDailyPool={...ledger.ownerDailyPool,used:Math.min(Number.MAX_SAFE_INTEGER,Math.max(0,count(ledger.ownerDailyPool.used)+tokenDifference))};
         if(receipt.ownerClaudeStart!=null&&receipt.ownerClaudeStart===ledger.ownerClaudePool?.start)updated.ownerClaudePool={...ledger.ownerClaudePool,used:Math.min(Number.MAX_SAFE_INTEGER,Math.max(0,count(ledger.ownerClaudePool.used)+tokenDifference))};
         if(ledger.month===receipt.day.slice(0,7))updated.tokens={...ledger.tokens,[receipt.quotaModel]:Math.min(Number.MAX_SAFE_INTEGER,Math.max(0,count(ledger.tokens?.[receipt.quotaModel])+tokenDifference))};
-        if(receipt.poolStart!==null&&receipt.poolStart===ledger.pool?.start)updated.pool={...ledger.pool,used:Math.min(Number.MAX_SAFE_INTEGER,Math.max(0,count(ledger.pool.used)+tokenDifference)),images:Math.max(0,count(ledger.pool.images)-(receipt.imageRequest&&(notSent||imageCount===0)?1:0)),luna6Tokens:Math.min(Number.MAX_SAFE_INTEGER,Math.max(0,count(ledger.pool.luna6Tokens)+(isLuna6(receipt.quotaModel)?tokenDifference:0))),opus55Tokens:Math.min(Number.MAX_SAFE_INTEGER,Math.max(0,count(ledger.pool.opus55Tokens)+(receipt.quotaModel==='anthropic/claude-opus-5.5'?tokenDifference:0)))};
+        if(receipt.poolStart!==null&&receipt.poolStart===ledger.pool?.start)updated.pool={...ledger.pool,used:Math.min(Number.MAX_SAFE_INTEGER,Math.max(0,count(ledger.pool.used)+poolDifference)),images:Math.max(0,count(ledger.pool.images)-(receipt.imageRequest&&(notSent||imageCount===0)?1:0)),luna6Tokens:Math.min(Number.MAX_SAFE_INTEGER,Math.max(0,count(ledger.pool.luna6Tokens)+(isLuna6(receipt.quotaModel)?tokenDifference:0))),opus55Tokens:Math.min(Number.MAX_SAFE_INTEGER,Math.max(0,count(ledger.pool.opus55Tokens)+(receipt.quotaModel==='anthropic/claude-opus-5.5'?tokenDifference:0)))};
         tx.set(session.refs.models,updated);
       }
       if(receipt.premium&&p.data()?.month===receipt.day.slice(0,7)){
@@ -371,7 +385,7 @@ export function createAiAllowance({db,config,now=Date.now}) {
       }
       const difference=charged-receipt.reserved,key=`${receipt.tier}Money`;
       const adjust=value=>Math.min(Number.MAX_SAFE_INTEGER,Math.max(0,count(value)+difference));
-      const receipts=(account.receipts||[]).flatMap(r=>r.id!==id?[r]:uncertain?[{...r,state:'uncertain',tokens:chargedTokens,reserved:charged,imageRequest:r.imageRequest&&imageCount!==0}]:[]);
+      const receipts=(account.receipts||[]).flatMap(r=>r.id!==id?[r]:uncertain?[{...r,state:'uncertain',tokens:chargedTokens,creditSpent:count(r.creditSpent)-creditRefund,reserved:charged,imageRequest:r.imageRequest&&imageCount!==0}]:[]);
       tx.set(session.refs.account,{receipts,...(account.day===receipt.day?{money:adjust(account.money),tokens:Math.min(Number.MAX_SAFE_INTEGER,Math.max(0,count(account.tokens)+tokenDifference))}:{})},{merge:true});
       tx.set(session.refs.global,{...(global.day===receipt.day?{[key]:adjust(global[key])}:{}),...(global.month===receipt.day.slice(0,7)?{monthMoney:adjust(global.monthMoney)}:{})},{merge:true});
     });
@@ -442,6 +456,7 @@ export function createAiAllowance({db,config,now=Date.now}) {
       pendingCostsUsd:receipts.filter(r=>r.day.slice(0,7)===day().slice(0,7)).reduce((sum,r)=>sum+count(r.reserved),0)/USD,
       modelCaps:{claude:{...metric(CLAUDE_SITE_LIMIT_USD,money.used/USD,c.data()?.start===money.start?money.start+4*DAY:null),unit:'USD'},
         ...(nook?{expensive:{...metric(NOOK_EXPENSIVE_TOKENS,deviceActive?count(device.expensiveUsed):0,resetAt),unit:'tokens'},haiku:{...metric(nookHaikuLimitUsd(actor),haiku.used/USD,h.data()?.start===haiku.start?haiku.start+4*DAY:null),unit:'USD'}}:!hasAppAiAllowance(actor)?{opus55:{...metric(5000,count(pool.opus55Tokens),resetAt),unit:'tokens'},images:{...metric(2,pool.images,resetAt),unit:'images'}}:{})},
+      modelCredits:(!actor.app||actor.app==='nyx')?Object.fromEntries(Object.entries(ledger.credits||{}).filter(([model])=>aiModelAllowed(model,actor)).map(([model,value])=>[model,count(value)])):{},
       modelRules:actor.modelRules||[]};
   }
   return {begin,reserve,settle,finish,device,register,nookUsage,usage};

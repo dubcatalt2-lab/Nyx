@@ -1,3 +1,5 @@
+import {addModelCredits} from '../scripture/ai-model-credits.mjs';
+import {ownerOnlyNyxModel} from '../scripture/ai-allowance.mjs';
 import {sourceFile} from '../scripture/source-layout.mjs';
 ﻿import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -10,7 +12,7 @@ import {memoryFirestore} from './test-ai-allowance.mjs';
 const source=readFileSync(sourceFile('shepherd.js'),'utf8'),ast=parse(source,{ecmaVersion:'latest',sourceType:'module'});
 const app=express();app.use(express.json());const db=memoryFirestore();const col=db.collection;db.collection=name=>({doc:id=>{const r=col(name).doc(id);r.set=async(data,options)=>db.runTransaction(tx=>tx.set(r,data,options));return r;}});
 const ownerUid='owner-fixture',uid='member-fixture',firebase={firestore:db,auth:{getUser:async uid=>({uid})}};let audits=[];
-const context=vm.createContext({app,validateAiModelRules,readAiActivity,founderProfileConfig:()=>({administratorUid:ownerUid}),
+const context=vm.createContext({app,addModelCredits,ownerOnlyNyxModel,validateAiModelRules,readAiActivity,founderProfileConfig:()=>({administratorUid:ownerUid}),
  sameOriginRequest:req=>req.get('sec-fetch-site')!=='cross-site',ownerDashboardActor:async req=>{if(!req.get('x-actor'))throw Object.assign(Error('Sign in'),{status:401});return{firebase,ownerUid,token:{uid:req.get('x-actor')},actor:{uid:req.get('x-actor'),role:req.get('x-role')||'member'}};},nyxRolePolicy:role=>({rank:role==='owner'?100:role==='admin'?80:10}),nyxActorHasPermission:()=>true,nyxAssignableRolesForActor:()=>[],nyxRoleForUser:uid=>uid===ownerUid?'owner':'member',nyxRoleLabels:{},founderProfileText:t=>t,
  invalidateOwnerDashboardSnapshot:()=>{},recordNyxAuditSafe:async(_f,r)=>audits.push(r),nyxCustomRoles:async()=>[],nyxOwnerUserRecord:u=>u,nyxOwnerUserForViewer:u=>u,nyxOwnerAccessPayload:()=>({}),nyxVisibleCustomRoles:()=>[]});
 for(const name of ['nyxOwnerUserCapabilities','assertNyxOwnerCapability']){const n=ast.body.find(n=>n.type==='FunctionDeclaration'&&n.id.name===name);vm.runInContext(source.slice(n.start,n.end),context);}
@@ -29,6 +31,13 @@ try{
  assert.equal((await fetch(base+'/ai')).status,401);
  assert.equal((await fetch(base+'/ai',{headers:{'x-actor':'other-person','x-role':'owner'}})).status,403);
  const activity=await fetch(base+'/ai',{headers:{'x-actor':ownerUid,'x-role':'owner'}});assert.equal(activity.status,200);assert.equal(activity.headers.get('cache-control'),'private, no-store');assert.equal((await activity.json()).entries[0].prompt,'Fixture question');
+ const grant=(actor,credits=100)=>fetch(base,{method:'PATCH',headers:{'content-type':'application/json','x-actor':actor,'x-role':'owner'},body:JSON.stringify({action:'add_ai_credits',model:'openai/gpt-6-luna',credits,requestId:'test-credit-request-0001'})});
+ assert.equal((await grant('not-owner')).status,403);
+ assert.equal((await grant(ownerUid,-1)).status,400);
+ assert.equal((await grant(ownerUid)).status,200);
+ assert.equal((await grant(ownerUid)).status,200);
+ const creditLedger=[...db.records.entries()].find(([key,value])=>key.startsWith('nyxAiAllowance/models-')&&value.credits);
+ assert.equal(creditLedger[1].credits['openai/gpt-6-luna'],100);
  assert(audits.some(a=>a.action==='ai_history_viewed'));assert(audits.some(a=>a.action==='ai_model_access_changed'));
  console.log('PASS actual owner routes: access validation, auth/role/origin rejection, replacement persistence, history isolation, no-store and audits');
 }finally{server.closeAllConnections();await new Promise(r=>server.close(r));}

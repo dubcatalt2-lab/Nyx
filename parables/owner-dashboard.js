@@ -887,11 +887,14 @@
     }
 
     function aiModelEditor(user) {
-      return `<section class="nyx-owner-detail-section"><h3>AI models and limits</h3><p>Allow grants this model to this account. Block removes access. Default follows the account plan. Blank limits add no extra message cap; shared token, spending and rate limits still apply.</p><div class="nyx-owner-ai-rules">${(user.aiAssignableModels||[]).map(model=>{
+      return `<section class="nyx-owner-detail-section"><h3>A1 model access for ${esc(user.username || user.displayName)}</h3><p>Choose a model below. Plan default follows this user's subscription; Allow and Block are account overrides. Token and spending limits still apply.</p><label>Find a model<input type="search" data-ai-model-filter placeholder="Type a model or provider name"></label><p data-ai-model-empty hidden>No matching models.</p><div class="nyx-owner-ai-rules">${(user.aiAssignableModels||[]).filter(model=>!user.aiModelAccess?.[model]?.ownerOnly).map(model=>{
         const rule=(user.aiModelRules||[]).find(r=>r.model===model)||{access:'default',messages:null,periodDays:4};
-        return `<details data-ai-model="${esc(model)}"><summary>${esc(model)} <small>${esc(rule.access)}${rule.messages!==null?' / '+rule.messages+' messages':''}</small></summary><div class="nyx-owner-ai-rule-fields"><label>Access<select data-ai-rule-access>${['default','allow','deny'].map(v=>`<option value="${v}"${selected(rule.access,v)}>${v==='deny'?'Block':v==='allow'?'Allow':'Default'}</option>`).join('')}</select></label><label>Messages per period<input data-ai-rule-messages type="number" min="0" max="100000" step="1" placeholder="No extra cap" value="${rule.messages??''}"></label><label>Reset every (days)<input data-ai-rule-days type="number" min="1" max="30" step="1" value="${rule.periodDays}"></label></div></details>`;
-      }).join('')}</div><div class="nyx-owner-detail-actions"><button type="button" data-owner-save-ai-models>Save AI access</button><button type="button" data-owner-ai-activity>View usage and chat history</button></div><div data-owner-ai-activity-result aria-live="polite"></div></section>`;
+        const policy=user.aiModelAccess?.[model]||{};
+        const name=model.split('/').pop().replace(/-/g,' ');
+        return `<details data-ai-model="${esc(model)}" data-ai-owner-only="${policy.ownerOnly?'1':'0'}" data-ai-access-default="${policy.default===true}" data-ai-access-allow="${policy.allow===true}" data-ai-access-deny="${policy.deny===true}"><summary><span>${esc(name)}<small>${esc(model)}</small></span></summary>${policy.ownerOnly?'<p>Reserved for the owner. Saved overrides do not bypass this restriction.</p>':''}<div class="nyx-owner-ai-rule-fields"><label>Account access<select data-ai-rule-access ${policy.ownerOnly?'disabled':''}>${['default','allow','deny'].map(v=>`<option value="${v}"${selected(rule.access,v)}>${v==='deny'?'Block':v==='allow'?'Allow':'Plan default'}</option>`).join('')}</select></label><label>Message cap (optional)<input data-ai-rule-messages type="number" min="0" max="100000" step="1" placeholder="No extra cap" value="${rule.messages??''}" ${policy.ownerOnly?'disabled':''}></label><label>Reset every (days)<input data-ai-rule-days type="number" min="1" max="30" step="1" value="${rule.periodDays}" ${policy.ownerOnly?'disabled':''}></label></div><p>Blank cap: no extra message limit. Zero: no messages allowed.</p><p>Model credits remaining: <strong>${Number(user.aiModelCredits?.[model]||0).toLocaleString()}</strong></p><div class="nyx-owner-ai-rule-fields"><label>Add token credits<input data-ai-credits type="number" min="1" max="10000000" step="1" placeholder="e.g. 1000"></label><button type="button" data-owner-add-ai-credits>Add credits</button></div><p>1 credit = 1 token for this model only. Credits are used before the normal allowance and do not expire. Save access changes separately.</p></details>`;
+      }).join('')}</div><p data-ai-access-save-state aria-live="polite">Showing saved settings.</p><div class="nyx-owner-detail-actions"><button type="button" data-owner-save-ai-models>Save A1 access</button><button type="button" data-owner-ai-activity>View usage and chat history</button></div><div data-owner-ai-activity-result aria-live="polite"></div></section>`;
     }
+
     async function loadAiActivity(button) {
       const uid=state.selectedUser?.uid,host=drawer.querySelector('[data-owner-ai-activity-result]');if(!uid||!host)return;
       button.disabled=true;host.textContent='Loading AI activity...';
@@ -1397,10 +1400,20 @@
       }
       const activityButton=event.target.closest('[data-owner-ai-activity]');
       if(activityButton)return void loadAiActivity(activityButton);
+      const creditButton=event.target.closest('[data-owner-add-ai-credits]');
+      if(creditButton) {
+        if(drawer.querySelector('[data-ai-access-save-state]')?.dataset.dirty==='1')return notify('Save your access changes before adding credits.','error');
+        const row=creditButton.closest('[data-ai-model]'),credits=Number(row.querySelector('[data-ai-credits]').value);
+        if(!Number.isSafeInteger(credits)||credits<1||credits>10000000)return notify('Enter 1-10,000,000 token credits.','error');
+        creditButton.disabled=true;
+        if(row._creditAmount!==credits){row._creditRequestId=crypto.randomUUID();row._creditAmount=credits;}
+        return void mutateUser('add_ai_credits',{model:row.dataset.aiModel,credits,requestId:row._creditRequestId}).finally(()=>{if(creditButton.isConnected)creditButton.disabled=false;});
+      }
       if(event.target.closest('[data-owner-save-ai-models]')) {
+        const hiddenRules=(state.selectedUser.aiModelRules||[]).filter(rule=>state.selectedUser.aiModelAccess?.[rule.model]?.ownerOnly);
         const modelRules=[...drawer.querySelectorAll('[data-ai-model]')].map(row=>({model:row.dataset.aiModel,access:row.querySelector('[data-ai-rule-access]').value,messages:row.querySelector('[data-ai-rule-messages]').value.trim()===''?null:Number(row.querySelector('[data-ai-rule-messages]').value),periodDays:Number(row.querySelector('[data-ai-rule-days]').value)})).filter(r=>r.access!=='default'||r.messages!==null);
         if(modelRules.some(r=>r.messages!==null&&(!Number.isSafeInteger(r.messages)||r.messages<0||r.messages>100000)||!Number.isInteger(r.periodDays)||r.periodDays<1||r.periodDays>30))return notify('Use whole numbers: 0-100000 messages and 1-30 reset days.','error');
-        return void mutateUser('set_ai_models',{modelRules});
+        return void mutateUser('set_ai_models',{modelRules:[...hiddenRules,...modelRules]});
       }
       if(event.target.closest('[data-owner-save-ai-limit]')){
         const monthlyModelLimits=Object.fromEntries(['luna','gemini'].map(model=>[model,Number(drawer.querySelector(`[data-owner-ai-limit="${model}"]`).value)]));
@@ -1641,6 +1654,18 @@
     }
 
     function onInput(event) {
+      if(event.target.matches('[data-ai-model-filter]')) {
+        const query=event.target.value.trim().toLowerCase();let visible=0;
+        for(const row of drawer.querySelectorAll('[data-ai-model]')) {row.hidden=!row.dataset.aiModel.toLowerCase().includes(query);if(!row.hidden)visible++;}
+        drawer.querySelector('[data-ai-model-empty]').hidden=visible>0;
+        return;
+      }
+      if(event.target.matches('[data-ai-rule-access],[data-ai-rule-messages],[data-ai-rule-days]')) {
+
+        drawer.querySelector('[data-ai-access-save-state]').dataset.dirty='1';
+        drawer.querySelector('[data-ai-access-save-state]').textContent='Unsaved changes. Press Save A1 access to apply.';
+      }
+
       updateCustomRoleColorPreview(event);
       if (event.target.name !== "search" || !event.target.closest("[data-owner-filters]")) return;
       clearTimeout(state.searchTimer);

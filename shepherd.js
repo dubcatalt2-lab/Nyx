@@ -1,3 +1,4 @@
+import {addModelCredits,modelCreditRef} from './scripture/ai-model-credits.mjs';
 import {learningRoutes} from './parables/learning-routes.js';
 import {sourceFile} from './scripture/source-layout.mjs';
 import {adFreeStatus, installAdFreeRoutes} from './scripture/ad-free-keys.mjs';
@@ -46,7 +47,7 @@ import { createNookDeveloper } from './scripture/nook-developer.mjs';
 import { aiImageContent } from './scripture/ai-image.mjs';
 ﻿import express from "express";
 import { AsyncLocalStorage } from "node:async_hooks";
-import { createAiAllowance, aiAllowanceConfig, premiumModelLimits, aiModelAllowed, hasAppAiAllowance, dropModelIsExpensive, nookModelIsExpensive, expensiveClaudeModel, nookHaikuModel, nookHaikuLimitUsd } from "./scripture/ai-allowance.mjs";
+import { createAiAllowance, aiAllowanceConfig, premiumModelLimits, aiModelAllowed, ownerOnlyNyxModel, hasAppAiAllowance, dropModelIsExpensive, nookModelIsExpensive, expensiveClaudeModel, nookHaikuModel, nookHaikuLimitUsd } from "./scripture/ai-allowance.mjs";
 import { createOpenRouterBalanceGuard, createOpenRouterOwnerStatus } from "./scripture/openrouter-balance.mjs";
 import { aiOutputImages } from "./scripture/ai-output-images.mjs";
 import { aiBudgetResponse } from "./scripture/ai-budget-response.mjs";
@@ -4972,6 +4973,11 @@ function nyxOwnerUserRecord(user, administration = {}, profileData = {}, activit
     deliverableEmail: nyxDeliverableEmail(email),
     aiModelRules: administration.aiModelRules || [],
     aiAssignableModels: assignableAiModels,
+    aiModelAccess: Object.fromEntries(assignableAiModels.map(model => {
+      const actor = {uid:user.uid,owner:role==='owner',premium:hasPremiumSubscription(subscriptionStatus),blocked:administration.aiAccess==='restricted'};
+      const ownerOnly = !actor.owner && !hasFullAiCatalog(actor) && ownerOnlyNyxModel(model);
+      return [model, {ownerOnly, ...Object.fromEntries(['default','allow','deny'].map(access => [access, aiModelAllowed(model,{...actor,modelRules:[{model,access}]} )]))}];
+    })),
     aiMonthlyModelLimits: hasPremiumSubscription(subscriptionStatus) ? premiumModelLimits(administration.aiMonthlyModelLimits) : {luna:0,gemini:0},
     aiAccess: ["trusted","restricted"].includes(administration.aiAccess) ? administration.aiAccess : "automatic",
     role,
@@ -13073,6 +13079,7 @@ app.get("/api/owner-dashboard/users/:uid", async (req, res) => {
       actor.uid,
       ownerUid
     );
+    if(actor.uid===ownerUid)record.aiModelCredits=(await modelCreditRef(firebase.firestore,uid).get()).data()?.credits||{};
     record.recentActivity = audit ? audit.docs.map(document => {
       const data = document.data() || {};
       return { id: document.id, action: String(data.action || ""), actorEmail: String(data.actorEmail || ""), createdAt: safeDateIso(data.createdAt), details: data.details || {} };
@@ -13414,6 +13421,7 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
     const capabilityByAction = {
       set_role: "canSetRole",
       set_subscription: "canSetSubscription",
+      add_ai_credits: "canSetAiLimit",
       set_ai_models: "canSetAiLimit",
       set_ai_limit: "canSetAiLimit",
       set_profile: "canEditProfile",
@@ -13452,7 +13460,12 @@ app.patch("/api/owner-dashboard/users/:uid", async (req, res) => {
     }
     let auditAction = action;
     let auditDetails = {};
-    if (action === "set_ai_models") {
+    if (action === "add_ai_credits") {
+      const model=String(req.body?.model||'');
+      if(ownerOnlyNyxModel(model)&&uid!==ownerUid)return res.status(403).json({error:'Choose another model for this account.'});
+      await addModelCredits(firebase.firestore,uid,req.body);
+      auditAction='ai_model_credits_added';auditDetails={model,credits:req.body.credits};
+    } else if (action === "set_ai_models") {
       const aiModelRules=validateAiModelRules(req.body?.modelRules);
       await firebase.firestore.collection('nyxUserAdministration').doc(uid).set({aiModelRules,updatedAt:new Date().toISOString()},{merge:true});
       auditAction='ai_model_access_changed';auditDetails={aiModelRules};

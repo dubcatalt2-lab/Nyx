@@ -30,15 +30,15 @@ try {
   for(const width of [1280,390]) {
     const page=await workspace.newPage({viewport:{width,height:900}});
     const errors=[];page.on('pageerror',e=>errors.push(e.message));
-    let state='low',dashboardRole='owner',statusRequests=0,modelRules=[];const member={uid:'member123',displayName:'Test Member',username:'member',email:'member@example.test',role:'member',subscriptionStatus:'premium',profile:{}};
-    await page.route('http://nyx.test/**',async route=>{
+    let state='low',dashboardRole='owner',statusRequests=0,modelRules=[],credits=0;const member={uid:'member123',displayName:'Test Member',username:'member',email:'member@example.test',role:'member',subscriptionStatus:'premium',profile:{}};
+    await page.route('https://nyx.test/**',async route=>{
       const path=new URL(route.request().url()).pathname;
       if(path==='/')return route.fulfill({contentType:'text/html',body:'<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body></body></html>'});
       let body={};
       if(path==='/api/owner-dashboard')body={access:{role:dashboardRole,founder:dashboardRole==='owner',permissions:[]},users:[member],metrics:{},pagination:{},audit:[]};
       if(path==='/api/owner-dashboard/users/member123'){
-        if(route.request().method()==='PATCH'){assert.equal(route.request().postDataJSON().action,'set_ai_models');modelRules=route.request().postDataJSON().modelRules;}
-        body={user:{...member,aiModelRules:modelRules,aiAssignableModels:['openai/gpt-5.6-luna']},access:{role:dashboardRole,founder:dashboardRole==='owner',permissions:[]},capabilities:{canSetAiLimit:dashboardRole==='owner',canSetSubscription:dashboardRole==='owner'}};
+        if(route.request().method()==='PATCH'){const data=route.request().postDataJSON();if(data.action==='add_ai_credits'){assert.equal(data.model,'openai/gpt-5.6-luna');credits+=data.credits;}else{assert.equal(data.action,'set_ai_models');modelRules=data.modelRules;}}
+        body={user:{...member,aiModelRules:modelRules,aiModelCredits:{'openai/gpt-5.6-luna':credits},aiModelAccess:{'openai/gpt-6-astra':{ownerOnly:true}},aiAssignableModels:['openai/gpt-5.6-luna','openai/gpt-6-astra']},access:{role:dashboardRole,founder:dashboardRole==='owner',permissions:[]},capabilities:{canSetAiLimit:dashboardRole==='owner',canSetSubscription:dashboardRole==='owner'}};
       }
       if(path==='/api/owner-dashboard/users/member123/ai')body={models:{'openai/gpt-5.6-luna':{requests:2,input:123,output:456}},entries:[{model:'openai/gpt-5.6-luna',at:Date.now(),prompt:'<img src=x onerror=alert(1)>',answer:'Fixture reply'}],limits:[]};
       if(path==='/api/owner-dashboard/ai-status'){
@@ -47,10 +47,10 @@ try {
       }
       return route.fulfill({json:body});
     });
-    await page.goto('http://nyx.test/');
-    await page.addStyleTag({path:`${root}/css/owner-dashboard.css`});
-    await page.addStyleTag({path:`${root}/css/owner-dashboard-polish.css`});
-    await page.addScriptTag({path:`${root}/js/owner-dashboard.js`});
+    await page.goto('https://nyx.test/');
+    await page.addStyleTag({path:sourceFile(`${root}/css/owner-dashboard.css`)});
+    await page.addStyleTag({path:sourceFile(`${root}/css/owner-dashboard-polish.css`)});
+    await page.addScriptTag({path:sourceFile(`${root}/js/owner-dashboard.js`)});
     await page.evaluate(()=>{window.dashboard=NyxOwnerDashboard.open({getToken:async()=>'fixture'});});
     const host=page.locator('[data-owner-ai-status]');
     await page.waitForFunction(()=>document.querySelector('[data-owner-ai-status]')?.dataset.aiState==='low');
@@ -58,8 +58,8 @@ try {
     const metric=await page.locator('.nyx-owner-metric').first().boundingBox();
     assert.ok(metric.height<160,'Status cards must not stretch the statistics row');
     await page.locator('[data-owner-section="users"]').click();
-    const workspace=page.locator('.nyx-owner-workspace');await workspace.scrollIntoViewIfNeeded();
-    const area=await workspace.boundingBox();assert.ok(area.height>=300,'User controls retain usable space');
+    const panel=page.locator('.nyx-owner-workspace');await panel.scrollIntoViewIfNeeded();
+    const area=await panel.boundingBox();assert.ok(area.height>=300,'User controls retain usable space');
     await page.locator('[data-owner-section="services"]').click();
     await host.scrollIntoViewIfNeeded();
     const bounds=await host.boundingBox();assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width+1,'Warning fits the viewport');
@@ -82,6 +82,16 @@ try {
     assert.doesNotMatch(await host.innerText(),/below \$0\.50/,'Refill clears the warning');
     await page.locator('[data-owner-section="users"]').click();
     await page.locator('[data-owner-view-user=member123]').first().click();
+    await page.locator('[data-ai-model]').first().waitFor();
+    assert.equal(await page.locator('[data-ai-model]').count(),1);
+    assert.equal(await page.locator('[data-ai-rule-status]').count(),0);
+    await page.locator('[data-ai-model-filter]').fill('nomatch');assert.equal(await page.locator('[data-ai-model]:visible').count(),0);
+    await page.locator('[data-ai-model-filter]').fill('luna');
+    await page.locator('[data-ai-model] summary').click();
+    await page.locator('[data-ai-credits]').fill('1000');
+    await page.locator('[data-owner-add-ai-credits]').click();
+    await page.waitForFunction(()=>document.querySelector('[data-ai-model]')?.textContent.includes('1,000'));
+    assert.equal(credits,1000);
     await page.locator('[data-ai-model] summary').click();
     await page.locator('[data-ai-rule-access]').selectOption('allow');
     await page.locator('[data-ai-rule-messages]').fill('25');

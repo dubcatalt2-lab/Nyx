@@ -24,16 +24,16 @@ try {
   assert.ok(!JSON.stringify(searches).includes('signed-'));
   const detail=await catalog.video(id);assert.equal(detail.detailsPending,false);assert.equal(primary,1);
   assert.deepEqual((await catalog.info(id)).formats, []);
-  await assert.rejects(catalog.playbackInfo(id), e => e.code === 'service' && /temporarily unavailable/.test(e.message));
+  await assert.rejects(catalog.playbackInfo(id), e => e.code === 'authentication' && /Primary login/.test(e.message));
   assert.equal((await catalog.comments(id)).comments[0].text,'Hello');
   const beforeShorts=calls;const shorts=await Promise.all(Array.from({length:20},()=>catalog.shorts(12)));
-  assert.equal(calls,beforeShorts+1);assert.equal(shorts[0].length,1);assert.equal(shorts[0][0].id,id);assert.equal(primary,1,'Shorts use the hashtag feed instead of broad compilation searches');
+  assert.equal(calls,beforeShorts+1);assert.equal(shorts[0].length,1);assert.equal(shorts[0][0].id,id);assert.equal(primary,2,'Shorts use the hashtag feed instead of broad compilation searches');
   assert.equal((await catalog.shortsPage(1,12)).nextPage,2);
   const beforePage=calls;const pages=await Promise.all(Array.from({length:20},()=>catalog.shortsPage(2,12)));
   assert.equal(calls,beforePage+1);assert.deepEqual(pages[0].videos.map(v=>v.id),['ufvttxs9vEo']);assert.equal(pages[0].nextPage,3);
   assert.deepEqual(await catalog.shortsPage(3,12),{videos:[],nextPage:null});
   for(const page of [0,-1,101,1.5,'abc'])assert.throws(()=>catalog.shortsPage(page),e=>e.status===400);
-  clock+=31000;await catalog.search('another query');assert.equal(primary,2,'primary is retried after the fixed cooldown');
+  clock+=31000;await catalog.search('another query');assert.equal(primary,3,'primary is retried after the fixed cooldown');
   const before=calls;bad=true;await assert.rejects(fallback.search('fail',5));
   await assert.rejects(fallback.search('again',5));assert.equal(calls,before+1,'failed instance is not hammered');
   for(const fields of [{isListed:false},{isFamilyFriendly:false},{paid:true},{premium:true},{allowedRegions:['CA']},{isUpcoming:true},{liveNow:true}])assert.throws(()=>invidiousInfo({...item,...fields},id),e=>e.code==='video');
@@ -67,3 +67,17 @@ try{
 const closing=createInvidiousFallback({env:{NYX_INVIDIOUS_ORIGINS:'https://fixture.example'},fetch:async(_url,{signal})=>new Promise((_,reject)=>signal.addEventListener('abort',()=>reject(Error('closed')),{once:true}))});
 const pending=Array.from({length:4},()=>closing.search('pending',1));await new Promise(resolve=>setTimeout(resolve,0));closing.close();assert((await Promise.allSettled(pending)).every(r=>r.status==='rejected'));
 console.log('PASS healthy 4-second responses, isolated endpoint failures, two-request concurrency, bounded queue and shutdown cancellation');
+
+// Discovery cooldown and cached backup metadata cannot prevent native recovery.
+let recoveredCalls=0;
+const recovered=createTubeCatalog({env:{},fallback:{enabled:true,search:async()=>({entries:[]}),info:async()=>({...invidiousInfo(item,id)}),close(){}},execute:async(_bin,args)=>{
+ recoveredCalls++;if(args.includes('--flat-playlist'))throw new TubeError('service','Discovery failed');
+ return JSON.stringify({id,availability:'public',duration:90,formats:[{format_id:'18'}]});
+}});
+try{
+ await recovered.search('test');await recovered.info(id);
+ const native=await Promise.all(Array.from({length:10},()=>recovered.playbackInfo(id)));
+ assert.equal(recoveredCalls,2);assert.equal(native[0].formats[0].format_id,'18');
+ await recovered.playbackInfo(id);assert.equal(recoveredCalls,2);
+}finally{await recovered.close();}
+console.log('PASS native extraction recovers independently of discovery cooldown and metadata-only cache');

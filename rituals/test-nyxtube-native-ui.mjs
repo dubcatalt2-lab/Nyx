@@ -1,9 +1,10 @@
+import {sourceFile} from '../scripture/source-layout.mjs';
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 import express from 'express';
 import { mkdtemp,rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join,resolve } from 'node:path';
 import { promisify } from 'node:util';
 import { execFile } from 'node:child_process';
 import { createRequire } from 'node:module';
@@ -11,13 +12,13 @@ const root=await mkdtemp(join(tmpdir(),'nyx-native-ui-'));
 let server,workspace;
 try {
   const file=join(root,'fixture.mp4');
-  await promisify(execFile)(process.env.NYX_FFMPEG_BIN||'ffmpeg',['-nostdin','-v','error','-f','lavfi','-i','color=c=blue:s=640x360:r=24','-f','lavfi','-i','sine=frequency=440:sample_rate=44100','-t','30','-c:v','libx264','-pix_fmt','yuv420p','-c:a','aac','-movflags','+faststart',file]);
+  await promisify(execFile)(process.env.NYX_FFMPEG_BIN||createRequire(import.meta.url)('@ffmpeg-installer/ffmpeg').path,['-nostdin','-v','error','-f','lavfi','-i','color=c=blue:s=640x360:r=24','-f','lavfi','-i','sine=frequency=440:sample_rate=44100','-t','30','-c:v','libx264','-pix_fmt','yuv420p','-c:a','aac','-movflags','+faststart',file]);
   const video={id:'YE7VzlLtp-4',title:'Native player test',creator:'Test creator',description:'A test video.',durationSeconds:30,captions:true};
   let busyReplies=2,failed=false,hold=false,checks=0,detailCalls=0,ownerState='working',ownerRole='owner';
   const app=express();
   app.get('/assets/vendor/hls.min.js',(_req,res)=>res.sendFile(createRequire(import.meta.url).resolve('hls.js/dist/hls.min.js'),{dotfiles:'allow'}));
   app.use('/api/nyxtube',(req,res)=>{
-    if(req.path==='/status')return res.json({configured:true,nativeAvailable:true});
+    if(req.path==='/status')return res.json({configured:true,nativeAvailable:true,invidiousEmbedOrigin:'https://backup.invalid'});
     if(req.path==='/video'){detailCalls++;return res.json({videos:[{...video,description:'Loaded full details',likeCount:null}]});}
     if(req.path==='/channel')return res.json({channel:{title:'Creator profile',subscriberCount:null},videos:[{...video,detailsPending:true}]});
     if(req.path.startsWith('/native/media/'))return res.sendFile(file);
@@ -35,14 +36,14 @@ try {
     if(req.path.startsWith('/nyxtube'))return res.json({enabled:true,state:ownerState,lastSuccess:'2026-09-08T12:00:00Z',cacheLimitBytes:7*1024**3,cacheBytes:1024,activeJobs:0});
     return res.json({access:{role:ownerRole,founder:ownerRole==='owner',permissions:[]},users:[],metrics:{},pagination:{total:0,page:1,pages:1},recentActivity:[]});
   });
-  app.use(express.static(process.env.NYX_TEST_STATIC_ROOT||process.cwd()));server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base=`http://127.0.0.1:${server.address().port}`;
+  app.use((req,res,next)=>{if(process.env.NYX_TEST_STATIC_ROOT)return next();res.sendFile(resolve(sourceFile(req.path.slice(1)||'study.html')),{dotfiles:'allow'},error=>{if(error)next();});});app.use(express.static(process.env.NYX_TEST_STATIC_ROOT||process.cwd()));server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base=`http://127.0.0.1:${server.address().port}`;
   workspace=await chromium.launch({headless:true,args:['--autoplay-policy=no-user-gesture-required']});
   const page=await workspace.newPage({viewport:{width:1280,height:900}}),errors=[];page.on('pageerror',e=>{errors.push(e.message);console.log('Page error:',e.message);});
   await page.addInitScript(()=>{window.YT={PlayerState:{PLAYING:1,PAUSED:2},Player:class{
     constructor(id,o){this.options=o;this.node=document.getElementById(id);this.node.innerHTML='<div data-test-embed style="height:100%">YouTube fallback</div>';setTimeout(()=>o.events.onReady({target:this}),0);}
     seekTo(){}setVolume(){}setPlaybackRate(){}mute(){}playVideo(){}pauseVideo(){}getPlayerState(){return 2;}getCurrentTime(){return 0;}getDuration(){return 30;}getAvailablePlaybackRates(){return [1];}getPlaybackRate(){return 1;}destroy(){this.node.replaceChildren();}
   }};});
-  await page.goto(base+'/apps/nyxtube/');await page.locator('.video-cover').first().click();
+  await page.goto(base+'/apps/nyxtube/index.html');await page.locator('.video-cover').first().click({timeout:10000}).catch(async e=>{console.log(await page.locator('body').innerText());console.log(await page.evaluate(()=>[...document.scripts].map(s=>s.src)));throw e;});
   const spinner=page.locator('.watch-loading-spinner');assert.ok(await spinner.isVisible());
   await page.waitForFunction(()=>document.querySelector('[data-watch-loading]').textContent.includes('Preparing video'));
   assert.match(await page.locator('[data-watch-loading]').innerText(),/Preparing video/);
@@ -102,14 +103,16 @@ try {
   await page.mouse.down();await page.waitForTimeout(450);await page.evaluate(()=>dispatchEvent(new Event('blur')));assert.equal(await player.evaluate(v=>v.playbackRate),1.25);await page.mouse.up();
   await player.evaluate(v=>v.pause());await page.locator('[data-watch-settings]').click();await page.locator('[data-watch-speed]').focus();await page.keyboard.press('Space');assert.ok(await player.evaluate(v=>v.paused),'Form controls must not control video');await page.keyboard.press('Escape');
   failed=true;
-  await page.locator('[data-watch-quality]').selectOption('720');await page.locator('[data-test-embed]').waitFor();await page.waitForFunction(()=>document.querySelector('[data-watch-engine]').value==='youtube');
+  await page.locator('[data-watch-quality]').selectOption('720');await page.waitForFunction(()=>document.body.textContent.includes('Unavailable Press Play to retry'));
+  assert.equal(await page.locator('[data-watch-engine]').evaluate(el=>el.value),'native');
+  assert.equal(await page.locator('[data-test-embed], iframe[src*="backup.invalid"]').count(),0);
   assert.ok(await page.locator('[data-watch-quality]').isDisabled());
   failed=false;
-  await page.getByRole('button',{name:'Switch to NyxTube',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-watch-player] video')?.readyState>=1);
+  await page.locator('[data-watch-center-play]').click();await page.waitForFunction(()=>document.querySelector('[data-watch-player] video')?.readyState>=1);
   await page.getByRole('button',{name:'Switch to embedded',exact:true}).click();await page.locator('[data-test-embed]').waitFor();
   hold=true;await page.getByRole('button',{name:'Switch to NyxTube',exact:true}).click();await page.locator('[data-back]').click();await page.waitForTimeout(1700);assert.equal(await page.locator('[data-watch-player] video').count(),0);
   await page.goto(base+'/owner-test');await page.evaluate(()=>NyxOwnerDashboard.open({getToken:async()=> 'mock'}));
-  await page.locator('[data-owner-section="ministries"]').click();
+  await page.locator('[data-owner-section="services"]').click();
   await page.locator('[data-owner-tube-state="working"]').waitFor();
   for (const [width,height] of [[1920,1080],[1280,720],[1024,600],[390,844]]) {
     await page.setViewportSize({width,height});
@@ -120,5 +123,5 @@ try {
   await page.locator('[data-owner-tube-check]').click();await page.locator('[data-owner-tube-state="working"]').waitFor();assert.equal(checks,1);
   await page.setViewportSize({width:390,height:844});assert.ok(await page.locator('[data-owner-tube-status]').evaluate(el=>el.scrollWidth<=el.clientWidth+1));
   ownerRole='admin';await page.locator('[data-owner-refresh]').first().click();await page.locator('[data-owner-tube-status]').waitFor({state:'hidden'});
-  assert.deepEqual(errors,[]);console.log('Native UI: real video playback, seek, fullscreen, quality state restoration, fallback, cancellation, 320/390px layout and Owner status passed.');
+  assert.deepEqual(errors,[]);console.log('Native UI: real video playback, seek, fullscreen, quality state restoration, native failure/retry without provider switching, cancellation, 320/390px layout and Owner status passed.');
 }finally{await workspace?.close();await new Promise(r=>server?server.close(r):r());await rm(root,{recursive:true,force:true});}

@@ -143,9 +143,18 @@ export function createTubeCatalog(options = {}) {
     });
   }
   async function playbackInfo(id, options) {
-    const result = await info(id, options);
-    if (result.metadataOnly) throw new TubeError('service', 'Video playback is temporarily unavailable. Search and video details are still available.');
-    return result;
+    validateId(id);
+    // Discovery cooldowns and metadata-only backups must never select playback.
+    const key = `native:${id}`;
+    if (options?.refresh) { prune(key); prune(`info:${id}`); }
+    const existing = cache.get(`info:${id}`);
+    if (existing?.expires > now() && !existing.value.metadataOnly) return existing.value;
+    return cached(key, async () => {
+      const result = await extract(`https://www.youtube.com/watch?v=${id}`, ['--no-playlist']);
+      if (result.id !== id || !catalogVideo(result, true)) throw new TubeError('video', 'That video is unavailable or restricted.', 422);
+      remember(`info:${id}`, result, 5 * 60000);
+      return result;
+    });
   }
   const video = async id => {
     const result = catalogVideo(await info(id), true);

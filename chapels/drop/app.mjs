@@ -57,7 +57,7 @@ async function navigate(tab,url){
 }
 
 $('search').onsubmit=e=>{e.preventDefault();try{newTab(websiteAddress($('query').value,settings.engine));}catch(error){notice(error.message);}};
-$('addressForm').onsubmit=e=>{e.preventDefault();if(active)try{void navigate(active,websiteAddress($('address').value,settings.engine));}catch(error){notice(error.message);}};
+$('q7m2x').onsubmit=e=>{e.preventDefault();if(active)try{void navigate(active,websiteAddress($('address').value,settings.engine));}catch(error){notice(error.message);}};
 $('back').onclick=()=>control('back',active?.frame);$('forward').onclick=()=>control('forward',active?.frame);$('reload').onclick=$('retryPage').onclick=()=>{if(active)void navigate(active,currentWebsiteUrl(active.frame)||active.url);};
 $('newTab').onclick=$('homeNav').onclick=()=>setView('home');$('aiNav').onclick=()=>setView('ai');$('tubeNav').onclick=()=>setView('tube');$('gamesNav').onclick=()=>setView('games');$('bookmarksNav').onclick=()=>setView('bookmarks');
 $('astraNav').onclick=()=>newTab('https://astra-education.top/');

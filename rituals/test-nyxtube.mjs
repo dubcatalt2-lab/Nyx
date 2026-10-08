@@ -269,25 +269,25 @@ try {
       document.body.classList.add("workspace-content-active");
       document.querySelectorAll("#nyxStudyHubStartup,#setupLaunchScreen,#setupScreen,.nyx-tos-gate").forEach(element => { element.style.pointerEvents = "none"; });
     });
-    const addressBounds = await discoveryPage.locator('form.workspace-mode-address > input.workspace-mode-url').boundingBox();
+    const addressBounds = await discoveryPage.locator('form.j5d9t > input.workspace-mode-url').boundingBox();
     assert(addressBounds?.width > 100, `Workspace address field did not have usable geometry: ${JSON.stringify(addressBounds)}`);
-    const addressBorder = discoveryPage.locator('form.workspace-mode-address > .workspace-mode-url-pointer-border');
+    const addressBorder = discoveryPage.locator('form.j5d9t > .workspace-mode-url-pointer-border');
     for (let attempt = 0; attempt < 12; attempt += 1) {
       await discoveryPage.evaluate(() => {
-        const field = document.querySelector('form.workspace-mode-address > input.workspace-mode-url');
+        const field = document.querySelector('form.j5d9t > input.workspace-mode-url');
         const bounds = field?.getBoundingClientRect();
         field?.focus();
         if (field && bounds) field.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX: bounds.left + Math.min(120, bounds.width / 2), clientY: bounds.top + bounds.height / 2 }));
       });
       await discoveryPage.mouse.move(addressBounds.x + Math.min(120, addressBounds.width / 2), addressBounds.y + addressBounds.height / 2);
       await discoveryPage.waitForTimeout(100);
-      const width = await discoveryPage.evaluate(() => document.querySelector('form.workspace-mode-address > .workspace-mode-url-pointer-border')?.getBoundingClientRect().width || 0);
+      const width = await discoveryPage.evaluate(() => document.querySelector('form.j5d9t > .workspace-mode-url-pointer-border')?.getBoundingClientRect().width || 0);
       if (width > 100) break;
     }
     await addressBorder.waitFor({ state: "attached" });
     const addressInteraction = await discoveryPage.evaluate(() => {
-      const field = document.querySelector('form.workspace-mode-address > input.workspace-mode-url');
-      const border = document.querySelector('form.workspace-mode-address > .workspace-mode-url-pointer-border');
+      const field = document.querySelector('form.j5d9t > input.workspace-mode-url');
+      const border = document.querySelector('form.j5d9t > .workspace-mode-url-pointer-border');
       return {
         fieldShadow: field ? getComputedStyle(field).boxShadow : "missing",
         borderOpacity: border ? Number.parseFloat(getComputedStyle(border).opacity) : -1,

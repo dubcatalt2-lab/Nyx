@@ -25,14 +25,14 @@ try{
  assert.equal(await page.locator('#workspace-tabs [role=tab]').count(),2);
  await key('Alt+w');await page.waitForURL('**#workspace');assert.equal(await page.locator('#workspace-tabs [role=tab]').count(),1,'Blank tab is removed');
  await key('Alt+t');await page.waitForURL('**#workspace');await page.locator('#workspace-new-tab').waitFor();
- await page.fill('#new-tab-query','https://example.com/?second=1');await page.locator('#new-tab-search button').click();await site().getByRole('heading',{name:'Example Domain'}).waitFor({timeout:30000});
+ await page.fill('#new-tab-query','https://example.com/?second=1');await page.locator('#k9v3s button').click();await site().getByRole('heading',{name:'Example Domain'}).waitFor({timeout:30000});
  await site().getByRole('heading',{name:'Example Domain'}).click();await key('Alt+w');assert.equal(await page.locator('#workspace-tabs [role=tab]').count(),1);
  await key('Alt+Shift+t');await site().getByRole('heading',{name:'Example Domain'}).waitFor({timeout:30000});
  assert.equal(await page.locator('#workspace-tabs [role=tab]').count(),2);assert.match(await page.locator('#address').inputValue(),/second=1/);
  await key('Alt+1');assert.equal(await page.locator('#workspace-tabs [role=tab][aria-selected=true]').count(),1);assert(!/second=1/.test(await page.locator('#address').inputValue()));
  await key('Alt+l');await key('Alt+a');assert.equal(await page.locator('#address').evaluate(e=>e.selectionEnd-e.selectionStart),(await page.locator('#address').inputValue()).length);
  await key('Alt+t');await page.waitForURL('**#workspace');await page.locator('#workspace-new-tab').waitFor();
- await page.fill('#new-tab-query','https://example.com/?closing=1');await page.locator('#new-tab-search button').click();
+ await page.fill('#new-tab-query','https://example.com/?closing=1');await page.locator('#k9v3s button').click();
  await page.locator('#close-workspace').click();
  assert.equal(await page.locator('#workspace-tabs [role=tab]').count(),2);
  assert.equal(await page.locator('#workspace-stage iframe').count(),2,'Closing while loading removes its frame');

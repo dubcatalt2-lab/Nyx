@@ -695,11 +695,11 @@ $("search").onsubmit = (e) => {
   e.preventDefault();
   void navigate($("query").value, {newTab:true, input:$("query")});
 };
-$("address-form").onsubmit = (e) => {
+$("e14rh").onsubmit = (e) => {
   e.preventDefault();
   navigate($("address").value);
 };
-$('new-tab-search').onsubmit = event => {event.preventDefault();void navigate($('new-tab-query').value, {input:$('new-tab-query')});};
+$('k9v3s').onsubmit = event => {event.preventDefault();void navigate($('new-tab-query').value, {input:$('new-tab-query')});};
 function workspaceControl(action){
   if(document.body.dataset.view==="app-view"){
     if(action==="reload") frames.get(location.hash.slice(1))?.contentWindow.location.reload();

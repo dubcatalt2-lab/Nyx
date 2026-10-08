@@ -721,7 +721,7 @@ legend {
   background: var(--mantle);
   border-block: 1px solid var(--surface);
 }
-#address-form {
+#e14rh {
   flex: 1;
 }
 #address {
@@ -1256,7 +1256,7 @@ body[data-view="app-view"] #app-host {height:100dvh;width:100%;margin:0;border:0
 body[data-view="app-view"] .app-view{display:flex;flex-direction:column}
 body[data-view="app-view"] #app-host{height:auto;flex:1;min-height:0}
 .workspace-bar{flex:none;align-items:center}
-@media(max-width:500px){.workspace-bar{padding:6px;gap:2px}.workspace-bar .icon-button{width:32px;height:34px;flex:none}#address-form{min-width:0}#address{padding:7px;font-size:14px}}
+@media(max-width:500px){.workspace-bar{padding:6px;gap:2px}.workspace-bar .icon-button{width:32px;height:34px;flex:none}#e14rh{min-width:0}#address{padding:7px;font-size:14px}}
 
 #open-customize{display:inline-flex;align-items:center;gap:10px;margin-top:16px}#open-customize svg{width:18px;height:18px}
 #customize-dialog{width:min(920px,calc(100vw - 28px));max-width:920px;max-height:calc(100dvh - 28px);padding:32px;border:1px solid var(--line);border-radius:14px;background:var(--mantle);color:var(--text);overflow:auto}
@@ -1299,9 +1299,9 @@ html[data-motion="reduce"] #customize-dialog *,html[data-motion="reduce"] .setti
 #workspace-new-tab{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:20px;padding:24px;background:var(--base)}
 #workspace-new-tab[hidden]{display:none}
 #workspace-new-tab h1{font-family:'Homemade Apple',cursive;font-size:clamp(28px,5vw,48px);font-weight:400;margin:0 0 16px}
-#new-tab-search{display:flex;width:min(650px,100%);gap:12px;padding:10px;background:var(--mantle);border:1px solid var(--line);border-radius:18px}
+#k9v3s{display:flex;width:min(650px,100%);gap:12px;padding:10px;background:var(--mantle);border:1px solid var(--line);border-radius:18px}
 #new-tab-query{flex:1;min-width:0;background:transparent;border:0;padding:10px;color:var(--text)}
-#new-tab-search button{width:44px;border:0;border-radius:12px;background:var(--surface);color:var(--text)}
+#k9v3s button{width:44px;border:0;border-radius:12px;background:var(--surface);color:var(--text)}
 
 #workspace-tabs .workspace-tab{display:flex;align-items:center;flex:none;min-width:0;border-radius:8px}
 #workspace-tabs .workspace-tab[data-active=true]{background:var(--surface)}

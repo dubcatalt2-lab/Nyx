@@ -109,7 +109,7 @@ try {
     await page.waitForTimeout(1000);assert(receives>before,'Bridge resumes after enabled reload');
     await page.goto(base+'/nyx');await page.waitForFunction(()=>typeof nyxLaunchGameFrame==='function');
     await page.waitForFunction(()=>!document.querySelector('#nyxStudyHubStartup')&&!document.body.classList.contains('nyx-loading-active'));
-    await page.locator('[data-workspace-shell-search]').evaluate(form=>{form.querySelector('[data-workspace-shell-url]').value='https://example.com/';form.requestSubmit();});
+    await page.locator('[data-f6p2r]').evaluate(form=>{form.querySelector('[data-workspace-shell-url]').value='https://example.com/';form.requestSubmit();});
     await page.frameLocator('iframe.view.active').getByRole('heading',{name:'Example Domain'}).waitFor({timeout:60000});
     await page.locator('[data-workspace-shell-settings]').first().evaluate(el=>el.click());
     await page.locator('[data-settings-category-button="proxy"]').click();

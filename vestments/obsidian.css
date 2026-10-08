@@ -122,7 +122,7 @@ body.workspace-shell .top-os {
   background:var(--obsidian-panel);backdrop-filter:blur(24px);box-shadow:none;zoom:1!important;
 }
 body.workspace-shell.nyx-workspace-chrome-visible .top-os {display:grid;grid-template-columns:minmax(0,1fr) 44px;grid-template-rows:40px 46px}
-.top-os>.workspace-mode-address {grid-column:1/-1;grid-row:2}
+.top-os>.j5d9t {grid-column:1/-1;grid-row:2}
 .nyx-tab-list-toggle {grid-column:2;grid-row:1;align-self:center;justify-self:center;width:30px;height:30px;display:grid;place-items:center;border:0;border-radius:6px;background:none;color:var(--obsidian-muted);padding:6px;transition:background-color 140ms,color 140ms}
 .nyx-tab-list-toggle svg {width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round}
 .nyx-tab-list-toggle:hover,.nyx-tab-list-toggle[aria-expanded="true"] {background:var(--obsidian-hover);color:var(--obsidian-text)}
@@ -157,14 +157,14 @@ body.workspace-shell.nyx-workspace-chrome-visible .top-os {display:grid;grid-tem
 .nyx-tab-strip [role="tab"]:focus-visible {outline:1px solid var(--obsidian-muted);outline-offset:-2px}
 .nyx-tab-strip .tab-drop-before {border-left-color:var(--obsidian-text)}
 .nyx-tab-strip .tab-drop-after {border-right-color:var(--obsidian-text)}
-body.workspace-shell .top-os .workspace-mode-address {position:relative;inset:auto;display:flex;align-items:center;gap:5px;width:100%;height:46px;padding:5px 10px;margin:0;border:0;background:var(--obsidian-field);box-shadow:none}
-.workspace-mode-address>button {display:grid;place-items:center;flex:none;width:30px;height:30px;padding:6px;border:0;border-radius:6px;background:none;color:var(--obsidian-text);box-shadow:none;font-size:17px}
-.workspace-mode-address>button:hover {background:var(--obsidian-hover)}
-.workspace-mode-address svg {width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
-.workspace-mode-address .workspace-mode-secure-indicator {display:grid;place-items:center;width:28px;height:30px;margin-left:6px;color:var(--obsidian-muted)}
-.workspace-mode-address .workspace-mode-url {flex:1;min-width:0;height:32px;border:1px solid var(--obsidian-line);border-radius:7px;padding:0 12px;background:var(--obsidian-bg);color:var(--obsidian-text);-webkit-text-fill-color:var(--obsidian-text);font-size:12px;box-shadow:none;outline:none}
-.workspace-mode-address .workspace-mode-url:focus {border-color:var(--obsidian-muted)}
-.workspace-mode-address :is(.workspace-tabs-toggle,[data-workspace-shell-home-nav],[data-workspace-shell-settings],[data-page-fullscreen],.workspace-mode-url-pointer-border){display:none!important}
+body.workspace-shell .top-os .j5d9t {position:relative;inset:auto;display:flex;align-items:center;gap:5px;width:100%;height:46px;padding:5px 10px;margin:0;border:0;background:var(--obsidian-field);box-shadow:none}
+.j5d9t>button {display:grid;place-items:center;flex:none;width:30px;height:30px;padding:6px;border:0;border-radius:6px;background:none;color:var(--obsidian-text);box-shadow:none;font-size:17px}
+.j5d9t>button:hover {background:var(--obsidian-hover)}
+.j5d9t svg {width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.j5d9t .workspace-mode-secure-indicator {display:grid;place-items:center;width:28px;height:30px;margin-left:6px;color:var(--obsidian-muted)}
+.j5d9t .workspace-mode-url {flex:1;min-width:0;height:32px;border:1px solid var(--obsidian-line);border-radius:7px;padding:0 12px;background:var(--obsidian-bg);color:var(--obsidian-text);-webkit-text-fill-color:var(--obsidian-text);font-size:12px;box-shadow:none;outline:none}
+.j5d9t .workspace-mode-url:focus {border-color:var(--obsidian-muted)}
+.j5d9t :is(.workspace-tabs-toggle,[data-workspace-shell-home-nav],[data-workspace-shell-settings],[data-page-fullscreen],.workspace-mode-url-pointer-border){display:none!important}
 
 .workspace-home.nyx-minimal-home {position:absolute;inset:0;display:grid;place-items:center;background:transparent;color:var(--obsidian-text);overflow:hidden}
 .workspace-home.nyx-minimal-home.hidden {display:none!important}
@@ -228,17 +228,17 @@ body.workspace-shell .top-os,html body.workspace-shell .workspace-shell-settings
   .nyx-visual-dock,.nyx-visual-dock *,.nyx-visual-dock *::after,.top-os,.nyx-minimal-hero{transition:none!important;animation:none!important}
 }
 
-html body.workspace-shell .workspace-mode-address>button {color:var(--obsidian-text)!important;-webkit-text-fill-color:currentColor!important;background:transparent!important;border:0!important;border-radius:6px!important;box-shadow:none!important;transition:background-color 150ms,transform 150ms}
-html body.workspace-shell .workspace-mode-address>button:hover {background:var(--obsidian-hover)!important;transform:translateY(-1px)}
-html body.workspace-shell .workspace-mode-address .workspace-mode-url {color:var(--obsidian-text)!important;-webkit-text-fill-color:var(--obsidian-text)!important;border-color:var(--obsidian-line)!important;box-shadow:none!important}
-html body.workspace-shell .workspace-mode-address .workspace-mode-url::selection {color:#fff;-webkit-text-fill-color:#fff;background:#3390ff}
-html body.workspace-shell :is(.workspace-mode-address>button,.nyx-home-links button):focus-visible {outline:1px solid var(--obsidian-muted);outline-offset:2px}
+html body.workspace-shell .j5d9t>button {color:var(--obsidian-text)!important;-webkit-text-fill-color:currentColor!important;background:transparent!important;border:0!important;border-radius:6px!important;box-shadow:none!important;transition:background-color 150ms,transform 150ms}
+html body.workspace-shell .j5d9t>button:hover {background:var(--obsidian-hover)!important;transform:translateY(-1px)}
+html body.workspace-shell .j5d9t .workspace-mode-url {color:var(--obsidian-text)!important;-webkit-text-fill-color:var(--obsidian-text)!important;border-color:var(--obsidian-line)!important;box-shadow:none!important}
+html body.workspace-shell .j5d9t .workspace-mode-url::selection {color:#fff;-webkit-text-fill-color:#fff;background:#3390ff}
+html body.workspace-shell :is(.j5d9t>button,.nyx-home-links button):focus-visible {outline:1px solid var(--obsidian-muted);outline-offset:2px}
 html body.workspace-shell .nyx-settings-control input[type="range"] {accent-color:#9aac9f;cursor:pointer}
 html body.workspace-shell .nyx-settings-control :is(button,input,select,textarea):focus-visible {outline:1px solid var(--obsidian-muted)!important;outline-offset:2px!important;border-radius:7px}
 html body.workspace-shell .nyx-settings-control button {padding:8px 12px!important;transition:background-color 150ms,border-color 150ms!important}
 html body.workspace-shell .nyx-settings-control :is(.nyx-wallpaper-card,.nyx-color-theme-card).selected {border-color:var(--obsidian-muted)!important}
 html body.workspace-shell .nyx-settings-control :is(.nyx-wallpaper-card,.nyx-color-theme-card):hover {border-color:var(--obsidian-muted)!important;background:var(--obsidian-hover)!important}
-@media(prefers-reduced-motion:reduce){.nyx-home-links button,.workspace-mode-address>button{transition:none!important;transform:none!important}}
+@media(prefers-reduced-motion:reduce){.nyx-home-links button,.j5d9t>button{transition:none!important;transform:none!important}}
 
 @keyframes nyx-wordmark-arrive{from{opacity:0;transform:translateY(9px) scale(.94);filter:blur(4px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
 @media(prefers-reduced-motion:reduce){html body.workspace-shell .nyx-minimal-brand h1{animation:none}}

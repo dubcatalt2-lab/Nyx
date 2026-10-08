@@ -3552,9 +3552,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const items=[...scope.querySelectorAll(selector)];
       items.slice(1).forEach(item=>item.remove());
     };
-    keepOne('form.workspace-mode-address [data-workspace-shell-settings]');
-    keepOne('form.workspace-mode-address .workspace-mode-weather');
-    keepOne('form.workspace-mode-address [data-workspace-shell-menu]');
+    keepOne('form.j5d9t [data-workspace-shell-settings]');
+    keepOne('form.j5d9t .workspace-mode-weather');
+    keepOne('form.j5d9t [data-workspace-shell-menu]');
     keepOne('#workspaceBookmarkPanel');
     keepOne('#workspaceModeMenu');
     const menu=scope.querySelector('#workspaceModeMenu');
@@ -3891,10 +3891,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function renderChromeFixed(){
     const top=document.querySelector('.top-os');
     if(top){
-      top.innerHTML="<div class=\"brand-mini\"><button class=\"workspace-mode-app-button active\" data-workspace-shell-home title=\"Current tab\"><span class=\"workspace-home-icon\" aria-hidden=\"true\"></span><span class=\"workspace-home-label\">Home</span></button><button class=\"workspace-mode-tab\" data-workspace-shell-new-course heading=\"New tab\"><span>New page</span></button></div><span class=\"workspace-top-clock\" data-workspace-shell-clock>--:--:--</span><form class=\"workspace-mode-address\" data-workspace-shell-search><button class=\"workspace-nav-control\" data-workspace-shell-back type=\"button\" title=\"Back\" aria-label=\"Back\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m15 18-6-6 6-6\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-forward type=\"button\" title=\"Forward\" aria-label=\"Forward\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-reload type=\"button\" title=\"Reload\" aria-label=\"Reload\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 11a8 8 0 1 0-2.35 5.65\"></path><path d=\"M20 4v7h-7\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-home-nav type=\"button\" title=\"Home\" aria-label=\"Home\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m3 11 9-8 9 8\"></path><path d=\"M5 10v10h14V10\"></path><path d=\"M9 20v-6h6v6\"></path></svg></button><input class=\"workspace-mode-url\" data-workspace-shell-url placeholder=\"S3ARC4 or enter a U3L\" autocomplete=\"off\"><button class=\"workspace-mode-bookmark workspace-mode-settings\" data-workspace-shell-settings data-open=\"settings\" type=\"button\" title=\"Settings\" aria-label=\"Settings\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3\"></circle><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\"></path></svg></button><button class=\"workspace-mode-weather\" data-open=\"weather\" type=\"button\" title=\"Weather\" aria-label=\"Weather\"><span class=\"weather-cloud-icon\" aria-hidden=\"true\"></span></button><button data-workspace-shell-menu type=\"button\" title=\"Menu\"><span class=\"fresh-real-icon\" aria-hidden=\"true\">⋮</span></button></form><div class=\"workspace-bookmark-panel\" id=\"workspaceBookmarkPanel\" hidden></div><div class=\"workspace-mode-menu\" id=\"workspaceModeMenu\"><button data-workspace-shell-new-tab type=\"button\">New page</button><button data-workspace-bookmarks-toggle type=\"button\">Bookmarks</button><button data-open=\"apps\" type=\"button\">Apps</button><hr><button data-open=\"settings\" type=\"button\">Settings</button><button data-workspace-hieroglyph-toggle type=\"button\">Hieroglyph Mode</button><button data-app-url=\"/assets/games/index.html\" type=\"button\">GAMES</button><button data-app-url=\"/apps/chat/\" type=\"button\">Chat</button><button data-app-url=\"https://discord.com/app\" type=\"button\">Discord</button><hr><button data-page-fullscreen type=\"button\">Fullscreen</button><button data-shell-about type=\"button\">Open About:Blank</button><button data-shell-about-tab type=\"button\">Open Tab in Abt:Blank</button></div>";
+      top.innerHTML="<div class=\"brand-mini\"><button class=\"workspace-mode-app-button active\" data-workspace-shell-home title=\"Current tab\"><span class=\"workspace-home-icon\" aria-hidden=\"true\"></span><span class=\"workspace-home-label\">Home</span></button><button class=\"workspace-mode-tab\" data-workspace-shell-new-course heading=\"New tab\"><span>New page</span></button></div><span class=\"workspace-top-clock\" data-workspace-shell-clock>--:--:--</span><form class=\"j5d9t\" data-f6p2r><button class=\"workspace-nav-control\" data-workspace-shell-back type=\"button\" title=\"Back\" aria-label=\"Back\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m15 18-6-6 6-6\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-forward type=\"button\" title=\"Forward\" aria-label=\"Forward\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-reload type=\"button\" title=\"Reload\" aria-label=\"Reload\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 11a8 8 0 1 0-2.35 5.65\"></path><path d=\"M20 4v7h-7\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-home-nav type=\"button\" title=\"Home\" aria-label=\"Home\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m3 11 9-8 9 8\"></path><path d=\"M5 10v10h14V10\"></path><path d=\"M9 20v-6h6v6\"></path></svg></button><input class=\"workspace-mode-url\" data-workspace-shell-url placeholder=\"S3ARC4 or enter a U3L\" autocomplete=\"off\"><button class=\"workspace-mode-bookmark workspace-mode-settings\" data-workspace-shell-settings data-open=\"settings\" type=\"button\" title=\"Settings\" aria-label=\"Settings\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3\"></circle><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\"></path></svg></button><button class=\"workspace-mode-weather\" data-open=\"weather\" type=\"button\" title=\"Weather\" aria-label=\"Weather\"><span class=\"weather-cloud-icon\" aria-hidden=\"true\"></span></button><button data-workspace-shell-menu type=\"button\" title=\"Menu\"><span class=\"fresh-real-icon\" aria-hidden=\"true\">⋮</span></button></form><div class=\"workspace-bookmark-panel\" id=\"workspaceBookmarkPanel\" hidden></div><div class=\"workspace-mode-menu\" id=\"workspaceModeMenu\"><button data-workspace-shell-new-tab type=\"button\">New page</button><button data-workspace-bookmarks-toggle type=\"button\">Bookmarks</button><button data-open=\"apps\" type=\"button\">Apps</button><hr><button data-open=\"settings\" type=\"button\">Settings</button><button data-workspace-hieroglyph-toggle type=\"button\">Hieroglyph Mode</button><button data-app-url=\"/assets/games/index.html\" type=\"button\">GAMES</button><button data-app-url=\"/apps/chat/\" type=\"button\">Chat</button><button data-app-url=\"https://discord.com/app\" type=\"button\">Discord</button><hr><button data-page-fullscreen type=\"button\">Fullscreen</button><button data-shell-about type=\"button\">Open About:Blank</button><button data-shell-about-tab type=\"button\">Open Tab in Abt:Blank</button></div>";
       const homeNav=top.querySelector('[data-workspace-shell-home-nav]');
       if(homeNav) homeNav.innerHTML=nyxDashboardIcon('home');
-      const shellAddress=top.querySelector('form.workspace-mode-address');
+      const shellAddress=top.querySelector('form.j5d9t');
       const shellUrl=top.querySelector('[data-workspace-shell-url]');
 
       {
@@ -3939,7 +3939,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       syncNyxLatencyBubble();
       ensureNyxVisualDock();
       }
-      top.querySelectorAll('.brand-mini button[title],.workspace-mode-address button[title]').forEach(button=>{
+      top.querySelectorAll('.brand-mini button[title],.j5d9t button[title]').forEach(button=>{
         if(!button.getAttribute('aria-label')) button.setAttribute('aria-label',button.getAttribute('title') || 'Workspace control');
         button.removeAttribute('title');
       });
@@ -3981,7 +3981,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return !homeEl || homeEl.classList.contains('hidden');
   }
   function syncChromeMode(){
-    if(renderedChromeMode==='workspace-shell' && document.querySelector('.top-os [data-workspace-shell-search]')){
+    if(renderedChromeMode==='workspace-shell' && document.querySelector('.top-os [data-f6p2r]')){
       if(workspaceShellNeedsStartupHome()) setWorkspaceShellHomeActive();
       return;
     }
@@ -4189,7 +4189,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       (document.getElementById('app') || document.body).appendChild(box);
     }
     if(input){
-      const anchor=input.closest?.('[data-workspace-blank-search]') || input;
+      const anchor=input.closest?.('[data-n8c4w]') || input;
       const rect=anchor.getBoundingClientRect();
       box.nyxSourceInput=input;
       box.style.left=Math.max(8,rect.left)+'px';
@@ -9240,7 +9240,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     {
       const searchEngine=selectedSearchEngineMeta();
       const searchLabel=`S3ARC4 ${searchEngine.label} or type a U3L`;
-      return `<div class="workspace-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="workspace-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="S3ARC4"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="workspace-body"><div class="workspace-home nyx-minimal-home nyx-visual-home"><main class="workspace-shell-start nyx-minimal-hero"><div class="nyx-minimal-brand"><img class="nyx-home-logo" data-nyx-logo src="/assets/icons/nyx-cat-moon.svg?v=3" alt="Nyx"><h1>NYX</h1></div><form class="workspace-blank-search nyx-minimal-search" data-workspace-blank-search><svg class="nyx-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input data-workspace-blank-input data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"></form><nav class="nyx-home-links" data-nyx-recent-searches aria-label="Recent searches" hidden></nav></main><nav class="nyx-minimal-utility-links" aria-label="Nyx tools and terms"><a data-open="terms" href="nyx://terms">Terms</a></nav><button class="nyx-appearance-toggle" data-nyx-appearance type="button" aria-label="Use light appearance" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button><button class="nyx-visual-customize" data-open="settings" type="button">${nyxDashboardIcon('settings')}<span>Customize</span></button><div class="nyx-home-presence${nyxFounderIsOwner&&nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'button':'status'}" tabindex="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${minimalPresenceText}</span></div></div></div>`;
+      return `<div class="workspace-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="workspace-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="S3ARC4"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="workspace-body"><div class="workspace-home nyx-minimal-home nyx-visual-home"><main class="workspace-shell-start nyx-minimal-hero"><div class="nyx-minimal-brand"><img class="nyx-home-logo" data-nyx-logo src="/assets/icons/nyx-cat-moon.svg?v=3" alt="Nyx"><h1>NYX</h1></div><form class="b3h7q nyx-minimal-search" data-n8c4w><svg class="nyx-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input data-workspace-blank-input data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"></form><nav class="nyx-home-links" data-nyx-recent-searches aria-label="Recent searches" hidden></nav></main><nav class="nyx-minimal-utility-links" aria-label="Nyx tools and terms"><a data-open="terms" href="nyx://terms">Terms</a></nav><button class="nyx-appearance-toggle" data-nyx-appearance type="button" aria-label="Use light appearance" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button><button class="nyx-visual-customize" data-open="settings" type="button">${nyxDashboardIcon('settings')}<span>Customize</span></button><div class="nyx-home-presence${nyxFounderIsOwner&&nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'button':'status'}" tabindex="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${minimalPresenceText}</span></div></div></div>`;
     }
   }
 
@@ -9431,7 +9431,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function playNyxStartupReveal(){
     const body=document.body;
     const targets=[
-      ...document.querySelectorAll('body.workspace-shell .top-os .brand-mini > button, body.workspace-shell .top-os > :is(.workspace-top-clock,.nyx-latency-bubble), body.workspace-shell .top-os .workspace-mode-address > *, body.workspace-shell .workspace-home [data-home-shortcuts], body.workspace-shell .workspace-home [data-home-shortcuts] > .quick-tile')
+      ...document.querySelectorAll('body.workspace-shell .top-os .brand-mini > button, body.workspace-shell .top-os > :is(.workspace-top-clock,.nyx-latency-bubble), body.workspace-shell .top-os .j5d9t > *, body.workspace-shell .workspace-home [data-home-shortcuts], body.workspace-shell .workspace-home [data-home-shortcuts] > .quick-tile')
     ];
     document.querySelectorAll('.shortcut-entrance').forEach(el=>el.classList.remove('shortcut-entrance'));
     document.querySelectorAll('.tab-opening,.tab-activating').forEach(el=>el.classList.remove('tab-opening','tab-activating'));
@@ -15600,7 +15600,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
       else closeWorkspaceShellSettings();
     });
     document.addEventListener('submit',e=>{
-      const shellSearch=e.target.closest?.('[data-workspace-shell-search]');
+      const shellSearch=e.target.closest?.('[data-f6p2r]');
       if(shellSearch){
         e.preventDefault();
         document.body.classList.remove('menu-open');
@@ -15608,7 +15608,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
         navigateWorkspaceShell(shellSearch.querySelector('[data-workspace-shell-url]')?.value);
         return;
       }
-      const blankSearch=e.target.closest?.('[data-workspace-blank-search]');
+      const blankSearch=e.target.closest?.('[data-n8c4w]');
       if(blankSearch){
         if(e.nyxBlankSearchHandled) return;
         e.nyxBlankSearchHandled=true;

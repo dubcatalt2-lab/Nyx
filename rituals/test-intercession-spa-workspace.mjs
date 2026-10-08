@@ -123,7 +123,7 @@ try{
       await page.locator('[data-workspace-shell-url]').waitFor({state:'attached'});
       await page.getByRole('button',{name:'Got it',exact:true}).click();
       await page.locator('#nyxStudyHubStartup').waitFor({state:'detached'});
-      await page.locator('[data-workspace-shell-search]').evaluate((form,handshake)=>{
+      await page.locator('[data-f6p2r]').evaluate((form,handshake)=>{
         form.querySelector('[data-workspace-shell-url]').value=handshake?'https://duckduckgo.com/?q=nyx':'https://discord.com/app';
         form.requestSubmit();
       },process.argv.includes('--handshake'));
@@ -162,7 +162,7 @@ try{
       await page.evaluate(async()=>{
         for(const registration of await navigator.serviceWorker.getRegistrations())await registration.unregister();
       });
-      await page.locator('[data-workspace-shell-search]').evaluate(form=>{
+      await page.locator('[data-f6p2r]').evaluate(form=>{
         form.querySelector('[data-workspace-shell-url]').value='https://duckduckgo.com/?q=worker-recovery';
         form.requestSubmit();
       });
@@ -177,7 +177,7 @@ try{
           return registration;
         };
       });
-      await page.locator('[data-workspace-shell-search]').evaluate(form=>{
+      await page.locator('[data-f6p2r]').evaluate(form=>{
         form.querySelector('[data-workspace-shell-url]').value='https://duckduckgo.com/?q=worker-race';
         form.requestSubmit();
       });

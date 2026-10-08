@@ -42,6 +42,25 @@ try {
   assert(await page.locator('.game-card').count()>0);
   await page.locator('[data-library="gn"]').click();
   assert(await page.locator('.game-card').count()>0);
+  // Exercise the exact player toolbar, including the Drop variant. Game documents
+  // are fixtures so this label/navigation regression never contacts providers.
+  await page.route('**/*',route=>route.request().isNavigationRequest()&&route.request().frame()!==page.mainFrame()
+    ?route.fulfill({contentType:'text/html',body:'<!doctype html><title>Game fixture</title><p>Ready</p>'})
+    :route.continue());
+  for(const width of [1365,390])for(const path of ['/assets/games/','/apps/drop/games.html']){
+    await page.setViewportSize({width,height:900});
+    await page.goto(base+path);
+    await page.locator('.game-card').first().waitFor({timeout:30000});
+    await page.waitForFunction(()=>document.querySelector('#closePlayer [data-nyx-display-label]')?.textContent.normalize('NFKC')==='G@M3Z');
+    for(let attempt=0;attempt<2;attempt++){
+      await page.locator('.game-card').first().click();
+      await page.locator('#gamePlayer').waitFor({state:'visible'});
+      assert.equal((await page.locator('#closePlayer [data-nyx-display-label]').textContent()).normalize('NFKC'),'G@M3Z');
+      await page.locator('#closePlayer').click();
+      await page.locator('#gamePlayer').waitFor({state:'hidden'});
+    }
+    console.log('PASS Games back label/open/close',width,path);
+  }
   assert.deepEqual(errors,[]);
   console.log('Built arcade loads the real JSON manifest and both bundled game catalogs.');
 

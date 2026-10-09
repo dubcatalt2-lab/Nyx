@@ -23,6 +23,7 @@ jobs:
           cache: npm
           cache-dependency-path: nook-desktop/package-lock.json
       - run: npm ci
+      - run: npm run assets
       - run: npm test
       - run: npx electron-builder --win nsis --${{ matrix.arch }} --publish never
         env:

@@ -1,0 +1,40 @@
+const {test} = require('node:test');
+const assert = require('node:assert/strict');
+const {Store} = require('../src/store.cjs');
+const {Engine} = require('../src/engine.cjs');
+const {Provider} = require('../src/provider.cjs');
+test('memory is opt-in, profiles are exclusive, skills and context survive session turns without changing permissions', async () => {
+  const store = new Store(':memory:'), workspace = store.workspace, requests = [];
+  store.remember('Keep this private'); const enabled = store.remember('Project uses plain JavaScript');
+  assert(!workspace.context().text.includes('plain JavaScript'));
+  workspace.memory(enabled, true);
+  workspace.save({kind:'skill',title:'Review',body:'Check error handling',enabled:true});
+  workspace.save({kind:'profile',title:'First',body:'Old preference',enabled:true});
+  workspace.save({kind:'profile',title:'Second',body:'Be concise',model:'fixture',enabled:true});
+  assert.equal(workspace.items().filter(item=>item.kind==='profile'&&item.enabled).length,1);
+  const engine = new Engine({store,broker:{status:()=>({level:0})},provider:{complete:async(model,messages)=>{requests.push(structuredClone(messages));return {text:JSON.stringify({message:'Answered',done:true}),model,reasoning:'Provider summary'};}},emit:()=>{}});
+  const first = await engine.start({prompt:'Remember this conversation',model:'fixture'});
+  await engine.start({prompt:'Follow up',model:'fixture',session:first.session});
+  assert.equal(workspace.sessions().length,1);
+  assert(requests[1].some(item=>item.content==='Remember this conversation'));
+  assert(requests[1][0].content.includes('Project uses plain JavaScript'));
+  assert(requests[1][0].content.includes('Check error handling'));
+  assert(!requests[1][0].content.includes('Keep this private'));
+  assert(!requests[1][0].content.includes('Old preference'));
+  assert(workspace.messages(first.session).some(item=>item.model==='fixture'&&item.reasoning==='Provider summary'));
+  await assert.rejects(engine.start({prompt:'Other account session',model:'fixture',session:'missing'}),/no longer exists/);
+  store.clear();assert.equal(workspace.sessions().length,0);assert.equal(workspace.items().length,0);store.close();
+});
+test('workspace validates mutations and rejects excessive enabled context',()=>{
+  const store=new Store(':memory:'),w=store.workspace;
+  assert.throws(()=>w.save({kind:'executable',title:'bad'}));
+  assert.throws(()=>w.save({kind:'skill',title:'x',body:'x'.repeat(8001)}));
+  assert.throws(()=>w.memory('missing',true));
+  for(let i=0;i<5;i++)w.save({kind:'skill',title:'Long '+i,body:'x'.repeat(8000),enabled:true});
+  assert.throws(()=>w.context(),/32 KB/);store.close();
+});
+test('desktop returns only provider-labelled reasoning summaries and actual response model',async()=>{
+  const p=new Provider({file:'unused',safeStorage:{}});p.catalog=[{id:'fixture',reasoning:true}];
+  p.request=async(_route,body)=>{assert.deepEqual(body.reasoning,{effort:'low'});return {model:'actual/model',choices:[{message:{content:'{"message":"OK","done":true}',reasoning:'not a summary',reasoning_details:[{type:'reasoning.encrypted',data:'never displayed'},{type:'reasoning.text',text:'never displayed'},{type:'reasoning.summary',summary:'Brief supplied explanation'}]},finish_reason:'stop'}]};};
+  const result=await p.complete('fixture',[],new AbortController().signal);assert.equal(result.model,'actual/model');assert.equal(result.reasoning,'Brief supplied explanation');
+});

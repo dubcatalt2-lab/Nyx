@@ -54,6 +54,22 @@ export function createKeyStore(db,now=Date.now,vault=null) {
       if(ips?.data()?.activeKey===data.activeKey)tx.set(ref(ip),{activeKey:null},{merge:true});
     });
   }
+  async function desktopKey(uid,device) {
+    if(!vault)throw fail('Desktop account storage is unavailable.',503);
+    const secret=`n_api_${randomBytes(32).toString('base64url')}`,id=hash(secret),encryptedKey=await vault.seal(secret,`${uid}:${id}`);
+    return db.runTransaction(async tx=>{
+      const data=(await tx.get(account(uid))).data()||defaults();
+      const existing=data.desktopKey?(await tx.get(ref(`key-${data.desktopKey}`))).data():null;
+      if(existing&&!existing.revoked){const key=await vault.open(existing.encryptedKey,`${uid}:${data.desktopKey}`);if(hash(key)!==data.desktopKey)throw fail('Desktop key verification failed.',503);return {key,prefix:existing.prefix};}
+      const bound=data.nookDevice||device;if(!bound)throw fail('Your account allowance could not be identified.',503);
+      tx.set(ref(`key-${id}`),{uid,prefix:secret.slice(0,13),label:'Nook desktop',createdAt:now(),revoked:false,app:'nook',device:bound,desktop:true,encryptedKey});
+      tx.set(account(uid),{...data,uid,desktopKey:id,nookDevice:bound});
+      return {key:secret,prefix:secret.slice(0,13)};
+    });
+  }
+  async function revokeDesktop(uid) {
+    await db.runTransaction(async tx=>{const data=(await tx.get(account(uid))).data();if(!data?.desktopKey)return;tx.set(ref(`key-${data.desktopKey}`),{revoked:true,encryptedKey:null},{merge:true});tx.set(account(uid),{desktopKey:null},{merge:true});});
+  }
   async function authenticate(secret) {
     if(!/^n_api_[A-Za-z0-9_-]{43}$/.test(secret))throw fail('A valid Nyx API key is required.',401);
     const id=hash(secret),s=await ref(`key-${id}`).get(),key=s.data();
@@ -63,12 +79,13 @@ export function createKeyStore(db,now=Date.now,vault=null) {
   async function details(uid) {
     const a=(await account(uid).get()).data();
     const k=a?.activeKey?(await ref(`key-${a.activeKey}`).get()).data():null;
+    const desktop=a?.desktopKey?(await ref(`key-${a.desktopKey}`).get()).data():null;
     const v=a||defaults(),day=new Date(now()).toISOString().slice(0,10);
     return {uid,balance:v.balance,grantedTokens:v.grantedTokens??v.balance+(v.usedTokens||0),usedTokens:v.usedTokens||0,
       models:v.models,dailyRequests:v.dailyRequests,minuteRequests:v.minuteRequests,maxOutput:v.maxOutput,
       requestsToday:v.day===day?v.requests||0:0,resetAt:Date.parse(day+'T00:00:00Z')+86400000,
       recent:(v.recent||[]).slice(-20).reverse(),pending:Boolean(v.hold?.until>now()),
-      nookDevice:v.nookDevice||null,key:k&&!k.revoked?{prefix:k.prefix,label:k.label,createdAt:k.createdAt,app:k.app||'nyx',revealAvailable:Boolean(k.encryptedKey)}:null};
+      nookDevice:v.nookDevice||null,desktopKey:desktop&&!desktop.revoked?{prefix:desktop.prefix,label:desktop.label,createdAt:desktop.createdAt,app:'nook',revealAvailable:false}:null,key:k&&!k.revoked?{prefix:k.prefix,label:k.label,createdAt:k.createdAt,app:k.app||'nyx',revealAvailable:Boolean(k.encryptedKey)}:null};
   }
   async function enableNook(uid,device){
     await db.runTransaction(async tx=>{
@@ -130,7 +147,7 @@ export function createKeyStore(db,now=Date.now,vault=null) {
       tx.set(account(receipt.uid),{balance:receipt.premium?v.balance:v.balance+receipt.reserved-used,hold:null,usedTokens:(v.usedTokens||0)+used,recent:[...(v.recent||[]).slice(-19),{at:now(),model:receipt.model,tokens:used,status:notSent?'not_sent':valid?'completed':'unconfirmed',durationMs:Math.max(0,now()-receipt.startedAt)}]},{merge:true});
     });
   }
-  return {issue,revoke,authenticate,details,update,reserve,settle,reveal,enableNook,ref};
+  return {issue,revoke,authenticate,details,update,reserve,settle,reveal,enableNook,desktopKey,revokeDesktop,ref};
 }
 
 export function installDeveloperApi(app,deps) {
@@ -172,6 +189,17 @@ export function installDeveloperApi(app,deps) {
     details.premium=Boolean(u.premium);details.monthlyModelLimits=u.premium&&!u.owner?u.monthlyModelLimits:{luna:0,gemini:0};return details;
   }
   app.get('/api',deps.page);
+  app.get('/api/nook-desktop/account',wrap(async(req,res)=>{
+    const u=await user(req);if(!deps.nook)throw fail('Nook is unavailable.',503);
+    const person=await u.firebase.auth.getUser(u.uid),details=await deps.nook.details(req,res,u);
+    res.json({uid:u.uid,email:person.email||'',name:person.displayName||person.email||'Nook account',premium:u.premium,unlimited:details.unlimited,usage:details.usage,models:details.catalog});
+  }));
+  app.post('/api/nook-desktop/account/connect',wrap(async(req,res)=>{
+    const u=await user(req,true);if(!deps.nook||!deps.configured())throw fail('Nook is unavailable.',503);
+    const result=await u.store.desktopKey(u.uid,await deps.nook.device(req,res,u.firebase));
+    res.json({uid:u.uid,...result});
+  }));
+  app.delete('/api/nook-desktop/account/key',wrap(async(req,res)=>{const u=await user(req,true);await u.store.revokeDesktop(u.uid);res.json({ok:true});}));
   app.get('/api/developer/me',wrap(async(req,res)=>{
     const u=await user(req);
     if(req.nookDeveloper){if(!deps.nook)throw fail('Nook API is unavailable.',503);return res.json(await deps.nook.details(req,res,u));}
@@ -205,7 +233,7 @@ export function installDeveloperApi(app,deps) {
     let query=u.firebase.firestore.collection('nyxDeveloperApi').orderBy('__name__').endAt('account-\uf8ff').limit(51);
     query=cursor?query.startAfter(cursor):query.startAt('account-');
     const snapshot=await query.get(),docs=snapshot.docs.slice(0,50);
-    const members=await Promise.all(docs.filter(doc=>doc.data().activeKey).map(async doc=>{const record=doc.data();const details=await accountDetails({...u,...await identity(u.firebase,record.uid,true)});let name=record.uid,email='';try{const person=await u.firebase.auth.getUser(record.uid);name=person.displayName||record.uid;email=person.email||'';}catch{}return {...details,name,email};}));
+    const members=await Promise.all(docs.filter(doc=>doc.data().activeKey||doc.data().desktopKey).map(async doc=>{const record=doc.data();const details=await accountDetails({...u,...await identity(u.firebase,record.uid,true)});let name=record.uid,email='';try{const person=await u.firebase.auth.getUser(record.uid);name=person.displayName||record.uid;email=person.email||'';}catch{}return {...details,key:details.key||details.desktopKey,name,email};}));
     res.json({members,nextCursor:snapshot.docs.length>50?docs.at(-1).id:null});
   }));
   app.post('/api/developer/owner/account/:uid/reveal-key',wrap(async(req,res)=>{const u=await owner(req);res.json(await u.store.reveal(req.params.uid,u.uid));}));
@@ -216,7 +244,7 @@ export function installDeveloperApi(app,deps) {
     if(limits!==undefined&&(!integer(limits?.luna,0,10000000)||!integer(limits?.gemini,0,10000000)))throw fail('Enter valid limits for both models.');
     await u.store.update(req.params.uid,req.body);if(limits!==undefined){target.monthlyModelLimits={luna:limits.luna,gemini:limits.gemini};await u.firebase.firestore.collection('nyxUserAdministration').doc(target.uid).set({aiMonthlyModelLimits:target.monthlyModelLimits},{merge:true});}
     res.json(await accountDetails(target));}));
-  app.delete('/api/developer/owner/account/:uid/key',wrap(async(req,res)=>{const u=await owner(req);await u.store.revoke(req.params.uid);res.json({ok:true});}));
+  app.delete('/api/developer/owner/account/:uid/key',wrap(async(req,res)=>{const u=await owner(req);await u.store.revoke(req.params.uid);await u.store.revokeDesktop(req.params.uid);res.json({ok:true});}));
   const cors=res=>res.set({'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Authorization, Content-Type','Access-Control-Allow-Methods':'GET, POST, OPTIONS'});
   app.options('/api/v1/models',(_req,res)=>{cors(res);res.sendStatus(204);});
   app.get('/api/v1/models',wrap(async(req,res)=>{

@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+import {mkdtemp} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import express from 'express';
+import {createKeyStore,installDeveloperApi} from '../scripture/developer-api.mjs';
+import {createApiKeyVault} from '../scripture/api-key-vault.mjs';
+import {createNookDeveloper} from '../scripture/nook-developer.mjs';
+import {createAiAllowance,aiAllowanceConfig} from '../scripture/ai-allowance.mjs';
+import {memoryFirestore} from './test-ai-allowance.mjs';
+const db=memoryFirestore(),vault=createApiKeyVault(join(await mkdtemp(join(tmpdir(),'nook-account-vault-')),'vault.key'));
+const store=createKeyStore(db,Date.now,vault),original=await store.issue('member','original-pool','Existing site',true,'nook');
+const desktop=await store.desktopKey('member','new-pool');
+assert.notEqual(desktop.key,original.key);assert.equal((await store.authenticate(original.key)).uid,'member');
+assert.equal((await store.authenticate(desktop.key)).device,'original-pool');
+assert.equal((await store.desktopKey('member','third-pool')).key,desktop.key);
+assert.notEqual((await store.desktopKey('another','another-pool')).key,desktop.key);
+await store.revokeDesktop('member');await assert.rejects(store.authenticate(desktop.key),/revoked/);
+assert.equal((await store.authenticate(original.key)).uid,'member');
+const replacement=await store.desktopKey('member','fourth-pool');assert.equal((await store.authenticate(replacement.key)).device,'original-pool');
+const firebase={firestore:db,auth:{getUser:async uid=>({uid,email:uid+'@example.test',displayName:uid,emailVerified:true})}};
+const allowance=createAiAllowance({db,config:aiAllowanceConfig({})});
+const nook=createNookDeveloper({allowance:()=>allowance,catalog:async()=>[{id:'anthropic/claude-haiku-5.5',pricing:{prompt:'.0000001',completion:'.0000005'}}],configured:()=>true});
+const app=express();app.use(express.json());
+installDeveloperApi(app,{nook,keyVault:vault,configured:()=>true,ownerUid:()=>'',sameOrigin:req=>req.get('origin')==='https://nook.nyxlearning.org',authenticate:async req=>{const uid=req.get('authorization')?.replace('Bearer ','');if(!uid)throw Object.assign(Error('Sign in'),{status:401});return {firebase,token:{uid,firebase:{sign_in_provider:'password'}}};},page:(_req,res)=>res.end()});
+const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
+const origin='http://127.0.0.1:'+server.address().port;
+try{
+ let response=await fetch(origin+'/api/nook-desktop/account');assert.equal(response.status,401);
+ response=await fetch(origin+'/api/nook-desktop/account',{headers:{Authorization:'Bearer member'}});assert.equal(response.status,200);const details=await response.json();assert.equal(details.uid,'member');assert.equal(details.usage.total.limit,7000);assert(details.models.some(m=>m.id==='anthropic/claude-haiku-5.5'));assert(!JSON.stringify(details).includes(replacement.key));
+ response=await fetch(origin+'/api/nook-desktop/account/connect',{method:'POST',headers:{Authorization:'Bearer member',Origin:'https://evil.test'}});assert.equal(response.status,403);
+ db.records.set('nyxUserAdministration/member',{aiAccess:'restricted'});
+ response=await fetch(origin+'/api/nook-desktop/account',{headers:{Authorization:'Bearer member'}});assert.equal(response.status,403);
+ console.log('PASS desktop keys preserve developer keys, reuse account pool across sign-ins/rotation, isolate accounts, revoke separately, and enforce authenticated usage and account restrictions');
+}finally{server.closeAllConnections();await new Promise(r=>server.close(r));}

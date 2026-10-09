@@ -1,0 +1,13 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),os=require('node:os');
+const {Account}=require('../src/account.cjs');
+test('account sign-in, encrypted persistence, renewal, failed-switch isolation and separate key revocation',async()=>{
+ const file=path.join(fs.mkdtempSync(path.join(os.tmpdir(),'nook-auth-')),'session.dpapi'),calls=[];
+ const safeStorage={isEncryptionAvailable:()=>true,encryptString:s=>Buffer.from(s).map(b=>b^91),decryptString:b=>Buffer.from(b).map(b=>b^91).toString()};
+ const key='n_api_'+'x'.repeat(43);let fail=false,refreshes=0;
+ const fetcher=async(url,options)=>{calls.push({url,options});assert.equal(options.redirect,'error');if(url.includes('auth-config'))return Response.json({enabled:true,apiKey:'public-config'});if(url.includes('signInWithPassword'))return fail?Response.json({error:{message:'INVALID_LOGIN_CREDENTIALS'}},{status:400}):Response.json({localId:'member',idToken:'identity-token',refreshToken:'refresh-secret',expiresIn:'3600'});if(url.includes('/connect'))return Response.json({uid:'member',key});if(url.includes('securetoken')){refreshes++;assert.equal(options.headers['Content-Type'],'application/x-www-form-urlencoded');assert.equal(new URLSearchParams(options.body).get('grant_type'),'refresh_token');return Response.json({user_id:'member',id_token:'renewed-token',refresh_token:'renewed-secret',expires_in:'3600'});}if(options.method==='DELETE')return Response.json({ok:true});return Response.json({uid:'member',usage:{total:{remaining:7000}}});};
+ const account=new Account({file,safeStorage,fetcher});await account.signIn({email:'member@example.test',password:'private-password'});assert.equal(account.session.uid,'member');assert(!fs.readFileSync(file).includes(Buffer.from('refresh-secret')));assert(!JSON.stringify(account.session).includes('private-password'));
+ for(const call of calls.filter(c=>c.url.startsWith('https://nook.')))assert(!String(call.options.body).includes('private-password'));
+ const restored=new Account({file,safeStorage,fetcher});restored.load();assert.equal(restored.session.uid,'member');restored.session.expires=0;assert.deepEqual(await Promise.all([restored.token(),restored.token()]),['renewed-token','renewed-token']);assert.equal(refreshes,1);
+ fail=true;await assert.rejects(restored.signIn({email:'wrong@example.test',password:'bad'}),/incorrect/);assert.equal(restored.session.uid,'member');assert.equal((await restored.details()).uid,'member');
+ await assert.rejects(restored.json('https://evil.test/'),/Untrusted/);await restored.revoke();assert.equal(restored.session,null);assert(!fs.existsSync(file));
+});

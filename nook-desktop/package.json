@@ -1,6 +1,6 @@
 {
   "name": "nook-agent",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Nook Agent for Windows",
   "author": "Nook",
@@ -10,19 +10,31 @@
     "test": "node --test test/*.test.cjs",
     "build:win": "electron-builder --win nsis --x64 --publish never",
     "build:arm64": "electron-builder --win nsis --arm64 --publish never",
-    "checksums": "node scripts/checksums.cjs"
+    "checksums": "node scripts/checksums.cjs",
+    "assets": "node scripts/build-assets.mjs",
+    "prebuild:win": "npm run assets",
+    "prebuild:arm64": "npm run assets"
   },
   "devDependencies": {
+    "@hugeicons/core-free-icons": "3.1.1",
     "electron": "44.7.0",
     "electron-builder": "26.15.3"
   },
   "build": {
     "appId": "org.nyxlearning.nook.agent",
     "productName": "Nook Agent",
-    "directories": {"output": "release"},
-    "files": ["src/**/*", "resources/**/*", "package.json"],
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "src/**/*",
+      "resources/**/*",
+      "package.json"
+    ],
     "asar": true,
-    "asarUnpack": ["resources/*.ps1"],
+    "asarUnpack": [
+      "resources/*.ps1"
+    ],
     "win": {
       "target": "nsis",
       "icon": "resources/nook.ico",
@@ -31,7 +43,7 @@
     },
     "nsis": {
       "oneClick": false,
-      "perMachine": false,
+      "perMachine": true,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": false,
       "createStartMenuShortcut": true,

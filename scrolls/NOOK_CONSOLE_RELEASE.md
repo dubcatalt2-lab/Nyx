@@ -1,0 +1,23 @@
+# Nook desktop 0.1.1
+
+The Windows application now uses the selected Console (F) layout, Nook website colors, and a collapsible sidebar using the same Hugeicons exports as Hermes Workspace. The reference is https://github.com/outsourc-e/hermes-workspace; this is a Nook implementation, not a bundled Hermes runtime.
+
+Native email/password sign-in, account creation and password reset connect to existing Nook accounts. An automatically provisioned desktop key is separate from the user's developer API key. Keys and refresh credentials are DPAPI-encrypted. Passwords are not persisted. API model policies and shared account usage limits remain authoritative. Owner key revocation covers both key types.
+
+Local sessions retain recent conversation context. Memory is explicitly enabled per note before being sent to models. Skills store reusable instructions; Profiles store instructions and a preferred model. A local checklist and reviewed, sequential Conductor queue are functional. Jobs displays execution history, and Operations retains approved Windows UI Automation and administrator actions. Queues run only while the app is open and never restart automatically. This does not implement Hermes swarm, scheduling, skill marketplace or remote plugins.
+
+Native account UIDs and manual-key fingerprints partition local SQLite data, project selection and backups. Legacy manual-key data is copied to its initial key profile with SQLite checkpointing and hash verification; original files remain. Signing out opens a separate local profile. Tool grants expire and reset on restart/account change.
+
+The model picker uses `/api/v1/models` with the account key. Model assets are rebuilt from `chapels/agents/models.js`, so the desktop uses the website's company/family icon mapping. Replies keep their response model IDs. The shared website currently uses one pulsing thinking dot beside each model's specific icon. Provider-labelled reasoning summaries appear in a closed Thinking summary disclosure and persist in history; omitted, raw or encrypted reasoning is not fabricated or exposed.
+
+Source assets regenerate through `nook-desktop/scripts/build-assets.mjs`; the pinned Hugeicons development dependency is not shipped as a runtime dependency. Licenses ship in resources. The Windows pipeline regenerates assets before testing/building both architectures.
+
+Verification: desktop unit tests exercise real file writes/undo, approved PowerShell/CMD, cancellation, permission revocation, provider contracts, workspace context and reasoning. Electron smoke checks exercise actual native approvals and controls. Console and account fixtures verify model icons, thinking disclosures, multi-turn sessions, skills/profiles/memory, sequential queues, account isolation, DPAPI persistence and 1320/800-width layouts. Backend account tests verify authenticated key provisioning, existing developer key preservation, separate revocation and shared-pool enforcement. No paid live model inference or real-user password sign-in is claimed. ARM64 is cross-built without ARM hardware testing. Installers remain unsigned.
+
+Production advertising stays disabled. No Ultraviolet or retired runtime is introduced. Independent Altar Worship, Drop and Tutsi projects are not changed by this release.
+
+## Administrator install and test workspace
+
+The installer now installs for all users and requests Windows administrator approval. The installed application remains asInvoker; install approval does not permanently elevate the agent. User clarification requested a coding-agent project workspace, not a VM or third-party sandbox driver. Files > Create test workspace copies the chosen project and grants level 3 access to the copy for 60 minutes. Credentials, links and node_modules are excluded. Copies are bounded to 50 MB, 10,000 entries and 4 MB per file. The UI reports excluded entries; dependencies may need installing separately. Originals remain untouched by ordinary file tools and relative test commands until Review & apply is approved. Text-file applications use snapshot hashes and backups; conflicts refuse overwrite. Deleted, binary and oversized files require manual handling. Test copies remain locally available when leaving or restarting; tool access is not restored.
+
+This workspace is not an OS security sandbox. Approved commands have ordinary Windows user rights and can explicitly reach outside the copy. UI Automation and elevated commands retain separate exact-action approvals. No Windows Sandbox, Sandboxie driver, service or automatic startup is installed. Development smoke ran a real PowerShell command in the copy, verified the original was unchanged, then applied the generated text file through native approval.

@@ -1,3 +1,4 @@
+import {installNookDesktopRelease} from './scripture/nook-desktop-release.mjs';
 import {addModelCredits,modelCreditRef} from './scripture/ai-model-credits.mjs';
 import {learningRoutes} from './parables/learning-routes.js';
 import {sourceFile} from './scripture/source-layout.mjs';
@@ -109,6 +110,8 @@ let catClassGamesCache = { games: [], expires: 0, promise: null };
 let catClassCoverUrls = new Set();
 const nyxCustomRoleLabelLimit = 64;
 const app = express();
+installNookDesktopRelease(app);
+app.use('/nook-desktop',(_req,res)=>res.status(404).end());
 const appTraffic = createAppTraffic({file:process.env.NYX_TRAFFIC_FILE || (process.platform === 'win32' ? join(process.env.TEMP || __dirname, 'nyx-app-traffic.json') : '/var/lib/nyx/app-traffic.json')});
 app.use(appTraffic.middleware);
 const gameConnection = createGameConnection();

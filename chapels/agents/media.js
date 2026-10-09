@@ -1,12 +1,12 @@
 ﻿export function setupMedia({notice,sizePrompt,canSend,voiceModel}){
  const $=id=>document.getElementById(id),svg=paths=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+paths+'</svg>';
  $('attachImage').innerHTML=svg('<path d="M13 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-8"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 5-5 4 4 3-3 6 6M19 2v6M16 5h6"/>');
- $('dictate').innerHTML=svg('<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/>');
- $('voice').innerHTML=svg('<path d="M3 10v4M7 6v12M12 3v18M17 6v12M21 10v4"/>');
+ if($('dictate'))$('dictate').innerHTML=svg('<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/>');
+ if($('voice'))$('voice').innerHTML=svg('<path d="M3 10v4M7 6v12M12 3v18M17 6v12M21 10v4"/>');
  $('removeImage').innerHTML=svg('<path d="m6 6 12 12M18 6 6 18"/>');
  let attachment=null,preparing=false,generation=0,recognition=null,conversation=false,speaking=false,paused=false,mode='',base='',transcript='',timer,player=null,playbackUrl='';
  const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
- function status(text=''){ $('voiceStatus').textContent=text;$('voiceStatus').hidden=!text;$('voice').setAttribute('aria-pressed',String(conversation));$('dictate').setAttribute('aria-pressed',String(!!recognition&&mode==='dictation')); }
+ function status(text=''){ $('voiceStatus').textContent=text;$('voiceStatus').hidden=!text;$('voice')?.setAttribute('aria-pressed',String(conversation));$('dictate')?.setAttribute('aria-pressed',String(!!recognition&&mode==='dictation')); }
  function clearImage(){generation++;attachment=null;$('attachment').hidden=true;$('attachmentImage').removeAttribute('src');$('imageInput').value='';}
  async function attach(file){
   if(!file)return;if(!/^image\/(png|jpeg|webp|gif)$/.test(file.type)){notice('Choose a PNG, JPEG, WebP or GIF image.');return;}if(file.size>10*1024*1024){notice('Choose an image under 10 MB.');return;}
@@ -26,8 +26,8 @@
   current.onend=()=>{if(recognition!==current)return;recognition=null;status();if(kind==='conversation'&&conversation){if(transcript.trim()&&canSend()){$('composer').requestSubmit();}else{conversation=false;status();}}};
   try{current.start();status(kind==='conversation'?'Listening — speak your task. Click the waveform to end.':'Listening — your words will appear above.');}catch{stopVoice();notice('Could not start the microphone. Try again.');}
  }
- $('dictate').onclick=()=>{if(recognition&&mode==='dictation'){recognition.stop();return;}stopVoice();listen('dictation');};
- $('voice').onclick=()=>{if(conversation){stopVoice();return;}if(!Recognition){notice('Voice conversation is unavailable in this workspace. Try Chrome or Edge.');return;}if(!canSend()){notice('Sign in and select a model first. Computer mode also needs a connected folder.');return;}if(!voiceModel())return;stopVoice();conversation=true;listen('conversation');};
+ if($('dictate'))$('dictate').onclick=()=>{if(recognition&&mode==='dictation'){recognition.stop();return;}stopVoice();listen('dictation');};
+ if($('voice'))$('voice').onclick=()=>{if(conversation){stopVoice();return;}if(!Recognition){notice('Voice conversation is unavailable in this workspace. Try Chrome or Edge.');return;}if(!canSend()){notice('Sign in and select a model first. Computer mode also needs a connected folder.');return;}if(!voiceModel())return;stopVoice();conversation=true;listen('conversation');};
  function resume(){if(conversation&&!paused&&!speaking&&canSend()&&!recognition){clearTimeout(timer);timer=setTimeout(()=>{if(conversation&&!speaking&&canSend())listen('conversation');},250);}}
  function pause(){paused=true;abortRecognition();if(conversation)status('Working — click the waveform to end voice.');}
  function reply(text,audio){if(!conversation)return;if(!audio?.data||!['audio/mpeg','audio/wav'].includes(audio.mime)){stopVoice();notice('No model audio was returned. Workspace read-aloud is not used.');return;}try{const binary=atob(audio.data),bytes=Uint8Array.from(binary,char=>char.charCodeAt(0));playbackUrl=URL.createObjectURL(new Blob([bytes],{type:audio.mime}));player=new Audio(playbackUrl);speaking=true;player.onended=()=>{speaking=false;URL.revokeObjectURL(playbackUrl);playbackUrl='';player=null;resume();};player.onerror=()=>{stopVoice();notice('Could not play the model voice.');};status('Speaking - click the waveform to end voice.');player.play().catch(()=>{stopVoice();notice('Audio playback was blocked. Start voice again to retry.');});}catch{stopVoice();notice('The model returned invalid audio.');}}

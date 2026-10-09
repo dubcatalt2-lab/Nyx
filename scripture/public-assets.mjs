@@ -7,7 +7,7 @@ export function privateSourcePath(path) {
   const parts = path.toLowerCase().split('/').filter(Boolean);
   if (parts.some(part => part.startsWith('.') && part !== '.well-known')) return true;
   if (/\.(?:ps1|py|sh|cmd|bat|map|ts)$/.test(path.toLowerCase())) return true;
-  return /^(?:lib|scripture|scripts|rituals|deploy|mission|ministry|tools|services|ministries|tests?|node_modules|netlify|remote-host|hermitage|companion|deacon|static-export|lectionary|docs|scrolls)(?:\/|$)/.test(parts.join('/')) ||
+  return /^(?:lib|scripture|scripts|rituals|deploy|mission|ministry|tools|services|ministries|tests?|node_modules|netlify|remote-host|hermitage|companion|deacon|nook-desktop|static-export|lectionary|docs|scrolls)(?:\/|$)/.test(parts.join('/')) ||
     /^(?:server|wisp-server|shepherd|fellowship-server)\.js$|^(?:server-http-(?:wisp|fellowship)|fellowship-gateway)\.mjs$|^(?:package(?:-lock)?\.json|agents\.md)$/i.test(parts.join('/'));
 }
 

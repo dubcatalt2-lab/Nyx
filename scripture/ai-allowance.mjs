@@ -18,7 +18,7 @@ export function nookModelIsExpensive(price){dropModelIsExpensive(price);return p
 const DAY=86400000, MINUTE=60000, USD=1_000_000;
 export const CLAUDE_SITE_LIMIT_USD=.05;
 export const NYX_HAIKU_MODEL='anthropic/claude-haiku-5.5';
-export const usesNyxHaikuPool=(model,actor={})=>model===NYX_HAIKU_MODEL&&(!actor.app||actor.app==='nyx');
+export const usesNyxHaikuPool=(model,actor={})=>model===NYX_HAIKU_MODEL&&(!actor.app||actor.app==='nyx'||actor.app==='nook');
 export const NOOK_HAIKU_MODEL='anthropic/claude-haiku-4.5';
 export const nookHaikuModel=(model,app)=>app==='nook'&&model===NOOK_HAIKU_MODEL;
 export const nookHaikuLimitUsd=actor=>hasFullAiCatalog(actor)?null:actor.premium===true?.50:.05;

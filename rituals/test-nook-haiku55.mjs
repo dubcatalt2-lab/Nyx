@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import {createAiAllowance, aiAllowanceConfig, aiModelAllowed, NYX_HAIKU_MODEL as model} from '../scripture/ai-allowance.mjs';
+import {memoryFirestore} from './test-ai-allowance.mjs';
+import {createNookDeveloper} from '../scripture/nook-developer.mjs';
+const db = memoryFirestore();
+let time = Date.now();
+const allowance = createAiAllowance({db, config: aiAllowanceConfig({NYX_AI_DAILY_BUDGET_USD: '10'}), now: () => time});
+const price = {inputPerMillion: .1, outputPerMillion: .5};
+const actor = {uid: 'haiku55-member', app: 'nook', device: 'haiku55-workspace', trusted: true, requestedModel: model, modelRules: [{model, access: 'deny', messages: 0, periodDays: 4}]};
+assert(aiModelAllowed(model, actor, price));
+assert(!aiModelAllowed(model, {...actor, blocked: true}, price));
+assert(!aiModelAllowed('anthropic/claude-opus-5.5', actor, price));
+for (let i = 0; i < 2; i++) {
+  const session = await allowance.begin(actor);
+  const reservation = await allowance.reserve(session, 'shared', {model, messages: [{role: 'user', content: 'Hello'}], max_tokens: 100}, price);
+  assert.equal(reservation.claudePrice, null);
+  await allowance.settle(reservation, {input: 10, output: 20});
+  await allowance.finish(session, true); time += 61000;
+}
+const usage = await allowance.nookUsage(actor);
+assert.equal(usage.total.used, 60); assert.equal(usage.total.limit, 7000);
+assert(![...db.records.keys()].some(key => /claude-money|haiku-money|policy-/.test(key)));
+const session = await allowance.begin(actor);
+db.records.set(session.refs.device.path, {pool: {start: time, resetAt: time + 86400000, used: 7000, expensiveUsed: 0}});
+await assert.rejects(allowance.reserve(session, 'shared', {model, messages: [{role: 'user', content: 'Hello'}], max_tokens: 100}, price), /7,000-token/);
+await allowance.finish(session);
+const api = createNookDeveloper({catalog: async () => [{id: model, pricing: {prompt: '.0000001', completion: '.0000005'}}], send: async () => Response.json({choices: [{message: {content: 'ok'}}]})});
+db.records.set('nyxUserAdministration/haiku55-member', {aiModelRules: actor.modelRules});
+const caller = {uid: actor.uid, firebase: {firestore: db}, key: {device: actor.device}};
+assert.equal((await api.models(caller))[0].id, model);
+await api.send({body: {model, messages: [{role: 'user', content: 'Hello'}]}}, {json: data => assert.equal(data.choices[0].message.content, 'ok')}, caller);
+console.log('PASS Nook Haiku 5.5 regular access, normal pool accounting/exhaustion, no separate quota and account-key catalog/inference parity');

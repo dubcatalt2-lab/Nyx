@@ -1,6 +1,6 @@
-## Haiku 5.5 shared Nyx pool (2026-10-09)
+## Haiku 5.5 shared Nyx and Nook pools (2026-10-09)
 
-`anthropic/claude-haiku-5.5` is available to ordinary and Premium Nyx accounts without a per-model grant. It uses the existing account token pool and reset period. Model-specific deny/message-quota records do not gate this model in Nyx; no model-policy counter or separate Claude money allowance is created for it. Normal account-wide restrictions, shared-pool exhaustion, concurrency and site spending accounting continue to apply. Other apps and Claude models retain their existing policies. Pricing is included in the standard catalog budget configuration.
+`anthropic/claude-haiku-5.5` is available to ordinary and Premium Nyx and Nook accounts without a per-model grant, including Nook account API keys. It uses each application's existing account token pool and reset period. Model-specific deny/message-quota records do not gate this model in Nyx or Nook; no model-policy counter, expensive-model subset or separate Claude money allowance is created for it. Normal account-wide restrictions, shared-pool exhaustion, concurrency and site spending accounting continue to apply. Other apps and Claude models retain their existing policies. Pricing is included in the standard catalog budget configuration.
 
 ## Current expensive-model access (2026-09-30)
 

@@ -1,0 +1,38 @@
+name: Nook Windows release
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'nook-v*'
+permissions:
+  contents: read
+jobs:
+  installer:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [x64, arm64]
+    defaults:
+      run:
+        working-directory: nook-desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: nook-desktop/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npx electron-builder --win nsis --${{ matrix.arch }} --publish never
+        env:
+          CSC_LINK: ${{ secrets.NOOK_WINDOWS_CERTIFICATE }}
+          CSC_KEY_PASSWORD: ${{ secrets.NOOK_WINDOWS_CERTIFICATE_PASSWORD }}
+      - run: npm run checksums
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nook-windows-${{ matrix.arch }}
+          path: |
+            nook-desktop/release/*-setup.exe
+            nook-desktop/release/SHA256SUMS.txt
+          if-no-files-found: error

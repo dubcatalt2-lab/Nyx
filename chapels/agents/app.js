@@ -7,7 +7,7 @@ import {supportsConversationVoice} from './voice-capabilities.js';
 import {setupChats} from './chats.js?v=20260928-projects-v1';
 import {setupScreen} from './screen.js?v=20260927-chat';
 import {setupPicker} from './models.js?v=20261009-key-catalog-v1';
-import {setupMedia} from './media.js?v=20260928-voice-v2';
+import {setupMedia} from './media.js?v=20261009-no-voice-buttons';
 const $=id=>document.getElementById(id);
 $('model').addEventListener('change',()=>media.stopVoice());
 const iconPaths={account:'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0 M4 21v-2a8 8 0 0 1 16 0v2',code:'m8 6-6 6 6 6M16 6l6 6-6 6M14 3l-4 18',chat:'M4 4h16v12H9l-5 4z',sun:'M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1 1M18 18l1 1M5 19l1-1M18 6l1-1 M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0',moon:'M20 15A8 8 0 0 1 9 4a8 8 0 1 0 11 11z',compose:'M9 4H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-5 M16 3a2 2 0 0 1 3 3l-9 9-4 1 1-4z',pin:'M8 3h8l-1 6 4 4v2H5v-2l4-4z M12 15v6',folder:'M3 7V5h6l2 2h10v13H3z',file:'M6 3h8l4 4v14H6z M14 3v5h5',refresh:'M20 11a8 8 0 1 0-2.35 5.65 M20 4v7h-7',plus:'M12 5v14 M5 12h14',send:'m21 3-8.5 18-3.2-7.3L2 10.5 21 3z M9.3 13.7l4.2-4.2',stop:'M6 6h12v12H6z',close:'m6 6 12 12 M18 6 6 18',search:'M21 21l-5-5 M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',connect:'M8 3v5 M16 3v5 M5 8h14v3a7 7 0 0 1-14 0z M12 18v3',download:'m3 7 9-4 9 4v10l-9 4-9-4z M3 7l9 4 9-4 M12 11v10 M7 5l9 4',spark:'m12 3 2 6 6 3-6 2-2 6-2-6-6-2 6-3z'};
@@ -15,9 +15,10 @@ function icon(name){return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d=
 for(const [id,name,label] of [['refresh','refresh',''],['newTask','compose','New chat'],['send','send',''],['stop','stop','Stop'],['closeLogin','close',''],['connect','connect','Connect folder'],['activityTab','spark','Activity'],['fileTab','file','Preview']]){const button=$(id);button.innerHTML=icon(name);if(label)button.append(document.createTextNode(label));}
 function updateTheme(){const light=document.documentElement.dataset.theme==='light';$('themeToggle').innerHTML=icon(light?'moon':'sun')+(light?'Dark mode':'Light mode');$('themeToggle').setAttribute('aria-label',light?'Use dark mode':'Use light mode');}
 $('themeToggle').onclick=()=>{const theme=document.documentElement.dataset.theme==='light'?'dark':'light';document.documentElement.dataset.theme=theme;try{localStorage.setItem('nook.theme',theme);}catch{}updateTheme();};updateTheme();
-const download=document.querySelector('.aside-bottom a');download.innerHTML=icon('download')+'Download companion';
+const download=document.querySelector('.aside-bottom a[href="/download/nyx-agents.zip"]');download.innerHTML=icon('download')+'Download companion';
 const welcomeTemplate=document.getElementById('welcome').cloneNode(true);
 const picker=setupPicker($('model'),{compact:dropEmbed});
+if(dropEmbed){for(const [id,label] of [['dictate','Dictate message'],['voice','Voice conversation']]){const button=document.createElement('button');button.id=id;button.type='button';button.title=label;button.setAttribute('aria-label',label);button.setAttribute('aria-pressed','false');$('voiceSettings').before(button);}}
 const media=setupMedia({notice,sizePrompt,canSend:()=>!running&&(chatMode||connected)&&!!auth?.currentUser&&!!$('model').value,voiceModel:()=>{if(!chatMode){notice('Switch to Chat for model voice conversations.');return false;}if(!supportsConversationVoice(models.find(item=>item.id===$('model').value))){picker.openVoice();notice('Choose a model with native voice output.');return false;}return true;}});
 const keys=setupKeys({appName:dropEmbed?'Drop':'Nook',user:()=>auth?.currentUser,busy:()=>running,notice,changed:async()=>{media.stopVoice();await loadModels();}});
 const screen=setupScreen({notice});

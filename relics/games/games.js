@@ -860,11 +860,12 @@ function renderLibraryTabs() {
     button.className = 'library-tab';
     button.dataset.library = library.id;
     button.title = library.description;
+    button.setAttribute('aria-label', library.label);
     button.setAttribute('aria-pressed', String(state.activeLibrary === library.id));
     button.classList.toggle('active', state.activeLibrary === library.id);
 
     const label = document.createElement('span');
-    label.textContent = library.label;
+    label.textContent = displayGameName(library.label);
     const total = document.createElement('span');
     total.className = 'library-tab-count';
     total.textContent = count.toLocaleString();

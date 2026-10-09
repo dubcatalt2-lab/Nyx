@@ -7,7 +7,7 @@ app.use(express.static('dist'));
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
 const base=process.env.NYX_TEST_ORIGIN||'http://127.0.0.1:'+server.address().port;
 const browser=await chromium.launch({channel:'msedge',headless:true});
-const apps=['ai.html','link-checker','link-generator','jsdelivr-publisher','api-keys','code-studio','nyxtube','chat','nyxify','agents','movies','nyxcloud','cloud-gaming','tutsi','drop'];
+const apps=['ai.html','link-checker','link-generator','link-generator/bulk.html','jsdelivr-publisher','api-keys','code-studio','code-tutorials','connect-domain','nyxtube','chat','nyxify','agents','movies','nyxcloud','cloud-gaming','tutsi','drop'];
 const failures=[];
 try{
  for(const width of [1365,390]){
@@ -48,7 +48,7 @@ try{
   assert(tileCount>=16,'Full default app catalog must be audited');
   for(const name of apps){
    errors.length=0;
-   await page.goto(base+(name==='ai.html'?'/ai.html':'/apps/'+name+'/'));
+   await page.goto(base+(name==='ai.html'?'/ai.html':'/apps/'+name+(name.endsWith('.html')?'':'/')));
    if(name==='ai.html'){
     await page.waitForFunction(()=>document.querySelector('.ai-sidebar-brand strong')?.textContent.normalize('NFKC')==='NYX A1');
     assert.equal((await page.title()).normalize('NFKC'),'NYX A1');
@@ -63,6 +63,17 @@ try{
    if(name==='code-studio')await page.waitForFunction(()=>document.querySelector('.eyebrow[data-nyx-display-label]')?.textContent.normalize('NFKC')==='NYX A1');
    await page.waitForTimeout(400);
    const state=await page.evaluate(()=>({text:document.body.innerText.slice(0,180),installed:document.__nyxDisplayLabelsInstalled,controls:document.querySelectorAll('button,input,a,select').length}));
+   if(!['agents','tutsi','drop'].includes(name)){
+    const leftovers=await page.evaluate(()=>{
+     const words=/\b(?:games?|gaming|browsers?|brows(?:e[sd]?|ing)|search(?:es|ing|ed)?|proxy|proxies|scramjet)\b/i;
+     return [...document.body.querySelectorAll('*')].filter(el=>!el.closest('script,style,textarea,pre,code,[contenteditable],.ai-message,.ai-message-content,.message,.chat-message,.monaco-editor,.cm-editor,[data-nyx-keep-text]')&&el.checkVisibility()).flatMap(el=>{
+      const values=[...el.childNodes].filter(n=>n.nodeType===3).map(n=>n.textContent);
+      for(const attr of ['placeholder','title','alt'])if(el.hasAttribute(attr))values.push(el.getAttribute(attr));
+      return values.filter(value=>words.test(value)).map(value=>({tag:el.tagName,text:value.slice(0,150)}));
+     });
+    });
+    assert.deepEqual(leftovers,[],name+' visible keyword leftovers');
+   }
    if(!state.installed||!state.controls||errors.length)failures.push({name,width,state,errors:[...errors]});
    console.log('AUDIT',width,name,JSON.stringify({installed:state.installed,controls:state.controls,errors}));
   }

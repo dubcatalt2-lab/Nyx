@@ -11,12 +11,18 @@
   const wordScopes='.nyx-release-notes,.nyx-tos-dialog,.nyx-terms-tab,.nyx-tos-document,[data-nyx-display-words]';
   const wordElements='p,li,strong,h1,h2,h3,a,span,button';
   const displayWords=/\b(?:link generators?|proxy|proxies|games?|gaming|AI|Discord)\b/gi;
+  const interfaceWords=/\b(?:games?|gaming|arcade|play(?:ing)?|search(?:es|ing|ed)?|browsers?|brows(?:e[sd]?|ing)|proxies|proxy|scramjet|baremux|bare-mux|ultraviolet|wisp|relay(?:s)?|movies?|videos?|shorts|music|link generators?)\b/gi;
+  const untouched='script,style,input,textarea,pre,code,kbd,[contenteditable="true"],.nyx-styled-display-name,.message,.message-content,.chat-message,.ai-message,.ai-message-content,.ai-thread-list,[data-message-id],.monaco-editor,.cm-editor,[data-nyx-keep-text]';
   const installed=new WeakSet();
   const generatedLabels=new WeakMap();
   function install(doc){
     if(!doc?.body || installed.has(doc) || doc.__nyxDisplayLabelsInstalled) return;
     installed.add(doc);
     doc.__nyxDisplayLabelsInstalled=true;
+    const nyxInterface=!/^(?:nook|drop|tutsi)\./i.test(doc.location.hostname)
+      && !/^\/(?:apps|chapels)\/(?:agents|drop|tutsi)(?:\/|$)/i.test(doc.location.pathname)
+      && doc.documentElement.dataset.appShell!=='tutsi' && !doc.documentElement.dataset.tutsiApp
+      && !doc.body.classList.contains('drop-games');
     function format(element){
       if(element.closest('input,textarea,pre,code,[contenteditable="true"],.nyx-styled-display-name,.message,.message-content,.chat-message,.ai-message,.ai-message-content,.ai-thread-list,[data-message-id]')) return;
       const nodes=[...element.childNodes].filter(node=>node.nodeType===3);
@@ -31,11 +37,23 @@
       for(const node of nodes)if(node!==content&&node.textContent.trim())node.textContent='';
     }
     function formatWords(element){
-      if(!element.closest(wordScopes) || element.closest('input,textarea,pre,code,[contenteditable="true"]'))return;
+      if((!nyxInterface && !element.closest(wordScopes)) || element.closest(untouched))return;
       for(const node of element.childNodes){
         if(node.nodeType!==3)continue;
-        const next=node.textContent.replace(displayWords,word=>nyxDisplayName(word));
+        const next=node.textContent.replace(nyxInterface?interfaceWords:displayWords,word=>nyxDisplayName(word));
         if(next!==node.textContent)node.textContent=next;
+      }
+    }
+    function formatAttributes(element){
+      if(!nyxInterface || element.closest('pre,code,textarea,[contenteditable="true"],.monaco-editor,.cm-editor,[data-nyx-keep-text]'))return;
+      for(const name of ['placeholder','title','alt']){
+        const value=element.getAttribute(name);
+        if(!value)continue;
+        const next=value.replace(interfaceWords,word=>nyxDisplayName(word));
+        if(next!==value){
+          if(name==='placeholder' && !element.hasAttribute('aria-label') && !element.hasAttribute('aria-labelledby'))element.setAttribute('aria-label',value);
+          element.setAttribute(name,next);
+        }
       }
     }
     function scan(node){
@@ -43,17 +61,21 @@
       if(!element)return;
       if(element.matches(labels+','+headings))format(element);
       element.querySelectorAll(labels+','+headings).forEach(format);
-      if(element.matches(wordElements))formatWords(element);
-      if(element.closest(wordScopes))element.querySelectorAll(wordElements).forEach(formatWords);
-      else element.querySelectorAll(wordScopes).forEach(scope=>{formatWords(scope);scope.querySelectorAll(wordElements).forEach(formatWords);});
+      if(nyxInterface){formatWords(element);formatAttributes(element);element.querySelectorAll('*').forEach(child=>{formatWords(child);formatAttributes(child);});}
+      else{
+        if(element.matches(wordElements))formatWords(element);
+        if(element.closest(wordScopes))element.querySelectorAll(wordElements).forEach(formatWords);
+        else element.querySelectorAll(wordScopes).forEach(scope=>{formatWords(scope);scope.querySelectorAll(wordElements).forEach(formatWords);});
+      }
     }
     scan(doc.body);
     new MutationObserver(records=>{
       for(const record of records){
-        if(record.type==='characterData')scan(record.target);
+        if(record.type==='attributes')formatAttributes(record.target);
+        else if(record.type==='characterData')scan(record.target);
         else {if(record.target.matches?.(labels+','+headings))format(record.target);if(record.target.matches?.(wordElements))formatWords(record.target);for(const node of record.addedNodes)scan(node);}
       }
-    }).observe(doc.body,{childList:true,subtree:true,characterData:true});
+    }).observe(doc.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['placeholder','title','alt']});
     function frame(frame){
       try{
         const url=new URL(frame.contentWindow.location.href);

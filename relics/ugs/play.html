@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Nyx Game</title>
+  <script defer src="/js/display-names.js?v=20261009-interface-words"></script>
   <style>
     *{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;background:#050814;color:#eef6ff;font-family:Outfit,Segoe UI,Arial,sans-serif}.loading{position:fixed;inset:0;z-index:2;display:grid;place-items:center;background:#050814}.loading.hidden{display:none}.status{width:min(440px,calc(100vw - 40px));padding:22px;border:1px solid #638ee8;border-radius:14px;background:#0b1225;text-align:center}.track{height:6px;margin-top:13px;overflow:hidden;border-radius:99px;background:#1c2945}.fill{width:18%;height:100%;border-radius:inherit;background:#76a4ff;animation:load 2.2s ease-in-out infinite}.status button{min-height:36px;margin-top:14px;border:1px solid #638ee8;border-radius:9px;background:#111d39;color:#eef6ff;padding:0 13px;font:inherit;cursor:pointer}iframe{position:fixed;inset:0;width:100%;height:100%;border:0;background:#050814}@keyframes load{50%{width:82%}}
   </style>
@@ -27,6 +28,19 @@
       'S/clsubwaysurferswinterholiday.html':'winter-holiday'
     };
     let failed=false;
+    let disposed=false;
+    const loadController=new AbortController();
+    const loadDeadline=setTimeout(()=>loadController.abort(),15000);
+    window.addEventListener('pagehide',()=>{disposed=true;clearTimeout(loadDeadline);loadController.abort()},{once:true});
+    async function fetchDocument(url){
+      try{
+        const response=await fetch(url,{cache:'no-store',signal:loadController.signal});
+        if(!response.ok)throw new Error(`HTTP ${response.status}`);
+        const source=await response.text();
+        if(disposed)throw new Error('Loading cancelled');
+        return source;
+      }finally{clearTimeout(loadDeadline)}
+    }
     let monitorRevision=0;
     function safePath(path){return path&&!path.includes('..')&&/^[a-z0-9_./%() +'\-]+$/i.test(path)?path:''}
     function fail(message){if(failed||launched)return;window.nyxReportGameFailure?.(/blank|timed out/i.test(String(message))?'startup-timeout':'load-error');failed=true;status.textContent=String(message||'This game could not be loaded.');const retry=document.createElement('button');retry.type='button';retry.textContent='retry';retry.onclick=()=>location.reload();status.append(document.createElement('br'),retry);loading.classList.remove('hidden');parent.postMessage({type:'nyx:game-failed'},'*')}
@@ -109,18 +123,26 @@
     }
     else if(path==='A/clasmallworldcup.html'){
       const sourceUrl=location.origin+'/assets/games/small-world-cup.html';
-      fetch(sourceUrl).then(response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.text();})
+      fetchDocument(sourceUrl)
         .then(source=>{launchStarted=true;frame.srcdoc=prepareGameDocument(source,path,sourceUrl);})
         .catch(error=>fail(`Could not load game: ${error.message||error}`));
     }
     else if(externalGames[path]){launchStarted=true;frame.src=externalGames[path]}
     else if(repairedDocuments[path]){
       const sourceUrl=location.origin+'/assets/games/subway-surfers.html';
-      fetch(sourceUrl).then(response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.text();})
+      fetchDocument(sourceUrl)
         .then(source=>{launchStarted=true;frame.srcdoc=prepareGameDocument(source.replace('data-edition="barcelona"',`data-edition="${repairedDocuments[path]}"`),path,sourceUrl);})
         .catch(error=>fail(`Could not load game: ${error.message||error}`));
     }
-    else {const assetUrl=`/assets/ugs/${path}`;fetch(assetUrl,{cache:'no-store'}).then(response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.text()}).then(source=>{launchStarted=true;const hasDeadCloak=/(?:\.\.\/)+storage\/js\/cloak(?:i)?\.js/i.test(source);if(path==='G/clgetawayshootout.html'||isWrapped(source)||/<base\b[^>]*href=["'][^"']*(?:cdn\.jsdelivr\.net|raw(?:cdn)?\.githack\.com|raw\.githubusercontent\.com)/i.test(source))frame.srcdoc=prepareGameDocument(unwrap(source),path,location.origin+assetUrl);else if(isWrapped(source)||hasDeadCloak)frame.srcdoc=prepare(source,path);else frame.src=assetUrl}).catch(error=>fail(`Could not load game: ${error.message||error}`))}
+    else {
+      const assetUrl=`/assets/ugs/${path}`;
+      fetchDocument(assetUrl).then(source=>{
+        if(disposed)return;
+        launchStarted=true;
+        if(path==='G/clgetawayshootout.html'||isWrapped(source)||/<base\b[^>]*href=["'][^"']*(?:cdn\.jsdelivr\.net|raw(?:cdn)?\.githack\.com|raw\.githubusercontent\.com)/i.test(source))frame.srcdoc=prepareGameDocument(unwrap(source),path,location.origin+assetUrl);
+        else frame.srcdoc=prepare(source,path);
+      }).catch(error=>{if(!disposed)fail(`Could not load game: ${error.message||error}`)});
+    }
   </script>
 </body>
 </html>

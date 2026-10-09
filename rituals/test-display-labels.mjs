@@ -23,5 +23,16 @@ try {
  assert.equal(await page.evaluate(()=>nyxDisplayName('AI')),'A1');
  assert.equal(await page.evaluate(()=>nyxDisplayName('A1')),'A1');
  assert.equal(await page.evaluate(()=>nyxDisplayName('Nyx AI').normalize('NFKC')),'NYX A1');
+ await page.evaluate(()=>{
+  document.body.insertAdjacentHTML('beforeend','<section id="wording"><input placeholder="Search games" value="search games"><p>Browse movies in your browser. Proxy scramjet games.</p><button title="Reload game">Random game</button><span>1,347 games</span><div class="ai-message-content">Search games with a proxy</div></section>');
+ });
+ await page.waitForFunction(()=>document.querySelector('#wording input').placeholder!=='Search games');
+ assert.equal(await page.locator('#wording input').inputValue(),'search games');
+ assert.equal(await page.locator('#wording input').getAttribute('aria-label'),'Search games');
+ assert.equal(await page.locator('#wording .ai-message-content').textContent(),'Search games with a proxy');
+ assert(!/\b(?:search|games?|browse|browser|proxy|scramjet|movies)\b/i.test(await page.locator('#wording p').textContent()));
+ await page.locator('#wording button').evaluate(el=>{el.title='Play game';el.textContent='Play game';});
+ await page.waitForFunction(()=>!document.querySelector('#wording button').title.includes('game'));
+ assert(!/\b(?:play|game)\b/i.test(await page.locator('#wording button').textContent()));
  console.log('PASS dynamic/icon labels, idempotence, accessible names, editable text, messages, code and profile preservation.');
 } finally {await browser.close()}

@@ -1,5 +1,13 @@
 # Nyx API
 
+## Key-specific model discovery (2026-10-09)
+
+`GET /api/v1/models` accepts a Nyx bearer key and returns `models` plus `capabilities.stream` and `capabilities.multimodal`. It validates the actual key and its owner, including revocation and account restrictions. Nook keys use their current account catalog; older Nyx keys retain their existing model grants and text-only limits. Responses are not cached and support cross-origin GET preflight. This endpoint does not spend tokens or return account identity, key material, or balances.
+
+The main A1 custom-key picker and Nook custom-key picker now use this endpoint rather than the signed-in user's catalog or the hardcoded custom-model list. Nook's playground rechecks the entered key before sending. The main picker ignores results from an older key selection. An empty upstream Nook catalog reports temporary unavailability (503), rather than a model-access denial (403).
+
+This update does not alter grants, credit balances, model policy, or spending limits. The historical sections below describe earlier API versions and should not be used as the current model catalog.
+
 The public `/api` page and existing Apps → Nyx API Keys entry use OpenRouter through the Nyx server. The owner's actual OpenRouter key never leaves the VPS. Old Groq-era keys cannot authenticate to the new gateway.
 
 Verified Nyx email accounts receive a one-time 1,000-token Gemini 2.5 Flash Lite grant. One active key per account; users on the same network have independent keys and grants. Rotation does not refill the balance. Premium instead shares a 50,000-token UTC calendar-month allowance with shared Nyx chat, across Gemini and Luna; Gemini can continue after the allowance is spent, while Luna stops. The configured owner has no personal token/daily-message ceiling. All requests still obey site spending and burst/concurrency protections.

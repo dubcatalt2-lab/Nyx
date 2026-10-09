@@ -51,12 +51,18 @@ const response = await fetch(${JSON.stringify(location.origin+'/api/v1/ai')}, {
 const data = await response.json();
 if (!response.ok) throw new Error(data.error || 'Nook request failed');
 console.log(data.choices?.[0]?.message?.content);`;$('apiEndpoint').textContent=location.origin+'/api/v1/ai';$('apiExample').textContent=`curl "${location.origin}/api/v1/ai" \\\n  -H "Authorization: Bearer $NOOK_API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '${JSON.stringify({model,messages:[{role:'user',content:'Hello'}],max_tokens:512})}'`;}
+ async function keyModels(key,signal){return readResponse(await fetch('/api/v1/models',{headers:{Authorization:'Bearer '+key},cache:'no-store',signal}));}
+ function setKeyModels(models){const chosen=$('playModel').value;$('playModel').replaceChildren(...models.map(m=>new Option(m.label||m.id,m.id)));if(models.some(m=>m.id===chosen))$('playModel').value=chosen;example();}
+ $('playKey').onchange=async()=>{const key=$('playKey').value.trim(),mine=revision;if(!/^n_api_[A-Za-z0-9_-]{43}$/.test(key))return;try{const data=await keyModels(key);if(mine===revision&&key===$('playKey').value.trim())setKeyModels(data.models||[]);}catch(error){if(mine===revision&&key===$('playKey').value.trim()){$('playModel').replaceChildren();$('playStatus').textContent=error.message.replaceAll(key,'[key]');}}};
  $('playModel').onchange=example;
  $('playForm').onsubmit=async event=>{
   event.preventDefault();if(controller)return;const key=$('playKey').value.trim();if(!/^n_api_[A-Za-z0-9_-]{43}$/.test(key)){$('playStatus').textContent='Enter your account API key.';return;}
   const mine=++revision,active=new AbortController();controller=active;const timer=setTimeout(()=>active.abort(),125000),started=performance.now();
   $('playRun').disabled=true;$('playCancel').hidden=false;$('playStatus').textContent='Generating…';$('playResult').textContent='';
   try{
+   const selected=$('playModel').value,data=await keyModels(key,active.signal);if(mine!==revision)return;
+   setKeyModels(data.models||[]);
+   if(!(data.models||[]).some(m=>m.id===selected))throw Error('The model list has been refreshed for this key. Choose a model and try again.');
    const response=await fetch('/api/v1/ai',{method:'POST',signal:active.signal,headers:{Authorization:'Bearer '+key,'Content-Type':'application/json'},body:JSON.stringify({model:$('playModel').value,messages:[{role:'user',content:$('playPrompt').value}],max_tokens:Number($('playTokens').value)})});
    const result=await readResponse(response);if(mine!==revision)return;
    const choice=result.choices?.[0];renderReply($('playResult'),choice?.message?.content||'The model returned no text.');

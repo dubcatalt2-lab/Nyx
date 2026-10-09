@@ -1406,14 +1406,18 @@
     closeModelMenu({restoreFocus:true});
   }
 
+  let modelLoadRevision=0;
   async function loadModels(){
+    const revision=++modelLoadRevision,key=customKey;
     const status=document.querySelector('.ai-model-status');
     model.disabled=true;
     modelTrigger.disabled=true;
     modelTrigger.setAttribute('aria-busy','true');
     try{
-      const response=await fetch((tutsiModelPicker()?'/api/tutsi-ai/models':'/api/nyx-ai/models')+(customKey?'?custom=1':''),{headers:await aiHeaders({accept:'application/json'})});
+      const ownKey=key.startsWith('n_api_');
+      const response=await fetch(ownKey?'/api/v1/models':(tutsiModelPicker()?'/api/tutsi-ai/models':'/api/nyx-ai/models')+(key?'?custom=1':''),{headers:ownKey?{accept:'application/json',Authorization:'Bearer '+key}:await aiHeaders({accept:'application/json'}),cache:'no-store'});
       const data=await response.json();
+      if(revision!==modelLoadRevision||key!==customKey)return false;
       if(!response.ok) throw new Error(data?.error||`Model catalog failed (${response.status})`);
       ownerMediaAccess=data.ownerMediaAccess===true;
       const next=Array.isArray(data?.models)?data.models.flatMap(item=>{
@@ -1438,6 +1442,7 @@
       }
       return true;
     }catch(error){
+      if(revision!==modelLoadRevision||key!==customKey)return false;
       console.warn('Nyx AI model catalog could not be loaded:',error);
       modelCatalog=[];
       renderModelOptions([],"");
@@ -1445,6 +1450,7 @@
       if(status){status.classList.add('is-warning');status.title='The model list could not be verified'}
       return false;
     }finally{
+      if(revision!==modelLoadRevision||key!==customKey)return false;
       const available=modelCatalog.length>0;
       model.disabled=!available;
       modelTrigger.disabled=!available;

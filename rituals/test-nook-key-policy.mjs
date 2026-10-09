@@ -29,3 +29,18 @@ const rules=[{model:'vendor/new',access:'deny'}];assert.equal(aiModelRule({model
 await assert.rejects(nook.send({body:{model:'vendor/new',messages:[{role:'user',content:'Hi'}]}},{},{uid:'member',firebase:{firestore:db},key:{device:'workspace-original'}}),/available to your Nook account/);
 assert.equal(providerCalls,0);
 console.log('PASS existing-key migration, persistent device binding across rotation, revocation, missing-device rejection, owner exemption and current model restrictions');
+
+const supported=[{id:'openai/gpt-6-luna',pricing:{prompt:'0.0000001',completion:'0.0000005'}},{id:'google/gemini-2.5-flash',pricing:{prompt:'0.0000003',completion:'0.0000025'}}];
+const accepted=[];
+const publicApi=createNookDeveloper({catalog:async()=>supported,send:async(req,payload)=>{assert.equal(req.nyxAiBilling.uid,'member');assert.equal(req.nyxAiBilling.device,'workspace-original');accepted.push(payload.model);return Response.json({choices:[{message:{content:'Hello'}}]});}});
+const caller={uid:'member',firebase:{firestore:db},key:{device:'workspace-original'}};
+for(const model of supported)await publicApi.send({body:{model:model.id,messages:[{role:'user',content:'Hi'}]}},{json:value=>assert.equal(value.choices[0].message.content,'Hello')},caller);
+assert.deepEqual(accepted,supported.map(m=>m.id));
+db.records.set('nyxUserAdministration/member',{aiModelRules:[{model:supported[0].id,access:'deny'}]});
+assert.deepEqual((await publicApi.models(caller)).map(m=>m.id),[supported[1].id]);
+await assert.rejects(publicApi.send({body:{model:supported[0].id,messages:[{role:'user',content:'Hi'}]}},{},caller),{status:403});
+assert.equal(accepted.length,2);
+console.log('PASS Luna 6 and Gemini Flash key requests and discovery enforce the same current account policy');
+
+const unavailable=createNookDeveloper({catalog:async()=>[]});
+await assert.rejects(unavailable.send({body:{model:supported[0].id,messages:[{role:'user',content:'Hi'}]}},{},caller),{status:503});

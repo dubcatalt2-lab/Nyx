@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import express from 'express';
+import {createNookDeveloper} from '../scripture/nook-developer.mjs';
 import {createKeyStore,installDeveloperApi,passwordDigest,checkPassword,GEMINI,LUNA} from '../scripture/developer-api.mjs';
 import {memoryFirestore} from './test-ai-allowance.mjs';
 import {createAiAllowance,aiAllowanceConfig} from '../scripture/ai-allowance.mjs';
@@ -36,7 +37,7 @@ const collection=routeDb.collection;
 routeDb.collection=name=>{const base=collection(name);return {...base,doc(id){const r=base.doc(id);return {...r,async set(value,options){routeDb.records.set(r.path,options?.merge?{...routeDb.records.get(r.path),...value}:value)}};},orderBy(){let lower='',upper='~',after='',limit=100;const q={endAt(v){upper=v;return q},startAt(v){lower=v;return q},startAfter(v){after=v;return q},limit(v){limit=v;return q},async get(){return {docs:[...routeDb.records].filter(([k])=>k.startsWith(name+'/')).map(([k,v])=>({id:k.slice(name.length+1),data:()=>v})).filter(d=>d.id>=lower&&d.id<=upper&&d.id>after).sort((a,b)=>a.id.localeCompare(b.id)).slice(0,limit)}}};return q;}};};
 const firebase={firestore:routeDb,auth:{getUser:async uid=>{if(!users.has(uid))throw Error('Missing user');return users.get(uid);}}};
 const app=express();app.use(express.json());let calls=0,mode='ok';
-installDeveloperApi(app,{firebase:async()=>firebase,authenticate:async req=>{const uid=req.get('authorization')?.replace('Bearer ','');if(!users.has(uid))throw Object.assign(Error('Sign in'),{status:401});return {firebase,token:{uid,firebase:{sign_in_provider:req.get('x-test-anonymous')?'anonymous':'password'}}};},ownerUid:()=> 'owner',passwordHash:()=>digest,sameOrigin:req=>req.get('origin')!=='https://evil.test',device:async req=>req.get('x-test-device')||'workspace',configured:()=>true,page:(_req,res)=>res.send('public API page'),send:async(req,payload)=>{
+installDeveloperApi(app,{nook:createNookDeveloper({catalog:async()=>[{id:'openai/gpt-6-luna',pricing:{prompt:'0.0000001',completion:'0.0000005'}},{id:'google/gemini-2.5-flash',pricing:{prompt:'0.0000003',completion:'0.0000025'}}],configured:()=>true}),firebase:async()=>firebase,authenticate:async req=>{const uid=req.get('authorization')?.replace('Bearer ','');if(!users.has(uid))throw Object.assign(Error('Sign in'),{status:401});return {firebase,token:{uid,firebase:{sign_in_provider:req.get('x-test-anonymous')?'anonymous':'password'}}};},ownerUid:()=> 'owner',passwordHash:()=>digest,sameOrigin:req=>req.get('origin')!=='https://evil.test',device:async req=>req.get('x-test-device')||'workspace',configured:()=>true,page:(_req,res)=>res.send('public API page'),send:async(req,payload)=>{
   if(mode==='presend')throw Object.assign(Error('budget reached'),{status:429});
   req.nyxApiSent=true;calls++;assert.equal(payload.model,GEMINI);
   if(mode==='timeout')throw Error('timeout');
@@ -47,6 +48,9 @@ const origin=`http://127.0.0.1:${server.address().port}`;
 const request=(path,uid,body,method,headers={})=>fetch(origin+path,{method:method||(body?'POST':'GET'),headers:{...(uid?{Authorization:'Bearer '+uid}:{}),'Content-Type':'application/json',...headers},...(body?{body:JSON.stringify(body)}:{})});
 try {
   assert.equal((await request('/api')).status,200);
+  assert.equal((await request('/api/v1/models')).status,401);
+  const preflight=await request('/api/v1/models',null,null,'OPTIONS');assert.equal(preflight.status,204);assert.match(preflight.headers.get('access-control-allow-methods'),/GET/);
+
   assert.equal((await request('/api/developer/me')).status,401);assert.equal((await request('/api/developer/owner/accounts','member')).status,403);assert.equal((await request('/api/developer/owner/accounts','owner')).status,403);
   const emailFree=await (await request('/api/developer/keys','unverified',{})).json();assert.ok(emailFree.key);
   delete users.get('unverified').email;
@@ -56,6 +60,13 @@ try {
   assert.equal((await request('/api/developer/keys','member',{},null,{'x-test-anonymous':'1'})).status,403,'Guest sessions cannot claim a key');
   assert.equal((await request('/api/developer/keys','member',{},null,{origin:'https://evil.test'})).status,403);
   const issued=await (await request('/api/developer/keys','member',{})).json();assert.ok(issued.key);
+  const keyCatalog=await request('/api/v1/models',issued.key);assert.equal(keyCatalog.status,200);assert.equal(keyCatalog.headers.get('cache-control'),'no-store');
+  const keyModels=await keyCatalog.json();assert.deepEqual(keyModels.models.map(m=>m.id),[GEMINI]);assert.equal(keyModels.capabilities.stream,false);
+  const nookStore=createKeyStore(routeDb,()=>Date.now()+61000),nookKey=await nookStore.issue('unverified','bound-workspace','Nook',true,'nook');
+  const nookModels=await (await request('/api/v1/models',nookKey.key)).json();assert.deepEqual(nookModels.models.map(m=>m.id),['openai/gpt-6-luna','google/gemini-2.5-flash']);assert.equal(nookModels.capabilities.stream,true);
+  routeDb.records.set('nyxUserAdministration/unverified',{aiModelRules:[{model:'openai/gpt-6-luna',access:'deny'}]});
+  assert.deepEqual((await (await request('/api/v1/models',nookKey.key)).json()).models.map(m=>m.id),['google/gemini-2.5-flash']);
+  await nookStore.revoke('unverified');assert.equal((await request('/api/v1/models',nookKey.key)).status,401);
   assert.equal((await request('/api/developer/keys','owner',{})).status,200,'Other accounts have independent keys');
   assert.equal((await request('/api/developer/unlock','member',{password})).status,403);
   assert.equal((await request('/api/developer/owner/account/member','owner')).status,403);

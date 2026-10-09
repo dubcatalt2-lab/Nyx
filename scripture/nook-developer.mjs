@@ -12,11 +12,11 @@ export function createNookDeveloper({allowance,catalog,send,configured}){
   const admin=(await u.firebase.firestore.collection('nyxUserAdministration').doc(u.uid).get()).data()||{};
   return {uid:u.uid,app:'nook',owner:u.owner,premium:u.premium,modelRules:admin.aiModelRules||[],blocked:admin.aiAccess==='restricted'};
  }
- async function models(u){const who=await actor(u);return (await catalog(who)).filter(m=>aiModelAllowed(m.id,who,aiCatalogPrice(m)));}
+ async function models(u){const who=await actor(u),available=await catalog(who);if(!available.length)throw fail('The model list is temporarily unavailable. Please retry shortly.',503);return available.filter(m=>aiModelAllowed(m.id,who,aiCatalogPrice(m)));}
  async function details(req,res,u){
   const who=await actor(u),saved=await u.store.details(u.uid),current=await device(req,res,u.firebase);
   const bound=saved.nookDevice||current;
-  const available=(await catalog(who)).filter(m=>aiModelAllowed(m.id,who,aiCatalogPrice(m)));
+  const available=await models(u);
   const currentUsage=bound!==current?await allowance(u.firebase).nookUsage({...who,device:current}):null;
   return {uid:u.uid,configured:configured(),key:saved.key,unlimited:hasFullAiCatalog(who),
    models:available.map(m=>m.id),catalog:available.map(m=>({...m,expensive:aiCatalogPrice(m)?nookModelIsExpensive(aiCatalogPrice(m)):null})),
@@ -45,5 +45,5 @@ export function createNookDeveloper({allowance,catalog,send,configured}){
   const result=await response.json();if(result.error)throw fail('The model provider could not complete this request.',503);
   res.json(result);
  }
- return {device,details,send:complete};
+ return {device,details,models,send:complete};
 }

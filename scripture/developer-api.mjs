@@ -217,7 +217,21 @@ export function installDeveloperApi(app,deps) {
     await u.store.update(req.params.uid,req.body);if(limits!==undefined){target.monthlyModelLimits={luna:limits.luna,gemini:limits.gemini};await u.firebase.firestore.collection('nyxUserAdministration').doc(target.uid).set({aiMonthlyModelLimits:target.monthlyModelLimits},{merge:true});}
     res.json(await accountDetails(target));}));
   app.delete('/api/developer/owner/account/:uid/key',wrap(async(req,res)=>{const u=await owner(req);await u.store.revoke(req.params.uid);res.json({ok:true});}));
-  const cors=res=>res.set({'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Authorization, Content-Type','Access-Control-Allow-Methods':'POST, OPTIONS'});
+  const cors=res=>res.set({'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'Authorization, Content-Type','Access-Control-Allow-Methods':'GET, POST, OPTIONS'});
+  app.options('/api/v1/models',(_req,res)=>{cors(res);res.sendStatus(204);});
+  app.get('/api/v1/models',wrap(async(req,res)=>{
+    cors(res);
+    if(!deps.configured())throw fail('AI is unavailable at this moment. Try again later.',503);
+    const firebase=await deps.firebase();if(!firebase)throw fail('API storage is unavailable.',503);
+    const store=createKeyStore(firebase.firestore),key=await store.authenticate(String(req.get('authorization')||'').replace(/^Bearer\s+/i,''));
+    const u=await identity(firebase,key.uid);
+    if(key.app==='nook'){
+      if(!deps.nook||!key.device)throw fail('Nook key access is unavailable.',503);
+      return res.json({models:await deps.nook.models({...u,firebase}),capabilities:{stream:true,multimodal:true}});
+    }
+    const details=await accountDetails({...u,firebase,store});
+    res.json({models:details.models.map(id=>({id,label:id,text:true,inputModalities:['text'],outputModalities:['text']})),capabilities:{stream:false,multimodal:false}});
+  }));
   app.options('/api/v1/ai',(_req,res)=>{cors(res);res.sendStatus(204);});
   app.post('/api/v1/ai',wrap(async(req,res)=>{
     cors(res);

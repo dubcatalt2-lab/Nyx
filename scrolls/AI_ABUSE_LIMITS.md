@@ -1,3 +1,7 @@
+## Haiku 5.5 shared Nyx pool (2026-10-09)
+
+`anthropic/claude-haiku-5.5` is available to ordinary and Premium Nyx accounts without a per-model grant. It uses the existing account token pool and reset period. Model-specific deny/message-quota records do not gate this model in Nyx; no model-policy counter or separate Claude money allowance is created for it. Normal account-wide restrictions, shared-pool exhaustion, concurrency and site spending accounting continue to apply. Other apps and Claude models retain their existing policies. Pricing is included in the standard catalog budget configuration.
+
 ## Current expensive-model access (2026-09-30)
 
 This supersedes older catalog access rules below. Across Nyx, Tutsi, Nook and Drop, all Anthropic Claude and OpenAI Astra models/aliases require a server-verified Premium subscription or owner access. Other models require Premium when verified catalog input or output pricing is at least $10 per million tokens; Nook retains its stricter greater-than-$5 threshold. Manual Allow rules, trusted/co-owner flags and client-supplied Premium flags do not bypass this gate. Model catalogs, chat requests, internal reservations and existing Nook developer keys use the current account policy. Premium/owner catalogs include supported, verified-price text/image models; the exact owner UID retains its full catalog and existing exemption.

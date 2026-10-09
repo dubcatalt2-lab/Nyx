@@ -17,6 +17,8 @@ export const NOOK_DEVICE_TOKENS=7000,NOOK_EXPENSIVE_TOKENS=1000;
 export function nookModelIsExpensive(price){dropModelIsExpensive(price);return price.inputPerMillion>5||price.outputPerMillion>5;}
 const DAY=86400000, MINUTE=60000, USD=1_000_000;
 export const CLAUDE_SITE_LIMIT_USD=.05;
+export const NYX_HAIKU_MODEL='anthropic/claude-haiku-5.5';
+export const usesNyxHaikuPool=(model,actor={})=>model===NYX_HAIKU_MODEL&&(!actor.app||actor.app==='nyx');
 export const NOOK_HAIKU_MODEL='anthropic/claude-haiku-4.5';
 export const nookHaikuModel=(model,app)=>app==='nook'&&model===NOOK_HAIKU_MODEL;
 export const nookHaikuLimitUsd=actor=>hasFullAiCatalog(actor)?null:actor.premium===true?.50:.05;
@@ -34,6 +36,7 @@ const dollars=value=>{const n=Number(value);if(!Number.isFinite(n)||n<0||n>10000
 const isLuna6=model=>model==='openai/gpt-6-luna'||model==='openai/gpt-6-luna-pro';
 export const isPublicAiModel=model=>model==='openai/gpt-6-luna'||isFreeAiModel(model)||/^google\/gemini-/.test(model)||/^deepseek\/deepseek-/.test(model);
 export function premiumOnlyAiModel(model,price=null,app=null) {
+  if(usesNyxHaikuPool(model,{app}))return false;
   if(nookHaikuModel(model,app))return false;
   // Prices are trusted catalog/configuration values in USD per million tokens.
   // Named families remain Premium even when an alias advertises a lower price.
@@ -42,6 +45,7 @@ export function premiumOnlyAiModel(model,price=null,app=null) {
   return !!price&&(app==='nook'?(price.inputPerMillion>5||price.outputPerMillion>5):(price.inputPerMillion>=10||price.outputPerMillion>=10));
 }
 export function ownerOnlyNyxModel(model, price=null) {
+  if(model===NYX_HAIKU_MODEL)return false;
   if (/^~?anthropic\/claude-haiku-4\.5(?:$|[-:])/.test(model)) return false;
   if (/^~?anthropic\/claude(?:-|$)/i.test(model) || /^~?openai\/gpt-(?:\d+(?:\.\d+)?-)?astra(?:-|$)/i.test(model)) return true;
   price = price || additionalPrices[`shared:${model}`];
@@ -51,6 +55,7 @@ export function ownerOnlyNyxModel(model, price=null) {
 export function aiModelAllowed(model, actor={},price=null) {
   if(hasFullAiCatalog(actor))return true;
   if(actor.blocked)return false;
+  if(usesNyxHaikuPool(model,actor))return true;
   if((!actor.app || actor.app==='nyx') && actor.owner!==true && ownerOnlyNyxModel(model,price))return false;
   if(premiumOnlyAiModel(model,price,actor.app)&&actor.owner!==true&&actor.premium!==true)return false;
   if(hasAppAiAllowance(actor))return !actor.blocked&&aiModelRule(actor,model)?.access!=='deny';
@@ -84,6 +89,7 @@ export function aiTokenPoolUsage(ledger={},premium={},actor={},time=Date.now()) 
   return {limit,used,images:0,luna6Tokens:0,opus55Tokens:0,remaining:Math.max(0,limit-used),start:time,resetAt,period};
 }
 const additionalPrices={
+  ['shared:'+NYX_HAIKU_MODEL]:{inputPerMillion:.10,outputPerMillion:.50,imageTokens:8192},
   'shared:anthropic/claude-haiku-4.5':{inputPerMillion:1,outputPerMillion:5,imageTokens:8192},
   'shared:openai/gpt-6-luna':{inputPerMillion:0.10,outputPerMillion:0.50,imageTokens:8192},
   'shared:openai/gpt-6-luna-pro':{inputPerMillion:0.10,outputPerMillion:0.50,imageTokens:8192},
@@ -159,8 +165,8 @@ export function createAiAllowance({db,config,now=Date.now}) {
     if(actor.blocked)throw failure('Shared AI access is restricted for this account.',403);
     if(actor.requestedModel&&!aiModelAllowed(actor.requestedModel,actor))throw failure('This AI model is not enabled for your account.',403);
     const free=isFreeAiModel(actor.freeModel);
-    const rule=aiModelRule(actor,actor.requestedModel);
-    const modelRef=actor.requestedModel?ref(`policy-${hash(actor.uid+'|'+actor.requestedModel)}`):null;
+    const rule=usesNyxHaikuPool(actor.requestedModel,actor)?null:aiModelRule(actor,actor.requestedModel);
+    const modelRef=actor.requestedModel&&!usesNyxHaikuPool(actor.requestedModel,actor)?ref(`policy-${hash(actor.uid+'|'+actor.requestedModel)}`):null;
     const refs=references(actor),id=randomBytes(16).toString('hex');
     refs.claude=ref(`claude-money-${['nyx','tutsi','nook','drop'].includes(actor.app)?actor.app:'nyx'}-${hash(actor.uid)}`);
     refs.haiku=ref(`haiku-money-nook-${hash(actor.uid)}`);
@@ -242,7 +248,7 @@ export function createAiAllowance({db,config,now=Date.now}) {
     const cost=estimate(session,provider,payload,catalogPrice),id=randomBytes(12).toString('hex');
     const claudePrice=catalogPrice||config.prices[`${provider}:${payload.model}`],claudeWebFee=aiWebBudget(payload)?.feeUsd||0;
     const haikuBudget=nookHaikuModel(payload.model,session.actor.app);
-    const claudeBudget=!hasFullAiCatalog(session.actor)&&(haikuBudget||expensiveClaudeModel(payload.model,claudePrice));
+    const claudeBudget=!usesNyxHaikuPool(payload.model,session.actor)&&!hasFullAiCatalog(session.actor)&&(haikuBudget||expensiveClaudeModel(payload.model,claudePrice));
     const claudeRef=haikuBudget?session.refs.haiku:session.refs.claude;
     const claudeLimit=haikuBudget?nookHaikuLimitUsd(session.actor):CLAUDE_SITE_LIMIT_USD;
     if(claudeBudget&&(!claudePrice||![claudePrice.inputPerMillion,claudePrice.outputPerMillion,claudePrice.requestUsd||0].every(n=>Number.isFinite(n)&&n>=0)))throw failure('This Claude model needs verified pricing before it can use the allowance.',503);

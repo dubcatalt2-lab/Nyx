@@ -82,3 +82,12 @@ test('agent formulates terminal actions and observes real results without manual
   const engine=new Engine({store,broker,emit:()=>{},provider:{complete:async(model,messages)=>{requests.push(structuredClone(messages));return {text:JSON.stringify(replies.shift())};}}});
   try {assert.equal((await engine.start({prompt:'Run the project check',model:'fixture'})).state,'completed');assert.equal(approvals.length,1);assert.match(requests[1].at(-1).content,/agent-check-passed/);assert.match(requests[1].at(-1).content,/"exitCode":0/);} finally {store.close();}
 });
+
+test('chat accepts plain replies, JSON fences and final-answer prose but never ambiguous tool actions',()=>{
+ assert.deepEqual(parse('Hello!'),{message:'Hello!',done:true});
+ assert.deepEqual(parse('```json\n{"message":"Hello","done":true}\n```'),{message:'Hello',done:true});
+ assert.deepEqual(parse('{"message":"Hello","done":true}\n\nHow can I help?'),{message:'Hello',done:true});
+ assert.throws(()=>parse('{"message":"run","tool":"command","args":{}} trailing'),/ambiguous/);
+ assert.throws(()=>parse('{"message":"hello","done":true} {"tool":"command"}'),/ambiguous/);
+ assert.throws(()=>parse('{"message":"incomplete"'),/incomplete/);
+});

@@ -9,6 +9,9 @@ import tempfile
 import threading
 import time
 import uuid
+import shlex
+from html.parser import HTMLParser
+from urllib.parse import urlsplit
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 ROOT = pathlib.Path('/home/nook-agent/workspace')
@@ -46,6 +49,41 @@ def read(value):
     return dict(path=value, content=data.decode('utf-8'), hash=digest(data))
 
 def run(tool, args, request_id):
+    if tool == 'browser':
+        url = args.get('url', '')
+        if not isinstance(url, str) or len(url) > 4000:
+            raise ValueError('Invalid website address')
+        parsed = urlsplit(url)
+        if parsed.scheme not in ['http', 'https'] or not parsed.hostname or parsed.username or parsed.password:
+            raise ValueError('Use an HTTP or HTTPS website address without credentials')
+        with tempfile.NamedTemporaryFile() as document:
+            result = run('command', dict(shell='bash', command='chromium --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --timeout=15000 --dump-dom '+shlex.quote(url)+' > '+shlex.quote(document.name)), request_id)
+            document.seek(0)
+            rendered = document.read(1000000).decode('utf-8', errors='replace')
+        if result['exitCode'] != 0 or result['stopped']:
+            raise ValueError('VM website check failed: '+(result['stopped'] or result['stderr'][-500:]))
+        class Page(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.skip = 0
+                self.text = []
+                self.links = []
+            def handle_starttag(self, tag, attrs):
+                if tag in ['script', 'style']:
+                    self.skip += 1
+                if tag == 'a':
+                    href = dict(attrs).get('href', '')
+                    if href and len(self.links) < 40:
+                        self.links.append(href[:500])
+            def handle_endtag(self, tag):
+                if tag in ['script', 'style']:
+                    self.skip = max(0, self.skip-1)
+            def handle_data(self, data):
+                if not self.skip and data.strip():
+                    self.text.append(data.strip())
+        page = Page()
+        page.feed(rendered)
+        return dict(url=url, text='\n'.join(page.text)[:16000], links=page.links, rendered=True, note='Untrusted rendered website content; large pages may be truncated.')
     if tool == 'list':
         p = target(args.get('path', ''))
         return dict(entries=[dict(path=str(x.relative_to(ROOT)), name=x.name, directory=x.is_dir()) for x in sorted(p.iterdir()) if not x.is_symlink()][:1000])

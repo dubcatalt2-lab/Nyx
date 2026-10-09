@@ -12,12 +12,12 @@ class Broker {
     if (level > 0 && !workspace) throw Error('Choose a project folder first.');
     this.vm = null; this.generation++; this.workspace = workspace; this.level = level; this.expires = Date.now() + minutes * 60000; return this.status();
   }
-  async grantVM(vm) { const info=await vm.status();this.generation++;this.vm=vm;this.workspace={root:info.root};this.level=3;this.expires=Date.now()+3600000;return this.status(); }
+  async grantVM(vm, lazy=false) { const info=lazy?{root:'/home/nook-agent/workspace'}:await vm.status();this.generation++;this.vm=vm;this.workspace={root:info.root};this.level=3;this.expires=Date.now()+3600000;return this.status(); }
   stop() { this.generation++; }
   revoke() { this.generation++; this.level = 0; this.expires = 0; }
   async run(tool, args, signal = new AbortController().signal) {
     const revision = this.generation;
-    const minimum = ['list', 'read', 'search'].includes(tool) ? 1 : ['write', 'mkdir', 'undo'].includes(tool) ? 2 : tool === 'elevate' ? 5 : ['command', 'ui.inspect', 'ui.invoke', 'ui.setValue'].includes(tool) ? 3 : 99;
+    const minimum = ['list', 'read', 'search'].includes(tool) ? 1 : ['write', 'mkdir', 'undo'].includes(tool) ? 2 : tool === 'elevate' ? 5 : ['browser', 'command', 'ui.inspect', 'ui.invoke', 'ui.setValue'].includes(tool) ? 3 : 99;
     const check = () => {
       if (signal.aborted || revision !== this.generation) throw denied('Stopped or permissions changed.');
       if (this.status().level < minimum || !this.workspace) throw denied('This tool is outside the current local permission grant.');
@@ -31,7 +31,7 @@ class Broker {
       if (!accepted) throw denied('The requested action was declined.');
     };
     if(this.vm){
-      if(!['list','read','search','write','mkdir','undo','command'].includes(tool))throw denied('Windows application control and elevation are unavailable in VM mode.');
+      if(!['list','read','search','write','mkdir','undo','command','browser'].includes(tool))throw denied('Windows application control and elevation are unavailable in VM mode.');
       if(['write','mkdir','undo','command'].includes(tool))await confirm('Allow this action inside your private VM?', tool === 'command' ? args.command + '\n\nLinux bash inside NyxCloud. This cannot elevate Windows.' : tool+'\n'+JSON.stringify(args));
       check();const result=await this.vm.run(tool,args,AbortSignal.any([signal,AbortSignal.timeout(Math.max(1,this.expires-Date.now()))]));
       if(tool==='command')this.emit({type:'terminal',body:{text:(result.stdout||'')+(result.stderr||'')}});

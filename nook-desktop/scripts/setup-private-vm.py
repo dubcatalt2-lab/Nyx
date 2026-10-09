@@ -47,7 +47,7 @@ UMask=0077
 WantedBy=multi-user.target
 '''
 files = [dict(path='/usr/local/lib/nook-agent.py', permissions='0644', content=agent), dict(path='/etc/nook-agent/token', permissions='0640', content=config['token']), dict(path='/etc/systemd/system/nook-agent.service', permissions='0644', content=service)]
-commands = [['sh', '-c', 'id nook-agent >/dev/null 2>&1 || useradd --create-home --shell /bin/bash nook-agent'], ['chown', 'root:nook-agent', '/etc/nook-agent/token'], ['chmod', '0750', '/home/nook-agent'], ['systemctl', 'daemon-reload'], ['systemctl', 'enable', '--now', 'nook-agent.service']]
+commands = [['sh', '-c', 'id nook-agent >/dev/null 2>&1 || useradd --create-home --shell /bin/bash nook-agent'], ['chown', 'root:nook-agent', '/etc/nook-agent/token'], ['chmod', '0750', '/home/nook-agent'], ['sh', '-c', 'command -v chromium >/dev/null || (apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends chromium)'], ['systemctl', 'daemon-reload'], ['systemctl', 'enable', 'nook-agent.service'], ['systemctl', 'restart', 'nook-agent.service']]
 data = '#cloud-config\n' + yaml.safe_dump(dict(users=[], ssh_deletekeys=False, preserve_hostname=True, write_files=files, runcmd=commands), sort_keys=False)
 iso = pycdlib.PyCdlib()
 iso.new(interchange_level=3, joliet=3, rock_ridge='1.09', vol_ident='CIDATA')

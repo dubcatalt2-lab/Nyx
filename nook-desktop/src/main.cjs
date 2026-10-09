@@ -92,14 +92,28 @@ function register() {
     accountDetails: () => provider.account.details(),
     resetPassword: ({email}) => provider.account.reset(email),
     revokeDesktopKey: () => changeAccount(async()=>{if(!await approve('Revoke your desktop key?','All desktop sessions using this account key will stop working. Your existing developer API key is unchanged.'))throw Error('Revocation cancelled.');await provider.account.revoke();provider.forget();return true;}),
-    connectVM: async () => {if(engine.active||toolController||accountBusy)throw Error('Stop the current task first.');const vm=new (require('./vm.cjs').PrivateVM)();await vm.status();const owner=profileRoot;if(!await approve('Use your private Nyx VM?', 'File and terminal tools will use /home/nook-agent/workspace inside your Debian VM for 60 minutes. Nook uses a dedicated unprivileged guest account. Commands and edits still require approval. Windows files are not automatically copied. Existing local project access is replaced.'))throw Error('VM connection declined.');if(owner!==profileRoot||engine.active||toolController||accountBusy)throw Error('Workspace changed.');testWorkspace=null;return broker.grantVM(vm);},
     chooseFolder: async () => { if (engine.active || toolController || accountBusy) throw Error('Stop the current task first.'); const owner=profileRoot; const result = await dialog.showOpenDialog(window, {title: 'Choose a project folder', properties: ['openDirectory']}); if (result.canceled) return null; if(owner!==profileRoot||engine.active||toolController||accountBusy)throw Error('Workspace changed while choosing a folder. Try again.'); broker.revoke(); testWorkspace=null; chosenRoot = result.filePaths[0]; fs.writeFileSync(path.join(profileRoot, 'project.json'), JSON.stringify({root: chosenRoot})); return chosenRoot; },
     grant: async ({level, minutes}) => { if (engine.active || toolController || accountBusy) throw Error('Stop the current task first.'); if (!Number.isInteger(level) || !levels[level]) throw Error('Invalid permission level.'); if (await approve('Approve local permissions?', `${levels[level]}\n\nProject: ${testWorkspace?.root || chosenRoot || 'None'}\nDuration: ${minutes} minutes\n\nPermissions expire automatically and are not restored after restarting Nook.`)) return broker.grant(testWorkspace?.root||chosenRoot, level, minutes); throw Error('Permission change declined.'); },
     revoke: () => { stop(); broker.revoke(); return broker.status(); },
     saveKey: ({key}) => changeAccount(()=>provider.save(key)),
     forgetKey: () => changeAccount(()=>{provider.forget();return true;}),
     models: () => provider.models(),
-    start: async data => { if (toolController || engine.active || accountBusy) throw Error('Another action is running.'); if (broker.status().level > 0 && !await approve('Start this task?', `Task:\n${data.prompt}\n\nModel: ${data.model}\nProject: ${broker.status().root}\n\nThe task can read permitted project files and send their contents and tool output to Nook and its model provider. Current permission level: ${broker.status().level}.`)) throw Error('Task declined.'); if (toolController || engine.active || accountBusy) throw Error('Another action is running.'); return engine.start(data); },
+    start: async data => {
+      if(toolController||engine.active||accountBusy)throw Error('Another action is running.');
+      const config=path.join(process.env.LOCALAPPDATA || '', 'NyxCloud', 'nook-agent.json');
+      if(fs.existsSync(config)){
+        const vm=new (require('./vm.cjs').PrivateVM)({config});
+        const guestBroker=new Broker({backup:path.join(profileRoot,'backups'),approve:async()=>true,emit});
+        await guestBroker.grantVM(vm,true);
+        if(toolController||engine.active||accountBusy)throw Error('Another action is running.');
+        engine.broker=guestBroker;
+        try{return await engine.start(data);}finally{guestBroker.revoke();}
+      }
+      engine.broker=broker;
+      if(broker.status().level>0&&!await approve('Start this task?', 'Task: '+data.prompt+'\nProject: '+broker.status().root+'\nPermitted content and tool output may be sent to the selected model.'))throw Error('Task declined.');
+      if(toolController||engine.active||accountBusy)throw Error('Another action is running.');
+      return engine.start(data);
+    },
     createTestWorkspace: async () => {
       if(engine.active||toolController||accountBusy||testWorkspace)throw Error('Stop current work and return to the original project before creating another test copy.');
       if(broker.status().target==='vm')throw Error('The VM already has a separate workspace.');if(!chosenRoot)throw Error('Choose a project folder first.');

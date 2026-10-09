@@ -11,7 +11,7 @@
 .nyx-arcade .arcade-masthead { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 30px; }
 .nyx-arcade .cove-header { justify-items: start; text-align: left; }
 .nyx-arcade .eyebrow { margin: 0 0 5px 3px; font-size: 10px; letter-spacing: .3em; color: var(--app-muted); }
-.nyx-arcade h1 { font-family: ArcadeDisplay, sans-serif; font-size: clamp(38px, 4.5vw, 58px); font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+.nyx-arcade h1 { font-family: ArcadeDisplay, sans-serif; font-size: clamp(30px, 3.5vw, 48px); font-weight: 500; letter-spacing: -.04em; line-height: 1; }
 .nyx-arcade .game-view-switch { margin: 0; border-radius: 12px; background: var(--app-panel); }
 .nyx-arcade .game-view-button { min-width: 112px; font-size: 12px; font-weight: 600; }
 .nyx-arcade .game-view-button.active { background: var(--app-raised); color: var(--app-text); }
@@ -19,25 +19,23 @@
 .nyx-arcade .arcade-featured { display: grid; grid-template-columns: 1.7fr 1fr 1fr; gap: 16px; margin-bottom: 40px; }
 .nyx-arcade .arcade-featured[hidden] { display: none; }
 .nyx-arcade .arcade-feature {
-  position: relative; isolation: isolate; height: clamp(260px, 26vw, 360px); min-width: 0;
-  overflow: hidden; padding: 0; border: 1px solid #ffffff24; border-radius: 18px;
-  background: #142529; text-align: left; cursor: pointer;
+  position: relative; isolation: isolate; display: grid; grid-template-rows: minmax(0,1fr) auto; height: clamp(260px, 23vw, 320px); min-width: 0;
+  overflow: hidden; padding: 0; border: 1px solid #ffffff24; border-radius: 3px;
+  background: var(--app-panel); text-align: left; cursor: pointer;
   transition: transform 220ms ease, border-color 220ms ease;
 }
-.nyx-arcade .arcade-feature:nth-child(2) { background: #292321; }
-.nyx-arcade .arcade-feature:nth-child(3) { background: #16283e; }
+.nyx-arcade .arcade-feature .game-cover { position: relative; inset: auto; min-height: 0; height: 100%; }
 .nyx-arcade .arcade-feature .game-cover::after {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(180deg, #00000008 10%, #00000020 30%, #000000e8 100%);
+  display: none;
 }
 .nyx-arcade .arcade-feature .game-cover img { transition: transform 600ms cubic-bezier(.2,.65,.3,1); }
 .nyx-arcade .arcade-feature .cover-fallback { font: 800 130px ArcadeDisplay, sans-serif; color: #ffffff20; }
-.nyx-arcade .arcade-feature-copy { position: absolute; inset: auto 26px 26px; display: grid; justify-items: start; gap: 12px; color: #fff; }
-.nyx-arcade .arcade-feature-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .18em; color: #ffffffbb; }
-.nyx-arcade .arcade-feature-title { font-family: ArcadeDisplay, sans-serif; font-weight: 700; font-size: clamp(25px, 3vw, 40px); line-height: 1.02; letter-spacing: -.035em; }
-.nyx-arcade .arcade-feature:first-child .arcade-feature-title { font-size: clamp(42px, 5.5vw, 76px); text-transform: uppercase; font-weight: 800; }
+.nyx-arcade .arcade-feature-copy { position: static; padding: 16px 20px; display: grid; justify-items: start; gap: 7px; color: var(--app-text); }
+.nyx-arcade .arcade-feature-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .18em; color: var(--app-muted); }
+.nyx-arcade .arcade-feature-title { font-family: ArcadeDisplay, sans-serif; font-weight: 700; font-size: clamp(20px, 2.2vw, 30px); line-height: 1.02; letter-spacing: -.035em; }
+.nyx-arcade .arcade-feature:first-child .arcade-feature-title { font-size: clamp(26px, 3vw, 40px); font-weight: 600; }
 .nyx-arcade .arcade-feature-play { display: inline-flex; align-items: center; gap: 18px; font-size: 12px; font-weight: 600; margin-top: 6px; }
-.nyx-arcade .arcade-feature:first-child .arcade-feature-play { padding: 12px 18px; border-radius: 8px; background: #f5f7f9; color: #111; }
+.nyx-arcade .arcade-feature:first-child .arcade-feature-play { padding: 0; border-radius: 0; background: transparent; color: var(--app-text); }
 .nyx-arcade .arcade-feature-play svg { width: 17px; height: 17px; transition: transform 220ms ease; }
 .nyx-arcade .arcade-feature-number { position: absolute; top: 20px; left: 24px; color: #fff; font-size: 11px; letter-spacing: .1em; border: 1px solid #ffffff45; border-radius: 6px; padding: 6px 8px; background: #00000042; }
 .nyx-arcade .arcade-feature:hover { transform: translateY(-3px); border-color: #ffffff80; }
@@ -65,57 +63,68 @@ html[data-nyx-appearance="light"] .nyx-arcade .library-tab.active { color: #fff;
 .nyx-arcade #gameCount { font-size: 11px; color: var(--app-muted); }
 .nyx-arcade .catalog-progress { margin: 8px 0 0; }
 
-.nyx-arcade .game-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 22px 16px; }
+.nyx-arcade .game-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: 230px; gap: 20px; align-items: stretch; }
 .nyx-arcade .nyx-sponsor-slot { grid-column: 1 / -1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 0; border-block: 1px solid var(--app-line); color: var(--app-muted); }
 .nyx-arcade .nyx-sponsor-slot > span { font-size: 10px; letter-spacing: .04em; }
 .nyx-arcade .nyx-sponsor-slot iframe { display: block; flex: none; width: 468px; height: 60px; border: 0; background: transparent; }
 .nyx-arcade .game-card {
-  display: flex; flex-direction: column; aspect-ratio: auto; min-width: 0; padding: 0;
-  border: 0; border-radius: 10px; background: transparent; overflow: hidden;
+  display: flex; flex-direction: column; grid-column: span 3; aspect-ratio: auto; min-width: 0; padding: 0;
+  border: 1px solid var(--app-line); border-radius: 3px; background: var(--app-panel); overflow: hidden;
   transition: transform 220ms ease;
 }
-.nyx-arcade .game-card .game-cover { position: relative; inset: auto; display: block; width: 100%; aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden; background: var(--app-raised); }
+.nyx-arcade .game-card .game-cover { position: relative; inset: auto; display: block; width: 100%; flex: 1; min-height: 0; aspect-ratio: auto; border-radius: 0; overflow: hidden; background: var(--app-raised); }
 .nyx-arcade .game-card::after { display: none; }
 .nyx-arcade .game-card .game-cover img { transition: transform 450ms cubic-bezier(.2,.65,.3,1); }
-.nyx-arcade .game-card .game-name { position: static; display: block; width: 100%; padding: 12px 4px 6px; opacity: 1; transform: none; background: transparent; text-align: left; font-size: 13px; font-weight: 500; line-height: 1.4; color: var(--app-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: none; }
+.nyx-arcade .game-card .game-name { position: static; display: block; width: 100%; padding: 14px 16px 3px; flex-shrink: 0; opacity: 1; transform: none; background: transparent; text-align: left; font-size: 15px; font-weight: 500; line-height: 1.4; color: var(--app-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: none; }
 .nyx-arcade .game-card .game-source-badge { top: 8px; left: 8px; border: 1px solid #ffffff20; border-radius: 5px; background: #0a0a0aaa; color: #fff; padding: 3px 6px; font-size: 8px; letter-spacing: .06em; }
 .nyx-arcade .game-card:hover { transform: translateY(-4px); }
 .nyx-arcade .game-card:is(:hover, :focus-visible) .game-cover img { transform: scale(1.05); filter: none; }
 .nyx-arcade :is(.arcade-feature, .arcade-random, .game-card, .library-tab):focus-visible { outline: 2px solid #7eb7ff; outline-offset: 4px; }
+.nyx-arcade .game-card[data-layout="featured"] { grid-column: span 6; grid-row: span 2; }
+.nyx-arcade .game-card[data-layout="wide"] { grid-column: span 6; }
+.nyx-arcade .game-card[data-layout="featured"] .game-name { font-size: 24px; padding-top: 18px; }
+.nyx-arcade .game-resource-meta { display: block; flex-shrink: 0; padding: 3px 16px 15px; color: var(--app-muted); text-align: left; font-size: 10px; letter-spacing: .04em; }
+.nyx-arcade .game-card:focus-visible { outline-color: var(--app-text); }
 .nyx-arcade .pagination { margin-top: 32px; }
 .nyx-arcade .page-button { font-size: 12px; }
 .nyx-arcade.cloud-session-active .arcade-masthead { display: none; }
 .nyx-arcade.cloud-session-active .library { width: 100%; padding: 0; }
 
 @media (min-width: 1600px) {
-  .nyx-arcade .game-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .nyx-arcade .game-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: 250px; }
 }
 @media (max-width: 1050px) {
-  .nyx-arcade .game-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .nyx-arcade .game-card { grid-column: span 2; }
+  .nyx-arcade .game-card[data-layout="featured"], .nyx-arcade .game-card[data-layout="wide"] { grid-column: span 4; }
+  .nyx-arcade .game-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); }
   .nyx-arcade .arcade-featured { grid-template-columns: 1.4fr 1fr 1fr; gap: 12px; }
   .nyx-arcade .arcade-feature-copy { inset: auto 18px 20px; }
   .nyx-arcade .arcade-random span { display: none; }
 }
 @media (max-width: 700px) {
+  .nyx-arcade .game-card[data-layout="featured"] { grid-row: span 1; }
+  .nyx-arcade .game-card[data-layout="featured"] .game-name { font-size: 19px; padding-top: 12px; }
+  .nyx-arcade .game-resource-meta { padding-inline: 12px; font-size: 9px; }
+  .nyx-arcade .game-card .game-name { padding-inline: 12px; }
   .nyx-arcade .library { padding-top: 24px; }
   .nyx-arcade .arcade-masthead { gap: 12px; margin-bottom: 24px; }
   .nyx-arcade h1 { font-size: 36px; }
   .nyx-arcade .game-view-button { min-width: 0; height: 36px; padding: 0 10px; font-size: 10px; }
   .nyx-arcade .arcade-featured { grid-template-columns: 1fr 1fr; margin-bottom: 28px; }
-  .nyx-arcade .arcade-feature { height: 200px; border-radius: 12px; }
+  .nyx-arcade .arcade-feature { height: 230px; border-radius: 3px; }
   .nyx-arcade .arcade-feature:first-child { grid-column: 1 / -1; height: 270px; }
-  .nyx-arcade .arcade-feature:first-child .arcade-feature-title { font-size: 58px; }
+  .nyx-arcade .arcade-feature:first-child .arcade-feature-title { font-size: 30px; }
   .nyx-arcade .arcade-feature-title { font-size: 27px; }
   .nyx-arcade .arcade-feature-label { font-size: 8px; letter-spacing: .1em; }
   .nyx-arcade .arcade-feature-number { top: 14px; left: 16px; }
   .nyx-arcade .arcade-collection { align-items: stretch; flex-direction: column; gap: 16px; }
   .nyx-arcade .catalog-tools { width: 100%; }
   .nyx-arcade .arcade-collection h2 { font-size: 21px; }
-  .nyx-arcade .game-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 12px; }
+  .nyx-arcade .game-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 210px; gap: 14px; }
   .nyx-arcade .game-card .game-name { font-size: 12px; padding-top: 9px; }
 }
 @media (max-width: 420px) {
-  .nyx-arcade .game-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nyx-arcade .game-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .nyx-arcade .arcade-feature-copy { inset-inline: 14px; }
   .nyx-arcade .arcade-feature-title { font-size: 24px; }
 }

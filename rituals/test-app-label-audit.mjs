@@ -7,7 +7,7 @@ app.use(express.static('dist'));
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
 const base=process.env.NYX_TEST_ORIGIN||'http://127.0.0.1:'+server.address().port;
 const browser=await chromium.launch({channel:'msedge',headless:true});
-const apps=['ai.html','link-checker','link-generator','link-generator/bulk.html','jsdelivr-publisher','api-keys','code-studio','code-tutorials','connect-domain','nyxtube','chat','nyxify','agents','movies','nyxcloud','cloud-gaming','tutsi','drop'];
+const apps=['ai.html','link-checker','jsdelivr-publisher','api-keys','code-studio','code-tutorials','connect-domain','nyxtube','chat','nyxify','agents','movies','nyxcloud','cloud-gaming','tutsi','drop'];
 const failures=[];
 try{
  for(const width of [1365,390]){

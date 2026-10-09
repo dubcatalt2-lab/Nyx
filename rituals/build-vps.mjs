@@ -78,7 +78,7 @@ function repositoryFiles() {
 }
 
 function isStaticSource(path) {
-  return rootFiles.has(path) || staticPrefixes.some(prefix => path.startsWith(prefix));
+  return !path.startsWith("apps/link-generator/") && (rootFiles.has(path) || staticPrefixes.some(prefix => path.startsWith(prefix)));
 }
 
 async function copyRepositoryStaticFiles() {

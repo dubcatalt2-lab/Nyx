@@ -52,9 +52,10 @@ class Broker {
       const cwd = this.workspace.resolve(args.cwd || '');
       if (!fs.statSync(cwd).isDirectory()) throw Error('Working directory must be a folder.');
       if (typeof args.command !== 'string' || args.command.length > 6000) throw Error('Invalid command.');
+      const timeout = Number.isInteger(args.timeoutMs) ? Math.max(1000,Math.min(600000,args.timeoutMs)) : 60000;
       await confirm('Run this command once?', `${args.shell || 'powershell'} in ${cwd}\n\n${args.command}\n\nThis command has your Windows user permissions. It can access files and the network outside this project. Approval is for this exact command only.`);
       this.workspace.resolve(args.cwd || ''); check();
-      return command(args.command, args.shell || 'powershell', {cwd, signal, timeout: Math.max(1, Math.min(60000, this.expires - Date.now())), onOutput: output => this.emit({type: 'terminal', body: output})});
+      return command(args.command, args.shell || 'powershell', {cwd, signal, timeout: Math.max(1, Math.min(timeout, this.expires - Date.now())), onOutput: output => this.emit({type: 'terminal', body: output})});
     }
     if (tool.startsWith('ui.')) {
       if (!Number.isSafeInteger(args.pid) || args.pid < 1 || args.pid === process.pid) throw Error('Specify another application process ID.');

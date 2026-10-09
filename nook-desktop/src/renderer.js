@@ -9,7 +9,7 @@ function button(text, action) { const node = document.createElement('button'); n
 function page(name) { document.querySelectorAll('[data-panel]').forEach(node => node.hidden = node.dataset.panel !== name); document.querySelectorAll('nav [data-page]').forEach(node => { if (node.dataset.page === name) node.setAttribute('aria-current', 'page'); else node.removeAttribute('aria-current'); }); }
 function setup() { if (queueRunning || busy) { error('Stop the current run before switching accounts.'); return; } accountEditing = true; page('agent'); $('accountSetup').hidden = false; $('email').focus(); }
 function running(value) { busy = value; $('run').disabled = value || !connected || !$('model').value; $('stop').hidden = !value && !manualCount; $('pause').hidden = !value; if (!value) $('resume').hidden = true; }
-document.querySelectorAll('[data-page]').forEach(node => node.onclick = guard(async () => { page(node.dataset.page); if (node.dataset.page === 'history' || node.dataset.page === 'memory') await refresh(); }));
+document.querySelectorAll('[data-page]').forEach(node => node.onclick = guard(async () => { page(node.dataset.page); if (node.dataset.page === 'history' || node.dataset.page === 'memory') await refresh(); if(node.dataset.page === 'projects')githubStatus(await invoke('githubStatus')); }));
 function renderMemories(items) { renderMemoryItems(items); }
 async function refresh() {
   const status = await invoke('status');
@@ -23,7 +23,9 @@ async function refresh() {
   $('connection').textContent = status.account?.email || (status.connected ? 'API key connected' : 'Not signed in');
   $('selectedRoot').textContent = status.chosenRoot || 'No folder selected';
   const access = status.permissions;
-  $('vmStatus').textContent = status.vmAvailable ? 'AI tools automatically use the private Nyx VM. Manual tools use your local project.' : 'Local Windows workspace';
+  $('vmStatus').textContent = status.vmAvailable ? 'Windows project is primary. The private VM is available for isolated tests and website checks.' : 'Windows project is primary. No private test VM is configured.';
+  $('projectLocation').textContent=status.chosenRoot || 'No folder selected';
+  $('projectTestStatus').textContent=access.testing?.ready ? 'Test copy ready: '+access.testing.files+' files. Refresh after Windows edits. '+access.testing.skipped.length+' paths excluded.' : status.vmAvailable ? 'Optional Linux test environment available.' : 'Private VM is not configured on this computer.';
   $('scope').textContent = access.level ? `Project access until ${new Date(access.expires).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}` : status.chosenRoot ? 'Access paused · click folder to reconnect' : 'No folder needed for chat';
   $('quickFolder').textContent = access.target === 'vm' ? 'Nyx VM' : status.chosenRoot ? status.chosenRoot.split(/[\\/]/).pop() : '+ Open folder';
   $('quickFolder').title = status.chosenRoot || 'Choose a project folder';
@@ -65,6 +67,8 @@ window.nook.subscribe(event => {
   if (event.type === 'result' && ['command','elevate'].includes(event.body.tool)) $('terminalOutput').textContent += '\n' + (event.body.result.error || 'Exit: ' + event.body.result.exitCode) + '\n';
   if (event.type === 'terminal') { $('terminalOutput').textContent = ($('terminalOutput').textContent + event.body.text).slice(-64000); }
   if (event.type === 'error') error(event.body.message);
+  if(event.type === 'connection-progress')$('githubProgress').textContent=($('githubProgress').textContent+event.body.text).slice(-6000);
+  if(event.type === 'project-progress')$('projectTestStatus').textContent=event.body.text;
   if (['tool', 'result', 'approval'].includes(event.type)) { const row = document.createElement('article'), label = document.createElement('strong'), content = document.createElement('pre'); label.textContent = event.body.tool || event.type; content.textContent = JSON.stringify(event.body, null, 2); row.append(label, content); $('activity').append(row); $('activityCount').textContent = '(' + (++activityCount) + ')'; }
   if (event.type === 'pause-requested') $('state').textContent = 'Pausing after current step';
   if (event.type === 'stopped') $('state').textContent = 'Stop requested';
@@ -100,3 +104,30 @@ $('terminalChat').onclick = () => { page('agent'); $('prompt').focus(); };
 $('inspectForm').onsubmit = guard(async () => { const pid = Number($('processId').value), data = await invoke('tool', {tool: 'ui.inspect', args: {pid}}); $('controls').replaceChildren(); for (const control of data.result) { const row = document.createElement('article'), text = document.createElement('p'); text.textContent = `${control.type} · ${control.name || '(unnamed)'} · ${control.id}`; const value = document.createElement('input'); value.setAttribute('aria-label', 'New value for ' + (control.name || control.id)); row.append(text, button('Invoke', async () => { $('computerResult').textContent = JSON.stringify(await invoke('tool', {tool: 'ui.invoke', args: {pid, id: control.id}}), null, 2); }), value, button('Set value', async () => { $('computerResult').textContent = JSON.stringify(await invoke('tool', {tool: 'ui.setValue', args: {pid, id: control.id, value: value.value}}), null, 2); })); $('controls').append(row); } });
 refresh().then(status => { if (status.connected) return models(); }).catch(issue => error(issue.message));
 setInterval(() => refresh().catch(() => {}), 30000);
+
+$('projectShortcut').onclick=guard(async()=>{page('projects');githubStatus(await invoke('githubStatus'));});
+$('projectOpen').onclick=()=>$('quickFolder').click();
+$('githubInstall').onclick=guard(()=>invoke('githubInstall'));
+$('gitInstall').onclick=guard(()=>invoke('gitInstall'));
+function githubStatus(value){$('githubStatus').textContent=value.connected?'Connected as '+value.login:value.message;}
+$('githubCheck').onclick=guard(async()=>githubStatus(await invoke('githubStatus')));
+async function connectionJob(buttonId,action){
+  const node=$(buttonId);node.disabled=true;$('stop').hidden=false;
+  try{return await action();}finally{node.disabled=false;$('stop').hidden=!busy;}
+}
+$('githubLogin').onclick=guard(()=>connectionJob('githubLogin',async()=>{ $('githubProgress').textContent='Complete GitHub sign-in in your browser. The device code will appear here if required.\n';githubStatus(await invoke('githubLogin')); }));
+async function cloneProject(repository){const result=await invoke('cloneRepository',{repository});if(result){await refresh();page('agent');$('prompt').focus();}}
+$('cloneForm').onsubmit=guard(()=>connectionJob('githubRepos',()=>cloneProject($('repositoryName').value.trim())));
+$('githubRepos').onclick=guard(()=>connectionJob('githubRepos',async()=>{
+  const repositories=await invoke('githubRepositories');$('repositoryList').replaceChildren();
+  for(const repository of repositories)$('repositoryList').append(button(repository.nameWithOwner+(repository.isPrivate?' ? Private':''),()=>connectionJob('githubRepos',()=>cloneProject(repository.nameWithOwner))));
+  if(!repositories.length)$('repositoryList').textContent='No repositories found. Enter owner/repository below, including repositories shared with you.';
+}));
+$('prepareVM').onclick=guard(async()=>{const result=await invoke('tool',{tool:'test.prepare',args:{}});await refresh();$('projectTestStatus').textContent='Ready: '+result.files+' files copied. '+result.skipped.length+' paths excluded.';});
+$('refreshVM').onclick=guard(async()=>{await invoke('tool',{tool:'test.refresh',args:{}});await refresh();$('vmChanges').replaceChildren();});
+$('reviewVM').onclick=guard(async()=>{
+  const result=await invoke('tool',{tool:'test.changes',args:{}});$('vmChanges').replaceChildren();
+  for(const change of result.changes){const row=document.createElement('article'),label=document.createElement('p');label.textContent=change.kind+' ? '+change.path+(change.conflict?' ? Local edits conflict':'');row.append(label);if(!change.conflict)row.append(button('Review & apply',async()=>{await invoke('tool',{tool:'test.apply',args:{paths:[change.path]}});row.remove();}));$('vmChanges').append(row);}
+  if(!result.changes.length)$('vmChanges').textContent='No changes in the test copy.';
+});
+$('publishProject').onclick=()=>{page('agent');$('prompt').value='Review this project?s Git changes and deployment configuration. Run appropriate checks, then prepare to commit, push and deploy my changes. Ask for the destination if it is not configured. Show each publishing command for approval and preserve unrelated work.';$('prompt').focus();};

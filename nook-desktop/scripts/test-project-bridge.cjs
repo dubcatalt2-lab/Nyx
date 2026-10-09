@@ -1,0 +1,24 @@
+const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict');
+const {PrivateVM}=require('../src/vm.cjs');
+const {ProjectBridge}=require('../src/project-bridge.cjs');
+(async()=>{
+  const directory=fs.mkdtempSync(path.join(os.tmpdir(),'nook-project-bridge-')),root=path.join(directory,'original');fs.mkdirSync(root);
+  fs.writeFileSync(path.join(root,'hello.txt'),'original');fs.writeFileSync(path.join(root,'.env'),'secret-fixture');fs.mkdirSync(path.join(root,'node_modules'));fs.writeFileSync(path.join(root,'node_modules','skip.txt'),'skip');
+  fs.writeFileSync(path.join(root,'image.bin'),Buffer.alloc(150000,201));
+  const bridge=new ProjectBridge({root,directory,vm:new PrivateVM()});
+  const ready=await bridge.prepare();assert.equal(ready.files,2);assert(ready.skipped.includes('.env'));assert(ready.skipped.includes('node_modules'));
+  const guest=bridge.guest();
+  let result=await guest.run('command',{shell:'bash',command:'pwd; test ! -e .env; test ! -e node_modules; printf changed > hello.txt; mkdir nested; printf new > nested/new.txt'});assert.equal(result.exitCode,0);assert.match(result.stdout,/projects\//);
+  assert.equal(fs.readFileSync(path.join(root,'hello.txt'),'utf8'),'original');
+  const changes=await bridge.changes();assert.equal(changes.length,2);assert(changes.every(file=>!file.conflict));
+  await assert.rejects(bridge.apply([],async()=>false),/declined/);assert.equal(fs.readFileSync(path.join(root,'hello.txt'),'utf8'),'original');
+  fs.writeFileSync(path.join(root,'hello.txt'),'newer local edit');assert((await bridge.changes()).find(file=>file.path==='hello.txt').conflict);
+  await assert.rejects(bridge.apply([],async()=>true),/conflicts/);
+  fs.writeFileSync(path.join(root,'hello.txt'),'original');
+  const applied=await bridge.apply([],async()=>true);assert.equal(applied.applied.length,2);assert.equal(fs.readFileSync(path.join(root,'nested','new.txt'),'utf8'),'new');assert.equal((await bridge.changes()).length,0);
+  result=await guest.run('command',{shell:'bash',command:`rm hello.txt; python3 -c 'from pathlib import Path; Path("image.bin").write_bytes(bytes([77])*150000)'`});assert.equal(result.exitCode,0);
+  await bridge.apply([],async()=>true);assert(!fs.existsSync(path.join(root,'hello.txt')));assert.equal(fs.readFileSync(path.join(root,'image.bin'))[0],77);
+  const restored=new ProjectBridge({root,directory,vm:new PrivateVM()});assert.equal(restored.status().guest,ready.guest);assert.equal((await restored.changes()).length,0);
+  assert(fs.readdirSync(path.join(directory,'backups')).some(file=>file.endsWith('.project.json')));
+  console.log('PASS real VM project copy: text/binary roundtrip, excluded credentials/dependencies, nested additions, deletion, denied apply, newer-file conflicts, recovery copies and persisted workspace. Fixture: '+directory);
+})().catch(error=>{console.error(error);process.exitCode=1;});

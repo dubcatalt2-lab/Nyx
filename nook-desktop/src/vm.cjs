@@ -18,13 +18,39 @@ class PrivateVM {
     if(!response.ok)throw Error(result.error || 'VM request failed');
     return result;
   }
+  project(id) {
+    if(!/^[a-f0-9-]{36}$/.test(id))throw Error('Invalid test workspace');
+    const parent=this, prefix='projects/'+id;
+    return {run:async(tool,args,signal)=>{
+      if(tool.startsWith('project.')){
+        const helper='.nook-project-transfer-'+require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(__dirname,'../resources/project-transfer.py'))).digest('hex').slice(0,16)+'.py';
+        const content=fs.readFileSync(path.join(__dirname,'../resources/project-transfer.py'),'utf8');
+        if(!parent.transferReady){
+          let previous=null;try{previous=await parent.run('read',{path:helper},signal);}catch(error){if(!/No such file/.test(error.message))throw error;}
+          if(previous?.content!==content)await parent.run('write',{path:helper,content,expectedHash:previous?.hash||null},signal);
+          parent.transferReady=true;
+        }
+        const request='.nook-transfer-'+randomUUID()+'.json';
+        await parent.run('write',{path:request,content:JSON.stringify(args),expectedHash:null},signal);
+        if(!['project.upload','project.download','project.manifest'].includes(tool))throw Error('Invalid transfer operation');
+        const result=await parent.run('command',{shell:'bash',command:'python3 /home/nook-agent/workspace/'+helper+' /home/nook-agent/workspace/'+prefix+' '+tool+' /home/nook-agent/workspace/'+request},signal);
+        if(result.exitCode!==0||result.stopped)throw Error('Project transfer failed: '+(result.stderr||result.stopped).slice(-1200));
+        return JSON.parse(result.stdout);
+      }
+      if(tool==='command'){
+        const cwd=args.cwd||'';if(typeof cwd!=='string'||cwd.startsWith('/')||cwd.split('/').includes('..')||cwd.includes('\\'))throw Error('Use a relative test directory');
+        return parent.run(tool,{...args,cwd:[prefix,cwd].filter(Boolean).join('/')},signal);
+      }
+      throw Error('Unsupported test workspace tool');
+    }};
+  }
   async status() { const result=await this.request('/status',{});if(result.service!=='nook-private-vm'||result.platform!=='linux')throw Error('Unexpected VM service');return result; }
   async run(tool,args,signal){
     if(signal?.aborted)throw Error('Stopped.');
     const id=randomUUID();
     const cancel=()=>{this.request('/cancel',{id}).catch(()=>{});};
     signal?.addEventListener('abort',cancel,{once:true});
-    try{return await this.request('/run',{id,tool,args},signal);}catch(error){await this.request('/cancel',{id}).catch(()=>{});throw error;}finally{signal?.removeEventListener('abort',cancel);}
+    try{return await this.request('/run',{id,tool,args,project:this.projectId},signal);}catch(error){await this.request('/cancel',{id}).catch(()=>{});throw error;}finally{signal?.removeEventListener('abort',cancel);}
   }
 }
 module.exports={PrivateVM};

@@ -6,6 +6,10 @@ const {Broker} = require('./broker.cjs');
 const {Store, redact} = require('./store.cjs');
 const {Engine} = require('./engine.cjs');
 const {Provider, ORIGIN} = require('./provider.cjs');
+const {ConnectedBroker} = require('./connected-broker.cjs');
+const {Connections} = require('./connections.cjs');
+let connectedBroker;
+const connections = new Connections({emit:text=>emit({type:'connection-progress',body:{text}})});
 if (process.env.NOOK_TEST_DATA && !app.isPackaged) app.setPath('userData', process.env.NOOK_TEST_DATA);
 app.setAppUserModelId('org.nyxlearning.nook.agent');
 const entry = pathToFileURL(path.join(__dirname, 'index.html')).href;
@@ -58,7 +62,7 @@ const levels = [
 async function manual(tool, args) {
   if (engine.active || toolController || accountBusy) throw Error('Another task is running. Stop it before manual actions.');
   toolController = new AbortController();
-  try { const result = await broker.run(tool, args, toolController.signal); store.event('', 'manual', {tool, result}); return result; }
+  try { const result = await connectedBroker.run(tool, args, toolController.signal); store.event('', 'manual', {tool, result}); return result; }
   finally { toolController = null; }
 }
 function activateProfile() {
@@ -78,16 +82,39 @@ function activateProfile() {
   try { const saved=JSON.parse(fs.readFileSync(path.join(profileRoot,'project.json'),'utf8'));if(typeof saved.root==='string'&&path.isAbsolute(saved.root)&&fs.statSync(saved.root).isDirectory())chosenRoot=saved.root; } catch {}
   store=new Store(path.join(profileRoot,'nook.sqlite'));
   broker=new Broker({backup:path.join(profileRoot,'backups'),approve,helper:path.join(resources,'automation.ps1'),emit});
-  engine=new Engine({provider,broker,store,emit});
+  connectedBroker=new ConnectedBroker({local:broker,config:path.join(process.env.LOCALAPPDATA || '', 'NyxCloud', 'nook-agent.json'),directory:profileRoot,approve,emit});
+  engine=new Engine({provider,broker:connectedBroker,store,emit});
 }
 async function changeAccount(action) {
   if(engine.active||toolController||accountBusy||approvalWindow)throw Error('Finish the current action before changing accounts.');
   accountBusy=true;broker.revoke();
   try{const result=await action();activateProfile();return result;}finally{accountBusy=false;}
 }
+async function connectionAction(action) {
+  if(engine.active||toolController||accountBusy||approvalWindow)throw Error('Finish the current action first.');
+  toolController=new AbortController();
+  try{return await action(toolController.signal);}finally{toolController=null;}
+}
 function register() {
   const actions = {
-    status: () => ({version: app.getVersion(), permissions: broker.status(), vmAvailable:fs.existsSync(path.join(process.env.LOCALAPPDATA || '','NyxCloud','nook-agent.json')), chosenRoot, testWorkspace:testWorkspace?.status()||null, connected: provider.connected(), account:provider.account.session?{uid:provider.account.session.uid,email:provider.account.session.email}:null,tasks: store.tasks(), memories: store.memories(), tray: !!tray}),
+    status: () => ({version: app.getVersion(), permissions: connectedBroker.status(), vmAvailable:fs.existsSync(path.join(process.env.LOCALAPPDATA || '','NyxCloud','nook-agent.json')), chosenRoot, testWorkspace:testWorkspace?.status()||null, connected: provider.connected(), account:provider.account.session?{uid:provider.account.session.uid,email:provider.account.session.email}:null,tasks: store.tasks(), memories: store.memories(), tray: !!tray}),
+    githubStatus: () => connections.status(),
+    githubRepositories: () => connectionAction(signal=>connections.repositories(signal)),
+    githubLogin: () => connectionAction(signal=>connections.login(signal)),
+    githubInstall: () => shell.openExternal('https://cli.github.com/'),
+    gitInstall: () => shell.openExternal('https://git-scm.com/downloads/win'),
+    cloneRepository: ({repository}) => connectionAction(async signal=>{
+      if(typeof repository !== 'string' || !/^[a-z\d][a-z\d-]{0,38}\/[a-z\d_.-]{1,100}$/i.test(repository))throw Error('Use owner/repository.');
+      const result=await dialog.showOpenDialog(window,{title:'Choose where to save this repository',properties:['openDirectory']});
+      if(result.canceled)return null;
+      const destination=path.join(result.filePaths[0],repository.split('/')[1]);
+      if(!await approve('Clone this GitHub project?',repository+'\n\nSave to '+destination+'\n\nUses the GitHub account connected to this Windows user. Existing files are never replaced.',signal))throw Error('Clone cancelled.');
+      await connections.clone(repository,destination,signal);
+      broker.revoke();testWorkspace=null;chosenRoot=destination;
+      fs.writeFileSync(path.join(profileRoot,'project.json'),JSON.stringify({root:chosenRoot}));
+      if(await approve('Open the cloned project?',chosenRoot+'\n\nAllow project reads and reviewed edits for 60 minutes. Windows commands require individual approval.',signal))broker.grant(chosenRoot,3,60);
+      return {root:chosenRoot};
+    }),
     signIn: data => changeAccount(()=>provider.signIn(data)),
     accountDetails: () => provider.account.details(),
     resetPassword: ({email}) => provider.account.reset(email),
@@ -100,16 +127,7 @@ function register() {
     models: () => provider.models(),
     start: async data => {
       if(toolController||engine.active||accountBusy)throw Error('Another action is running.');
-      const config=path.join(process.env.LOCALAPPDATA || '', 'NyxCloud', 'nook-agent.json');
-      if(fs.existsSync(config)){
-        const vm=new (require('./vm.cjs').PrivateVM)({config});
-        const guestBroker=new Broker({backup:path.join(profileRoot,'backups'),approve:async()=>true,emit});
-        await guestBroker.grantVM(vm,true);
-        if(toolController||engine.active||accountBusy)throw Error('Another action is running.');
-        engine.broker=guestBroker;
-        try{return await engine.start(data);}finally{guestBroker.revoke();}
-      }
-      engine.broker=broker;
+      engine.broker=connectedBroker;
       if(broker.status().level>0&&!await approve('Start this task?', 'Task: '+data.prompt+'\nProject: '+broker.status().root+'\nPermitted content and tool output may be sent to the selected model.'))throw Error('Task declined.');
       if(toolController||engine.active||accountBusy)throw Error('Another action is running.');
       return engine.start(data);

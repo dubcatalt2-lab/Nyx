@@ -34,5 +34,11 @@ try {
  await page.locator('#wording button').evaluate(el=>{el.title='Play game';el.textContent='Play game';});
  await page.waitForFunction(()=>!document.querySelector('#wording button').title.includes('game'));
  assert(!/\b(?:play|game)\b/i.test(await page.locator('#wording button').textContent()));
+ await page.evaluate(()=>document.body.insertAdjacentHTML('beforeend','<section id="connections"><p>Connection sites web reload website pages. https://sites.example.com/web/pages</p><button>Reload website</button><input value="wss://sites.example.com/web/" placeholder="Find websites"></section>'));
+ await page.waitForFunction(()=>!document.querySelector('#connections button').textContent.includes('Reload'));
+ assert(!/\b(?:connections?|sites?|web|reload|websites?|pages?)\b/i.test((await page.locator('#connections p').textContent()).split('https://')[0]));
+ assert((await page.locator('#connections p').textContent()).includes('https://sites.example.com/web/pages'));
+ assert.equal(await page.locator('#connections input').inputValue(),'wss://sites.example.com/web/');
+ assert.equal(await page.getByRole('button',{name:'Reload website',exact:true}).count(),1);
  console.log('PASS dynamic/icon labels, idempotence, accessible names, editable text, messages, code and profile preservation.');
 } finally {await browser.close()}

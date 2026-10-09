@@ -9959,7 +9959,6 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   const nyxDefaultGlobalApps=[
     ['code-studio','code-studio','Code Sandbox','/apps/code-studio/'],
     ['link-checker','link-checker','Link Checker','/apps/link-checker/'],
-    ['link-generator','link-generator','Link Generator','/apps/link-generator/'],
     ['jsdelivr-publisher','jsdelivr-publisher','JSDelivr Publisher','/apps/jsdelivr-publisher/'],
     ['nyx-api-keys','api-keys','Nyx API Keys','/apps/api-keys/'],
     ['youtube','youtube.com','YouTube','/apps/nyxtube/'],
@@ -9973,14 +9972,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     ['tiktok','tiktok.com','TikTok','https://www.tiktok.com/'],
     ['animex','animex.one','Animex','https://animex.one/']
   ].map(([id,icon,name,url])=>({id,icon,name,url})).map(app=>app.id==='youtube'?{...app,name:'NyxTube'}:app);
-  const nyxHiddenGlobalAppIds=new Set(['code-tutorials']);
+  const nyxHiddenGlobalAppIds=new Set(['code-tutorials','link-generator']);
   let nyxGlobalApps=nyxDefaultGlobalApps.map(app=>({...app}));
   function normalizeNyxGlobalApp(app){
     const id=String(app?.id||'').trim().toLowerCase();
     const icon=String(app?.icon||'apps').trim().toLowerCase();
     const name=String(app?.name||'').trim();
     const url=normalizeInternalAppUrl(app?.url);
-    if(!/^[a-z0-9][a-z0-9-]{1,63}$/.test(id) || !name || !url) return null;
+    if(!/^[a-z0-9][a-z0-9-]{1,63}$/.test(id) || !name || !url || id==='link-generator' || /\/apps\/link-generator(?:[/?#]|$)/i.test(url)) return null;
     return {id,icon,name:name.slice(0,48),url:url.slice(0,2048)};
   }
   function globalAppIcon(app){return appIcons[app.icon] || iconForUrl(app.url) || appIcon('apps')}

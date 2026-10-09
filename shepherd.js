@@ -66,6 +66,7 @@ import { Readable } from "node:stream";
 import { spawn } from "node:child_process";
 import { startWispurr } from "./scripture/fellowship-relay.mjs";
 import { Server as SocketIOServer } from "socket.io";
+import { retiredLinkGenerator } from "./scripture/retired-link-generator.mjs";
 import { linkGeneratorHourlyQuota } from "./scripture/link-generator-quota.mjs";
 import { batchFiles, inspectBatchTree } from "./scripture/link-generator-batch.mjs";
 import { prepareStaticPackage, staticLauncher, validateStaticManifest } from "./chapels/jsdelivr-publisher/static-publish.js";
@@ -111,6 +112,7 @@ let catClassCoverUrls = new Set();
 const nyxCustomRoleLabelLimit = 64;
 const app = express();
 installNookDesktopRelease(app);
+app.use(retiredLinkGenerator);
 app.use('/nook-desktop',(_req,res)=>res.status(404).end());
 const appTraffic = createAppTraffic({file:process.env.NYX_TRAFFIC_FILE || (process.platform === 'win32' ? join(process.env.TEMP || __dirname, 'nyx-app-traffic.json') : '/var/lib/nyx/app-traffic.json')});
 app.use(appTraffic.middleware);
@@ -376,7 +378,6 @@ const nyxMoviesCinejoyMigrationField = "moviesCinejoyTarget";
 const nyxMoviesGlobalApp = Object.freeze({ id: "movies", icon: "nyx-movies", name: "Movies", url: "/apps/movies/" });
 const nyxDefaultGlobalApps = Object.freeze([
   { id: "link-checker", icon: "link-checker", name: "Link Checker", url: "/apps/link-checker/" },
-  { id: "link-generator", icon: "link-generator", name: "Link Generator", url: "/apps/link-generator/" },
   nyxJsdelivrPublisherGlobalApp,
   nyxApiKeysGlobalApp,
   nyxCodeStudioGlobalApp,
@@ -3873,7 +3874,7 @@ function nyxGlobalAppId(value, name = "", url = "") {
 function nyxNormalizeGlobalApp(value, { requireName = false } = {}) {
   const name = nyxGlobalAppName(value?.name);
   const url = nyxGlobalAppUrl(value?.url);
-  if ((requireName && name.length < 2) || !name || !url) return null;
+  if ((requireName && name.length < 2) || !name || !url || value?.id === "link-generator" || /\/apps\/link-generator(?:[/?#]|$)/i.test(url)) return null;
   const id = nyxGlobalAppId(value?.id, name, url);
   return { id, icon: nyxGlobalAppIcon(value?.icon, url), name, url };
 }

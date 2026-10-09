@@ -86,7 +86,7 @@ test('agent formulates terminal actions and observes real results without manual
 test('chat accepts plain replies, JSON fences and final-answer prose but never ambiguous tool actions',()=>{
  assert.deepEqual(parse('Hello!'),{message:'Hello!',done:true});
  assert.deepEqual(parse('```json\n{"message":"Hello","done":true}\n```'),{message:'Hello',done:true});
- assert.deepEqual(parse('{"message":"Hello","done":true}\n\nHow can I help?'),{message:'Hello',done:true});
+ assert.deepEqual(parse('{"message":"Hello","done":true}\n\nHow can I help?'),{message:'Hello\n\nHow can I help?',done:true});
  assert.throws(()=>parse('{"message":"run","tool":"command","args":{}} trailing'),/ambiguous/);
  assert.throws(()=>parse('{"message":"hello","done":true} {"tool":"command"}'),/ambiguous/);
  assert.throws(()=>parse('{"message":"incomplete"'),/incomplete/);

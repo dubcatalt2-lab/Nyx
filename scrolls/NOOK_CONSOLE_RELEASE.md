@@ -45,3 +45,15 @@ Reply parser accepts normal conversational text, fenced JSON and final-answer tr
 ## 0.1.5 conversation presentation
 
 User messages align right in compact, wrapping panels; assistant responses remain left. Updated send control uses Hugeicons ArrowUp02 with a 42px target, rounded-square styling, clear hover/disabled states and reduced-motion support. Agent instructions request natural direct replies and avoid unsolicited branding/hosting/VM narration, while retaining accurate disclosure when asked or relevant to limitations. Saved conversation content is preserved; wording guidance affects new responses.
+
+## 0.1.6: Windows projects, optional VM testing, and connected publishing
+
+The selected Windows project is now the primary AI workspace. Open folder grants reviewed local access; normal file and command tools use it. The private VM is reserved for explicit test tools and website checks. No VM command implicitly substitutes for a Windows command.
+
+Projects provides GitHub CLI browser sign-in, current Windows GitHub account status, repository listing, and clone/open with destination selection. GitHub credentials are not copied into the VM or sent as model context. The existing Windows GitHub/hosting CLI sessions are available to individually approved local commands. Publishing is an agent-prepared command flow, not a provider-specific deployment dashboard; a new hosting account still requires that provider's sign-in. Git and GitHub CLI are prerequisites with installation links. Repository list shows the first 100 owned repositories; shared repos can be entered as owner/name.
+
+Optional test copies support up to 50 MB/10,000 entries, 4 MB per file, excluded credentials/dependencies/generated output, text and binary transfer, persisted copy identity, reviewed apply-back including deletions, content hash conflict checks and recovery receipts. VM copies are not refreshed automatically; Refresh from Windows preserves the prior copy. VM remains a separately running personal guest, not installed or started on other users' computers by this release. Transfers use a versioned helper through the existing authenticated guest daemon, so no guest service restart is required.
+
+Reply handling retains final-answer fields and trailing final prose rather than dropping them. Progress-only final replies trigger at most two repair attempts; persistent failures produce a visible failure response instead of Done. This is a bounded wording check, not a guarantee that every model answer is correct. Previous chat history is preserved.
+
+Validation includes unit tests, actual Windows commands, actual private VM binary/text transfer and conflict/recovery checks, app UI with Windows primary and explicit VM tests/apply-back, GitHub UI fixtures, and current Windows GitHub account/repository discovery. No real repository push, deployment of a user-selected project, new GitHub login, or paid model inference was performed by these tests.

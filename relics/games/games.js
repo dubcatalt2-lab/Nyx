@@ -1,11 +1,13 @@
 import "../../parables/display-names.js";
+import {activityName} from "./activity-names.js";
 import {createGameCloudSave} from "./game-cloud-save.js";
 import {createGameSponsors} from "../../parables/publisher-placements.js";
 
 const dropGames = document.body.classList.contains('drop-games');
 const nyxArcade = !dropGames && document.documentElement.dataset.appShell !== 'tutsi'
   && !document.documentElement.dataset.tutsiApp;
-const displayGameName = value => nyxArcade ? globalThis.nyxDisplayName(value) : value;
+const resourceName = value => nyxArcade ? activityName(value) : value;
+const displayGameName = value => nyxArcade ? globalThis.nyxDisplayName(resourceName(value)) : value;
 const elements = {
   grid: document.getElementById('gameGrid'),
   search: document.getElementById('gameSearch'),
@@ -106,8 +108,8 @@ let arcadeFeaturedSignature = '';
 if (nyxArcade) {
   document.body.classList.add('nyx-arcade');
   const header = document.querySelector('.cove-header');
-  header.querySelector('.eyebrow').textContent = 'NYX';
-  header.querySelector('h1').textContent = 'ARCADE';
+  header.querySelector('.eyebrow').textContent = 'NYX / COLLECTIONS';
+  header.querySelector('h1').textContent = 'Activity library';
   const masthead = document.createElement('div');
   masthead.className = 'arcade-masthead';
   header.before(masthead);
@@ -121,7 +123,7 @@ if (nyxArcade) {
 
   const collection = document.createElement('div');
   collection.className = 'arcade-collection';
-  collection.innerHTML = '<h2>Game library<span class="arcade-heading-line" aria-hidden="true"></span></h2>';
+  collection.innerHTML = '<h2>Activity collection<span class="arcade-heading-line" aria-hidden="true"></span></h2>';
   const tools = document.querySelector('.catalog-tools');
   tools.before(collection);
   collection.append(tools);
@@ -163,18 +165,18 @@ function renderArcadeFeatures(games) {
     card.className = 'arcade-feature';
     card.type = 'button';
     card.dataset.gameKey = game.key;
-    card.setAttribute('aria-label', `Launch ${game.title}`);
+    card.setAttribute('aria-label', `Open ${resourceName(game.title)}`);
     const copy = document.createElement('span');
     copy.className = 'arcade-feature-copy';
     const label = document.createElement('span');
     label.className = 'arcade-feature-label';
-    label.textContent = index === 0 ? 'In the spotlight' : 'Arcade pick';
+    label.textContent = index === 0 ? 'Featured activity' : 'From the collection';
     const title = document.createElement('span');
     title.className = 'arcade-feature-title';
     title.textContent = displayGameName(game.title);
     const play = document.createElement('span');
     play.className = 'arcade-feature-play';
-    play.innerHTML = 'Play now <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>';
+    play.innerHTML = 'Open activity <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>';
     copy.append(label, title, play);
     const number = document.createElement('span');
     number.className = 'arcade-feature-number';
@@ -732,14 +734,14 @@ function makeFallback(title) {
 function makeCover(game) {
   const cover = document.createElement('span');
   cover.className = 'game-cover';
-  const fallback = makeFallback(game.title);
+  const fallback = makeFallback(resourceName(game.title));
   cover.append(fallback);
   if (!game.covers.length) {
     return cover;
   }
 
   const image = document.createElement('img');
-  image.alt = '';
+  image.alt = nyxArcade ? `${resourceName(game.title)} cover` : '';
 
 
   image.loading = 'eager';
@@ -789,7 +791,7 @@ function makeCard(game) {
   card.dataset.gameKey = game.key;
   card.dataset.gameSource = game.source;
   card.dataset.preferredSource = ['all', 'misc'].includes(state.activeLibrary) ? '' : state.activeLibrary;
-  card.setAttribute('aria-label', `Play ${game.title}`);
+  card.setAttribute('aria-label', `${nyxArcade ? 'Open' : 'Play'} ${resourceName(game.title)}`);
   card.append(makeCover(game));
 
   const source = document.createElement('span');
@@ -802,6 +804,11 @@ function makeCard(game) {
   name.className = 'game-name';
   name.textContent = displayGameName(game.title);
   card.append(name);
+  if(nyxArcade){
+    const detail=document.createElement('span');detail.className='game-resource-meta';
+    detail.textContent=(GAME_LIBRARIES.find(library=>library.id===activeSource)?.label || 'Collection')+' / Open activity';
+    card.append(detail);
+  }
   return card;
 }
 
@@ -816,7 +823,7 @@ function visibleGames() {
     (state.activeLibrary === 'misc'
       ? !game.hasIcon
       : (game.hasIcon || query || includeUnillustratedGames()) && (state.activeLibrary === 'all' || gameSources(game).some(source => source.source === state.activeLibrary)))
-      && (!query || game.title.toLowerCase().includes(query))
+      && (!query || game.title.toLowerCase().includes(query) || resourceName(game.title).toLowerCase().includes(query))
   );
   return games.sort((a, b) => elements.sort.value === 'za'
     ? b.title.localeCompare(a.title, undefined, { numeric: true })
@@ -836,6 +843,7 @@ function render() {
     for (const game of pageGames) fragment.append(makeCard(game));
     elements.grid.replaceChildren(fragment);
   }
+  if(nyxArcade)elements.grid.querySelectorAll('.game-card').forEach((card,index)=>{card.dataset.layout=index%12===0&&pageGames.length>5?'featured':index%12===7?'wide':'standard';});
   elements.empty.hidden = games.length > 0;
   elements.count.textContent = `${games.length.toLocaleString()} game${games.length === 1 ? '' : 's'}`;
   elements.pagination.hidden = games.length <= state.pageSize;
@@ -865,7 +873,7 @@ function renderLibraryTabs() {
     button.classList.toggle('active', state.activeLibrary === library.id);
 
     const label = document.createElement('span');
-    label.textContent = displayGameName(library.label);
+    label.textContent = nyxArcade ? globalThis.nyxDisplayName(library.label) : library.label;
     const total = document.createElement('span');
     total.className = 'library-tab-count';
     total.textContent = count.toLocaleString();
@@ -1167,8 +1175,8 @@ async function openGame(game, updateHistory = true, preferredSource = '') {
   state.activeSourceIndex = firstAvailable >= 0 ? firstAvailable : 0;
   syncGameProvider();
   elements.playerTitle.textContent = displayGameName(game.title);
-  elements.playerTitle.setAttribute('aria-label', game.title);
-  elements.frame.title = game.title;
+  elements.playerTitle.setAttribute('aria-label', resourceName(game.title));
+  elements.frame.title = resourceName(game.title);
   elements.player.hidden = false;
   syncGamePerformanceMode();
   startGamePerformanceMonitor();

@@ -11,7 +11,10 @@
   const wordScopes='.nyx-release-notes,.nyx-tos-dialog,.nyx-terms-tab,.nyx-tos-document,[data-nyx-display-words]';
   const wordElements='p,li,strong,h1,h2,h3,a,span,button';
   const displayWords=/\b(?:link generators?|proxy|proxies|games?|gaming|AI|Discord)\b/gi;
-  const interfaceWords=/\b(?:games?|gaming|arcade|play(?:ing)?|search(?:es|ing|ed)?|browsers?|brows(?:e[sd]?|ing)|proxies|proxy|scramjet|baremux|bare-mux|ultraviolet|wisp|relay(?:s)?|movies?|videos?|shorts|music|link generators?)\b/gi;
+  const interfaceWords=/\b(?:games?|gaming|arcade|play(?:ing)?|search(?:es|ing|ed)?|browsers?|brows(?:e[sd]?|ing)|proxies|proxy|scramjet|baremux|bare-mux|ultraviolet|wisp|relay(?:s)?|movies?|videos?|shorts|music|link generators?|connections?|sites?|web|websites?|pages?|reload(?:s|ing|ed)?)\b/gi;
+  function styledWords(value, pattern){
+    return value.split(/((?:https?|wss?):\/\/[^\s<>"']+)/gi).map((part,index)=>index%2?part:part.replace(pattern,word=>nyxDisplayName(word))).join('');
+  }
   const untouched='script,style,input,textarea,pre,code,kbd,[contenteditable="true"],.nyx-styled-display-name,.message,.message-content,.chat-message,.ai-message,.ai-message-content,.ai-thread-list,[data-message-id],.monaco-editor,.cm-editor,[data-nyx-keep-text]';
   const installed=new WeakSet();
   const generatedLabels=new WeakMap();
@@ -40,7 +43,8 @@
       if((!nyxInterface && !element.closest(wordScopes)) || element.closest(untouched))return;
       for(const node of element.childNodes){
         if(node.nodeType!==3)continue;
-        const next=node.textContent.replace(nyxInterface?interfaceWords:displayWords,word=>nyxDisplayName(word));
+        const next=styledWords(node.textContent,nyxInterface?interfaceWords:displayWords);
+        if(next!==node.textContent && element.matches('button,a,h1,h2,h3,option') && !element.hasAttribute('aria-label'))element.setAttribute('aria-label',element.textContent.trim());
         if(next!==node.textContent)node.textContent=next;
       }
     }
@@ -49,7 +53,7 @@
       for(const name of ['placeholder','title','alt']){
         const value=element.getAttribute(name);
         if(!value)continue;
-        const next=value.replace(interfaceWords,word=>nyxDisplayName(word));
+        const next=styledWords(value,interfaceWords);
         if(next!==value){
           if(name==='placeholder' && !element.hasAttribute('aria-label') && !element.hasAttribute('aria-labelledby'))element.setAttribute('aria-label',value);
           element.setAttribute(name,next);

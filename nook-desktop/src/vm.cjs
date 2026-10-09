@@ -10,7 +10,7 @@ class PrivateVM {
   }
   async request(route, body, signal) {
     let response;
-    try { response = await this.fetcher('http://127.0.0.1:48764' + route, {method:'POST', headers:{'Content-Type':'application/json', Authorization:'Bearer '+this.token}, body:JSON.stringify(body), signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(65000)]) : AbortSignal.timeout(5000), redirect:'error'}); }
+    try { response = await this.fetcher('http://127.0.0.1:48764' + route, {method:'POST', headers:{'Content-Type':'application/json', Authorization:'Bearer '+this.token}, body:JSON.stringify(body), signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(65000)]) : AbortSignal.timeout(route === '/run' ? 65000 : 5000), redirect:'error'}); }
     catch { throw Error(signal?.aborted ? 'Stopped.' : 'Private Nyx VM is offline or its agent is unavailable. Start NyxCloud; no Windows command was run.'); }
     const chunks=[];let size=0;
     for await(const chunk of response.body){size+=chunk.length;if(size>400000)throw Error('VM response exceeded the limit');chunks.push(Buffer.from(chunk));}
@@ -24,7 +24,7 @@ class PrivateVM {
     const id=randomUUID();
     const cancel=()=>{this.request('/cancel',{id}).catch(()=>{});};
     signal?.addEventListener('abort',cancel,{once:true});
-    try{return await this.request('/run',{id,tool,args},signal);}finally{signal?.removeEventListener('abort',cancel);}
+    try{return await this.request('/run',{id,tool,args},signal);}catch(error){await this.request('/cancel',{id}).catch(()=>{});throw error;}finally{signal?.removeEventListener('abort',cancel);}
   }
 }
 module.exports={PrivateVM};

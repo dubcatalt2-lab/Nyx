@@ -44,6 +44,10 @@ try{
     const settings=page.locator('[data-settings-category="workspace"]');
     await settings.waitFor({state:'visible'});
     assert(!/\btabs?\b/i.test(await settings.innerText()),'Workspace settings must use page wording');
+    await settings.locator('[data-page-heading]').fill('My Coursework');
+    await settings.locator('[data-tab-cloak-apply]').click();
+    await page.waitForFunction(()=>document.title==='My Coursework');
+    assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.tabTitle')),'My Coursework');
     await page.locator('[data-nyx-dock-item="home"]').click();
     if(setup!==null){
       assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.userName')),'Saved student');
@@ -51,6 +55,7 @@ try{
     }
     await page.reload();
     await input.waitFor({state:'visible'});
+    await page.waitForFunction(()=>document.title==='My Coursework');
     assert.equal(await page.locator('#setupScreen').count(),0);
     assert.deepEqual(errors,[]);
     console.log(`PASS setup=${setup}, ${width}px: no wizard, Home usable, Terms and saved preferences retained.`);

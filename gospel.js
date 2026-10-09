@@ -2644,27 +2644,27 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     google:'./assets/icons/google-logo.png',
     classlink:'./assets/icons/classlink-logo.png'
   };
-  const nyxTabTitle = '\u057c\u028f\u04fc';
-  const learningTabTitle = 'DeltaMath';
-  const learningTabFavicon = favicons.deltamath;
-  let nyxTabFavicon = './assets/icons/nyx-cat-moon-small.svg?v=3';
-  const nyxFaviconHref = () => $('appFavicon')?.href || nyxTabFavicon;
-  function migrateLearningTabIdentity(){
+  const nyxPageHeading = '\u057c\u028f\u04fc';
+  const learningPageHeading = 'DeltaMath';
+  const learningPageIcon = favicons.deltamath;
+  let nyxPageIcon = './assets/icons/nyx-cat-moon-small.svg?v=3';
+  const nyxFaviconHref = () => $('appFavicon')?.href || nyxPageIcon;
+  function migrateLearningPageIdentity(){
     if(store.text('nyx.tabIdentityVersion','')==='deltamath-v5') return;
     const savedPreset=store.text('nyx.logo','').trim();
     const savedTitle=store.text('nyx.tabTitle','').trim();
     const savedFavicon=store.text('nyx.tabFavicon','').trim();
     const usesLearningIdentity=(!savedPreset || savedPreset==='nyx')
-      && (!savedTitle || savedTitle===learningTabTitle || /^(?:StudyHub|Learning Commons)(?:\s+[—-].*)?$/.test(savedTitle))
+      && (!savedTitle || savedTitle===learningPageHeading || /^(?:StudyHub|Learning Commons)(?:\s+[—-].*)?$/.test(savedTitle))
       && (!savedFavicon || /(?:^|\/)assets\/icons\/(?:studyhub\.svg|deltamath\.png)(?:[?#].*)?$/i.test(savedFavicon));
     if(usesLearningIdentity){
-      store.setText('nyx.tabTitle',learningTabTitle);
-      store.setText('nyx.tabFavicon',learningTabFavicon);
+      store.setText('nyx.tabTitle',learningPageHeading);
+      store.setText('nyx.tabFavicon',learningPageIcon);
       store.setText('nyx.logo','deltamath');
     }
     store.setText('nyx.tabIdentityVersion','deltamath-v5');
   }
-  migrateLearningTabIdentity();
+  migrateLearningPageIdentity();
   async function applyNyxLogoTheme(theme=store.text('nyx.theme','default')){
     if(!window.NyxLogo) return;
     try{
@@ -2675,8 +2675,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       ]);
       if(store.text('nyx.theme','default')!==theme) return;
       favicons.nyx=compactUrl;
-      nyxTabFavicon=compactUrl;
-      const nyxPresetSelected=store.text('nyx.logo','nyx')==='nyx' && store.text('nyx.tabTitle','')===nyxTabTitle;
+      nyxPageIcon=compactUrl;
+      const nyxPresetSelected=store.text('nyx.logo','nyx')==='nyx' && store.text('nyx.tabTitle','')===nyxPageHeading;
       if(nyxPresetSelected) store.setText('nyx.tabFavicon',compactUrl);
       if(nyxPresetSelected || !store.text('nyx.tabFavicon','')){
         const favicon=$('appFavicon');
@@ -2690,7 +2690,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       });
       renderWorkspaceShellTabs();
       activeWorkspace?.renderTabs?.();
-      if(nyxPresetSelected) setCurrentTabCloak(store.text('nyx.tabTitle',nyxTabTitle),compactUrl,false);
+      if(nyxPresetSelected) setCurrentPageIdentity(store.text('nyx.tabTitle',nyxPageHeading),compactUrl,false);
     }catch(error){
       console.warn('Nyx logo theme could not be applied:',error);
     }
@@ -5344,10 +5344,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const effect=esc(store.text('nyx.visualEffect','none'));
     const effectSpeed=esc(store.text('nyx.visualEffectSpeed','1.1'));
     const effectAmount=esc(store.text('nyx.visualEffectAmount','16'));
-    return `<section class="settings-app settings-single-pane workspace-only-settings"><main class="settings-main"><h1>Workspace Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Course page appearance</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Course heading"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose page icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply course appearance</button><button class="settings-action" data-preset="deltamath" type="button">Reset</button></div></section><section class="settings-block"><h2>Course presets</h2><select class="settings-select" data-preset-select><option value="deltamath" ${currentPreset==='deltamath'?'selected':''}>DeltaMath</option><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Study window</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current page iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original page return address"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Automatic study window</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Return original page after opening</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save study window settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Class shortcut</h2><p>Press this combo anytime to instantly close the current page without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>L00KUP Engine</h2><select class="settings-select" data-workspace-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>Reference Library</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Learning engine</h2><select class="settings-select" data-workspace-mode-select><option value="auto" ${workspaceMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${workspaceMode==='scramjet'?'selected':''}>Learning engine</option></select></section><section class="settings-block"><h2>Compatibility mode</h2><p>Use the alternate connection when a network cannot open sites. Turn off for the standard connection. Reload website pages after changing. Custom connections keep their saved choice.</p><div class="settings-row"><span>Use Compatibility mode</span><button class="settings-action ${store.get('nyx.httpBridge',true)?'on':''}" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div></section><section class="settings-block"><h2>Connection method</h2><select class="settings-select" data-workspace-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Atlas connection</option><option value="wisp" ${transport==='wisp'?'selected':''}>Campus connection endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Textbook connection</option></select><div class="settings-actions"><button class="settings-action" data-workspace-settings-save type="button">Save Workspace Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
+    return `<section class="settings-app settings-single-pane workspace-only-settings"><main class="settings-main"><h1>Workspace Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Course page appearance</h2><div class="settings-form-row"><input class="settings-input" data-page-heading value="${savedTitle}" placeholder="Course heading"><input class="settings-input" data-page-icon-file type="file" accept="image/*,.ico" aria-label="Choose page icon file"><input type="hidden" data-page-icon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply course appearance</button><button class="settings-action" data-preset="deltamath" type="button">Reset</button></div></section><section class="settings-block"><h2>Course presets</h2><select class="settings-select" data-preset-select><option value="deltamath" ${currentPreset==='deltamath'?'selected':''}>DeltaMath</option><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Study window</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current page iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original page return address"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Automatic study window</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Return original page after opening</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save study window settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Class shortcut</h2><p>Press this combo anytime to instantly close the current page without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>L00KUP Engine</h2><select class="settings-select" data-workspace-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>Reference Library</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Learning engine</h2><select class="settings-select" data-workspace-mode-select><option value="auto" ${workspaceMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${workspaceMode==='scramjet'?'selected':''}>Learning engine</option></select></section><section class="settings-block"><h2>Compatibility mode</h2><p>Use the alternate connection when a network cannot open sites. Turn off for the standard connection. Reload website pages after changing. Custom connections keep their saved choice.</p><div class="settings-row"><span>Use Compatibility mode</span><button class="settings-action ${store.get('nyx.httpBridge',true)?'on':''}" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div></section><section class="settings-block"><h2>Connection method</h2><select class="settings-select" data-workspace-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Atlas connection</option><option value="wisp" ${transport==='wisp'?'selected':''}>Campus connection endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Textbook connection</option></select><div class="settings-actions"><button class="settings-action" data-workspace-settings-save type="button">Save Workspace Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
   }
   function workspaceShellPresetTiles(){
-    return `<button class="quick-tile" data-preset="deltamath" type="button"><img class="quick-icon" alt="" src="${favicons.deltamath}"><span>DeltaMath page</span></button><button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${nyxTabFavicon}"><span>ռʏӼ page</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google page</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive page</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink page</span></button>`;
+    return `<button class="quick-tile" data-preset="deltamath" type="button"><img class="quick-icon" alt="" src="${favicons.deltamath}"><span>DeltaMath page</span></button><button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${nyxPageIcon}"><span>ռʏӼ page</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google page</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive page</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink page</span></button>`;
   }
   function saveWorkspaceShellSettings(root=document){
     const engine=root.querySelector('[data-workspace-engine]');
@@ -5485,7 +5485,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       if(categoryFor(title)==='workspace'){
         block.classList.add('nyx-workspace-settings-card');
-        const labels=[['[data-tab-title]','Course heading'],['[data-tab-favicon-file]','Page icon'],['[data-cloak-type]','Open Nyx in'],['[data-cloak-redirect-url]','Return destination']];
+        const labels=[['[data-page-heading]','Course heading'],['[data-page-icon-file]','Page icon'],['[data-cloak-type]','Open Nyx in'],['[data-cloak-redirect-url]','Return destination']];
         labels.forEach(([selector,text])=>{
           const field=controls.querySelector(selector);
           if(!field)return;
@@ -5954,7 +5954,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
 
   function workspaceShellPageSrcdoc(page){
-    const script='function nyxEffectPayload(){return{type:"nyx:effect-settings",effect:document.querySelector("[data-effect-value]")?.value||"none",speed:document.querySelector("[data-effect-speed]")?.value||"1.1",amount:document.querySelector("[data-effect-amount]")?.value||"16",theme:document.querySelector("[data-theme-value]")?.value||"default"}}function nyxWorkspacePayload(){return{type:"nyx:workspace-settings",engine:document.querySelector("[data-workspace-engine]")?.value||"duckduckgo",workspaceMode:document.querySelector("[data-workspace-mode-select]")?.value||"auto",transport:document.querySelector("[data-workspace-transport]")?.value||"libcurlRaw"}}document.addEventListener("click",e=>{const preset=e.target.closest("[data-preset]");if(preset){e.preventDefault();e.stopPropagation();parent.postMessage({type:"nyx:preset",preset:preset.dataset.preset},"*");return}const app=e.target.closest("[data-app-url]");if(app){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:app.dataset.appUrl},"*");return}const url=e.target.closest("[data-url]");if(url&&url.closest(".shell-page,.workspace-shell-page")){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:url.dataset.url},"*");return}if(e.target.closest("[data-workspace-settings-save]")){e.preventDefault();parent.postMessage(nyxWorkspacePayload(),"*")}if(e.target.closest("[data-page-fullscreen]"))parent.postMessage({type:"nyx:fullscreen"},"*");if(e.target.closest("[data-shell-about]"))parent.postMessage({type:"nyx:about"},"*");if(e.target.closest("[data-shell-about-tab]"))parent.postMessage({type:"nyx:about-tab"},"*")});document.addEventListener("change",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){document.querySelectorAll("[data-tab-title]").forEach(el=>{el.value=presetSelect.options[presetSelect.selectedIndex]?.textContent||presetSelect.value||"nyx"});parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-value],[data-effect-speed],[data-effect-amount],[data-theme-value]"))parent.postMessage(nyxEffectPayload(),"*");if(e.target.closest("[data-workspace-engine],[data-workspace-mode-select],[data-workspace-transport]"))parent.postMessage(nyxWorkspacePayload(),"*")});document.addEventListener("input",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-speed],[data-effect-amount]")){document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=(Number(document.querySelector("[data-effect-speed]")?.value||1.1)).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=document.querySelector("[data-effect-amount]")?.value||"16"});parent.postMessage(nyxEffectPayload(),"*")}});';
+    const script='function nyxEffectPayload(){return{type:"nyx:effect-settings",effect:document.querySelector("[data-effect-value]")?.value||"none",speed:document.querySelector("[data-effect-speed]")?.value||"1.1",amount:document.querySelector("[data-effect-amount]")?.value||"16",theme:document.querySelector("[data-theme-value]")?.value||"default"}}function nyxWorkspacePayload(){return{type:"nyx:workspace-settings",engine:document.querySelector("[data-workspace-engine]")?.value||"duckduckgo",workspaceMode:document.querySelector("[data-workspace-mode-select]")?.value||"auto",transport:document.querySelector("[data-workspace-transport]")?.value||"libcurlRaw"}}document.addEventListener("click",e=>{const preset=e.target.closest("[data-preset]");if(preset){e.preventDefault();e.stopPropagation();parent.postMessage({type:"nyx:preset",preset:preset.dataset.preset},"*");return}const app=e.target.closest("[data-app-url]");if(app){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:app.dataset.appUrl},"*");return}const url=e.target.closest("[data-url]");if(url&&url.closest(".shell-page,.workspace-shell-page")){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:url.dataset.url},"*");return}if(e.target.closest("[data-workspace-settings-save]")){e.preventDefault();parent.postMessage(nyxWorkspacePayload(),"*")}if(e.target.closest("[data-page-fullscreen]"))parent.postMessage({type:"nyx:fullscreen"},"*");if(e.target.closest("[data-shell-about]"))parent.postMessage({type:"nyx:about"},"*");if(e.target.closest("[data-shell-about-tab]"))parent.postMessage({type:"nyx:about-tab"},"*")});document.addEventListener("change",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){document.querySelectorAll("[data-page-heading]").forEach(el=>{el.value=presetSelect.options[presetSelect.selectedIndex]?.textContent||presetSelect.value||"nyx"});parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-value],[data-effect-speed],[data-effect-amount],[data-theme-value]"))parent.postMessage(nyxEffectPayload(),"*");if(e.target.closest("[data-workspace-engine],[data-workspace-mode-select],[data-workspace-transport]"))parent.postMessage(nyxWorkspacePayload(),"*")});document.addEventListener("input",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-speed],[data-effect-amount]")){document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=(Number(document.querySelector("[data-effect-speed]")?.value||1.1)).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=document.querySelector("[data-effect-amount]")?.value||"16"});parent.postMessage(nyxEffectPayload(),"*")}});';
     const popupScript='document.addEventListener("click",e=>{const popup=e.target.closest("[data-popup-protection]");if(!popup)return;e.preventDefault();const next=popup.dataset.enabled!=="true";popup.dataset.enabled=String(next);popup.classList.toggle("on",next);popup.textContent="Popup Protection "+(next?"On":"Off");parent.postMessage({type:"nyx:popup-protection",enabled:next},"*")});';
     const panicFrameScript='let NYX_PANIC_CAPTURE=false;function nyxPanicCombo(e){const key=String(e.key||"").trim();if(!key||["Control","Shift","Alt","Meta"].includes(key))return "";const parts=[];if(e.ctrlKey)parts.push("Ctrl");if(e.altKey)parts.push("Alt");if(e.shiftKey)parts.push("Shift");if(e.metaKey)parts.push("Meta");parts.push(key.length===1?key.toUpperCase():key.replace(/^Arrow/,""));return parts.join("+")}document.addEventListener("click",e=>{if(e.target.closest("[data-panic-capture]"))NYX_PANIC_CAPTURE=true;if(e.target.closest("[data-panic-clear]"))NYX_PANIC_CAPTURE=false},true);document.addEventListener("keydown",e=>{if(!NYX_PANIC_CAPTURE)return;const combo=nyxPanicCombo(e);if(!combo)return;e.preventDefault();e.stopPropagation();NYX_PANIC_CAPTURE=false;document.querySelectorAll("[data-panic-key-display]").forEach(el=>el.textContent=combo);parent.postMessage({type:"nyx:panic-key-set",combo},"*")},true);';
     const finalInternalPaintScript='document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=Number(NYX_EFFECT_SPEED).toFixed(1)+"x"});';
@@ -12577,7 +12577,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         return;
       }
       if(e.data.type==='nyx:tab-cloak'){
-        applyCustomTabCloak(e.data.title || '???', e.data.favicon || favicons.nyx);
+        applyCustomPageIdentity(e.data.title || '???', e.data.favicon || favicons.nyx);
         return;
       }
       if(e.data.type==='nyx:workspace-settings'){
@@ -14053,8 +14053,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         <section class="settings-card">
           <h2>Course page appearance</h2>
           <p>Choose the heading and icon shown on your course page.</p>
-          <div class="settings-row"><input data-tab-title value="${esc(store.text('nyx.tabTitle',document.title || '???'))}" placeholder="Course heading"><input class="file-input" data-tab-favicon-file type="file" accept="image/*,.ico"></div>
-          <input type="hidden" data-tab-favicon value="${esc(store.text('nyx.tabFavicon',nyxFaviconHref()))}">
+          <div class="settings-row"><input data-page-heading value="${esc(store.text('nyx.tabTitle',document.title || '???'))}" placeholder="Course heading"><input class="file-input" data-page-icon-file type="file" accept="image/*,.ico"></div>
+          <input type="hidden" data-page-icon value="${esc(store.text('nyx.tabFavicon',nyxFaviconHref()))}">
           <button data-tab-cloak-apply>Apply course appearance</button>
         </section>
         <section class="settings-card">
@@ -14604,28 +14604,28 @@ Auto uses the learning engine with Textbook by default and can recover with anot
   function applyPreset(name, silent=false){
     const previousCloakTitle=store.text('nyx.tabTitle','').trim();
     if(name==='custom'){
-      applyCustomTabCloak(store.text('nyx.tabTitle','nyx'),store.text('nyx.tabFavicon',nyxFaviconHref()),silent);
+      applyCustomPageIdentity(store.text('nyx.tabTitle','nyx'),store.text('nyx.tabFavicon',nyxFaviconHref()),silent);
       syncPresetCloakFields();
       return;
     }
-    const labels={deltamath:learningTabTitle,nyx:nyxTabTitle,classroom:'Google Classroom',drive:'Google Drive',classlink:'ClassLink',google:'Google'};
-    const title=labels[name]||nyxTabTitle;
-    const favicon=name==='nyx' ? nyxTabFavicon : (favicons[name]||favicons.nyx||favicons.google);
-    setCurrentTabCloak(title,favicon,true);
+    const labels={deltamath:learningPageHeading,nyx:nyxPageHeading,classroom:'Google Classroom',drive:'Google Drive',classlink:'ClassLink',google:'Google'};
+    const title=labels[name]||nyxPageHeading;
+    const favicon=name==='nyx' ? nyxPageIcon : (favicons[name]||favicons.nyx||favicons.google);
+    setCurrentPageIdentity(title,favicon,true);
     const brand=$('brandName');
-    if(brand) brand.textContent=nyxTabTitle;
+    if(brand) brand.textContent=nyxPageHeading;
     store.setText('nyx.logo',name);
     store.setText('nyx.tabTitle',title);
     store.setText('nyx.tabFavicon',favicon);
     syncPresetCloakFields();
     repairBlankWorkspaceShellPresetTabs(previousCloakTitle);
-    scheduleStoredTabCloakEnforce();
-    requestAnimationFrame(()=>setCurrentTabCloak(title,favicon,false));
+    scheduleStoredPageIdentityEnforce();
+    requestAnimationFrame(()=>setCurrentPageIdentity(title,favicon,false));
     if(!silent) toast('Page preset applied');
   }
   function repairBlankWorkspaceShellPresetTabs(previousCloakTitle=''){
     if(!Array.isArray(workspaceShellTabs) || !workspaceShellTabs.length) return;
-    const presetTitles=new Set([learningTabTitle,nyxTabTitle,'ռʏӼ','Õ¼ÊÓ¼','Google Classroom','Google Drive','ClassLink','Google']);
+    const presetTitles=new Set([learningPageHeading,nyxPageHeading,'ռʏӼ','Õ¼ÊÓ¼','Google Classroom','Google Drive','ClassLink','Google']);
     if(previousCloakTitle) presetTitles.add(previousCloakTitle);
     let changed=false;
     workspaceShellTabs.forEach((tab,index)=>{
@@ -14667,17 +14667,17 @@ Auto uses the learning engine with Textbook by default and can recover with anot
     scope.querySelectorAll?.('[data-preset-select]').forEach(select=>{
       if([...select.options].some(option=>option.value===logo)) select.value=logo;
     });
-    scope.querySelectorAll?.('[data-tab-title]').forEach(input=>{input.value=title});
-    scope.querySelectorAll?.('[data-tab-favicon]').forEach(input=>{input.value=favicon});
+    scope.querySelectorAll?.('[data-page-heading]').forEach(input=>{input.value=title});
+    scope.querySelectorAll?.('[data-page-icon]').forEach(input=>{input.value=favicon});
   }
-  function enforceStoredTabCloak(){
+  function enforceStoredPageIdentity(){
     const title=store.text('nyx.tabTitle','').trim();
     const favicon=store.text('nyx.tabFavicon','').trim();
-    if(title || favicon) setCurrentTabCloak(title || document.title, favicon || nyxFaviconHref(), false);
+    if(title || favicon) setCurrentPageIdentity(title || document.title, favicon || nyxFaviconHref(), false);
   }
-  function scheduleStoredTabCloakEnforce(){
-    enforceStoredTabCloak();
-    [80,320,1000].forEach(delay=>setTimeout(enforceStoredTabCloak,delay));
+  function scheduleStoredPageIdentityEnforce(){
+    enforceStoredPageIdentity();
+    [80,320,1000].forEach(delay=>setTimeout(enforceStoredPageIdentity,delay));
   }
   function reachableTabDocuments(){
     const docs=[document];
@@ -14689,9 +14689,9 @@ Auto uses the learning engine with Textbook by default and can recover with anot
     }catch{}
     return docs;
   }
-  function setCurrentTabCloak(title, favicon, forceRefresh=false){
-    const cleanTitle=String(title || nyxTabTitle).trim() || nyxTabTitle;
-    const cleanFavicon=String(favicon || nyxTabFavicon).trim() || nyxTabFavicon;
+  function setCurrentPageIdentity(title, favicon, forceRefresh=false){
+    const cleanTitle=String(title || nyxPageHeading).trim() || nyxPageHeading;
+    const cleanFavicon=String(favicon || nyxPageIcon).trim() || nyxPageIcon;
     reachableTabDocuments().forEach(doc=>{
       setPageTitle(cleanTitle,doc);
       setPageFavicon(cleanFavicon,forceRefresh,doc);
@@ -14742,25 +14742,25 @@ Auto uses the learning engine with Textbook by default and can recover with anot
     install(targetDoc);
     return finalHref;
   }
-  function applyCustomTabCloak(title, favicon, silent=false){
+  function applyCustomPageIdentity(title, favicon, silent=false){
     const cleanTitle=String(title || '').trim() || 'nyx';
     const cleanFavicon=String(favicon || '').trim() || favicons.nyx;
-    setCurrentTabCloak(cleanTitle,cleanFavicon,/^(?:\.\/|\/|assets\/)/i.test(cleanFavicon));
+    setCurrentPageIdentity(cleanTitle,cleanFavicon,/^(?:\.\/|\/|assets\/)/i.test(cleanFavicon));
     store.setText('nyx.tabTitle',cleanTitle);
     store.setText('nyx.tabFavicon',cleanFavicon);
     store.setText('nyx.logo','custom');
-    scheduleStoredTabCloakEnforce();
+    scheduleStoredPageIdentityEnforce();
     if(!silent) toast('Page cloak applied');
   }
   let tabCloakPersistenceInstalled=false;
-  function installTabCloakPersistence(){
+  function installPageIdentityPersistence(){
     if(tabCloakPersistenceInstalled) return;
     tabCloakPersistenceInstalled=true;
     ['focus','pageshow','visibilitychange'].forEach(type=>{
-      window.addEventListener(type,()=>scheduleStoredTabCloakEnforce(),{passive:true});
+      window.addEventListener(type,()=>scheduleStoredPageIdentityEnforce(),{passive:true});
     });
     if(document.head){
-      new MutationObserver(()=>scheduleStoredTabCloakEnforce()).observe(document.head,{childList:true,subtree:true,attributes:true,attributeFilter:['href','rel']});
+      new MutationObserver(()=>scheduleStoredPageIdentityEnforce()).observe(document.head,{childList:true,subtree:true,attributes:true,attributeFilter:['href','rel']});
     }
   }
   function currentCloakFrameUrl(){
@@ -16112,9 +16112,9 @@ Auto uses the learning engine with Textbook by default and can recover with anot
       }
       if(e.target.closest('[data-tab-cloak-apply]')){
         const root=e.target.closest('.window,.settings-app,body') || document;
-        const fileInput=root.querySelector('[data-tab-favicon-file]');
+        const fileInput=root.querySelector('[data-page-icon-file]');
         const file=fileInput?.files?.[0];
-        const apply=favicon=>applyCustomTabCloak(root.querySelector('[data-tab-title]')?.value || 'nyx', favicon || root.querySelector('[data-tab-favicon]')?.value || favicons.nyx);
+        const apply=favicon=>applyCustomPageIdentity(root.querySelector('[data-page-heading]')?.value || 'nyx', favicon || root.querySelector('[data-page-icon]')?.value || favicons.nyx);
         if(file){
           if(!file.type.startsWith('image/') && !/\.ico$/i.test(file.name || '')){
             toast('Choose an image file for the page icon');
@@ -16123,7 +16123,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
           const reader=new FileReader();
           reader.onload=()=>{
             const dataUrl=String(reader.result || '');
-            const hidden=root.querySelector('[data-tab-favicon]');
+            const hidden=root.querySelector('[data-page-icon]');
             if(hidden) hidden.value=dataUrl;
             apply(dataUrl);
           };
@@ -16698,8 +16698,8 @@ Auto uses the learning engine with Textbook by default and can recover with anot
   function finishNyxOpenStartup(){
     if(finishNyxOpenStartup.done) return;
     finishNyxOpenStartup.done=true;
-    if(store.text('nyx.tabTitle','') || store.text('nyx.tabFavicon','')) enforceStoredTabCloak();
-    else setCurrentTabCloak(learningTabTitle,learningTabFavicon,false);
+    if(store.text('nyx.tabTitle','') || store.text('nyx.tabFavicon','')) enforceStoredPageIdentity();
+    else setCurrentPageIdentity(learningPageHeading,learningPageIcon,false);
     migrateGlassDefault();
     applyAutoHieroglyphPreference();
   }

@@ -4,11 +4,11 @@ body:not(.workspace-shell).custom-bg-active.theme-sakura .custom-bg-image{
   display:block!important;
 }
 body.theme-ruby input[type="file"].settings-input::file-selector-button,
-body.theme-ruby .file-input[data-tab-favicon-file]::file-selector-button,
+body.theme-ruby .file-input[data-page-icon-file]::file-selector-button,
 body.theme-emerald input[type="file"].settings-input::file-selector-button,
-body.theme-emerald .file-input[data-tab-favicon-file]::file-selector-button,
+body.theme-emerald .file-input[data-page-icon-file]::file-selector-button,
 body.theme-sakura input[type="file"].settings-input::file-selector-button,
-body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
+body.theme-sakura .file-input[data-page-icon-file]::file-selector-button{
   background:rgba(148,163,184,.24)!important;
   color:#f8fafc!important;
   -webkit-text-fill-color:#f8fafc!important;

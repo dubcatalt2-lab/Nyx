@@ -2720,12 +2720,12 @@ body.lag-reducer .window{
   font:inherit;
 }
 input[type="file"].settings-input,
-.file-input[data-tab-favicon-file]{
+.file-input[data-page-icon-file]{
   color:#f8fafc;
   background:rgba(14,17,26,.54);
 }
 input[type="file"].settings-input::file-selector-button,
-.file-input[data-tab-favicon-file]::file-selector-button{
+.file-input[data-page-icon-file]::file-selector-button{
   height:28px;
   margin:0 12px 0 0;
   border:0;
@@ -2736,17 +2736,17 @@ input[type="file"].settings-input::file-selector-button,
   font:800 12px Outfit,Arial,sans-serif;
 }
 body.theme-ruby input[type="file"].settings-input::file-selector-button,
-body.theme-ruby .file-input[data-tab-favicon-file]::file-selector-button{
+body.theme-ruby .file-input[data-page-icon-file]::file-selector-button{
   background:linear-gradient(145deg,rgba(248,113,113,.52),rgba(127,29,29,.78));
   color:#fee2e2;
 }
 body.theme-emerald input[type="file"].settings-input::file-selector-button,
-body.theme-emerald .file-input[data-tab-favicon-file]::file-selector-button{
+body.theme-emerald .file-input[data-page-icon-file]::file-selector-button{
   background:linear-gradient(145deg,rgba(52,211,153,.52),rgba(6,78,59,.78));
   color:#dcfce7;
 }
 body.theme-sakura input[type="file"].settings-input::file-selector-button,
-body.theme-sakura .file-input[data-tab-favicon-file]::file-selector-button{
+body.theme-sakura .file-input[data-page-icon-file]::file-selector-button{
   background:linear-gradient(145deg,rgba(249,168,212,.58),rgba(157,23,77,.74));
   color:#fce7f3;
 }

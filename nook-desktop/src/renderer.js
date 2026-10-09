@@ -23,8 +23,9 @@ async function refresh() {
   $('connection').textContent = status.account?.email || (status.connected ? 'API key connected' : 'Not signed in');
   $('selectedRoot').textContent = status.chosenRoot || 'No folder selected';
   const access = status.permissions;
+  $('vmStatus').textContent = access.target === 'vm' ? 'Private Nyx VM ? Linux workspace' : 'Local Windows workspace';
   $('scope').textContent = access.level ? `Project access until ${new Date(access.expires).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}` : status.chosenRoot ? 'Access paused · click folder to reconnect' : 'No folder needed for chat';
-  $('quickFolder').textContent = status.chosenRoot ? status.chosenRoot.split(/[\\/]/).pop() : '+ Open folder';
+  $('quickFolder').textContent = access.target === 'vm' ? 'Nyx VM' : status.chosenRoot ? status.chosenRoot.split(/[\\/]/).pop() : status.vmAvailable ? 'Connect Nyx VM' : '+ Open folder';
   $('quickFolder').title = status.chosenRoot || 'Choose a project folder';
   $('tray').checked = status.tray;
   renderTestWorkspace(status.testWorkspace);
@@ -76,7 +77,8 @@ $('newChat').onclick = guard(async () => { if (busy || queueRunning) throw Error
 function bindSuggestions(){document.querySelectorAll('[data-prompt]').forEach(node => node.onclick = () => { $('prompt').value = node.dataset.prompt; $('prompt').focus(); });}
 bindSuggestions();
 $('prompt').onkeydown = event => { if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) { event.preventDefault(); if (!busy && connected && $('model').value) $('taskForm').requestSubmit(); else if (!connected) setup(); } };
-$('quickFolder').onclick = guard(async () => { if (busy) throw Error('Stop the current task before changing project access.'); const status = await invoke('status'); if (status.chosenRoot && status.permissions.level === 0) { await invoke('grant', {level:3,minutes:60}); } else { const folder = await invoke('chooseFolder'); if (!folder) return; currentFile = null; currentFolder = ''; $('editor').value = ''; $('files').replaceChildren(); $('saveFile').disabled = true; await invoke('grant', {level:3,minutes:60}); } await refresh(); $('prompt').focus(); });
+$('quickFolder').onclick = guard(async () => { if (busy) throw Error('Stop the current task before changing project access.'); const status = await invoke('status'); if(status.vmAvailable && !status.chosenRoot && status.permissions.target !== 'vm'){await invoke('connectVM');await refresh();return;} if (status.permissions.target === 'vm') { page('settings'); return; } if (status.chosenRoot && status.permissions.level === 0) { await invoke('grant', {level:3,minutes:60}); } else { const folder = await invoke('chooseFolder'); if (!folder) return; currentFile = null; currentFolder = ''; $('editor').value = ''; $('files').replaceChildren(); $('saveFile').disabled = true; await invoke('grant', {level:3,minutes:60}); } await refresh(); $('prompt').focus(); });
+$('connectVM').onclick = guard(async () => { await invoke('connectVM'); await refresh(); page('agent'); $('prompt').focus(); });
 $('downloads').onclick = guard(() => invoke('downloads'));
 $('stop').onclick = guard(() => { queueRunning = false; return invoke('stop'); });
 $('pause').onclick = guard(() => invoke('pause'));

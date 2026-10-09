@@ -25,3 +25,11 @@ This workspace is not an OS security sandbox. Approved commands have ordinary Wi
 ## 0.1.2 chat-driven terminal
 
 Removed manual shell, working-directory, command and administrator-command forms. The Terminal page is a read-only activity log with a return-to-chat action. The existing agent loop formulates commands, invokes the broker and observes results; exact-command approval and administrator UAC still apply. Tested with a fixture model producing a real PowerShell action and receiving its exit status/output, plus native approval, denial and test-copy application checks. No paid live inference was used.
+
+## 0.1.3 private NyxCloud VM
+
+The private Debian QEMU VM now has a dedicated nook-agent account and systemd guest broker. Nook uses authenticated HTTP over a fixed localhost-only QEMU port forward (127.0.0.1:48764 to guest 8087); no cloud execution service or public listener is added. Configuration remains under LOCALAPPDATA/NyxCloud outside Git. Setup creates an incremental cloud-init seed and backs up the launcher without replacing the disk or personal files. Existing VM desktop/tunnel remains separate. Run setup-private-vm.py with the existing VM build-tools Python only while the VM is shut down.
+
+Connect Nyx VM in the composer or Use private Nyx VM in Settings grants a 60-minute guest workspace. Account switch/restart revokes access. File tools, conflict-aware writes/undo and bash commands run in /home/nook-agent/workspace. VM commands have a 60-second timeout, bounded output and cancellation by process group. The guest service cannot gain privileges or write system directories; Windows UI/elevation tools are unavailable and there is no fallback to Windows execution. Windows project files are not automatically transferred. Guest network access remains available. This uses the existing persistent VM, not an ephemeral clean image.
+
+Tests: real guest status, anonymous rejection, read/write/conflict/undo, model-fixture-driven Linux command and observations, unprivileged identity, path escape refusal and cancellation; unit tests cover fixed loopback/auth, no redirect, cancellation and approval/revocation. No paid inference used. Reference: QEMU system invocation hostfwd and cloud-init module documentation.

@@ -5,13 +5,14 @@ const {command, execute, powershell} = require('./processes.cjs');
 const denied = message => Object.assign(Error(message), {code: 'DENIED'});
 class Broker {
   constructor({backup, approve, helper, emit = () => {}}) { Object.assign(this, {backup, approve, helper, emit}); this.level = 0; this.expires = 0; this.workspace = null; this.generation = 0; }
-  status() { return {level: Date.now() < this.expires ? this.level : 0, root: this.workspace?.root || '', expires: this.expires}; }
+  status() { return {level: Date.now() < this.expires ? this.level : 0, root: this.workspace?.root || '', expires: this.expires, target: this.vm ? 'vm' : 'local', platform: this.vm ? 'linux' : 'windows'}; }
   grant(root, level, minutes = 30) {
     if (!Number.isInteger(level) || level < 0 || level > 5 || !Number.isInteger(minutes) || minutes < 1 || minutes > 60) throw Error('Invalid permission scope.');
     const workspace = root ? new Workspace(root, this.backup) : null;
     if (level > 0 && !workspace) throw Error('Choose a project folder first.');
-    this.generation++; this.workspace = workspace; this.level = level; this.expires = Date.now() + minutes * 60000; return this.status();
+    this.vm = null; this.generation++; this.workspace = workspace; this.level = level; this.expires = Date.now() + minutes * 60000; return this.status();
   }
+  async grantVM(vm) { const info=await vm.status();this.generation++;this.vm=vm;this.workspace={root:info.root};this.level=3;this.expires=Date.now()+3600000;return this.status(); }
   stop() { this.generation++; }
   revoke() { this.generation++; this.level = 0; this.expires = 0; }
   async run(tool, args, signal = new AbortController().signal) {
@@ -29,6 +30,13 @@ class Broker {
       check();
       if (!accepted) throw denied('The requested action was declined.');
     };
+    if(this.vm){
+      if(!['list','read','search','write','mkdir','undo','command'].includes(tool))throw denied('Windows application control and elevation are unavailable in VM mode.');
+      if(['write','mkdir','undo','command'].includes(tool))await confirm('Allow this action inside your private VM?', tool === 'command' ? args.command + '\n\nLinux bash inside NyxCloud. This cannot elevate Windows.' : tool+'\n'+JSON.stringify(args));
+      check();const result=await this.vm.run(tool,args,AbortSignal.any([signal,AbortSignal.timeout(Math.max(1,this.expires-Date.now()))]));
+      if(tool==='command')this.emit({type:'terminal',body:{text:(result.stdout||'')+(result.stderr||'')}});
+      return result;
+    }
     if (tool === 'list') return this.workspace.list(args.path || '');
     if (tool === 'read') return this.workspace.read(args.path);
     if (tool === 'search') return this.workspace.search(args.query);

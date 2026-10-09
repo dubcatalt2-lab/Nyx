@@ -41,3 +41,7 @@ Supersedes the manual VM-connect workflow above. On PCs with the private VM conf
 Added VM-only browser tool using headless Chromium to render HTTP(S) pages and return bounded untrusted text and links. Chromium runs without its inner process sandbox inside the unprivileged, systemd-restricted guest service; the QEMU VM remains the host-isolation boundary. No Windows files are mounted into this workspace. Native code does not send the local VM token to Nook or model providers. Real example.com rendering and automatic AI-only bash execution passed.
 
 Reply parser accepts normal conversational text, fenced JSON and final-answer trailing prose. Multiple or ambiguous tool objects never execute; one bounded format-repair request is permitted before a readable failure. Fixed the reported JSON trailing-character error without relaxing tool-name/argument validation.
+
+## 0.1.5 conversation presentation
+
+User messages align right in compact, wrapping panels; assistant responses remain left. Updated send control uses Hugeicons ArrowUp02 with a 42px target, rounded-square styling, clear hover/disabled states and reduced-motion support. Agent instructions request natural direct replies and avoid unsolicited branding/hosting/VM narration, while retaining accurate disclosure when asked or relevant to limitations. Saved conversation content is preserved; wording guidance affects new responses.

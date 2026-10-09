@@ -146,7 +146,7 @@ export async function attachBulkJobs({ access }) {
   };
   const worker = new BulkJob({ store, access, update });
   const execute = async options => navigator.locks.request('nyx-link-publish-job', { ifAvailable: true }, async lock => {
-    if (!lock) { update(await store.read(), 'This job is already running in another tab.'); return; }
+    if (!lock) { update(await store.read(), 'This job is already running in another page.'); return; }
     try {
       running = true;
       if (options) await worker.create(options);

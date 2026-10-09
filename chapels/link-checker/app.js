@@ -569,7 +569,7 @@
     $('[data-freedns-progress-label]').textContent=completed>=total?`Checked all ${total.toLocaleString()} domains`:`Full scan: ${completed.toLocaleString()} of ${total.toLocaleString()} domains`;
     $('[data-freedns-progress-count]').textContent=`${percent}%${failed?` · ${failed.toLocaleString()} failed`:''}`;
     $('[data-freedns-progress-bar]').style.width=`${percent}%`;
-    $('[data-freedns-progress-detail]').textContent='Keep this tab open. Saved verdicts let a stopped full scan resume without repeating completed domains.';
+    $('[data-freedns-progress-detail]').textContent='Keep this page open. Saved verdicts let a stopped full scan resume without repeating completed domains.';
   }
   function freednsDelay(milliseconds,signal){
     if(signal.aborted)return Promise.reject(new DOMException('Stopped','AbortError'));

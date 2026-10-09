@@ -73,7 +73,7 @@
     const selection=target&&typeof target.selectionStart==='number'?target.value.slice(target.selectionStart,target.selectionEnd):String(doc.getSelection()||'');
     const entries=[
       ['Back','back','[data-workspace-shell-back]'],['Forward','forward','[data-workspace-shell-forward]'],
-      ['Reload tab','reload','[data-workspace-shell-reload]'],['New tab','plus','[data-workspace-shell-new-tab]'],
+      ['Reload page','reload','[data-workspace-shell-reload]'],['New page','plus','[data-workspace-shell-new-tab]'],
       ['Settings','settings','[data-nyx-dock-item="settings"]']
     ].map(([label,icon,selector])=>({label,icon,disabled:!document.querySelector(selector)||document.querySelector(selector).disabled,run:()=>document.querySelector(selector)?.click()}));
     if(selection)entries.unshift({label:'Copy','icon':'copy',run:()=>navigator.clipboard.writeText(selection).catch(()=>{})});

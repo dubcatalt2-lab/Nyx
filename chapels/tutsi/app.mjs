@@ -348,7 +348,7 @@ for (const [id, key] of Object.entries({
   $(id).addEventListener("change", () => {
     settings[key] = $(id).type === "checkbox" ? $(id).checked : $(id).value;
     applySettings();
-    if(key==='httpBridge')toast('Connection setting saved. Reload website tabs to apply.');
+    if(key==='httpBridge')toast('Connection setting saved. Reload website pages to apply.');
     if(['adBlock','popupBlock','downloadBlock'].includes(key)){
       for(const [name,frame] of frames){if(['games','movies'].includes(name))frame.src=frame.src;else protectAppContents(frame);}
       for(const tab of workspaceTabs)if(tab.element){tab.element.setAttribute('sandbox',protectionSandbox(settings));control('reload',tab.element);}
@@ -364,7 +364,7 @@ function applyTabFields(){
  settings.tabPreset=$('tab-preset').value;
  settings.tabTitle=$('tab-title').value;
  applySettings();
- $('tab-preset-status').textContent='Applied to this workspace tab.';
+ $('tab-preset-status').textContent='Applied to this workspace page.';
 }
 $('tab-title').addEventListener('input',applyTabFields);
 $('tab-preset').addEventListener('input',applyTabFields);
@@ -537,14 +537,14 @@ function renderWorkspaceTabs(){
   const strip=$('workspace-tabs');strip.replaceChildren();
   workspaceTabs.forEach((tab,index)=>{
     const button=document.createElement('button');button.type='button';button.setAttribute('role','tab');button.setAttribute('aria-selected',String(tab===activeTab));
-    let label='New tab';try{label=new URL(tab.url).hostname}catch{}
+    let label='New page';try{label=new URL(tab.url).hostname}catch{}
     button.textContent=label;button.title=`Alt+${index+1}: ${label}`;button.onclick=()=>selectWorkspaceTab(tab);
     const item=document.createElement('div');item.className='workspace-tab';item.setAttribute('role','presentation');item.dataset.active=String(tab===activeTab);
-    const close=document.createElement('button');close.type='button';close.className='workspace-tab-close';close.textContent=String.fromCharCode(215);close.setAttribute('aria-label',`Close ${label}`);close.title='Close tab';
+    const close=document.createElement('button');close.type='button';close.className='workspace-tab-close';close.textContent=String.fromCharCode(215);close.setAttribute('aria-label',`Close ${label}`);close.title='Close page';
     close.onclick=()=>{removeWebsiteTab(tab);$('workspace-tabs').querySelector('[aria-selected="true"]')?.focus();};
     item.append(button,close);strip.append(item);
   });
-  const add=document.createElement('button');add.textContent='+';add.type='button';add.setAttribute('aria-label','New tab (Alt+T)');add.onclick=()=>newWorkspaceTab();strip.append(add);
+  const add=document.createElement('button');add.textContent='+';add.type='button';add.setAttribute('aria-label','New page (Alt+T)');add.onclick=()=>newWorkspaceTab();strip.append(add);
 }
 function syncWorkspaceTabView(){
   $('workspace-new-tab').hidden=!!activeTab?.url;
@@ -567,7 +567,7 @@ setInterval(()=>{
   if(document.activeElement!==$('address') && !appPaths[location.hash.slice(1)])$('address').value=url;
 },750);
 function newWorkspaceTab(url=''){
-  if(workspaceTabs.length>=8){toast('You can open up to 8 website tabs. Close one first.');return false;}
+  if(workspaceTabs.length>=8){toast('You can open up to 8 website pages. Close one first.');return false;}
   const tab={url:'',element:null,status:null,navigation:0};workspaceTabs.push(tab);selectWorkspaceTab(tab);
   if(url)void navigate(url);else {$('new-tab-query').value='';$('new-tab-query').focus();}
   return true;

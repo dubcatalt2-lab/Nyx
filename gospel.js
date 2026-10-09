@@ -734,7 +734,7 @@
       <header class="nyx-profile-directory-header"><div><span>NYX COMMUNITY</span><h2 id="nyxProfileDirectoryTitle">${requestedProfileUid?'Profile':'Community profiles'}</h2><p>Discover the people using Nyx.</p></div><button type="button" data-close-profile-directory aria-label="Close community profiles">${nyxAccountMenuIcon('close')}</button></header>
       <div class="nyx-profile-directory-layout">
         <aside class="nyx-profile-directory-sidebar">
-          <label class="nyx-profile-directory-search">${nyxAccountMenuIcon('people')}<input type="search" data-profile-directory-search placeholder="S3ARC4 name, username, or role" autocomplete="off"></label>
+          <label class="nyx-profile-directory-search">${nyxAccountMenuIcon('people')}<input type="search" data-profile-directory-search placeholder="L00KUP name, username, or role" autocomplete="off"></label>
           <p data-profile-directory-summary>Loading profiles…</p>
           <div class="nyx-profile-directory-results" data-profile-directory-results aria-live="polite"></div>
         </aside>
@@ -1836,7 +1836,7 @@
   const NYX_TERMS_VERSION='2026-07-30';
   function nyxTermsSectionsMarkup(){
     return `<section><h2>1. Eligibility</h2><p>You must comply with all applicable laws when using Nyx. If you are under the age required by your jurisdiction to enter into a binding agreement, you may only use Nyx with the permission of a parent or legal guardian.</p></section>
-      <section><h2>2. Description of the Service</h2><p>Nyx is a platform that may provide features including, but not limited to:</p><ul><li>S3ARC4 and discovery tools</li><li>A1-powered transcription and summarization</li><li>Productivity and educational tools</li><li>Entertainment applications</li><li>Links to third-party websites and services</li><li>Experimental features released for testing</li></ul><p>Features may change, be added, modified, or removed at any time without notice.</p></section>
+      <section><h2>2. Description of the Service</h2><p>Nyx is a platform that may provide features including, but not limited to:</p><ul><li>L00KUP and discovery tools</li><li>A1-powered transcription and summarization</li><li>Productivity and educational tools</li><li>Entertainment applications</li><li>Links to third-party websites and services</li><li>Experimental features released for testing</li></ul><p>Features may change, be added, modified, or removed at any time without notice.</p></section>
       <section><h2>3. Acceptable Use</h2><p>You agree not to:</p><ul><li>Violate any applicable law or regulation.</li><li>Attempt to gain unauthorized access to Nyx, its servers, or other users' systems.</li><li>Upload or distribute malware, viruses, or malicious code.</li><li>Interfere with or disrupt the operation of the Service.</li><li>Circumvent security measures, authentication systems, or rate limits.</li><li>Use automated systems that excessively burden our infrastructure.</li><li>Impersonate another person or entity.</li><li>Infringe upon the intellectual property or other legal rights of others.</li><li>Use Nyx in a manner that harms other users or the availability of the Service.</li></ul><p>We reserve the right to suspend, restrict, or terminate access for users who violate these Terms.</p></section>
       <section><h2>4. User Content</h2><p>Some features may allow you to submit text, media, links, or other content ("User Content").</p><p>You retain ownership of your User Content.</p><p>By submitting User Content, you grant Nyx a non-exclusive, worldwide, royalty-free license to host, process, reproduce, and display that content solely for the purpose of operating, maintaining, and improving the Service.</p><p>You represent that you have the necessary rights and permissions to submit any User Content you provide.</p></section>
       <section><h2>5. A1 Features</h2><p>Nyx may provide A1-generated content such as summaries, transcriptions, recommendations, or other generated material.</p><p>A1-generated output may be inaccurate, incomplete, or outdated. It should not be relied upon as professional, legal, financial, medical, or other expert advice.</p><p>Users are responsible for reviewing and verifying A1-generated content before relying on it.</p></section>
@@ -1892,7 +1892,7 @@
   }
   const nyxPublicProfileInlinePolish='.nyx-founder-profile-standard{max-width:480px!important;border-color:color-mix(in srgb,#555963 72%,var(--nyx-founder-accent-primary,#8fb8ff))!important;border-radius:14px!important;background:linear-gradient(180deg,#1c1e24,color-mix(in srgb,#191b20 96%,var(--nyx-founder-accent-primary,#8fb8ff)))!important;box-shadow:0 14px 32px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.035)!important}.nyx-founder-profile-standard .nyx-founder-banner{width:100%!important;height:132px!important}.nyx-founder-profile-standard .nyx-founder-profile-content{padding:0 11px 11px!important}.nyx-founder-profile-standard .nyx-founder-image-wrap{width:78px!important;height:78px!important;margin-top:-40px!important;border:4px solid #1c1e24!important;background:#1c1e24!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--nyx-founder-accent-primary,#8fb8ff) 72%,#d5d9e1),0 7px 15px rgba(0,0,0,.34)!important}.nyx-founder-profile-standard .nyx-founder-copy{margin-top:8px!important;padding:12px!important;border-color:rgba(255,255,255,.08)!important;border-radius:10px!important;background:linear-gradient(180deg,color-mix(in srgb,#272a32 97%,var(--nyx-founder-accent-primary,#8fb8ff)),#22242b)!important}.nyx-founder-profile-standard .nyx-founder-copy h3{font-size:20px!important;line-height:1.15!important}.nyx-founder-profile-standard .nyx-founder-handle{margin:2px 0 8px!important;font-size:12px!important}.nyx-founder-profile-standard .nyx-founder-role{margin:8px 0!important;color:#aeb2bd!important;font-size:10px!important;letter-spacing:.075em!important}.nyx-founder-role-list{gap:6px!important;margin:0 0 10px!important}.nyx-founder-role-chip,.nyx-founder-profile-standard .nyx-founder-badge{min-height:23px!important;padding:2px 7px!important;border:1px solid #484b55!important;border-radius:6px!important;background:#2b2e36!important;font-size:10.5px!important;transition:border-color .18s ease,background-color .18s ease,transform .18s ease!important}.nyx-founder-role-owner{border-color:color-mix(in srgb,var(--nyx-founder-accent-primary,#8fb8ff) 68%,#c5c9d2)!important;background:color-mix(in srgb,#2b2e36 81%,var(--nyx-founder-accent-primary,#8fb8ff))!important}.nyx-founder-role-chip:hover{border-color:color-mix(in srgb,var(--nyx-founder-accent-primary,#8fb8ff) 60%,#70747e)!important;background:color-mix(in srgb,#2b2e36 87%,var(--nyx-founder-accent-primary,#8fb8ff))!important;transform:translateY(-1px)!important}.nyx-founder-about{margin-top:2px!important;padding-top:10px!important;border-top-color:rgba(255,255,255,.075)!important}.nyx-founder-about>strong{margin-bottom:5px!important;color:#b8bdc8!important;font-size:10px!important;letter-spacing:.075em!important}.nyx-founder-profile-standard .nyx-founder-bio{font-size:12.5px!important;line-height:1.48!important}.nyx-founder-profile-standard .nyx-founder-link{margin-top:10px!important;font-size:12px!important}';
   const nyxDiscordCreditsProfileStyle='.nyx-credits-hero{margin-bottom:34px!important}.nyx-credits-hero h1{font-size:clamp(36px,6vw,54px)!important;font-weight:600!important}.nyx-credits-section{margin-bottom:44px!important}.nyx-credits-section>h2{margin-bottom:18px!important;font-size:26px!important}.nyx-founder-profile-standard{max-width:510px!important;border-radius:12px!important;background:linear-gradient(155deg,color-mix(in srgb,var(--nyx-founder-accent-primary,#5865f2) 66%,#202126),color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 30%,#18191e))!important}.nyx-founder-profile-standard .nyx-founder-banner{height:150px!important;aspect-ratio:auto!important;background:var(--nyx-founder-banner-color,var(--nyx-founder-accent-secondary,#8ea1ff))!important}.nyx-founder-profile-standard .nyx-founder-banner img{width:100%!important;height:100%!important;object-fit:cover!important;object-position:center!important}.nyx-founder-profile-standard .nyx-founder-profile-content{padding:0 14px 14px!important}.nyx-founder-profile-standard .nyx-founder-image-wrap{width:84px!important;height:84px!important;margin-top:-43px!important;border-color:color-mix(in srgb,var(--nyx-founder-accent-primary,#5865f2) 62%,#18191e)!important}.nyx-founder-profile-standard .nyx-founder-copy{margin-top:9px!important;padding:13px!important;border:1px solid color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 38%,transparent)!important;border-radius:9px!important;background:color-mix(in srgb,var(--nyx-founder-accent-primary,#5865f2) 14%,rgba(12,13,17,.76))!important}.nyx-founder-profile-standard .nyx-founder-copy h3{font-size:21px!important}.nyx-founder-profile-standard .nyx-founder-role{margin-top:10px!important}.nyx-founder-profile-standard .nyx-founder-about{margin-top:4px!important}.nyx-founder-profile-standard .nyx-founder-bio{font-size:13px!important}'+nyxPublicProfileInlinePolish;
-  const nyxCreditsPresentationStyle=`/* Shared by the internal Credits tab and desktop About window. */
+  const nyxCreditsPresentationStyle=`
 html body .nyx-credits-tab{box-sizing:border-box;width:100%;max-width:960px;min-height:65vh;margin:0 auto;padding:clamp(48px,9vh,96px) 24px 64px!important;text-align:center;color:#e0ddea}
 html body .nyx-credits-tab .nyx-credits-title{margin:0 0 48px!important;padding:0;border:0;color:#a8a1b8!important;font-size:28px!important;font-weight:400!important;letter-spacing:0!important;line-height:1.4;text-shadow:none!important}
 html body .nyx-credits-tab .nyx-credits-thanks{display:grid;gap:40px;width:100%!important;max-width:none!important;margin:0!important;padding:0!important;list-style:none}
@@ -2021,7 +2021,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(!overlay || removed.has(overlay) || !overlay.isConnected) continue;
       removed.add(overlay);
       overlay.remove();
-      console.info('Nyx removed an ad overlay that escaped its workspace tab.');
+      console.info('Nyx removed an ad overlay that escaped its workspace page.');
     }
     return removed.size;
   }
@@ -2034,7 +2034,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const overlay=workspaceAttachedOverlayRoot(root);
       if(overlay?.isConnected){
         overlay.remove();
-        console.info('Nyx blocked an ad overlay from leaving its workspace tab.');
+        console.info('Nyx blocked an ad overlay from leaving its workspace page.');
       }
     };
     const inspect=records=>{
@@ -2293,7 +2293,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }catch(error){
       if(status){
         status.classList.add('error');
-        status.textContent='Eruda could not load. Check your connection and reopen this tab.';
+        status.textContent='Eruda could not load. Check your connection and reopen this page.';
       }
       console.error('Nyx Eruda failed to load',error);
     }
@@ -2307,7 +2307,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const saved=String(store.text('nyx.engine','duckduckgo')).trim().toLowerCase();
     const id=Object.prototype.hasOwnProperty.call(engines,saved) ? saved : 'duckduckgo';
     const entries={
-      duckduckgo:{id:'duckduckgo',label:'Reference Search',icon:appIcon('duckduckgo.com')},
+      duckduckgo:{id:'duckduckgo',label:'Reference Library',icon:appIcon('duckduckgo.com')},
       google:{id:'google',label:'Google',icon:appIcon('google.com')},
       bing:{id:'bing',label:'Bing',icon:'https://www.bing.com/favicon.ico'}
     };
@@ -2320,7 +2320,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       icon.alt='';
     });
     qsa('.nyx-visual-home [data-workspace-blank-input]').forEach(input=>{
-      const text=`S3ARC4 ${meta.label} or type a U3L`;
+      const text=`Find a topic or enter an address`;
       input.placeholder=text;
       input.setAttribute('aria-label',text);
       input.dataset.searchEngine=meta.id;
@@ -2386,7 +2386,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       return true;
     }catch(error){
       console.warn('Nyx search history could not save:',error?.message || error);
-      toast("Nyx could not save this s3arc4 to S3ARC4 history.");
+      toast("Nyx could not save this s3arc4 to L00KUP history.");
       return false;
     }
   }
@@ -2886,7 +2886,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   installHomeShortcutIconFallbacks();
   function titleForUrl(url){
     const raw=String(url || '').trim();
-    if(!raw || raw==='about:blank') return 'New Tab';
+    if(!raw || raw==='about:blank') return 'New Page';
     if(/(?:^|\/)apps\/chat(?:\/|$)/i.test(raw)) return 'Nyx Chat';
     if(/(?:^|\/)apps\/link-checker(?:\/|$)/i.test(raw)) return 'Link Checker';
     if(/(?:^|\/)apps\/link-generator(?:\/|$)/i.test(raw)) return 'Link Generator';
@@ -2896,7 +2896,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(raw==='nyx://ai') return "Nyx A1";
     if(raw.startsWith('nyx://')) return raw.replace('nyx://','nyx ');
     if(raw.startsWith('assets/games/') || raw.startsWith('assets/ugs/') || raw.startsWith('/assets/games/') || raw.startsWith('/assets/ugs/')) return 'GAMES';
-    try{return new URL(raw,location.href).hostname.replace(/^www\./,'') || 'New Tab'}catch{return 'New Tab'}
+    try{return new URL(raw,location.href).hostname.replace(/^www\./,'') || 'New Page'}catch{return 'New Page'}
   }
   function websiteDetailsHidden(){
     return store.get('nyx.hideWebsiteDetails',false);
@@ -2923,7 +2923,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const activeTab=activeWorkspace?.tabs?.find(tab=>tab.id===activeWorkspace.active);
     const shellTab=workspaceShellTabs.find(tab=>tab.id===workspaceShellActiveTab);
     const url=activeTab?.sourceUrl || activeTab?.url || shellTab?.url || '';
-    const title=activeTab?.title || shellTab?.title || 'New Tab';
+    const title=activeTab?.title || shellTab?.title || 'New Page';
     const titlebar=activeWorkspace?.win?.querySelector?.('.titlebar-title');
     if(titlebar) titlebar.textContent=workspaceChromeTitle(title,url);
   }
@@ -2943,7 +2943,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   const connectionPrivacyGuardSource=`(() => {
     if (typeof globalThis === "undefined" || globalThis.__nyxProxyPrivacyInstalled) return;
     globalThis.__nyxProxyPrivacyInstalled = true;
-    const denied = Object.freeze({ code: 1, message: "Location access is disabled in Nyx private tabs." });
+    const denied = Object.freeze({ code: 1, message: "Location access is disabled in Nyx private pages." });
     const fail = callback => {
       if (typeof callback === "function") queueMicrotask(() => callback(denied));
     };
@@ -3834,7 +3834,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         <button type="button" data-nyx-dock-item="vms" data-app-url="/apps/nyxcloud/" aria-label="VMs" title="VMs" hidden style="display:none"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="13" rx="2"/><path d="M8 21h8m-4-5v5"/></svg><span>VMs</span></button>
         <button type="button" data-nyx-dock-item="apps" data-app-url="nyx://apps" aria-label="Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="7" height="7" rx="1"/><rect x="3" y="16" width="7" height="6" rx="1"/><rect x="12" y="14" width="7" height="8" rx="1"/><rect x="14" y="2" width="7" height="7" rx="1"/></svg><span>Apps</span></button>
       </nav>
-      <div class="nyx-rail-footer"><a class="nyx-rail-discord" data-nyx-trusted-external="discord" data-nyx-dock-item="discord" href="https://discord.com/invite/cAdjYAJs3u" target="_blank" rel="noopener noreferrer" aria-label="Join the Nyx Discord server (opens in a new tab)" title="Join our Discord"><i class="nyx-rail-discord-icon" aria-hidden="true"></i><span>Discord</span></a><button type="button" data-nyx-dock-item="settings" data-open="settings" aria-label="Settings">${nyxDashboardIcon('settings')}<span>Settings</span></button><div class="nyx-visual-dock-profile" data-nyx-profile-slot></div></div>`;
+      <div class="nyx-rail-footer"><a class="nyx-rail-discord" data-nyx-trusted-external="discord" data-nyx-dock-item="discord" href="https://discord.com/invite/cAdjYAJs3u" target="_blank" rel="noopener noreferrer" aria-label="Join the Nyx Discord server (opens in a new page)" title="Join our Discord"><i class="nyx-rail-discord-icon" aria-hidden="true"></i><span>Discord</span></a><button type="button" data-nyx-dock-item="settings" data-open="settings" aria-label="Settings">${nyxDashboardIcon('settings')}<span>Settings</span></button><div class="nyx-visual-dock-profile" data-nyx-profile-slot></div></div>`;
       (document.getElementById('app') || document.body).appendChild(dock);
       watchNyxVisualDock();
       if(navigator.getBattery){
@@ -3891,7 +3891,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function renderChromeFixed(){
     const top=document.querySelector('.top-os');
     if(top){
-      top.innerHTML="<div class=\"brand-mini\"><button class=\"workspace-mode-app-button active\" data-workspace-shell-home title=\"Current tab\"><span class=\"workspace-home-icon\" aria-hidden=\"true\"></span><span class=\"workspace-home-label\">Home</span></button><button class=\"workspace-mode-tab\" data-workspace-shell-new-course heading=\"New tab\"><span>New page</span></button></div><span class=\"workspace-top-clock\" data-workspace-shell-clock>--:--:--</span><form class=\"j5d9t\" data-f6p2r><button class=\"workspace-nav-control\" data-workspace-shell-back type=\"button\" title=\"Back\" aria-label=\"Back\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m15 18-6-6 6-6\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-forward type=\"button\" title=\"Forward\" aria-label=\"Forward\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-reload type=\"button\" title=\"Reload\" aria-label=\"Reload\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 11a8 8 0 1 0-2.35 5.65\"></path><path d=\"M20 4v7h-7\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-home-nav type=\"button\" title=\"Home\" aria-label=\"Home\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m3 11 9-8 9 8\"></path><path d=\"M5 10v10h14V10\"></path><path d=\"M9 20v-6h6v6\"></path></svg></button><input class=\"workspace-mode-url\" data-workspace-shell-url placeholder=\"S3ARC4 or enter a U3L\" autocomplete=\"off\"><button class=\"workspace-mode-bookmark workspace-mode-settings\" data-workspace-shell-settings data-open=\"settings\" type=\"button\" title=\"Settings\" aria-label=\"Settings\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3\"></circle><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\"></path></svg></button><button class=\"workspace-mode-weather\" data-open=\"weather\" type=\"button\" title=\"Weather\" aria-label=\"Weather\"><span class=\"weather-cloud-icon\" aria-hidden=\"true\"></span></button><button data-workspace-shell-menu type=\"button\" title=\"Menu\"><span class=\"fresh-real-icon\" aria-hidden=\"true\">⋮</span></button></form><div class=\"workspace-bookmark-panel\" id=\"workspaceBookmarkPanel\" hidden></div><div class=\"workspace-mode-menu\" id=\"workspaceModeMenu\"><button data-workspace-shell-new-tab type=\"button\">New page</button><button data-workspace-bookmarks-toggle type=\"button\">Bookmarks</button><button data-open=\"apps\" type=\"button\">Apps</button><hr><button data-open=\"settings\" type=\"button\">Settings</button><button data-workspace-hieroglyph-toggle type=\"button\">Hieroglyph Mode</button><button data-app-url=\"/assets/games/index.html\" type=\"button\">GAMES</button><button data-app-url=\"/apps/chat/\" type=\"button\">Chat</button><button data-app-url=\"https://discord.com/app\" type=\"button\">Discord</button><hr><button data-page-fullscreen type=\"button\">Fullscreen</button><button data-shell-about type=\"button\">Open About:Blank</button><button data-shell-about-tab type=\"button\">Open Tab in Abt:Blank</button></div>";
+      top.innerHTML="<div class=\"brand-mini\"><button class=\"workspace-mode-app-button active\" data-workspace-shell-home title=\"Current page\"><span class=\"workspace-home-icon\" aria-hidden=\"true\"></span><span class=\"workspace-home-label\">Home</span></button><button class=\"workspace-mode-tab\" data-workspace-shell-new-course heading=\"New page\"><span>New page</span></button></div><span class=\"workspace-top-clock\" data-workspace-shell-clock>--:--:--</span><form class=\"j5d9t\" data-f6p2r><button class=\"workspace-nav-control\" data-workspace-shell-back type=\"button\" title=\"Back\" aria-label=\"Back\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m15 18-6-6 6-6\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-forward type=\"button\" title=\"Forward\" aria-label=\"Forward\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-reload type=\"button\" title=\"Reload\" aria-label=\"Reload\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 11a8 8 0 1 0-2.35 5.65\"></path><path d=\"M20 4v7h-7\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-home-nav type=\"button\" title=\"Home\" aria-label=\"Home\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m3 11 9-8 9 8\"></path><path d=\"M5 10v10h14V10\"></path><path d=\"M9 20v-6h6v6\"></path></svg></button><input class=\"workspace-mode-url\" data-workspace-shell-url placeholder=\"Find a topic or enter an address\" autocomplete=\"off\"><button class=\"workspace-mode-bookmark workspace-mode-settings\" data-workspace-shell-settings data-open=\"settings\" type=\"button\" title=\"Settings\" aria-label=\"Settings\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3\"></circle><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\"></path></svg></button><button class=\"workspace-mode-weather\" data-open=\"weather\" type=\"button\" title=\"Weather\" aria-label=\"Weather\"><span class=\"weather-cloud-icon\" aria-hidden=\"true\"></span></button><button data-workspace-shell-menu type=\"button\" title=\"Menu\"><span class=\"fresh-real-icon\" aria-hidden=\"true\">⋮</span></button></form><div class=\"workspace-bookmark-panel\" id=\"workspaceBookmarkPanel\" hidden></div><div class=\"workspace-mode-menu\" id=\"workspaceModeMenu\"><button data-workspace-shell-new-tab type=\"button\">New page</button><button data-workspace-bookmarks-toggle type=\"button\">Bookmarks</button><button data-open=\"apps\" type=\"button\">Apps</button><hr><button data-open=\"settings\" type=\"button\">Settings</button><button data-workspace-hieroglyph-toggle type=\"button\">Hieroglyph Mode</button><button data-app-url=\"/assets/games/index.html\" type=\"button\">GAMES</button><button data-app-url=\"/apps/chat/\" type=\"button\">Chat</button><button data-app-url=\"https://discord.com/app\" type=\"button\">Discord</button><hr><button data-page-fullscreen type=\"button\">Fullscreen</button><button data-shell-about type=\"button\">Open About:Blank</button><button data-shell-about-tab type=\"button\">Open Page in Abt:Blank</button></div>";
       const homeNav=top.querySelector('[data-workspace-shell-home-nav]');
       if(homeNav) homeNav.innerHTML=nyxDashboardIcon('home');
       const shellAddress=top.querySelector('form.j5d9t');
@@ -4120,7 +4120,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(/^nyx:\/\/(?:about|credits)$/i.test(String(url).trim())) return 'About Nyx';
     try{
       const parsed=new URL(workspaceShellSourceUrl(url),location.href);
-      if(parsed.origin===location.origin && parsed.pathname==='/search') return parsed.searchParams.get('q') || "S3ARC4";
+      if(parsed.origin===location.origin && parsed.pathname==='/search') return parsed.searchParams.get('q') || "L00KUP";
       if(parsed.origin===location.origin && parsed.pathname.includes('/assets/games/')) return 'GAMES';
       if(parsed.origin===location.origin && parsed.pathname.includes('/assets/ugs/')) return 'GAMES';
       if(parsed.origin===location.origin && parsed.pathname.includes('/apps/chat/')) return 'Nyx Chat';
@@ -4128,9 +4128,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(parsed.origin===location.origin && parsed.pathname.includes('/apps/link-checker/')) return 'Link Checker';
       if(parsed.origin===location.origin && parsed.pathname.includes('/apps/link-generator/')) return 'Link Generator';
       if(parsed.origin===location.origin) return parsed.pathname.split('/').filter(Boolean).pop() || 'nyx';
-      return parsed.hostname.replace(/^www\./,'') || 'New tab';
+      return parsed.hostname.replace(/^www\./,'') || 'New page';
     }catch{
-      return String(url || 'New tab').replace(/^https?:\/\//,'').slice(0,34) || 'New tab';
+      return String(url || 'New page').replace(/^https?:\/\//,'').slice(0,34) || 'New page';
     }
   }
   function workspaceShellDisplayValue(url){
@@ -4425,7 +4425,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     menu.dataset.nyxOwnedOverlay='';
     menu.setAttribute('role','menu');
     menu.setAttribute('aria-label','Link actions');
-    menu.innerHTML='<button type="button" role="menuitem" data-nyx-copy-clean-link>Copy link</button><button type="button" role="menuitem" data-nyx-open-clean-link>Open link in new tab</button>';
+    menu.innerHTML='<button type="button" role="menuitem" data-nyx-copy-clean-link>Copy link</button><button type="button" role="menuitem" data-nyx-open-clean-link>Open link in new page</button>';
     (document.getElementById('app') || document.body).appendChild(menu);
     const bounds=menu.getBoundingClientRect();
     menu.style.left=`${Math.max(8,Math.min(Number(x || 0),innerWidth-bounds.width-8))}px`;
@@ -4783,8 +4783,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     sidebar=document.createElement('aside');
     sidebar.id='nyxWorkspaceTabSidebar';
     sidebar.className='nyx-workspace-tab-sidebar';
-    sidebar.setAttribute('aria-label','Workspace tabs');
-    sidebar.innerHTML='<header><strong>Tabs</strong><div><button type="button" data-workspace-bookmarks-toggle title="Bookmarks" aria-label="Bookmarks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h5l1.5 2H19v11H5z"></path></svg></button><button type="button" data-workspace-shell-new-course heading="New tab" aria-label="New page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></header><div class="nyx-workspace-tab-list" data-workspace-shell-tab-list role="tablist" aria-label="Open tabs"></div>';
+    sidebar.setAttribute('aria-label','Workspace pages');
+    sidebar.innerHTML='<header><strong>Tabs</strong><div><button type="button" data-workspace-bookmarks-toggle title="Bookmarks" aria-label="Bookmarks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h5l1.5 2H19v11H5z"></path></svg></button><button type="button" data-workspace-shell-new-course heading="New page" aria-label="New page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></header><div class="nyx-workspace-tab-list" data-workspace-shell-tab-list role="tablist" aria-label="Open pages"></div>';
     sidebar.querySelector('[data-workspace-shell-new-tab]')?.addEventListener('click',event=>{
       event.preventDefault();
       event.stopPropagation();
@@ -4838,7 +4838,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       strip.className='nyx-tab-strip';
       strip.dataset.nyxDockTabs='';
       strip.setAttribute('role','tablist');
-      strip.setAttribute('aria-label','Open tabs');
+      strip.setAttribute('aria-label','Open pages');
       top.prepend(strip);
       installWorkspaceShellTabReordering(strip);
     }
@@ -4847,7 +4847,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       toggle.type='button';
       toggle.className='nyx-tab-list-toggle';
       toggle.dataset.workspaceShellTabsToggle='';
-      toggle.setAttribute('aria-label','Open tabs');
+      toggle.setAttribute('aria-label','Open pages');
       toggle.setAttribute('aria-controls','nyxWorkspaceTabSidebar');
       toggle.setAttribute('aria-expanded','false');
       toggle.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M3 6h1M3 12h1M3 18h1"/></svg>';
@@ -4883,7 +4883,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     add.type='button';
     add.className='nyx-visual-dock-tab-add';
     add.dataset.nyxVisualNewTab='';
-    add.setAttribute('aria-label','New tab');
+    add.setAttribute('aria-label','New page');
     add.innerHTML='<span aria-hidden="true">+</span><strong>New page</strong>';
     add.addEventListener('click',()=>openWorkspaceShellTab(''));
     fragment.appendChild(add);
@@ -5083,7 +5083,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const id='shell-'+Date.now()+Math.random().toString(16).slice(2);
     const normalized=url ? normalize(url) : '';
     const isBlank=!normalized;
-    workspaceShellTabs.push({id,url:normalized,title:isBlank ? 'New Tab' : workspaceShellLabel(normalized),icon:isBlank ? favicons.nyx : iconForUrl(normalized)});
+    workspaceShellTabs.push({id,url:normalized,title:isBlank ? 'New Page' : workspaceShellLabel(normalized),icon:isBlank ? favicons.nyx : iconForUrl(normalized)});
     workspaceShellOpeningTabs.add(id);
     workspaceShellActiveTab=id;
     renderWorkspaceShellTabs();
@@ -5109,7 +5109,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       else{
         activeWorkspace.activate?.(created?.id);
         created.url='';
-        created.title='New Tab';
+        created.title='New Page';
         created.icon=favicons.nyx;
         created.history=[''];
         created.index=0;
@@ -5140,7 +5140,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(isBlank){
       if(created){
         created.url='';
-        created.title='New Tab';
+        created.title='New Page';
         created.icon=favicons.nyx;
         created.history=[''];
         created.index=0;
@@ -5344,10 +5344,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const effect=esc(store.text('nyx.visualEffect','none'));
     const effectSpeed=esc(store.text('nyx.visualEffectSpeed','1.1'));
     const effectAmount=esc(store.text('nyx.visualEffectAmount','16'));
-    return `<section class="settings-app settings-single-pane workspace-only-settings"><main class="settings-main"><h1>Workspace Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Course tab appearance</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Course heading"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply course appearance</button><button class="settings-action" data-preset="deltamath" type="button">Reset</button></div></section><section class="settings-block"><h2>Course presets</h2><select class="settings-select" data-preset-select><option value="deltamath" ${currentPreset==='deltamath'?'selected':''}>DeltaMath</option><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Study window</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original page return address"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Automatic study window</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Return original page after opening</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save study window settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Class shortcut</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>S3ARC4 Engine</h2><select class="settings-select" data-workspace-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>Reference Search</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Learning engine</h2><select class="settings-select" data-workspace-mode-select><option value="auto" ${workspaceMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${workspaceMode==='scramjet'?'selected':''}>Learning engine</option></select></section><section class="settings-block"><h2>Compatibility mode</h2><p>Use the alternate connection when a network cannot open sites. Turn off for the standard connection. Reload website tabs after changing. Custom connections keep their saved choice.</p><div class="settings-row"><span>Use Compatibility mode</span><button class="settings-action ${store.get('nyx.httpBridge',true)?'on':''}" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div></section><section class="settings-block"><h2>Connection method</h2><select class="settings-select" data-workspace-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Atlas connection</option><option value="wisp" ${transport==='wisp'?'selected':''}>Campus connection endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Textbook connection</option></select><div class="settings-actions"><button class="settings-action" data-workspace-settings-save type="button">Save Workspace Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
+    return `<section class="settings-app settings-single-pane workspace-only-settings"><main class="settings-main"><h1>Workspace Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Course page appearance</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Course heading"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose page icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply course appearance</button><button class="settings-action" data-preset="deltamath" type="button">Reset</button></div></section><section class="settings-block"><h2>Course presets</h2><select class="settings-select" data-preset-select><option value="deltamath" ${currentPreset==='deltamath'?'selected':''}>DeltaMath</option><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Study window</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current page iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original page return address"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Automatic study window</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Return original page after opening</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save study window settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Class shortcut</h2><p>Press this combo anytime to instantly close the current page without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>L00KUP Engine</h2><select class="settings-select" data-workspace-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>Reference Library</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Learning engine</h2><select class="settings-select" data-workspace-mode-select><option value="auto" ${workspaceMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${workspaceMode==='scramjet'?'selected':''}>Learning engine</option></select></section><section class="settings-block"><h2>Compatibility mode</h2><p>Use the alternate connection when a network cannot open sites. Turn off for the standard connection. Reload website pages after changing. Custom connections keep their saved choice.</p><div class="settings-row"><span>Use Compatibility mode</span><button class="settings-action ${store.get('nyx.httpBridge',true)?'on':''}" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div></section><section class="settings-block"><h2>Connection method</h2><select class="settings-select" data-workspace-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Atlas connection</option><option value="wisp" ${transport==='wisp'?'selected':''}>Campus connection endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Textbook connection</option></select><div class="settings-actions"><button class="settings-action" data-workspace-settings-save type="button">Save Workspace Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
   }
   function workspaceShellPresetTiles(){
-    return `<button class="quick-tile" data-preset="deltamath" type="button"><img class="quick-icon" alt="" src="${favicons.deltamath}"><span>DeltaMath tab</span></button><button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${nyxTabFavicon}"><span>ռʏӼ tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
+    return `<button class="quick-tile" data-preset="deltamath" type="button"><img class="quick-icon" alt="" src="${favicons.deltamath}"><span>DeltaMath page</span></button><button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${nyxTabFavicon}"><span>ռʏӼ page</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google page</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive page</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink page</span></button>`;
   }
   function saveWorkspaceShellSettings(root=document){
     const engine=root.querySelector('[data-workspace-engine]');
@@ -5403,8 +5403,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const definitions=[
       ['general','General',settingsIcons.advanced,'Choose Nyx defaults and everyday behavior.',['nyx','home design','search engine']],
       ['appearance','Appearance',settingsIcons.customize,'Make Nyx feel like yours.',['theme','homepage','sidebar','custom theme','effects','wallpapers','line waves','performance']],
-      ['workspace','Workspace',settingsIcons.browsing,'Manage course tabs, reference search, and workspace controls.',['course tab appearance','course presets','study window','tab design']],
-      ['privacy','Study focus',settingsIcons.privacy,'Manage tab presentation and unwanted interruptions.',['focus tabs','popup protection']],
+      ['workspace','Workspace',settingsIcons.browsing,'Manage course pages, reference search, and workspace controls.',['course page appearance','course presets','study window','page design']],
+      ['privacy','Study focus',settingsIcons.privacy,'Manage page presentation and unwanted interruptions.',['focus pages','popup protection']],
       ['connections','Connections',settingsIcons.browsing,'Choose how Nyx reaches the web.',['learning engine','compatibility mode','connection method','campus connection address']],
       ['accounts','Accounts',settingsIcons.account,'Manage your identity, cloud saves, and staff tools.',['account','cloud saves','owner dashboard','founder profile']],
       ['data','Data',settingsIcons.advanced,'Move, download, or reset local Nyx data.',['data transfer','clear cache']],
@@ -5485,7 +5485,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       if(categoryFor(title)==='workspace'){
         block.classList.add('nyx-workspace-settings-card');
-        const labels=[['[data-tab-title]','Course heading'],['[data-tab-favicon-file]','Tab icon'],['[data-cloak-type]','Open Nyx in'],['[data-cloak-redirect-url]','Return destination']];
+        const labels=[['[data-tab-title]','Course heading'],['[data-tab-favicon-file]','Page icon'],['[data-cloak-type]','Open Nyx in'],['[data-cloak-redirect-url]','Return destination']];
         labels.forEach(([selector,text])=>{
           const field=controls.querySelector(selector);
           if(!field)return;
@@ -5493,7 +5493,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           const caption=document.createElement('span');caption.textContent=text;
           field.replaceWith(label);label.append(caption,field);
         });
-        if(title==='course tab appearance')heading.textContent='Course appearance';
+        if(title==='course page appearance')heading.textContent='Course appearance';
         if(title==='course presets')heading.textContent='Quick presets';
         if(title==='study window'){
           heading.textContent='Launch options';
@@ -5561,7 +5561,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         activate(buttons.find(button=>button.classList.contains('active'))?.dataset.settingsCategoryButton || 'appearance');
         return;
       }
-      title.textContent="S3ARC4 Results";
+      title.textContent="L00KUP Results";
       header.querySelector('p').textContent='Matching settings across Nyx.';
       buttons.forEach(button=>button.classList.remove('active'));
       categories.forEach(section=>{
@@ -5625,14 +5625,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const privacyBlock=document.createElement('section');
       privacyBlock.className='settings-block';
       const hideDetails=websiteDetailsHidden();
-      privacyBlock.innerHTML=`<h2>Focus tabs</h2><p>Hides your current tab names and icons from view.</p><div class="settings-row"><span>Simplify names and icons</span><button class="settings-action ${hideDetails?'on':''}" data-switch="nyx.hideWebsiteDetails" type="button">${hideDetails?'On':'Off'}</button></div>`;
+      privacyBlock.innerHTML=`<h2>Focus pages</h2><p>Hides your current page names and icons from view.</p><div class="settings-row"><span>Simplify names and icons</span><button class="settings-action ${hideDetails?'on':''}" data-switch="nyx.hideWebsiteDetails" type="button">${hideDetails?'On':'Off'}</button></div>`;
       const fontBlock=document.createElement('section');
       fontBlock.className='settings-block';
       fontBlock.innerHTML=`<h2>Font</h2><select class="settings-select" data-font-value>${nyxFontOptionsMarkup()}</select>`;
       effectBlock.before(fontBlock);
       const homepageBlock=document.createElement('section');
       homepageBlock.className='settings-block nyx-homepage-appearance-setting';
-      homepageBlock.innerHTML='<h2>Homepage</h2><p>Keep new tabs focused on the Nyx title and wallpaper.</p><div class="settings-row"><span>New tab opens</span><strong>Home</strong></div>';
+      homepageBlock.innerHTML='<h2>Homepage</h2><p>Keep new pages focused on the Nyx title and wallpaper.</p><div class="settings-row"><span>New page opens</span><strong>Home</strong></div>';
 
       const lagBlock=document.createElement('section');
       lagBlock.className='settings-block';
@@ -5731,7 +5731,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
 
 
       if(shellTab?.workspaceTabId && activeWorkspace?.closeTab){
-        try{activeWorkspace.closeTab(shellTab.workspaceTabId)}catch(error){console.warn('Nyx: embedded tab cleanup failed during shell close',error)}
+        try{activeWorkspace.closeTab(shellTab.workspaceTabId)}catch(error){console.warn('Nyx: embedded page cleanup failed during shell close',error)}
       }
       workspaceShellTabs.splice(nextIndex,1);
       if(workspaceShellActiveTab===id) workspaceShellActiveTab=workspaceShellTabs[Math.max(0,nextIndex-1)]?.id || workspaceShellTabs[0]?.id || null;
@@ -5794,8 +5794,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(nextUrl){
       tab.title=workspaceShellLabel(nextUrl);
       tab.icon=iconForUrl(nextUrl);
-    }else if(tab.title!=='Home' && tab.title!=='New Tab'){
-      tab.title='New Tab';
+    }else if(tab.title!=='Home' && tab.title!=='New Page'){
+      tab.title='New Page';
       tab.icon=favicons.nyx;
     }
     renderWorkspaceShellTabs();
@@ -5926,7 +5926,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const discordFounderProfileStyle='.nyx-founder-profile-standard{display:block!important;max-width:620px!important;margin:0 auto!important;padding:0!important;overflow:hidden!important;border:1px solid color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 42%,transparent)!important;border-radius:16px!important;background:#111827!important;box-shadow:0 16px 42px rgba(0,0,0,.32)!important}.nyx-founder-profile-standard .nyx-founder-banner{height:140px!important;margin:0!important;background:var(--nyx-founder-accent,#8fb8ff)!important}.nyx-founder-profile-standard .nyx-founder-profile-content{display:block!important;padding:0 16px 18px!important}.nyx-founder-profile-standard .nyx-founder-image-wrap{width:88px!important;height:88px!important;margin:-45px 0 0!important;border:6px solid #111827!important;border-radius:50%!important;background:#111827!important}.nyx-founder-profile-standard .nyx-founder-image{border:0!important;border-radius:50%!important;background:#172338!important}.nyx-founder-profile-standard .nyx-founder-status{right:-2px!important;bottom:-2px!important;border:4px solid #111827!important}.nyx-founder-profile-standard .nyx-founder-copy{padding-top:13px!important}.nyx-founder-name-row{display:flex!important;align-items:center!important;gap:7px!important}.nyx-founder-profile-standard .nyx-founder-copy h3{margin:0!important;color:#f8fbff!important;font-size:24px!important;font-weight:700!important;letter-spacing:-.025em!important}.nyx-founder-owner-crown{color:#f0c85c!important;font-size:18px!important;line-height:1!important}.nyx-founder-profile-standard .nyx-founder-handle{margin:2px 0 10px!important;color:#b5c2d5!important;font-size:14px!important}.nyx-founder-profile-standard .nyx-founder-role{margin:0 0 11px!important;color:#9cadc4!important;font-size:11px!important;font-weight:600!important;letter-spacing:.09em!important}.nyx-founder-role-list{display:flex!important;flex-wrap:wrap!important;gap:7px!important;margin:0 0 12px!important}.nyx-founder-role-chip{display:inline-flex!important;align-items:center!important;gap:5px!important;padding:4px 8px!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:4px!important;background:rgba(255,255,255,.08)!important;color:#d9e3f1!important;font-size:11px!important;font-weight:650!important}.nyx-founder-role-owner{border-color:color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 78%,transparent)!important;background:color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 22%,transparent)!important;color:#fff!important}.nyx-founder-role-owner span{color:#f0c85c!important}.nyx-founder-profile-standard .nyx-founder-badges{margin:0 0 14px!important}.nyx-founder-profile-standard .nyx-founder-badge{border:0!important;border-radius:4px!important;background:rgba(255,255,255,.1)!important;color:#c9d7ea!important}.nyx-founder-about{padding-top:13px!important;border-top:1px solid rgba(255,255,255,.14)!important}.nyx-founder-about>strong{display:block!important;margin-bottom:7px!important;color:#f5f8ff!important;font-size:12px!important;font-weight:700!important;text-transform:uppercase!important}.nyx-founder-profile-standard .nyx-founder-bio{color:#d5dfec!important;font-size:14px!important;line-height:1.55!important}.nyx-founder-profile-standard .nyx-founder-link{margin-top:14px!important;color:#cbd9ff!important}@media(max-width:680px){.nyx-founder-profile-standard .nyx-founder-image-wrap{width:88px!important;margin:-45px 0 0!important}.nyx-founder-profile-standard .nyx-founder-copy{text-align:left!important}.nyx-founder-profile-standard .nyx-founder-badges{justify-content:flex-start!important}}';
     const pages={
       apps:{title:'Apps',body:`<style>html,body,.apps-shell-page{background:transparent!important;background-image:none!important}</style><div class="workspace-home workspace-shell-page apps-shell-page"><h1 class="home-heading">Apps</h1><p class="home-sub">Everything in Nyx.</p><div class="quick-grid apps-launch-grid" data-nyx-global-app-grid>${quickTiles()}</div></div>`},
-      links:{title:'Bookmarks',body:`<div class="workspace-home workspace-shell-page"><h1 class="home-heading">Bookmarks</h1><p class="home-sub">Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>Reference Search</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></div>`}
+      links:{title:'Bookmarks',body:`<div class="workspace-home workspace-shell-page"><h1 class="home-heading">Bookmarks</h1><p class="home-sub">Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>Reference Library</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></div>`}
     };
     const page=pages[name] || pages.apps;
     tab.url='nyx://'+name;
@@ -5995,7 +5995,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       updateWorkspaceShellLocation(tab.url);
       return true;
     }
-    const presetTiles=`<button class="quick-tile" data-preset="deltamath" type="button"><img class="quick-icon" alt="" src="${favicons.deltamath}"><span>DeltaMath tab</span></button><button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${favicons.nyx}"><span>ռʏӼ tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
+    const presetTiles=`<button class="quick-tile" data-preset="deltamath" type="button"><img class="quick-icon" alt="" src="${favicons.deltamath}"><span>DeltaMath page</span></button><button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${favicons.nyx}"><span>ռʏӼ page</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google page</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive page</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink page</span></button>`;
     const utilityPageStyle=`
       html,body{min-height:100%!important;background:#0a1220!important;color:#eaf2ff!important}
       .nyx-utility-tab{width:min(860px,calc(100vw - 44px));min-height:100vh;margin:0 auto;padding:clamp(34px,6vw,72px) clamp(22px,5vw,58px) 90px!important;background:transparent!important;color:#eaf2ff!important}
@@ -6053,7 +6053,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const terminalPageScript=`(()=>{const output=document.querySelector('[data-nyx-terminal-output]');const input=document.querySelector('[data-nyx-terminal-input]');const write=(text,type='')=>{const row=document.createElement('div');row.className='nyx-terminal-line'+(type?' '+type:'');row.textContent=String(text);output.appendChild(row);output.scrollTop=output.scrollHeight};const run=raw=>{const command=String(raw||'').trim();if(!command)return;write('nyx> '+command,'command');const name=command.toLowerCase();if(name==='clear'){output.textContent='';return}if(name==='help'){write('Commands: help, status, theme, origin, storage, date, clear');return}if(name==='status'){write('Nyx is '+(navigator.onLine?'online':'offline')+' · '+(navigator.platform||'workspace'));return}if(name==='theme'){write('Theme: '+(document.body.className.match(/theme-([^ ]+)/)?.[1]||'default'));return}if(name==='origin'){write('Origin: '+parent.location.origin);return}if(name==='storage'){write('Local settings entries: '+localStorage.length);return}if(name==='date'){write(new Date().toLocaleString());return}write('Unknown command: '+command+'. Type "help" for the command list.','error')};write('Nyx Developer Console');write('Type "help" to list commands. Workspace DevTools cannot be opened by a webpage.');document.querySelector('[data-nyx-terminal-form]')?.addEventListener('submit',event=>{event.preventDefault();run(input?.value);if(input)input.value=''});setTimeout(()=>input?.focus(),50)})();`;
     const pages={
       apps:{title:'Apps',body:`<style>html,body,.apps-shell-page{background:transparent!important;background-image:none!important}</style><section class="shell-page apps-shell-page"><h1>Apps</h1><p>Everything in Nyx.</p><div class="quick-grid apps-launch-grid" data-nyx-global-app-grid>${quickTiles()}</div></section>`},
-      links:{title:'Bookmarks',body:`<section class="shell-page"><h1>Bookmarks</h1><p>Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>Reference Search</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></section>`},
+      links:{title:'Bookmarks',body:`<section class="shell-page"><h1>Bookmarks</h1><p>Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>Reference Library</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></section>`},
       terms:{title:'Terms Of Service',style:utilityPageStyle,body:nyxTermsPageMarkup()},
       about:{title:'About Nyx',style:utilityPageStyle+nyxCreditsPresentationStyle+nyxCreditsOwnerImageStyle,script:nyxCreditsLinkScript,body:nyxCreditsPageMarkup()},
       credits:{title:'About Nyx',style:utilityPageStyle+nyxCreditsPresentationStyle+nyxCreditsOwnerImageStyle,script:nyxCreditsLinkScript,body:nyxCreditsPageMarkup()},
@@ -7423,13 +7423,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         }
         applyVisualEffectSetting();
         document.body.classList.remove('runtime-lag-guard');
-        if(shouldShowStartupCustomization()){
-          document.body.classList.remove('nyx-startup-prep');
-          suppressHomeEntranceOnStartup=false;
-          showSetup();
-        }else{
-          playNyxStartupReveal();
-        }
+        playNyxStartupReveal();
       },440);
 
       await startupProgress?.complete?.('Nyx is ready');
@@ -9239,8 +9233,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const minimalPresenceText=nyxPresenceCount===null ? 'Connecting\u2026' : `${nyxPresenceCount} online`;
     {
       const searchEngine=selectedSearchEngineMeta();
-      const searchLabel=`S3ARC4 ${searchEngine.label} or type a U3L`;
-      return `<div class="workspace-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="workspace-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="S3ARC4"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="workspace-body"><div class="workspace-home nyx-minimal-home nyx-visual-home"><main class="workspace-shell-start nyx-minimal-hero"><div class="nyx-minimal-brand"><img class="nyx-home-logo" data-nyx-logo src="/assets/icons/nyx-cat-moon.svg?v=3" alt="Nyx"><h1>NYX</h1></div><form class="b3h7q nyx-minimal-search" data-n8c4w><svg class="nyx-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input data-workspace-blank-input data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"></form><nav class="nyx-home-links" data-nyx-recent-searches aria-label="Recent searches" hidden></nav></main><nav class="nyx-minimal-utility-links" aria-label="Nyx tools and terms"><a data-open="terms" href="nyx://terms">Terms</a></nav><button class="nyx-appearance-toggle" data-nyx-appearance type="button" aria-label="Use light appearance" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button><button class="nyx-visual-customize" data-open="settings" type="button">${nyxDashboardIcon('settings')}<span>Customize</span></button><div class="nyx-home-presence${nyxFounderIsOwner&&nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'button':'status'}" tabindex="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${minimalPresenceText}</span></div></div></div>`;
+      const searchLabel=`Find a topic or enter an address`;
+      return `<div class="workspace-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="workspace-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="L00KUP"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="workspace-body"><div class="workspace-home nyx-minimal-home nyx-visual-home"><main class="workspace-shell-start nyx-minimal-hero"><div class="nyx-minimal-brand"><img class="nyx-home-logo" data-nyx-logo src="/assets/icons/nyx-cat-moon.svg?v=3" alt="Nyx"><h1>NYX</h1></div><form class="b3h7q nyx-minimal-search" data-n8c4w><svg class="nyx-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input data-workspace-blank-input data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"></form><nav class="nyx-home-links" data-nyx-recent-searches aria-label="Recent topics" hidden></nav></main><nav class="nyx-minimal-utility-links" aria-label="Nyx tools and terms"><a data-open="terms" href="nyx://terms">Terms</a></nav><button class="nyx-appearance-toggle" data-nyx-appearance type="button" aria-label="Use light appearance" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button><button class="nyx-visual-customize" data-open="settings" type="button">${nyxDashboardIcon('settings')}<span>Customize</span></button><div class="nyx-home-presence${nyxFounderIsOwner&&nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'button':'status'}" tabindex="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${minimalPresenceText}</span></div></div></div>`;
     }
   }
 
@@ -10216,14 +10210,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         {label:'Reading search query',run:searchCheck},
         {label:'Checking selected search engine',run:async()=>{await preflightDelay(150); return !!store.text('nyx.engine','duckduckgo')}},
         ...base,
-        {label:'Preparing results tab',run:async()=>{await preflightDelay(160); return true}}
+        {label:'Preparing results page',run:async()=>{await preflightDelay(160); return true}}
       ]);
     }
     if(kind==='workspace'){
       return appendFinal([
         {label:'Checking requested page',run:searchCheck},
         ...base,
-        {label:'Opening workspace tab',run:async()=>{await preflightDelay(160); return true}}
+        {label:'Opening workspace page',run:async()=>{await preflightDelay(160); return true}}
       ]);
     }
     if(kind==='startup-diagnostics'){
@@ -10271,7 +10265,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const tasks=nyxPreflightTasks(kind,options);
       const overlay=document.createElement('div');
       overlay.className='nyx-preflight';
-      const preflightTitle=kind==='startup-diagnostics' ? 'Startup Diagnostics' : kind==='startup' ? 'Starting nyx' : kind==='apps' ? 'Opening Apps' : kind==='search' ? "Checking S3ARC4" : 'Checking Workspace';
+      const preflightTitle=kind==='startup-diagnostics' ? 'Startup Diagnostics' : kind==='startup' ? 'Starting nyx' : kind==='apps' ? 'Opening Apps' : kind==='search' ? "Checking L00KUP" : 'Checking Workspace';
       overlay.innerHTML=`<section class="nyx-preflight-card" role="status" aria-live="polite"><h2 class="nyx-preflight-title">${esc(preflightTitle)}</h2><ul class="nyx-preflight-list">${tasks.map((task,index)=>`<li class="nyx-preflight-item" data-preflight-step="${index}"><span class="nyx-preflight-dot">&bull;</span><span>${esc(task.label)}</span></li>`).join('')}</ul><div class="nyx-preflight-bar"><div class="nyx-preflight-fill"></div></div></section>`;
       (document.getElementById('app') || document.body).appendChild(overlay);
       requestAnimationFrame(()=>overlay.classList.add('show'));
@@ -10305,7 +10299,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
 
   function openWorkspace(url='https://duckduckgo.com/',options={}){
-    const win=makeWindow({title:'New Tab',className:'workspace-window',body:workspaceBody()});
+    const win=makeWindow({title:'New Page',className:'workspace-window',body:workspaceBody()});
 
     cleanWorkspaceControls(win);
     tick();
@@ -10387,7 +10381,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const frame=document.createElement('iframe'); frame.className='view';
       applyFrameInteractionPermissions(frame);
       win.querySelector('.workspace-body').appendChild(frame);
-      const tab={id,title:'New Tab',url:'',icon:favicons.nyx,history:[],index:-1,frame,opening:true,privacySessionId:createConnectionPrivacySessionId()};
+      const tab={id,title:'New Page',url:'',icon:favicons.nyx,history:[],index:-1,frame,opening:true,privacySessionId:createConnectionPrivacySessionId()};
       state.tabs.push(tab);
       activate(id);
       if(openUrl) navigate(openUrl,forceMode);
@@ -11399,7 +11393,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       const activeUrl=t?.url || mappedShellTab?.url || '';
       const activeLocation=workspaceShellSourceUrl(t?.sourceUrl || activeUrl) || t?.sourceUrl || activeUrl;
-      const activeTitle=t?.title || mappedShellTab?.title || 'New Tab';
+      const activeTitle=t?.title || mappedShellTab?.title || 'New Page';
       const activeIsBlank=isWorkspaceShellBlankUrl(activeUrl);
       win.classList.toggle('nyx-frame-loading',!!t?.loading);
       ensureTabLoadingScene()?.setAttribute('aria-hidden',t?.loading?'false':'true');
@@ -12061,7 +12055,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         t.actualEngine='scramjet-failed';
         setFrameSandbox(t,true);
         clearFrameDocument(t);
-        t.frame.srcdoc=connectionFailureHtml('The private tab session could not start. Reload Nyx and try again.',"Learning engine",{allowDirect:true});
+        t.frame.srcdoc=connectionFailureHtml('The private page session could not start. Reload Nyx and try again.',"Learning engine",{allowDirect:true});
       });
     }
     function waitForTabResultPaint(t,timeout=4200){
@@ -12184,7 +12178,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const parsed=new URL(url,location.href);
         if(parsed.origin===location.origin && !parsed.pathname.includes('/assets/') && (parsed.pathname==='/' || /\/index\.html$/i.test(parsed.pathname))){
           t.url='';
-          t.title='New Tab';
+          t.title='New Page';
           t.icon=favicons.nyx;
           t.history=[''];
           t.index=0;
@@ -12234,7 +12228,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         if(isWorkspaceShellBlankUrl(stored)){
           t.url='';
           t.sourceUrl='';
-          t.title='New Tab';
+          t.title='New Page';
           t.icon=favicons.nyx;
           t.expectedEngine='';
           t.actualEngine='blank';
@@ -12533,7 +12527,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const sourceUrl=String(sourceTab?.sourceUrl || '').trim();
         if(!sourceTab || !sourceUrl) return;
         loadTab(sourceTab,sourceUrl,false,'iframe',sourceUrl);
-        toast('Trying this tab in direct mode');
+        toast('Trying this page in direct mode');
         return;
       }
       if(e.data.type==='nyx:shell-tab-index'){
@@ -13923,7 +13917,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     makeWindow({title:'Apps',left:'12vw',top:'90px',width:'600px',height:'430px',body:`<div class="panel"><h1>Apps</h1><div class="quick-grid apps-launch-grid" data-nyx-global-app-grid>${quickTiles()}</div></div>`});
   }
   function openLinks(){
-    makeWindow({title:'Links',left:'18vw',top:'100px',width:'520px',height:'380px',body:`<div class="panel"><h1>Links</h1><div class="glass-grid"><div class="glass-card"><h2>S3ARC4 Engines</h2><button data-url="https://www.google.com/">Google</button><button data-url="https://duckduckgo.com/">Reference Search</button></div><div class="glass-card"><h2>School</h2><button data-url="https://docs.google.com/">Docs</button><button data-url="https://classroom.google.com/">Classroom</button></div></div></div>`});
+    makeWindow({title:'Links',left:'18vw',top:'100px',width:'520px',height:'380px',body:`<div class="panel"><h1>Links</h1><div class="glass-grid"><div class="glass-card"><h2>Reference Sources</h2><button data-url="https://www.google.com/">Google</button><button data-url="https://duckduckgo.com/">Reference Library</button></div><div class="glass-card"><h2>School</h2><button data-url="https://docs.google.com/">Docs</button><button data-url="https://classroom.google.com/">Classroom</button></div></div></div>`});
   }
   function openTermsOfService(){
     if(document.body.classList.contains('workspace-shell')) return openWorkspaceShellInternalTab('terms');
@@ -14041,8 +14035,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         <section class="settings-card">
           <h2>Study window</h2>
           <p>Choose how your study window opens.</p>
-          <div class="settings-row"><select data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><button data-save-cloak>Save</button></div>
-          <div class="settings-row"><span>Redirect original</span><button class="switch ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" aria-label="Redirect original tab"></button></div>
+          <div class="settings-row"><select data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current page iframe</option></select><button data-save-cloak>Save</button></div>
+          <div class="settings-row"><span>Redirect original</span><button class="switch ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" aria-label="Redirect original page"></button></div>
           <div class="settings-row"><input data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Redirect U3L"><button data-launch-selected-cloak>Launch</button></div>
           <div class="settings-actions"><button data-about>Open in About:Blank</button><button data-blob>Open in Blob</button></div>
         </section>
@@ -14052,13 +14046,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           <div class="settings-row"><span>Automatic study window</span><button class="switch" data-switch="nyx.autoCloak" aria-label="Automatic study window"></button></div>
         </section>
         <section class="settings-card">
-          <h2>Tab Presets</h2>
+          <h2>Page Presets</h2>
           <p>Changes the workspace course heading and icon.</p>
           <div class="seg"><button data-preset="deltamath" type="button">DeltaMath</button><button data-preset="classroom" type="button">Google Classroom</button><button data-preset="drive" type="button">Google Drive</button><button data-preset="classlink" type="button">Classlink</button><button data-preset="google" type="button">Google</button><button data-preset="deltamath" type="button">Reset</button></div>
         </section>
         <section class="settings-card">
-          <h2>Course tab appearance</h2>
-          <p>Choose the heading and icon shown on your course tab.</p>
+          <h2>Course page appearance</h2>
+          <p>Choose the heading and icon shown on your course page.</p>
           <div class="settings-row"><input data-tab-title value="${esc(store.text('nyx.tabTitle',document.title || '???'))}" placeholder="Course heading"><input class="file-input" data-tab-favicon-file type="file" accept="image/*,.ico"></div>
           <input type="hidden" data-tab-favicon value="${esc(store.text('nyx.tabFavicon',nyxFaviconHref()))}">
           <button data-tab-cloak-apply>Apply course appearance</button>
@@ -14070,7 +14064,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         </section>
         <section class="settings-card">
           <h2>Class shortcut</h2>
-          <p>Press this key combo anytime to instantly close the current tab.</p>
+          <p>Press this key combo anytime to instantly close the current page.</p>
           <div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div>
           <div class="settings-actions"><button data-panic-capture type="button">Capture</button><button data-panic-clear type="button">Clear</button></div>
         </section>
@@ -14120,11 +14114,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         </section>
         <section class="settings-card">
           <h2>Workspace Mode</h2>
-          <p>Makes nyx look like a Chrome page with tabs on top, an address bar, and an Apps button instead of the bottom app bar.</p>
+          <p>Makes nyx look like a Chrome page with pages on top, an address bar, and an Apps button instead of the bottom app bar.</p>
         </section>
         <section class="settings-card">
           <h2>Focus display</h2>
-          <p>Replace external website names and icons in Nyx tabs with a generic hidden label.</p>
+          <p>Replace external website names and icons in Nyx pages with a generic hidden label.</p>
           <div class="settings-row"><span>Simplify names and icons</span><button class="switch ${websiteDetailsHidden()?'on':''}" data-switch="nyx.hideWebsiteDetails" aria-label="Simplify website names and icons"></button></div>
         </section>
         <section class="settings-card">
@@ -14159,7 +14153,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         <section class="settings-card">
           <h2>Connections</h2>
           <p>Choose the workspace engine Nyx uses for external sites.
-The learning engine opens web resources inside your workspace. Use Repair connection if a tab cannot connect.
+The learning engine opens web resources inside your workspace. Use Repair connection if a page cannot connect.
 Auto uses the learning engine with Textbook by default and can recover with another relay if the connection fails.</p>
           <select id="settingWorkspaceMode">
             <option value="auto">Auto</option>
@@ -14169,7 +14163,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
         </section>
         <section class="settings-card">
           <h2>Connection method</h2>
-          <div class="settings-row"><span>Compatibility mode</span><button class="settings-action" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div><p>Use the alternate connection when a network cannot open sites. Turn off for the standard connection. Reload website tabs after changing. Custom connections keep their saved choice.</p>
+          <div class="settings-row"><span>Compatibility mode</span><button class="settings-action" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div><p>Use the alternate connection when a network cannot open sites. Turn off for the standard connection. Reload website pages after changing. Custom connections keep their saved choice.</p>
           <p class="hint">Choose an installed connection method.</p>
           <select id="settingTransport">
             <option value="auto">Auto (recommended)</option>
@@ -14180,9 +14174,9 @@ Auto uses the learning engine with Textbook by default and can recover with anot
           <button data-save-workspace>Save Workspace Settings</button><button class="settings-action" data-workspace-connection-repair type="button">Repair connection</button>
         </section>
         <section class="settings-card">
-          <h2>Change S3ARC4 Engine</h2>
+          <h2>Choose Reference Source</h2>
           <p>Pick the s3arc4 engine used for workspace searches.</p>
-          <select id="settingEngine" data-engine-value><option value="google">Google</option><option value="bing">Bing</option><option value="duckduckgo">Reference Search</option></select>
+          <select id="settingEngine" data-engine-value><option value="google">Google</option><option value="bing">Bing</option><option value="duckduckgo">Reference Library</option></select>
         </section>
         <section class="settings-card">
           <h2>Effects</h2>
@@ -14378,39 +14372,6 @@ Auto uses the learning engine with Textbook by default and can recover with anot
       },true);
     }
   }
-  function showSetup(){
-    const setup=$('setupScreen');
-    const name=$('setupName');
-    if(!setup) return;
-    wireSetupWizardControls(setup);
-    if(name) name.value=store.text('nyx.userName','');
-    const theme=$('setupTheme');
-    if(theme) theme.value=store.text('nyx.theme','default');
-    const effect=$('setupEffect');
-    if(effect) effect.value=store.text('nyx.visualEffect','none');
-    const workspace=$('setupWorkspaceMode');
-    if(workspace) workspace.value=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE));
-    const engine=$('setupEngine');
-    if(engine) engine.value=store.text('nyx.engine','duckduckgo');
-    const font=$('setupFont');
-    if(font){
-      font.innerHTML=nyxFontOptionsMarkup();
-      font.value=nyxFontChoice()[0];
-    }
-    syncSetupThemeCards();
-    updateSetupPreview();
-    syncSetupAccountStep();
-    setup.hidden=false;
-    setup.inert=false;
-    document.body.classList.add('setup-active');
-    setup.classList.add('show');
-    setup.setAttribute('aria-hidden','false');
-    setSetupStep(0);
-    setTimeout(()=>name?.focus(),80);
-  }
-  function shouldShowStartupCustomization(){
-    return !store.get('nyx.setupComplete',false);
-  }
   let nyxTermsGateTimer=0;
   function closeNyxTermsGate(){
     document.querySelector('.nyx-tos-gate')?.remove();
@@ -14597,7 +14558,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
         store.set(key,v);
         if(key==='nyx.httpBridge'){
           resetWorkspaceConnectionRuntime(false);
-          toast('Connection setting saved. Reload website tabs to apply.');
+          toast('Connection setting saved. Reload website pages to apply.');
         }
         qsa(`[data-switch="${key}"]`).forEach(el=>{el.classList.toggle('on',v);el.setAttribute('aria-checked',String(!!v))});
         qsa(`[data-switch="${key}"].settings-action`).forEach(el=>{el.textContent=v?'On':'Off'});
@@ -14660,7 +14621,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
     repairBlankWorkspaceShellPresetTabs(previousCloakTitle);
     scheduleStoredTabCloakEnforce();
     requestAnimationFrame(()=>setCurrentTabCloak(title,favicon,false));
-    if(!silent) toast('Tab preset applied');
+    if(!silent) toast('Page preset applied');
   }
   function repairBlankWorkspaceShellPresetTabs(previousCloakTitle=''){
     if(!Array.isArray(workspaceShellTabs) || !workspaceShellTabs.length) return;
@@ -14669,7 +14630,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
     let changed=false;
     workspaceShellTabs.forEach((tab,index)=>{
       if(tab.url || !presetTitles.has(String(tab.title || '').trim())) return;
-      tab.title=index===0 ? 'Home' : 'New Tab';
+      tab.title=index===0 ? 'Home' : 'New Page';
       tab.icon=favicons.nyx;
       changed=true;
     });
@@ -14789,7 +14750,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
     store.setText('nyx.tabFavicon',cleanFavicon);
     store.setText('nyx.logo','custom');
     scheduleStoredTabCloakEnforce();
-    if(!silent) toast('Tab cloak applied');
+    if(!silent) toast('Page cloak applied');
   }
   let tabCloakPersistenceInstalled=false;
   function installTabCloakPersistence(){
@@ -16156,7 +16117,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
         const apply=favicon=>applyCustomTabCloak(root.querySelector('[data-tab-title]')?.value || 'nyx', favicon || root.querySelector('[data-tab-favicon]')?.value || favicons.nyx);
         if(file){
           if(!file.type.startsWith('image/') && !/\.ico$/i.test(file.name || '')){
-            toast('Choose an image file for the tab icon');
+            toast('Choose an image file for the page icon');
             return;
           }
           const reader=new FileReader();

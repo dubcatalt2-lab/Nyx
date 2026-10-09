@@ -59,8 +59,8 @@
     {name:'rps',usage:'/rps rock|paper|scissors',description:'Play rock, paper, scissors against Nyx.'},
     {name:'random',usage:'/random min max',description:'Choose a random whole number in a range.'},
     {name:'calc',usage:'/calc expression',description:'Calculate a basic numeric expression.'},
-    {name:'timer',usage:'/timer 30s',description:'Start a timer in this Chat tab.'},
-    {name:'remind',usage:'/remind 10m message',description:'Set a reminder for this Chat tab.'},
+    {name:'timer',usage:'/timer 30s',description:'Start a timer in this Chat page.'},
+    {name:'remind',usage:'/remind 10m message',description:'Set a reminder for this Chat page.'},
     {name:'date',usage:'/date',description:'Insert the current local date.'},
     {name:'time',usage:'/time',description:'Insert the current local time.'},
     {name:'timezone',usage:'/timezone [zone]',description:'Show the time in an IANA time zone.'},
@@ -586,7 +586,7 @@
   function commandBase64Decode(value){try{const binary=atob(String(value||'').replace(/\s+/g,''));return new TextDecoder().decode(Uint8Array.from(binary,char=>char.charCodeAt(0)))}catch{throw new Error('Enter a valid Base64 value.') }}
   function commandDuration(value){const match=String(value||'').trim().match(/^(\d{1,4})(s|m|h)$/i);if(!match)throw new Error('Use a duration such as 30s, 10m, or 1h.');const amount=Number(match[1]);const multiplier={s:1000,m:60000,h:3600000}[match[2].toLowerCase()];const duration=amount*multiplier;if(duration<1000||duration>24*60*60*1000)throw new Error('Choose a duration from 1 second through 24 hours.');return duration}
   function commandTimerLabel(duration){if(duration%3600000===0)return `${duration/3600000}h`;if(duration%60000===0)return `${duration/60000}m`;return `${Math.round(duration/1000)}s`}
-  function commandSetTimer(duration,message){const label=commandTimerLabel(duration);setTimeout(()=>{showNotice(message,'success');playChatPing(`timer:${Date.now()}`,'mention')},duration);showNotice(`Timer set for ${label}. Keep this Chat tab open.`,'success')}
+  function commandSetTimer(duration,message){const label=commandTimerLabel(duration);setTimeout(()=>{showNotice(message,'success');playChatPing(`timer:${Date.now()}`,'mention')},duration);showNotice(`Timer set for ${label}. Keep this Chat page open.`,'success')}
   function commandTextLimit(value,label='Text',maximum=240){const text=String(value||'');if(text.length>maximum)throw new Error(`${label} can be up to ${maximum} characters for this command.`);return text}
   function commandSummary(message){showNotice(message,'success');return {handled:true}}
   function executeAdditionalSlashCommand(commandName,args){

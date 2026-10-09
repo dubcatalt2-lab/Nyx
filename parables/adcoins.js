@@ -59,7 +59,7 @@ export function startAdcoins() {
         badge = document.createElement('div');
         badge.className = 'nyx-adcoins';
         badge.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8 13 3 3 5-7"/></svg><span></span>';
-        badge.title = 'Every 10 minutes with Nyx visible earns a 3-minute ad break. Shared across tabs in this workspace.';
+        badge.title = 'Every 10 minutes with Nyx visible earns a 3-minute ad break. Shared across pages in this workspace.';
         home.append(badge);
       }
       if (!badge) continue;

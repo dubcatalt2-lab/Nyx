@@ -114,46 +114,7 @@ try{
   await page.goto(origin,{waitUntil:'domcontentloaded'});
   assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.homeDesign')),'redesigned','Original home preference was not migrated');
   await page.waitForSelector('#nyxBeamsBg[data-preset]');
-  const setupScreen=page.locator('#setupScreen');
-  assert.equal(await setupScreen.getAttribute('aria-hidden'),'true','Completed setup did not mark its screen hidden');
-  assert.deepEqual(await setupScreen.evaluate(screen=>({
-    hidden:screen.hidden,
-    inert:screen.inert,
-    display:getComputedStyle(screen).display,
-    pointerEvents:getComputedStyle(screen).pointerEvents,
-    atCenter:document.elementFromPoint(innerWidth/2,innerHeight/2)===screen
-  })),{
-    hidden:true,
-    inert:true,
-    display:'none',
-    pointerEvents:'none',
-    atCenter:false
-  },'Completed setup left an invisible click-blocking layer');
-  await page.emulateMedia({reducedMotion:'reduce'});
-  await setupScreen.evaluate(screen=>{
-    screen.hidden=false;
-    screen.inert=false;
-    screen.setAttribute('aria-hidden','false');
-    screen.classList.add('show');
-  });
-  assert.deepEqual(await setupScreen.evaluate(screen=>({
-    display:getComputedStyle(screen).display,
-    opacity:getComputedStyle(screen).opacity,
-    visibility:getComputedStyle(screen).visibility,
-    pointerEvents:getComputedStyle(screen).pointerEvents
-  })),{
-    display:'grid',
-    opacity:'1',
-    visibility:'visible',
-    pointerEvents:'auto'
-  },'Setup wizard was invisible or non-interactive with reduced motion enabled');
-  await setupScreen.evaluate(screen=>{
-    screen.classList.remove('show');
-    screen.setAttribute('aria-hidden','true');
-    screen.hidden=true;
-    screen.inert=true;
-  });
-  await page.emulateMedia({reducedMotion:'no-preference'});
+  assert.equal(await page.locator('#setupScreen').count(),0,'Retired welcome wizard must not be present');
   const frameLoader=page.locator('.nyx-frame-loader svg').first();
   await frameLoader.waitFor({state:'attached'});
   assert.equal(await frameLoader.getAttribute('viewBox'),'0 0 210 110','External page loader was not laid out horizontally');

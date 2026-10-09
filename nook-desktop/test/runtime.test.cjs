@@ -74,3 +74,11 @@ test('provider uses fixed HTTPS, encrypted storage, catalog validation and redir
   assert(fs.readFileSync(path.join(f.root, 'key'), 'utf8').startsWith('encrypted:'));
   provider.forget(); assert(!fs.existsSync(path.join(f.root, 'key')));
 });
+
+test('agent formulates terminal actions and observes real results without manual command input', async () => {
+  const f=fixture(),store=new Store(path.join(f.root,'tasks.sqlite')),requests=[],approvals=[];
+  const broker=new Broker({...f,helper:'',approve:async request=>{approvals.push(request);return true;}});broker.grant(f.project,3);
+  const replies=[{message:'Run the project check',tool:'command',args:{shell:'powershell',command:'Write-Output agent-check-passed',cwd:''}},{message:'Check completed',done:true}];
+  const engine=new Engine({store,broker,emit:()=>{},provider:{complete:async(model,messages)=>{requests.push(structuredClone(messages));return {text:JSON.stringify(replies.shift())};}}});
+  try {assert.equal((await engine.start({prompt:'Run the project check',model:'fixture'})).state,'completed');assert.equal(approvals.length,1);assert.match(requests[1].at(-1).content,/agent-check-passed/);assert.match(requests[1].at(-1).content,/"exitCode":0/);} finally {store.close();}
+});

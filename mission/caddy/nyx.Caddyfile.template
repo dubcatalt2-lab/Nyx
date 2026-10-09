@@ -83,3 +83,5 @@ http:// {
 	import nyx_access_log
 	redir https://{host}{uri} permanent
 }
+
+import /etc/caddy/sites-enabled/*.caddy

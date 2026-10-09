@@ -34,8 +34,8 @@ try{
     }
     await page.getByRole('button',{name:'Got it',exact:true}).click({timeout:2500}).catch(()=>{});
     const input=page.locator('.nyx-minimal-search input').first();
-    assert.equal(await input.getAttribute('placeholder'),'Find a topic or enter an address');
-    assert.equal(await input.getAttribute('aria-label'),'Find a topic or enter an address');
+    assert.equal(await input.getAttribute('placeholder'),'find your lessons');
+    assert.equal(await input.getAttribute('aria-label'),'find your lessons');
     assert.equal(await input.getAttribute('data-search-engine'),'duckduckgo');
     await input.fill('Home is ready');
     assert.equal(await input.inputValue(),'Home is ready');

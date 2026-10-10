@@ -9259,6 +9259,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(/^(?:assets|apps)\//i.test(raw)) return `/${raw}`;
     return raw;
   }
+  function internalDocumentAddress(value){
+    try{
+      const url=new URL(value,location.href);
+      if(url.origin!==location.origin||!/(?:\/apps\/[^/]+|\/assets\/games)\/*$/.test(url.pathname))return value;
+      url.pathname=url.pathname.replace(/\/+$/,'')+'/index.html';
+      return url.href;
+    }catch{return value;}
+  }
   function normalizeHomeShortcut(item){
     const next={...item,url:normalizeInternalAppUrl(item?.url)};
     if(['http://icefy.top','https://aether.cx','https://cinejoy.to','/apps/movies'].includes(String(next.url || '').trim().replace(/\/+$/,'').toLowerCase())){
@@ -11831,7 +11839,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
 
       t.frameHistoryPending={index:t.index};
       monitorWorkspaceTabSecurity(t,securitySource,securityIntent);
-      t.frame.src=url;
+      t.frame.src=internalDocumentAddress(url);
       markWorkspaceEngine(t,expectedEngine,url,'iframe-src');
       renderTabs();
       if(isSelectedWorkspaceTab(t)) activate(t.id);

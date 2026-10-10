@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {minify} from 'terser';
-import {transformWorkspaceStrings,scrambleInlineScripts,opaqueIdentifiers} from './build-workspace-scramble.mjs';
+import {transformWorkspaceStrings,scrambleInlineScripts,opaqueIdentifiers,shuffleDeclarations} from './build-workspace-scramble.mjs';
 
 const fixture=String.raw`
 "use strict";
@@ -69,3 +69,11 @@ const imported='import {BareMux as browser} from "./peer.js"; export {browser as
 assert(!/BareMux|\bbrowser\b|\bproxy\b/.test(transformWorkspaceStrings(imported)));
 assert.equal(transformWorkspaceStrings(transformWorkspaceStrings(imported),{decode:true}),imported);
 console.log('PASS string values, strict mode, templates/raw tags, Unicode, module imports, HTML data, serialized workers, publisher rebasing and opaque locals.');
+
+const shuffledFixture='"use strict"; let count=4; function alpha(){return beta()+count} function beta(){return 2} function gamma(){function one(){return two()} function two(){return 8} return one()} globalThis.result=[alpha(),gamma()];';
+const shuffled=shuffleDeclarations(shuffledFixture,'test');
+assert.notEqual(shuffled,shuffledFixture);
+assert.equal(JSON.stringify(evaluate(shuffled)),JSON.stringify(evaluate(shuffledFixture)));
+assert.equal(shuffleDeclarations(shuffledFixture,'test'),shuffled);
+assert.equal(shuffleDeclarations('function a(){return 1} function a(){return 2}'),'function a(){return 1} function a(){return 2}');
+console.log('PASS declaration permutation, closures, strict mode, nested calls and duplicate declaration preservation');

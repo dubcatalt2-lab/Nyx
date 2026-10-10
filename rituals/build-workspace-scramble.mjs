@@ -99,3 +99,26 @@ export async function scrambleWorkspaceOutput(root) {
   await visit();
   console.log(`Workspace strings: ${scripts} scripts and ${pages} pages verified against their parsed executable structure.`);
 }
+
+export function shuffleDeclarations(source,seed='workspace') {
+  const tree=parseJs(source),edits=[];
+  const rank=node=>createHash('sha256').update(seed+':'+node.start+':'+node.id.name).digest('hex');
+  function visit(node){
+    if(!node||typeof node!=='object')return;
+    if(node.type==='Program'||node.type==='BlockStatement'){
+      const declarations=node.body.filter(child=>child.type==='FunctionDeclaration'&&child.id);
+      if(declarations.length>1&&new Set(declarations.map(child=>child.id.name)).size===declarations.length){
+        let ordered=[...declarations].sort((a,b)=>rank(a).localeCompare(rank(b)));
+        if(ordered.every((child,index)=>child===declarations[index]))ordered=ordered.slice(1).concat(ordered[0]);
+        declarations.forEach((child,index)=>edits.push({start:child.start,end:child.end,text:shuffleDeclarations(source.slice(ordered[index].start,ordered[index].end),seed+':'+ordered[index].id.name)}));
+        for(const child of node.body)if(child.type!=='FunctionDeclaration')visit(child);
+        return;
+      }
+    }
+    for(const value of Object.values(node))if(Array.isArray(value))value.forEach(visit);else if(value&&typeof value==='object')visit(value);
+  }
+  visit(tree);
+  for(const edit of edits.sort((a,b)=>b.start-a.start))source=source.slice(0,edit.start)+edit.text+source.slice(edit.end);
+  parseJs(source);
+  return source;
+}

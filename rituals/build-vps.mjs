@@ -2,7 +2,7 @@ import {sourceFile,publicSourcePath,publicSourceText} from '../scripture/source-
 import {buildGameStorage} from './build-game-storage.mjs';
 import {buildPublicModules} from './build-public-modules.mjs';
 import {buildFrontendAssets} from './build-frontend-assets.mjs';
-import {opaqueIdentifiers,scrambleWorkspaceOutput} from './build-workspace-scramble.mjs';
+import {opaqueIdentifiers,scrambleWorkspaceOutput,shuffleDeclarations} from './build-workspace-scramble.mjs';
 import {buildPublisherPackage} from './build-publisher-package.mjs';
 import {formatPublishedHtml} from './format-published-html.mjs';
 import { spawn, spawnSync } from "node:child_process";
@@ -250,7 +250,7 @@ function runtimeCompressOptions() {
 function runtimeFormatOptions() {
   return {
     ascii_only: true,
-    beautify: true,
+    beautify: false,
     indent_level: 2,
     comments: /@license|@preserve|copyright|^!/i,
     semicolons: true
@@ -326,7 +326,7 @@ async function minifyFirstPartyWorkspaceRuntimes() {
     if (target.path === "script.js") source = await minifyEmbeddedScramjetGuards(source);
     const program = parse(source, { ecmaVersion: "latest", sourceType: "module", allowReturnOutsideFunction: true });
     const isModule = target.path.endsWith(".mjs") || program.body.some(node => /^(Import|Export)/.test(node.type));
-    const result = await minify(source, {
+    const result = await minify(shuffleDeclarations(source,target.path), {
       module: isModule,
       compress: runtimeCompressOptions(),
       mangle: runtimeMangleOptions(isModule,target.path),
@@ -455,6 +455,8 @@ async function main() {
   await writeNotFoundPage();
   await buildPublisherPackage(root, output);
   await scrambleWorkspaceOutput(output);
+  const scatteredAudit=spawnSync(process.execPath,[join(here,'test-scattered-build.mjs'),output],{cwd:root,stdio:'inherit'});
+  if(scatteredAudit.status!==0)throw new Error('Scattered runtime import validation failed.');
   const retiredAudit = spawnSync(process.execPath, [join(here, 'check-retired-engine.mjs'), output], {cwd: root, stdio: 'inherit'});
   if (retiredAudit.status !== 0) throw new Error('Retired engine found in release output.');
   if (output !== join(root, 'dist')) await writeFile(join(dirname(output), 'ready.json'), JSON.stringify({format:'nyx-static-release', version:1, builtAt:new Date().toISOString()}));

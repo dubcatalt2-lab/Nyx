@@ -1,14 +1,16 @@
 import {sourceFile} from '../scripture/source-layout.mjs';
 import {parse} from 'acorn';
 import {rewriteStorageNames,storageNames,migrateStorage} from './build-storage.mjs';
-import {readFile,writeFile} from 'node:fs/promises';
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {join,posix} from 'node:path';
 import {createHash} from 'node:crypto';
 import {minify} from 'terser';
 import {formatPublishedHtml,formatPublishedJs} from './format-published-html.mjs';
 import {scrambleInlineScripts,opaqueIdentifiers} from './build-workspace-scramble.mjs';
-const alias=path=>posix.join(posix.dirname(path),'@r'+createHash('sha256').update('frontend-education-v1:'+path).digest('hex').slice(0,24)+'!'+posix.extname(path));
-function rewriteRelativeScriptUrls(source,path,aliases){
+export const scatteredAssetPath=path=>{const hash=createHash('sha256').update('frontend-scattered-v2:'+path).digest('hex');return posix.join(posix.dirname(path),'@'+hash.slice(0,8),hash.slice(8,16),'@r'+hash.slice(16,40)+'!'+posix.extname(path));};
+const alias=scatteredAssetPath;
+const previousAlias=path=>posix.join(posix.dirname(path),'@r'+createHash('sha256').update('frontend-education-v1:'+path).digest('hex').slice(0,24)+'!'+posix.extname(path));
+function rewriteRelativeScriptUrls(source,path,aliases,publishedPath=path){
   const edits=[];
   const tree=parse(source,{ecmaVersion:'latest',sourceType:'module',allowReturnOutsideFunction:true});
   const property=node=>node?.computed?node.property?.value:node?.property?.name;
@@ -24,16 +26,19 @@ function rewriteRelativeScriptUrls(source,path,aliases){
   function visit(node,parent){
     if(!node||typeof node!=='object')return;
     const value=node.type==='Literal'&&typeof node.value==='string'?node.value:node.type==='TemplateLiteral'&&!node.expressions.length?node.quasis[0].value.cooked:null;
+    if(publishedPath!==path&&node.type==='MemberExpression'&&node.object?.type==='MetaProperty'&&node.property?.name==='url'){edits.push({start:node.start,end:node.end,text:'new URL('+JSON.stringify(path)+',import.meta.url).href'});}
     if(value&&!value.startsWith('/')&&!/^[a-z]+:/i.test(value)&&urlArgument(parent,node)){
       const [,pathname,suffix]=value.match(/^([^?#]*)(.*)$/);
-      const original=posix.resolve(posix.dirname(path),pathname),renamed=aliases[original];
-      if(renamed){let relative=posix.relative(posix.dirname(path),renamed);if(value.startsWith('./'))relative='./'+relative;edits.push({start:node.start,end:node.end,text:JSON.stringify(relative+suffix)});}
+      const original=posix.resolve(posix.dirname(path),pathname);
+      const moduleRelative=['ImportExpression','ImportDeclaration','ExportNamedDeclaration','ExportAllDeclaration'].includes(parent?.type)||parent?.callee?.name==='importScripts'||(parent?.callee?.name==='URL'&&parent.arguments[1]?.type==='MemberExpression'&&parent.arguments[1].object?.type==='MetaProperty');
+      const renamed=aliases[original]||(publishedPath!==path&&moduleRelative?original:null);
+      if(renamed){const metaBase=parent?.callee?.name==='URL'&&parent.arguments[1]?.object?.type==='MetaProperty';let relative=posix.relative(posix.dirname(metaBase||!moduleRelative?path:publishedPath),renamed);if(!relative.startsWith('.'))relative='./'+relative;edits.push({start:node.start,end:node.end,text:JSON.stringify(relative+suffix)});}
     }
     for(const [key,value] of Object.entries(node)){if(key==='parent')continue;if(Array.isArray(value))for(const child of value)visit(child,node);else if(value&&typeof value==='object')visit(value,node);}
   }
   visit(tree,null);for(const edit of edits.sort((a,b)=>b.start-a.start))source=source.slice(0,edit.start)+edit.text+source.slice(edit.end);return source;
 }
-export function rewriteFrontendReferences(source,path,aliases) {
+export function rewriteFrontendReferences(source,path,aliases,publishedPath=path) {
   source=rewriteStorageNames(source);
   const directory=posix.dirname(path);
   for(const [original,renamed] of Object.entries(aliases).sort((a,b)=>b[0].length-a[0].length)) {
@@ -51,7 +56,7 @@ export function rewriteFrontendReferences(source,path,aliases) {
       }
     }
   }
-  return /\.(?:js|mjs)$/.test(path)?rewriteRelativeScriptUrls(source,path,aliases):source;
+  return /\.(?:js|mjs)$/.test(path)?rewriteRelativeScriptUrls(source,path,aliases,publishedPath):source;
 }
 export async function buildFrontendAssets(output,files,lessonHtml) {
   const existing=JSON.parse(await readFile(sourceFile(join(output,'proxy-assets.json')),'utf8')).aliases;
@@ -62,7 +67,14 @@ export async function buildFrontendAssets(output,files,lessonHtml) {
     let source;try{source=await readFile(sourceFile(join(output,path)),'utf8');}catch{continue;}
     source=rewriteFrontendReferences(source,'/'+path,aliases);
     await writeFile(join(output,path),source);
-    if(aliases['/'+path])await writeFile(join(output,aliases['/'+path].slice(1)),source);
+    if(aliases['/'+path]){
+      const destination=aliases['/'+path];
+      const original=await readFile(sourceFile(join(output,path)),'utf8');
+      const relocated=rewriteRelativeScriptUrls(original,'/'+path,Object.fromEntries(Object.values(aliases).map(value=>[value,value])),destination);
+      await mkdir(join(output,posix.dirname(destination).slice(1)),{recursive:true});
+      await writeFile(join(output,destination.slice(1)),relocated);
+      await writeFile(join(output,previousAlias('/'+path).slice(1)),source);
+    }
   }
   const entryDocuments={};
   for(const path of ['index.html','apps/tutsi/index.html','apps/drop/index.html']) {
@@ -88,6 +100,7 @@ export async function buildFrontendAssets(output,files,lessonHtml) {
     const prior=from.slice(0,-4)+'.js';
     if(prior!==to&&!/\.module-[a-f0-9]+\.js$/.test(to)){
       mappings.aliases[prior]=to;
+      mappings.aliases[previousAlias(prior)]=to;
       mappings.aliases[alias(prior)]=to;
       mappings.aliases[to.slice(0,-3)+'.mjs']=to;
     }

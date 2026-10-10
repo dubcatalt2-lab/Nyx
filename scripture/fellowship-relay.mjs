@@ -20,7 +20,7 @@ export async function startWispurr({ port = 6001, onFailure = () => {} } = {}) {
         const available = await new Promise((resolve, reject) => {
           const probe = createServer();
           probe.once('error', error => error.code === 'EADDRINUSE' ? resolve(false) : reject(error));
-          probe.listen(candidate, '0.0.0.0', () => probe.close(() => resolve(true)));
+          probe.listen(candidate, process.platform === 'win32' ? '::' : '0.0.0.0', () => probe.close(() => resolve(true)));
         });
         if (available) return candidate;
       }

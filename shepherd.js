@@ -14256,7 +14256,7 @@ app.get('/study.html', (_req,res)=>res.set('Cache-Control','no-store').sendFile(
 app.use(publicAssetBoundary(staticRoot));
 if(staticRoot===__dirname)app.use((req,res,next)=>{
   const file=sourceFile(join(staticRoot,decodeURIComponent(req.path)));
-  if(typeof file==='string'&&file!==join(staticRoot,decodeURIComponent(req.path))){req.url='/'+file.slice(staticRoot.length+1).replaceAll('\\','/')+(req.url.includes('?')?req.url.slice(req.url.indexOf('?')):'');}
+  if(typeof file==='string'&&file!==join(staticRoot,decodeURIComponent(req.path))){req.url='/'+file.slice(staticRoot.length+1).replaceAll('\\','/')+(req.path.endsWith('/')?'/':'')+(req.url.includes('?')?req.url.slice(req.url.indexOf('?')):'');}
   next();
 });
 app.use(express.static(staticRoot));

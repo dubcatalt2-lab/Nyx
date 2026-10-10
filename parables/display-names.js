@@ -11,7 +11,7 @@
   const wordScopes='.nyx-release-notes,.nyx-tos-dialog,.nyx-terms-tab,.nyx-tos-document,[data-nyx-display-words]';
   const wordElements='p,li,strong,h1,h2,h3,a,span,button';
   const displayWords=/\b(?:link generators?|proxy|proxies|games?|gaming|AI|Discord)\b/gi;
-  const interfaceWords=/\b(?:games?|gaming|arcade|play(?:ing)?|search(?:es|ing|ed)?|browsers?|brows(?:e[sd]?|ing)|proxies|proxy|scramjet|baremux|bare-mux|ultraviolet|wisp|relay(?:s)?|movies?|videos?|shorts|music|link generators?|connections?|sites?|web|websites?|pages?|reload(?:s|ing|ed)?)\b/gi;
+  const interfaceWords=/\b(?:games?|gaming|arcade|play(?:ing)?|search(?:es|ing|ed)?|browsers?|brows(?:e[sd]?|ing)|proxies|proxy|scramjet|baremux|bare-mux|wisp|relay(?:s)?|movies?|videos?|shorts|music|link generators?|connections?|sites?|web|websites?|pages?|reload(?:s|ing|ed)?)\b/gi;
   function styledWords(value, pattern){
     return value.split(/((?:https?|wss?):\/\/[^\s<>"']+)/gi).map((part,index)=>index%2?part:part.replace(pattern,word=>nyxDisplayName(word))).join('');
   }

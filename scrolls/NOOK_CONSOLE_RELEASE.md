@@ -14,7 +14,7 @@ Source assets regenerate through `nook-desktop/scripts/build-assets.mjs`; the pi
 
 Verification: desktop unit tests exercise real file writes/undo, approved PowerShell/CMD, cancellation, permission revocation, provider contracts, workspace context and reasoning. Electron smoke checks exercise actual native approvals and controls. Console and account fixtures verify model icons, thinking disclosures, multi-turn sessions, skills/profiles/memory, sequential queues, account isolation, DPAPI persistence and 1320/800-width layouts. Backend account tests verify authenticated key provisioning, existing developer key preservation, separate revocation and shared-pool enforcement. No paid live model inference or real-user password sign-in is claimed. ARM64 is cross-built without ARM hardware testing. Installers remain unsigned.
 
-Production advertising stays disabled. No Ultraviolet or retired runtime is introduced. Independent Altar Worship, Drop and Tutsi projects are not changed by this release.
+Production advertising stays disabled. No retired runtime is introduced. Independent Altar Worship, Drop and Tutsi projects are not changed by this release.
 
 ## Administrator install and test workspace
 

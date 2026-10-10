@@ -351,4 +351,6 @@ if (stratusCheck.status !== 0) {
   process.exit(1);
 }
 
+const retiredAudit = spawnSync(process.execPath, [sourceFile('scripts/check-retired-engine.mjs'), '.', '--tracked'], {stdio:'inherit'});
+if (retiredAudit.status !== 0) process.exit(1);
 console.log(`Deployment check passed (${requiredFiles.length} required files found).`);

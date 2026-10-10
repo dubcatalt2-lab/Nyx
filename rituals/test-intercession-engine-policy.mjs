@@ -1,5 +1,5 @@
 import {sourceFile} from '../scripture/source-layout.mjs';
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {parse} from 'acorn';
@@ -20,17 +20,15 @@ const api=vm.runInNewContext(functions.join('\n')+';({normalizeWorkspaceModeName
  loadSelectedSearchFallback:()=>{calls.push('failure');return true;}
 });
 for(const mode of ['scramjet-v1','sjv1','scram-v1'])assert.equal(api.normalizeWorkspaceModeName(mode),'scramjet');
-for(const mode of ['ultraviolet','uv','ultra','"ultraviolet"','stemconnect','stem-connect'])assert.equal(api.normalizeWorkspaceModeName(mode),'scramjet');
+for(const mode of ['retired-engine','legacy-engine','stemconnect','stem-connect'])assert.equal(api.normalizeWorkspaceModeName(mode),'scramjet');
 for(const mode of ['removed-engine','obsolete-mode'])assert.equal(api.normalizeWorkspaceModeName(mode),'scramjet');
-assert.doesNotMatch(source,/ultraviolet|__uv|uv\$config|\/uv\/|uv\.config|uv\.sw/i,'Retired runtime must not remain in the shell');
 for(const mode of ['auto','iframe','scramjet'])assert.equal(api.normalizeWorkspaceModeName(mode),mode);
 assert.doesNotMatch(source,/studyjetV1|scramjet-v1|sj-v1/i);
-for(configured of ['auto','scramjet','ultraviolet','scramjet-v1']){
+for(configured of ['auto','scramjet','retired-engine','scramjet-v1']){
  calls.length=0;api.fallbackConnectionEngine({},'https://example.com/','scramjet');assert.deepEqual(calls,['failure']);
- calls.length=0;api.fallbackConnectionEngine({},'https://example.com/','ultraviolet');assert.deepEqual(calls,['scramjet']);
+ calls.length=0;api.fallbackConnectionEngine({},'https://example.com/','retired-engine');assert.deepEqual(calls,['scramjet']);
 }
 for(const text of [source,readFileSync(sourceFile('index.html'),'utf8')]){
- assert.doesNotMatch(text,/<option value="ultraviolet"[^>]*>U1TR4V10L\$T<\/option>/);
  assert.doesNotMatch(text,/<option value="scramjet-v1"/);
  assert.doesNotMatch(text,/<option value="iframe"/);
 }

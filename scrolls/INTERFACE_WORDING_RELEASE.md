@@ -1,6 +1,6 @@
 # Nyx interface wording and archive loading — 2026-10-09
 
-The shared display formatter now covers whole interface words in Nyx's built-in pages: game/games/gaming, arcade/play, search variants, browse/browser variants, proxy/proxies, Scramjet, BareMux, Ultraviolet, Wisp, relay, movie/video/music/shorts and link generator. Visible text, placeholders, tooltips and image alternatives use the existing Unicode display style. Later text and attribute updates receive the same treatment. Game collection names also use the display formatter.
+The shared display formatter now covers whole interface words in Nyx's built-in pages: game/games/gaming, arcade/play, search variants, browse/browser variants, proxy/proxies, Scramjet, BareMux, Wisp, relay, movie/video/music/shorts and link generator. Visible text, placeholders, tooltips and image alternatives use the existing Unicode display style. Later text and attribute updates receive the same treatment. Game collection names also use the display formatter.
 
 Typed values, editable/code regions, chat messages, saved profile names, internal identifiers, routes, API contracts and stored data are preserved. Ordinary accessible names remain readable. This is a presentation change, not the outstanding exhaustive dependency/source naming migration. Nook, Drop and Tutsi retain their separate interface behavior.
 
@@ -8,7 +8,7 @@ The ordinary archive loader now inserts its fetched HTML into the player instead
 
 Validation includes dynamic labels and user-content preservation; desktop/mobile built-in-page auditing; Arcade filters, search, keyboard/random launch, empty state, cloud switching and responsive layouts; selected HTML fetched once, relative JavaScript, local save/reload and HTTP failures; existing cloud-save and game-startup health tests; real Cookie Clicker input and save/reload using the changed loader. API catalogs in page audits are fixtures and do not establish every upstream media provider's availability. The full archive is not individually gameplay-tested.
 
-The unfinished native Nook account/UI changes are excluded from this release. Production advertising stays disabled; Ultraviolet is not added.
+The unfinished native Nook account/UI changes are excluded from this release. Production advertising stays disabled; retired engines are not added.
 
 2026-10-09: Retired Nyx Link Generator from default/stored app catalogs and utility navigation. Hosted app routes and generator API return 410, while shared account auth-config remains available. Generator frontend files are excluded from new hosted/static packages. Independent Drop/Tutsi projects and saved account data are unchanged. Display keywords now also cover connection, site, web, website, page and reload variants, preserving visible URL strings, input values and accessible button names.
 

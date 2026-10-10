@@ -455,6 +455,8 @@ async function main() {
   await writeNotFoundPage();
   await buildPublisherPackage(root, output);
   await scrambleWorkspaceOutput(output);
+  const retiredAudit = spawnSync(process.execPath, [join(here, 'check-retired-engine.mjs'), output], {cwd: root, stdio: 'inherit'});
+  if (retiredAudit.status !== 0) throw new Error('Retired engine found in release output.');
   if (output !== join(root, 'dist')) await writeFile(join(dirname(output), 'ready.json'), JSON.stringify({format:'nyx-static-release', version:1, builtAt:new Date().toISOString()}));
   console.log(`VPS build ready in ${output}`);
   console.log(`Wisp endpoint: ${wispUrl}`);

@@ -20,7 +20,7 @@ try{
   await page.locator('[data-nyx-dock-item="settings"]').click();
   await page.getByRole('button',{name:'Connections',exact:true}).click();
   const category=page.locator('[data-settings-category="connections"]');await category.waitFor({state:'visible'});
-  assert(!/\b(proxy|scramjet|wisp|epoxy|libcurl|ultraviolet)\b/i.test(await category.innerText()),'Connection settings must use neutral wording');
+  assert(!/\b(proxy|scramjet|wisp|epoxy|libcurl)\b/i.test(await category.innerText()),'Connection settings must use neutral wording');
   assert.equal(await category.locator('[data-workspace-mode-select]').count(),1);
   assert.match(await category.innerText(),/Compatibility mode/);
   assert.equal(await category.getByRole('heading',{name:'Connection method',exact:true}).count(),1);

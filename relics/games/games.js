@@ -843,7 +843,22 @@ function render() {
     for (const game of pageGames) fragment.append(makeCard(game));
     elements.grid.replaceChildren(fragment);
   }
-  if(nyxArcade)elements.grid.querySelectorAll('.game-card').forEach((card,index)=>{card.dataset.layout=index%12===0&&pageGames.length>5?'featured':index%12===7?'wide':'standard';});
+  if(nyxArcade){
+    elements.grid.querySelectorAll('.activity-chapter').forEach(heading=>heading.remove());
+    const chapters=['The Battle of Waterloo','The Age of Exploration','The Industrial Revolution','The Renaissance','The Ancient World','The History of Discovery'];
+    elements.grid.querySelectorAll('.game-card').forEach((card,index)=>{
+      card.dataset.layout=index%12===0&&pageGames.length>5?'featured':index%12===7?'wide':'standard';
+      if(index%12===0){
+        const heading=document.createElement('h3');
+        heading.className='activity-chapter';
+        const number=document.createElement('span');
+        number.textContent=String((state.page-1)*3+index/12+1).padStart(2,'0');
+        number.setAttribute('aria-hidden','true');
+        heading.append(number,document.createTextNode(chapters[((state.page-1)*3+index/12)%chapters.length]));
+        card.before(heading);
+      }
+    });
+  }
   elements.empty.hidden = games.length > 0;
   elements.count.textContent = `${games.length.toLocaleString()} game${games.length === 1 ? '' : 's'}`;
   elements.pagination.hidden = games.length <= state.pageSize;

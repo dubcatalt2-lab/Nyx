@@ -63,12 +63,15 @@ html[data-nyx-appearance="light"] .nyx-arcade .library-tab.active { color: #fff;
 .nyx-arcade #gameCount { font-size: 11px; color: var(--app-muted); }
 .nyx-arcade .catalog-progress { margin: 8px 0 0; }
 
-.nyx-arcade .game-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: 230px; gap: 20px; align-items: stretch; }
+.nyx-arcade .game-grid { --activity-row-height: 230px; --activity-gap: 20px; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: auto; gap: var(--activity-gap); align-items: stretch; }
+.nyx-arcade .activity-chapter { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 18px; margin: 22px 0 0; padding: 18px 0 4px; border-top: 1px solid var(--app-line); color: var(--app-text); font-size: clamp(22px, 2.3vw, 32px); font-weight: 500; letter-spacing: -.025em; line-height: 1.25; }
+.nyx-arcade .activity-chapter span { flex-shrink: 0; color: var(--app-muted); font-size: 11px; letter-spacing: .12em; }
+.nyx-arcade .activity-chapter:first-child { margin-top: 0; }
 .nyx-arcade .nyx-sponsor-slot { grid-column: 1 / -1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 0; border-block: 1px solid var(--app-line); color: var(--app-muted); }
 .nyx-arcade .nyx-sponsor-slot > span { font-size: 10px; letter-spacing: .04em; }
 .nyx-arcade .nyx-sponsor-slot iframe { display: block; flex: none; width: 468px; height: 60px; border: 0; background: transparent; }
 .nyx-arcade .game-card {
-  display: flex; flex-direction: column; grid-column: span 3; aspect-ratio: auto; min-width: 0; padding: 0;
+  display: flex; flex-direction: column; grid-column: span 3; height: var(--activity-row-height); aspect-ratio: auto; min-width: 0; padding: 0;
   border: 1px solid var(--app-line); border-radius: 3px; background: var(--app-panel); overflow: hidden;
   transition: transform 220ms ease;
 }
@@ -80,7 +83,7 @@ html[data-nyx-appearance="light"] .nyx-arcade .library-tab.active { color: #fff;
 .nyx-arcade .game-card:hover { transform: translateY(-4px); }
 .nyx-arcade .game-card:is(:hover, :focus-visible) .game-cover img { transform: scale(1.05); filter: none; }
 .nyx-arcade :is(.arcade-feature, .arcade-random, .game-card, .library-tab):focus-visible { outline: 2px solid #7eb7ff; outline-offset: 4px; }
-.nyx-arcade .game-card[data-layout="featured"] { grid-column: span 6; grid-row: span 2; }
+.nyx-arcade .game-card[data-layout="featured"] { grid-column: span 6; grid-row: span 2; height: calc(var(--activity-row-height) * 2 + var(--activity-gap)); }
 .nyx-arcade .game-card[data-layout="wide"] { grid-column: span 6; }
 .nyx-arcade .game-card[data-layout="featured"] .game-name { font-size: 24px; padding-top: 18px; }
 .nyx-arcade .game-resource-meta { display: block; flex-shrink: 0; padding: 3px 16px 15px; color: var(--app-muted); text-align: left; font-size: 10px; letter-spacing: .04em; }
@@ -91,7 +94,7 @@ html[data-nyx-appearance="light"] .nyx-arcade .library-tab.active { color: #fff;
 .nyx-arcade.cloud-session-active .library { width: 100%; padding: 0; }
 
 @media (min-width: 1600px) {
-  .nyx-arcade .game-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: 250px; }
+  .nyx-arcade .game-grid { --activity-row-height: 250px; grid-template-columns: repeat(12, minmax(0, 1fr)); }
 }
 @media (max-width: 1050px) {
   .nyx-arcade .game-card { grid-column: span 2; }
@@ -102,7 +105,7 @@ html[data-nyx-appearance="light"] .nyx-arcade .library-tab.active { color: #fff;
   .nyx-arcade .arcade-random span { display: none; }
 }
 @media (max-width: 700px) {
-  .nyx-arcade .game-card[data-layout="featured"] { grid-row: span 1; }
+  .nyx-arcade .game-card[data-layout="featured"] { grid-row: span 1; height: var(--activity-row-height); }
   .nyx-arcade .game-card[data-layout="featured"] .game-name { font-size: 19px; padding-top: 12px; }
   .nyx-arcade .game-resource-meta { padding-inline: 12px; font-size: 9px; }
   .nyx-arcade .game-card .game-name { padding-inline: 12px; }
@@ -120,7 +123,7 @@ html[data-nyx-appearance="light"] .nyx-arcade .library-tab.active { color: #fff;
   .nyx-arcade .arcade-collection { align-items: stretch; flex-direction: column; gap: 16px; }
   .nyx-arcade .catalog-tools { width: 100%; }
   .nyx-arcade .arcade-collection h2 { font-size: 21px; }
-  .nyx-arcade .game-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-auto-rows: 210px; gap: 14px; }
+  .nyx-arcade .game-grid { --activity-row-height: 210px; --activity-gap: 14px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .nyx-arcade .game-card .game-name { font-size: 12px; padding-top: 9px; }
 }
 @media (max-width: 420px) {

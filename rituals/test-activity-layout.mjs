@@ -24,16 +24,20 @@ try{
  await page.route('**/activity-fixture/play.html*',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><title>Activity</title><p>Fixture loaded</p>'}));
  await page.goto(base+'/assets/games/',{waitUntil:'domcontentloaded'});
  try{await page.locator('.game-card').nth(29).waitFor();}catch(error){console.log(errors,await page.locator('body').innerText());throw error;}
+ assert.equal(await page.locator('.activity-chapter').count(),3);
+ assert.match(await page.locator('.activity-chapter').first().innerText(),/The Battle of Waterloo/);
  for(const width of [1440,768,390]){
   await page.setViewportSize({width,height:1000});
   const sizes=await page.locator('.game-card').evaluateAll(nodes=>nodes.map(n=>({width:n.getBoundingClientRect().width,height:n.getBoundingClientRect().height})));
   assert(sizes[0].width>sizes[1].width*1.5);
   if(width>700)assert(sizes[0].height>sizes[1].height*1.8);
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`Overflow at ${width}`);
+  assert(await page.locator('.activity-chapter').evaluateAll(nodes=>nodes.every(n=>n.getBoundingClientRect().bottom<=n.nextElementSibling.getBoundingClientRect().top)),`Heading overlaps at ${width}`);
   await page.screenshot({path:join(temp,`library-${width}.png`),fullPage:true});
  }
  await page.locator('#gameSearch').fill('Motion Lab');
  await page.waitForFunction(()=>document.querySelectorAll('.game-card').length===1);
+ assert.equal(await page.locator('.activity-chapter').count(),1);
  assert.equal(await page.locator('.game-card img').getAttribute('alt'),'Motion Lab cover');
  const key=await page.locator('.game-card').getAttribute('data-game-key');
  await page.locator('#gameSearch').fill('Slope');
@@ -45,6 +49,8 @@ try{
  await page.locator('#gameSearch').fill('');
  await page.locator('#nextPage').click();
  await page.waitForFunction(()=>document.querySelectorAll('.game-card').length===5);
+ assert.equal(await page.locator('.activity-chapter').count(),1);
+ assert.match(await page.locator('.activity-chapter').innerText(),/The Renaissance/);
  assert.deepEqual(errors,[]);
  console.log('PASS varied desktop/mobile tiles, no overflow, renamed covers, original-name search, player startup and pagination. Screenshots: '+temp);
 }finally{

@@ -41,7 +41,8 @@
       clearTimeout(loadTimer);
       controller.abort();
       host.replaceChildren();
-      status.textContent = 'Luna could not connect. Close and reopen it to retry.';
+      console.warn('[Luna load]', error);
+      status.textContent = 'Luna';
     });
   });
   document.querySelector('[data-luna-close]').addEventListener('click', () => dialog.close());

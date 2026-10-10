@@ -18,9 +18,7 @@ function nyxScramjetRouteMissHtml() {
   button{margin-top:18px;border:1px solid #445066;border-radius:10px;background:#1b2230;color:#f5f7fb;padding:10px 15px;font:600 14px system-ui,sans-serif;cursor:pointer}
 </style>
 <main>
-  <h1>Reconnecting Scramjet</h1>
-  <p>Nyx is reconnecting this tab to the proxy service worker.</p>
-  <button type="button" data-nyx-repair onclick="if(parent===window){location.reload()}else{window.nyxRepairing=true;parent.postMessage({type:'nyx:repair-connection'},parent.location.origin)}">Repair connection</button>
+  <button type="button" data-nyx-repair onclick="if(parent===window){location.reload()}else{window.nyxRepairing=true;parent.postMessage({type:'nyx:repair-connection'},parent.location.origin)}">Try again</button>
 </main>
 <script>
   (() => {

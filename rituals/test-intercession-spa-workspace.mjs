@@ -147,7 +147,7 @@ try{
       const fallback=await context.request.get(backend+'/~/study/missing/session/https%3A%2F%2Fexample.com');
       const repairHtml=(await fallback.text()).replace('nyx-route-miss','nyx-connection-error');
       await page.locator('iframe.view.active').evaluate((iframe,html)=>{iframe.removeAttribute('src');iframe.srcdoc=html},repairHtml);
-      await frame.getByRole('button',{name:'Repair connection',exact:true}).click();
+      await frame.getByRole('button',{name:'Try again',exact:true}).click();
       await frame.locator('#channel-b').waitFor({timeout:30000});
       assert(await page.evaluate(async()=>window.fixtureWorker!==(await navigator.serviceWorker.getRegistration('/~/study/')).active),'Repair replaces the old worker connection');
       assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.theme')),'halloween');

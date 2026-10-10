@@ -797,7 +797,22 @@ const nyxDecoyHtml = `<!doctype html>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
-  <title>Student Learning Portal</title>
+  <title>Prayer &amp; Reflection</title>
+<meta name="description" content="A moment for prayer. A little room for reflection.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Prayer &amp; Reflection">
+<meta property="og:title" content="Prayer &amp; Reflection — Faith, Hope &amp; Love">
+<meta property="og:description" content="A moment for prayer. A little room for reflection.">
+<meta property="og:image" content="https://prayer.altarworship.org.uk/assets/social/prayer-reflection.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A simple cross beside Prayer and Reflection, with Psalm 46:10.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Prayer &amp; Reflection — Faith, Hope &amp; Love">
+<meta name="twitter:description" content="A moment for prayer. A little room for reflection.">
+<meta name="twitter:image" content="https://prayer.altarworship.org.uk/assets/social/prayer-reflection.png">
+<meta name="twitter:image:alt" content="A simple cross beside Prayer and Reflection, with Psalm 46:10.">
   <style>
     :root{color-scheme:light;--blue:#245d9c;--ink:#243041;--muted:#657184;--line:#dfe5ed;--paper:#fff;--bg:#f5f7fa}
     *{box-sizing:border-box}html,body{margin:0;min-height:100%;font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:var(--bg)}
@@ -14263,9 +14278,7 @@ app.use(["/~/sj/", "/~/study/"], (_req, res) => {
   button{margin-top:18px;border:1px solid #445066;border-radius:10px;background:#1b2230;color:#f5f7fb;padding:10px 15px;font:600 14px Raleway,Arial,sans-serif;cursor:pointer}
 </style>
 <main>
-  <h1>Reconnecting StudyJet</h1>
-  <p>Nyx is reconnecting this tab to the proxy service worker.</p>
-  <button type="button" data-nyx-repair onclick="if(parent===window){location.reload()}else{window.nyxRepairing=true;parent.postMessage({type:'nyx:repair-connection'},parent.location.origin)}">Repair connection</button>
+  <button type="button" data-nyx-repair onclick="if(parent===window){location.reload()}else{window.nyxRepairing=true;parent.postMessage({type:'nyx:repair-connection'},parent.location.origin)}">Try again</button>
 </main>
 <script>
   (() => {

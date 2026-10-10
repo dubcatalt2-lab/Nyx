@@ -45,7 +45,7 @@ try {
     calls[1].frame.src = '/connected'; calls[1].resolve({managed: true});
     calls[0].reject(new Error('Old attempt failed'));
   });
-  await cloud.waitForFunction(() => document.querySelector('[data-luna-status]').textContent === 'CloudMoon games');
+  await cloud.waitForFunction(() => document.querySelector('[data-luna-status]').textContent === 'CloudMoon '+window.nyxDisplayName('games'));
   assert.equal(await cloud.locator('[data-luna-host] iframe').count(), 1);
   await cloud.locator('[data-luna-close]').click();
   await page.waitForFunction(() => calls[1].aborted);
@@ -53,7 +53,7 @@ try {
   await cloud.locator('[data-luna-open]').click();
   await page.waitForFunction(() => calls.length === 3);
   await page.evaluate(() => calls[2].resolve({managed: false}));
-  await cloud.getByText('Luna could not connect. Close and reopen it to retry.').waitFor();
+  await cloud.locator('[data-luna-status]').filter({hasText:/^Luna$/}).waitFor();
   assert.equal(await cloud.locator('[data-luna-host] iframe').count(), 0, 'Never fall back to a direct Luna iframe');
   assert.deepEqual(direct, []);
   assert.deepEqual(errors, []);

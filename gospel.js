@@ -7725,12 +7725,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return config.prefix + encode(target);
   }
   function connectionFailureHtml(message,engine='Nyx',{allowDirect=false,heading=''}={}){
-    const safe=String(message || 'Refresh this page once so the updated service worker can take over, then search again.').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const safeHeading=String(heading || `${engine || 'Nyx'} did not start`).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const repairAction='<button type="button" data-nyx-repair onclick="parent.postMessage({type:\'nyx:repair-connection\'},parent.location.origin)">Repair connection</button><small>Your account and saved settings stay in place.</small>';
-    const directAction=allowDirect?'<button type="button" onclick="parent.postMessage({type:\'nyx:proxy-direct-fallback\'},\'*\')">Try direct mode</button><small>Direct mode works only when the site allows embedding.</small>':'';
-    return `<!doctype html><meta charset="utf-8"><meta name="nyx-connection-error" content="1"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font-family:Outfit,Arial,sans-serif;background:#101318;color:#f5f7fb;display:grid;place-items:center;min-height:100vh}main{box-sizing:border-box;width:min(560px,100%);padding:28px;text-align:center}h1{font-size:20px;margin:0 0 10px}p{margin:0;color:#c8ced8;line-height:1.45}button{min-height:42px;margin:18px 0 0;padding:0 18px;border:1px solid #6379a0;border-radius:12px;background:#1a2841;color:#f5f7fb;font:700 14px Outfit,Arial,sans-serif;cursor:pointer}small{display:block;margin-top:9px;color:#98a6bb;line-height:1.4}@media(max-width:480px) and (max-height:520px){main{padding:18px}h1{font-size:18px}p{font-size:13px}button{width:100%}}</style><main><h1>${safeHeading}</h1><p>${safe}</p>${repairAction}${directAction}</main>`;
+    console.warn('[workspace load]',engine,heading,message);
+    const repairAction='<button type="button" data-nyx-repair onclick="parent.postMessage({type:\'nyx:repair-connection\'},parent.location.origin)">Try again</button>';
+    const directAction=allowDirect?'<button type="button" onclick="parent.postMessage({type:\'nyx:proxy-direct-fallback\'},\'*\')">Open directly</button>':'';
+    return `<!doctype html><meta charset="utf-8"><meta name="nyx-connection-error" content="1"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font-family:Outfit,Arial,sans-serif;background:#101318;color:#f5f7fb;display:grid;place-items:center;min-height:100vh}main{padding:24px;text-align:center}button{min-height:42px;margin:6px;padding:0 18px;border:1px solid #445066;border-radius:8px;background:#1b2230;color:#f5f7fb;font:600 14px Outfit,Arial,sans-serif;cursor:pointer}</style><main>${repairAction}${directAction}</main>`;
   }
+
   function loadScript(src){
     return new Promise((resolve,reject)=>{
       const existing=document.querySelector(`script[src="${src}"]`);

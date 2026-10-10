@@ -4,6 +4,7 @@ import {resolve,relative,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 const self=fileURLToPath(import.meta.url);
+const signatureFiles=new Set([self,fileURLToPath(new URL('./audit-release.mjs',import.meta.url))]);
 const root=resolve(process.argv[2]||'.');
 const reportPath=process.argv[3]?.startsWith('--')?null:process.argv[3];
 const tracked=process.argv.includes('--tracked');
@@ -25,7 +26,7 @@ for(const file of files){
  report.files++;
  const name=relative(root,file).replaceAll('\\','/');
  if(retiredPath.test(name))report.failures.push({file:name,encoding:'path',match:name});
- if(file===self){report.approved.push({file:name,reason:'Regression scanner signature definitions only; not published application code'});continue;}
+ if(signatureFiles.has(file)){report.approved.push({file:name,reason:'Regression scanner signature definitions only; not published application code'});continue;}
  if(binaryExtensions.has(extname(name).toLowerCase())){report.binaryFiles++;continue;}
  const text=readFileSync(file,'utf8');
  scan(text,name,'raw');

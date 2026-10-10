@@ -26,7 +26,7 @@ try{
     page.on('pageerror',error=>errors.push(error.message));
     await page.goto(`${base}/study.html`,{waitUntil:'domcontentloaded'});
     await page.waitForFunction(()=>document.body?.classList.contains('workspace-shell')&&!document.body.classList.contains('nyx-loading-active')&&!document.body.classList.contains('nyx-startup-prep'),null,{timeout:20000});
-    assert.equal(await page.locator('#setupScreen').count(),0);
+    assert.equal(await page.locator('#setupScreen,#setupLaunchScreen').count(),0);
     assert.equal(await page.locator('body.setup-active').count(),0);
     if(setup===null){
       await page.locator('[data-nyx-tos-agree]').click();
@@ -40,7 +40,7 @@ try{
     await input.fill('Home is ready');
     assert.equal(await input.inputValue(),'Home is ready');
     await page.locator('[data-nyx-dock-item="settings"]').click();
-    await page.getByRole('button',{name:'Workspace',exact:true}).click();
+    await page.locator('[data-settings-category-button="workspace"]').click();
     const settings=page.locator('[data-settings-category="workspace"]');
     await settings.waitFor({state:'visible'});
     assert(!/\btabs?\b/i.test(await settings.innerText()),'Workspace settings must use page wording');
@@ -56,7 +56,7 @@ try{
     await page.reload();
     await input.waitFor({state:'visible'});
     await page.waitForFunction(()=>document.title==='My Coursework');
-    assert.equal(await page.locator('#setupScreen').count(),0);
+    assert.equal(await page.locator('#setupScreen,#setupLaunchScreen').count(),0);
     assert.deepEqual(errors,[]);
     console.log(`PASS setup=${setup}, ${width}px: no wizard, Home usable, Terms and saved preferences retained.`);
     await context.close();

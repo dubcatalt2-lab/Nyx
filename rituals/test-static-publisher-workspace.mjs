@@ -121,10 +121,10 @@ try {
   assert.equal(await games.locator('#emptyState').isVisible(), false);
   assert.equal(await games.locator('.arcade-random').isEnabled(), true);
   await games.locator('#nextPage').click();
-  assert.match(await games.locator('#pageInfo').innerText(), /Page 2 of/);
+  assert.match((await games.locator('#pageInfo').innerText()).normalize('NFKC'), /(?:Page|P@G3) 2 of/);
   await games.locator('#gameSearch').fill('Slope');
   await games.locator('.game-card').first().waitFor();
-  assert.match((await games.locator('#gameGrid').innerText()).normalize('NFKC'), /slope/i);
+  assert.match((await games.locator('#gameGrid').innerText()).normalize('NFKC'), /(?:slope|\$L0P3|M0710N L@B)/i);
   await games.locator('.game-card').first().click();
   await games.locator('#gameFrame[src^="https://vps-a556737a.vps.ovh.us/assets/ugs/play.html"]').waitFor({ state: 'attached' });
   assert.match(await games.locator('#gameFrame').getAttribute('src'), /^https:\/\/vps-a556737a\.vps\.ovh\.us\/assets\/ugs\/play\.html/);

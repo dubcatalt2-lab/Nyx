@@ -3,6 +3,8 @@ import {parse as parseHtml} from 'parse5';
 import {createHash} from 'node:crypto';
 import {readFile,writeFile,readdir} from 'node:fs/promises';
 import {join,posix} from 'node:path';
+import {minify} from 'terser';
+import {obscureGameStrings} from './build-game-strings.mjs';
 
 export function opaqueIdentifiers(seed='workspace') {
   const prefix='_0x'+createHash('sha256').update(seed).digest('hex').slice(0,6)+'_';
@@ -82,6 +84,27 @@ export function scrambleInlineScripts(source,{decode=false}={}) {
 
 export async function scrambleWorkspaceOutput(root) {
   let scripts=0,pages=0;
+  async function gamePage(source,file){
+    const tree=parseHtml(source,{sourceCodeLocationInfo:true}),edits=[];
+    async function walk(node){
+      const location=node.sourceCodeLocation;
+      if(node.tagName==='script'&&!node.attrs.some(attr=>attr.name==='src')&&location?.endTag){
+        const type=node.attrs.find(attr=>attr.name==='type')?.value||'';
+        if(['','module','text/javascript','application/javascript'].includes(type)){
+          const start=location.startTag.endOffset,end=location.endTag.startOffset;
+          const code=source.slice(start,end);
+          const seed=file+':'+start;
+          const compiled=await minify(shuffleDeclarations(code,seed),{module:type==='module',compress:false,mangle:{nth_identifier:opaqueIdentifiers(seed)},format:{comments:false,ascii_only:true}});
+          const result=/\.toString\(\)/.test(code)?compiled.code:obscureGameStrings(compiled.code,seed);
+          edits.push({start,end,text:result});
+        }
+      }
+      for(const child of node.childNodes||[])await walk(child);
+    }
+    await walk(tree);
+    for(const edit of edits.sort((a,b)=>b.start-a.start))source=source.slice(0,edit.start)+edit.text+source.slice(edit.end);
+    return source;
+  }
   async function visit(directory=''){
     for(const entry of await readdir(join(root,directory),{withFileTypes:true})){
       const file=posix.join(directory,entry.name);
@@ -90,13 +113,17 @@ export async function scrambleWorkspaceOutput(root) {
       if(!/\.(?:js|html)$/.test(file)||['serve-mini.js','configure-host.js'].includes(file))continue;
       const source=await readFile(join(root,file),'utf8');
       try{
-        const result=file.endsWith('.js')?transformWorkspaceStrings(source):scrambleInlineScripts(source);
+        let result=file.endsWith('.js')?transformWorkspaceStrings(source):scrambleInlineScripts(source);
+        if(file.startsWith('assets/games/')&&file.endsWith('.js')&&!/\.toString\(\)/.test(source))result=obscureGameStrings(result,file);
+        if(/^assets\/(?:games|gn-math|gms-games|reds-misc)\/.*\.html$/.test(file))result=await gamePage(result,file);
         await writeFile(join(root,file),result);
       }catch(error){throw Error(file+': '+error.message,{cause:error});}
       if(file.endsWith('.js'))scripts++;else pages++;
     }
   }
   await visit();
+  const localPlayer=join(root,'assets/ugs/play.html');
+  try{await writeFile(localPlayer,await gamePage(scrambleInlineScripts(await readFile(localPlayer,'utf8')),'assets/ugs/play.html'));pages++;}catch(error){if(error.code!=='ENOENT')throw error;}
   console.log(`Workspace strings: ${scripts} scripts and ${pages} pages verified against their parsed executable structure.`);
 }
 

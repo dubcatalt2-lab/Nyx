@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import express from 'express';
 import {chromium} from 'playwright';
-const app=express();app.use('/assets/games',express.static('relics/games'));app.get('/',(_,r)=>r.send('<!doctype html><title>Save fixture</title>'));
+const app=express();app.use('/assets/games',express.static(process.env.NYX_TEST_GAME_ASSETS||'relics/games'));app.get('/',(_,r)=>r.send('<!doctype html><title>Save fixture</title>'));
 const cloud=new Map();let fail=false,puts=0;
 app.use(express.json({limit:'1mb'}));
 app.post('/cloud',(req,res)=>{const {type,gameKey,accountUid,storage,removed}=req.body;const key='alice:'+gameKey;if(type.endsWith('load'))return res.json({accountUid:'alice',storage:cloud.get(key)||{}});puts++;if(fail)return res.status(503).json({error:'offline fixture'});if(accountUid!=='alice')return res.status(409).json({error:'account changed'});const value={...cloud.get(key),...storage};for(const name of removed||[])delete value[name];cloud.set(key,value);res.json({saved:true});});

@@ -65,6 +65,7 @@ import { createRequire } from "node:module";
 import { Readable } from "node:stream";
 import { spawn } from "node:child_process";
 import { startWispurr } from "./scripture/fellowship-relay.mjs";
+import { createServer as createSyncServer } from "./scripture/network/server.mjs";
 import { Server as SocketIOServer } from "socket.io";
 import { retiredLinkGenerator } from "./scripture/retired-link-generator.mjs";
 import { linkGeneratorHourlyQuota } from "./scripture/link-generator-quota.mjs";
@@ -3697,6 +3698,7 @@ app.get("/runtime-config.js", (_req, res) => {
       publisherAdsEnabled,
       publisherAdsAdkidOnly,
       learningRoutesEnabled: true,
+      syncTransportEnabled: process.env.NYX_SYNC_ENABLED === '1',
       wispUrl: externalWispUrl,
       wispUrls: [...new Set(String(process.env.NYX_WISP_RELAYS || "").split(",").map(normalizePublicWispUrl).filter(Boolean))],
       presenceUrl: publicOrigin ? `${publicOrigin}/api/presence` : "",
@@ -14324,6 +14326,7 @@ async function startNyxServer() {
   });
   const server = createServer((req, res) => app(req, res));
   const chatSocketServer = attachNyxChatSocketServer(server);
+  const syncServer = process.env.NYX_SYNC_ENABLED === '1' ? createSyncServer({allowed: async request => !await nyxRequestIpIsBanned(request)}) : null;
   const serverSockets = new Set();
 
   server.on("connection", socket => {
@@ -14339,6 +14342,7 @@ async function startNyxServer() {
       rejectWispUpgrade(socket, "400 Bad Request");
       return;
     }
+    if (upgradePath === '/api/sync' && syncServer) { await syncServer.upgrade(req, socket, head); return; }
     if (upgradePath === '/api/nyxcloud/socket') { nyxCloudDesktop.upgrade(req,socket,head);return; }
     if (upgradePath === '/api/private-remote/socket') { remoteDesktop.upgrade(req,socket,head);return; }
     if (upgradePath === "/socket.io/" || upgradePath.startsWith("/socket.io/")) {
@@ -14379,6 +14383,7 @@ async function startNyxServer() {
     void nyxTubeCatalog.close();
     if (shuttingDown) return;
     shuttingDown = true;
+    syncServer?.close();
     const workerStopped = wisp?.stop();
     chatSocketServer.disconnectSockets(true);
     server.close(() => Promise.allSettled([Promise.resolve(workerStopped), appTraffic.close()]).then(() => process.exit(exitCode)));

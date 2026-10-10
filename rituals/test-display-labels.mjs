@@ -55,5 +55,22 @@ try {
  assert.equal(await page.locator('#brand span').textContent(),'https://nyx.example/nyx nyx.example support@nyx.example');
  assert.equal(await page.locator('#brand .message').textContent(),'Nyx');
  assert.equal(await page.locator('#brand code').textContent(),'Nyx');
+ await page.evaluate(()=>document.body.insertAdjacentHTML('beforeend','<section id="original-names"><p>Scramjet BareMux bare-mux Epoxy Libcurl Wisp Wispurr MercuryWorkshop</p><input placeholder="Scramjet Epoxy" value="Scramjet"><code>Scramjet</code><a href="https://example.com/scramjet">https://example.com/scramjet</a></section>'));
+ await page.waitForFunction(()=>!document.querySelector('#original-names p').textContent.includes('Scramjet'));
+ assert.equal((await page.locator('#original-names p').textContent()).normalize('NFKC'),'Scramjet BareMux bare-mux Epoxy Libcurl Wisp Wispurr MercuryWorkshop');
+ assert.equal((await page.locator('#original-names input').getAttribute('placeholder')).normalize('NFKC'),'Scramjet Epoxy');
+ assert.equal(await page.locator('#original-names input').inputValue(),'Scramjet');
+ assert.equal(await page.locator('#original-names code').textContent(),'Scramjet');
+ assert.equal(await page.locator('#original-names a').getAttribute('href'),'https://example.com/scramjet');
+ const rendered=await page.locator('#original-names p').textContent();
+ await page.locator('#original-names p').evaluate(el=>el.append(document.createTextNode(' ready')));
+ assert.equal(await page.locator('#original-names p').textContent(),rendered+' ready');
+ await page.evaluate(()=>document.body.insertAdjacentHTML('beforeend','<section class="workspace-only-settings nyx-settings-dashboard"><section data-settings-category="advanced"><div class="nyx-settings-group"></div></section></section>'));
+ await page.addScriptTag({content:await readFile('parables/pwa-install.js','utf8')});
+ await page.waitForFunction(()=>document.querySelector('[data-install-nyx]')?.textContent.normalize('NFKC')==='Install NYX');
+ await page.evaluate(()=>new Promise(resolve=>setTimeout(resolve,50)));
+ await page.evaluate(()=>window.dispatchEvent(new Event('beforeinstallprompt',{cancelable:true})));
+ await page.waitForFunction(()=>document.querySelector('[data-install-nyx-status]').textContent==='Ready to install on this device.');
+ assert.equal(await page.locator('[data-nyx-install-card]').count(),1);
  console.log('PASS dynamic/icon labels, idempotence, accessible names, editable text, messages, code and profile preservation.');
 } finally {await browser.close()}

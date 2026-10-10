@@ -203,7 +203,6 @@ const requiredFiles = [
   "startup.js",
   "styles.css",
   "scramjet.sw.js",
-  "js/loading-screen.js",
   "js/display-names.js",
   "js/availability.js",
   "js/nyx-logo.js",

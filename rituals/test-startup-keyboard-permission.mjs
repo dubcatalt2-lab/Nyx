@@ -44,7 +44,7 @@ try{
     const input=page.locator('.nyx-minimal-search input').first();
     await input.fill('startup still works');
     assert.equal(await input.inputValue(),'startup still works');
-    assert.equal(await page.locator('#setupLaunchScreen').getAttribute('aria-hidden'),'true');
+    assert.equal(await page.locator('#setupLaunchScreen').count(),0);
     assert.equal(await input.evaluate(element=>Boolean(element.closest('[inert]'))),false);
     assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.userName')),'Saved student');
     if(mode==='pending'){

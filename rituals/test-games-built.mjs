@@ -11,9 +11,10 @@ import { chromium } from 'playwright';
 const temp = await mkdtemp(join(tmpdir(), 'nyx-wispurr-workspace-'));
 const staticRoot = join(temp, 'site');
 await symlink(resolve('dist'), staticRoot, process.platform === 'win32' ? 'junction' : 'dir');
+const external=process.env.NYX_TEST_WISP_URL || '';
 const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => /^(path|systemroot|windir|temp|tmp|home|userprofile|localappdata)$/i.test(key)));
 const child = fork(new URL('../shepherd.js', import.meta.url), [], {
-  env: { ...env, PORT: '0', NYX_STATIC_ROOT: staticRoot, NYX_YOUTUBE_NATIVE_ENABLED: '0' }, silent: true
+  env: { ...env, PORT: '0', WISP_URL:external, NYX_STATIC_ROOT: staticRoot, NYX_YOUTUBE_NATIVE_ENABLED: '0' }, silent: true
 });
 child.stdout.resume();
 let stderr = '';
@@ -28,13 +29,14 @@ try {
   });
   const base = `http://127.0.0.1:${port}`;
   const health = await (await fetch(base + '/healthz')).json();
-  assert.equal(health.wispImplementation, 'wispurr');
+  assert.equal(health.wispImplementation, external?'external':'wispurr');
   workspace = await chromium.launch({ channel: 'msedge', headless: true });
   const page=await workspace.newPage();
   const errors=[]; page.on('pageerror',error=>errors.push(error.message));
-  const catalogResponse=page.waitForResponse(response=>new URL(response.url()).pathname==='/assets/games/games.json');
+  const catalogResponse=page.waitForResponse(response=>new URL(response.url()).pathname==='/assets/games/games.json').catch(error=>({failed:error}));
   await page.goto(base+'/assets/games/');
   const manifest=await catalogResponse;
+  if(manifest.failed)throw manifest.failed;
   assert.equal(manifest.status(),200);
   assert((await manifest.json()).catalogs.length>0);
   await page.locator('.game-card').first().waitFor({timeout:30000});

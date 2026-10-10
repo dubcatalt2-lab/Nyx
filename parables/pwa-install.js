@@ -3,6 +3,12 @@
 
   let installPrompt = null;
   let lastMessage = "";
+  const renderedText = new WeakMap();
+  function updateText(element, value) {
+    if (renderedText.get(element) === value) return;
+    renderedText.set(element, value);
+    if (element.textContent !== value) element.textContent = value;
+  }
   const SINGLE_FILE_RELEASE = "2026.09.18.1";
 
   function isInstalled() {
@@ -74,7 +80,7 @@
       button.disabled = installed;
       button.setAttribute("aria-disabled", String(installed));
       const label = installed ? "Nyx is Installed" : "Install Nyx";
-      if (button.textContent !== label) button.textContent = label;
+      updateText(button, label);
     });
     document.querySelectorAll("[data-install-nyx-status]").forEach((status) => {
       const text = installed
@@ -82,7 +88,7 @@
         : message || (installPrompt
           ? "Ready to install on this device."
           : "Installs Nyx as an app with its own window and desktop icon.");
-      if (status.textContent !== text) status.textContent = text;
+      updateText(status, text);
     });
     document.querySelectorAll("[data-download-nyx-singlefile]").forEach((button) => {
       if (button.dataset.nyxSingleFileBound === "true") return;

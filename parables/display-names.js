@@ -5,15 +5,17 @@
     .replace(/[A-Za-z]/g,letter=>substitutions[letter.toLowerCase()] || letter.toUpperCase())
     .replace(/[A-Z0-9]/g,letter=>String.fromCodePoint(letter<='9' ? 0x1d7e2+letter.charCodeAt(0)-48 : 0x1d5a0+letter.charCodeAt(0)-65))
     .replace(/(^|\s)@\u{1d7e3}(?=$|\s)/gu,(_,space)=>space+'A1');
+  const originalNames=/^(?:scramjet|bare-?mux|epoxy(?:-transport)?|libcurl(?:-transport)?|wisp(?:urr)?|mercuryworkshop)$/i;
+  const unicodeName=value=>value.replace(/[A-Za-z]/g,letter=>String.fromCodePoint((letter>='a'?0x1d5ba-97:0x1d5a0-65)+letter.charCodeAt(0)));
   const names=/^(?:(?:nyx|tutsi|drop)\s+)?(?:home|games|music|youtube|nyxtube|nyxify(?:\/built in music)?|ai|a1|duck ai|duck a1|chat|vms|apps|discord|settings|account|movies|more movie sites|tiktok|animex|cloud gaming|link generator|bulk link generator|link checker|jsdelivr publisher|code sandbox|code studio|api(?: keys)?|premium|caffeine|arcade|game library|all games|miscellaneous)$/i;
   const labels='[data-nyx-dock-item] > span,.home-shortcut-open > span,.workspace-home-label,.nyx-discord-link > span,.quick-tile > span:not(.quick-icon),#all-apps button > span,[data-nyx-display-label]';
   const headings='h1,h2,h3,nav a,nav button,header strong,.nyxify-brand strong,.lc-brand strong,.utility-nav-item > span,.brand,.brand-title';
   const wordScopes='.nyx-release-notes,.nyx-tos-dialog,.nyx-terms-tab,.nyx-tos-document,[data-nyx-display-words]';
   const wordElements='p,li,strong,h1,h2,h3,a,span,button';
   const displayWords=/\b(?:link generators?|proxy|proxies|games?|gaming|AI|Discord)\b/gi;
-  const interfaceWords=/\b(?:nyx|games?|gaming|arcade|play(?:ing)?|search(?:es|ing|ed)?|browsers?|brows(?:e[sd]?|ing)|proxies|proxy|scramjet|baremux|bare-mux|wisp|relay(?:s)?|movies?|videos?|shorts|music|link generators?|connections?|sites?|web|websites?|pages?|reload(?:s|ing|ed)?)\b/gi;
+  const interfaceWords=/\b(?:nyx|games?|gaming|arcade|play(?:ing)?|search(?:es|ing|ed)?|browsers?|brows(?:e[sd]?|ing)|proxies|proxy|scramjet|baremux|bare-mux|epoxy(?:-transport)?|libcurl(?:-transport)?|wisp(?:urr)?|mercuryworkshop|relay(?:s)?|movies?|videos?|shorts|music|link generators?|connections?|sites?|web|websites?|pages?|reload(?:s|ing|ed)?)\b/gi;
   function styledWords(value, pattern){
-    return value.split(/((?:[a-z][a-z0-9+.-]*:\/\/[^\s<>"']+|[\w.+-]+@[\w.-]+\.[a-z]{2,}|(?:[a-z0-9-]+\.)+[a-z]{2,}(?:[/:][^\s<>"']*)?))/gi).map((part,index)=>index%2?part:part.replace(pattern,word=>nyxDisplayName(word))).join('');
+    return value.split(/((?:[a-z][a-z0-9+.-]*:\/\/[^\s<>"']+|[\w.+-]+@[\w.-]+\.[a-z]{2,}|(?:[a-z0-9-]+\.)+[a-z]{2,}(?:[/:][^\s<>"']*)?))/gi).map((part,index)=>index%2?part:part.replace(pattern,word=>originalNames.test(word)?unicodeName(word):nyxDisplayName(word))).join('');
   }
   const untouched='script,style,input,textarea,pre,code,kbd,[contenteditable="true"],.nyx-styled-display-name,.message,.message-content,.chat-message,.ai-message,.ai-message-content,.ai-thread-list,[data-message-id],.monaco-editor,.cm-editor,[data-nyx-keep-text]';
   const installed=new WeakSet();

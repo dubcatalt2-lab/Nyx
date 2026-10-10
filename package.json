@@ -31,6 +31,8 @@
     "test:nyxtube-segments": "node rituals/test-nyxtube-segments.mjs",
     "test:utility-theme": "node rituals/test-utility-neutral-theme.mjs",
     "build:vps": "node rituals/build-vps.mjs",
+    "test:network": "node rituals/test-network-adapter.mjs",
+    "check:release-audit": "node rituals/audit-release.mjs dist",
     "check:branding": "node rituals/check-branding.mjs",
     "check:deploy": "node rituals/check-deploy.mjs && npm run check:branding"
   },

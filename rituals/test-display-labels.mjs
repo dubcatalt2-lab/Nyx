@@ -1,4 +1,4 @@
-﻿import assert from 'node:assert/strict';
+import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
 const browser=await chromium.launch({channel:'msedge',headless:true});
@@ -40,5 +40,20 @@ try {
  assert((await page.locator('#connections p').textContent()).includes('https://sites.example.com/web/pages'));
  assert.equal(await page.locator('#connections input').inputValue(),'wss://sites.example.com/web/');
  assert.equal(await page.getByRole('button',{name:'Reload website',exact:true}).count(),1);
+ await page.evaluate(()=>{
+  document.title='Nyx';
+  document.body.insertAdjacentHTML('beforeend','<section id="brand"><h2>Nyx</h2><p>Welcome to nyx. NYX is ready.</p><img alt="Nyx logo" title="About Nyx"><input placeholder="Ask Nyx" value="Nyx"><a href="nyx://settings">nyx://settings</a><span>https://nyx.example/nyx nyx.example support@nyx.example</span><div class="message">Nyx</div><code>Nyx</code></section>');
+ });
+ await page.waitForFunction(()=>document.title==='𝖭𝖸𝖷' && document.querySelector('#brand h2').textContent==='𝖭𝖸𝖷');
+ assert.equal(await page.locator('#brand p').textContent(),'Welcome to 𝖭𝖸𝖷. 𝖭𝖸𝖷 is ready.');
+ assert.equal(await page.locator('#brand img').getAttribute('alt'),'𝖭𝖸𝖷 logo');
+ assert.equal(await page.locator('#brand img').getAttribute('title'),'About 𝖭𝖸𝖷');
+ assert.equal(await page.locator('#brand input').getAttribute('placeholder'),'Ask 𝖭𝖸𝖷');
+ assert.equal(await page.locator('#brand input').inputValue(),'Nyx');
+ assert.equal(await page.locator('#brand a').textContent(),'nyx://settings');
+ assert.equal(await page.locator('#brand a').getAttribute('href'),'nyx://settings');
+ assert.equal(await page.locator('#brand span').textContent(),'https://nyx.example/nyx nyx.example support@nyx.example');
+ assert.equal(await page.locator('#brand .message').textContent(),'Nyx');
+ assert.equal(await page.locator('#brand code').textContent(),'Nyx');
  console.log('PASS dynamic/icon labels, idempotence, accessible names, editable text, messages, code and profile preservation.');
 } finally {await browser.close()}

@@ -11,9 +11,9 @@
   const wordScopes='.nyx-release-notes,.nyx-tos-dialog,.nyx-terms-tab,.nyx-tos-document,[data-nyx-display-words]';
   const wordElements='p,li,strong,h1,h2,h3,a,span,button';
   const displayWords=/\b(?:link generators?|proxy|proxies|games?|gaming|AI|Discord)\b/gi;
-  const interfaceWords=/\b(?:games?|gaming|arcade|play(?:ing)?|search(?:es|ing|ed)?|browsers?|brows(?:e[sd]?|ing)|proxies|proxy|scramjet|baremux|bare-mux|wisp|relay(?:s)?|movies?|videos?|shorts|music|link generators?|connections?|sites?|web|websites?|pages?|reload(?:s|ing|ed)?)\b/gi;
+  const interfaceWords=/\b(?:nyx|games?|gaming|arcade|play(?:ing)?|search(?:es|ing|ed)?|browsers?|brows(?:e[sd]?|ing)|proxies|proxy|scramjet|baremux|bare-mux|wisp|relay(?:s)?|movies?|videos?|shorts|music|link generators?|connections?|sites?|web|websites?|pages?|reload(?:s|ing|ed)?)\b/gi;
   function styledWords(value, pattern){
-    return value.split(/((?:https?|wss?):\/\/[^\s<>"']+)/gi).map((part,index)=>index%2?part:part.replace(pattern,word=>nyxDisplayName(word))).join('');
+    return value.split(/((?:[a-z][a-z0-9+.-]*:\/\/[^\s<>"']+|[\w.+-]+@[\w.-]+\.[a-z]{2,}|(?:[a-z0-9-]+\.)+[a-z]{2,}(?:[/:][^\s<>"']*)?))/gi).map((part,index)=>index%2?part:part.replace(pattern,word=>nyxDisplayName(word))).join('');
   }
   const untouched='script,style,input,textarea,pre,code,kbd,[contenteditable="true"],.nyx-styled-display-name,.message,.message-content,.chat-message,.ai-message,.ai-message-content,.ai-thread-list,[data-message-id],.monaco-editor,.cm-editor,[data-nyx-keep-text]';
   const installed=new WeakSet();
@@ -72,6 +72,13 @@
         else element.querySelectorAll(wordScopes).forEach(scope=>{formatWords(scope);scope.querySelectorAll(wordElements).forEach(formatWords);});
       }
     }
+    function formatTitle(){
+      if(!nyxInterface)return;
+      const next=styledWords(doc.title,/\bnyx\b/gi);
+      if(next!==doc.title)doc.title=next;
+    }
+    formatTitle();
+    if(doc.head)new MutationObserver(formatTitle).observe(doc.head,{childList:true,subtree:true,characterData:true});
     scan(doc.body);
     new MutationObserver(records=>{
       for(const record of records){

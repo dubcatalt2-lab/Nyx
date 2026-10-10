@@ -295,7 +295,7 @@ function setGameView(view, updateUrl = true) {
     try {
       const url = new URL(location.href);
       url.hash = nextView === 'cloud' ? 'cloud' : '';
-      history.replaceState(null, '', url);
+      history.replaceState(history.state, '', url);
     } catch {}
   }
 }
@@ -916,9 +916,10 @@ function changePage(nextPage) {
 function updateGameQuery(key) {
   try {
     const url = new URL(location.href);
-    if (key) url.searchParams.set('game', key);
+    if (key && !nyxArcade) url.searchParams.set('game', key);
     else url.searchParams.delete('game');
-    history.replaceState(null, '', url);
+    const saved = nyxArcade ? {...history.state, nyxActivity: key || null} : history.state;
+    history.replaceState(saved, '', url);
   } catch {
 
   }
@@ -1209,7 +1210,7 @@ async function openGame(game, updateHistory = true, preferredSource = '') {
   if (state.activeGame !== game || activeGameCloudSave !== save) return;
   launchGameSource(state.activeSourceIndex);
   elements.close.focus();
-  if (updateHistory) updateGameQuery(game.key);
+  if (updateHistory || nyxArcade) updateGameQuery(game.key);
   try { parent.postMessage({ type: 'nyx:game-loading' }, '*'); } catch {}
 }
 
@@ -1238,7 +1239,8 @@ async function loadLibrary() {
   const failed = [];
   let completed = 0;
   let requestedOpened = false;
-  const requested = new URLSearchParams(location.search).get('game');
+  const requested = new URLSearchParams(location.search).get('game') || (nyxArcade ? history.state?.nyxActivity : null);
+  if (nyxArcade) updateGameQuery(requested || '');
 
   const publish = () => {
     state.games = mergeCatalogs([...loaded.values()]);

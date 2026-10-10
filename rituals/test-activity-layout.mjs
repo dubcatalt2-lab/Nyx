@@ -45,12 +45,24 @@ try{
  await page.locator('.game-card').click();
  await page.locator('#gamePlayer').waitFor({state:'visible'});
  assert.equal(await page.locator('#gameFrame').getAttribute('title'),'Motion Lab');
+ await page.waitForFunction(()=>history.state?.nyxActivity);
+ assert.equal(new URL(page.url()).searchParams.has('game'),false);
+ await page.reload({waitUntil:'domcontentloaded'});
+ await page.locator('#gamePlayer').waitFor({state:'visible'});
+ assert.equal(await page.locator('#gameFrame').getAttribute('title'),'Motion Lab');
+ assert.equal(new URL(page.url()).searchParams.has('game'),false);
  await page.locator('#closePlayer').click();
+ assert.equal(await page.evaluate(()=>history.state?.nyxActivity),null);
  await page.locator('#gameSearch').fill('');
  await page.locator('#nextPage').click();
  await page.waitForFunction(()=>document.querySelectorAll('.game-card').length===5);
  assert.equal(await page.locator('.activity-chapter').count(),1);
  assert.match(await page.locator('.activity-chapter').innerText(),/The Renaissance/);
+ await page.goto(base+'/assets/games/?game=slope&keep=yes',{waitUntil:'domcontentloaded'});
+ await page.locator('#gamePlayer').waitFor({state:'visible'});
+ assert.equal(new URL(page.url()).searchParams.has('game'),false);
+ assert.equal(new URL(page.url()).searchParams.get('keep'),'yes');
+ assert.equal(await page.locator('#gameFrame').getAttribute('title'),'Motion Lab');
  assert.deepEqual(errors,[]);
  console.log('PASS varied desktop/mobile tiles, no overflow, renamed covers, original-name search, player startup and pagination. Screenshots: '+temp);
 }finally{

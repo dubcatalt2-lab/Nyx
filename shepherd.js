@@ -122,7 +122,7 @@ const dropOwnerScope=createDropOwnerScope({verify:async token=>(await linkGenera
 app.use(dropOwnerScope.middleware);
 app.get(['/agents','/agents/'],(_req,res)=>res.redirect(302,'/apps/agents/'));
 app.get('/',(req,res,next)=>['nook.nyxlearning.org','nook.donateyourboat.us'].includes(req.hostname)?res.set({'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}).sendFile(sourceFile(join(staticRoot,'apps','agents','index.html')),{dotfiles:'allow'}):next());
-app.get('/',(req,res,next)=>req.hostname==='drop.ridgewoodstem.org'?res.set({'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}).sendFile(sourceFile(join(staticRoot,'apps','drop','index.html')),{dotfiles:'allow'}):next());
+app.get('/',(req,res,next)=>['drop.ridgewoodstem.org','drop.altarworship.org.uk'].includes(req.hostname)?res.set({'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}).sendFile(sourceFile(join(staticRoot,'apps','drop','index.html')),{dotfiles:'allow'}):next());
 app.get('/download/nyx-agents.zip',async(_req,res)=>{try{res.set({'Content-Type':'application/zip','Content-Disposition':'attachment; filename="Nyx-Agents.zip"','Cache-Control':'no-store'}).send(await companionZip(__dirname));}catch{res.status(503).send('The companion download is unavailable.');}});
 installTutsiCrawlerControls(app);
 app.get(["/proxy-assets.json", "/frontend-assets.json"], (_req,res)=>res.status(404).end());
@@ -611,7 +611,7 @@ function cacheNyxCustomHostnameDecision(hostname, allowed) {
 async function nyxCustomHostnameAllowed(hostname) {
   const normalized = normalizeNyxCustomHostname(hostname);
   if (!normalized) return false;
-  if(['nook.nyxlearning.org','nook.donateyourboat.us','robotics.ridgewoodstem.org','drop.ridgewoodstem.org','nyx.ridgewoodstem.org'].includes(normalized))return true;
+  if(['nook.nyxlearning.org','nook.donateyourboat.us','robotics.ridgewoodstem.org','drop.ridgewoodstem.org','drop.altarworship.org.uk','nyx.ridgewoodstem.org'].includes(normalized))return true;
   const configuredHostnames = [...embeddedWispAllowedOrigins, process.env.NYX_PUBLIC_ORIGIN, ...tutsiHostnames]
     .map(value => normalizeNyxCustomHostname(value))
     .filter(Boolean);

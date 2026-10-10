@@ -11,6 +11,9 @@ assert.deepEqual(await Promise.all([
  run('drop.ridgewoodstem.org','/api/account/profile','drop-owner'),
  run('drop.ridgewoodstem.org','/api/drop-ai','drop-owner')
 ]),['drop-owner','','','','','drop-owner']);
+assert.equal(await run('drop.altarworship.org.uk','/api/owner-dashboard','drop-owner'),'drop-owner');
+assert.equal(await run('drop.altarworship.org.uk','/api/owner-dashboard','member'),'');
+assert.equal(await run('altarworship.org.uk','/api/owner-dashboard','drop-owner'),'');
 assert.equal(scope.uid(),'');
 process.env.DROP_OWNER_UID='drop-owner';
 assert(hasFullAiCatalog({uid:'drop-owner',app:'drop'}));

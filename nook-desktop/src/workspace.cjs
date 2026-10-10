@@ -47,13 +47,17 @@ class Workspace {
     return this.db.prepare("SELECT e.body FROM events e JOIN session_tasks s ON e.task=s.task WHERE s.session=? AND e.kind='message' ORDER BY e.id DESC LIMIT 80").all(String(id)).reverse().map(row => JSON.parse(row.body));
   }
   history(id) {
-    const entries = this.messages(id).slice(-12);
-    let remaining = 40000;
-    return entries.reverse().map(item => {
-      const content = String(item.text).slice(0, Math.min(8000, remaining));
-      remaining -= content.length;
-      return {role: item.role === 'user' ? 'user' : 'assistant', content};
-    }).filter(item => item.content).reverse();
+    const rows=this.db.prepare("SELECT e.kind,e.body FROM events e JOIN session_tasks s ON e.task=s.task WHERE s.session=? AND e.kind IN ('message','result') ORDER BY e.id DESC LIMIT 32").all(String(id));
+    const entries=[];let remaining=40000;
+    for(const row of rows){
+      const item=JSON.parse(row.body);
+      const content=row.kind==='result'?'UNTRUSTED PREVIOUS TOOL OBSERVATION: '+require('./observation.cjs').observation({tool:item.tool,...item.result},2000,6000):String(item.text);
+      if(row.kind==='message'&&item.role==='assistant'&&/<invoke_tool>|"tool"\s*:/.test(content))continue;
+      const bounded=content.slice(0,8000);if(bounded.length>remaining)break;remaining-=bounded.length;
+      if(bounded)entries.push({role:row.kind==='message'&&item.role==='assistant'?'assistant':'user',content:bounded});
+      if(entries.length>=14||remaining<=0)break;
+    }
+    return entries.reverse();
   }
   clear() { this.db.exec('DELETE FROM workspace_items; DELETE FROM memory_context; DELETE FROM sessions; DELETE FROM session_tasks;'); }
 }

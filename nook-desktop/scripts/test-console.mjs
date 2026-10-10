@@ -6,7 +6,8 @@ import assert from 'node:assert/strict';
 const require=createRequire(import.meta.url),{_electron}=require('../../node_modules/playwright-core');
 const folder=path.resolve(import.meta.dirname,'..'),data=mkdtempSync(path.join(tmpdir(),'nook-console-'));
 const env={...process.env,NOOK_TEST_DATA:data};delete env.ELECTRON_RUN_AS_NODE;
-const app=await _electron.launch({executablePath:require('electron'),args:[folder],env});
+const installed=process.env.NOOK_INSTALLED_EXE;
+const app=await _electron.launch({executablePath:installed||require('electron'),args:installed?['--user-data-dir='+data]:[folder],env});
 try {
   const page=await app.firstWindow(),errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.locator('#accountSetup').waitFor();

@@ -81,6 +81,14 @@ class Workspace {
     if (checked.hash !== receipt.after) throw Error('Saved file verification failed. Inspect the file and its backup.');
     return {changed: true, id, path: relative, hash: checked.hash, verified: true};
   }
+  edit(relative,oldText,newText,expectedHash) {
+    if(typeof oldText!=='string'||!oldText||typeof newText!=='string')throw Error('Provide nonempty oldText and text for its replacement.');
+    const previous=this.read(relative);
+    if(previous.hash!==expectedHash)throw Error('The file changed. Read it again before editing.');
+    const first=previous.content.indexOf(oldText);
+    if(first<0||previous.content.indexOf(oldText,first+oldText.length)>=0)throw Error('The text must match exactly once. Read the file and include more surrounding text.');
+    return this.write(relative,previous.content.slice(0,first)+newText+previous.content.slice(first+oldText.length),expectedHash);
+  }
   undo(id) {
     if (!/^[a-f0-9-]{36}$/.test(id)) throw Error('Invalid change ID.');
     const receiptPath = path.join(this.backup, id + '.json');

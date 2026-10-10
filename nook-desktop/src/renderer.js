@@ -69,7 +69,7 @@ window.nook.subscribe(event => {
   if (event.type === 'error') error(event.body.message);
   if(event.type === 'connection-progress')$('githubProgress').textContent=($('githubProgress').textContent+event.body.text).slice(-6000);
   if(event.type === 'project-progress')$('projectTestStatus').textContent=event.body.text;
-  if (['tool', 'result', 'approval'].includes(event.type)) { const row = document.createElement('article'), label = document.createElement('strong'), content = document.createElement('pre'); label.textContent = event.body.tool || event.type; content.textContent = JSON.stringify(event.body, null, 2); row.append(label, content); $('activity').append(row); $('activityCount').textContent = '(' + (++activityCount) + ')'; }
+  if (['tool', 'result', 'approval', 'recovery'].includes(event.type)) { const row = document.createElement('article'), label = document.createElement('strong'), content = document.createElement('pre'); label.textContent = event.body.tool || event.type; content.textContent = JSON.stringify(event.body, null, 2); row.append(label, content); $('activity').append(row); $('activityCount').textContent = '(' + (++activityCount) + ')'; }
   if (event.type === 'pause-requested') $('state').textContent = 'Pausing after current step';
   if (event.type === 'stopped') $('state').textContent = 'Stop requested';
 });

@@ -25,11 +25,12 @@ class Provider {
     return data;
   }
   async models() { const data = await this.request('/api/v1/models'); if (!Array.isArray(data.models)) throw Error('Invalid model catalog.'); this.catalog = data.models.map(model => typeof model === 'string' ? {id: model, name: model} : model).filter(model => typeof model.id === 'string'); return this.catalog; }
-  async complete(model, messages, signal) {
+  async complete(model, messages, signal, {maxTokens=8192}={}) {
     const selected = this.catalog?.find(item => item.id === model);
-    const data = await this.request('/api/v1/ai', {model, messages, max_tokens: 1600, stream: false, ...(selected?.reasoning ? {reasoning: {effort: 'low'}} : {})}, signal);
+    const data = await this.request('/api/v1/ai', {model, messages, max_tokens: Math.max(1024,Math.min(16384,Number.isSafeInteger(maxTokens)?maxTokens:8192)), stream: false, ...(selected?.reasoning ? {reasoning: {effort: 'low'}} : {})}, signal);
     const choice = data.choices?.[0];
-    const text = choice?.message?.content;
+    const content=choice?.message?.content;
+    const text=typeof content==='string'?content:Array.isArray(content)?content.filter(item=>item?.type==='text'&&typeof item.text==='string').map(item=>item.text).join(''):choice?.finish_reason==='length'?'':null;
     if (typeof text !== 'string') throw Error('Choose a model that supports text responses.');
     const reasoning = (Array.isArray(choice.message.reasoning_details) ? choice.message.reasoning_details : []).slice(0,20).filter(item => item?.type === 'reasoning.summary' && typeof item.summary === 'string').map(item => item.summary).join('').slice(0,2400);
     return {text, reasoning, model: typeof data.model === 'string' ? data.model.slice(0,200) : model, finishReason: choice.finish_reason, usage: data.usage};

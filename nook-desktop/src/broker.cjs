@@ -17,7 +17,7 @@ class Broker {
   revoke() { this.generation++; this.level = 0; this.expires = 0; }
   async run(tool, args, signal = new AbortController().signal) {
     const revision = this.generation;
-    const minimum = ['list', 'read', 'search'].includes(tool) ? 1 : ['write', 'mkdir', 'undo'].includes(tool) ? 2 : tool === 'elevate' ? 5 : ['browser', 'command', 'ui.inspect', 'ui.invoke', 'ui.setValue'].includes(tool) ? 3 : 99;
+    const minimum = ['list', 'read', 'search'].includes(tool) ? 1 : ['write', 'edit', 'mkdir', 'undo'].includes(tool) ? 2 : tool === 'elevate' ? 5 : ['browser', 'command', 'ui.inspect', 'ui.invoke', 'ui.setValue'].includes(tool) ? 3 : 99;
     const check = () => {
       if (signal.aborted || revision !== this.generation) throw denied('Stopped or permissions changed.');
       if (this.status().level < minimum || !this.workspace) throw denied('This tool is outside the current local permission grant.');
@@ -38,13 +38,25 @@ class Broker {
       return result;
     }
     if (tool === 'list') return this.workspace.list(args.path || '');
-    if (tool === 'read') return this.workspace.read(args.path);
+    if (tool === 'read') {
+      const result=this.workspace.read(args.path);
+      if(args.offset===undefined&&args.limit===undefined)return result;
+      const offset=args.offset??0,limit=args.limit??12000;
+      if(!Number.isSafeInteger(offset)||offset<0||!Number.isSafeInteger(limit)||limit<1||limit>16000)throw Error('Use a nonnegative character offset and a limit between 1 and 16000.');
+      return {...result,content:result.content.slice(offset,offset+limit),offset,totalCharacters:result.content.length,truncated:offset>0||offset+limit<result.content.length};
+    }
     if (tool === 'search') return this.workspace.search(args.query);
     if (tool === 'write') {
       this.workspace.resolve(args.path, true);
       if (typeof args.content !== 'string') throw Error('Text content is required.');
       if (this.level < 4) await confirm('Save this file?', `${args.path}\n\n${args.content}`);
       check(); return this.workspace.write(args.path, args.content, args.expectedHash);
+    }
+    if(tool==='edit') {
+      this.workspace.resolve(args.path);
+      if(typeof args.oldText!=='string'||typeof args.newText!=='string')throw Error('Replacement text is required.');
+      if(this.level<4)await confirm('Apply this file edit?',args.path+'\n\nReplace:\n'+args.oldText+'\n\nWith:\n'+args.newText);
+      check();return this.workspace.edit(args.path,args.oldText,args.newText,args.expectedHash);
     }
     if (tool === 'mkdir') { this.workspace.resolve(args.path, true); if (this.level < 4) await confirm('Create folder?', args.path); check(); return this.workspace.mkdir(args.path); }
     if (tool === 'undo') { await confirm('Restore a previous file version?', `Change ${args.id}. Newer edits will not be overwritten.`); return this.workspace.undo(args.id); }

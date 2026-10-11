@@ -197,8 +197,8 @@ function genresHtml() {
       };
       // update buttons state
       for (let i = 0; i < btns.length; ++i) {
-        let g = eval(btns[i].getAttribute("genre"));
-        let l = eval(btns[i].getAttribute("lang"));
+        let g = (btns[i].getAttribute("genre")?.split("+").reduce((sum,part)=>sum+Number(part),0) ?? null);
+        let l = (btns[i].getAttribute("lang")?.split("+").reduce((sum,part)=>sum+Number(part),0) ?? null);
         if (g == genre || l == lang) {
           btns[i].classList.add("active");
         } else {
@@ -211,8 +211,8 @@ function genresHtml() {
     search(curgenre, curlang);
     for (let i = 0; i < btns.length; ++i) {
       btns[i].onclick = function () {
-        let g = eval(btns[i].getAttribute("genre"));
-        let l = eval(btns[i].getAttribute("lang"));
+        let g = (btns[i].getAttribute("genre")?.split("+").reduce((sum,part)=>sum+Number(part),0) ?? null);
+        let l = (btns[i].getAttribute("lang")?.split("+").reduce((sum,part)=>sum+Number(part),0) ?? null);
         if (g) curgenre = g;
         if (l) curlang = l;
         search(curgenre, curlang);

@@ -1369,7 +1369,7 @@ function Mt(t, e, i, s, h, n, a) {
     t.fillRect(s, h, n, a)
 }
 function St(t, e, i, s, h, n, a) {
-    var r = eval('"\\u' + h + '"');
+    var r = JSON.parse('"\\u' + h + '"');
     t.globalAlpha = e,
     t.font = i,
     t.fillStyle = s,

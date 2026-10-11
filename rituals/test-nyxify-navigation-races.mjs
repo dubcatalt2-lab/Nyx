@@ -49,9 +49,9 @@ try{
   assert.equal(await page.getByText('Home chart',{exact:true}).first().isVisible(),true,'Stale artist response must not replace Home');
   await page.locator('#detailView .alink').first().click();
   for(let i=0;i<100&&!pending.has('artist');i++)await new Promise(resolve=>setTimeout(resolve,20));
-  await submit('after-artist');await finish('after-artist',{data:[track('Search after artist')]});
+  await submit('after-artist');await finish('after-artist',{data:[track('Latest artist result')]});
   await finish('artist',{error:'Delayed artist failure'},503);
-  assert.equal(await page.getByText('Search after artist',{exact:true}).first().isVisible(),true,'Stale detail error must not replace a search');
+  assert.equal(await page.getByText('Latest artist result',{exact:true}).first().isVisible(),true,'Stale detail error must not replace a search');
   const heart=page.locator('#detailView .like-btn').first();
   await heart.focus();await page.keyboard.press('Space');
   assert.equal(await heart.getAttribute('aria-pressed'),'true','Space on Like must activate Like, not its parent song row');

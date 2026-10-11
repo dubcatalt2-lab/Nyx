@@ -273,12 +273,10 @@
               <div class="setting-row">
                 <div>
                   <label for="transport">Connection method</label>
-                  <p>Try another if a website has trouble loading.</p>
+                  <p>External resources use the configured service.</p>
                 </div>
                 <select id="transport">
-                  <option value="epoxy">Atlas</option>
-                  <option value="libcurl">Textbook</option>
-                  <option value="wisp">Relay compatibility</option>
+                  <option value="document">Document service</option>
                 </select>
               </div>
               <div class="setting-row"><div><label>Custom domains</label><p>Connect a FreeDNS hostname with automatic HTTPS.</p></div><a class="button" href="/tutsi/connect-domain" target="_blank" rel="noopener">Connect domain</a></div>
@@ -293,13 +291,13 @@
                 <p id="filter-address-result" role="status"></p><button id="use-address-filter" type="button" hidden>Use this filter</button>
               </details>
               <div class="relay-setting">
-                <label for="relay">Connection relay</label>
+                <label for="relay">Document service</label>
                 <p>Leave blank to use the default server.</p>
                 <div class="relay-input">
                   <input
                     id="relay"
                     type="url"
-                    placeholder="wss://your-relay.example/resources/live/"
+                    placeholder="https://documents.example.org"
                     autocomplete="off"
                   /><button
                     class="secondary"

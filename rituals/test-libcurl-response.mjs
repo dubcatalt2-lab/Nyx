@@ -5,7 +5,7 @@ import {createRequire} from 'node:module';
 import vm from 'node:vm';
 import {parse} from 'acorn';
 const {preserveTransferErrors,requestWithTransferRetry,bufferLimit}=await import(process.argv.includes('--built')
-  ? '../dist/assets/transports/libcurl-response.mjs' : '../assets/transports/libcurl-response.mjs');
+  ? '../dist/assets/transports/libcurl-response.mjs' : '../relics/transports/libcurl-response.mjs');
 
 // Use the installed upstream stream implementation, including its late-error
 // behavior, rather than reproducing that behavior in a mock implementation.

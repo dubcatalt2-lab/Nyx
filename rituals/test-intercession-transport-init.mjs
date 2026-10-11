@@ -49,7 +49,7 @@ try{
 
   const retry=make(async()=>{},x=>x,{text:()=> 'libcurlRaw'},()=> 'wss://fixture.test/wisp/',()=>0);
   const failed=state(),attempt=retry();await failed.started;failed.reject(new Error('fixture init failed'));
-  await assert.rejects(attempt,/No configured Wisp relay/);
+  await assert.rejects(attempt,/No configured connection relay/);
   const next=state(),recovered=retry();await next.started;next.resolve();assert.equal((await recovered).ready,true);
   assert.equal(next.created,1,'Failure must release the pending initializer for a later retry');
 

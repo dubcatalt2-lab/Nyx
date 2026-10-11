@@ -27,7 +27,7 @@ try {
     if (path === '/api/founder-profile/auth-config') payload = {enabled: true, projectId: 'fixture', apiKey: 'test'};
     if (path === '/api/chat/bootstrap') payload = {me, members: [me], channels: [{id: 'rules', name: 'rules'}, {id: 'announcements', name: 'announcements'}, {id: 'general', name: 'general', description: 'Community chat'}], conversations: [], voice: {channels: [], participants: []}};
     if (path === '/api/chat/messages') payload = {messages: Array.from({length: 12}, (_, i) => ({id: String(i).padStart(40, 'a'), author: i % 3 ? peer : me, text: ['Anyone playing tonight?', 'I will be around after six.', 'See you there.'][i % 3], createdAtMs: Date.now() - (12 - i) * 360000}))};
-    if (path === '/api/profiles/' + peer.uid) payload = {uid: peer.uid, profile: {...peer, bio: 'Design, music, and late nights.\n<script>Text stays text.</script>', bannerUrl: new URL('/assets/backgrounds/1014077.jpg', base).href}, online: true, role: 'owner', roleLabel: 'Owner', createdAt: '2026-01-01T00:00:00.000Z'};
+    if (path === '/api/profiles/' + peer.uid) payload = {uid: peer.uid, profile: {...peer, bio: 'Design, art, and late nights.\n<script>Text stays text.</script>', bannerUrl: new URL('/assets/backgrounds/1014077.jpg', base).href}, online: true, role: 'owner', roleLabel: 'Owner', createdAt: '2026-01-01T00:00:00.000Z'};
     if (path === '/api/chat/relationships') payload = {relationships: relations};
     if (path.startsWith('/api/chat/relationships/')) {
       const action = route.request().postDataJSON().action; actions.push(action);
@@ -50,7 +50,7 @@ try {
   await page.getByRole('button', {name: 'River', exact: true}).first().click();
   const profile = page.locator('[data-member-dialog]');
   await profile.locator('.member-bio').waitFor();
-  assert.match(await profile.innerText(), /Design, music/);
+  assert.match(await profile.innerText(), /Design, art/);
   await profile.locator('.member-banner-image').evaluate(image => image.decode());
   assert(await profile.locator('.member-banner-image').evaluate(image => image.naturalWidth > 0));
   assert.equal(await profile.locator('script').count(), 0);

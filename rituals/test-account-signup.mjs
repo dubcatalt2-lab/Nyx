@@ -67,8 +67,8 @@ try{
     }
     localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');
     if(sessionStorage.getItem('nyx.test.releaseNotesFresh')!=='true'){
-      localStorage.setItem('nyx.releaseNotes.2026-08-31-new-nyx.device','2026-08-31-new-nyx');
-      localStorage.setItem('nyx.releaseNotes.2026-08-31-new-nyx.test-user-1234','2026-08-31-new-nyx');
+      localStorage.setItem('nyx.releaseNotes.2026-10-02-nyx-1.6.8.device','2026-10-02-nyx-1.6.8');
+      localStorage.setItem('nyx.releaseNotes.2026-10-02-nyx-1.6.8.test-user-1234','2026-10-02-nyx-1.6.8');
     }
     globalThis.__nyxMockSignOuts=0;
     const removeStartup=()=>{

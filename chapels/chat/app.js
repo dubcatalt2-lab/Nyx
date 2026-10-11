@@ -622,7 +622,52 @@
     if(commandName==='magicball'){need('a question');const answers=['Yes.','No.','Probably.','Probably not.','Ask again later.','Signs point to yes.','Very doubtful.','Without a doubt.'];return {text:`🎱 ${answers[Math.floor(Math.random()*answers.length)]}`}}
     if(commandName==='rps'){const choice=args.toLowerCase();if(!['rock','paper','scissors'].includes(choice))throw new Error('Choose rock, paper, or scissors.');const nyx=['rock','paper','scissors'][Math.floor(Math.random()*3)];const outcome=choice===nyx?'Tie.':(choice==='rock'&&nyx==='scissors')||(choice==='paper'&&nyx==='rock')||(choice==='scissors'&&nyx==='paper')?'You win!':'Nyx wins.';return {text:`You chose ${choice}; Nyx chose ${nyx}. ${outcome}`}}
     if(commandName==='random'){const match=args.match(/^(-?\d+)\s+(-?\d+)$/);if(!match)throw new Error('Use /random min max.');let min=Number(match[1]),max=Number(match[2]);if(min>max)[min,max]=[max,min];if(max-min>1000000000)throw new Error('Choose a smaller numeric range.');return {text:String(min+Math.floor(Math.random()*(max-min+1)))}}
-    if(commandName==='calc'){const expression=need('an expression');if(expression.length>80||!/^[\d\s+\-*/%.()]+$/.test(expression))throw new Error('Use only numbers, parentheses, decimals, +, -, *, /, and %.');let value;try{value=Function(`"use strict";return (${expression})`)()}catch{throw new Error('That calculation is not valid.')}if(typeof value!=='number'||!Number.isFinite(value))throw new Error('That calculation has no finite result.');return {text:`${expression} = ${Number(value.toPrecision(12))}`}}
+    if(commandName==='calc'){const expression=need('an expression');if(expression.length>80||!/^[\d\s+\-*/%.()]+$/.test(expression))throw new Error('Use only numbers, parentheses, decimals, +, -, *, /, and %.');let value;try{value=(function arithmetic(input,x=0){
+  const text=String(input);
+  if(text.length>512)throw new Error('Expression is too long.');
+  const parts=[];
+  let cursor=0;
+  while(cursor<text.length){
+    if(/\s/.test(text[cursor])){cursor++;continue;}
+    const number=text.slice(cursor).match(/^(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/);
+    const name=text.slice(cursor).match(/^[a-zA-Z]+|^π/);
+    if(number){parts.push({kind:'number',value:Number(number[0])});cursor+=number[0].length;}
+    else if(name){parts.push({kind:'name',value:name[0].toLowerCase()});cursor+=name[0].length;}
+    else if('+-*/%^(),'.includes(text[cursor])){const op=text.slice(cursor,cursor+2)==='**'?'^':text[cursor];parts.push({kind:'operator',value:op});cursor+=op==='^'&&text[cursor]==='*'?2:1;}
+    else throw new Error('Unsupported symbol in expression.');
+  }
+  const functions={sqrt:Math.sqrt,sin:Math.sin,cos:Math.cos,tan:Math.tan,log:Math.log10,ln:Math.log,abs:Math.abs};
+  let index=0;
+  const value=()=>parts[index]?.value;
+  const primary=()=>{
+    const token=parts[index++];
+    if(!token)throw new Error('Expected a number.');
+    if(token.kind==='number')return token.value;
+    if(token.value==='('){const n=expression();if(value()!==')')throw new Error('Missing closing parenthesis.');index++;return n;}
+    if(token.kind==='name'){
+      if(['pi','π','e','x'].includes(token.value))return token.value==='x'?Number(x):token.value==='e'?Math.E:Math.PI;
+      if(!Object.hasOwn(functions,token.value)||value()!=='(')throw new Error('Unknown function.');
+      index++;const n=expression();if(value()!==')')throw new Error('Missing closing parenthesis.');index++;return functions[token.value](n);
+    }
+    throw new Error('Expected a number.');
+  };
+  const power=()=>{let n=primary();if(value()==='^'){index++;n=n**unary();}return n;};
+  const unary=()=>{if(value()==='+'||value()==='-'){const sign=value();index++;return(sign==='-'?-1:1)*unary();}return power();};
+  const product=()=>{
+    let n=unary();
+    while(index<parts.length){
+      const explicit=['*','/','%'].includes(value()),implicit=parts[index]?.kind==='name'||value()==='(';
+      if(!explicit&&!implicit)break;
+      const op=explicit?parts[index++].value:'*',right=unary();
+      n=op==='*'?n*right:op==='/'?n/right:n%right;
+    }
+    return n;
+  };
+  const expression=()=>{let n=product();while(value()==='+'||value()==='-'){const op=parts[index++].value,right=product();n=op==='+'?n+right:n-right;}return n;};
+  const result=expression();
+  if(index!==parts.length)throw new Error('Unexpected expression input.');
+  return result;
+})(expression)}catch{throw new Error('That calculation is not valid.')}if(typeof value!=='number'||!Number.isFinite(value))throw new Error('That calculation has no finite result.');return {text:`${expression} = ${Number(value.toPrecision(12))}`}}
     if(commandName==='timer'){const duration=commandDuration(need('a duration'));commandSetTimer(duration,`Your ${commandTimerLabel(duration)} timer is done.`);return {handled:true}}
     if(commandName==='remind'){const match=args.match(/^(\S+)\s+([\s\S]+)$/);if(!match)throw new Error('Use /remind 10m your reminder.');const duration=commandDuration(match[1]);const reminder=commandTextLimit(match[2],'Reminder');commandSetTimer(duration,`Reminder: ${reminder}`);return {handled:true}}
     if(commandName==='date')return {text:new Date().toLocaleDateString([], {dateStyle:'full'})};

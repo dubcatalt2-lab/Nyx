@@ -31,8 +31,6 @@ User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /service/
-Disallow: /scramjet/
-Disallow: /wisp/
 Disallow: /apps/chat/
 Disallow: /student-resources.html
 Disallow: /tutsi

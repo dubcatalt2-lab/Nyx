@@ -4,6 +4,7 @@ import {buildPublicModules} from './build-public-modules.mjs';
 import {buildFrontendAssets} from './build-frontend-assets.mjs';
 import {opaqueIdentifiers,scrambleWorkspaceOutput,shuffleDeclarations} from './build-workspace-scramble.mjs';
 import {buildPublisherPackage} from './build-publisher-package.mjs';
+import {buildNativeValues} from './build-native-values.mjs';
 import {formatPublishedHtml} from './format-published-html.mjs';
 import { spawn, spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
@@ -18,7 +19,6 @@ import { minify as minifyHtml } from "html-minifier-terser";
 import { minify } from "terser";
 import {learningPage} from '../ministries/domain-pages/pages.mjs';
 import {buildOutputPath} from '../scripture/build-output.mjs';
-import { buildProxyAssets } from "./build-intercession-assets.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
@@ -31,14 +31,13 @@ const rootFiles = new Set([
   "nyx-singlefile.html",
   "app.webmanifest",
   "robots.txt",
-  "tutsi-runtime.sw.js",
+
   "sitemap.xml",
   "script.js",
   "startup.js",
   "startup-studyhub.html",
   "student-resources.html",
-  "styles.css",
-  "scramjet.sw.js"
+  "styles.css"
 ]);
 const staticPrefixes = ["apps/", "assets/", "css/", "js/"];
 const blockedExtensions = /\.(?:7z|avi|mkv|mov|mp4|rar|webm|zip)$/i;
@@ -50,20 +49,7 @@ const remotelyHostedUgsGames = new Set([
   "minecraft/eaglercraft.1.5.2.html"
 ]);
 
-function normalizeWispUrl(value) {
-  const raw = String(value || "").trim();
-  if (!raw) return "";
-  const url = new URL(raw);
-  if (url.protocol === "https:") url.protocol = "wss:";
-  if (url.protocol === "http:") url.protocol = "ws:";
-  if (!new Set(["ws:", "wss:"]).has(url.protocol)) throw new Error("WISP_URL must use ws:// or wss://");
-  if (!url.pathname || url.pathname === "/") url.pathname = "/wisp/";
-  if (!url.pathname.endsWith("/")) url.pathname += "/";
-  url.username = "";
-  url.password = "";
-  url.hash = "";
-  return url.href;
-}
+
 
 function repositoryFiles() {
   const result = spawnSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], {
@@ -99,22 +85,7 @@ async function copyRepositoryStaticFiles() {
   }
 }
 
-async function copyProxyRuntimes() {
-  const { baremuxPath } = require("@mercuryworkshop/bare-mux/node");
-  const { scramjetPath } = require("@mercuryworkshop/scramjet/path");
-  const controller = dirname(require.resolve("@mercuryworkshop/scramjet-controller"));
-  const epoxy = join(dirname(require.resolve("@mercuryworkshop/epoxy-transport")), "..", "dist");
-  const libcurl = dirname(require.resolve("@mercuryworkshop/libcurl-transport"));
-  for (const [source, destination] of [
-    [baremuxPath, "baremux"],
-    [scramjetPath, "scramjet"],
-    [controller, "controller"],
-    [epoxy, "epoxy"],
-    [libcurl, "libcurl"]
-  ]) {
-    await cp(sourceFile(source), join(output, destination), { recursive: true, force: true });
-  }
-}
+
 
 async function copyEruda() {
   const source = require.resolve("eruda");
@@ -145,7 +116,7 @@ async function waitForLocalServer(child) {
   });
 }
 
-async function writePatchedRuntimes(wispUrl) {
+async function writeRuntimeConfig() {
   // Runtime generation needs Express routes, not a second relay worker.
   // Bind only to loopback and keep an existing development server running.
   const runtimeServer = `
@@ -164,19 +135,13 @@ async function writePatchedRuntimes(wispUrl) {
   `;
   const child = spawn(process.execPath, ["--input-type=module", "--eval", runtimeServer], {
     cwd: root,
-    env: { ...process.env, PORT: "0", WISP_URL: wispUrl },
+    env: { ...process.env, PORT: "0" },
     stdio: ["ignore", "pipe", "pipe", "ipc"]
   });
   try {
     const port = await waitForLocalServer(child);
     const routes = new Map([
-      ["/runtime-config.js", "runtime-config.js"],
-      ["/baremux/index.mjs", "baremux/index.mjs"],
-      ["/scramjet/scramjet.js", "scramjet/scramjet.js"],
-      ["/controller/controller.api.js", "controller/controller.api.js"],
-      ["/controller/controller.inject.js", "controller/controller.inject.js"],
-      ["/controller/controller.sw.js", "controller/controller.sw.js"],
-      ["/nyx-scramjet-runtime-guard.js", "nyx-scramjet-runtime-guard.js"]
+      ["/runtime-config.js", "runtime-config.js"]
     ]);
     for (const [route, destination] of routes) {
       const response = await fetch(`http://127.0.0.1:${port}${route}`, { signal: AbortSignal.timeout(15_000) });
@@ -257,51 +222,10 @@ function runtimeFormatOptions() {
   };
 }
 
-async function minifyEmbeddedScramjetGuards(source) {
-  const names = new Set([
-    "studyjetSpotifyChromeOsGuardSource",
-    "studyjetMinimalRuntimeGuardSource",
-    "studyjetHelperRuntimeGuardSource"
-  ]);
-  const program = parse(source, { ecmaVersion: "latest", sourceType: "script" });
-  const replacements = [];
-  const visit = async node => {
-    if (!node || typeof node !== "object") return;
-    if (
-      node.type === "VariableDeclarator" &&
-      names.has(node.id?.name) &&
-      node.init?.type === "TemplateLiteral" &&
-      node.init.expressions.length === 0
-    ) {
-      const result = await minify(node.init.quasis[0].value.cooked, {
-        compress: runtimeCompressOptions(),
-        mangle: runtimeMangleOptions(false),
-        format: runtimeFormatOptions()
-      });
-      if (!result.code) throw new Error(`Could not minify embedded guard ${node.id.name}`);
-      replacements.push({ start: node.init.start, end: node.init.end, code: JSON.stringify(result.code) });
-      names.delete(node.id.name);
-      return;
-    }
-    for (const value of Object.values(node)) {
-      if (Array.isArray(value)) {
-        for (const child of value) await visit(child);
-      } else if (value && typeof value === "object" && typeof value.type === "string") {
-        await visit(value);
-      }
-    }
-  };
-  await visit(program);
-  if (names.size) throw new Error(`Could not locate embedded Scramjet guards: ${[...names].join(", ")}`);
-  let transformed = source;
-  replacements.sort((a, b) => b.start - a.start).forEach(replacement => {
-    transformed = `${transformed.slice(0, replacement.start)}${replacement.code}${transformed.slice(replacement.end)}`;
-  });
-  return transformed;
-}
+
 
 async function minifyFirstPartyWorkspaceRuntimes() {
-  const generatedRuntimes = ["runtime-config.js", "nyx-scramjet-runtime-guard.js"];
+  const generatedRuntimes = ["runtime-config.js"];
   const trackedRuntimes = repositoryFiles().filter(relative => (
     /\.(js|mjs)$/.test(relative) &&
     isStaticSource(relative) &&
@@ -323,7 +247,6 @@ async function minifyFirstPartyWorkspaceRuntimes() {
       continue;
     }
     sourceBytes += Buffer.byteLength(source);
-    if (target.path === "script.js") source = await minifyEmbeddedScramjetGuards(source);
     const program = parse(source, { ecmaVersion: "latest", sourceType: "module", allowReturnOutsideFunction: true });
     const isModule = target.path.endsWith(".mjs") || program.body.some(node => /^(Import|Export)/.test(node.type));
     const result = await minify(shuffleDeclarations(source,target.path), {
@@ -427,7 +350,9 @@ async function versionStylesheets() {
 }
 
 async function main() {
-  const wispUrl = normalizeWispUrl(process.env.WISP_URL);
+  const documents=spawnSync(process.execPath,[join(root,'connection/build.mjs')],{cwd:root,stdio:'inherit'});
+  if(documents.status!==0)throw new Error('Document application build failed.');
+
   if (output !== join(root, 'dist') && existsSync(output)) throw new Error('Staged build output already exists; use a new release directory.');
   await rm(output, { recursive: true, force: true });
   await mkdir(output, { recursive: true });
@@ -443,25 +368,28 @@ async function main() {
   await buildGameStorage(root,output);
   await copyKatex();
   await copyRemoteViewer();
-  await copyProxyRuntimes();
-  await writePatchedRuntimes(wispUrl);
+
+  await writeRuntimeConfig();
   await removeUnavailableUgsEntries();
   await minifyFirstPartyWorkspaceRuntimes();
   await versionStylesheets();
   await minifyFirstPartyMarkupAndStyles();
-  await buildProxyAssets(output);
+
   const modules = await buildPublicModules(output);
   await buildFrontendAssets(output,repositoryFiles().filter(isStaticSource).map(file => (modules['/'+file] || '/'+file).slice(1)),learningPage());
   await writeNotFoundPage();
+  await buildNativeValues(output);
   await buildPublisherPackage(root, output);
   await scrambleWorkspaceOutput(output);
   const scatteredAudit=spawnSync(process.execPath,[join(here,'test-scattered-build.mjs'),output],{cwd:root,stdio:'inherit'});
   if(scatteredAudit.status!==0)throw new Error('Scattered runtime import validation failed.');
   const retiredAudit = spawnSync(process.execPath, [join(here, 'check-retired-engine.mjs'), output], {cwd: root, stdio: 'inherit'});
   if (retiredAudit.status !== 0) throw new Error('Retired engine found in release output.');
+  const releaseAudit = spawnSync(process.execPath, [join(here, 'audit-release.mjs'), output], {cwd: root, stdio: 'inherit'});
+  if (releaseAudit.status !== 0) throw new Error('Release signature and native-call audit failed. Output is not ready for deployment.');
   if (output !== join(root, 'dist')) await writeFile(join(dirname(output), 'ready.json'), JSON.stringify({format:'nyx-static-release', version:1, builtAt:new Date().toISOString()}));
   console.log(`VPS build ready in ${output}`);
-  console.log(`Wisp endpoint: ${wispUrl}`);
+
 }
 
 await main();

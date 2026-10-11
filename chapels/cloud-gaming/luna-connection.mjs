@@ -6,10 +6,7 @@ function check(frame, signal) {
 
 function settings() {
   const read = key => { try { return localStorage.getItem(key) || ''; } catch { return ''; } };
-  const transport = read('nyx.transport').replace(/^"|"$/g, '');
   return {
-    transport: !transport || transport === 'auto' || /^libcurl/i.test(transport) ? 'libcurl' : transport === 'wisp' ? 'wisp' : 'epoxy',
-    httpBridge: read('nyx.httpBridge') !== 'false', relay: read('nyx.wispUrl'), autoRelay: true,
     adBlock: read('nyx.popupProtection') !== 'false', popupBlock: true, downloadBlock: true
   };
 }

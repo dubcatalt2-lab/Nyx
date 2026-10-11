@@ -22,8 +22,9 @@ const context=vm.createContext({freeModelHealth:{failure:()=>null},aiCatalogPric
  nyxAiProviderFetch:async(_provider,_url,options)=>{calls++;payload=JSON.parse(options.body);const next=queue.length?queue.shift():answer;return next instanceof Response?next:Response.json(next);}
 });
 vm.runInContext(['nyxAiErrorBody','nyxAiProviderError','nyxAiApplySupportedParameters','nyxAiCompletionText','nyxAiLooksCorrupted'].map(declaration).join('\n'),context);
-const start=source.indexOf('app.post("/api/nyx-ai",'),end=source.indexOf('\n// Nyx-issued API keys',start);
-vm.runInContext(source.slice(start,end),context);
+const route=ast.body.find(node=>node.type==='ExpressionStatement'&&node.expression?.callee?.object?.name==='app'&&node.expression.callee.property?.name==='post'&&node.expression.arguments[0]?.value==='/api/nyx-ai');
+assert(route);
+vm.runInContext(source.slice(route.start,route.end),context);
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
 const send=body=>fetch(`http://127.0.0.1:${server.address().port}/api/nyx-ai`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({model:'fixture-model',message:'Edit heading',messages:[{role:'user',content:'Return JSON edits for Old'}],stream:false,...body})});
 try{

@@ -23,7 +23,7 @@ export function watchWebsiteFrame(frame,{previousDocument=null,onReady,onError,r
    const href=frame.contentWindow?.location.href||'';
    if(doc&&doc!==previousDocument&&href!=='about:blank'){
     const text=(doc.body?.innerText||'').trim();
-    const engineError=/^(?:Internal Service Worker Error:|Error (?:processing|fetching) your request|Reconnecting (?:Scramjet|Studyjet))/i.test(text);
+    const engineError=/^(?:Internal Service Worker Error:|Error (?:processing|fetching) your request|Document request failed)/i.test(text);
     if(engineError){void fail('The browsing connection was interrupted.');return;}
     const media=doc.body?.querySelector('img,svg,canvas,video,iframe,input,button');
     if((text||media)&&doc.readyState!=='loading'){stop();onReady();return;}

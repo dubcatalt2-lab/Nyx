@@ -1,0 +1,21 @@
+FROM node:24-bookworm-slim AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY connection ./connection
+COPY rituals/audit-release.mjs ./rituals/audit-release.mjs
+RUN npm ci --ignore-scripts
+RUN npm run build --workspace connection
+RUN npm prune --omit=dev --ignore-scripts
+
+FROM node:24-bookworm-slim
+WORKDIR /app
+ENV NODE_ENV=production
+ENV DOCUMENT_HOST=0.0.0.0
+ENV DOCUMENT_PORT=8080
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/connection ./connection
+COPY relay.js ./relay.js
+COPY package.json ./package.json
+USER node
+EXPOSE 8080
+CMD ["node", "relay.js"]

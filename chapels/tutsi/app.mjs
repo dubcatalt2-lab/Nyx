@@ -15,7 +15,8 @@ const defaults = {
   accent: "mauve",
   motion: false,
   engine: "duckduckgo",
-  transport: "libcurl",
+  transport: "document",
+  documentOrigin: "",
   relay: "",
   autoRelay: true,
   httpBridge: true,
@@ -31,8 +32,7 @@ try {
   saved = JSON.parse(localStorage.getItem("tutsi.settings.v1") || "{}");
 } catch {}
 let settings = { ...defaults, ...saved };
-// Accept preferences saved by earlier releases, including restored cloud data.
-settings.transport = String(settings.transport).replace(atob('bGliY3VybA=='), 'libcurl').replace('textlib', 'libcurl').replace(atob('ZXBveHk='), 'epoxy').replace('atlas', 'epoxy');
+settings.transport = "document";
 const palettes = {
   mocha: {
     base: "#1e1e2e",
@@ -307,7 +307,7 @@ function applySettings() {
   $("motion").checked = settings.motion;
   $("search-engine").value = settings.engine;
   $("transport").value = settings.transport;
-  $("relay").value = settings.relay;
+  $("relay").value = settings.documentOrigin;
   $("auto-relay").checked = settings.autoRelay;
   $("http-bridge").checked = settings.httpBridge !== false;
   for(const [id,key] of [['ad-block','adBlock'],['popup-block','popupBlock'],['download-block','downloadBlock']])$(id).checked=settings[key]!==false;
@@ -321,12 +321,9 @@ function applySettings() {
   frames.forEach(styleApp);
   try {
     localStorage.setItem("tutsi.settings.v1", JSON.stringify(settings));
-    localStorage.setItem(
-      "nyx.transport",
-      settings.transport === "libcurl" ? "libcurlRaw" : settings.transport,
-    );
-    if (settings.relay) localStorage.setItem("nyx.wispUrl", settings.relay);
-    else localStorage.removeItem("nyx.wispUrl");
+    localStorage.setItem("nyx.transport","document");
+    if(settings.documentOrigin)localStorage.setItem("nyx.documentOrigin",settings.documentOrigin);
+    else localStorage.removeItem("nyx.documentOrigin");
   } catch {
     toast("Your workspace could not save these settings.");
   }
@@ -375,19 +372,19 @@ $("relay").addEventListener("change", () => {
     if (value) {
       const url = new URL(value);
       if (
-        !["ws:", "wss:"].includes(url.protocol) ||
+        !["http:", "https:"].includes(url.protocol) ||
         url.username ||
         url.password ||
-        url.hash ||
-        (location.protocol === "https:" && url.protocol !== "wss:")
+        url.hash || url.search || url.pathname!=="/" || url.origin===location.origin || (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)&&url.hostname===location.hostname) ||
+        (location.protocol === "https:" && url.protocol !== "https:")
       )
         throw Error();
     }
-    settings.relay = value;
+    settings.documentOrigin = value;
     applySettings();
   } catch {
-    toast("Enter a valid secure relay address, such as wss://host/resources/live/.");
-    $("relay").value = settings.relay;
+    toast("Enter the secure origin of your separate document service.");
+    $("relay").value = settings.documentOrigin;
   }
 });
 $("reset-settings").onclick = () => {
@@ -433,7 +430,7 @@ window.nyxLaunchGameFrame=async(frame,url,{signal}={})=>{
   if(signal?.aborted||!frame.isConnected)return;
   const cancel=()=>closeWorkspace(frame);
   signal?.addEventListener('abort',cancel,{once:true});
-  try { await explore(target.href,settings,frame); if(signal?.aborted){closeWorkspace(frame);return;} return {managed:true,engine:'scramjet',url:target.href}; }
+  try { await explore(target.href,settings,frame); if(signal?.aborted){closeWorkspace(frame);return;} return {managed:true,engine:'document',url:target.href}; }
   catch(error){signal?.removeEventListener('abort',cancel);cancel();throw error;}
 };
 window.nyxLaunchMovieFrame=async(frame,url,{signal,recover=false}={})=>{

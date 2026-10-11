@@ -1,4 +1,4 @@
-name: Connection adapter
+name: Document connection and release audit
 on:
   push:
     branches: [main, agent/pirate-cove]
@@ -6,7 +6,24 @@ on:
 permissions:
   contents: read
 jobs:
-  network:
+  document-connection:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: connection/package-lock.json
+      - run: npm ci
+      - run: node rituals/test-dependency-purge.mjs
+      - run: npm ci --prefix connection
+      - run: npx playwright install --with-deps chromium
+      - run: node rituals/test-cached-folder-navigation.mjs
+      - run: npm --prefix connection run build
+      - run: npm run test:network
+      - run: node rituals/test-document-window.mjs
+  complete-release-audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,7 +32,7 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:network
-      - run: node rituals/audit-release.mjs relics/network
-      - run: node rituals/audit-release.mjs scripture/network
+      - run: node rituals/test-dependency-purge.mjs
+      - run: npm run build:vps
+      - run: npm run check:deploy
+      - run: npm run check:release-audit

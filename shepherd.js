@@ -53,7 +53,6 @@ import { createOpenRouterBalanceGuard, createOpenRouterOwnerStatus } from "./scr
 import { aiOutputImages } from "./scripture/ai-output-images.mjs";
 import { aiBudgetResponse } from "./scripture/ai-budget-response.mjs";
 import { aiConfigureChatWeb, aiResponseMetadata, aiWantsWeb } from './scripture/ai-web.mjs';
-import { installHttpWisp } from "./fellowship-gateway.mjs";
 import { createServer } from "node:http";
 import { BlockList, isIP } from "node:net";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
@@ -64,8 +63,6 @@ import { join, dirname, resolve, posix } from "node:path";
 import { createRequire } from "node:module";
 import { Readable } from "node:stream";
 import { spawn } from "node:child_process";
-import { startWispurr } from "./scripture/fellowship-relay.mjs";
-import { createServer as createSyncServer } from "./scripture/network/server.mjs";
 import { Server as SocketIOServer } from "socket.io";
 import { retiredLinkGenerator } from "./scripture/retired-link-generator.mjs";
 import { linkGeneratorHourlyQuota } from "./scripture/link-generator-quota.mjs";
@@ -83,11 +80,6 @@ import { createMetingBackend } from "./scripture/nyxify-meting.mjs";
 const __dirname = resolve(process.env.NYX_PROJECT_ROOT || process.cwd());
 const staticRoot = resolve(process.env.NYX_STATIC_ROOT || __dirname);
 const require = createRequire(join(__dirname, "package.json"));
-const { baremuxPath:bookmuxPath } = require("@mercuryworkshop/bare-mux/node");
-const { scramjetPath:studyjetPath } = require("@mercuryworkshop/scramjet/path");
-const studyjetControllerPath = dirname(require.resolve("@mercuryworkshop/scramjet-controller"));
-const epoxyPath = join(dirname(require.resolve("@mercuryworkshop/epoxy-transport")), "..", "dist");
-const libcurlPath = dirname(require.resolve("@mercuryworkshop/libcurl-transport"));
 const erudaPath = require.resolve("eruda");
 const hlsPath = require.resolve("hls.js/dist/hls.min.js");
 const katexPath = join(dirname(require.resolve("katex/package.json")), "dist");
@@ -129,27 +121,9 @@ installTutsiCrawlerControls(app);
 app.get(["/proxy-assets.json", "/frontend-assets.json"], (_req,res)=>res.status(404).end());
 const nyxifyMeting = createMetingBackend();
 
-function normalizePublicWispUrl(value) {
-  try {
-    const raw = String(value || "").trim();
-    if (!raw) return "";
-    const url = new URL(raw);
-    if (url.protocol === "https:") url.protocol = "wss:";
-    if (url.protocol === "http:") url.protocol = "ws:";
-    if (url.protocol !== "ws:" && url.protocol !== "wss:") return "";
-    if (!url.pathname || url.pathname === "/") url.pathname = "/wisp/";
-    if (!url.pathname.endsWith("/")) url.pathname += "/";
-    url.username = "";
-    url.password = "";
-    url.hash = "";
-    return url.href;
-  } catch {
-    return "";
-  }
-}
 
-const externalWispUrl = normalizePublicWispUrl(process.env.WISP_URL);
-const embeddedWispAllowedOrigins = [...new Set([
+
+const applicationAllowedOrigins = [...new Set([
   ...String(process.env.NYX_ALLOWED_ORIGINS || "").split(","),
   process.env.NYX_PUBLIC_ORIGIN
 ].map(value => String(value || "").trim().replace(/\/$/, "")).filter(Boolean))];
@@ -464,9 +438,9 @@ function normalizeNyxIp(value) {
 }
 
 function nyxChatOriginAllowed(origin, requestHost = "") {
-  if (!embeddedWispAllowedOrigins.length || embeddedWispAllowedOrigins.includes("*")) return true;
+  if (!applicationAllowedOrigins.length || applicationAllowedOrigins.includes("*")) return true;
   const normalizedOrigin = String(origin || "").trim().replace(/\/$/, "");
-  if (embeddedWispAllowedOrigins.includes(normalizedOrigin)) return true;
+  if (applicationAllowedOrigins.includes(normalizedOrigin)) return true;
   try {
     const parsed = new URL(normalizedOrigin);
     const host = String(requestHost || "").split(",")[0].trim().toLowerCase();
@@ -476,7 +450,7 @@ function nyxChatOriginAllowed(origin, requestHost = "") {
   }
 }
 
-function rejectWispUpgrade(socket, status = "403 Forbidden") {
+function rejectUpgrade(socket, status = "403 Forbidden") {
   try {
     socket.write(`HTTP/1.1 ${status}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);
   } finally {
@@ -542,7 +516,7 @@ const customHostnameSites = new Map();
 async function customHostnameSite(hostname) {
   const host = normalizeNyxCustomHostname(hostname);
   if (isTutsiHostname(host)) return "tutsi";
-  if (!host || [...embeddedWispAllowedOrigins, process.env.NYX_PUBLIC_ORIGIN].some(value => normalizeNyxCustomHostname(value) === host)) return "nyx";
+  if (!host || [...applicationAllowedOrigins, process.env.NYX_PUBLIC_ORIGIN].some(value => normalizeNyxCustomHostname(value) === host)) return "nyx";
   const cached = customHostnameSites.get(host);
   if (cached && cached.expires > Date.now()) return cached.site;
   if (!firebaseAdminModeConfigured()) return "nyx";
@@ -613,7 +587,7 @@ async function nyxCustomHostnameAllowed(hostname) {
   const normalized = normalizeNyxCustomHostname(hostname);
   if (!normalized) return false;
   if(['nook.nyxlearning.org','nook.donateyourboat.us','robotics.ridgewoodstem.org','drop.ridgewoodstem.org','drop.altarworship.org.uk','nyx.ridgewoodstem.org'].includes(normalized))return true;
-  const configuredHostnames = [...embeddedWispAllowedOrigins, process.env.NYX_PUBLIC_ORIGIN, ...tutsiHostnames]
+  const configuredHostnames = [...applicationAllowedOrigins, process.env.NYX_PUBLIC_ORIGIN, ...tutsiHostnames]
     .map(value => normalizeNyxCustomHostname(value))
     .filter(Boolean);
   if (configuredHostnames.includes(normalized)) return true;
@@ -762,8 +736,6 @@ async function nyxIpBanGuard(req, res, next) {
 }
 
 app.use(nyxIpBanGuard);
-const bookmuxIndexPath = join(bookmuxPath, "index.mjs");
-const studyjetRuntimePath = join(studyjetPath, "scramjet.js");
 
 app.use((req, res, next) => {
   const noStorePaths = new Set([
@@ -772,15 +744,10 @@ app.use((req, res, next) => {
     "/app.webmanifest",
     "/script.js",
     "/startup.js",
-    "/styles.css",
-    "/scramjet.sw.js",
-    "/baremux/index.mjs",
-    "/scramjet/scramjet.js",
-    "/nyx-scramjet-runtime-guard.js"
+    "/styles.css"
   ]);
   const noStorePrefix = /^\/(?:assets\/(?:gms-games|reds-misc)\/|gms-games-|reds-misc-)/i.test(req.path);
-  const opaqueConnectionAsset = /^\/(?:(?:scramjet|studyjet)\/|controller\/|epoxy\/|atlas\/|libcurl\/|textlib\/|baremux\/|bookmux\/|assets\/transports\/|apps\/tutsi\/)?@?r[0-9a-f]{24}!?\.(?:js|mjs|wasm)$/.test(req.path);
-  if (noStorePaths.has(req.path) || noStorePrefix || opaqueConnectionAsset) {
+  if (noStorePaths.has(req.path) || noStorePrefix) {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
@@ -790,7 +757,7 @@ app.use((req, res, next) => {
 
 const nyxDecoyUserAgentPattern = /(?:ahrefsbot|applebot|baiduspider|bingbot|bytespider|ccbot|chatgpt-user|claudebot|discordbot|dotbot|duckduckbot|embedly|facebookexternalhit|gptbot|googlebot|google-inspectiontool|ia_archiver|iframely|linkedinbot|mj12bot|oai-searchbot|petalbot|pinterestbot|perplexitybot|semrushbot|skypeuripreview|slackbot|telegrambot|twitterbot|whatsapp|yandexbot)/i;
 const nyxDecoyAutomationUserAgentPattern = /(?:axios|curl\/|go-http-client|java\/|libwww-perl|node-fetch|postmanruntime|powershell|python-requests|undici|wget\/)/i;
-const nyxDecoyExcludedPathPattern = /^\/(?:api(?:\/|$)|healthz$|socket\.io(?:\/|$)|wisp(?:\/|$)|robots\.txt$|sitemap\.xml$|app\.webmanifest$|favicon(?:\.[a-z0-9]+)?$)/i;
+const nyxDecoyExcludedPathPattern = /^\/(?:api(?:\/|$)|healthz$|socket\.io(?:\/|$)|robots\.txt$|sitemap\.xml$|app\.webmanifest$|favicon(?:\.[a-z0-9]+)?$)/i;
 const nyxDecoyNonDocumentExtensionPattern = /\.(?:avif|bmp|css|gif|ico|jpe?g|js|json|mjs|mp3|mp4|ogg|opus|png|svg|wasm|wav|webm|webp|woff2?|xml)$/i;
 const nyxDecoyHtml = `<!doctype html>
 <html lang="en">
@@ -860,7 +827,7 @@ app.use((req, res, next) => {
   res.set({ "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow, noarchive, nosnippet" });
   const documentRequest = (req.method === "GET" || req.method === "HEAD")
     && !nyxDecoyNonDocumentExtensionPattern.test(req.path)
-    && !/^\/(?:api|wisp|socket\.io)(?:\/|$)/i.test(req.path)
+    && !/^\/(?:api|socket\.io)(?:\/|$)/i.test(req.path)
     && (!req.get("accept") || /text\/html|\*\/\*/i.test(req.get("accept")));
   if (documentRequest) return res.type("html").send(nyxDecoyHtml);
   return res.status(403).type("text/plain").send("Automated access is not permitted.");
@@ -1377,384 +1344,11 @@ app.get("/catalog-game-cover", async (req, res) => {
 
 
 
-function patchedBookmuxIndex() {
-  return readFileSync(bookmuxIndexPath, "utf8")
-    .replace(
-      'const e=(await self.clients.matchAll({type:"window",includeUncontrolled:!0})).map',
-      'const e=(await self.clients.matchAll({type:"window",includeUncontrolled:!0})).filter((e=>{try{const t=new URL(e.url);return t.origin===self.location.origin&&!t.pathname.startsWith("/service/")&&!t.pathname.startsWith("/~/sj/")}catch{return!1}})).map'
-    )
-    .replace(/setTimeout\(([^,]+),1e3,new TypeError\("timeout"\)\)/g, 'setTimeout($1,5000,new TypeError("timeout"))')
-    .replace(/within 1s/g, "within 5s")
-    .replace(/setTimeout\(([^,]+),1500\)/g, "setTimeout($1,5000)")
-    .replace(/within 1\.5s/g, "within 5s");
-}
 
 
 
-function patchedStudyjetControllerAsset(name) {
-  let source = readFileSync(join(studyjetControllerPath, name), "utf8");
-  if (name === "controller.sw.js") {
-    const clientsOriginal = 'sendSetCookie:async({cookies:e,options:r})=>{let o=await self.clients.matchAll()';
-    const clientsPatched = 'sendSetCookie:async({cookies:e,options:r})=>{let o=await self.clients.matchAll({type:"window",includeUncontrolled:!0})';
 
 
-
-    if (!source.includes(clientsOriginal)) throw new Error('Scramjet cookie client discovery signature changed');
-    source = source.replace(clientsOriginal, clientsPatched);
-    const original = '$controller$setCookie:{cookies:e,options:r,id:o}';
-    const patched = '$controller$setCookie:{cookies:e,options:r,id:o,controllerId:this.id}';
-    if (!source.includes(original)) throw new Error("Scramjet service-worker cookie sync signature changed");
-    source = source.replace(original, patched);
-  } else if (name === "controller.api.js") {
-    const original = 'let t=e.data.$controller$setCookie;t.options?.clear';
-    const patched = 'let t=e.data.$controller$setCookie;if(t.controllerId&&t.controllerId!==this.id)return;t.options?.clear';
-    if (!source.includes(original)) throw new Error("Scramjet controller cookie sync signature changed");
-    source = source.replace(original, patched);
-  } else if (name === "controller.inject.js") {
-    const original = 'let t=e.data.$controller$setCookie;if(t.options?.clear&&this.cookieJar.clear()';
-    const patched = 'let t=e.data.$controller$setCookie;if(t.controllerId&&!String(this.init.prefix?.pathname||"").includes("/"+t.controllerId+"/"))return;if(t.options?.clear&&this.cookieJar.clear()';
-    if (!source.includes(original)) throw new Error("Scramjet injected cookie sync signature changed");
-    source = source.replace(original, patched);
-  }
-  return source;
-}
-
-function patchedStudyjetRuntime() {
-  const source = readFileSync(studyjetRuntimePath, "utf8");
-  const original = 'if(u.origin===new i.xP(e.rawUrl).origin)throw new i.$D("attempted to fetch from same origin - this means the site has obtained a reference to the real origin, aborting");';
-  const patched = 'if(u.origin===new i.xP(e.rawUrl).origin&&u.pathname.startsWith(t.context.prefix.pathname))u=new i.xP((0,n.v2)(u,t.context));else if(u.origin===new i.xP(e.rawUrl).origin)throw new i.$D("attempted to fetch from same origin - this means the site has obtained a reference to the real origin, aborting");';
-  const historyOriginal = 'apply(t){let r=e.box.histories.get(t.this),s=(0,n.Qf)(t.args[2]);';
-
-
-  const historyPatched = 'apply(t){if(t.args.length<3||null==t.args[2])return t.call();let r=e.box.histories.get(t.this),s=(0,n.Qf)(t.args[2]);';
-  if (!source.includes(historyOriginal)) throw new Error('Scramjet history signature changed');
-  return (source.includes(original) ? source.replace(original, patched) : source)
-    .replace(historyOriginal, historyPatched);
-}
-
-function studyjetRuntimeGuard() {
-  return `(() => {
-  if (typeof window === "undefined" || window.__nyxScramjetGuards) return;
-  window.__nyxScramjetGuards = true;
-  const nativeOpen = window.open?.bind(window);
-  if (!window.trustedTypes) {
-    try {
-      Object.defineProperty(window, "trustedTypes", {
-        configurable: true,
-        value: {
-          createPolicy(_name, rules = {}) {
-            return {
-              createHTML(value) {
-                return typeof rules.createHTML === "function" ? rules.createHTML(value) : value;
-              },
-              createScript(value) {
-                return typeof rules.createScript === "function" ? rules.createScript(value) : value;
-              },
-              createScriptURL(value) {
-                return typeof rules.createScriptURL === "function" ? rules.createScriptURL(value) : value;
-              }
-            };
-          }
-        }
-      });
-    } catch {}
-  }
-  try {
-    const nativeCurrentScript = Object.getOwnPropertyDescriptor(Document.prototype, "currentScript");
-    const fallbackScript = document.createElement("script");
-    fallbackScript.setAttribute("nonce", "");
-    Object.defineProperty(Document.prototype, "currentScript", {
-      configurable: true,
-      get() {
-        let current = null;
-        try {
-          current = nativeCurrentScript?.get?.call(this) || null;
-        } catch {}
-        if (current) return current;
-        return this.querySelector?.("script[src],script") || fallbackScript;
-      }
-    });
-  } catch {}
-  try {
-    if (!window.__nyxRuntimeShortcuts) {
-      window.__nyxRuntimeShortcuts = true;
-      const isEditingTarget = target => !!(target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/i.test(target.tagName || "")));
-      const selectedTextFromTarget = target => {
-        try {
-          if (/^(INPUT|TEXTAREA)$/i.test(target?.tagName || "")) return String(target.value || "").slice(target.selectionStart || 0, target.selectionEnd || 0);
-          return String(getSelection?.() || "");
-        } catch {
-          return "";
-        }
-      };
-      const replaceSelectionInTarget = (target, text) => {
-        try {
-          if (/^(INPUT|TEXTAREA)$/i.test(target?.tagName || "")) {
-            const start = target.selectionStart || 0;
-            const end = target.selectionEnd || 0;
-            const value = String(target.value || "");
-            target.value = value.slice(0, start) + text + value.slice(end);
-            const cursor = start + String(text).length;
-            target.setSelectionRange(cursor, cursor);
-            target.dispatchEvent(new Event("input", { bubbles: true }));
-            return;
-          }
-          document.execCommand?.("insertText", false, text);
-        } catch {}
-      };
-      const writeClipboard = async text => {
-        try {
-          await navigator.clipboard?.writeText(String(text || ""));
-        } catch {
-          try { document.execCommand?.("copy"); } catch {}
-        }
-      };
-      const shortcutParent = (() => { try { return window.parent; } catch { return null; } })();
-      const shortcutTop = (() => { try { return window.top; } catch { return null; } })();
-      const postAltShortcut = payload => {
-        try { shortcutParent?.postMessage(payload, "*"); } catch {}
-        try {
-          if (shortcutTop && shortcutTop !== shortcutParent) shortcutTop.postMessage(payload, "*");
-        } catch {}
-        try { window.parent?.postMessage(payload, "*"); } catch {}
-        try {
-          if (window.top && window.top !== window.parent) window.top.postMessage(payload, "*");
-        } catch {}
-      };
-      window.addEventListener("keydown", event => {
-        const key = String(event.key || "").toLowerCase();
-        if (event.altKey && !event.ctrlKey && !event.metaKey && event.location !== 2 && key === "alt") {
-          event.preventDefault();
-          event.stopPropagation();
-          postAltShortcut({ type: "nyx:alt-prime" });
-          return;
-        }
-        if (event.altKey && !event.ctrlKey && !event.metaKey && event.location !== 2 && isEditingTarget(event.target) && /^[acxvzy]$/.test(key)) {
-          event.preventDefault();
-          event.stopPropagation();
-          if (key === "a") {
-            if (event.target?.select) event.target.select();
-            else document.execCommand?.("selectAll");
-            return;
-          }
-          if (key === "c") {
-            writeClipboard(selectedTextFromTarget(event.target));
-            return;
-          }
-          if (key === "x") {
-            const selected = selectedTextFromTarget(event.target);
-            writeClipboard(selected);
-            replaceSelectionInTarget(event.target, "");
-            return;
-          }
-          if (key === "v") {
-            navigator.clipboard?.readText?.().then(text => replaceSelectionInTarget(event.target, text)).catch(() => {
-              try { document.execCommand?.("paste"); } catch {}
-            });
-            return;
-          }
-          if (key === "z") {
-            document.execCommand?.("undo");
-            return;
-          }
-          if (key === "y") {
-            document.execCommand?.("redo");
-            return;
-          }
-        }
-        if (event.altKey && !event.ctrlKey && !event.metaKey && event.location !== 2 && (/^[1-9]$/.test(key) || ["l", "d", "t", "w", "r", "arrowleft", "arrowright", "tab"].includes(key))) {
-          event.preventDefault();
-          event.stopPropagation();
-          postAltShortcut({ type: "nyx:alt-shortcut", key, code: event.code || "", location: event.location || 0, shiftKey: !!event.shiftKey });
-          return;
-        }
-      }, true);
-    }
-  } catch {}
-  const blockedHtml = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>nyx://blocked67haha</title><style>html,body{margin:0;width:100%;height:100%;background:#fff;color:#111;font:28px Raleway,Arial,sans-serif}body{display:grid;place-items:center;text-align:center}main{padding:24px}</style></head><body><main>are you trying to hack me scamma???</main></body></html>';
-  const popupProtectionEnabled = () => {
-    try {
-      return JSON.parse(localStorage.getItem("nyx.popupProtection") ?? "true") !== false;
-    } catch {
-      return true;
-    }
-  };
-  const writeBlocked = popup => {
-    if (!popup) return false;
-    try {
-      popup.document.open();
-      popup.document.write(blockedHtml);
-      popup.document.close();
-      popup.focus?.();
-      return true;
-    } catch {
-      return false;
-    }
-  };
-  const opennyxPopupWarning = () => {
-    // Popup protection must never create a real popup just to display a
-    // warning. Return a workspace-like inert handle to the calling site.
-    const popup = null;
-    return {
-      closed: false,
-      focus() { try { popup?.focus?.(); } catch {} },
-      blur() { try { popup?.blur?.(); } catch {} },
-      close() { try { popup?.close?.(); } catch {} this.closed = true; },
-      postMessage() {},
-      document: {
-        open() { writeBlocked(popup); return this; },
-        write() { writeBlocked(popup); },
-        writeln() { writeBlocked(popup); },
-        close() { writeBlocked(popup); }
-      },
-      location: {
-        href: "nyx://blocked67haha",
-        assign() { opennyxPopupWarning(); },
-        replace() { opennyxPopupWarning(); },
-        reload() { writeBlocked(popup); },
-        toString() { return "nyx://blocked67haha"; }
-      }
-    };
-  };
-  const isDownloadUrl = value => {
-    const rawHref = String(value || "").trim();
-    // Blob/data URLs and script-like paths are also used by verification
-    // challenges, workers, and client-side navigation. Treating them as
-    // downloads breaks those flows before they can complete. Explicit
-    // Explicit download links are still handled by isDownloadLink below.
-    if (/^(?:blob|data):/i.test(rawHref)) return false;
-    const href = rawHref.split(/[?#]/)[0].toLowerCase();
-    return /\.(?:apk|appx|bat|bin|cmd|com|crx|deb|dmg|exe|iso|jar|msi|pkg|scr|wsf|zip|7z|rar)$/i.test(href);
-  };
-  const postDownloadRequest = (value, filename = "") => {
-    const href = String(value || "").trim();
-    if (!href || !window.parent || window.parent === window) return false;
-    try {
-      window.parent.postMessage({
-        type: "nyx:download-request",
-        url: href,
-        filename: String(filename || ""),
-        sourceUrl: String(location.href || "")
-      }, "*");
-      return true;
-    } catch {
-      return false;
-    }
-  };
-  let guardedOpen = (...args) => {
-    if (isDownloadUrl(args[0]) && postDownloadRequest(args[0])) return null;
-    if (!popupProtectionEnabled() && nativeOpen) return nativeOpen(...args);
-    return opennyxPopupWarning();
-  };
-  try {
-    if (typeof nativeOpen === "function" && typeof Proxy === "function") {
-      guardedOpen = new Proxy(nativeOpen, {
-        apply(target, thisArg, args) {
-          if (isDownloadUrl(args[0]) && postDownloadRequest(args[0])) return null;
-          if (!popupProtectionEnabled()) return Reflect.apply(target, thisArg, args);
-          return opennyxPopupWarning();
-        },
-        construct(target, args, newTarget) {
-          if (!popupProtectionEnabled()) {
-            try {
-              return Reflect.construct(target, args, newTarget);
-            } catch {
-              return Reflect.apply(target, window, args);
-            }
-          }
-          return opennyxPopupWarning();
-        },
-        get(target, prop, receiver) {
-          if (prop === "__nyxPopupGuard") return true;
-          if (prop === "toString") return () => "function open() { [native code] }";
-          return Reflect.get(target, prop, receiver);
-        }
-      });
-    }
-  } catch {}
-  const shouldTrapPopupTarget = target => {
-    const value = String(target || "").toLowerCase();
-    return value && !["_self", "_parent", "_top"].includes(value);
-  };
-  const isDownloadLink = link => {
-    if (!link) return false;
-    if (link.hasAttribute("download")) return true;
-    return isDownloadUrl(link.href || link.getAttribute("href") || "");
-  };
-  try {
-    Object.defineProperty(window, "open", { value: guardedOpen, writable: true, configurable: true });
-  } catch {
-    window.open = guardedOpen;
-  }
-  try {
-    const nativeAnchorClick = HTMLAnchorElement.prototype.click;
-    HTMLAnchorElement.prototype.click = function() {
-      if (isDownloadLink(this) && postDownloadRequest(this.href || this.getAttribute("href"), this.getAttribute("download") || "")) return;
-      if (popupProtectionEnabled() && shouldTrapPopupTarget(this.target)) {
-        opennyxPopupWarning();
-        return;
-      }
-      return nativeAnchorClick.call(this);
-    };
-  } catch {}
-  if (document && !window.__nyxPopupWarningListeners) {
-    window.__nyxPopupWarningListeners = true;
-    document.addEventListener("click", event => {
-      const link = event.target?.closest?.("a[href]");
-      if (!link) return;
-      if (isDownloadLink(link) && postDownloadRequest(link.href || link.getAttribute("href"), link.getAttribute("download") || "")) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        return;
-      }
-      if (!popupProtectionEnabled() || !shouldTrapPopupTarget(link.getAttribute("target"))) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      opennyxPopupWarning();
-    }, true);
-    document.addEventListener("auxclick", event => {
-      const link = event.target?.closest?.("a[href]");
-      if (!link) return;
-      if (isDownloadLink(link) && postDownloadRequest(link.href || link.getAttribute("href"), link.getAttribute("download") || "")) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        return;
-      }
-      if (!popupProtectionEnabled() || !shouldTrapPopupTarget(link.getAttribute("target"))) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      opennyxPopupWarning();
-    }, true);
-    document.addEventListener("submit", event => {
-      if (!popupProtectionEnabled()) return;
-      const form = event.target;
-      if (!form || String(form.tagName || "").toUpperCase() !== "FORM" || !shouldTrapPopupTarget(form.getAttribute("target"))) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      opennyxPopupWarning();
-    }, true);
-  }
-  const wrapCue = name => {
-    const Native = window[name];
-    if (typeof Native !== "function" || Native.__nyxWrapped) return;
-    function SafeCue(start, end, text) {
-      let safeStart = Number(start);
-      let safeEnd = Number(end);
-      if (!Number.isFinite(safeStart) || safeStart < 0) safeStart = 0;
-      if (!Number.isFinite(safeEnd) || safeEnd <= safeStart) safeEnd = safeStart + 0.001;
-      return Reflect.construct(Native, [safeStart, safeEnd, text == null ? "" : String(text)], new.target || SafeCue);
-    }
-    try {
-      Object.setPrototypeOf(SafeCue, Native);
-      SafeCue.prototype = Native.prototype;
-      Object.defineProperty(SafeCue, "__nyxWrapped", { value: true });
-      window[name] = SafeCue;
-    } catch {}
-  };
-  wrapCue("VTTCue");
-  wrapCue("TextTrackCue");
-})();`;
-}
 
 app.get(["/seraph-fetch", "/seraph-asset"], (_req, res) => {
   res.status(404).type("text/plain").send("Not found");
@@ -3533,8 +3127,6 @@ app.get("/healthz", (_req, res) => {
   res.status(200).json({
     ok: true,
     service: "nyx",
-    wisp: externalWispUrl ? "external" : "embedded",
-    wispImplementation: externalWispUrl ? "external" : "wispurr",
     chatRealtime: nyxChatSocketServer ? "socket.io" : "polling"
   });
 });
@@ -3698,25 +3290,13 @@ app.get("/runtime-config.js", (_req, res) => {
       publisherAdsEnabled,
       publisherAdsAdkidOnly,
       learningRoutesEnabled: true,
-      syncTransportEnabled: process.env.NYX_SYNC_ENABLED === '1',
-      wispUrl: externalWispUrl,
-      wispUrls: [...new Set(String(process.env.NYX_WISP_RELAYS || "").split(",").map(normalizePublicWispUrl).filter(Boolean))],
+      documentOrigin: process.env.DOCUMENT_ORIGIN || "",
       presenceUrl: publicOrigin ? `${publicOrigin}/api/presence` : "",
       publicOrigin
     })});`
   );
 });
 
-app.get("/baremux/index.mjs", (_req, res) => {
-  res.type("application/javascript").send(patchedBookmuxIndex());
-});
-app.get("/scramjet/scramjet.js", (_req, res) => {
-  res.type("application/javascript").send(patchedStudyjetRuntime());
-});
-app.get("/nyx-scramjet-runtime-guard.js", (_req, res) => {
-  res.setHeader("Cache-Control", "no-store");
-  res.type("application/javascript").send(studyjetRuntimeGuard());
-});
 app.get("/nyx-compat/cineby-app.js", async (_req, res) => {
   try {
     if (!cinebyAppCache.source || cinebyAppCache.expires < Date.now()) {
@@ -8481,7 +8061,7 @@ app.post("/api/custom-hostnames", async (req, res) => {
   }
   const site = req.body?.site ?? "nyx";
   if (!["nyx", "tutsi"].includes(site)) return res.status(400).json({ error: "Choose Nyx or Tutsi." });
-  const reserved = [...embeddedWispAllowedOrigins, process.env.NYX_PUBLIC_ORIGIN, ...tutsiHostnames]
+  const reserved = [...applicationAllowedOrigins, process.env.NYX_PUBLIC_ORIGIN, ...tutsiHostnames]
     .some(value => normalizeNyxCustomHostname(value) === requestedHostname);
   if (reserved) return res.status(409).json({ error: "This is a built-in hostname and cannot be registered." });
   const rate = nyxCustomHostnameRateState(nyxClientIp(req) || "unknown");
@@ -14207,18 +13787,8 @@ app.use('/api/nyxcloud',nyxCloudDesktop.router);
 app.get(/^\/apps\/nyxcloud$/,(_req,res)=>res.redirect(302,'/apps/nyxcloud/'));
 app.use('/api/private-remote',remoteDesktop.router);
 app.use((req,res,next)=>{let path;try{path=posix.normalize(decodeURIComponent(req.path).replaceAll('\\','/')).toLowerCase();}catch{return res.status(400).end();}if(path==='/apps/remote'||path.startsWith('/apps/remote/'))return remoteDesktop.pageAccess(req,res,next);next();});
-let httpRelayPort = 0;
-const closeHttpRelay = installHttpWisp(app, {
-  upstream: () => httpRelayPort ? {url: externalWispUrl || `ws://127.0.0.1:${httpRelayPort}/resources/live/`, origin: `http://127.0.0.1:${httpRelayPort}`} : null,
-  clientIp: nyxClientIp, banned: nyxRequestIpIsBanned,
-  allowed: req => {
-    if (req.headers['sec-fetch-site'] && req.headers['sec-fetch-site'] !== 'same-origin') return false;
-    if (req.headers.origin) {
-      try { return new URL(req.headers.origin).host === req.headers.host; } catch { return false; }
-    }
-    return req.headers['sec-fetch-site'] === 'same-origin';
-  }
-});
+
+
 
 app.use("/api", (_req, res) => {
   res.status(404).json({ error: "API route not found." });
@@ -14256,17 +13826,12 @@ app.get('/study.html', (_req,res)=>res.set('Cache-Control','no-store').sendFile(
 app.use(publicAssetBoundary(staticRoot));
 if(staticRoot===__dirname)app.use((req,res,next)=>{
   const file=sourceFile(join(staticRoot,decodeURIComponent(req.path)));
-  if(typeof file==='string'&&file!==join(staticRoot,decodeURIComponent(req.path))){req.url='/'+file.slice(staticRoot.length+1).replaceAll('\\','/')+(req.url.includes('?')?req.url.slice(req.url.indexOf('?')):'');}
+  if(typeof file==='string'&&file!==join(staticRoot,decodeURIComponent(req.path))){req.url='/'+file.slice(staticRoot.length+1).replaceAll('\\','/')+(req.path.endsWith('/')?'/':'')+(req.url.includes('?')?req.url.slice(req.url.indexOf('?')):'');}
   next();
 });
 app.use(express.static(staticRoot));
 app.use("/assets/vendor/katex/", express.static(katexPath));
 app.use('/assets/vendor/novnc/',express.static(dirname(dirname(require.resolve('@novnc/novnc')))));
-app.use("/scramjet/", express.static(studyjetPath));
-app.use("/controller/", express.static(studyjetControllerPath));
-app.use("/baremux/", express.static(bookmuxPath));
-app.use("/epoxy/", express.static(epoxyPath));
-app.use("/libcurl/", express.static(libcurlPath));
 
 app.use(["/~/sj/", "/~/study/"], (_req, res) => {
   res.set("Cache-Control", "no-store").status(200).type("html").send(`<!doctype html>
@@ -14317,16 +13882,12 @@ app.use((_req, res) => {
   res.sendFile(sourceFile(join(staticRoot, "index.html")), { dotfiles: 'allow' });
 });
 
-export { app, attachNyxChatSocketServer, externalWispUrl, normalizePublicWispUrl, nyxActiveGuestUsers, nyxActorCanReviewSearchHistory, nyxChatCanAccessChannel, nyxChatIsSchoolRestrictedChannel, nyxClientIp, nyxRolePresentation, nyxVisibleCustomRoles, nyxifyArtistMatches, nyxifyDurationMatches, nyxifyFullTrackCompare, nyxifyMultilingualTopMatch, nyxifyOfficialArtistScore, nyxifyTrackTitleMatches, recordLocalPresence };
+export { app, attachNyxChatSocketServer, nyxActiveGuestUsers, nyxActorCanReviewSearchHistory, nyxChatCanAccessChannel, nyxChatIsSchoolRestrictedChannel, nyxClientIp, nyxRolePresentation, nyxVisibleCustomRoles, nyxifyArtistMatches, nyxifyDurationMatches, nyxifyFullTrackCompare, nyxifyMultilingualTopMatch, nyxifyOfficialArtistScore, nyxifyTrackTitleMatches, recordLocalPresence };
 
 const isDirectRun = process.argv[1] && resolve(process.argv[1]) === join(__dirname, "shepherd.js");
 async function startNyxServer() {
-  const wisp = externalWispUrl ? null : await startWispurr({
-    onFailure: () => { console.error("Nyx relay worker stopped."); shutdown("worker", 1); }
-  });
   const server = createServer((req, res) => app(req, res));
   const chatSocketServer = attachNyxChatSocketServer(server);
-  const syncServer = process.env.NYX_SYNC_ENABLED === '1' ? createSyncServer({allowed: async request => !await nyxRequestIpIsBanned(request)}) : null;
   const serverSockets = new Set();
 
   server.on("connection", socket => {
@@ -14339,36 +13900,21 @@ async function startNyxServer() {
     try {
       upgradePath = new URL(req.url || "/", "http://localhost").pathname;
     } catch {
-      rejectWispUpgrade(socket, "400 Bad Request");
+      rejectUpgrade(socket, "400 Bad Request");
       return;
     }
-    if (upgradePath === '/api/sync' && syncServer) { await syncServer.upgrade(req, socket, head); return; }
     if (upgradePath === '/api/nyxcloud/socket') { nyxCloudDesktop.upgrade(req,socket,head);return; }
     if (upgradePath === '/api/private-remote/socket') { remoteDesktop.upgrade(req,socket,head);return; }
     if (upgradePath === "/socket.io/" || upgradePath.startsWith("/socket.io/")) {
       return;
     }
-    if (!externalWispUrl && ["/resources/live/", "/resources/live", "/wisp/", "/wisp"].includes(upgradePath)) {
-      try {
-        if (await nyxRequestIpIsBanned(req)) {
-          rejectWispUpgrade(socket);
-          return;
-        }
-      } catch (error) {
-        console.error("Nyx Wisp IP ban check could not be completed:", error?.message || error);
-      }
-      if (socket.destroyed) return;
-      wisp.route(req, socket, head);
-    } else {
-      rejectWispUpgrade(socket, "404 Not Found");
-    }
+    rejectUpgrade(socket, "404 Not Found");
   });
 
   const port = Number.parseInt(process.env.PORT || "8080", 10);
 
   server.listen(port, "0.0.0.0", () => {
     const address = server.address();
-    httpRelayPort = address && typeof address === "object" ? address.port : 0;
     if (typeof process.send === "function" && address && typeof address === "object") {
       process.send({ type: "nyx:listening", port: address.port });
     }
@@ -14377,16 +13923,15 @@ async function startNyxServer() {
   let shuttingDown = false;
   function shutdown(signal, exitCode = 0) {
     remoteDesktop.close();
-    closeHttpRelay();
+
     void nyxTubeBackend.close();
     nyxTubeInvidiousPlayback.close();
     void nyxTubeCatalog.close();
     if (shuttingDown) return;
     shuttingDown = true;
-    syncServer?.close();
-    const workerStopped = wisp?.stop();
+
     chatSocketServer.disconnectSockets(true);
-    server.close(() => Promise.allSettled([Promise.resolve(workerStopped), appTraffic.close()]).then(() => process.exit(exitCode)));
+    server.close(() => Promise.allSettled([appTraffic.close()]).then(() => process.exit(exitCode)));
     setTimeout(() => {
       for (const socket of serverSockets) socket.destroy();
     }, 1_000).unref();

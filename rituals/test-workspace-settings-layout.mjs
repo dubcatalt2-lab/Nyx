@@ -15,9 +15,9 @@ try{
   await page.screenshot({path:`.codex-artifacts/settings-open-${width}.png`});
   await page.locator('[data-settings-category-button="workspace"]').click();
   const category=page.locator('[data-settings-category="workspace"]');
-  await category.getByText('Tab appearance',{exact:true}).waitFor();
+  await category.locator('[data-tab-cloak-apply]').waitFor();
   assert.equal(await category.locator('.nyx-workspace-settings-card').count(),3);
-  await category.getByLabel('Tab title',{exact:true}).fill('Study notes');
+  await category.locator('[data-page-heading]').fill('Study notes');
   await category.locator('[data-tab-cloak-apply]').click();
   assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.tabTitle')),'Study notes');
   const field=category.locator('[data-cloak-redirect-url]');await field.fill('https://example.com/');

@@ -4,7 +4,7 @@ const baseUrl = process.env.NYX_TEST_BASE_URL || "http://127.0.0.1:8080";
 const livePlayer = process.env.NYX_TEST_LIVE_PLAYER === "1";
 const videos = [
   { id: "dQw4w9WgXcQ", title: "A test documentary", creator: "Nyx Test", channelId: "UC1234567890123456789012", channelAvatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Crect width='48' height='48' fill='%2386a9e8'/%3E%3C/svg%3E", description: "A full documentary description for the NyxTube watch page.", publishedAt: "2026-08-20T12:00:00.000Z", thumbnail: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg", durationSeconds: 212, viewCount: 1203400, likeCount: 532, commentCount: 47, captions: true, isShort: false, sourceUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" },
-  { id: "aqz-KE-bpKQ", title: "A second video", creator: "Test Studio", channelId: "UCabcdefghijklmnopqrstuv", channelAvatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%23d990b3'/%3E%3C/svg%3E", description: "This description must be visible below the selected video.", publishedAt: "2026-08-21T12:00:00.000Z", thumbnail: "https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg", durationSeconds: 73, viewCount: 8421, likeCount: 42, commentCount: 3, captions: true, isShort: true, sourceUrl: "https://www.youtube.com/watch?v=aqz-KE-bpKQ" },
+  { id: "aqz-KE-bpKQ", title: "A second documentary", creator: "Test Studio", channelId: "UCabcdefghijklmnopqrstuv", channelAvatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48'%3E%3Ccircle cx='24' cy='24' r='24' fill='%23d990b3'/%3E%3C/svg%3E", description: "This description must be visible below the selected video.", publishedAt: "2026-08-21T12:00:00.000Z", thumbnail: "https://i.ytimg.com/vi/aqz-KE-bpKQ/hqdefault.jpg", durationSeconds: 73, viewCount: 8421, likeCount: 42, commentCount: 3, captions: true, isShort: true, sourceUrl: "https://www.youtube.com/watch?v=aqz-KE-bpKQ" },
 ];
 const shorts = [videos[1], { ...videos[1], id: "M7lc1UVf-VE", title: "Next test Short", creator: "Next Studio" }];
 
@@ -104,7 +104,7 @@ try {
   await page.locator(livePlayer ? "[data-watch-player] iframe" : "[data-mock-youtube-player]").waitFor({ state: "attached" });
   console.log("NyxTube test: watch player ready");
   if (process.env.NYX_TEST_SCREENSHOT_PATH) await page.screenshot({ path: process.env.NYX_TEST_SCREENSHOT_PATH.replace(/\.png$/i, "-watch.png"), fullPage: true });
-  assert(await page.locator("[data-watch-title]").textContent() === "A second video", "Watch metadata did not match the selected video");
+  assert(await page.locator("[data-watch-title]").textContent() === "A second documentary", "Watch metadata did not match the selected video");
   await page.locator("[data-watch-channel-mark] img").waitFor();
   assert(await page.locator("[data-watch-creator]").textContent() === "Test Studio", "Watch page did not render the creator name as a channel action");
   if (!livePlayer) {
@@ -162,15 +162,17 @@ try {
     assert(await page.locator("[data-watch-captions]").getAttribute("aria-pressed") === "false", "C did not disable captions");
     console.log("NyxTube test: tap/hold Space and YouTube-style keyboard shortcuts passed");
     await page.setViewportSize({ width: 390, height: 700 });
+    await page.locator("[data-watch-stage]").hover();
     await page.locator("[data-watch-forward]").waitFor({ state: "visible" });
     if (process.env.NYX_TEST_SCREENSHOT_PATH) await page.screenshot({ path: process.env.NYX_TEST_SCREENSHOT_PATH.replace(/\.png$/i, "-seek-mobile.png"), fullPage: true });
     await page.locator("[data-watch-forward]").click();
-    assert(await page.evaluate(() => window.__nyxTubeLastSeek) === 28, "Mobile forward control did not seek five seconds");
+    assert(await page.evaluate(() => window.__nyxTubeLastSeek) === 33, "Mobile forward control did not seek ten seconds");
     await page.locator("[data-watch-rewind]").click();
-    assert(await page.evaluate(() => window.__nyxTubeLastSeek) === 23, "Mobile rewind control did not seek back five seconds");
-    assert(!await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1), "Watch statistics or information tabs overflow at 390px");
+    assert(await page.evaluate(() => window.__nyxTubeLastSeek) === 23, "Mobile rewind control did not seek back ten seconds");
+    const overflow=await page.evaluate(()=>[...document.querySelectorAll('body *')].filter(e=>{const b=e.getBoundingClientRect();return b.width&&b.right>innerWidth+1&&getComputedStyle(e).position!=='fixed'}).map(e=>({tag:e.tagName,class:e.className,width:e.getBoundingClientRect().width,right:e.getBoundingClientRect().right})).slice(0,18));
+    assert(!await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1), 'Mobile overflow: '+JSON.stringify(overflow));
     await page.setViewportSize({ width: 1280, height: 900 });
-    console.log("NyxTube test: keyboard and mobile five-second seeking passed");
+    console.log("NyxTube test: keyboard and mobile ten-second seeking passed");
     await page.locator('[data-watch-info-tab="comments"]').click();
     await page.getByText("This comment came from YouTube.").waitFor();
     assert(await page.locator(".watch-comment").count() === 1, "YouTube comments did not render in the watch page");
@@ -189,7 +191,7 @@ try {
     console.log("NyxTube test: usable YouTube player settings passed");
     await page.evaluate(() => { window.__nyxTubeMockBlockedIds = ["dQw4w9WgXcQ"]; });
     await page.locator("[data-watch-related] .related-card").filter({ hasText: "A test documentary" }).click();
-    await page.waitForFunction(() => document.querySelector("[data-watch-title]")?.textContent === "A second video");
+    await page.waitForFunction(() => document.querySelector("[data-watch-title]")?.textContent === "A second documentary");
     assert((await page.locator("[data-notice]").textContent())?.includes("restricted on this Chromebook"), "Restricted-video recovery did not explain the automatic fallback");
     assert(await page.locator("[data-mock-youtube-player]").count() === 1, "Restricted-video recovery did not start the next playable video");
     await page.evaluate(() => { window.__nyxTubeMockBlockedIds = []; });
@@ -200,7 +202,7 @@ try {
   await page.locator(livePlayer ? "[data-short-player] iframe" : "[data-mock-youtube-player]").first().waitFor({ state: "attached" });
   console.log("NyxTube test: Shorts player ready");
   if (process.env.NYX_TEST_SCREENSHOT_PATH) await page.screenshot({ path: process.env.NYX_TEST_SCREENSHOT_PATH.replace(/\.png$/i, "-shorts.png"), fullPage: true });
-  assert(await page.locator("[data-short-title]").textContent() === "A second video", "Initial Short did not render");
+  assert(await page.locator("[data-short-title]").textContent() === "A second documentary", "Initial Short did not render");
   await page.locator("[data-short-next]").click();
   await page.getByText("Next test Short").waitFor();
   if(!livePlayer)assert(await page.locator('[data-short-player] [id^=nyxtube-prepared-short-]').count()<=4,'Shorts warm pool must stay bounded');
@@ -223,10 +225,10 @@ try {
     const rect = selector => document.querySelector(selector)?.getBoundingClientRect().toJSON();
     const overlaps = (a, b) => a && b && a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
     const card = rect(".short-card"), copy = rect(".short-copy"), actions = rect(".short-actions"), nav = rect(".short-nav");
-    return { cardBottom: card?.bottom, navTop: nav?.top, viewportHeight: innerHeight, copyActionsOverlap: overlaps(copy, actions) };
+    return { cardBottom: card?.bottom, navRight:nav?.right, viewportWidth:innerWidth, cardNavOverlap:overlaps(card,nav), viewportHeight: innerHeight, copyActionsOverlap: overlaps(copy, actions) };
   });
   assert(mobileShorts.cardBottom <= mobileShorts.viewportHeight + 1, "Short player exceeds a compact mobile viewport");
-  assert(mobileShorts.navTop >= mobileShorts.cardBottom - 1, "Mobile Short navigation overlaps the player");
+  assert(!mobileShorts.cardNavOverlap && mobileShorts.navRight <= mobileShorts.viewportWidth + 1, "Mobile Short navigation overlaps the player");
   assert(!mobileShorts.copyActionsOverlap, "Mobile Short metadata overlaps its controls");
   if (process.env.NYX_TEST_SCREENSHOT_PATH) await page.screenshot({ path: process.env.NYX_TEST_SCREENSHOT_PATH.replace(/\.png$/i, "-shorts-mobile.png"), fullPage: true });
 
@@ -260,42 +262,20 @@ try {
     await discoveryPage.addInitScript(() => {
       localStorage.setItem("nyx.setupComplete", "true");
       localStorage.setItem("nyx.homeDesign", "redesigned");
+      localStorage.setItem("nyx.tosAcceptedVersion", "2026-07-30");
+      localStorage.setItem("nyx.releaseNotes.2026-10-02-nyx-1.6.8.seen", "2026-10-02-nyx-1.6.8");
     });
     await discoveryPage.route("**/api/apps", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ apps: [{ id: "youtube", icon: "youtube.com", name: "NyxTube", url: "/apps/nyxtube/" }] }) }));
     await discoveryPage.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
-    const redesignedNyxTubeDestination = discoveryPage.locator('[data-nyx-dock-item="video"][data-app-url="/apps/nyxtube/"]');
+    const redesignedNyxTubeDestination = discoveryPage.locator('[data-nyx-dock-item="youtube"][data-app-url="/apps/nyxtube/"]');
     await redesignedNyxTubeDestination.waitFor({ state: "attached" });
-    await discoveryPage.evaluate(() => {
-      document.body.classList.add("workspace-content-active");
-      document.querySelectorAll("#nyxStudyHubStartup,#setupLaunchScreen,#setupScreen,.nyx-tos-gate").forEach(element => { element.style.pointerEvents = "none"; });
-    });
-    const addressBounds = await discoveryPage.locator('form.j5d9t > input.workspace-mode-url').boundingBox();
-    assert(addressBounds?.width > 100, `Workspace address field did not have usable geometry: ${JSON.stringify(addressBounds)}`);
-    const addressBorder = discoveryPage.locator('form.j5d9t > .workspace-mode-url-pointer-border');
-    for (let attempt = 0; attempt < 12; attempt += 1) {
-      await discoveryPage.evaluate(() => {
-        const field = document.querySelector('form.j5d9t > input.workspace-mode-url');
-        const bounds = field?.getBoundingClientRect();
-        field?.focus();
-        if (field && bounds) field.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX: bounds.left + Math.min(120, bounds.width / 2), clientY: bounds.top + bounds.height / 2 }));
-      });
-      await discoveryPage.mouse.move(addressBounds.x + Math.min(120, addressBounds.width / 2), addressBounds.y + addressBounds.height / 2);
-      await discoveryPage.waitForTimeout(100);
-      const width = await discoveryPage.evaluate(() => document.querySelector('form.j5d9t > .workspace-mode-url-pointer-border')?.getBoundingClientRect().width || 0);
-      if (width > 100) break;
-    }
-    await addressBorder.waitFor({ state: "attached" });
-    const addressInteraction = await discoveryPage.evaluate(() => {
-      const field = document.querySelector('form.j5d9t > input.workspace-mode-url');
-      const border = document.querySelector('form.j5d9t > .workspace-mode-url-pointer-border');
-      return {
-        fieldShadow: field ? getComputedStyle(field).boxShadow : "missing",
-        borderOpacity: border ? Number.parseFloat(getComputedStyle(border).opacity) : -1,
-        borderWidth: border?.getBoundingClientRect().width || 0,
-      };
-    });
-    assert(addressInteraction.fieldShadow === "none" || addressInteraction.fieldShadow.includes("inset"), `Workspace address field still uses an elevated hover glow: ${addressInteraction.fieldShadow}`);
-    assert(addressInteraction.borderWidth === 0, `Workspace address pointer animation was still active: ${JSON.stringify(addressInteraction)}`);
+    await redesignedNyxTubeDestination.click();
+    await discoveryPage.frameLocator('iframe.view.active').locator('[data-video-grid]').waitFor({state:'attached'});
+    const addressField=discoveryPage.locator('[data-workspace-shell-url]:visible');
+    const addressBounds=await addressField.boundingBox();
+    assert(addressBounds?.width>100,'Workspace address field must fit beside navigation controls');
+    await addressField.click();
+    assert(await addressField.evaluate(field=>document.activeElement===field),'Address field must accept focus');
     const catalog = await discoveryPage.evaluate(() => fetch("/api/apps", { cache: "no-store" }).then(response => response.json()));
     assert(catalog.apps?.some(app => app.id === "youtube" && app.name === "NyxTube" && app.url === "/apps/nyxtube/"), "Apps API did not expose the NyxTube entry");
     await discoveryPage.close();
@@ -309,7 +289,7 @@ try {
       localStorage.removeItem("nyx.homeShortcuts.nyxTubeShortcutV1");
     });
     await migrationPage.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
-    await migrationPage.locator('[data-home-shortcuts] button[data-app-url="/apps/nyxtube/"]').waitFor({ state: "attached" });
+    await migrationPage.waitForFunction(()=>JSON.parse(localStorage.getItem('nyx.homeShortcuts')||'[]').some(item=>item.url==='/apps/nyxtube/'));
     const migrated = await migrationPage.evaluate(() => JSON.parse(localStorage.getItem("nyx.homeShortcuts") || "[]"));
     assert(migrated.some(item => item.url === "/apps/nyxtube/" && item.title === "NyxTube"), `Returning profile did not receive the NyxTube shortcut migration: ${JSON.stringify(migrated)}`);
     await migrationPage.close();

@@ -1911,19 +1911,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     .nyx-credits-founder-card{display:block;max-width:470px;margin:0;border-color:rgba(255,255,255,.12);border-radius:16px;background:#111216;box-shadow:0 18px 40px rgba(0,0,0,.28)}.nyx-credits-founder-media{min-height:142px;overflow:visible;background:#f3eef5}.nyx-credits-founder-banner{overflow:hidden;border-radius:15px 15px 0 0;background:var(--nyx-founder-banner-color,#f3eef5)}.nyx-credits-founder-banner::after{display:none}.nyx-credits-founder-banner img{object-position:center;opacity:.92}.nyx-credits-founder-avatar{left:18px;bottom:-47px;width:92px;height:92px;border:6px solid #111216;box-shadow:0 0 0 2px rgba(255,255,255,.18),0 8px 18px rgba(0,0,0,.32)}.nyx-credits-founder-status{right:-2px;bottom:1px;border-color:#111216}.nyx-credits-founder-presence{position:absolute;z-index:2;left:118px;bottom:-39px;display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:0 13px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:#202126;color:#d9dde5;font-size:12px;font-weight:650;box-shadow:0 5px 14px rgba(0,0,0,.2)}.nyx-credits-founder-presence i{width:8px;height:8px;border-radius:50%;background:#77849a}.nyx-credits-founder-presence.nyx-founder-status-online i{background:#5bc68a}.nyx-credits-founder-presence.nyx-founder-status-idle i{background:#e4b65a}.nyx-credits-founder-presence.nyx-founder-status-dnd i{background:#df6875}.nyx-credits-founder-copy{padding:60px 20px 21px}.nyx-credits-founder-copy>p.nyx-credits-founder-role{margin:0 0 7px!important;color:#aeb5c1!important;font-size:10px!important;letter-spacing:.08em!important}.nyx-credits-founder-copy h3{font-size:26px!important;line-height:1.1!important}.nyx-credits-founder-handle{margin:4px 0 14px!important;color:#9ba2ae!important}.nyx-credits-founder-bio{color:#d6d9df!important;font-size:13px!important;line-height:1.55!important}.nyx-credits-founder-roles,.nyx-credits-founder-badges{margin-top:14px}.nyx-credits-founder-role,.nyx-credits-founder-badge{border-color:#444750;border-radius:6px;background:#24262d;color:#d9dde5}.nyx-credits-founder-roles .nyx-credits-founder-role:first-child{border-color:color-mix(in srgb,var(--nyx-founder-accent,var(--credits-accent)) 62%,#535763);background:color-mix(in srgb,#262830 82%,var(--nyx-founder-accent,var(--credits-accent)));color:#fff}@media(max-width:720px){.nyx-credits-founder-card{max-width:none}.nyx-credits-founder-media{min-height:132px}.nyx-credits-founder-copy{padding:58px 18px 19px}}
   `;
   const nyxCreditsOwnerImageStyle=`.nyx-credits-owner-image{width:min(394px,100%);margin:0}.nyx-credits-owner-image img{display:block;width:100%;height:auto;border-radius:0}`;
-  const DEFAULT_WORKSPACE_MODE='scramjet';
-  const DEFAULT_WORKSPACE_TRANSPORT='libcurlRaw';
-  function normalizeWorkspaceTransportName(value=DEFAULT_WORKSPACE_TRANSPORT){
-    const name=String(value || DEFAULT_WORKSPACE_TRANSPORT).trim().toLowerCase()
-      .replace(atob('bGliY3VybA=='),'libcurl').replace('textlib','libcurl')
-      .replace(atob('ZXBveHk='),'epoxy').replace('atlas','epoxy');
-    if(name==='libcurl' || name==='libcurlraw') return 'libcurlRaw';
-    if(name==='epoxy' || name==='wisp' || name==='auto') return name;
-    return DEFAULT_WORKSPACE_TRANSPORT;
-  }
-  if(String(store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT)).toLowerCase()==='libcurl'){
-    store.setText('nyx.transport','libcurlRaw');
-  }
+  const DEFAULT_WORKSPACE_MODE='document';
+  const DEFAULT_WORKSPACE_TRANSPORT='document';
+  function normalizeWorkspaceTransportName(){return 'document';}
   const nyxFontOptions=[
     ['outfit','Outfit','Outfit,Arial,sans-serif'],
     ['raleway','Raleway','Raleway,Arial,sans-serif'],
@@ -2423,7 +2413,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     overlay.addEventListener('click',close,{once:true});
     setTimeout(close,3600);
   }
-  const rammerheadBase = 'https://browser.rammerhead.org/';
+  
   const defaultBg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
   const bgPresets = {
     dragon: defaultBg,
@@ -2550,13 +2540,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(nyxPhotoWallpapers[family]) return preset.family===family;
       if(preset.family || value==='lineWaves') return false;
       return !wavesActive || Object.hasOwn(window.NyxLineWavesWallpaper?.palettes || {},value);
-    }).map(([value,preset])=>`<button class="nyx-wallpaper-card${selected===value?' selected':''}" data-nyx-beam-wallpaper="${esc(value)}" type="button" aria-pressed="${selected===value}">${preset.family ? `<img src="assets/backgrounds/${preset.family}.jpg" class="nyx-photo-preview ${preset.variant}" alt="" loading="lazy">` : `<canvas width="240" height="135" data-nyx-beam-preview="${esc(value)}" aria-hidden="true"></canvas>`}<span><strong>${esc(preset.label)}</strong></span><i class="nyx-wallpaper-check" aria-hidden="true">&#10003;</i></button>`).join('');
+    }).map(([value,preset])=>`<button class="nyx-wallpaper-card${selected===value?' selected':''}" data-nyx-beam-wallpaper="${esc(value)}" type="button" aria-pressed="${selected===value}">${preset.family ? `<img src="assets/backgrounds/${preset.family}.jpg" class="nyx-photo-preview ${preset.variant}" alt="" loading="eager">` : `<canvas width="240" height="135" data-nyx-beam-preview="${esc(value)}" aria-hidden="true"></canvas>`}<span><strong>${esc(preset.label)}</strong></span><i class="nyx-wallpaper-check" aria-hidden="true">&#10003;</i></button>`).join('');
   }
   function nyxWallpaperFamiliesMarkup(){
     const selected=currentNyxBeamWallpaper();
     return `<div class="nyx-wallpaper-grid">${Object.entries({...nyxPhotoWallpapers,waves:'Waves',beams:'Beams'}).map(([family,label])=>{
       const active=family==='waves' ? selected==='lineWaves' : family==='beams' ? !selected.startsWith('photo-') && selected!=='lineWaves' : selected.startsWith(`photo-${family}-`);
-      return `<button class="nyx-wallpaper-card${active?' selected':''}" data-nyx-wallpaper-family="${family}" type="button" aria-label="${label} styles">${nyxPhotoWallpapers[family] ? `<img src="assets/backgrounds/${family}.jpg" alt="" loading="lazy">` : `<canvas width="240" height="135" data-nyx-beam-preview="${family==='waves'?'lineWaves':'frost'}" aria-hidden="true"></canvas>`}<span><strong>${label}</strong></span><i class="nyx-wallpaper-check" aria-hidden="true">&#10003;</i></button>`;
+      return `<button class="nyx-wallpaper-card${active?' selected':''}" data-nyx-wallpaper-family="${family}" type="button" aria-label="${label} styles">${nyxPhotoWallpapers[family] ? `<img src="assets/backgrounds/${family}.jpg" alt="" loading="eager">` : `<canvas width="240" height="135" data-nyx-beam-preview="${family==='waves'?'lineWaves':'frost'}" aria-hidden="true"></canvas>`}<span><strong>${label}</strong></span><i class="nyx-wallpaper-check" aria-hidden="true">&#10003;</i></button>`;
     }).join('')}</div>`;
   }
   function showNyxWallpaperFamily(root,family=''){
@@ -2928,15 +2918,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   let zTop = 20, winCount = 0, activeWorkspace = null, antiCloseEnabled = store.get('nyx.antiClose',true), panicCaptureArmed = false, antiClosePanicBypass = false;
   let antiCloseConfirmHandler = null, antiCloseGestureHandler = null, antiCloseRearmTimer = null, antiCloseHadGesture = false;
   let renderedChromeMode = '';
-  let studyjetInstallPromise = null;
-  let studyjetController = null;
+  
+  
   let workspaceConnectionPrewarmScheduled = false;
-  let bookmuxConnection = null;
-  let studyjetTransport = null;
-  let studyjetTransportKey = '';
-  let studyjetTransportPending = null;
-  let workspaceTransportOverride = '';
-  let studyjetInstallError = '';
+  
+  
+  
+  
+  
   let nyxPresenceCount = null;
   const connectionPrivacyGuardSource=`(() => {
     if (typeof globalThis === "undefined" || globalThis.__nyxProxyPrivacyInstalled) return;
@@ -2974,77 +2963,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return `nyx_${String(random).replace(/[^a-z0-9_-]/gi,'_').slice(0,72)}`;
   }
 
-  let studyjetRuntimeGuardSource = '';
-  const studyjetNvidiaAuthGuardSource=`(() => {
-    if (typeof window === "undefined" || window.__nyxNvidiaAuthCompatibility) return;
-    let hostname="";
-    let address="";
-    try { hostname=String(location.hostname || "").replace(/^www\./i, "").toLowerCase(); } catch {}
-    try { address=decodeURIComponent(String(location.href || "")).toLowerCase(); } catch { address=String(location.href || "").toLowerCase(); }
-    const supportedHost=/(^|\.)(geforcenow\.com|nvidia\.com|nvidiagrid\.net)$/;
-    if (!supportedHost.test(hostname) && !/(geforcenow\.com|nvidia\.com|nvidiagrid\.net)/.test(address)) return;
-    window.__nyxNvidiaAuthCompatibility=true;
-    const grantedStatus=()=>{
-      const status=new EventTarget();
-      Object.defineProperties(status,{
-        state:{enumerable:true,value:"granted"},
-        onchange:{configurable:true,writable:true,value:null}
-      });
-      return status;
-    };
-    const permissions=navigator.permissions;
-    const nativeQuery=permissions?.query?.bind(permissions);
-    if (permissions && nativeQuery) {
-      const query=descriptor=>String(descriptor?.name || "").toLowerCase()==="storage-access"
-        ? Promise.resolve(grantedStatus())
-        : nativeQuery(descriptor);
-      try { Object.defineProperty(permissions,"query",{configurable:true,value:query}); }
-      catch { try { permissions.query=query; } catch {} }
-    }
-    const storageHandle=()=>({
-      localStorage:window.localStorage,
-      sessionStorage:window.sessionStorage
-    });
-    try { Object.defineProperty(Document.prototype,"hasStorageAccess",{configurable:true,value:()=>Promise.resolve(true)}); } catch {}
-    try { Object.defineProperty(Document.prototype,"requestStorageAccess",{configurable:true,value:()=>Promise.resolve(storageHandle())}); } catch {}
-    try { Object.defineProperty(document,"hasStorageAccess",{configurable:true,value:()=>Promise.resolve(true)}); } catch {}
-    try { Object.defineProperty(document,"requestStorageAccess",{configurable:true,value:()=>Promise.resolve(storageHandle())}); } catch {}
-  })();`;
-  const studyjetSpotifyChromeOsGuardSource=`(() => {
-    if (typeof window === "undefined" || window.__nyxSpotifyChromeOsCompatibility) return;
-    const nativeUserAgent = String(navigator.userAgent || "");
-    if (!/\\bCrOS\\b/i.test(nativeUserAgent)) return;
-    let hostname = "";
-    let pageAddress = "";
-    try { hostname = String(location.hostname || "").toLowerCase(); } catch {}
-    try { pageAddress = decodeURIComponent(String(location.href || "")).toLowerCase(); } catch { pageAddress = String(location.href || "").toLowerCase(); }
-    const compatibilityHost=/(^|\\.)(spotify\\.com|spotifycdn\\.com|scdn\\.co|google\\.com|gstatic\\.com|recaptcha\\.net)$/;
-    if (!compatibilityHost.test(hostname) && !/(spotify\\.com|spotifycdn\\.com|scdn\\.co|google\\.com|gstatic\\.com|recaptcha\\.net)/.test(pageAddress)) return;
-    window.__nyxSpotifyChromeOsCompatibility = true;
-    const chromeVersion = nativeUserAgent.match(/Chrome\\/([0-9.]+)/i)?.[1] || "138.0.0.0";
-    const desktopUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/" + chromeVersion + " Safari/537.36";
-    const defineNavigatorValue = (name, value) => {
-      try { Object.defineProperty(Navigator.prototype, name, { configurable: true, get: () => value }); }
-      catch { try { Object.defineProperty(navigator, name, { configurable: true, get: () => value }); } catch {} }
-    };
-    defineNavigatorValue("userAgent", desktopUserAgent);
-    defineNavigatorValue("platform", "Win32");
-    const nativeData = navigator.userAgentData;
-    if (nativeData) {
-      const desktopData = {
-        brands: Array.from(nativeData.brands || []),
-        mobile: false,
-        platform: "Windows",
-        toJSON() { return { brands: this.brands, mobile: false, platform: "Windows" }; },
-        async getHighEntropyValues(hints) {
-          let values = {};
-          try { values = await nativeData.getHighEntropyValues(hints); } catch {}
-          return { ...values, platform: "Windows", platformVersion: "10.0.0", architecture: "x86", bitness: "64", model: "" };
-        }
-      };
-      defineNavigatorValue("userAgentData", desktopData);
-    }
-  })();`;
+  
+  
+
   const workspaceAdBlockRuntimeSource=`(() => {
     if (typeof window === "undefined" || window.__nyxWorkspaceAdBlock) return;
     window.__nyxWorkspaceAdBlock = true;
@@ -3065,7 +2986,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const resourceValue=node=>node?.getAttribute?.("src") || node?.getAttribute?.("href") || node?.getAttribute?.("data-src") || "";
     const removeAd=node=>{
       try {
-        if (!protectionEnabled() || !node || node.nodeType!==1 || node.hasAttribute?.("scramjet-injected")) return false;
+        if (!protectionEnabled() || !node || node.nodeType!==1) return false;
         if (node.matches?.(adSelector) || blocked(resourceValue(node))) {
           node.remove?.();
           return true;
@@ -3178,279 +3099,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     queueMicrotask(notifyGameDistributionReady);
     clean(document);
   })();`;
-  const studyjetMinimalRuntimeGuardSource=`(() => {
-    if (typeof window === "undefined" || window.__nyxScramjetMinimalGuards) return;
-    window.__nyxScramjetMinimalGuards = true;
-    try {
-      const noop = value => value;
-      window.$scramerr = window.$scramerr || noop;
-      window.$scramjet$pushsourcemap = window.$scramjet$pushsourcemap || noop;
-    } catch {}
-    try {
-      window.__sentry_instrumentation_handlers__ = window.__sentry_instrumentation_handlers__ || {};
-      window.global = window.global || window;
-    } catch {}
-    if (!window.trustedTypes) {
-      try {
-        Object.defineProperty(window, "trustedTypes", {
-          configurable: true,
-          value: {
-            createPolicy(_name, rules = {}) {
-              return {
-                createHTML(value) { return typeof rules.createHTML === "function" ? rules.createHTML(value) : value; },
-                createScript(value) { return typeof rules.createScript === "function" ? rules.createScript(value) : value; },
-                createScriptURL(value) { return typeof rules.createScriptURL === "function" ? rules.createScriptURL(value) : value; }
-              };
-            }
-          }
-        });
-      } catch {}
-    }
-    try {
-      if (!window.Buffer) {
-        const toBytes = value => value instanceof Uint8Array ? value : new TextEncoder().encode(String(value ?? ""));
-        window.Buffer = {
-          from: toBytes,
-          alloc(size) { return new Uint8Array(Math.max(0, Number(size) || 0)); },
-          isBuffer(value) { return value instanceof Uint8Array; },
-          byteLength(value) { return toBytes(value).byteLength; }
-        };
-      }
-      if (!window.Long) {
-        const toNumber = value => Number(value && typeof value === "object" && "low" in value ? value.low : value) || 0;
-        window.Long = {
-          ZERO: 0,
-          UZERO: 0,
-          fromNumber: toNumber,
-          fromValue: toNumber,
-          isLong() { return false; }
-        };
-      }
-    } catch {}
-    try {
-      const nativeCurrentScript = Object.getOwnPropertyDescriptor(Document.prototype, "currentScript");
-      const fallbackScript = document.createElement("script");
-      fallbackScript.setAttribute("nonce", "");
-      Object.defineProperty(Document.prototype, "currentScript", {
-        configurable: true,
-        get() {
-          let current = null;
-          try { current = nativeCurrentScript?.get?.call(this) || null; } catch {}
-          return current || this.querySelector?.("script[src],script") || fallbackScript;
-        }
-      });
-    } catch {}
-    try {
-      const blockedTelemetry = value => /(?:google-analytics\\.com|googletagmanager\\.com|stats\\.g\\.doubleclick\\.net|analytics\\.google\\.com)/i.test(String(value || ""));
-      const neutralizeScript = node => {
-        try {
-          if (node && String(node.tagName || "").toUpperCase() === "SCRIPT" && blockedTelemetry(node.src || node.getAttribute?.("src"))) {
-            node.type = "text/plain";
-            node.removeAttribute("src");
-            node.text = "";
-            return true;
-          }
-        } catch {}
-        return false;
-      };
-      const nativeAppendChild = Node.prototype.appendChild;
-      Node.prototype.appendChild = function(node) {
-        if (neutralizeScript(node)) return node;
-        return nativeAppendChild.call(this, node);
-      };
-      const nativeInsertBefore = Node.prototype.insertBefore;
-      Node.prototype.insertBefore = function(node, before) {
-        if (neutralizeScript(node)) return node;
-        return nativeInsertBefore.call(this, node, before);
-      };
-      const nativeSetAttribute = Element.prototype.setAttribute;
-      Element.prototype.setAttribute = function(name, value) {
-        if (String(this.tagName || "").toUpperCase() === "SCRIPT" && String(name || "").toLowerCase() === "src" && blockedTelemetry(value)) {
-          nativeSetAttribute.call(this, "type", "text/plain");
-          return;
-        }
-        return nativeSetAttribute.call(this, name, value);
-      };
-      const srcDescriptor = Object.getOwnPropertyDescriptor(HTMLScriptElement.prototype, "src");
-      if (srcDescriptor?.set) {
-        Object.defineProperty(HTMLScriptElement.prototype, "src", {
-          configurable: true,
-          get() { return srcDescriptor.get.call(this); },
-          set(value) {
-            if (blockedTelemetry(value)) {
-              try { this.type = "text/plain"; } catch {}
-              return;
-            }
-            return srcDescriptor.set.call(this, value);
-          }
-        });
-      }
-      if (navigator.sendBeacon) {
-        const nativeBeacon = navigator.sendBeacon.bind(navigator);
-        navigator.sendBeacon = (url, data) => blockedTelemetry(url) ? true : nativeBeacon(url, data);
-      }
-    } catch {}
-    try {
-      const popupProtectionEnabled = () => {
-        try {
-          const raw = localStorage.getItem("nyx.popupProtection");
-          return raw == null || JSON.parse(raw) !== false;
-        } catch {
-          return true;
-        }
-      };
-      const blockedUrl = "nyx://blocked67haha";
-      const fakePopup = (notify = false) => {
-        if (notify) {
-          try { window.parent?.postMessage?.({ type: "nyx:popup", url: blockedUrl, blocked: true }, "*"); } catch {}
-        }
-        const fakeDocument = { open(){ return this; }, write(){}, writeln(){}, close(){} };
-        return {
-          closed: false,
-          document: fakeDocument,
-          focus(){},
-          blur(){},
-          close(){ this.closed = true; },
-          postMessage(){},
-          location: {
-            href: blockedUrl,
-            assign(){},
-            replace(){},
-            reload(){},
-            toString(){ return blockedUrl; }
-          }
-        };
-      };
-      const targetOpensPopup = target => {
-        const value = String(target || "").toLowerCase();
-        return value && !["_self", "_parent", "_top"].includes(value);
-      };
-      const looksDownloadLike = value => {
-        const text = String(value || "").trim();
-        return /^(?:blob|data):/i.test(text) || /\.(?:apk|appx|bat|bin|cmd|com|crx|deb|dmg|exe|iso|jar|js|jse|msi|pkg|ps1|scr|sh|vbs|wsf|zip|7z|rar)(?:[?#]|$)/i.test(text);
-      };
-      const trustedGeneratedPopup = link => {
-        if (!link?.matches?.("a[data-nyx-generated-popup][href]")) return false;
-        if (!/^[/]apps[/]link-generator(?:[/]|$)/i.test(String(location.pathname || ""))) return false;
-        try {
-          const parsed = new URL(link.href || link.getAttribute("href"), location.href);
-          if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.port || parsed.search || parsed.hash) return false;
-          if (parsed.hostname !== "jsdelivr.b-cdn.net" && /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?[.]b-cdn[.]net$/i.test(parsed.hostname)) return parsed.pathname === "/";
-          if (!["cdn.jsdelivr.net", "fastly.jsdelivr.net", "gcore.jsdelivr.net", "quantil.jsdelivr.net", "originfastly.jsdelivr.net", "testingcf.jsdelivr.net", "jsdelivr.b-cdn.net", "esm.sh", "raw.esm.sh"].includes(parsed.hostname.toLowerCase())) return false;
-          return /^[/]gh[/][a-z0-9_.-]+[/][a-z0-9_.-]+@[a-z0-9._%~-]+[/][a-z0-9._%-]+[.]svg$/i.test(parsed.pathname);
-        } catch {
-          return false;
-        }
-      };
-      const nativeOpen = window.open?.bind(window);
-      const guardedOpen = (...args) => {
-        if (!popupProtectionEnabled() && nativeOpen) return nativeOpen(...args);
-        return fakePopup(Boolean(navigator.userActivation?.isActive));
-      };
-      try {
-        if (typeof window.open === "function" && typeof Proxy === "function") {
-          window.open = new Proxy(window.open, {
-            apply(target, thisArg, args) {
-              if (!popupProtectionEnabled()) return Reflect.apply(target, thisArg, args);
-              return fakePopup(Boolean(navigator.userActivation?.isActive));
-            },
-            construct(target, args, newTarget) {
-              if (!popupProtectionEnabled()) {
-                try { return Reflect.construct(target, args, newTarget); }
-                catch { return Reflect.apply(target, window, args); }
-              }
-              return fakePopup(Boolean(navigator.userActivation?.isActive));
-            },
-            get(target, prop, receiver) {
-              if (prop === "__nyxPopupGuard") return true;
-              if (prop === "toString") return () => "function open() { [native code] }";
-              return Reflect.get(target, prop, receiver);
-            }
-          });
-        } else {
-          window.open = guardedOpen;
-        }
-      } catch {
-        window.open = guardedOpen;
-      }
-      try {
-        Object.defineProperty(window.open, "toString", { configurable: true, value: () => "function open() { [native code] }" });
-      } catch {}
-      if (window.HTMLAnchorElement?.prototype) {
-        const nativeAnchorClick = HTMLAnchorElement.prototype.click;
-        HTMLAnchorElement.prototype.click = function() {
-          if (popupProtectionEnabled() && (targetOpensPopup(this.target) || this.hasAttribute("download") || looksDownloadLike(this.href || this.getAttribute("href")))) {
-            fakePopup(Boolean(navigator.userActivation?.isActive));
-            return;
-          }
-          return nativeAnchorClick.call(this);
-        };
-      }
-      const stopPopupEvent = event => {
-        if (!popupProtectionEnabled()) return;
-        const link = event.target?.closest?.("a[href]");
-        if (!link) return;
-        if (trustedGeneratedPopup(link)) return;
-        if (targetOpensPopup(link.getAttribute("target")) || link.hasAttribute("download") || looksDownloadLike(link.href || link.getAttribute("href"))) {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          fakePopup(true);
-        }
-      };
-      const stopPopupSubmit = event => {
-        if (!popupProtectionEnabled()) return;
-        const form = event.target;
-        if (!form || String(form.tagName || "").toUpperCase() !== "FORM") return;
-        if (targetOpensPopup(form.getAttribute("target"))) {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          fakePopup(true);
-        }
-      };
-      document.addEventListener("click", stopPopupEvent, true);
-      document.addEventListener("auxclick", stopPopupEvent, true);
-      document.addEventListener("submit", stopPopupSubmit, true);
-    } catch {}
-  })();`;
-  const studyjetHelperRuntimeGuardSource=`(() => {
-    if (typeof window === "undefined" || window.__nyxScramjetHelperGuards) return;
-    window.__nyxScramjetHelperGuards = true;
-    try {
-      const seen = new Map();
-      const noisy = /bare-mux|Hyper client|tls handshake eof|preloaded using link preload|requestStorageAccess|PlayReady|robustness level|reCAPTCHA Timeout|load timed out|trying fallback|failed; switching|Uncaught \\(in promise\\) undefined|^undefined$/i;
-      const summarize = value => String(value && (value.stack || value.message) || value || "")
-        .replace(/https?:\\/\\/[^\\s)]+/g, "<url>")
-        .replace(/\\b[0-9a-f]{6,}\\b/gi, "<id>")
-        .replace(/\\d+/g, "#")
-        .slice(0, 360);
-      ["warn","error"].forEach(level => {
-        const native = console[level]?.bind(console);
-        if (!native || native.__nyxDedupe) return;
-        console[level] = (...args) => {
-          const text = args.map(summarize).join(" ");
-          if (noisy.test(text)) {
-            const key = level + ":" + text;
-            const now = Date.now();
-            const last = seen.get(key) || 0;
-            if (now - last < 12000) return;
-            seen.set(key, now);
-          }
-          native(...args);
-        };
-        console[level].__nyxDedupe = true;
-      });
-      const noop = value => value;
-      window.$scramerr = window.$scramerr || noop;
-      window.$scramjet$pushsourcemap = window.$scramjet$pushsourcemap || noop;
-    } catch {}
-  })();`;
-  const connectionStateVersion='nyx-proxy-state-20261005-studyjet-only-v14';
-  const studyjetStateVersion='nyx-scramjet-state-20260814-private-tabs-v2';
-  const studyjetServiceWorkerUrl='/scramjet.sw.js?v=nyx-sj-20260905-cookie-owner-v5';
+
+
+  const connectionStateVersion='nyx-document-state-20261010-v1';
   function installNyxConsoleDedupe(scope='top'){
     if(console.__nyxDedupeInstalled) return;
     const seen=new Map();
-    const noisy=/bare-mux|Hyper client|tls handshake eof|preloaded using link preload|requestStorageAccess|PlayReady|robustness level|reCAPTCHA Timeout|load timed out|trying fallback|failed; switching|Uncaught \\(in promise\\) undefined|^undefined$/i;
+    const noisy=/Hyper client|tls handshake eof|preloaded using link preload|requestStorageAccess|PlayReady|robustness level|reCAPTCHA Timeout|load timed out|trying fallback|failed; switching|Uncaught \\(in promise\\) undefined|^undefined$/i;
     const summarize=value=>{
       try{
         return String(value && (value.stack || value.message) || value)
@@ -5111,7 +4766,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         created.icon=favicons.nyx;
         created.history=[''];
         created.index=0;
-        created.scramjetFrame=null;
+        
         created.frame.removeAttribute('src');
         created.frame.removeAttribute('srcdoc');
         created.frame.classList.remove('active');
@@ -5142,7 +4797,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         created.icon=favicons.nyx;
         created.history=[''];
         created.index=0;
-        created.scramjetFrame=null;
+        
         created.frame.removeAttribute('src');
         created.frame.removeAttribute('srcdoc');
         created.frame.classList.remove('active');
@@ -5336,13 +4991,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const currentPreset=esc(store.text('nyx.logo','nyx'));
     const engine=esc(store.text('nyx.engine','duckduckgo'));
     const savedWorkspaceMode=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE));
-    const workspaceMode=esc(savedWorkspaceMode==='rammerhead' ? 'auto' : savedWorkspaceMode);
+    const workspaceMode=esc(savedWorkspaceMode);
     const transport=esc(normalizeWorkspaceTransportName(store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT)));
     const theme=esc(store.text('nyx.theme','default'));
     const effect=esc(store.text('nyx.visualEffect','none'));
     const effectSpeed=esc(store.text('nyx.visualEffectSpeed','1.1'));
     const effectAmount=esc(store.text('nyx.visualEffectAmount','16'));
-    return `<section class="settings-app settings-single-pane workspace-only-settings"><main class="settings-main"><h1>Workspace Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Course page appearance</h2><div class="settings-form-row"><input class="settings-input" data-page-heading value="${savedTitle}" placeholder="Course heading"><input class="settings-input" data-page-icon-file type="file" accept="image/*,.ico" aria-label="Choose page icon file"><input type="hidden" data-page-icon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply course appearance</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>Course presets</h2><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Study window</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current page iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original page return address"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Automatic study window</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Return original page after opening</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save study window settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Class shortcut</h2><p>Press this combo anytime to instantly close the current page without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>L00KUP Engine</h2><select class="settings-select" data-workspace-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>Reference Library</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Learning engine</h2><select class="settings-select" data-workspace-mode-select><option value="auto" ${workspaceMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${workspaceMode==='scramjet'?'selected':''}>Learning engine</option></select></section><section class="settings-block"><h2>Compatibility mode</h2><p>Use the alternate connection when a network cannot open sites. Turn off for the standard connection. Reload website pages after changing. Custom connections keep their saved choice.</p><div class="settings-row"><span>Use Compatibility mode</span><button class="settings-action ${store.get('nyx.httpBridge',true)?'on':''}" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div></section><section class="settings-block"><h2>Connection method</h2><select class="settings-select" data-workspace-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Atlas connection</option><option value="wisp" ${transport==='wisp'?'selected':''}>Campus connection endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Textbook connection</option></select><div class="settings-actions"><button class="settings-action" data-workspace-settings-save type="button">Save Workspace Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
+    return `<section class="settings-app settings-single-pane workspace-only-settings"><main class="settings-main"><h1>Workspace Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Course page appearance</h2><div class="settings-form-row"><input class="settings-input" data-page-heading value="${savedTitle}" placeholder="Course heading"><input class="settings-input" data-page-icon-file type="file" accept="image/*,.ico" aria-label="Choose page icon file"><input type="hidden" data-page-icon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply course appearance</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>Course presets</h2><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Study window</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current page iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original page return address"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Automatic study window</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Return original page after opening</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save study window settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Class shortcut</h2><p>Press this combo anytime to instantly close the current page without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>L00KUP Engine</h2><select class="settings-select" data-workspace-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>Reference Library</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Learning engine</h2><select class="settings-select" data-workspace-mode-select><option value="auto" ${workspaceMode==='auto'?'selected':''}>Auto</option><option value="document" ${workspaceMode==='document'?'selected':''}>Learning engine</option></select></section><section class="settings-block"><h2>Compatibility mode</h2><p>External resources open on the document service. Press Open there to start the session.</p><div class="settings-row"><span>Use Compatibility mode</span><button class="settings-action ${store.get('nyx.httpBridge',true)?'on':''}" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div></section><section class="settings-block"><h2>Connection method</h2><select class="settings-select" data-workspace-transport><option value="document">Document service</option></select><div class="settings-actions"><button class="settings-action" data-workspace-settings-save type="button">Save Workspace Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
   }
   function workspaceShellPresetTiles(){
     return `<button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${nyxPageIcon}"><span>ռʏӼ page</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google page</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive page</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink page</span></button>`;
@@ -5359,10 +5014,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(tabDesign) store.setText('nyx.tabDesign',normalizeWorkspaceTabDesign(tabDesign.value));
     const nextTransport=normalizeWorkspaceTransportName(transport?.value);
     if(normalizeWorkspaceTransportName(store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT))!==nextTransport){
-      studyjetInstallPromise=null;
-      studyjetController=null;
-      studyjetTransport=null;
-      studyjetTransportKey='';
+      
+      
+      
+      
     }
     store.setText('nyx.transport', nextTransport);
     applyUserSettings();
@@ -5381,7 +5036,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(workspaceModeSelect){
       const workspaceModeLabels={
         auto:'Auto',
-        scramjet:'Learning engine',
+        document:'Document service',
 
       };
       [...workspaceModeSelect.options].forEach(option=>{
@@ -5591,46 +5246,18 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     overlay.innerHTML=`<main class="workspace-shell-settings-panel" aria-label="Settings">${workspaceShellSettingsMarkup(workspaceShellPresetTiles())}</main>`;
     (document.getElementById('app') || document.body).appendChild(overlay);
     const transportSelect=overlay.querySelector('[data-workspace-transport]');
-    const legacyLibcurlOption=transportSelect?.querySelector('option[value="libcurl"]');
-    if(legacyLibcurlOption){
-      legacyLibcurlOption.value='libcurlRaw';
-      legacyLibcurlOption.textContent='Textbook';
-    }
-    if(transportSelect && !transportSelect.querySelector('option[value="auto"]')){
-      transportSelect.prepend(new Option('Auto (recommended)','auto'));
-      transportSelect.value=normalizeWorkspaceTransportName(store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT));
-    }
-    if(transportSelect){
-      const transportLabels={epoxy:'Atlas',wisp:'Campus connection',libcurl:'Textbook',libcurlRaw:'Textbook',auto:'Auto'};
-      [...transportSelect.options].forEach(option=>{
-        if(transportLabels[option.value]) option.textContent=transportLabels[option.value];
-      });
-    }
-    if(transportSelect && globalThis.__NYX_RUNTIME_CONFIG__?.syncTransportEnabled===true){
-      const label=document.createElement('label');
-      label.className='settings-row';
-      const control=document.createElement('input');
-      control.type='checkbox';
-      control.checked=store.get('nyx.connectionTrial',false)===true;
-      control.dataset.connectionTrial='';
-      label.append(control,document.createTextNode('Try the experimental connection'));
-      const detail=document.createElement('p');
-      detail.className='hint';
-      detail.textContent='Uses the new connection for ordinary documents. Live sessions, uploads and media keep the standard method. Applies after you reopen Nyx.';
-      transportSelect.after(label,detail);
-      control.addEventListener('change',()=>store.set('nyx.connectionTrial',control.checked));
-    }
+    if(transportSelect){transportSelect.replaceChildren(new Option('Document service','document'));transportSelect.value='document';}
     const transportBlock=transportSelect?.closest('.settings-block');
     if(transportBlock){
-      const customWisp=storedCustomWispUrl();
-      const wispBlock=document.createElement('section');
-      wispBlock.className='settings-block nyx-wisp-setting';
-      wispBlock.innerHTML=`<h2>Campus connection address</h2><p>Use a custom campus connection for Nyx. Only use a connection you trust because it carries your website traffic.</p><div class="settings-form-row"><input class="settings-input" data-workspace-wisp-url type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(customWisp)}" placeholder="${esc(defaultWispUrl())}" aria-label="Custom Campus connection address"></div><p class="settings-hint" data-workspace-wisp-status>${customWisp ? `Custom campus connection: ${esc(customWisp)}` : `Default campus connection: ${esc(defaultWispUrl())}`}</p><div class="settings-actions"><button class="settings-action" data-workspace-wisp-save type="button">Save Campus connection address</button><button class="settings-action" data-workspace-wisp-reset type="button">Use default</button><button class="settings-action" data-workspace-connection-repair type="button">Repair connection</button></div>`;
-      transportBlock.after(wispBlock);
+      const customOrigin=storedDocumentOrigin();
+      const documentBlock=document.createElement('section');
+      documentBlock.className='settings-block nyx-document-setting';
+      documentBlock.innerHTML=`<h2>Campus connection address</h2><p>Use a custom campus connection for Nyx. Only use a connection you trust because it carries your website traffic.</p><div class="settings-form-row"><input class="settings-input" data-workspace-document-url type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(customOrigin)}" placeholder="${esc(defaultDocumentOrigin())}" aria-label="Custom Campus connection address"></div><p class="settings-hint" data-workspace-document-status>${customOrigin ? `Custom campus connection: ${esc(customOrigin)}` : `Default campus connection: ${esc(defaultDocumentOrigin())}`}</p><div class="settings-actions"><button class="settings-action" data-workspace-document-save type="button">Save Campus connection address</button><button class="settings-action" data-workspace-document-reset type="button">Use default</button><button class="settings-action" data-workspace-connection-repair type="button">Repair connection</button></div>`;
+      transportBlock.after(documentBlock);
       const transferBlock=document.createElement('section');
       transferBlock.className='settings-block nyx-data-transfer-setting';
       transferBlock.innerHTML="<h2>Data Transfer</h2><p>Move supported game saves, A1 conversations, utility history, shortcuts, and safe device preferences between Nyx links. Authentication sessions, personal API keys, and custom connection credentials are never included.</p><p class=\"settings-hint\" data-nyx-data-transfer-status>Export on this link, then import the downloaded JSON backup on another Nyx link.</p><input data-nyx-data-import-file type=\"file\" accept=\"application/json,.json\" hidden><div class=\"settings-actions\"><button class=\"settings-action\" data-nyx-data-export type=\"button\">Export data</button><button class=\"settings-action\" data-nyx-data-import type=\"button\">Import data</button><button class=\"settings-action\" data-nyx-data-reload type=\"button\" hidden>Reload Nyx</button></div><p class=\"settings-hint\">Backups can contain browsing, game, and conversation data. Store the file securely.</p>";
-      wispBlock.after(transferBlock);
+      documentBlock.after(transferBlock);
     }
     const effectBlock=overlay.querySelector('[data-effect-value]')?.closest('.settings-block');
     if(effectBlock){
@@ -5908,7 +5535,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         tab.icon=favicons.nyx;
       tab.history=[''];
       tab.index=0;
-      tab.scramjetFrame=null;
+      
       tab.frame.removeAttribute('src');
       tab.frame.removeAttribute('srcdoc');
       tab.frame.classList.remove('active');
@@ -5966,7 +5593,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
 
   function workspaceShellPageSrcdoc(page){
-    const script='function nyxEffectPayload(){return{type:"nyx:effect-settings",effect:document.querySelector("[data-effect-value]")?.value||"none",speed:document.querySelector("[data-effect-speed]")?.value||"1.1",amount:document.querySelector("[data-effect-amount]")?.value||"16",theme:document.querySelector("[data-theme-value]")?.value||"default"}}function nyxWorkspacePayload(){return{type:"nyx:workspace-settings",engine:document.querySelector("[data-workspace-engine]")?.value||"duckduckgo",workspaceMode:document.querySelector("[data-workspace-mode-select]")?.value||"auto",transport:document.querySelector("[data-workspace-transport]")?.value||"libcurlRaw"}}document.addEventListener("click",e=>{const preset=e.target.closest("[data-preset]");if(preset){e.preventDefault();e.stopPropagation();parent.postMessage({type:"nyx:preset",preset:preset.dataset.preset},"*");return}const app=e.target.closest("[data-app-url]");if(app){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:app.dataset.appUrl},"*");return}const url=e.target.closest("[data-url]");if(url&&url.closest(".shell-page,.workspace-shell-page")){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:url.dataset.url},"*");return}if(e.target.closest("[data-workspace-settings-save]")){e.preventDefault();parent.postMessage(nyxWorkspacePayload(),"*")}if(e.target.closest("[data-page-fullscreen]"))parent.postMessage({type:"nyx:fullscreen"},"*");if(e.target.closest("[data-shell-about]"))parent.postMessage({type:"nyx:about"},"*");if(e.target.closest("[data-shell-about-tab]"))parent.postMessage({type:"nyx:about-tab"},"*")});document.addEventListener("change",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){document.querySelectorAll("[data-page-heading]").forEach(el=>{el.value=presetSelect.options[presetSelect.selectedIndex]?.textContent||presetSelect.value||"nyx"});parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-value],[data-effect-speed],[data-effect-amount],[data-theme-value]"))parent.postMessage(nyxEffectPayload(),"*");if(e.target.closest("[data-workspace-engine],[data-workspace-mode-select],[data-workspace-transport]"))parent.postMessage(nyxWorkspacePayload(),"*")});document.addEventListener("input",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-speed],[data-effect-amount]")){document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=(Number(document.querySelector("[data-effect-speed]")?.value||1.1)).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=document.querySelector("[data-effect-amount]")?.value||"16"});parent.postMessage(nyxEffectPayload(),"*")}});';
+    const script='function nyxEffectPayload(){return{type:"nyx:effect-settings",effect:document.querySelector("[data-effect-value]")?.value||"none",speed:document.querySelector("[data-effect-speed]")?.value||"1.1",amount:document.querySelector("[data-effect-amount]")?.value||"16",theme:document.querySelector("[data-theme-value]")?.value||"default"}}function nyxWorkspacePayload(){return{type:"nyx:workspace-settings",engine:document.querySelector("[data-workspace-engine]")?.value||"duckduckgo",workspaceMode:document.querySelector("[data-workspace-mode-select]")?.value||"auto",transport:document.querySelector("[data-workspace-transport]")?.value||"document"}}document.addEventListener("click",e=>{const preset=e.target.closest("[data-preset]");if(preset){e.preventDefault();e.stopPropagation();parent.postMessage({type:"nyx:preset",preset:preset.dataset.preset},"*");return}const app=e.target.closest("[data-app-url]");if(app){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:app.dataset.appUrl},"*");return}const url=e.target.closest("[data-url]");if(url&&url.closest(".shell-page,.workspace-shell-page")){e.preventDefault();parent.postMessage({type:"nyx:navigate",url:url.dataset.url},"*");return}if(e.target.closest("[data-workspace-settings-save]")){e.preventDefault();parent.postMessage(nyxWorkspacePayload(),"*")}if(e.target.closest("[data-page-fullscreen]"))parent.postMessage({type:"nyx:fullscreen"},"*");if(e.target.closest("[data-shell-about]"))parent.postMessage({type:"nyx:about"},"*");if(e.target.closest("[data-shell-about-tab]"))parent.postMessage({type:"nyx:about-tab"},"*")});document.addEventListener("change",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){document.querySelectorAll("[data-page-heading]").forEach(el=>{el.value=presetSelect.options[presetSelect.selectedIndex]?.textContent||presetSelect.value||"nyx"});parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-value],[data-effect-speed],[data-effect-amount],[data-theme-value]"))parent.postMessage(nyxEffectPayload(),"*");if(e.target.closest("[data-workspace-engine],[data-workspace-mode-select],[data-workspace-transport]"))parent.postMessage(nyxWorkspacePayload(),"*")});document.addEventListener("input",e=>{const presetSelect=e.target.closest("[data-preset-select]");if(presetSelect){parent.postMessage({type:"nyx:preset",preset:presetSelect.value||"nyx"},"*");return}if(e.target.closest("[data-effect-speed],[data-effect-amount]")){document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=(Number(document.querySelector("[data-effect-speed]")?.value||1.1)).toFixed(1)+"x"});document.querySelectorAll("[data-effect-amount-label]").forEach(el=>{el.textContent=document.querySelector("[data-effect-amount]")?.value||"16"});parent.postMessage(nyxEffectPayload(),"*")}});';
     const popupScript='document.addEventListener("click",e=>{const popup=e.target.closest("[data-popup-protection]");if(!popup)return;e.preventDefault();const next=popup.dataset.enabled!=="true";popup.dataset.enabled=String(next);popup.classList.toggle("on",next);popup.textContent="Popup Protection "+(next?"On":"Off");parent.postMessage({type:"nyx:popup-protection",enabled:next},"*")});';
     const panicFrameScript='let NYX_PANIC_CAPTURE=false;function nyxPanicCombo(e){const key=String(e.key||"").trim();if(!key||["Control","Shift","Alt","Meta"].includes(key))return "";const parts=[];if(e.ctrlKey)parts.push("Ctrl");if(e.altKey)parts.push("Alt");if(e.shiftKey)parts.push("Shift");if(e.metaKey)parts.push("Meta");parts.push(key.length===1?key.toUpperCase():key.replace(/^Arrow/,""));return parts.join("+")}document.addEventListener("click",e=>{if(e.target.closest("[data-panic-capture]"))NYX_PANIC_CAPTURE=true;if(e.target.closest("[data-panic-clear]"))NYX_PANIC_CAPTURE=false},true);document.addEventListener("keydown",e=>{if(!NYX_PANIC_CAPTURE)return;const combo=nyxPanicCombo(e);if(!combo)return;e.preventDefault();e.stopPropagation();NYX_PANIC_CAPTURE=false;document.querySelectorAll("[data-panic-key-display]").forEach(el=>el.textContent=combo);parent.postMessage({type:"nyx:panic-key-set",combo},"*")},true);';
     const finalInternalPaintScript='document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=Number(NYX_EFFECT_SPEED).toFixed(1)+"x"});';
@@ -7326,7 +6953,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       ))],
       ['Checking servers',async()=>doubleCheck(async()=>(
         location.protocol==='file:'
-        || await Promise.all(['/scramjet/scramjet.js','/baremux/index.mjs'].map(path=>fetchOk(path,900)))
+        || await Promise.all(['/runtime-config.js','/js/document-window.mjs'].map(path=>fetchOk(path,900)))
           .then(results=>results.some(Boolean))
       ))],
       ['Checking workspace engine',async()=>doubleCheck(async()=>Boolean(window.fetch && window.Promise && window.URL && window.Blob))],
@@ -7341,7 +6968,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }],
       ['Checking connection updates',async()=>doubleCheck(async()=>{
         if(typeof preflightStateCurrent==='function') return preflightStateCurrent();
-        return typeof connectionStateVersion==='string' && typeof studyjetStateVersion==='string';
+        return typeof connectionStateVersion==='string' && typeof prepareDocumentWindow==='function';
       })],
       ['Checking for bugs',async()=>doubleCheck(async()=>(
         Boolean(document.body && $('desktop') && $('visualEffects') && $('customBgImage'))
@@ -7464,59 +7091,23 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
     return target;
   }
-  function getRhBase(){
-    return store.text('nyx.rammerheadBase',rammerheadBase).replace(/\/+$/,'') + '/';
-  }
-  function getRhSession(){
-    return new Promise(resolve=>{
-      const base=getRhBase();
-      const cached=store.text('nyx.rammerheadSession','');
-      const xhr=new XMLHttpRequest();
-      let done=false;
-      const finish=id=>{
-        if(done) return;
-        done=true;
-        clearTimeout(timer);
-        if(id){
-          store.setText('nyx.rammerheadSession',id);
-          resolve({base,id});
-        }else if(cached){
-          resolve({base,id:cached});
-        }else{
-          resolve(null);
-        }
-      };
-      const timer=setTimeout(()=>finish(null),5000);
-      try{
-        xhr.open('GET',base+'newsession',true);
-        xhr.onload=()=>{
-          const id=(xhr.responseText||'').trim();
-          finish(id || null);
-        };
-        xhr.onerror=()=>finish(null);
-        xhr.send();
-      }catch{
-        finish(null);
-      }
-    });
-  }
-  function rhBuildUrl(base,id,url){
-    return base + id + '/' + url;
-  }
+  
+  
+  
   function connectionModeUrl(mode,url,privacySessionId=''){
     mode=normalizeWorkspaceModeName(mode);
     const target=connectionTargetUrl(url);
     if(!target) return url;
     {}
-    if(mode==='scramjet') return studyjetUrl(target) || target;
+    if(mode==='document') return documentAddress(target) || target;
     return url;
   }
   window.nyxProxyGameUrl=async url=>{
     const target=connectionTargetUrl(url);
     if(!target) return '';
-    const ready=await installStudyjet();
+    const ready=await prepareDocumentWindow();
     if(!ready) throw new Error('The game connection is unavailable.');
-    return studyjetUrl(target);
+    return documentAddress(target);
   };
   const nyxManagedGameFrames=new WeakMap();
   const nyxAdProtectedGameFrames=new WeakSet();
@@ -7542,8 +7133,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         frameWindow=frame.contentWindow;
         frameDocument=frame.contentDocument;
         if(frameWindow && frameWindow!==window){
-          if(!frameWindow.__nyxWorkspaceAdBlock) frameWindow.eval(workspaceAdBlockRuntimeSource);
-          if(!frameWindow.__nyxScramjetMinimalGuards) frameWindow.eval(studyjetMinimalRuntimeGuardSource);
+          if(!frameWindow.__nyxWorkspaceAdBlock){const script=frameDocument.createElement("script");script.textContent=workspaceAdBlockRuntimeSource;(frameDocument.head||frameDocument.documentElement).appendChild(script);script.remove();}
+
         }
       }catch{}
       if(!frameDocument?.documentElement) return false;
@@ -7576,46 +7167,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return protect();
   }
   window.nyxInstallGameAdProtection=frame=>installGameFrameAdProtection(frame);
-  window.nyxLaunchGameFrame=async (frame,url,{forceProxy:forceConnection=false,signal}={})=>{
-    const target=connectionTargetUrl(url);
-    if(!target) return {managed:false,engine:'',url:''};
-    installGameFrameAdProtection(frame);
-    const mode=forceConnection ? 'scramjet' : selectedWorkspaceMode(target);
-    if(mode==='scramjet' && String(frame?.tagName || '').toLowerCase()==='iframe'){
-      const ready=await installStudyjet();
-      const controller=studyjetController;
-      if(ready && controller){
-        if(signal?.aborted || !frame.isConnected) return;
-        let managed=nyxManagedGameFrames.get(frame);
-        if(!managed || managed.__nyxScramjetVersion!=='v2'){
-          frame.removeAttribute('src');
-          managed=controller.createFrame(frame,{plugins:[
-                createStudyjetCompatibilityPlugin('','proxy-sri'),
-                createStudyjetCompatibilityPlugin(workspaceAdBlockRuntimeSource,'ad-block'),
-                createStudyjetCompatibilityPlugin(studyjetMinimalRuntimeGuardSource,'minimal-guard')
-              ]});
-          managed.__nyxScramjetVersion='v2';
-          nyxManagedGameFrames.set(frame,managed);
-        }
-        if(signal?.aborted || !frame.isConnected) return;
-        const cancel=()=>{
-          if(nyxManagedGameFrames.get(frame)!==managed)return;
-          frame.src='about:blank';
-          const index=controller.frames?.indexOf(managed)??-1;
-          if(index>=0)controller.frames.splice(index,1);
-          nyxManagedGameFrames.delete(frame);
-        };
-        signal?.addEventListener('abort',cancel,{once:true});
-        try{
-          await managed.go(target);
-          if(signal?.aborted || !frame.isConnected){cancel();return;}
-        }catch(error){signal?.removeEventListener('abort',cancel);cancel();throw error;}
-        return {managed:true,engine:'scramjet',url:target};
-      }
-    }
-    if(mode==='iframe') return {managed:false,engine:'iframe',url:target};
-    throw new Error('The game connection is unavailable.');
-  };
+  window.nyxLaunchGameFrame=async(frame,url,{forceProxy:forceConnection=false,signal}={})=>{const target=connectionTargetUrl(url);if(!target)return {managed:false,engine:'',url:''};if(!forceConnection&&selectedWorkspaceMode(target)==='iframe')return {managed:false,engine:'iframe',url:target};const{openDocument}=await import('/js/document-window.mjs');return openDocument(frame,target,{signal});};
 
   window.nyxLaunchMovieFrame=async(frame,url,{signal,recover=false}={})=>{
     const {movieSourceUrl}=await import('/chapels/movies/providers.mjs?v=20260915-aniembed-v1');
@@ -7627,17 +7179,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(recover) nyxManagedGameFrames.delete(frame);
     await window.nyxLaunchGameFrame(frame,url,{forceProxy:true,signal});
   };
-  function normalizeWorkspaceModeName(mode){
-    let value=String(mode || 'auto').trim();
-    if((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))){
-      try{value=JSON.parse(value)}catch{value=value.slice(1,-1)}
-    }
-    value=String(value || 'auto').trim().toLowerCase().replace(atob('c2NyYW1qZXQ='),'scramjet').replace('studyjet','scramjet');
-    if(value==='sj' || value==='scram' || value==='scramjet' || value==='scramjet-v2' || value==='sjv2') return 'scramjet';
-    if(value==='rh' || value==='rammerhead') return 'rammerhead';
-    if(value==='direct' || value==='iframe') return 'iframe';
-    return value==='auto' ? 'auto' : 'scramjet';
-  }
+  function normalizeWorkspaceModeName(value){return value==='iframe'?'iframe':value==='auto'?'auto':'document';}
   function connectionTargetUrl(url){
     try{
       const target=new URL(url,location.href);
@@ -7680,7 +7222,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const host=workspaceHost(url);
     if(!host) return 'iframe';
     if(hostMatches(host,['slither.io'])) return 'iframe';
-    if(hostMatches(host,['cineby.at'])) return 'scramjet';
+    if(hostMatches(host,['cineby.at'])) return 'document';
     if(hostMatches(host,['tcgplayer.com'])) return 'iframe';
     const studyjetHosts=[
       'geforcenow.com','nvidia.com','play.geforcenow.com',
@@ -7692,8 +7234,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       'localhost','127.0.0.1'
     ];
     if(hostMatches(host,iframeHosts)) return 'iframe';
-    if(hostMatches(host,studyjetHosts)) return 'scramjet';
-    return 'scramjet';
+    if(hostMatches(host,studyjetHosts)) return 'document';
+    return 'document';
   }
   function selectedWorkspaceMode(url){
     try{
@@ -7701,15 +7243,15 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(target.origin===location.origin || target.protocol==='file:') return 'iframe';
     }catch{}
     const mode=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE));
-    if(isSpotifyFamilyUrl(url)) return 'scramjet';
-    if(hostMatches(workspaceHost(url),['tiktok.com'])) return 'scramjet';
+    if(isSpotifyFamilyUrl(url)) return 'document';
+    if(hostMatches(workspaceHost(url),['tiktok.com'])) return 'document';
     if(hostMatches(workspaceHost(url),['slither.io'])) return 'iframe';
-    if(mode==='iframe' && hostMatches(workspaceHost(url),['cineby.at'])) return 'scramjet';
+    if(mode==='iframe' && hostMatches(workspaceHost(url),['cineby.at'])) return 'document';
     if(mode!=='auto') return mode;
     return bestWorkspaceMode(url);
   }
   function appCompatibilityMode(url){
-    if(hostMatches(workspaceHost(url),['aether.cx','crazygames.com','tiktok.com'])) return 'scramjet';
+    if(hostMatches(workspaceHost(url),['aether.cx','crazygames.com','tiktok.com'])) return 'document';
     return '';
   }
   function isYouTubeUrl(url){
@@ -7726,13 +7268,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }catch{return url}
   }
 
-  function studyjetUrl(url){
-    const target=connectionTargetUrl(url);
-    if(!target || !studyjetController?.prefix) return '';
-    const config=studyjetConfig();
-    const encode=typeof config.codec?.encode==='function' ? config.codec.encode : encodeURIComponent;
-    return config.prefix + encode(target);
-  }
+  function documentAddress(value){const target=connectionTargetUrl(value);if(!target)return '';const local=['localhost','127.0.0.1'].includes(location.hostname);const origin=globalThis.__NYX_RUNTIME_CONFIG__?.documentOrigin||(local?'http://127.0.0.1:8082':'');if(!origin)return '';const url=new URL(origin);if(url.origin===location.origin)return '';return url.origin+'/#'+encodeURIComponent(target);}
   function connectionFailureHtml(message,engine='Nyx',{allowDirect=false,heading=''}={}){
     console.warn('[workspace load]',engine,heading,message);
     const repairAction='<button type="button" data-nyx-repair onclick="parent.postMessage({type:\'nyx:repair-connection\'},parent.location.origin)">Try again</button>';
@@ -7800,57 +7336,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const active=fresh?.active || current?.active || null;
         return compatible(active) ? active : null;
       }
-      async function refreshStudyjetServiceWorker(){
-        if(!('serviceWorker' in navigator)) return false;
-        const registration=await navigator.serviceWorker.getRegistration('/~/sj/');
-        if(!registration) return false;
-        await registration.update().catch(()=>null);
-        return Boolean(await waitForServiceWorkerScript(registration,studyjetServiceWorkerUrl));
-      }
-  function normalizeWispUrl(value){
-    const raw=String(value || '').trim();
-    if(!raw) return '';
-    let endpoint;
-    try{endpoint=new URL(raw)}catch{throw new Error('Enter a complete ws:// or wss:// Campus connection address.')}
-    if(endpoint.protocol!=='ws:' && endpoint.protocol!=='wss:') throw new Error('A Campus connection address must start with ws:// or wss://.');
-    if(endpoint.username || endpoint.password) throw new Error('Campus connection addresses cannot contain a username or password.');
-    if(endpoint.hash) throw new Error('Campus connection addresses cannot contain a # fragment.');
-    if(location.protocol==='https:' && endpoint.protocol!=='wss:') throw new Error('Secure Nyx pages require a wss:// Campus connection address.');
-    return endpoint.href;
-  }
-  function defaultWispUrl(){
-    const configured=String(globalThis.__NYX_RUNTIME_CONFIG__?.wispUrl || '').trim();
-    if(/^wss?:\/\//i.test(configured)) return configured.endsWith('/') ? configured : configured+'/';
-    if(!hasHostedBackend()) return 'wss://wisp.mercurywork.shop/';
-    const protocol=location.protocol==='https:' ? 'wss:' : 'ws:';
-    return `${protocol}//${location.host}/resources/live/`;
-  }
-  function storedCustomWispUrl(){
-    try{const url=normalizeWispUrl(store.text('nyx.wispUrl',''));return url===workspaceHttpRelayUrl()?'':url}catch{return ''}
-  }
-  function workspaceHttpRelayUrl(){
-    return `${location.protocol==='https:'?'wss:':'ws:'}//${location.host}/api/tutsi-relay/socket/`;
-  }
-  function wispUrl(){
-    return storedCustomWispUrl() || window.NyxRelaySelection?.current(configuredWispUrls()) || configuredWispUrls()[0];
-  }
-  function configuredWispUrls(){
-    if(store.get('nyx.httpBridge',true))return [workspaceHttpRelayUrl()];
-    const extras=globalThis.__NYX_RUNTIME_CONFIG__?.wispUrls;
-    const urls=[...new Set([defaultWispUrl(),...(Array.isArray(extras)?extras:[])].map(value=>{
-      try{return normalizeWispUrl(value)}catch{return ''}
-    }).filter(url=>url&&url!==workspaceHttpRelayUrl()))];
-    return urls.length?urls:[`${location.protocol==='https:'?'wss:':'ws:'}//${location.host}/resources/live/`];
-  }
-  async function selectWispRelay(failed=''){
-    const custom=storedCustomWispUrl();
-    if(custom)return custom;
-    if(store.get('nyx.httpBridge',true)){
-      const {installHttpRelaySocket}=await import('/chapels/tutsi/http-relay.mjs');
-      installHttpRelaySocket();
-    }
-    return await window.NyxRelaySelection?.choose(configuredWispUrls(),failed) || configuredWispUrls()[0];
-  }
+
+  function normalizeDocumentOrigin(value){if(!value)return '';const url=new URL(value);if(!['http:','https:'].includes(url.protocol)||url.username||url.password||url.origin===location.origin||(location.protocol==='https:'&&url.protocol!=='https:'))throw Error('Use a separate secure document service address.');return url.origin;}
+  function defaultDocumentOrigin(){return globalThis.__NYX_RUNTIME_CONFIG__?.documentOrigin||(['localhost','127.0.0.1'].includes(location.hostname)?'http://127.0.0.1:8082':'');}
+  function storedDocumentOrigin(){try{return normalizeDocumentOrigin(store.text('nyx.documentOrigin',''));}catch{return '';}}
+
+  function selectedDocumentOrigin(){return storedDocumentOrigin()||defaultDocumentOrigin();}
+
+
   function activeWorkspaceSourceUrl(){
     const activeTab=activeWorkspace?.tabs?.find(tab=>tab.id===activeWorkspace.active);
     const raw=activeTab?.sourceUrl || activeTab?.url || '';
@@ -7858,27 +7351,27 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   function resetWorkspaceConnectionRuntime(reloadActive=true){
     const activeSource=activeWorkspaceSourceUrl();
-    workspaceTransportOverride='';
-    studyjetInstallPromise=null;
-    studyjetController=null;
-    studyjetTransport?.close?.();
-    studyjetTransport=null;
-    studyjetTransportPending=null;
-    studyjetTransportKey='';
+    
+    
+    
+    
+    
+    
+    
     if(reloadActive && /^https?:\/\//i.test(activeSource)) setTimeout(()=>activeWorkspace?.navigate?.(activeSource),0);
   }
-  function saveWorkspaceWispUrl(root,reset=false){
-    const input=root?.querySelector('[data-workspace-wisp-url]');
-    const status=root?.querySelector('[data-workspace-wisp-status]');
+  function saveDocumentOrigin(root,reset=false){
+    const input=root?.querySelector('[data-workspace-document-url]');
+    const status=root?.querySelector('[data-workspace-document-status]');
     let next='';
-    try{next=reset ? '' : normalizeWispUrl(input?.value || '')}catch(error){
+    try{next=reset ? '' : normalizeDocumentOrigin(input?.value || '')}catch(error){
       input?.focus();
       toast(error?.message || "Enter a valid Campus connection address.");
       return false;
     }
-    store.setText('nyx.wispUrl',next);
+    store.setText('nyx.documentOrigin',next);
     if(input) input.value=next;
-    if(status) status.textContent=next ? `Custom campus connection: ${next}` : `Default campus connection: ${defaultWispUrl()}`;
+    if(status) status.textContent=next ? `Custom campus connection: ${next}` : `Default campus connection: ${defaultDocumentOrigin()}`;
     resetWorkspaceConnectionRuntime();
     toast(next ? "Custom Campus connection address saved" : "Default Campus connection address restored");
     return true;
@@ -7992,7 +7485,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }catch{}
     }
     try{
-      const endpoint=new URL(wispUrl());
+      const endpoint=new URL(selectedDocumentOrigin());
       endpoint.protocol=endpoint.protocol==='wss:' ? 'https:' : 'http:';
       endpoint.pathname='/presence';
       endpoint.search='';
@@ -8069,324 +7562,26 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     setInterval(heartbeat,15_000);
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible') heartbeat()});
   }
-  async function installBookmuxTransport(){
-    await selectWispRelay();
-    const { BareMuxConnection:BookmuxConnection } = await import('/baremux/index.mjs?v=nyx-baremux-worker-start-v2');
-    const connection = bookmuxConnection || (bookmuxConnection = new BookmuxConnection('/baremux/worker.js'));
-    const wisp=wispUrl();
-    const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-    const setTransportWithRetry=async (path,args)=>{
-      let lastError=null;
-      for(let attempt=0;attempt<3;attempt++){
-        try{
-          if(wisp===workspaceHttpRelayUrl()){
-            await connection.setManualTransport(`
-              const {installHttpRelaySocket}=await import('/chapels/tutsi/http-relay.mjs');
-              installHttpRelaySocket();
-              const {default:Transport}=await import(${JSON.stringify(path)});
-              return [Transport,${JSON.stringify(path)}];
-            `,args);
-          }else{
-            await connection.setTransport(path,args);
-          }
-          return;
-        }catch(error){
-          lastError=error;
-          await delay(220*(attempt+1));
-        }
-      }
-      throw lastError;
-    };
-    const transport=normalizeWorkspaceTransportName(workspaceTransportOverride || store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT));
-    try{
-      if(transport==='libcurlRaw' || transport==='auto'){
-        try{
-          await setTransportWithRetry('/assets/transports/libcurl-baremux.mjs', [{ wisp, websocket: wisp }]);
-          return connection;
-        }catch(error){
-          throw error;
-        }
-      }
-      if(transport==='wisp'){
-        await setTransportWithRetry('/epoxy/index.mjs', [{ wisp, wisp_v2: false }]);
-        return connection;
-      }
-      await setTransportWithRetry('/epoxy/index.mjs', [{ wisp, wisp_v2: true }]);
-      return connection;
-    }catch(firstError){
-      if(transport==='libcurlRaw') throw firstError;
-      await setTransportWithRetry('/epoxy/index.mjs', [{ wisp, wisp_v2: false }]).catch(()=>{
-        throw firstError;
-      });
-      return connection;
-    }
-  }
-  async function createStudyjetTransport(){
-    await selectWispRelay();
-    const transport=normalizeWorkspaceTransportName(workspaceTransportOverride || store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT));
-    const trial=globalThis.__NYX_RUNTIME_CONFIG__?.syncTransportEnabled===true && store.get('nyx.connectionTrial',false)===true;
-    const key=`${transport}:${wispUrl()}:${trial}`;
-    if(studyjetTransport && studyjetTransportKey===key) return studyjetTransport;
-    if(studyjetTransportPending?.key===key) return studyjetTransportPending.promise;
-    const wisp=wispUrl();
-    const buildTransport=async name=>{
-      let endpoint=null;
-      if(wisp===workspaceHttpRelayUrl()){
-        const {createHttpRelayEndpoint}=await import('/chapels/tutsi/http-relay.mjs');
-        endpoint=createHttpRelayEndpoint();
-      }
-      const relay=endpoint?.url||wisp;
-      let client;
-      try{
-      if(name==='libcurlRaw' || name==='auto'){
-        const { default: LibcurlClient } = await import('/assets/transports/libcurl-pilgrim.mjs');
-        client=new LibcurlClient({ wisp:relay, websocket:relay });
-      }else{
-      const { default: EpoxyTransport } = await import('/assets/transports/incense-pilgrim.mjs');
-        client=new EpoxyTransport({ wisp:relay, wisp_v2: name!=='wisp' });
-      }
-      }catch(error){endpoint?.close();throw error;}
-      if(endpoint){const close=client.close?.bind(client);client.close=()=>{endpoint.close();close?.();};}
-      return client;
-    };
 
 
-    const pending={key,promise:null};
-    studyjetTransportPending=pending;
-    pending.promise=(async()=>{
-      const {RelayTransport}=await import('/chapels/tutsi/relay.mjs');
-      const client=new RelayTransport({urls:[wisp],monitorMs:0,storage:null,createClient:async()=>{
-        const next=await buildTransport(transport);
-        let timer;
-        try{if(typeof next.init==='function'&&!next.ready)await Promise.race([
-          next.init(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Workspace transport startup timed out')),10000);})
-        ]);return next;}catch(error){next.close?.();throw error;}finally{clearTimeout(timer);}
-      }});
-      try{await client.init();}catch(error){client.close();throw error;}
-      let selected=client;
-      if(trial){
-        const {Adapter}=await import('/assets/network/adapter.mjs');
-        selected=new Adapter(client);
-      }
-      if(studyjetTransportPending===pending){
-        studyjetTransport=selected;
-        studyjetTransportKey=key;
-      }
-      return selected;
-    })().finally(()=>{if(studyjetTransportPending===pending) studyjetTransportPending=null;});
-    return pending.promise;
-  }
-  function studyjetConfig(){
-    return {
-      prefix:'/~/sj/',
-      scramjetPath:'/scramjet/scramjet.js?v=20260905-optional-history-url-v1',
-      injectPath:'/controller/controller.inject.js',
-      wasmPath:'/scramjet/scramjet.wasm',
-      virtualWasmPath:'scramjet.wasm.js',
-      codec:{
-        encode:url=>encodeURIComponent(url),
-        decode:url=>decodeURIComponent(url)
-      }
-    };
-  }
-  function studyjetRuntimeConfig(){
-    const authSafeFlags={
-      captureErrors:false,
-      cleanErrors:false,
-      sourcemaps:false,
-      destructureRewrites:false,
-      allowInvalidJs:false,
-      allowFailedIntercepts:true,
-      encapsulateWorkers:true
-    };
-    return {
-      flags:{
-        syncxhr:false,
-        disableComputedWrap:true,
-        rewriterLogs:false,
-        captureErrors:false,
-        cleanErrors:false,
-        scramitize:false,
-        sourcemaps:false,
-        destructureRewrites:false,
-        allowInvalidJs:false,
-        debugTrampolines:false,
-        debugSourceURL:false,
-        allowFailedIntercepts:true,
-        encapsulateWorkers:true
-      },
-      siteFlags:{
-        'https?:\\/\\/([^/]+\\.)?(spotify\\.com|spotifycdn\\.com|scdn\\.co|accounts\\.scdn\\.co)(\\/|$)':authSafeFlags,
-        'https?:\\/\\/([^/]+\\.)?(google\\.com|gstatic\\.com|recaptcha\\.net)(\\/|$)':authSafeFlags
-      },
-      maskedfiles:['inject.js','scramjet.wasm.js']
-    };
-  }
-  function createStudyjetController(serviceworker,transport){
-    const api=window.$scramjetController;
-    const Controller=api?.Controller;
-    if(!Controller) throw new Error('Learning controller did not load');
-    api.assertRuntimeScramjetVersion?.();
-    return new Controller({
-      serviceworker,
-      transport,
-      config:studyjetConfig(),
-      scramjetConfig:studyjetRuntimeConfig()
-    });
-  }
-  async function createPrivateStudyjetController(){
-    const base=studyjetController;
-    if(!base?.serviceWorkerController || !base?.transport) throw new Error('Private learning session is unavailable');
-    const controller=createStudyjetController(base.serviceWorkerController,base.transport);
-    const {trackConnectionController,waitForConnectionController}=await import('/js/intercession-startup.mjs');
-    controller.nyxStopWorkerTracking=trackConnectionController(controller);
-    try{await waitForConnectionController(controller,5000);}catch(error){
-      controller.nyxStopWorkerTracking();
-      try{controller.cookieSyncChannel?.close?.()}catch{}
-      try{controller.port?.close?.()}catch{}
-      throw error;
-    }
-    controller.loadSavedCookies=async()=>{};
-    controller.persistCookies=async()=>{};
-    controller.cookieSyncDirty=false;
-    controller.cookieUpdatedAt=Date.now();
-    try{controller.cookieJar?.clear?.()}catch{}
-    try{controller.cookieSyncChannel?.close?.()}catch{}
-    return controller;
-  }
-  function destroyConnectionPrivacySession(tab){
-    if(!tab) return;
-    const controller=tab.privateScramjetController;
-    if(controller){
-      controller.nyxStopWorkerTracking?.();
-      try{controller.cookieJar?.clear?.()}catch{}
-      try{controller.frames?.splice?.(0,controller.frames.length)}catch{}
-      try{controller.cookieSyncChannel?.close?.()}catch{}
-      try{controller.port?.close?.()}catch{}
-    }
 
 
-    tab.privateScramjetController=null;
-    tab.privateScramjetControllerPromise=null;
-    tab.scramjetFrame=null;
-    const sessionId=String(tab.privacySessionId || '');
-    if(/^nyx_[a-z0-9_-]{12,80}$/i.test(sessionId) && navigator.serviceWorker){
-      const message={type:'nyx:destroy-proxy-session',sessionId};
-      navigator.serviceWorker.getRegistration('/service/').then(registration=>{
-        registration?.active?.postMessage?.(message);
-      }).catch(()=>{});
-    }
-  }
+
+  function destroyConnectionPrivacySession(tab){if(tab?.frame?.dataset.documentSource){tab.frame.src='about:blank';delete tab.frame.dataset.documentSource;}}
   window.addEventListener('pagehide',event=>{
     if(event.persisted) return;
     activeWorkspace?.tabs?.forEach?.(tab=>destroyConnectionPrivacySession(tab));
   });
-  async function reconnectStudyjetController(controller,serviceworker,transport,force=false){
-    if(!controller || !serviceworker) return false;
-    controller.setTransport?.(transport);
-    if(controller.serviceWorkerController===serviceworker && !force) return true;
-    if(typeof controller.setupMessagePort!=='function') return false;
-    controller.serviceWorkerController=serviceworker;
-    controller.guardServiceWorkerRevive=false;
-    controller.setupMessagePort();
-    await new Promise(resolve=>setTimeout(resolve,120));
-    return true;
-  }
-  async function ensureStudyjetWorkerConnection(controller,force=false){
-    let registration=await navigator.serviceWorker.getRegistration('/~/sj/');
-    if(!registration || registration.scope!==new URL('/~/sj/',location.href).href){
-      registration=await navigator.serviceWorker.register(studyjetServiceWorkerUrl,{scope:'/~/sj/',updateViaCache:'none'});
-    }
-    const worker=await waitForServiceWorkerScript(registration,studyjetServiceWorkerUrl);
-    if(!worker) throw new Error('The browsing connection could not be restored. Try again.');
-    for(const current of new Set([studyjetController,controller])){
-      if(current && !await reconnectStudyjetController(current,worker,studyjetController.transport,force)){
-        throw new Error('The browsing session could not reconnect. Try again.');
-      }
-    }
-  }
+
+
   let workspaceConnectionRepair=null;
-  function repairWorkspaceConnection(){
-    if(workspaceConnectionRepair)return workspaceConnectionRepair;
-    workspaceConnectionRepair=(async()=>{
-      if(!navigator.serviceWorker)throw new Error('This workspace cannot create a browsing connection.');
-      await studyjetInstallPromise;
-      await studyjetTransportPending?.promise.catch(()=>null);
-      studyjetInstallPromise=null;
-      studyjetTransport?.close?.();
-      studyjetTransport=null;
-      studyjetTransportPending=null;
-      studyjetTransportKey='';
-      await unregisterConnectionScope('/~/sj/');
-      if(!await installStudyjet())throw new Error(studyjetInstallError || 'The browsing connection is unavailable.');
-      await ensureStudyjetWorkerConnection(null,true);
-      for(const tab of activeWorkspace?.tabs || []){
-        if(tab.privateScramjetController)await ensureStudyjetWorkerConnection(tab.privateScramjetController,true);
-      }
-    })().finally(()=>{workspaceConnectionRepair=null});
-    return workspaceConnectionRepair;
-  }
-  async function loadStudyjetRuntimeGuardSource(){
-    if(studyjetRuntimeGuardSource) return studyjetRuntimeGuardSource;
-    const response=await fetch('/nyx-scramjet-runtime-guard.js',{cache:'no-store'});
-    if(!response.ok) throw new Error('Could not load Learning runtime guard');
-    studyjetRuntimeGuardSource=await response.text();
-    return studyjetRuntimeGuardSource;
-  }
-  function findStudyjetHtmlNode(node,name){
-    if(String(node?.name || '').toLowerCase()===name) return node;
-    const children=node?.childNodes || node?.children;
-    if(!Array.isArray(children)) return null;
-    for(const child of children){
-      const found=findStudyjetHtmlNode(child,name);
-      if(found) return found;
-    }
-    return null;
-  }
-  function installStudyjetRuntimeGuards(root,source=studyjetRuntimeGuardSource,key='runtime-guard'){
-    const target=findStudyjetHtmlNode(root,'head') || findStudyjetHtmlNode(root,'html') || root;
-    const children=target?.childNodes || target?.children;
-    if(!Array.isArray(children)) return;
-    if(children.some(child=>child?.attribs?.['data-nyx-runtime-guard']===key)) return;
-    const script={
-      type:'script',
-      name:'script',
-      attribs:{'data-nyx-runtime-guard':key},
-      children:[],
-      parent:target,
-      prev:null,
-      next:children[0] || null
-    };
-    const sourceNode={type:'text',data:source || 'void 0;',parent:script,prev:null,next:null};
-    script.children.push(sourceNode);
-    if(children[0]) children[0].prev=script;
-    children.unshift(script);
-  }
-  function shouldUseStudyjetRuntimeGuard(url){
-    return false;
-  }
-  function shouldUseStudyjetMinimalGuard(url){
-    const raw=String(url || '');
-    const host=workspaceHost(workspaceShellSourceUrl(raw) || raw);
-    if(host && hostMatches(host,[
-      'spotify.com',
-      'spotifycdn.com',
-      'scdn.co',
-      'accounts.spotify.com',
-      'accounts.scdn.co',
-      'open.spotify.com'
-    ])) return false;
-    return !!host && hostMatches(host,[
-      'google.com',
-      'gstatic.com',
-      'recaptcha.net',
-      'google-analytics.com',
-      'googletagmanager.com'
-    ]);
-  }
-  function shouldUseStudyjetHelperGuard(url){
-    return false;
-  }
+  async function repairWorkspaceConnection(){if(!await prepareDocumentWindow())throw Error('Document service unavailable.');activeWorkspace?.reloadTab?.();}
+
+
+
+
+
+
   function isNvidiaAuthFamilyUrl(url){
     const raw=String(url || '');
     const host=workspaceHost(workspaceShellSourceUrl(raw) || raw);
@@ -8396,9 +7591,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       'nvidiagrid.net'
     ]);
   }
-  function shouldStripStudyjetDuckDuckGoScripts(url){
-    return false;
-  }
+
   function isSpotifyFamilyUrl(url){
     const raw=String(url || '');
     const host=workspaceHost(workspaceShellSourceUrl(raw) || raw);
@@ -8536,7 +7729,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const hasVisibleStructure=!!doc.querySelector('main,button,a,input,[role],[data-testid],svg,img,canvas,video,audio');
 
 
-      const hasErrorText=/^(?:Error:\s*)?(?:(?:scramjet|learning engine) did not start|scramjet route missed|error processing your request|internal server error|internal service worker error|Reconnecting (?:Scramjet|Studyjet|Learning engine)|request failed with error code\s*(?:35|52|56|60)|ssl connect error|ssl peer certificate|failure when receiving data from the peer|localhost refused to connect)\b/i.test(visibleText);
+      const hasErrorText=/^(?:Error:\s*)?(?:(?:Document service|learning engine) did not start|Document request failed|error processing your request|internal server error|internal service worker error|Reconnecting (?:Document service|Document service|Learning engine)|request failed with error code\s*(?:35|52|56|60)|ssl connect error|ssl peer certificate|failure when receiving data from the peer|localhost refused to connect)\b/i.test(visibleText);
       const blank=!hasVisibleStructure && text.length<12 && structureCount<4;
       return {reachable:true,blank,hasErrorText:hasErrorText||routeMiss,routeMiss,text,visibleText,title,htmlLength:structureCount,readyState:doc.readyState};
     }catch(error){
@@ -8600,198 +7793,26 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }catch{}
     return true;
   }
-  function watchStudyjetHealth(t,sourceUrl){
-    if(!t?.frame || !sourceUrl) return;
-    const source=workspaceShellSourceUrl(sourceUrl) || String(sourceUrl);
-    if(!/^https?:/i.test(source)) return;
-    if(t.scramjetPresentationIntent!==(t.navigationIntent || '')){
-      t.scramjetPresentationIntent=t.navigationIntent || '';
-      t.scramjetPresentationRetries=0;
-    }
-    t.scramjetPresentationSource=source;
-    if(t.scramjetHealthLoadHandler){
-      try{t.frame.removeEventListener('load',t.scramjetHealthLoadHandler)}catch{}
-    }
-    const token='scramjet-health-'+Date.now()+Math.random().toString(16).slice(2);
-    const navigationIntent=t.navigationIntent || '';
-    const startedAt=Date.now();
-    t.scramjetHealthWatchToken=token;
-    let badKind='';
-    let badChecks=0;
-    let recoveryStarted=false;
-    const current=()=>t.frame?.isConnected
-      && t.scramjetHealthWatchToken===token
-      && (t.navigationIntent || '')===navigationIntent
-      && t.scramjetPresentationSource===source
-      && workspaceFrameStillAtSource(t,source);
-    const recover=async reason=>{
-      if(recoveryStarted || !current()) return;
-      const retries=Number(t.scramjetPresentationRetries || 0);
-      if(retries>=2) return;
-      recoveryStarted=true;
-      t.scramjetPresentationRetries=retries+1;
-      t.scramjetHealthWatchToken='recovering-'+token;
-      if(t.scramjetPresentationRetries>1){
-        await refreshStudyjetServiceWorker().catch(()=>false);
-        studyjetInstallPromise=null;
-        await installStudyjet().catch(()=>false);
-      }else{
-        await new Promise(resolve=>setTimeout(resolve,240));
-      }
-      if(!t.frame?.isConnected || (t.navigationIntent || '')!==navigationIntent || t.scramjetPresentationSource!==source || !workspaceFrameStillAtSource(t,source)) return;
-      try{
-        t.scramjetFrame?.go(source);
-      }catch{
-        return;
-      }
-      setTimeout(()=>{
-        if(t.frame?.isConnected && (t.navigationIntent || '')===navigationIntent) watchStudyjetHealth(t,source);
-      },120);
-    };
-    const check=()=>{
-      if(!current()) return;
 
 
-      let document=null;
-      try{document=t.frame.contentDocument}catch{}
-      if(document && t.scramjetHealthyDocument===document) return;
-      const presentation=inspectFramePresentation(t);
-      if(!presentation.reachable || presentation.hasErrorText) return;
-      if(document && /^(?:interactive|complete)$/.test(presentation.readyState) && !presentation.blank && (!presentation.unstyled || presentation.usableControls)){
-        t.scramjetHealthyDocument=document;
-        badKind='';
-        badChecks=0;
-        return;
-      }
-      const kind=presentation.unstyled ? 'stylesheets did not load' : (presentation.blank && Date.now()-startedAt>3600 ? 'page stayed blank' : '');
-      if(!kind){
-        badKind='';
-        badChecks=0;
-        return;
-      }
-      if(kind===badKind) badChecks+=1;
-      else{
-        badKind=kind;
-        badChecks=1;
-      }
-      if(badChecks>=2) void recover(kind);
-    };
-    const onLoad=()=>{
-      setTimeout(check,850);
-      setTimeout(check,2100);
-      setTimeout(check,4200);
-    };
-    t.scramjetHealthLoadHandler=onLoad;
-    t.frame.addEventListener('load',onLoad);
-    setTimeout(check,2400);
-    setTimeout(check,5000);
-    setTimeout(check,8200);
-  }
-
-  function removeStudyjetHtmlNodes(root,predicate){
-    const children=root?.childNodes || root?.children;
-    if(!Array.isArray(children)) return;
-    for(let i=children.length-1;i>=0;i--){
-      const child=children[i];
-      if(predicate(child)) children.splice(i,1);
-      else removeStudyjetHtmlNodes(child,predicate);
-    }
-  }
-  function stripStudyjetDuckDuckGoScripts(root){
-    removeStudyjetHtmlNodes(root,node=>{
-      if(String(node?.name || '').toLowerCase()!=='script') return false;
-      const src=String(node?.attribs?.src || '').toLowerCase();
-      const id=String(node?.attribs?.id || '').toLowerCase();
-      const text=(node?.children || []).map(child=>child?.data || '').join('');
-      return src.includes('/dist/p.')
-        || src.includes('links.duckduckgo.com/d.js')
-        || id==='deep_preload_script'
-        || text.includes('window.__sc__=');
-    });
-  }
-  function stripStudyjetPreloadLinks(root){
-    removeStudyjetHtmlNodes(root,node=>{
-      if(String(node?.name || '').toLowerCase()!=='link') return false;
-      if(String(node?.attribs?.rel || '').toLowerCase()!=='preload') return false;
-      const asType=String(node?.attribs?.as || '').toLowerCase();
-      const href=String(node?.attribs?.href || '').toLowerCase();
-      return asType==='font'
-        || asType==='fetch'
-        || href.includes('.woff')
-        || href.includes('/generated-locales/')
-        || href.endsWith('.json');
-    });
-  }
-  function stripStudyjetResourceIntegrity(root){
-    const visit=node=>{
-      if(!node || typeof node!=='object') return;
-      const attrs=node.attribs;
-      if(attrs && typeof attrs==='object'){
 
 
-        delete attrs.integrity;
-        delete attrs['scramjet-attr-integrity'];
-      }
-      const children=node.childNodes || node.children;
-      if(Array.isArray(children)) children.forEach(visit);
-    };
-    visit(root);
-  }
+
+
   function replaceCinebyDevtoolBundle(root){
     const children=root?.childNodes || root?.children;
     if(!Array.isArray(children)) return;
     for(const node of children){
       if(String(node?.name || '').toLowerCase()==='script'){
-        const src=String(node?.attribs?.['scramjet-attr-src'] || node?.attribs?.src || '');
+        const src=String(node?.attribs?.['src'] || node?.attribs?.src || '');
         if(/\/_app-[^/?]+\.js(?:[?#]|$)/i.test(src)) node.attribs.src='/nyx-compat/cineby-app.js';
       }
       replaceCinebyDevtoolBundle(node);
     }
   }
-  function patchStudyjetHtml(root,source=studyjetRuntimeGuardSource,key='runtime-guard'){
-    if(key==='proxy-sri'){
-      stripStudyjetResourceIntegrity(root);
-      return;
-    }
-    if(key==='duckduckgo-noscript'){
-      stripStudyjetDuckDuckGoScripts(root);
-      return;
-    }
-    if(key==='spotify-preload-strip'){
-      stripStudyjetPreloadLinks(root);
-      return;
-    }
-    if(key==='cineby-disable-devtool'){
-      replaceCinebyDevtoolBundle(root);
-      return;
-    }
-    installStudyjetRuntimeGuards(root,source,key);
-  }
-  function createStudyjetCompatibilityPlugin(source=studyjetRuntimeGuardSource,key='runtime-guard'){
-    const plugin={
-      name:'nyx-compatibility-'+key,
-      dependencies:[],
-      install(frame){
-        const Tap=window.$scramjet?.Tap;
-        const hook=frame?.fetchHandler?.hooks?.rewriter?.html?.post;
-        if(!Tap?.tap) return;
-        if(hook) Tap.tap(hook,context=>patchStudyjetHtml(context?.handler?.root,source,key),plugin);
-        if(key==='proxy-sri'){
-          const responseHook=frame?.fetchHandler?.hooks?.fetch?.response;
-          if(responseHook) Tap.tap(responseHook,(_context,result)=>{
-            const headers=result?.response?.headers;
-            const link=String(headers?.get?.('link') || '');
-            if(!link) return;
-            headers.set('link',link.replace(/;\s*integrity\s*=\s*(?:"[^"]*"|'[^']*'|[^,;]*)/gi,''));
-          },plugin);
-        }
-      }
-    };
-    return plugin;
-  }
-  function isStudyjetIdbShapeError(error){
-    return /object stores? was not found|not found/i.test(String(error?.message || error));
-  }
+
+
+
   function deleteIndexedDb(name){
     return new Promise(resolve=>{
       if(!window.indexedDB) return resolve(false);
@@ -8814,35 +7835,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const registration=await navigator.serviceWorker.getRegistration(scope).catch(()=>null);
     if(registration?.scope===new URL(scope,location.href).href)await registration.unregister().catch(()=>null);
   }
-  async function repairStudyjetStorage(){
-    if(navigator.serviceWorker){
-      await Promise.all(['/~/sj/','/scramjet/service/'].map(unregisterConnectionScope));
-    }
-    const names=['$scramjet','__scramjet_controller'];
-    if(indexedDB.databases){
-      const databases=await indexedDB.databases().catch(()=>[]);
-      for(const db of databases){
-        if(db?.name && /scramjet/i.test(db.name) && !names.includes(db.name)) names.push(db.name);
-      }
-    }
-    await Promise.all(names.map(name=>deleteIndexedDb(name)));
-  }
 
-  async function repairStudyjetCaches(){
-    if(!window.caches?.keys) return;
-    const names=await caches.keys().catch(()=>[]);
-    await Promise.all(names.filter(name=>/scramjet/i.test(name)).map(name=>caches.delete(name).catch(()=>false)));
-  }
-  async function repairRetiredConnectionStorage(){
-    if(navigator.serviceWorker){
-      await unregisterConnectionScope('/service/');
-    }
-  }
-  async function repairRetiredConnectionCaches(){
-    if(!window.caches?.keys) return;
-    const names=await caches.keys().catch(()=>[]);
-    await Promise.all(names.filter(name=>/(bare|epoxy|libcurl)/i.test(name)).map(name=>caches.delete(name).catch(()=>false)));
-  }
+
+
+
+
   function clearNyxCookies(){
     try{
       const hostParts=location.hostname.split('.').filter(Boolean);
@@ -8888,7 +7885,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const databases=await indexedDB.databases().catch(()=>[]);
         await Promise.all(databases.map(db=>db?.name ? deleteIndexedDb(db.name) : false));
       }else{
-        await Promise.all(['$scramjet','__scramjet_controller'].map(name=>deleteIndexedDb(name)));
+
       }
     }catch{}
     clearNyxCookies();
@@ -8896,109 +7893,26 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     try{localStorage.clear()}catch{}
     setTimeout(()=>location.replace(location.pathname || '/'),220);
   }
-  async function ensureFreshConnectionState(){
-    if(store.text('nyx.proxyStateVersion','')===connectionStateVersion) return;
-    await Promise.all([
-      repairStudyjetStorage(),
-      repairStudyjetCaches(),
-      repairRetiredConnectionStorage(),
-      repairRetiredConnectionCaches()
-    ]);
-    studyjetController=null;
-    studyjetTransport=null;
-    studyjetTransportKey='';
-    store.setText('nyx.scramjetStateVersion',studyjetStateVersion);
-    store.setText('nyx.proxyStateVersion',connectionStateVersion);
-  }
-  async function ensureFreshStudyjetState(){
-    if(store.text('nyx.scramjetStateVersion','')===studyjetStateVersion) return;
-    await repairStudyjetStorage();
-    await repairStudyjetCaches();
-    studyjetController=null;
-    studyjetTransport=null;
-    studyjetTransportKey='';
-    store.setText('nyx.scramjetStateVersion',studyjetStateVersion);
-  }
 
 
 
 
 
 
-  function installStudyjet(){
-    if(studyjetInstallPromise) return studyjetInstallPromise;
-    let step="starting Learning engine";
-    studyjetInstallPromise=(async()=>{
-      step='checking workspace support';
-      if(location.protocol==='file:'){
-        studyjetInstallError="Learning engine needs Nyx to be opened from its website, not as a local file.";
-        return false;
-      }
-      if(!('serviceWorker' in navigator)){
-        studyjetInstallError="This workspace does not support the Service Workers Learning engine needs. Some watch workspaces do not provide that feature.";
-        return false;
-      }
-      step="resetting stale Learning engine state";
-      await ensureFreshConnectionState();
-      await ensureFreshStudyjetState();
-      step="loading Learning engine assets";
-      const {loadConnectionScript,waitForConnectionController,trackConnectionController}=await import('/js/intercession-startup.mjs');
-      await loadConnectionScript('/scramjet/scramjet.js?v=20260905-optional-history-url-v1',()=>Boolean(window.$scramjet));
-      await loadConnectionScript('/controller/controller.api.js',()=>Boolean(window.$scramjetController));
-      step='loading Learning runtime guard';
-      await loadStudyjetRuntimeGuardSource();
-      step="starting Learning engine connection";
-      const transport=await createStudyjetTransport();
-      step='registering Learning service worker';
-      const registration=await navigator.serviceWorker.register(studyjetServiceWorkerUrl,{scope:'/~/sj/',updateViaCache:'none'});
 
 
-      step='activating Learning service worker';
-      const serviceworker=await waitForServiceWorkerScript(registration,studyjetServiceWorkerUrl);
-      if(!serviceworker) throw new Error('Learning service worker did not activate');
-      step="initializing Learning engine controller";
-      try{
-        if(!studyjetController) studyjetController=createStudyjetController(serviceworker,transport);
-        else if(!await reconnectStudyjetController(studyjetController,serviceworker,transport)){
-          studyjetController=createStudyjetController(serviceworker,transport);
-        }
-        studyjetController.nyxStopWorkerTracking=trackConnectionController(studyjetController);
-        await waitForConnectionController(studyjetController);
-      }catch(initError){
-        if(!isStudyjetIdbShapeError(initError)) throw initError;
-        step="repairing Learning engine storage";
-        await repairStudyjetStorage();
-        const repairedRegistration=await navigator.serviceWorker.register(studyjetServiceWorkerUrl,{scope:'/~/sj/',updateViaCache:'none'});
-        const repairedServiceworker=await waitForServiceWorkerScript(repairedRegistration,studyjetServiceWorkerUrl);
-        if(!repairedServiceworker) throw new Error('Learning service worker did not activate after storage repair');
-        step="initializing Learning engine controller after storage repair";
-        studyjetController?.nyxStopWorkerTracking?.();
-        studyjetController=createStudyjetController(repairedServiceworker,transport);
-        studyjetController.nyxStopWorkerTracking=trackConnectionController(studyjetController);
-        await waitForConnectionController(studyjetController);
-      }
-      studyjetInstallError='';
-      return true;
-    })().catch(err=>{
-      studyjetInstallError=`Failed while ${step}: ${err?.message || err}`;
-      studyjetController?.nyxStopWorkerTracking?.();
-      studyjetController=null;
-      studyjetInstallPromise=null;
-      return false;
-    });
-    return studyjetInstallPromise;
-  }
+  async function prepareDocumentWindow(){try{const{documentOrigin}=await import('/js/document-window.mjs');const response=await fetch(documentOrigin()+'/healthz',{credentials:'omit',signal:AbortSignal.timeout(5000)});return response.ok;}catch{return false;}}
   function scheduleWorkspaceConnectionPrewarm(){
     if(workspaceConnectionPrewarmScheduled) return;
     const mode=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE));
-    if(mode!=='auto' && mode!=='scramjet') return;
+    if(mode!=='auto' && mode!=='document') return;
     workspaceConnectionPrewarmScheduled=true;
     const warm=()=>{
       if(document.visibilityState==='hidden'){
         workspaceConnectionPrewarmScheduled=false;
         return;
       }
-      void installStudyjet();
+      void prepareDocumentWindow();
     };
     if(typeof requestIdleCallback==='function') requestIdleCallback(warm,{timeout:700});
     else setTimeout(warm,0);
@@ -9023,21 +7937,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     document.addEventListener('pointerdown',warmFromSearchIntent,{capture:true,passive:true});
     document.addEventListener('focusin',warmFromSearchIntent,{capture:true,passive:true});
   }
-  function rammerhead(url){
-    if(/^data:text\/html/i.test(url)) return url;
-    const base=getRhBase();
-    if(url.startsWith(base)) return url;
-    const sessionId=store.text('nyx.rammerheadSession','');
-    return sessionId ? rhBuildUrl(base,sessionId,url) : url;
-  }
-  async function rhNavigate(rawUrl,navigateFn){
-    if(/^data:text\/html/i.test(rawUrl)){
-      navigateFn(rawUrl);
-      return;
-    }
-    const session=await getRhSession();
-    navigateFn(session ? rhBuildUrl(session.base,session.id,rawUrl) : rawUrl);
-  }
+  
+  
   function bring(win){win.style.zIndex=++zTop}
   function updateMinimizedDock(){
     const dock=document.querySelector('.dock');
@@ -9273,6 +8174,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const raw=String(url || '').trim();
     if(/^(?:assets|apps)\//i.test(raw)) return `/${raw}`;
     return raw;
+  }
+  function internalDocumentAddress(value){
+    try{
+      const url=new URL(value,location.href);
+      if(url.origin!==location.origin||!/(?:\/apps\/[^/]+|\/assets\/games)\/*$/.test(url.pathname))return value;
+      url.pathname=url.pathname.replace(/\/+$/,'')+'/index.html';
+      return url.href;
+    }catch{return value;}
   }
   function normalizeHomeShortcut(item){
     const next={...item,url:normalizeInternalAppUrl(item?.url)};
@@ -10104,30 +9013,18 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(mode!=='auto') return mode;
     try{
       const normalized=normalize(workspaceShellSourceUrl(target) || target);
-      return 'scramjet';
+      return 'document';
     }catch{
-      return 'scramjet';
+      return 'document';
     }
   }
   async function preflightEngineReady(target=''){
     if(location.protocol==='file:' || !('serviceWorker' in navigator)) return false;
     if(preflightWorkspaceModeForTarget(target)==='iframe') return true;
-    return installStudyjet();
+    return prepareDocumentWindow();
 }
-  async function preflightTransportReady(target=''){
-    if(location.protocol==='file:') return false;
-    if(preflightWorkspaceModeForTarget(target)==='iframe') return true;
-    return !!(await createStudyjetTransport());
-}
-  async function preflightServiceWorkerReady(target=''){
-    if(location.protocol==='file:' || !('serviceWorker' in navigator)) return false;
-    await preflightEngineReady(target);
-    const registrations=await Promise.all([
-      navigator.serviceWorker.getRegistration('/~/sj/').catch(()=>null),
-      navigator.serviceWorker.getRegistration('/service/').catch(()=>null)
-    ]);
-    return registrations.some(registration=>registration?.active || registration?.waiting || registration?.installing);
-  }
+  async function preflightTransportReady(){return prepareDocumentWindow();}
+  async function preflightServiceWorkerReady(){return prepareDocumentWindow();}
   function preflightSearchUrl(raw=''){
     return normalize(raw || 'nyx') || '';
   }
@@ -10139,32 +9036,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     await Promise.allSettled(urls.map(url=>preflightFetchOk(url,1600)));
     return true;
   }
-  async function preflightLibcurlReady(){
-    if(location.protocol==='file:') return true;
-    const checks=await Promise.allSettled([
-      preflightFetchOk('/libcurl/index.mjs',2600),
-      preflightFetchOk('/assets/transports/libcurl-baremux.mjs',2600),
-      preflightImportOk('/assets/transports/libcurl-scramjet.mjs',4200)
-    ]);
-    return checks.every(check=>check.status==='fulfilled' && check.value);
-  }
-  async function preflightFilesReady(){
-    if(location.protocol==='file:') return true;
-    const files=[
-      '/',
-      '/scramjet/scramjet.js',
-      '/scramjet.sw.js',
-      '/baremux/index.mjs',
-      '/epoxy/index.mjs',
-      '/controller/controller.api.js'
-    ];
-    const checks=await Promise.allSettled(files.map(url=>preflightFetchOk(url,2600)));
-    return checks.every(check=>check.status==='fulfilled' && check.value);
-  }
-  async function preflightStateCurrent(){
-    await ensureFreshConnectionState();
-    return store.text('nyx.proxyStateVersion','')===connectionStateVersion && store.text('nyx.scramjetStateVersion','')===studyjetStateVersion;
-  }
+  async function preflightDocumentReady(){return prepareDocumentWindow();}
+  async function preflightFilesReady(){return (await Promise.all(['/', '/js/document-window.mjs'].map(url=>preflightFetchOk(url,2600)))).every(Boolean);}
+  async function preflightStateCurrent(){return prepareDocumentWindow();}
   async function preflightBugScan(){
     const required=[
       document.body,
@@ -10195,7 +9069,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       return tasks;
     };
     const serverCheck=async()=>{
-      const checks=['/scramjet/scramjet.js','/baremux/index.mjs'].map(url=>preflightFetchOk(url,2400).catch(()=>false));
+      const checks=['/runtime-config.js','/js/document-window.mjs'].map(url=>preflightFetchOk(url,2400).catch(()=>false));
       const results=await Promise.all(checks);
       return location.protocol==='file:' || results.some(Boolean);
     };
@@ -10388,7 +9262,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       return false;
     }
     function showWorkspaceMessage(t,url){
-      loadStudyjetTab(t,url,false);
+      loadDocumentTab(t,url,false);
     }
     function addTab(openUrl='',forceMode=''){
       const id='tab'+Date.now()+Math.random().toString(16).slice(2);
@@ -10414,20 +9288,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         showWorkspaceShellInternalPage(source.replace(/^nyx:\/\//,'') || 'apps');
         return true;
       }
-      if(t.scramjetFrame){
-        if(!studyjetController || t.privateScramjetController?.transport !== studyjetController.transport){
-          loadStudyjetTab(t,source,false);
-          return true;
-        }
-        clearFrameDocument(t);
-        try{
-          t.scramjetFrame.go(source);
-          return true;
-        }catch{
-          retryStudyjetTab(t,source);
-          return true;
-        }
-      }
+      if(t.frame?.dataset.documentSource){loadDocumentTab(t,source,false);return true;}
       try{
         t.frame?.contentWindow?.location?.reload();
         return true;
@@ -10613,8 +9474,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(isNyxPublisherFrame(t.frame))return false;
       try{
         const frameWindow=t.frame.contentWindow;
+        const frameDocument=t.frame.contentDocument;
         if(!frameWindow || frameWindow===window) return false;
-        if(!frameWindow.__nyxWorkspaceAdBlock) frameWindow.eval(workspaceAdBlockRuntimeSource);
+        if(!frameWindow.__nyxWorkspaceAdBlock){const script=frameDocument.createElement("script");script.textContent=workspaceAdBlockRuntimeSource;(frameDocument.head||frameDocument.documentElement).appendChild(script);script.remove();}
         return !!frameWindow.__nyxWorkspaceAdBlock;
       }catch{
         try{
@@ -10673,26 +9535,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       attach();
     }
-    function recoverRejectedStudyjetLocation(t,rejectedSource,previousSource){
-      const recoverySource=/^https?:\/\//i.test(previousSource) ? previousSource : '';
-      if(!t?.scramjetFrame || !recoverySource) return;
-      const recoveryKey=`${recoverySource}\n${rejectedSource}`;
-      if(t.scramjetRejectedLocationKey===recoveryKey) return;
-      t.scramjetRejectedLocationKey=recoveryKey;
-      const frame=t.frame;
-      const navigationIntent=t.navigationIntent;
-      setTimeout(()=>{
-        if(!state.tabs.includes(t) || t.scramjetRejectedLocationKey!==recoveryKey) return;
-        if(t.frame!==frame || t.navigationIntent!==navigationIntent || t.sourceUrl!==recoverySource) return;
 
-
-        try{
-          const actual=workspaceShellSourceUrl(frame.contentWindow.location.href);
-          if(!workspaceShellRejectFrameLocation(actual,recoverySource)) return;
-        }catch{return}
-        try{t.scramjetFrame.go(recoverySource)}catch{}
-      },160);
-    }
     function installPopupBridge(t){
       if(!t?.frame) return;
       installWorkspaceLinkContextMenu(t);
@@ -10725,13 +9568,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
             if(!/^https?:\/\//i.test(source) || source===location.href) return;
             const previousSource=workspaceShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
             if(workspaceShellRejectFrameLocation(source,previousSource)){
-              if(!sameDocument) recoverRejectedStudyjetLocation(t,source,previousSource);
+              if(!sameDocument) loadDocumentTab(t,source,false);
               return;
             }
 
 
-            if(sameDocument) t.scramjetHealthyDocument=frame.contentDocument;
-            t.scramjetRejectedLocationKey='';
+            
             t.previousNavigationDocument=null;
             const currentHistory=workspaceShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
             if(pendingFrameNavigation && pendingFrameNavigation.index===t.index){
@@ -11369,9 +10211,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(t.frame.classList.contains('active')) frame.classList.add('active');
       t.frame.replaceWith(frame);
       t.frame=frame;
-      t.scramjetFrame=null;
-      t.scramjetVersion='';
-      t.scramjetRuntimeGuarded=null;
+      
+      
+      
       t.popupBridgeInstalled=false;
       setFrameSandbox(t,true);
       installPopupBridge(t);
@@ -11442,9 +10284,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     function detectWorkspaceEngine(url,t){
       const raw=String(url || '');
       const frameSrc=String(t?.frame?.getAttribute?.('src') || '');
-      if(t?.scramjetFrame || raw.startsWith('/~/sj/') || frameSrc.includes('/~/sj/')) return 'scramjet';
-      if(raw.startsWith('/service/') || frameSrc.startsWith('/service/')) return 'scramjet';
-      if(raw.startsWith('/scramjet/service/') || frameSrc.startsWith('/scramjet/service/')) return 'scramjet-legacy';
+      if(t?.expectedEngine==='document' || raw.startsWith('/~/sj/') || frameSrc.includes('/~/sj/')) return 'document';
+      if(raw.startsWith('/service/') || frameSrc.startsWith('/service/')) return 'document';
+      if(raw.startsWith('/scramjet/service/') || frameSrc.startsWith('/scramjet/service/')) return 'document';
       if(/^https?:/i.test(raw)) return 'direct';
       if(raw.startsWith('nyx://')) return 'nyx';
       return raw ? 'iframe' : 'blank';
@@ -11454,56 +10296,17 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       t.expectedEngine=expected || t.expectedEngine || '';
       t.actualEngine=detectWorkspaceEngine(url,t);
     }
-    function resetConnectionInstallers(){
-      studyjetInstallPromise=null;
-      studyjetTransport=null;
-      studyjetTransportKey='';
-    }
-    function setWorkspaceTransportOverride(next){
-      next=next ? normalizeWorkspaceTransportName(next) : '';
-      if(workspaceTransportOverride===next) return;
-      workspaceTransportOverride=next;
-      resetConnectionInstallers();
-    }
-    function applyPreferredTransportForUrl(url,workspaceMode=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE))){
-      if(!transportAutoEnabled()){
-        setWorkspaceTransportOverride('');
-        return;
-      }
-      setWorkspaceTransportOverride('libcurlRaw');
-    }
-    function transportAutoEnabled(){
-      return normalizeWorkspaceTransportName(store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT))==='auto';
-    }
-    function connectionTransportName(){
-      return normalizeWorkspaceTransportName(workspaceTransportOverride || store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT));
-    }
-    function transportRetryOrder(current){
-      const ordered=['libcurlRaw','epoxy','wisp'];
-      const index=ordered.indexOf(current);
-      if(index<0) return ordered;
-      return [...ordered.slice(index+1),...ordered.slice(0,index)];
-    }
-    function serviceWorkerTransportErrorText(text){
-      return /internal service worker error|request failed with error code\s*(?:35|52|56|60)|ssl connect error|tls handshake eof|wisp server closed|muxtaskended|ssl peer certificate|ssh remote key|certificate.*not ok|failure when receiving data from the peer/i.test(String(text || ''));
-    }
+    
+    
+    
+    
+    
+    
+    
     function tlsCertificateErrorText(text){
       return /request failed with error code\s*60\b|ssl peer certificate|certificate.*not ok|certificate (?:error|invalid|expired|revoked|untrusted)|cert_(?:authority_invalid|common_name_invalid|date_invalid)/i.test(String(text || ''));
     }
-    function retrySearchHandshake(t,sourceUrl,expectedEngine,reason){
-      if(expectedEngine!=='scramjet' || tlsCertificateErrorText(reason)) return false;
-      if(!/request failed with error code\s*35\b|ssl connect error|tls handshake eof/i.test(String(reason || ''))) return false;
-      if(!Object.values(engines).some(prefix=>String(sourceUrl).startsWith(prefix))) return false;
-      const key=String(t.navigationIntent || '')+':'+sourceUrl;
-      if(t.searchHandshakeRecovery===key) return false;
-      t.searchHandshakeRecovery=key;
-      t.transportWatchToken='';
-      t.loadWatchToken='';
-      const current=connectionTransportName();
-      setWorkspaceTransportOverride(current==='libcurlRaw'||current==='auto'?'epoxy':'libcurlRaw');
-      loadStudyjetTab(t,sourceUrl,false);
-      return true;
-    }
+    
     function monitorWorkspaceTabSecurity(t,sourceUrl,navigationIntent=t?.navigationIntent || ''){
       if(!t?.frame) return;
       const source=workspaceShellSourceUrl(sourceUrl) || String(sourceUrl || '');
@@ -11592,216 +10395,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         else return loadSelectedSearchFallback(t,sourceUrl,reason || 'selected iframe mode failed');
         return true;
       }
-      if(expectedEngine!=='scramjet'){
-        loadStudyjetTab(t,sourceUrl,false);
+      if(expectedEngine!=='document'){
+        loadDocumentTab(t,sourceUrl,false);
         return true;
       }
       return loadSelectedSearchFallback(t,sourceUrl,reason || "Learning engine retries exhausted");
 }
-    function watchFrameTransportErrors(t,sourceUrl,expectedEngine){
-      if(!t?.frame || !sourceUrl || !expectedEngine) return;
-      const automaticMode=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE))==='auto';
-      const token='transport-'+Date.now()+Math.random().toString(16).slice(2);
-      t.transportWatchToken=token;
-      const check=()=>{
-        if(t.transportWatchToken!==token || !state.tabs.includes(t) || !workspaceFrameStillAtSource(t,sourceUrl)) return;
-        let text='';
-        const health=inspectFrameHealth(t);
-        text=health.visibleText || '';
-        if(health.routeMiss && expectedEngine==='scramjet'){
-          const navigationIntent=t.navigationIntent;
-          const recoveryKey=String(navigationIntent || '')+':'+sourceUrl;
-          if(t.workerRouteRecovery===recoveryKey) return;
-          t.workerRouteRecovery=recoveryKey;
-          t.transportWatchToken='';
-          t.loadWatchToken='';
-          void ensureStudyjetWorkerConnection(t.privateScramjetController,true).then(()=>{
-            if(state.tabs.includes(t) && t.navigationIntent===navigationIntent && workspaceFrameStillAtSource(t,sourceUrl)) loadStudyjetTab(t,sourceUrl,false);
-          }).catch(()=>{
-            if(state.tabs.includes(t) && t.navigationIntent===navigationIntent) loadSelectedSearchFallback(t,sourceUrl,'The browsing connection could not be restored.');
-          });
-          return;
-        }
-        if(!health.hasErrorText || !serviceWorkerTransportErrorText(text)) return;
-        const certificateFailure=tlsCertificateErrorText(text);
-        setWorkspaceTabSecurityState(t,certificateFailure ? 'insecure' : 'unknown');
-        if(certificateFailure){
-          loadSelectedSearchFallback(t,sourceUrl,text);
-          return;
-        }
-        if(retrySearchHandshake(t,sourceUrl,expectedEngine,text)) return;
-        if(!automaticMode){
-          loadSelectedSearchFallback(t,sourceUrl,text);
-          return;
-        }
-        const key=`${expectedEngine}:${sourceUrl}`;
-        const attempts=t.transportRetries || (t.transportRetries={});
-        attempts[key]=(attempts[key] || 0) + 1;
-        if(isSpotifyFamilyUrl(sourceUrl) && expectedEngine==='scramjet'){
-          return;
-        }
-        if(attempts[key]>2){
-          fallbackConnectionEngine(t,sourceUrl,expectedEngine,'transport retries exhausted');
-          return;
-        }
-        if(!transportAutoEnabled()){
-          fallbackConnectionEngine(t,sourceUrl,expectedEngine,'transport failed with fixed transport');
-          return;
-        }
-        const currentTransport=connectionTransportName();
-        const nextTransport=transportRetryOrder(currentTransport)[0] || DEFAULT_WORKSPACE_TRANSPORT;
-        setWorkspaceTransportOverride(nextTransport);
-        if(expectedEngine==='scramjet') loadStudyjetTab(t,sourceUrl,false);
-        else {}
-      };
-      t.frame.addEventListener('load',()=>setTimeout(check,80),{once:true});
-      setTimeout(check,1300);
-      setTimeout(check,4200);
-    }
-    function watchConnectionLoad(t,sourceUrl,expectedEngine){
-      if(!sourceUrl || !expectedEngine) return;
-
-
-      if(normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE))!=='auto') return;
-      if(t.fallbackSource!==sourceUrl){
-        t.fallbackSource=sourceUrl;
-        t.fallbackAttempts=0;
-      }
-      const token='load-'+Date.now()+Math.random().toString(16).slice(2);
-      t.loadWatchToken=token;
-      const watchStartedAt=Date.now();
-      let loaded=false;
-      let settled=false;
-
-
-      const current=()=>!settled && t.loadWatchToken===token && state.tabs.includes(t)
-        && workspaceFrameStillAtSource(t,sourceUrl);
-      const settle=()=>{
-        settled=true;
-        t.frame?.removeEventListener?.('load',markLoaded);
-      };
-      const markLoaded=()=>{
-        const frameSrc=String(t.frame?.getAttribute?.('src') || '');
-        let frameHref='';
-        try{frameHref=String(t.frame?.contentWindow?.location?.href || '')}catch{}
-        const hasConnectionPath=frameSrc.startsWith('/service/') || frameSrc.startsWith('/~/sj/') || frameSrc.startsWith('/scramjet/service/')
-          || frameHref.includes('/service/') || frameHref.includes('/~/sj/') || frameHref.includes('/scramjet/service/');
-        const hasDirectPage=/^https?:/i.test(frameSrc) || (/^https?:/i.test(frameHref) && frameHref!=='about:blank' && frameHref!==location.href);
-        if(!hasConnectionPath && !hasDirectPage) return;
-        loaded=true;
-        t.frame?.removeEventListener?.('load',markLoaded);
-      };
-      t.frame.addEventListener('load',markLoaded);
-      const connectionLooksBroken=()=>{
-        const health=inspectFrameHealth(t);
-        if(!health.reachable) return false;
-        if(health.blank && health.readyState!=='complete') return false;
-        if(isSpotifyFamilyUrl(sourceUrl)){
-          try{
-            const doc=t.frame?.contentDocument;
-            const text=String(doc?.body?.textContent || '').trim();
-            const htmlClass=String(doc?.documentElement?.className || '');
-            if(text.length>80 || /spotify/i.test(htmlClass) || doc?.querySelector('[data-testid],script[src*="spotify"],script[src*="spotifycdn"]')) return false;
-          }catch{}
-        }
-        try{
-          if(t.frame?.contentDocument?.querySelector('#desktop,#welcomeScreen')) return true;
-        }catch{}
-        return !!(health.blank || health.hasErrorText);
-      };
-      const protectedSiteReturnedEmptyShell=()=>{
-        const host=workspaceHost(sourceUrl);
-        if(!hostMatches(host,['meta.ai'])) return false;
-        const health=inspectFrameHealth(t);
-        return health.reachable && !health.hasErrorText && String(health.visibleText || '').length<12 && /meta ai/i.test(health.title || '');
-      };
-      if(hostMatches(workspaceHost(sourceUrl),['meta.ai'])){
-        let consecutiveProtectedBlanks=0;
-        let protectedChecks=0;
-        const protectedTimer=setInterval(()=>{
-          protectedChecks+=1;
-          if(!current() || protectedChecks>20){
-            clearInterval(protectedTimer);
-            return;
-          }
-          consecutiveProtectedBlanks=protectedSiteReturnedEmptyShell() ? consecutiveProtectedBlanks+1 : 0;
-          if(consecutiveProtectedBlanks<2) return;
-          clearInterval(protectedTimer);
-          loadSelectedSearchFallback(t,sourceUrl,'the site returned a blocked empty shell');
-        },1000);
-      }
-      const attemptFallback=(force=false)=>{
-        t.frame?.removeEventListener?.('load',markLoaded);
-        if(!current() || (loaded && !force)) return;
-        if(!force){
-          const health=inspectFrameHealth(t);
-          const healthyProgress=health.reachable && !health.hasErrorText && !health.blank;
-          if(healthyProgress){
-            loaded=true;
-            settle();
-            return;
-          }
-          if(health.reachable && !health.hasErrorText && health.readyState==='loading' && Date.now()-watchStartedAt<10000) return;
-        }
-        if(isSpotifyFamilyUrl(sourceUrl) && expectedEngine==='scramjet'){
-          if(!t.spotifyPinnedNoticeShown){
-            t.spotifyPinnedNoticeShown=true;
-          }
-          return;
-        }
-        if(isSpotifyFamilyUrl(sourceUrl)){
-          try{
-            const doc=t.frame?.contentDocument;
-            const text=String(doc?.body?.textContent || '').trim();
-            const htmlClass=String(doc?.documentElement?.className || '');
-            if(text.length>80 || /spotify/i.test(htmlClass) || doc?.querySelector('[data-testid],script[src*="spotify"],script[src*="spotifycdn"]')) return;
-          }catch{}
-        }
-        const currentUrl=String(t.url || '');
-        if(t.url!==sourceUrl && !currentUrl.startsWith('/service/') && !currentUrl.startsWith('/~/sj/') && !currentUrl.startsWith('/scramjet/service/')) return;
-        t.fallbackAttempts=(t.fallbackAttempts || 0) + 1;
-        if(t.fallbackAttempts>4) return;
-        const workspaceMode=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE));
-        const canAutoTransport=transportAutoEnabled();
-        const currentTransport=connectionTransportName();
-        const nextTransport=transportRetryOrder(currentTransport)[0] || '';
-        let handled=false;
-        if(expectedEngine==='scramjet'){
-          if(canAutoTransport && nextTransport){
-            setWorkspaceTransportOverride(nextTransport);
-            loadStudyjetTab(t,sourceUrl,false);
-            handled=true;
-          }else if(workspaceMode==='scramjet'){
-            loadStudyjetTab(t,sourceUrl,false);
-            handled=true;
-          }else if(workspaceMode==='auto'){
-            if(canAutoTransport) setWorkspaceTransportOverride('epoxy');
-            loadSelectedSearchFallback(t,sourceUrl,"Learning engine relays exhausted");
-            handled=true;
-          }
-        }
-        if(!handled) fallbackConnectionEngine(t,sourceUrl,expectedEngine,'blank or timed-out proxy frame');
-      };
-      const checkBlankFallback=()=>{
-        if(!current()) return;
-        if(protectedSiteReturnedEmptyShell()){
-          loadSelectedSearchFallback(t,sourceUrl,'the site returned a blocked empty shell');
-          return;
-        }
-        if(connectionLooksBroken()) attemptFallback(true);
-        else{
-          const health=inspectFrameHealth(t);
-          if(health.reachable && !health.blank && !health.hasErrorText
-            && /^(?:interactive|complete)$/.test(health.readyState)) settle();
-        }
-      };
-      t.frame.addEventListener('load',()=>setTimeout(checkBlankFallback,1600),{once:true});
-      setTimeout(checkBlankFallback,3200);
-      setTimeout(checkBlankFallback,7600);
-      setTimeout(checkBlankFallback,12000);
-      setTimeout(attemptFallback,5200);
-      setTimeout(attemptFallback,11000);
-    }
+    
+    
     function isSelectedWorkspaceTab(t){
       const linked=workspaceShellTabs.find(tab=>tab.workspaceTabId===t.id);
       return state.active===t.id && (!document.body.classList.contains('workspace-shell') || !linked || linked.id===workspaceShellActiveTab);
@@ -11809,7 +10410,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     function loadTab(t,url,addHistory=true,expectedEngine='',sourceUrl=''){
       const requestedSource=sourceUrl || (/^https?:/i.test(url) ? url : '');
       if(expectedEngine==='iframe' && hostMatches(workspaceHost(requestedSource),['cineby.at'])){
-        loadStudyjetTab(t,requestedSource,addHistory);
+        loadDocumentTab(t,requestedSource,addHistory);
         return;
       }
       t.expectedEngine=expectedEngine || t.expectedEngine || '';
@@ -11834,19 +10435,18 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       installPopupBridge(t);
       const proxied=url.startsWith('/service/') || url.startsWith('/scramjet/service/') || url.startsWith('/~/sj/');
-      if(!url.startsWith('/scramjet/service/') && !url.startsWith('/~/sj/')) t.scramjetFrame=null;
       setFrameSandbox(t,true);
       clearFrameDocument(t);
       if(normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE))==='auto' && directOnly(url) && !proxied){
-        loadStudyjetTab(t,url,addHistory);
+        loadDocumentTab(t,url,addHistory);
         return;
       }
-      watchConnectionLoad(t,sourceUrl || (/^https?:/i.test(url) ? url : ''),expectedEngine);
-      watchFrameTransportErrors(t,sourceUrl || (/^https?:/i.test(url) ? url : ''),expectedEngine);
+      
+      
 
       t.frameHistoryPending={index:t.index};
       monitorWorkspaceTabSecurity(t,securitySource,securityIntent);
-      t.frame.src=url;
+      t.frame.src=internalDocumentAddress(url);
       markWorkspaceEngine(t,expectedEngine,url,'iframe-src');
       renderTabs();
       if(isSelectedWorkspaceTab(t)) activate(t.id);
@@ -11870,208 +10470,25 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(isSelectedWorkspaceTab(t)) activate(t.id);
       updateWorkspaceShellLocation(url,t.id);
     }
-    function retryStudyjetTab(t,url){
-      t.scramjetRetries=(t.scramjetRetries || 0) + 1;
-      if(t.scramjetRetries>3) return false;
-      const navigationIntent=t.navigationIntent || '';
-      t.frame.removeAttribute('src');
-      setTimeout(async ()=>{
-        if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-        await refreshStudyjetServiceWorker().catch(()=>false);
-        if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-        studyjetInstallPromise=null;
-        const ok=await installStudyjet();
-        if(!ok || !state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-        if(t.scramjetFrame){
-          try{t.scramjetFrame.go(url); return}catch{}
-        }
-      },220);
-      return true;
-    }
+    function retryDocumentTab(t,url){loadDocumentTab(t,url,false);return true;}
 
-    function loadStudyjetTab(t,url,addHistory=true){
-      t.expectedEngine='scramjet';
-      t.sourceUrl=url;
-      setTabLoading(t,true);
-      if(addHistory){
-        const currentHistory=workspaceShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
-        if(currentHistory!==url){
-          t.history=t.history.slice(0,t.index+1);
-          t.history.push(url);
-          t.index=t.history.length-1;
-        }
-      }
-      const navigationIntent=t.navigationIntent || '';
-      installStudyjet().then(async ok=>{
-        if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-        if(!ok || !studyjetController){
-          if(transportAutoEnabled()){
-            const retryCount=Number(t.scramjetStartupRetries || 0);
-            const nextTransport=transportRetryOrder(connectionTransportName())[0] || '';
-            if(retryCount<2 && nextTransport){
-              t.scramjetStartupRetries=retryCount+1;
-              setWorkspaceTransportOverride(nextTransport);
-              loadStudyjetTab(t,url,false);
-              return;
-            }
-          }
-          setTabLoading(t,false);
-          t.url=url;
-          setTabMeta(t,url,false);
-          t.actualEngine='scramjet-failed';
-          setFrameSandbox(t,true);
-          clearFrameDocument(t);
-          t.frame.srcdoc=connectionFailureHtml(studyjetInstallError,"Learning engine",{allowDirect:true});
-          return;
-        }
-        await ensureStudyjetWorkerConnection(t.privateScramjetController);
-        if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-        if(t.privateScramjetController && t.privateScramjetController.transport !== studyjetController.transport){
-          t.privateScramjetController.setTransport(studyjetController.transport);
-        }
-        const existingFrameSrc=String(t.frame.getAttribute('src') || '');
-        if(existingFrameSrc.startsWith('/service/')){
-          replaceTabFrame(t);
-        }
-        const spotifyChromeOsCompatibility=/\bCrOS\b/i.test(String(navigator.userAgent || '')) && isSpotifyFamilyUrl(url);
-        const guardMode=isNvidiaAuthFamilyUrl(url) ? 'nvidia-auth' : (spotifyChromeOsCompatibility ? 'spotify-chromeos' : (shouldUseStudyjetRuntimeGuard(url) ? 'full' : (shouldUseStudyjetMinimalGuard(url) ? 'minimal' : (shouldUseStudyjetHelperGuard(url) ? 'helper' : 'none'))));
-        if(t.scramjetFrame && t.scramjetRuntimeGuarded!==guardMode){
-          replaceTabFrame(t);
-        }
-        if(!t.scramjetFrame){
-          if(!t.privateScramjetControllerPromise){
-            const startup=createPrivateStudyjetController();
-            const tracked=startup.then(controller=>{
-              if(t.privateScramjetControllerPromise!==tracked){
-                controller.nyxStopWorkerTracking?.();
-                try{controller.cookieSyncChannel?.close?.()}catch{}
-                try{controller.port?.close?.()}catch{}
-                throw new Error('Private learning session was superseded');
-              }
-              t.privateScramjetController=controller;
-              return controller;
-            }).catch(error=>{
-              if(t.privateScramjetControllerPromise===tracked) t.privateScramjetControllerPromise=null;
-              throw error;
-            });
-            t.privateScramjetControllerPromise=tracked;
-          }
-          const privateController=await t.privateScramjetControllerPromise;
-          if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent){
-            return;
-          }
-          setFrameSandbox(t,true);
-          t.frame.removeAttribute('src');
-          clearFrameDocument(t);
-          installPopupBridge(t);
-          const plugins=[
-            createStudyjetCompatibilityPlugin('','proxy-sri'),
-            createStudyjetCompatibilityPlugin(connectionPrivacyGuardSource,'privacy'),
-            createStudyjetCompatibilityPlugin(workspaceAdBlockRuntimeSource,'ad-block')
-          ];
-          if(guardMode==='full') plugins.push(createStudyjetCompatibilityPlugin(studyjetRuntimeGuardSource,'runtime-guard'));
-          else if(guardMode==='nvidia-auth') plugins.push(createStudyjetCompatibilityPlugin(studyjetNvidiaAuthGuardSource,'nvidia-auth'));
-          else if(guardMode==='spotify-chromeos') plugins.push(createStudyjetCompatibilityPlugin(studyjetSpotifyChromeOsGuardSource,'spotify-chromeos'));
-          else if(guardMode==='minimal') plugins.push(createStudyjetCompatibilityPlugin(studyjetMinimalRuntimeGuardSource,'minimal-guard'));
-          else if(guardMode==='helper') plugins.push(createStudyjetCompatibilityPlugin(studyjetHelperRuntimeGuardSource,'helper-guard'));
-          if(shouldStripStudyjetDuckDuckGoScripts(url)){
-            plugins.push(createStudyjetCompatibilityPlugin('', 'duckduckgo-noscript'));
-          }
-          if(hostMatches(workspaceHost(url),['cineby.at'])){
-            plugins.push(createStudyjetCompatibilityPlugin('', 'cineby-disable-devtool'));
-          }
-          t.scramjetRuntimeGuarded=guardMode;
-          t.scramjetFrame=privateController.createFrame(t.frame,{plugins});
-          t.scramjetFrame.addEventListener?.('urlchange',event=>{
-            const next=workspaceShellSourceUrl(String(event.url || '')) || String(event.url || '');
-            if(!next) return;
-            const previousSource=workspaceShellSourceUrl(t.sourceUrl || t.url || '') || t.sourceUrl || t.url || '';
-            if(workspaceShellRejectFrameLocation(next,previousSource)){
-              recoverRejectedStudyjetLocation(t,next,previousSource);
-              return;
-            }
-            t.scramjetRejectedLocationKey='';
-            const currentHistory=workspaceShellSourceUrl(t.history?.[t.index] || '') || String(t.history?.[t.index] || '');
-            const initialStudyjetRedirect=t.scramjetHistoryPending===true;
-            if(initialStudyjetRedirect){
-              t.scramjetHistoryPending=false;
-              if(t.index>=0) t.history[t.index]=next;
-            }else if(next!==currentHistory && next!==previousSource){
-              t.history=t.history.slice(0,t.index+1);
-              t.history.push(next);
-              t.index=t.history.length-1;
-            }
-            t.url=next;
-            t.sourceUrl=next;
-            t.title=titleForUrl(next);
-            t.icon=iconForUrl(next);
-            renderTabs();
-            if(t.id===state.active) win.querySelector('.urlbar').value=workspaceShellDisplayValue(next);
-            updateWorkspaceShellLocation(next,t.id);
-            monitorWorkspaceTabSecurity(t,next,t.navigationIntent || '');
-            watchStudyjetHealth(t,next);
-            setTimeout(()=>syncLoadedTabIcon(t),120);
-          });
-        }
-        setTabMeta(t,url,false);
-        monitorWorkspaceTabSecurity(t,url,navigationIntent);
-        t.scramjetHistoryPending=true;
-        t.scramjetHealthRetries=0;
-        t.scramjetRetries=0;
-        watchConnectionLoad(t,url,'scramjet');
-        watchFrameTransportErrors(t,url,'scramjet');
-        watchStudyjetHealth(t,url);
-        if(String(t.frame.getAttribute('src') || '').startsWith('/service/')) t.frame.removeAttribute('src');
-        clearFrameDocument(t);
-        try{
-          t.scramjetFrame.go(url);
-        }catch{
-          retryStudyjetTab(t,url);
-        }
-        const isSearchNavigation=Object.values(engines).some(prefix=>String(url).startsWith(prefix));
-        const revealLoadedFrame=()=>{
-          if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-          setTimeout(()=>setTabLoading(t,false),40);
-        };
-        t.frame.addEventListener('load',revealLoadedFrame,{once:true});
-        setTimeout(revealLoadedFrame,2500);
-        void waitForTabResultPaint(t,isSearchNavigation ? 12000 : 8000).then(painted=>{
-          if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent || !workspaceFrameStillAtSource(t,url)) return;
-
-
-          if(isSearchNavigation && !painted && inspectFrameHealth(t).blank) loadSelectedSearchFallback(t,url,'search results did not finish loading');
-        });
-        if(spotifyChromeOsCompatibility) startSpotifyChromeOsFrameCompatibility(t);
-        else stopSpotifyChromeOsFrameCompatibility(t);
-        setTimeout(()=>{
-          if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-          if(t.scramjetFrame && !String(t.frame.getAttribute('src') || '').includes('/~/sj/')){
-            markWorkspaceEngine(t,'scramjet',String(t.frame.getAttribute('src') || ''),'scramjet-path-check');
-            try{t.scramjetFrame.go(url)}catch{}
-          }
-        },450);
-        setTimeout(()=>{
-          if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-          markWorkspaceEngine(t,'scramjet',String(t.frame.getAttribute('src') || url),'scramjet-final');
-        },900);
-        setTimeout(()=>{
-          if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-          try{
-            const isStudyjetPath=t.frame.contentWindow?.location?.pathname?.startsWith('/~/sj/');
-            const loadednyx=!!t.frame.contentDocument?.querySelector('#desktop,#welcomeScreen');
-            if(isStudyjetPath && loadednyx) retryStudyjetTab(t,url);
-          }catch{}
-        },1800);
-      }).catch(()=>{
-        if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-        setTabLoading(t,false);
-        destroyConnectionPrivacySession(t);
-        t.actualEngine='scramjet-failed';
-        setFrameSandbox(t,true);
-        clearFrameDocument(t);
-        t.frame.srcdoc=connectionFailureHtml('The private page session could not start. Reload Nyx and try again.',"Learning engine",{allowDirect:true});
-      });
-    }
+    function loadDocumentTab(t,url,addHistory=true){
+ t.expectedEngine='document';t.sourceUrl=url;t.url=url;
+ if(addHistory&&t.history?.[t.index]!==url){t.history=t.history.slice(0,t.index+1);t.history.push(url);t.index=t.history.length-1;}
+ setTabLoading(t,true);setTabMeta(t,url,false);clearFrameDocument(t);setFrameSandbox(t,true);
+ import('/js/document-window.mjs').then(({openDocument})=>{
+  if(!state.tabs.includes(t)||t.sourceUrl!==url)return;
+  openDocument(t.frame,url,{onError:error=>{setTabLoading(t,false);console.warn('Document startup:',error);},onNavigate:next=>{
+   if(!state.tabs.includes(t))return;
+   if(t.sourceUrl!==next.url){t.history=t.history.slice(0,t.index+1);t.history.push(next.url);t.index=t.history.length-1;}
+   t.sourceUrl=next.url;t.url=next.url;setTabMeta(t,next.url,false);setTabLoading(t,false);
+   if(next.title)t.title=next.title;
+   renderTabs();if(isSelectedWorkspaceTab(t)){activate(t.id);updateWorkspaceShellLocation(next.url,t.id);}
+  }});t.actualEngine='document';
+  t.frame.addEventListener('load',()=>setTabLoading(t,false),{once:true});
+ }).catch(error=>{setTabLoading(t,false);t.frame.srcdoc=connectionFailureHtml(error.message,'Document service',{allowDirect:true});});
+ renderTabs();if(isSelectedWorkspaceTab(t))activate(t.id);updateWorkspaceShellLocation(url,t.id);
+}
     function waitForTabResultPaint(t,timeout=4200){
       return new Promise(resolve=>{
         if(!t?.frame) return resolve(false);
@@ -12133,7 +10550,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         };
         const poll=setInterval(()=>{
           const srcdoc=String(t.frame?.getAttribute?.('srcdoc') || '');
-          if(srcdoc && /(?:Scramjet|Learning engine) did not start|Page Not Found|error/i.test(srcdoc)) finish(false);
+          if(srcdoc && /(?:Document service|Learning engine) did not start|Page Not Found|error/i.test(srcdoc)) finish(false);
           if(hasMeaningfulContent()) finish(true);
         },420);
         const timer=setTimeout(()=>finish(false),timeout);
@@ -12146,7 +10563,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const navigationIntent='navigate-'+Date.now()+Math.random().toString(16).slice(2);
       t.navigationIntent=navigationIntent;
       try{t.previousNavigationDocument=t.frame.contentDocument}catch{t.previousNavigationDocument=null;}
-      t.scramjetStartupRetries=0;
+      
       t.selectedSearchFallbackKey='';
       t.loadWatchToken='superseded-'+navigationIntent;
       t.transportWatchToken='superseded-'+navigationIntent;
@@ -12165,18 +10582,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         win.querySelector('.urlbar').value=workspaceShellDisplayValue(url);
         hideWorkspaceSuggestions();
         const workspaceMode=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE));
-        if(!forceMode || !workspaceTransportOverride) applyPreferredTransportForUrl(url,workspaceMode);
+        
         updateWorkspaceShellLocation(url,t.id,true);
         const mode=normalizeWorkspaceModeName(forceMode || selectedWorkspaceMode(url));
         if(workspaceMode==='auto' && mode==='iframe' && directOnly(url)){
-          loadStudyjetTab(t,url,true);
-        }else if(mode==='rammerhead'){
-          rhNavigate(url,finalUrl=>{
-            if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-            loadTab(t,finalUrl,true,'rammerhead',url);
-          });
-        }else if(mode==='scramjet'){
-          loadStudyjetTab(t,url,true);
+          loadDocumentTab(t,url,true);
+        }else if(mode==='document'){
+          loadDocumentTab(t,url,true);
         }else {
           loadTab(t,connectionModeUrl(mode,url,t.privacySessionId),true,mode || 'iframe',url);
         }
@@ -12186,7 +10598,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const url=youtubeEnglishUrl(normalize(workspaceShellSourceUrl(raw) || raw)); if(!url)return;
       win.querySelector('.urlbar').value=workspaceShellDisplayValue(url);
       const workspaceMode=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE));
-      if(!forceMode || !workspaceTransportOverride) applyPreferredTransportForUrl(url,workspaceMode);
+      
       updateWorkspaceShellLocation(url,t.id,true);
       try{
         const parsed=new URL(url,location.href);
@@ -12211,16 +10623,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }catch{}
       const mode=normalizeWorkspaceModeName(forceMode || selectedWorkspaceMode(url));
       if(workspaceMode==='auto' && mode==='iframe' && directOnly(url)){
-        loadStudyjetTab(t,url,true);
+        loadDocumentTab(t,url,true);
         return;
       }
-      if(mode==='rammerhead'){
-        rhNavigate(url,finalUrl=>{
-          if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-          loadTab(t,finalUrl,true,'rammerhead');
-        });
-      }else if(mode==='scramjet'){
-        loadStudyjetTab(t,url,true);
+      if(mode==='document'){
+        loadDocumentTab(t,url,true);
       }else {
         loadTab(t,connectionModeUrl(mode,url,t.privacySessionId),true,mode || 'iframe',url);
       }
@@ -12246,7 +10653,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           t.icon=favicons.nyx;
           t.expectedEngine='';
           t.actualEngine='blank';
-          t.scramjetFrame=null;
+          
           clearFrameDocument(t);
           t.frame.removeAttribute('src');
           t.frame.classList.remove('active','transparent-internal-page');
@@ -12259,8 +10666,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         }
         const source=workspaceShellSourceUrl(stored) || stored;
         const engine=selectedWorkspaceMode(source);
-        if(engine==='scramjet'){
-          loadStudyjetTab(t,source,false);
+        if(engine==='document'){
+          loadDocumentTab(t,source,false);
         }else {
           loadTab(t,stored,false,engine,source);
         }
@@ -12525,8 +10932,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         void repairWorkspaceConnection().then(()=>{
           if(!state.tabs.includes(tab) || tab.navigationIntent!==intent || tab.sourceUrl!==source)return;
           tab.workerRouteRecovery='';
-          tab.scramjetStartupRetries=0;
-          loadStudyjetTab(tab,source,false);
+          
+          loadDocumentTab(tab,source,false);
         }).catch(()=>{
           toast('Connection repair could not finish. Check your workspace extensions or try again.');
         }).finally(()=>{
@@ -12598,12 +11005,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         store.setText('nyx.engine',e.data.engine || 'duckduckgo');
         store.setText('nyx.workspaceMode',normalizeWorkspaceModeName(e.data.workspaceMode || e.data.b\u0072owserMode || DEFAULT_WORKSPACE_MODE));
         const nextTransport=normalizeWorkspaceTransportName(e.data.transport);
-        workspaceTransportOverride='';
+        
         if(normalizeWorkspaceTransportName(store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT))!==nextTransport){
-          studyjetInstallPromise=null;
-          studyjetController=null;
-          studyjetTransport=null;
-          studyjetTransportKey='';
+          
+          
+          
+          
         }
         store.setText('nyx.transport',nextTransport);
         applyUserSettings();
@@ -13314,14 +11721,52 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function lionAiNormalizeMath(expr){
     return expr.replace(/π/gi,'pi').replace(/\s+/g,'').replace(/(\d)([a-zA-Z(])/g,'$1*$2').replace(/([a-zA-Z)])(\d)/g,'$1*$2').replace(/\)\(/g,')*(').replace(/\^/g,'**');
   }
-  function lionAiEvalExpression(expr, xValue=0){
-    const normalized=lionAiNormalizeMath(expr)
-      .replace(/\bpi\b/gi,'Math.PI').replace(/\be\b/g,'Math.E')
-      .replace(/\bsqrt\(/gi,'Math.sqrt(').replace(/\bsin\(/gi,'Math.sin(').replace(/\bcos\(/gi,'Math.cos(').replace(/\btan\(/gi,'Math.tan(')
-      .replace(/\blog\(/gi,'Math.log10(').replace(/\bln\(/gi,'Math.log(').replace(/\babs\(/gi,'Math.abs(');
-    if(!/^[0-9xX+\-*/().,MathPIEabsqrtingclo]+$/.test(normalized)) throw new Error('Unsupported symbol in expression.');
-    return Function('x','return ('+normalized.replace(/\bX\b/g,'x')+')')(xValue);
+  function lionAiEvalExpression(expr,xValue=0){return (function arithmetic(input,x=0){
+  const text=String(input);
+  if(text.length>512)throw new Error('Expression is too long.');
+  const parts=[];
+  let cursor=0;
+  while(cursor<text.length){
+    if(/\s/.test(text[cursor])){cursor++;continue;}
+    const number=text.slice(cursor).match(/^(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/);
+    const name=text.slice(cursor).match(/^[a-zA-Z]+|^π/);
+    if(number){parts.push({kind:'number',value:Number(number[0])});cursor+=number[0].length;}
+    else if(name){parts.push({kind:'name',value:name[0].toLowerCase()});cursor+=name[0].length;}
+    else if('+-*/%^(),'.includes(text[cursor])){const op=text.slice(cursor,cursor+2)==='**'?'^':text[cursor];parts.push({kind:'operator',value:op});cursor+=op==='^'&&text[cursor]==='*'?2:1;}
+    else throw new Error('Unsupported symbol in expression.');
   }
+  const functions={sqrt:Math.sqrt,sin:Math.sin,cos:Math.cos,tan:Math.tan,log:Math.log10,ln:Math.log,abs:Math.abs};
+  let index=0;
+  const value=()=>parts[index]?.value;
+  const primary=()=>{
+    const token=parts[index++];
+    if(!token)throw new Error('Expected a number.');
+    if(token.kind==='number')return token.value;
+    if(token.value==='('){const n=expression();if(value()!==')')throw new Error('Missing closing parenthesis.');index++;return n;}
+    if(token.kind==='name'){
+      if(['pi','π','e','x'].includes(token.value))return token.value==='x'?Number(x):token.value==='e'?Math.E:Math.PI;
+      if(!Object.hasOwn(functions,token.value)||value()!=='(')throw new Error('Unknown function.');
+      index++;const n=expression();if(value()!==')')throw new Error('Missing closing parenthesis.');index++;return functions[token.value](n);
+    }
+    throw new Error('Expected a number.');
+  };
+  const power=()=>{let n=primary();if(value()==='^'){index++;n=n**unary();}return n;};
+  const unary=()=>{if(value()==='+'||value()==='-'){const sign=value();index++;return(sign==='-'?-1:1)*unary();}return power();};
+  const product=()=>{
+    let n=unary();
+    while(index<parts.length){
+      const explicit=['*','/','%'].includes(value()),implicit=parts[index]?.kind==='name'||value()==='(';
+      if(!explicit&&!implicit)break;
+      const op=explicit?parts[index++].value:'*',right=unary();
+      n=op==='*'?n*right:op==='/'?n/right:n%right;
+    }
+    return n;
+  };
+  const expression=()=>{let n=product();while(value()==='+'||value()==='-'){const op=parts[index++].value,right=product();n=op==='+'?n+right:n-right;}return n;};
+  const result=expression();
+  if(index!==parts.length)throw new Error('Unexpected expression input.');
+  return result;
+})(expr,xValue);}
   function lionAiSolveEquation(input){
     const equation=input.split(/solve:?/i).pop().trim();
     if(!equation.includes('=')){
@@ -14168,23 +12613,18 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           <h2>Connections</h2>
           <p>Choose the workspace engine Nyx uses for external sites.
 The learning engine opens web resources inside your workspace. Use Repair connection if a page cannot connect.
-Auto uses the learning engine with Textbook by default and can recover with another relay if the connection fails.</p>
+Open an external resource using your configured document service.</p>
           <select id="settingWorkspaceMode">
             <option value="auto">Auto</option>
-            <option value="scramjet">Use Learning engine</option>
+            <option value="document">Use Learning engine</option>
 
           </select>
         </section>
         <section class="settings-card">
           <h2>Connection method</h2>
-          <div class="settings-row"><span>Compatibility mode</span><button class="settings-action" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div><p>Use the alternate connection when a network cannot open sites. Turn off for the standard connection. Reload website pages after changing. Custom connections keep their saved choice.</p>
+          <p>External resources open on the document service. Press Open there to start the session.</p>
           <p class="hint">Choose an installed connection method.</p>
-          <select id="settingTransport">
-            <option value="auto">Auto (recommended)</option>
-            <option value="epoxy">Atlas</option>
-            <option value="wisp">Campus connection</option>
-            <option value="libcurlRaw">Textbook</option>
-          </select>
+          <select id="settingTransport"><option value="document">Document service</option></select>
           <button data-save-workspace>Save Workspace Settings</button><button class="settings-action" data-workspace-connection-repair type="button">Repair connection</button>
         </section>
         <section class="settings-card">
@@ -14226,7 +12666,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
     const modeSel=win.querySelector('#settingWorkspaceMode');
     if(modeSel){
       const mode=normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE));
-      modeSel.value=mode==='rammerhead' ? 'auto' : mode;
+      modeSel.value=mode;
     }
     const transportSel=win.querySelector('#settingTransport');
     if(transportSel) transportSel.value=normalizeWorkspaceTransportName(store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT));
@@ -14910,18 +13350,6 @@ Auto uses the learning engine with Textbook by default and can recover with anot
       return nativeOpen ? nativeOpen(url,target,features) : null;
     };
   }
-  function installBookmuxPortResponder(){
-    if(window.__nyxBarebooksResponderInstalled) return;
-    window.__nyxBarebooksResponderInstalled=true;
-    window.addEventListener('message',event=>{
-      if(event.data?.type!=='getPort' || !event.data.port) return;
-      try{
-        const worker=new SharedWorker('/baremux/worker.js','bare-mux-worker');
-        const replyPort=event.data.port;
-        MessagePort.prototype.postMessage.call(replyPort,worker.port,[worker.port]);
-      }catch{}
-    });
-  }
   function installAntiClose(){
     const msg='Are you sure you want to leave this page?';
     if(antiCloseConfirmHandler) return;
@@ -14938,6 +13366,19 @@ Auto uses the learning engine with Textbook by default and can recover with anot
     window.addEventListener('keydown',antiCloseGestureHandler,true);
     if(antiCloseEnabled) antiCloseHadGesture=true;
     syncAntiCloseHandler();
+  }
+  function installRetiredRuntimeRecovery(){
+    let offered=false;
+    window.addEventListener('message',event=>{
+      if(event.origin!==location.origin || event.data?.type!=='getPort' || !event.data.port || offered) return;
+      offered=true;
+      const shade=shownyxPrompt('This window uses an older component. Reload when you are ready to reconnect.',{onOk:()=>location.reload()});
+      shade.querySelector('input')?.remove();
+      const reload=shade.querySelector('.nyx-prompt-ok');
+      reload.textContent='Reload';
+      shade.querySelector('.nyx-prompt-cancel').textContent='Later';
+      reload.focus();
+    });
   }
   function syncAntiCloseHandler(){
     if(!antiCloseConfirmHandler) return;
@@ -15196,16 +13637,16 @@ Auto uses the learning engine with Textbook by default and can recover with anot
         });
         return;
       }
-      const wispSave=e.target.closest?.('[data-workspace-wisp-save]');
-      if(wispSave){
+      const documentSave=e.target.closest?.('[data-workspace-document-save]');
+      if(documentSave){
         e.preventDefault();
-        saveWorkspaceWispUrl(wispSave.closest('.workspace-shell-settings-overlay'));
+        saveDocumentOrigin(documentSave.closest('.workspace-shell-settings-overlay'));
         return;
       }
-      const wispReset=e.target.closest?.('[data-workspace-wisp-reset]');
-      if(wispReset){
+      const documentReset=e.target.closest?.('[data-workspace-document-reset]');
+      if(documentReset){
         e.preventDefault();
-        saveWorkspaceWispUrl(wispReset.closest('.workspace-shell-settings-overlay'),true);
+        saveDocumentOrigin(documentReset.closest('.workspace-shell-settings-overlay'),true);
         return;
       }
       const dataExport=e.target.closest?.('[data-nyx-data-export]');
@@ -15798,12 +14239,12 @@ Auto uses the learning engine with Textbook by default and can recover with anot
         store.setText('nyx.engine', input?.value || 'duckduckgo');
         store.setText('nyx.workspaceMode', normalizeWorkspaceModeName(mode?.value || DEFAULT_WORKSPACE_MODE));
         const nextTransport=normalizeWorkspaceTransportName(transport?.value);
-        workspaceTransportOverride='';
+        
         if(normalizeWorkspaceTransportName(store.text('nyx.transport',DEFAULT_WORKSPACE_TRANSPORT))!==nextTransport){
-          studyjetInstallPromise=null;
-          studyjetController=null;
-          studyjetTransport=null;
-          studyjetTransportKey='';
+          
+          
+          
+          
         }
         store.setText('nyx.transport', nextTransport);
         applyUserSettings(); toast('Workspace settings saved'); return;
@@ -15984,9 +14425,9 @@ Auto uses the learning engine with Textbook by default and can recover with anot
       }
     });
     document.addEventListener('keydown',e=>{
-      if(e.target?.matches?.('[data-workspace-wisp-url]') && e.key==='Enter'){
+      if(e.target?.matches?.('[data-workspace-document-url]') && e.key==='Enter'){
         e.preventDefault();
-        saveWorkspaceWispUrl(e.target.closest('.workspace-shell-settings-overlay'));
+        saveDocumentOrigin(e.target.closest('.workspace-shell-settings-overlay'));
         return;
       }
       if(e.target?.id==='settingName' && e.key==='Enter'){
@@ -16261,7 +14702,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
   let nyxLatencySamples=[];
   let nyxLatencyHistory=[];
   let nyxLatencyLatestMs=null;
-  let nyxLatencyHealth={ok:null,service:'',wisp:'',chatRealtime:''};
+  let nyxLatencyHealth={ok:null,service:'',document:'',chatRealtime:''};
   let nyxLatencyLastSuccessAt=0;
   function nyxLatencyQualityFor(ms){
     if(!Number.isFinite(ms)) return nyxLatencyQuality==='offline' ? 'offline' : 'sampling';
@@ -16291,7 +14732,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
     setText('[data-nyx-latency-range]',Number.isFinite(rangeMin) ? `${rangeMin}–${rangeMax} ms` : '-- ms');
     setText('[data-nyx-health-overall]',nyxLatencyHealth.ok===true ? 'Healthy' : nyxLatencyHealth.ok===false ? 'Unavailable' : 'Checking');
     setText('[data-nyx-health-workspace]',navigator.onLine ? 'Online' : 'Offline');
-    setText('[data-nyx-health-wisp]',nyxLatencyHealth.ok===false ? 'Unavailable' : nyxLatencyHealth.wisp ? nyxLatencyHealth.wisp==='embedded' ? 'Embedded' : nyxLatencyHealth.wisp : 'Checking');
+    setText('[data-nyx-health-document]',nyxLatencyHealth.ok===false ? 'Unavailable' : nyxLatencyHealth.document ? nyxLatencyHealth.document==='embedded' ? 'Embedded' : nyxLatencyHealth.document : 'Checking');
     setText('[data-nyx-health-chat]',nyxLatencyHealth.ok===false ? 'Unavailable' : nyxLatencyHealth.chatRealtime ? nyxLatencyHealth.chatRealtime==='socket.io' ? 'Realtime' : nyxLatencyHealth.chatRealtime : 'Checking');
     const updatedPrefix=nyxLatencyHealth.ok===false ? 'Last healthy' : 'Updated';
     setText('[data-nyx-latency-updated]',nyxLatencyLastSuccessAt ? `${updatedPrefix} ${new Date(nyxLatencyLastSuccessAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit',second:'2-digit'})} · every second` : 'Waiting for the first health check');
@@ -16345,7 +14786,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
     nyxLatencyHealth={
       ok:true,
       service:String(payload?.service || 'nyx'),
-      wisp:String(payload?.wisp || ''),
+      document:String(payload?.document || ''),
       chatRealtime:String(payload?.chatRealtime || '')
     };
     nyxLatencyLastSuccessAt=sampledAt;
@@ -16395,7 +14836,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
     nyxLatencyQuality='sampling';
     nyxLatencySamples=[];
     nyxLatencyHistory=[];
-    nyxLatencyHealth={ok:null,service:'',wisp:'',chatRealtime:''};
+    nyxLatencyHealth={ok:null,service:'',document:'',chatRealtime:''};
     nyxLatencyLastSuccessAt=0;
     syncNyxLatencyBubble();
     for(let sample=0;sample<3;sample+=1){
@@ -16408,11 +14849,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
   function startNyxLatencyMonitor(){
     if(startNyxLatencyMonitor.started) return;
     startNyxLatencyMonitor.started=true;
-    window.NyxAvailability?.start(()=>({url:wispUrl(),custom:!!storedCustomWispUrl()}),async failed=>{
-      if(storedCustomWispUrl())return;
-      const next=await selectWispRelay(failed);
-      if(!storedCustomWispUrl() && next!==failed)resetWorkspaceConnectionRuntime();
-    });
+
     syncNyxLatencyBubble();
     void calibrateNyxLatency();
     const refresh=()=>{if(!document.hidden) void sampleNyxLatency(true)};
@@ -16522,7 +14959,7 @@ Auto uses the learning engine with Textbook by default and can recover with anot
     if(hostedCloakEntry) document.body.classList.add('hosted-cloak-entry');
     document.documentElement.classList.toggle('nyx-chromeos',isChromeOsUser());
     document.body.classList.add('runtime-lag-guard');
-    removeLegacyStartupPdfData(); installDeltaNewTabRedirect(); installBookmuxPortResponder(); installAntiClose(); bind(); startNyxGlobalApps(); installInteractiveHomeTitleDots(); initWeatherPanel(); startCenterClock(); startNyxPresence(); startNyxLatencyMonitor(); startSpotifyChromeOsCompatibilitySweep(); loadFounderProfile(); initializeFounderOwnerAccess(); startNyx();
+    removeLegacyStartupPdfData(); installDeltaNewTabRedirect(); installRetiredRuntimeRecovery(); installAntiClose(); bind(); startNyxGlobalApps(); installInteractiveHomeTitleDots(); initWeatherPanel(); startCenterClock(); startNyxPresence(); startNyxLatencyMonitor(); startSpotifyChromeOsCompatibilitySweep(); loadFounderProfile(); initializeFounderOwnerAccess(); startNyx();
     if(hostedCloakEntry){
       scheduleHostedCloakLaunch();
       return;

@@ -27,6 +27,9 @@ try {
       if(path.startsWith('/assets/vendor/katex/'))return route.fulfill({contentType:path.endsWith('.js')?'text/javascript':path.endsWith('.css')?'text/css':'font/woff2',body:await readFile(sourceFile(root==='.'?'node_modules/katex/dist/'+path.split('/katex/')[1]:root+path))});
       if(path==='/assets/icons/nyx-cat-moon.svg')return route.fulfill({contentType:'image/svg+xml',body:await readFile(sourceFile(root+path))});
       if(path==='/api'||path.startsWith('/apps/api-keys/')||['/js/app-presentation.js','/js/ai-markdown.js','/apps/utility-shell.css','/apps/obsidian.css','/assets/vendor/three.r134.min.js','/js/beams-wallpaper.js','/js/line-waves-wallpaper.js'].includes(path))return route.fulfill({contentType:path.endsWith('.js')?'text/javascript':path.endsWith('.css')?'text/css':'text/html',body:await readFile(sourceFile(root+(path==='/api'?'/apps/api-keys/index.html':path)),'utf8')});
+      if(/\.(?:js|mjs|css|woff2?|svg|png)$/.test(path)){
+        try{return route.fulfill({contentType:/\.m?js$/.test(path)?'text/javascript':path.endsWith('.css')?'text/css':path.endsWith('.svg')?'image/svg+xml':path.endsWith('.png')?'image/png':'font/woff2',body:await readFile(sourceFile(root+path))});}catch{return route.abort();}
+      }
       if(path==='/api/v1/ai'){balance-=12;return route.fulfill({json:{choices:[{message:{content:answer},finish_reason:'length'}],usage:{prompt_tokens:7,completion_tokens:5}}});}
       if(path==='/api/developer/owner/account/member/reveal-key')return route.fulfill({json:{key:'n_api_owner-reveal-fixture'}});
       if(path==='/api/developer/owner/accounts')return route.fulfill({json:{members:[{uid:'member',name:'Test Member',balance,usedTokens:12,key:{prefix:'n_api_fixture'}}],nextCursor:null}});
@@ -40,11 +43,11 @@ try {
       return route.fulfill({json:{uid:'member',premium,monthlyModelLimits:premium?{luna:25000,gemini:50000}:{luna:0,gemini:0},tokenPool:{limit:premium?50000:10000,used:0,remaining:premium?50000:10000,period:'four-days',resetAt:Date.now()+4*86400000},balance,usedTokens:0,models:['google/gemini-2.5-flash-lite'],dailyRequests:20,minuteRequests:4,maxOutput:512,owner,verified,unlocked,key,configured:true,grantedTokens:1000,requestsToday:1,recent:[{at:Date.now(),model:'google/gemini-2.5-flash-lite',tokens:12,status:'completed'}]}});
     });
     await page.goto('http://nyx.test/');const frame=page.frameLocator('iframe');
-    await frame.locator('#notice').filter({hasText:'Sign in to Nyx to continue.'}).waitFor();
+    await frame.locator('#notice').filter({hasText:/Sign in to .* to continue/ }).waitFor();
     await frame.locator('#sign-in').click();
     await frame.locator('#account').filter({hasText:'1,000'}).waitFor();
     assert.equal(await frame.locator('#sign-in').isVisible(),false,'Signed-in users must not see a sign-in link');
-    assert.equal(await frame.locator('body').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(11, 16, 13)');
+    assert.equal(await frame.locator('body').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(0, 0, 0)');
     assert.equal(await frame.locator('body').evaluate(el=>getComputedStyle(el).backgroundImage),'none');
     assert.equal(await frame.locator('#nyxBeamsBg').count(),0,'Embedded page must not duplicate wallpaper rendering');
     assert.equal(await frame.locator('#create-button').isDisabled(),false,'Email verification is not required');
@@ -56,7 +59,7 @@ try {
     await frame.locator('[data-tab=playground]').click();
     assert.equal(await frame.locator('#playground-key').inputValue(),'n_api_fixture-only-secret');
     await frame.locator('#playground-prompt').fill('Explain rainbows.');await frame.locator('#playground-send').click();
-    await frame.locator('#playground-response strong').filter({hasText:'in water droplets'}).waitFor();
+    await frame.locator('#playground-response strong').filter({hasText:'in water droplets'}).waitFor({timeout:5000}).catch(async error=>{console.error('Playground diagnostics',JSON.stringify({errors,response:await frame.locator('#playground-response').innerText(),meta:await frame.locator('#playground-meta').innerText()}));throw error;});
     assert.equal(await frame.locator('#playground-response li').count(),2);
     assert.equal(await frame.locator('#playground-response .katex').count(),1);
     assert.equal(await frame.locator('#playground-response img').count(),0);

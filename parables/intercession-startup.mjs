@@ -1,35 +1,4 @@
-const pending = new Map();
-const controllers = new Set();
-
-// Register before constructing controllers: their revive listener opens a new
-// message port using serviceWorkerController, which can still be a retired worker.
-if (typeof navigator !== 'undefined' && navigator.serviceWorker) {
-  navigator.serviceWorker.addEventListener('message', event => {
-    if (!event.data?.$controller$swrevive || !event.source?.scriptURL) return;
-    const worker = event.source;
-    if (typeof ServiceWorker === 'undefined' || !(worker instanceof ServiceWorker)) return;
-    if (!['activating', 'activated'].includes(worker.state)) return;
-    for (const controller of controllers) {
-      const previous = controller.serviceWorkerController;
-      if (!previous || previous === worker) continue;
-      try {
-        const currentUrl = new URL(previous.scriptURL);
-        const nextUrl = new URL(worker.scriptURL);
-        if (currentUrl.origin !== nextUrl.origin || currentUrl.pathname !== nextUrl.pathname) continue;
-        controller.serviceWorkerController = worker;
-        controller.guardServiceWorkerRevive = false;
-      } catch {}
-    }
-  });
-}
-
-export function trackConnectionController(instance) {
-  controllers.add(instance);
-  return () => controllers.delete(instance);
-}
-
-// A failed script element must not turn every subsequent navigation into a
-// promise waiting for a load event that has already happened.
+const pending=new Map();
 export function loadConnectionScript(src, ready, { timeoutMs = 20000 } = {}) {
   if (ready()) return Promise.resolve();
   const url = new URL(src, location.href).href;
@@ -55,13 +24,3 @@ export function loadConnectionScript(src, ready, { timeoutMs = 20000 } = {}) {
   pending.set(url, task);
   return task;
 }
-
-export function waitForConnectionController(instance, timeoutMs = 20000) {
-  let timer;
-  return Promise.race([
-    instance.wait(),
-    new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('The workspace controller took too long to start. Please retry.')), timeoutMs); })
-  ]).finally(() => clearTimeout(timer));
-}
-
-export {trackConnectionController as trackProxyController, loadConnectionScript as loadProxyScript, waitForConnectionController as waitForProxyController};

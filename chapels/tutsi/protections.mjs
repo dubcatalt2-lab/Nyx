@@ -185,7 +185,7 @@ export function installPageProtection(frame,settings){
       if(!response.ok)return {verdict:'unverified'};
       return response.json();
     };
-    win.eval(protectionSource(settings));
+    const script=win.document.createElement("script");script.textContent=protectionSource(settings);(win.document.head||win.document.documentElement).appendChild(script);script.remove();
   }catch{} // Cross-origin content is constrained by the frame sandbox instead.
 }
 

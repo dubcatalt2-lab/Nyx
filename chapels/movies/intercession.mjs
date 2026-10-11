@@ -3,11 +3,8 @@ const read = key => { try { return localStorage.getItem(key) || ''; } catch { re
 const abort = signal => { if (signal?.aborted) throw signal.reason || new DOMException('Cancelled', 'AbortError'); };
 function standaloneSettings() {
   const tutsi = location.hostname.startsWith('tutsi.') || new URLSearchParams(location.search).get('tutsi') === '1' || document.documentElement.dataset.site === 'tutsi';
-  if (tutsi) { let saved; try { saved=JSON.parse(read('tutsi.settings.v1') || '{}'); } catch {} return {transport:'libcurl',httpBridge:true,autoRelay:true,...saved}; }
-  const transport=read('nyx.transport').replace(/^"|"$/g,'');
-  return {transport:!transport || transport==='auto' || /^libcurl/i.test(transport)?'libcurl':transport==='wisp'?'wisp':'epoxy',
-    httpBridge:read('nyx.httpBridge')!=='false',relay:read('nyx.wispUrl'),autoRelay:true,
-    adBlock:read('nyx.popupProtection')!=='false',popupBlock:true,downloadBlock:true};
+  if (tutsi) { let saved; try { saved=JSON.parse(read('tutsi.settings.v1') || '{}'); } catch {} return {adBlock:saved?.adBlock!==false,popupBlock:saved?.popupBlock!==false,downloadBlock:saved?.downloadBlock!==false}; }
+  return {adBlock:read('nyx.popupProtection')!=='false',popupBlock:true,downloadBlock:true};
 }
 
 export async function launchMovieConnection(frame, url, signal, {recover=false}={}) {

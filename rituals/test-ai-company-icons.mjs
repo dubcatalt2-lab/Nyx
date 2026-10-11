@@ -25,7 +25,7 @@ try{
  await page.setViewportSize({width:390,height:844});const bounds=await page.locator('#modelMenu').boundingBox();assert(bounds.x>=0&&bounds.x+bounds.width<=390);
  await page.screenshot({path:'.codex-artifacts/ai-anthropic-mobile.png'});
  await page.locator('#modelSearch').press('Escape');
- await page.evaluate(async()=>{const {decorateEmbedded}=await import('/chapels/tutsi/embedded.mjs');decorateEmbedded(document,'ai');});
+ await page.evaluate(async()=>{const {decorateEmbedded}=await import('/apps/tutsi/embedded.js');decorateEmbedded(document,'ai');});
  await page.locator('#modelTrigger').click();
  await page.waitForFunction(()=>document.querySelector('#modelCompanies').dataset.layout==='tutsi');assert.equal(await page.locator('.ai-company-pinned').count(),0);
  await page.locator('#modelCompanies [data-model-company="anthropic"]').click();assert.equal(await page.locator('#modelOptions [data-model-id]').count(),1);

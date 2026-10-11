@@ -22,8 +22,9 @@ const context=vm.createContext({app,process:{env:{}},URL,AbortController,setTime
  nyxAiProviderFetch:async()=>{calls++;return response;}
 });
 vm.runInContext(['nyxAiErrorBody','nyxAiApplySupportedParameters','nyxAiCompletionText','nyxAiLooksCorrupted','nyxAiErrorMessage','nyxAiProviderError','nyxAiStreamText','nyxAiWriteStreamChunk'].map(declaration).join('\n'),context);
-const start=source.indexOf('app.post("/api/nyx-ai",'),end=source.indexOf('\n// Nyx-issued API keys',start);
-vm.runInContext(source.slice(start,end),context);
+const route=ast.body.find(node=>node.type==='ExpressionStatement'&&node.expression?.callee?.object?.name==='app'&&node.expression.callee.property?.name==='post'&&node.expression.arguments[0]?.value==='/api/nyx-ai');
+assert(route);
+vm.runInContext(source.slice(route.start,route.end),context);
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
 const send=stream=>fetch(`http://127.0.0.1:${server.address().port}/api/nyx-ai`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({model,message:'Hello',stream})});
 const error=code=>({error:{code,message:'Provider returned error',metadata:{raw:'secret-fixture private provider details'}}});

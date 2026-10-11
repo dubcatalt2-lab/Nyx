@@ -3,6 +3,10 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "relay.js",
+  "connection/server.mjs",
+  "connection/worker.mjs",
+  "js/document-window.mjs",
   "js/document-controls.js",
   "css/document-controls.css",
   "assets/backgrounds/study-away-cover.png",
@@ -108,9 +112,6 @@ const requiredFiles = [
   "assets/games/small-world-cup.html",
   "lib/game-resource-repairs.mjs",
   "lib/game-reports.mjs",
-  "assets/transports/libcurl-client.mjs",
-  "assets/transports/libcurl-response.mjs",
-  "lib/wispurr-relay.mjs",
   "js/ai-screen-chat.js",
   "apps/tutsi/app.webmanifest",
   "apps/tutsi/install.js",
@@ -130,21 +131,16 @@ const requiredFiles = [
   "apps/tutsi/app.mjs",
   "apps/tutsi/protections.mjs",
   "apps/tutsi/shortcuts.mjs",
-  "tutsi-runtime.sw.js",
-  "apps/tutsi/http-relay.mjs",
   "lib/tutsi-crawler-controls.mjs",
   "lib/tutsi-hostnames.mjs",
   "lib/cloud-launch-limit.mjs",
   "ministries/stratus/provider-step.mjs",
   "ministries/stratus/verification-mailbox.mjs",
   "ministries/stratus/provider-account.mjs",
-  "server-http-wisp.mjs",
   "apps/tutsi/style.css",
   "apps/tutsi/proxy.mjs",
-  "apps/tutsi/relay.mjs",
   "apps/tutsi/filter-detection.mjs",
   "js/duck-image-viewport.js",
-  "apps/tutsi/proxy-compat.mjs",
   "apps/tutsi/icons.mjs",
   "apps/tutsi/clock.mjs",
   "apps/tutsi/profiles.html",
@@ -162,8 +158,6 @@ const requiredFiles = [
   "css/profile-editor-layout.css",
   "assets/profile/effects/catalog.json",
   "assets/profile/decorations/catalog.json",
-  "scripts/build-proxy-assets.mjs",
-  "scripts/proxy-asset-names.json",
   "assets/icons/nyx-movies.svg",
   "lib/movies.mjs",
   "lib/movie-images.mjs",
@@ -202,7 +196,6 @@ const requiredFiles = [
   "script.js",
   "startup.js",
   "styles.css",
-  "scramjet.sw.js",
   "js/display-names.js",
   "js/availability.js",
   "js/nyx-logo.js",
@@ -336,7 +329,7 @@ for(const file of ['netlify.toml','netlify/functions/api.mjs','scripts/build-net
   let exists=false;try{await access(sourceFile(file));exists=true;}catch(error){if(error.code!=='ENOENT')throw error;}
   if(exists)throw Error('Obsolete deployment file: '+file);
 }
-for (const dependency of ["express", "firebase-admin", "wispurr", "mp4box", "hls.js", "@novnc/novnc"]) {
+for (const dependency of ["express", "firebase-admin", "mp4box", "hls.js", "@novnc/novnc"]) {
   if (!packageJson.dependencies?.[dependency]) {
     console.error(`Deployment dependency is missing: ${dependency}`);
     process.exit(1);

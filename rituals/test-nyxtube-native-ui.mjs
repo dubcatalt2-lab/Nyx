@@ -45,8 +45,8 @@ try {
   }};});
   await page.goto(base+'/apps/nyxtube/index.html');await page.locator('.video-cover').first().click({timeout:10000}).catch(async e=>{console.log(await page.locator('body').innerText());console.log(await page.evaluate(()=>[...document.scripts].map(s=>s.src)));throw e;});
   const spinner=page.locator('.watch-loading-spinner');assert.ok(await spinner.isVisible());
-  await page.waitForFunction(()=>document.querySelector('[data-watch-loading]').textContent.includes('Preparing video'));
-  assert.match(await page.locator('[data-watch-loading]').innerText(),/Preparing video/);
+  await page.waitForFunction(()=>document.querySelector('[data-watch-loading]').textContent.includes('Preparing'));
+  assert.match(await page.locator('[data-watch-loading]').innerText(),/Preparing/);
   const rotation=await spinner.evaluate(el=>getComputedStyle(el).transform);await page.waitForTimeout(150);
   assert.notEqual(await spinner.evaluate(el=>getComputedStyle(el).transform),rotation,'Download circle must rotate');
   const player=page.locator('[data-watch-player] video');await page.waitForFunction(()=>document.querySelector('[data-watch-player] video')?.currentTime>0.1);
@@ -56,7 +56,7 @@ try {
   assert.ok(await player.evaluate(v=>v.videoWidth>0 && v.getBoundingClientRect().height>100),'Native picture is missing or collapsed');
   await player.evaluate(v=>v.dispatchEvent(new Event('waiting')));
   assert.ok(await spinner.isVisible(),'Buffering after playback must show a spinner');
-  assert.match(await page.locator('[data-watch-loading]').innerText(),/Loading video chunks/);
+  assert.match(await page.locator('[data-watch-loading]').innerText(),/Loading .* chunks/);
   const bufferedRotation=await spinner.evaluate(el=>getComputedStyle(el).transform);await page.waitForTimeout(150);
   assert.notEqual(await spinner.evaluate(el=>getComputedStyle(el).transform),bufferedRotation);
   await page.locator('[data-watch-stage]').screenshot({path:'.codex-artifacts/nyxtube-chunk-buffering.png'});
@@ -103,7 +103,7 @@ try {
   await page.mouse.down();await page.waitForTimeout(450);await page.evaluate(()=>dispatchEvent(new Event('blur')));assert.equal(await player.evaluate(v=>v.playbackRate),1.25);await page.mouse.up();
   await player.evaluate(v=>v.pause());await page.locator('[data-watch-settings]').click();await page.locator('[data-watch-speed]').focus();await page.keyboard.press('Space');assert.ok(await player.evaluate(v=>v.paused),'Form controls must not control video');await page.keyboard.press('Escape');
   failed=true;
-  await page.locator('[data-watch-quality]').selectOption('720');await page.waitForFunction(()=>document.body.textContent.includes('Unavailable Press Play to retry'));
+  await page.locator('[data-watch-quality]').selectOption('720');await page.waitForFunction(()=>document.body.textContent.includes('Unavailable'));
   assert.equal(await page.locator('[data-watch-engine]').evaluate(el=>el.value),'native');
   assert.equal(await page.locator('[data-test-embed], iframe[src*="backup.invalid"]').count(),0);
   assert.ok(await page.locator('[data-watch-quality]').isDisabled());

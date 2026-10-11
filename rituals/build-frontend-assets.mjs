@@ -59,8 +59,7 @@ export function rewriteFrontendReferences(source,path,aliases,publishedPath=path
   return /\.(?:js|mjs)$/.test(path)?rewriteRelativeScriptUrls(source,path,aliases,publishedPath):source;
 }
 export async function buildFrontendAssets(output,files,lessonHtml) {
-  const existing=JSON.parse(await readFile(sourceFile(join(output,'proxy-assets.json')),'utf8')).aliases;
-  const candidates=[...new Set(files)].filter(p=>/\.(js|mjs)$/.test(p)&&!p.startsWith('assets/ugs/')&&!p.startsWith('assets/vendor/')&&!existing['/'+p]&&p!=='runtime-config.js');
+  const candidates=[...new Set(files)].filter(p=>/\.(js|mjs)$/.test(p)&&!p.startsWith('assets/ugs/')&&!p.startsWith('assets/vendor/')&&p!=='runtime-config.js');
   const aliases=Object.fromEntries(candidates.map(p=>['/'+p,alias('/'+p)]));
   // Keep old URLs for open tabs; new documents and module graphs use stable aliases.
   for(const path of [...new Set(files)].filter(p=>/\.(html|js|mjs)$/.test(p)&&!p.startsWith('assets/ugs/')&&!p.startsWith('assets/vendor/'))) {

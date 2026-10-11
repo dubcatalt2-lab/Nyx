@@ -5,7 +5,6 @@
   "type": "module",
   "scripts": {
     "start": "node shepherd.js",
-    "start:wisp": "node fellowship-server.js",
     "dev": "node shepherd.js",
     "dev:accounts": "powershell -NoProfile -ExecutionPolicy Bypass -File rituals/start-local-accounts.ps1",
     "prepare:vision": "node rituals/warm-vision-model.mjs",
@@ -18,7 +17,7 @@
     "test:code-studio": "node rituals/test-code-studio.mjs",
     "test:code-runner": "node rituals/test-code-runner.mjs",
     "test:code-tutorials": "node rituals/test-code-tutorials.mjs",
-    "test:games": "node rituals/test-games.mjs",
+    "test:lessons": "node rituals/test-lessons.mjs",
     "test:guest-ip-tracking": "node rituals/test-guest-ip-tracking.mjs",
     "test:nyxify-covers": "node rituals/test-nyxify-playlist-covers.mjs",
     "test:nyxify-live": "node rituals/test-nyxify-live-playback.mjs",
@@ -31,10 +30,12 @@
     "test:nyxtube-segments": "node rituals/test-nyxtube-segments.mjs",
     "test:utility-theme": "node rituals/test-utility-neutral-theme.mjs",
     "build:vps": "node rituals/build-vps.mjs",
-    "test:network": "node rituals/test-network-adapter.mjs",
+    "test:network": "npm --prefix connection test",
     "check:release-audit": "node rituals/audit-release.mjs dist",
     "check:branding": "node rituals/check-branding.mjs",
-    "check:deploy": "node rituals/check-deploy.mjs && npm run check:branding"
+    "check:deploy": "node rituals/check-deploy.mjs && npm run check:branding",
+    "start:relay": "node relay.js",
+    "build:connection": "npm --prefix connection run build"
   },
   "engines": {
     "node": ">=20 <25"
@@ -42,11 +43,6 @@
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
     "@huggingface/transformers": "^4.2.0",
-    "@mercuryworkshop/bare-mux": "2.1.9",
-    "@mercuryworkshop/epoxy-transport": "^2.1.28",
-    "@mercuryworkshop/libcurl-transport": "^2.0.5",
-    "@mercuryworkshop/scramjet": "2.0.67-alpha.2",
-    "@mercuryworkshop/scramjet-controller": "0.0.14",
     "@novnc/novnc": "1.7.0",
     "eruda": "3.4.3",
     "express": "5.2.1",
@@ -59,7 +55,6 @@
     "socket.io": "^4.8.3",
     "three": "^0.134.0",
     "vanta": "^0.5.24",
-    "wispurr": "4.2.0",
     "ws": "^8.21.0"
   },
   "devDependencies": {
@@ -74,5 +69,8 @@
     "parse5": "7.3.0",
     "socket.io-client": "^4.8.3",
     "terser": "^5.49.2"
-  }
+  },
+  "workspaces": [
+    "connection"
+  ]
 }

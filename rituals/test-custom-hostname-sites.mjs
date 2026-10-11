@@ -10,7 +10,7 @@ const registration=source.slice(source.indexOf('app.post("/api/custom-hostnames"
 const records=new Map();let handler,writes=0,lookupIps=['15.204.93.166'];
 const firestore={collection:()=>({doc:id=>({id,get:async()=>snapshot(id)})}),runTransaction:async cb=>cb({get:ref=>ref.get(),set:(ref,data)=>{writes++;records.set(ref.id,data);}})};
 function snapshot(id){return {exists:records.has(id),data:()=>records.get(id)};}
-const make=new Function('app','isIP','createHash','tutsiHostnames','isTutsiHostname','embeddedWispAllowedOrigins','process','firebaseAdminModeConfigured','linkGeneratorFirebase','nyxCustomHostnameTargetIps','sameOriginRequest','nyxCustomHostnameRateState','nyxClientIp','nyxCustomHostnameResolvedIps','cacheNyxCustomHostnameDecision',`
+const make=new Function('app','isIP','createHash','tutsiHostnames','isTutsiHostname','applicationAllowedOrigins','process','firebaseAdminModeConfigured','linkGeneratorFirebase','nyxCustomHostnameTargetIps','sameOriginRequest','nyxCustomHostnameRateState','nyxClientIp','nyxCustomHostnameResolvedIps','cacheNyxCustomHostnameDecision',`
 const nyxCustomHostnameCollectionName='fixture', nyxCustomHostnameRegistrationMaxAttempts=10,nyxCustomHostnameRegistrationWindowMs=60000;
 ${declarations}\n${registration}
 return {site:customHostnameSite,id:nyxCustomHostnameDocumentId,normalize:normalizeNyxCustomHostname};`);

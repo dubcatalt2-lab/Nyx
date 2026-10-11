@@ -12,11 +12,11 @@ for(const [from,to] of Object.entries({...sourceLayout,...sourceFileLayout})){
 }
 assert.equal(publicSourcePath('chapels/movies/intercession.mjs'),'apps/movies/proxy.mjs');
 assert.equal(publicSourcePath('study.html'),'index.html');
-assert.equal(publicSourcePath('barebooks/index.mjs'),'baremux/index.mjs');
-assert.equal(publicSourcePath('relics/transports/incense-pilgrim.mjs'),'assets/transports/epoxy-scramjet.mjs');
+assert(privateSourcePath('/relay.js'));
+assert(privateSourcePath('/connection/server.mjs'));
+assert.equal(publicSourcePath('parables/document-window.mjs'),'js/document-window.mjs');
 assert.equal(publicSourceText('import("/chapels/tutsi/intercession.mjs")'),'import("/apps/tutsi/proxy.mjs")');
 for(const name of ['scripture','ministries','hermitage','deacon','lectionary','scrolls'])assert(privateSourcePath('/'+name+'/anything.js'));
-assert(privateSourcePath('/fellowship-gateway.mjs'));
 const router=await readFile('mission/refresh-turn-router.sh','utf8');
 assert(router.includes('/etc/letsencrypt/renewal-hooks/deploy/nyx-turn-certificate'),'Certbot discovers hooks only in its standard deploy directory');
 assert(!router.includes('/etc/letsencrypt/renewal-hooks/mission/'));

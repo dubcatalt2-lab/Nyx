@@ -5,6 +5,7 @@ import {buildFrontendAssets} from './build-frontend-assets.mjs';
 import {opaqueIdentifiers,scrambleWorkspaceOutput,shuffleDeclarations} from './build-workspace-scramble.mjs';
 import {buildPublisherPackage} from './build-publisher-package.mjs';
 import {buildNativeValues} from './build-native-values.mjs';
+import {buildLessonAssets} from './build-lesson-assets.mjs';
 import {formatPublishedHtml} from './format-published-html.mjs';
 import { spawn, spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
@@ -379,6 +380,7 @@ async function main() {
   await buildFrontendAssets(output,repositoryFiles().filter(isStaticSource).map(file => (modules['/'+file] || '/'+file).slice(1)),learningPage());
   await writeNotFoundPage();
   await buildNativeValues(output);
+  await buildLessonAssets(output,{cacheDirectory:join(root,'.codex-artifacts/lesson-build-cache'),reportPath:join(root,'.codex-artifacts/lesson-build-report.json')});
   await buildPublisherPackage(root, output);
   await scrambleWorkspaceOutput(output);
   const scatteredAudit=spawnSync(process.execPath,[join(here,'test-scattered-build.mjs'),output],{cwd:root,stdio:'inherit'});

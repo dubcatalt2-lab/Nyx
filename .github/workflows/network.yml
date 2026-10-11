@@ -19,6 +19,7 @@ jobs:
       - run: node rituals/test-dependency-purge.mjs
       - run: npm ci --prefix connection
       - run: npx playwright install --with-deps chromium
+      - run: npm run test:lesson-assets
       - run: node rituals/test-cached-folder-navigation.mjs
       - run: npm --prefix connection run build
       - run: npm run test:network

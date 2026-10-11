@@ -1,3 +1,9 @@
+# Current follow-up ? 2026-10-11
+
+Browser games retained at the user's request; remote streaming is not enabled. The new bundled-game build pass processes 1,586 files / 2,412 scripts with zero failures and reduces 169,222,971 bytes to 161,787,238 bytes. Chrome/Edge game and fixture interactions, generated-build checks, desktop/mobile catalog controls, and the narrow deployment check pass. See LESSON_DELIVERY_VERIFICATION.md for raw output and limits.
+
+Full release remains blocked: atob 0, eval 13, Function 15, signatures 656, paths 12, parse errors 0, source maps 0. HTTPS hosting and isolation work remain open. No production update. Historical status follows.
+
 # Deployment status ? 2026-10-11
 
 The original document service, dependency removals, browser repairs, loading optimization and lesson-test naming are prepared on `agent/nyx-page-wording-20261008`. This branch is not a production release.

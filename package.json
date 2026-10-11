@@ -18,6 +18,7 @@
     "test:code-runner": "node rituals/test-code-runner.mjs",
     "test:code-tutorials": "node rituals/test-code-tutorials.mjs",
     "test:lessons": "node rituals/test-lessons.mjs",
+    "test:lesson-assets": "node rituals/test-static-execution.mjs && node rituals/test-binary-text.mjs && node rituals/test-lesson-assets.mjs",
     "test:guest-ip-tracking": "node rituals/test-guest-ip-tracking.mjs",
     "test:nyxify-covers": "node rituals/test-nyxify-playlist-covers.mjs",
     "test:nyxify-live": "node rituals/test-nyxify-live-playback.mjs",

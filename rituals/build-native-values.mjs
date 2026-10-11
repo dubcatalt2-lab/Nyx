@@ -4,7 +4,7 @@ import {parse} from 'acorn';
 import {parse as html} from 'parse5';
 import {binaryText} from '../scripture/binary-text.mjs';
 
-export function replaceBinaryCalls(text,mode){
+export function replaceBinaryCalls(text,mode,staticOnly=false){
   const tree=parse(text,{ecmaVersion:'latest',sourceType:mode,allowReturnOutsideFunction:mode!=='module'});
   const edits=[];
   const scopes=new WeakMap();
@@ -37,7 +37,30 @@ export function replaceBinaryCalls(text,mode){
   const bound=(name,node)=>{for(let s=scopes.get(node);s;s=s.parent)if(s.names.has(name))return true;return false;};
   const visit=node=>{
     if(!node||typeof node!=='object')return;
-    if(node.type==='CallExpression'){
+    if(staticOnly&&node.type==='WithStatement')return;
+    if(staticOnly&&node.type==='CallExpression'&&!node.optional&&node.callee.type==='Identifier'&&node.callee.name==='eval'&&!bound('eval',node)&&node.arguments.length===1&&typeof node.arguments[0].value==='string'){
+      const code=node.arguments[0].value;
+      try{
+        const program=parse(code,{ecmaVersion:'latest',sourceType:'script'});
+        const statement=program.body[0];
+        if(program.body.length===1&&statement.type==='ExpressionStatement'&&!statement.directive){
+          edits.push({start:node.start,end:node.end,text:'(0,'+code.slice(statement.expression.start,statement.expression.end)+')'});
+          return;
+        }
+        if(code==='let foo = 123;'){
+          edits.push({start:node.start,end:node.end,text:'(()=>{let foo = 123;})()'});
+          return;
+        }
+      }catch{}
+    }
+    if(staticOnly&&node.type==='CallExpression'&&['CallExpression','NewExpression'].includes(node.callee.type)){
+      const factory=node.callee;
+      if(factory.callee.type==='Identifier'&&factory.callee.name==='Function'&&!bound('Function',node)&&!bound('globalThis',node)&&factory.arguments.length===1&&factory.arguments[0].value==='return this'&&node.arguments.length===0){
+        edits.push({start:node.start,end:node.end,text:'globalThis'});
+        return;
+      }
+    }
+    if(!staticOnly&&node.type==='CallExpression'){
       const callee=node.callee;
       if(callee.type==='Identifier'&&callee.name==='atob'&&!bound('atob',node)||callee.type==='MemberExpression'&&['globalThis','window','self'].includes(callee.object.name)&&!bound(callee.object.name,node)&&(callee.computed?callee.property.value:callee.property.name)==='atob')edits.push({start:callee.start,end:callee.end,text:'('+binaryText.toString()+')'});
     }
@@ -47,9 +70,19 @@ export function replaceBinaryCalls(text,mode){
   for(const edit of edits.sort((a,b)=>b.start-a.start))text=text.slice(0,edit.start)+edit.text+text.slice(edit.end);
   return {text,count:edits.length};
 }
+export function replaceStaticCalls(text,mode){
+  if(!/\b(?:eval|Function)\s*\(/.test(text))return {text,count:0};
+  return replaceBinaryCalls(text,mode,true);
+}
 export async function buildNativeValues(root){
-  let count=0;
+  let count=0,compiled=0;
   const failures=[];
+  const transform=(text,mode)=>{
+    const staticResult=replaceStaticCalls(text,mode);
+    const result=replaceBinaryCalls(staticResult.text,mode);
+    compiled+=staticResult.count;
+    return {...result,changed:result.count>0||staticResult.count>0};
+  };
   async function walk(directory){
     for(const item of await readdir(directory,{withFileTypes:true})){
       const file=join(directory,item.name);
@@ -66,8 +99,8 @@ export async function buildNativeValues(root){
               const location=node.sourceCodeLocation;
               const start=location?.startTag.endOffset,end=location?.endTag?.startOffset;
               if(Number.isInteger(start)&&Number.isInteger(end))try{
-                const result=replaceBinaryCalls(text.slice(start,end),type==='module'?'module':'script');
-                if(result.count){edits.push({start,end,text:result.text});count+=result.count;}
+                const result=transform(text.slice(start,end),type==='module'?'module':'script');
+                if(result.changed){edits.push({start,end,text:result.text});count+=result.count;}
               }catch(error){failures.push({file,line:location.startLine,message:error.message});}
             }
           }
@@ -77,7 +110,7 @@ export async function buildNativeValues(root){
         for(const edit of edits.sort((a,b)=>b.start-a.start))text=text.slice(0,edit.start)+edit.text+text.slice(edit.end);
       }else{
         let result;
-        try{result=replaceBinaryCalls(text,'module');}catch{try{result=replaceBinaryCalls(text,'script');}catch(error){failures.push({file,message:error.message});}}
+        try{result=transform(text,'module');}catch{try{result=transform(text,'script');}catch(error){failures.push({file,message:error.message});}}
         if(result){text=result.text;count+=result.count;}
       }
       if(text!==original)await writeFile(file,text);
@@ -85,5 +118,6 @@ export async function buildNativeValues(root){
   }
   await walk(root);
   console.log('Native decoding: '+count+' calls replaced with byte decoding; '+failures.length+' parse failures remain for the mandatory release audit.');
-  return {count,failures};
+  console.log('Static execution: '+compiled+' known expressions compiled ahead of time.');
+  return {count,compiled,failures};
 }

@@ -1,7 +1,7 @@
 name: Document connection and release audit
 on:
   push:
-    branches: [main, agent/pirate-cove, agent/nyx-page-wording-20261008]
+    branches: [main, agent/pirate-cove, agent/nyx-page-wording-20261008, 'agent/nyx-release-*']
   pull_request:
 permissions:
   contents: read

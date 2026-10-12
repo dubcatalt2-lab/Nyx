@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
+import {readFile} from 'node:fs/promises';
 import {obscureGameStrings} from './build-game-strings.mjs';
 import {transformWorkspaceStrings} from './build-workspace-scramble.mjs';
 
@@ -33,3 +34,10 @@ const repeatedContext=vm.createContext({});
 vm.runInContext(repeated,repeatedContext);vm.runInContext(repeated,repeatedContext);
 assert.equal(repeatedContext.ready,'Ready');assert.equal(repeatedContext.calls,1);
 console.log('PASS deterministic game string pools, saved values, Unicode, directives, keys, classes, templates, module imports and static rebasing.');
+
+const helperSource=obscureGameStrings(transformWorkspaceStrings(await readFile('relics/games/game-cdn.js','utf8')),'assets/games/game-cdn.js',{standalone:['gameDeliveryUrl','repairGameResourcePath','gameSourceText','gameRoutedSource']});
+const helpers=await import('data:text/javascript,'+encodeURIComponent(helperSource));
+const isolated=vm.createContext({URL});
+vm.runInContext('const gameSourceText='+helpers.gameSourceText.toString()+';const convert='+helpers.gameRoutedSource.toString()+';globalThis.result=convert("https://cdn.jsdelivr.net/gh/a/b@latest/file.js","https://app.test/gn-math-resource",gameSourceText)',isolated);
+assert.equal(isolated.result,'https://app.test/gn-math-resource/https/raw.githack.com/a/b/HEAD/file.js');
+console.log('PASS production string transform: serialized game helpers execute in an isolated realm without module decoder bindings');

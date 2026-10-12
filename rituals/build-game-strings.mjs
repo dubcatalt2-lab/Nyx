@@ -1,7 +1,7 @@
 import {parse} from 'acorn';
 import {createHash} from 'node:crypto';
 
-export function obscureGameStrings(source,seed='games'){
+export function obscureGameStrings(source,seed='games',{standalone=[]}={}){
   const hash=createHash('sha256').update(seed).digest('hex');
   const name='_0x'+hash.slice(0,12),table=name+'_a',cache=name+'_b';
   if(source.includes('function '+name+'('))return source;
@@ -9,6 +9,8 @@ export function obscureGameStrings(source,seed='games'){
   const key=parseInt(hash.slice(12,16),16)||173;
   function visit(node,parent){
     if(!node||typeof node!=='object')return;
+    // Serialized helpers execute in another realm without this module's decoder.
+    if(node.type==='FunctionDeclaration'&&standalone.includes(node.id?.name))return;
     if(node.type==='Literal'&&typeof node.value==='string'){
       const value=node.value;
       if(!value||value.length>256||/[/:]/.test(value)||parent?.directive)return;

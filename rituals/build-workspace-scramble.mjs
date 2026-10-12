@@ -114,7 +114,7 @@ export async function scrambleWorkspaceOutput(root) {
       const source=await readFile(join(root,file),'utf8');
       try{
         let result=file.endsWith('.js')?transformWorkspaceStrings(source):scrambleInlineScripts(source);
-        if(file.startsWith('assets/games/')&&file.endsWith('.js')&&!/\.toString\(\)/.test(source))result=obscureGameStrings(result,file);
+        if(file.startsWith('assets/games/')&&file.endsWith('.js')&&!/\.toString\(\)/.test(source))result=obscureGameStrings(result,file,{standalone:file==='assets/games/game-cdn.js'?['gameDeliveryUrl','repairGameResourcePath','gameSourceText','gameRoutedSource']:[]});
         if(/^assets\/(?:games|gn-math|gms-games|reds-misc)\/.*\.html$/.test(file))result=await gamePage(result,file);
         await writeFile(join(root,file),result);
       }catch(error){throw Error(file+': '+error.message,{cause:error});}

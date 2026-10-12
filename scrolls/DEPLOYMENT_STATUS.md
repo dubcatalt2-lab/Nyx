@@ -1,3 +1,13 @@
+# Active release - 2026-10-12 UTC
+
+Runtime 59a1b70d15c4d971d7041256ae9e8be2d628febd is deployed to the main VPS application. Public main is reconciled, the HTTPS document service is active, and localhost:8080 serves the verified build. GitHub CI and Windows/Linux release audits pass: 5,220 files, 452 classified raw matches, zero blocked findings/source maps; native calls atob 0, eval 2, Function 2.
+
+GN Math launch paths and 835 local covers are repaired. Clicked sign-in windows and callbacks pass Chrome/Edge tests; live TikTok opens Google sign-in inside Nyx. Complete third-party account login and all-game gameplay are not claimed. Five covers still use remote fallbacks. See RELEASE_REPAIRS.md for full raw evidence and limitations. Rollback code, dependency tree and private environment are retained on the VPS.
+
+Everything below is historical.
+
+---
+
 # Current verification candidate ? 2026-10-12 UTC
 
 The full code-aware release audit passes: 5,220 files; atob 0, eval 2, Function 2; 452 raw matches reviewed; zero blocked findings, paths, parse errors or source maps. GN Math catalog/cover repairs, nested login-popup/session fixes, private cookie persistence and current UI regression tests pass. The isolated HTTPS document service is active; the main production application and public main are still pending. See RELEASE_REPAIRS.md for raw outputs and explicit compatibility limits. The user-provided YouTube session was renewed privately. Earlier status below is historical.

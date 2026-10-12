@@ -1,6 +1,6 @@
-# Release repairs ? verification candidate
+# Release repairs - deployed 2026-10-12 UTC
 
-2026-10-12 UTC. The document service is active at https://documents.nyxlearning.org. The main application and public main have not yet been updated. This report supersedes the earlier blocked audit.
+Runtime commit 59a1b70d15c4d971d7041256ae9e8be2d628febd. Public main is reconciled and updated. The main application and isolated document service are active; localhost:8080 uses the verified release checkout. The previous server code, dependencies and private environment were retained for rollback.
 
 ## COMPLETED
 
@@ -54,14 +54,28 @@
 - Removed the embedded source-map directive from the generated offline game and disabled its original signature badge. The source archive stays unchanged; the distributed game is explicitly a modified, unsigned build.
 - Renewed the private server YouTube cookie file supplied by the user. Credentials remain outside the repository and reports.
 
+- Reconciled public main without restoring removed engines. Windows and Linux builds pass the same code-aware audit. Normalized first-party source line endings and the compressed game's OS header; verified that only that header byte changed and the expanded program hash stayed identical.
+- Activated the reviewed server release, updated localhost:8080, and verified the real TikTok-to-Google popup through Nyx's tab interface. Unsolicited-popup denial remains covered by Chrome/Edge regressions.
+
 ## INCOMPLETE
 
-- Public-main reconciliation and main application activation are pending. The separately hosted document service and localhost configuration have been updated.
-- Full third-party OAuth login completion is not verified. Popup opening/callbacks pass Chrome and Edge, and live TikTok opens the actual Google sign-in page; cookie-only OAuth flows across top-level partitions are not guaranteed to share a session. TikTok intermittently returns feed 403 responses and an initialization error also reproduced in a direct Chrome load.
+- Full third-party OAuth login completion is not verified. Popup opening/callbacks pass Chrome and Edge, and live TikTok opens the actual Google sign-in page; cookie-only OAuth flows across top-level partitions are not guaranteed to share a session. TikTok intermittently returns feed 403 responses and an initialization error also reproduced in a direct Chrome load. Public-site checks additionally observed an initial login-option timeout and a gateway-error page before a fresh session reached the actual Google sign-in page. No real account credentials were entered.
 - Comprehensive gameplay of every bundled/provider game is not verified. The modified offline game reaches the new-world loading screen; complete play/save/reload remains unverified. Five cover files retain remote fallbacks.
 - A pre-refactor full-distribution byte baseline was not captured. The precise before/after game-delivery measurement below covers 1,586 files, not the entire application.
 
+For future builds on the 8 GB VPS, use Node 24 (matching CI) with `NODE_OPTIONS=--max-old-space-size=4096` for the build process. The running application keeps its existing runtime and systemd memory limits. The Node 22 server build attempts were stopped during prolonged script analysis, including after a larger heap was confirmed active; neither partial build was activated.
+
+Deployment used the complete audited Windows-built static package, with an SHA256 check after upload. The independent Linux CI build passes the same gate. The VPS Node 24 compile was also stopped while minifying large games after the local package passed; no partial server output was activated. Prefer building the verified package outside the VPS to avoid competing with live traffic.
+
 ## VERIFICATION OUTPUT
+
+Public HTTPS shell popup regression (real external documents; no credentials entered):
+
+```text
+PASS public Nyx shell: unsolicited window denied; clicked window routed through HTTPS document service; real popup handle and closed state preserved.
+```
+
+The test initially assumed an obsolete heading on the external example page. It was corrected to assert the documentation text actually returned by that page; no application workaround was added.
 
 Machine-local workspace paths below are abbreviated; the original raw logs remain in .codex-artifacts.
 
@@ -199,11 +213,89 @@ Live TikTok provider popup (no credentials entered):
 
 No removed package appears in the final build in any form. This covers the audited review candidate, not the older public main or main production deployment. No removed networking source was vendored or wrapped.
 
-## FILES CHANGED
 
-This full scoped list excludes unrelated Nook/cloud changes. Generated dist files were built, not edited. No public game functions were renamed; generated local names are mangled by the build. New source functions include inspectCode, auditRelease, repairLessonCode, buildLessonRuntime, compile, evaluateGlobal, prepareOfflineDocument, isolatedApplication, sessionStore, partition, and catalogDocuments. The twelve asset renames retain stable game identities and saved-data migrations.
+Final reviewed deployment-package build (Windows; raw tail). The independent Linux CI build also passed.
 
 ```text
+{
+  "passed": true,
+  "files": 5220,
+  "counts": {
+    "atob": 0,
+    "eval": 2,
+    "Function": 2
+  },
+  "nonGlobalFunctionMethods": 4,
+  "rawMatches": 452,
+  "classified": 452,
+  "blockingFindings": 0,
+  "pathMatches": 0,
+  "parseErrors": 0,
+  "unreadable": 0,
+  "sourceMaps": 0,
+  "embeddedPrograms": 1,
+  "report": "C:\\Users\\dubca\\Downloads\\<workspace>\\.worktrees\\nyx-release-20261012\\.codex-artifacts\\release-audit.json"
+}
+VPS build ready in C:\Users\dubca\Downloads\<workspace>\.worktrees\nyx-release-20261012\.nyx-releases\release-20261012\site
+```
+
+Final native/browser checks:
+
+```text
+✔ offline document compression is portable and preserves the edited program (5.2111ms)
+✔ AST audit resolves aliases, computed names, constructors, shadowing and WebAssembly methods (4.0766ms)
+✔ raw evidence is specific to bytes and individual matches; changed assets fail closed (95.311ms)
+✔ shared compiler accepts explicit bindings, returns completion values and reports errors (1.9469ms)
+✔ callback registries preserve lexical callbacks and game keyword predicates become ordinary functions (3.0669ms)
+✔ theme selection and asset catalog identities survive path renames (9.0397ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 227.8929
+PASS compiler bootstrap: external base URLs and embedded documents retain synchronous same-origin loading
+PASS browser compiler: explicit bindings, persistent console globals, coordinate access and developer console initialization
+{"shell":"localhost:8080","popupOpened":true,"title":"Sign in - Google Accounts","popupHost":"d-89a8000a68d759c68bfaeab5056d67342e97643511923e63702da58a.nyxlearning.org"}
+```
+
+GitHub CI: [Document connection and release audit](https://github.com/dubcatalt2-lab/Nyx/actions/runs/38199042537) - success. Original raw audit artifacts are attached to that run.
+
+
+Deployed static-tree comparison (not a reconstructed pre-refactor baseline):
+
+```text
+Previously deployed static tree (apparent bytes):
+519545754	/var/www/nyx/.nyx-releases/release-20261010-ae20381/site
+Candidate static tree (apparent bytes):
+468340547	/var/www/nyx-release-20261012/.nyx-releases/release-20261012/site
+```
+
+Upload manifest:
+
+```json
+{"commit":"59a1b70d15c4d971d7041256ae9e8be2d628febd","sha256":"34c105ae5947793b36712528b344271375755385d862248827cc6785a90b5046","archiveBytes":347011285,"staticFileBytes":468340547,"files":5220,"buildPlatform":"Windows","independentLinuxCIRun":38199042537}
+```
+
+Live verification:
+
+```text
+{"base":"https://nyxlearning.org","health":"PASS","isolatedDocumentOrigin":"PASS","coverChecksums":3,"stylesheetChecksum":"PASS","staleGamePaths":2}
+{"base":"https://prayer.altarworship.org.uk","health":"PASS","isolatedDocumentOrigin":"PASS","coverChecksums":3,"stylesheetChecksum":"PASS","staleGamePaths":2}
+{"base":"http://localhost:8080","health":"PASS","isolatedDocumentOrigin":"PASS","coverChecksums":3,"stylesheetChecksum":"PASS","staleGamePaths":2}
+{"shell":"https://prayer.altarworship.org.uk/study.html","popupOpened":true,"title":"Sign in - Google Accounts","popupHost":"d-89a8000a68d759c68bfaeab5056d67342e97643511923e63702da58a.nyxlearning.org"}
+```
+
+A diagnostic reuse of the HTTP-only localhost fixture against the public HTTPS shell failed before creating its document frame: the secure-origin check in `parables/document-window.mjs` intentionally rejects that configuration. It is not counted as a passing test. The correctly configured local Chrome/Edge fixtures and independent Linux CI pass.
+
+## FILES CHANGED
+
+Release repair changes since bda2646d, including main reconciliation:
+
+```text
+A	.github/workflows/folder-navigation.yml
 M	.github/workflows/network.yml
 M	chapels/chat/app.js
 M	connection/README.md
@@ -221,11 +313,13 @@ A	connection/partition.mjs
 M	connection/runtime.js
 M	connection/server.mjs
 A	connection/session-store.mjs
+A	connection/session.test.mjs
 M	connection/socket.mjs
 M	connection/transform.mjs
 M	gospel.js
 A	mission/install-document-service.sh
 A	mission/systemd/nyx-document.service.template
+M	mission/update-ovh.sh
 M	package.json
 M	parables/document-window.mjs
 M	relics/games/games.js
@@ -1087,6 +1181,7 @@ A	rituals/audit-code.mjs
 M	rituals/audit-release.mjs
 M	rituals/build-lesson-assets.mjs
 A	rituals/build-lesson-runtime.mjs
+M	rituals/build-native-values.mjs
 M	rituals/build-vps.mjs
 A	rituals/lesson-compiler-entry.mjs
 A	rituals/prepare-offline-document.mjs
@@ -1104,6 +1199,7 @@ M	rituals/test-nyxtube-backend.mjs
 A	rituals/test-release-repairs.mjs
 M	rituals/test-static-publisher-workspace.mjs
 M	rituals/test-theme-restoration.mjs
+A	rituals/test-worker-port.mjs
 A	scripture/catalog-documents.mjs
 A	scripture/lesson-compiler.mjs
 M	scripture/nyxtube-streaming.mjs
@@ -1115,7 +1211,6 @@ M	shepherd.js
 M	vestments.css
 M	vestments/avatar-decorations.css
 M	vestments/theme-tints.css
-A	connection/session.test.mjs
 ```
 
 ## DEPENDENCIES REMOVED

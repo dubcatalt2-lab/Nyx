@@ -63,7 +63,7 @@ install -d -m 0750 -o "${APP_OWNER}" -g nyx "${APP_DIR}/.nyx-releases"
 STATIC_RELEASE=$(runuser -u "${APP_OWNER}" -- mktemp -d "${APP_DIR}/.nyx-releases/release-$(date -u +%Y%m%dT%H%M%S)-XXXXXX")
 STATIC_BUILD="${STATIC_RELEASE}/site"
 PREVIOUS_STATIC_ROOT=$(node mission/static-release.mjs current "${APP_DIR}" "${ENV_FILE}")
-runuser -u "${APP_OWNER}" -- env -u WISP_URL NYX_BUILD_OUTPUT="${STATIC_BUILD}" NYX_PUBLIC_ORIGIN="https://${DOMAIN}" npm run build:vps
+runuser -u "${APP_OWNER}" -- env NYX_BUILD_OUTPUT="${STATIC_BUILD}" NYX_PUBLIC_ORIGIN="https://${DOMAIN}" npm run build:vps
 runuser -u "${APP_OWNER}" -- npm run check:deploy
 runuser -u "${APP_OWNER}" -- env NYX_BUILD_OUTPUT="${STATIC_BUILD}" node rituals/test-public-modules.mjs
 runuser -u "${APP_OWNER}" -- env ONNXRUNTIME_NODE_INSTALL=skip npm prune --omit=dev --package-lock=false

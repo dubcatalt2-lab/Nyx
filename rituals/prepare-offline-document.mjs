@@ -32,7 +32,10 @@ export function prepareOfflineDocument(source) {
   script(tree);
   if(edits.length!==2||badges!==1)throw new Error('Unexpected offline program metadata');
   for(const edit of edits.sort((a,b)=>b.start-a.start))code=code.slice(0,edit.start)+edit.text+code.slice(edit.end);
-  const next=gzipSync(code,{level:9}).toString('base64');
+  const compressed=gzipSync(code,{level:9});
+  // The gzip OS field must not change reviewed assets between build hosts.
+  compressed[9]=255;
+  const next=compressed.toString('base64');
   const changes=[
     {start:loc.startTag.endOffset,end:loc.endTag.startOffset,text:prefix+next},
     {start:signature.sourceCodeLocation.startTag.endOffset,end:signature.sourceCodeLocation.endTag.startOffset,text:''}

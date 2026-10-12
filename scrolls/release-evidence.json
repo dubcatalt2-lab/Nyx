@@ -2067,6 +2067,387 @@
         }
       ],
       "evidence": "Reviewed source gospel.js: former decoration IDs are read-only migration inputs normalized to the current catalog before rendering. The historical connection setting occurs only in NYX_PORTABLE_BACKUP_DENIED_KEYS, which excludes it from exports; no transport implementation or runtime selection uses it. Parsed built strings match these four source constants."
+    },
+    {
+      "sha256": "4c320366d14eceec3528dcef26c37448b6ced93f3d27b40a0782a821574671b3",
+      "matches": [
+        {
+          "section": "decoded string",
+          "contextHash": "9c581cc23b88ddd1379abae8f2a98a24382c6f45ecb66e8ac8a11ecdacf88d2c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "829ce8b39281e87ca0e005168df28ceb45b2a07d1ed3d214834bcbb38e0f8d9d"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "0db1ab372ee63e24b783ed1fc49846a77c3f19c55c50b924a876ccf0ad9b9e32"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "1812509570842334cbee4ec8d5401945242e9f886ca13fae6137f80e1c1de912"
+        }
+      ],
+      "evidence": "Reviewed source gospel.js: former decoration IDs are read-only migration inputs normalized to the current catalog before rendering. The historical connection setting occurs only in NYX_PORTABLE_BACKUP_DENIED_KEYS, which excludes it from exports; no transport implementation or runtime selection uses it. Parsed built strings match these four source constants."
+    },
+    {
+      "sha256": "e022d589bca87725c87fa678f6704ec8325798bcd2162daa51678da3e9dd0119",
+      "matches": [
+        {
+          "section": "decoded string",
+          "contextHash": "9c581cc23b88ddd1379abae8f2a98a24382c6f45ecb66e8ac8a11ecdacf88d2c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "829ce8b39281e87ca0e005168df28ceb45b2a07d1ed3d214834bcbb38e0f8d9d"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "0db1ab372ee63e24b783ed1fc49846a77c3f19c55c50b924a876ccf0ad9b9e32"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "1812509570842334cbee4ec8d5401945242e9f886ca13fae6137f80e1c1de912"
+        }
+      ],
+      "evidence": "Reviewed source gospel.js: former decoration IDs are read-only migration inputs normalized to the current catalog before rendering. The historical connection setting occurs only in NYX_PORTABLE_BACKUP_DENIED_KEYS, which excludes it from exports; no transport implementation or runtime selection uses it. Parsed built strings match these four source constants."
+    },
+    {
+      "sha256": "f1e47b241e82f0ab366ddb5ab039f0769780d4ce3209cd5300d7d2e2c7a0efcb",
+      "matches": [
+        {
+          "section": "decoded string",
+          "contextHash": "829ce8b39281e87ca0e005168df28ceb45b2a07d1ed3d214834bcbb38e0f8d9d"
+        }
+      ],
+      "evidence": "Reviewed chapels/chat/app.js normalizeUserProfile: the former saved decoration ID is an input to a one-way migration to scholar-ring. It is not rendered as branding or used to select a transport. The parsed built string matches this saved-profile migration constant."
+    },
+    {
+      "sha256": "256d4ed6beb92f74c82c26d080787306c60feeecf42225f7bb4080eb16762a53",
+      "matches": [
+        {
+          "section": "decoded string",
+          "contextHash": "9c581cc23b88ddd1379abae8f2a98a24382c6f45ecb66e8ac8a11ecdacf88d2c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "829ce8b39281e87ca0e005168df28ceb45b2a07d1ed3d214834bcbb38e0f8d9d"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "0db1ab372ee63e24b783ed1fc49846a77c3f19c55c50b924a876ccf0ad9b9e32"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "1812509570842334cbee4ec8d5401945242e9f886ca13fae6137f80e1c1de912"
+        }
+      ],
+      "evidence": "Reviewed source gospel.js: former decoration IDs are read-only migration inputs normalized to the current catalog before rendering. The historical connection setting occurs only in NYX_PORTABLE_BACKUP_DENIED_KEYS, which excludes it from exports; no transport implementation or runtime selection uses it. Parsed built strings match these four source constants."
+    },
+    {
+      "sha256": "1137660026bff73208f6353131704161514bea28d43e002a77478e89134eb39f",
+      "matches": [
+        {
+          "section": "decoded string",
+          "contextHash": "829ce8b39281e87ca0e005168df28ceb45b2a07d1ed3d214834bcbb38e0f8d9d"
+        }
+      ],
+      "evidence": "Reviewed chapels/chat/app.js normalizeUserProfile: the former saved decoration ID is an input to a one-way migration to scholar-ring. It is not rendered as branding or used to select a transport. The parsed built string matches this saved-profile migration constant."
+    },
+    {
+      "file": "assets/ugs/minecraft/EaglercraftL_1.9_v0_7_0_Offline_Signed.html",
+      "sha256": "d8261657e4ec7dba9d6f57ee493771413e58bde14836c56a4f4529a51cdd317c",
+      "evidence": "Portable rebuild reviewed byte-for-byte against the prior approved modified offline game. The only change is the gzip OS header from Windows (10) to unspecified (255); compressed body, remaining HTML and every finding context are identical. Expanded program SHA256 is 90ac56f4a90d55073db2041d2094c75f2ac0831fecd829ffed4e395769e1d832. Raw hits are compressed resource bytes; decoded plant block IDs and shader uniform are saved-world/graphics compatibility values. No removed networking implementation. Future changes require re-review.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "3ff8e24e49857d8cecb9105f98e0cedfcba853e67ba3fbcbec19ea775aacc258"
+        },
+        {
+          "section": "raw",
+          "contextHash": "1b9418eceee6475d2681c955040a93d0da4b26c714f9b86c6e1df8363b36bb09"
+        },
+        {
+          "section": "raw",
+          "contextHash": "a6a2e74eeb5b180e468128f1796b0002ffe1d1ca6ac3f98e9b2aacc824ad3150"
+        },
+        {
+          "section": "raw",
+          "contextHash": "d48ee2c639e89540ba01c7ee15eac97fa62e5e128d8717c2358113649e16a531"
+        },
+        {
+          "section": "raw",
+          "contextHash": "15bae0e04d15d5d1313200f321657bd3650b48c100500a8a5b02c2300ec0d14a"
+        },
+        {
+          "section": "raw",
+          "contextHash": "331d31e9e0ef9875624f8d2ee8115fd2561357859124549b873f6094bb769337"
+        },
+        {
+          "section": "raw",
+          "contextHash": "b98d23f558787e04c22a20a1a40d512ad3761609600aeb3f1d02149b8b195182"
+        },
+        {
+          "section": "raw",
+          "contextHash": "7bcb7918f0499ecf63306850e8d9a8f283e05f4d656fb577ff69db8864146113"
+        },
+        {
+          "section": "raw",
+          "contextHash": "9fa876f23823a4ae03cb8996e6170afbf9546f21206d6b4fde35567427b6725d"
+        },
+        {
+          "section": "raw",
+          "contextHash": "9546e7e1fbc33524d4e35a37946f0bd507d25e9944ed5b2fab0bc46fe4ab5a13"
+        },
+        {
+          "section": "raw",
+          "contextHash": "2382bafe2576d7424cc847eccb027a0d3f2db18795da824631e8a53be3c518b8"
+        },
+        {
+          "section": "raw",
+          "contextHash": "99990e2383c577c59d33a5fefb805f1ceca6501a204209fcd287f82e972d72df"
+        },
+        {
+          "section": "raw",
+          "contextHash": "2c71f2eeb3c3c16433e4820aaf39d024122c29ef34da152189b397d85dc91cb9"
+        },
+        {
+          "section": "raw",
+          "contextHash": "7ab2c48f5aa7f068cec961f265a7b9190ea0a5797919b44713366cab2a8b3f21"
+        },
+        {
+          "section": "raw",
+          "contextHash": "782a44fb660e21819d00834575a8f58327dc20292e11e18deb59bfc6af73be26"
+        },
+        {
+          "section": "raw",
+          "contextHash": "16e78226118e72cc983a65aced3515afe1e623ce5682bfb225985cd7be0621ae"
+        },
+        {
+          "section": "raw",
+          "contextHash": "9aed1e97371a27705c0f8bfd25717d8dcd0c72dc0ad4a6f089f103f90045a2c3"
+        },
+        {
+          "section": "raw",
+          "contextHash": "0459447ee2d78590ca8012eeaa56c90e8561591b7c12cd333f3e79e026b02036"
+        },
+        {
+          "section": "raw",
+          "contextHash": "553301374248abf82f5eca56dfcd684b04efc9306361ded85ce35f0ad60e2bd1"
+        },
+        {
+          "section": "raw",
+          "contextHash": "4fd69120f43465b65a6787c4532589cfd506bac9e8762ca946954ebed36173cc"
+        },
+        {
+          "section": "raw",
+          "contextHash": "d714d02d3d291f98574be6c9ebb62cc5257990ce0263483064bc81c8e6cc6d33"
+        },
+        {
+          "section": "raw",
+          "contextHash": "f770ef49dbaf8807c366d32a25aee539fce49c184fe0ea7d109b29e284edc356"
+        },
+        {
+          "section": "raw",
+          "contextHash": "3286be6aba5c4b0c5edccb5c323c69d00760335cabc8001c9ff0ad51e0966c78"
+        },
+        {
+          "section": "raw",
+          "contextHash": "db0d15423059605d03755e1b7143ed6e4d2590322c4ede7595e44a82e2ff0af2"
+        },
+        {
+          "section": "raw",
+          "contextHash": "68408f2da3ca33e331ed64e239c3d409b8af8920cb815e8127ea1909d9b0ab5e"
+        },
+        {
+          "section": "raw",
+          "contextHash": "f2ab323f35615f99e9d4ad6ff9547a06d044fc53bd4595a9f4a4e7eccbfff841"
+        },
+        {
+          "section": "raw",
+          "contextHash": "3ac20062040bd3bb899cf2248bfef9e19aa2d8d015491554f8e863f0843ce698"
+        },
+        {
+          "section": "raw",
+          "contextHash": "d67b3a33375416bf172f4de251ee482f0281f87a32417b6d4af032f2e9bdd277"
+        },
+        {
+          "section": "raw",
+          "contextHash": "8d48d9508b5ab41b8cb7787e4e0d1cc22b0d7901396e49563fcd54cd072081fb"
+        },
+        {
+          "section": "raw",
+          "contextHash": "330f1470ac19f9c6f8c4e19216d3c1b1b1901929eed62fe2f5c6f0e03be5e2a3"
+        },
+        {
+          "section": "raw",
+          "contextHash": "fd6600ec90b51f957c6ff035cf85e511a1a99678e382c826ea09ef8745aaf02e"
+        },
+        {
+          "section": "raw",
+          "contextHash": "4ef94d538b7fbac039859c574c6bd1f70f8f95d9dc586ae985c64fd566eaf191"
+        },
+        {
+          "section": "raw",
+          "contextHash": "e2fddd7d3e356330cc34461990f5a1b7086e8a3b0a6335fe6087be8081618ac4"
+        },
+        {
+          "section": "raw",
+          "contextHash": "dfd723a49cad3c7f982b7d32ce0a5e34d74ad68b33a0c7d4e41573a094bb910b"
+        },
+        {
+          "section": "raw",
+          "contextHash": "2cb47a078fd22712da4b69957358c9e0af08c0ef3ce188b3d4f93f001234b049"
+        },
+        {
+          "section": "raw",
+          "contextHash": "7972776b4683a41921bc4261fba4370d215148fce22772465658dac0b3a075f3"
+        },
+        {
+          "section": "raw",
+          "contextHash": "aeffcd562b034a853c7de14ceab88e9fcbba6383f7c08d2e35bcc32215da24a8"
+        },
+        {
+          "section": "raw",
+          "contextHash": "58da7bf35b351c5d838673eeea18ba0617a806894705f6e5e4544e62f3bc9e1b"
+        },
+        {
+          "section": "raw",
+          "contextHash": "5af948a6e388f21277f8fd6b39c11dfcdd14e9b5889d625eea1df5a7e4749e96"
+        },
+        {
+          "section": "raw",
+          "contextHash": "81416e6534d3d5e44556bd4300cb5a6b43272ce437e69c5ef0f1510d269f9e79"
+        },
+        {
+          "section": "raw",
+          "contextHash": "1961589895a5671cbcb4998b87f670bcbdc8104a5930f9d29dc5563657ad2d74"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "f0a5da17e0ffa3a21c2b07c964d465799eb0deb62905ccb1b271ce7716614746"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "4fe831c4651a51934e696d7717fde5b5a1ab2dabf05ababb459f3d136a0d23f4"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "6865dc4b519964bf8febec001854b9f7d871469e68999ef5124b48902e34e70a"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "731643cf8686c7516488f68f4ee0a3e2f31e37f4113cf3155adec4ef14492938"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "92bd0772c4ac86ce8ffdedea6af42477b712eee59f2878ebc1f1db891d6a07a9"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "b5faf1cc3f04502c8d4c8529cca3595510bff619094a29108f3f5feab0c3d37d"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "ba394e5ce06dacef50442054819b401419fd8e30bcfc6c70640b17e9787ae935"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "28aed9f39ce80577d89c816afcffde09a2406beb882b6fb2e24739c696c2036c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "f52aad13cac6321e9c79245688661263eb66c4ffb862e25337dbc96a4c404965"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "9a5c72ebd85a5912c4b3da708ba9684872b92f4a5bb57670c03c1372f842fd5a"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "7b0271b63dc2f039bbf3862ef36dd3fb32bc319fa2bd8c143d6b9839e6c7788c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "0ae45e4dd9506751b7c670216458d86a7d65144d42930f3af34e0d6acd4808ef"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "c314b3bffd92000daaa036bfbfe8ef7f6f8010a88f7b2fb8d5ca8b8f328cb87c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "a9c487d469200b593bd3795048de6527f21e32842c97bf03403f61786b9f2e05"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "6b8a615de6bfd229a2338dd72941fb050c47c67f6341d020d591d55c6b16aa9a"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "856fc7feab5f95c06a14aa797f88e4d0f021cac52fafb4258340e03f2857b80c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "67d25239970abfa9b444b8e0ea495f15a8f587c9064c79217ffe940ad43b8d3f"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "3196153e650d86507b1d9324126675bb4ddf111c9dc1f021da77ec0a3dcb94f4"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "815266f6ff31ff91ef3423195abd9d7dc3147a2359474e4e390de3104d7be0b4"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "769c1bb938ca74a0c1fe79ecd5857fc9be9f60e91f0df460f149ef4357e90ea7"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "2a4115d8f5e151d54d06fb80c9611eff927f33b74e2ac0b22881230efff08cec"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "a0171152f4bf55e1c2833f7844cc802fc9929979ab40b604faad96c2a084d511"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "96043c11122d401ad888e0eeb4b206993153bb79ec5cf697055b88a9307f92c1"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "6edad8c75d2d0308b8896c04dc4218c72176079b0d7211e45ecdd769326dffa1"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "08563a3abe6b614b51ecd626d3b3d427136ed06c13422c8a11b5bbe740adb2de"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "f3bcb8d0c1ed1ed38969f31fd34490b7607aad1517ba1bcf5d33ab8c79e9f026"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "9acc1a46e189a23a5966c5126f480abeb930405718dfdda57fd5ba05b4a07b11"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "918f26113ca523e19a6368393c9fca0a4290695b3cc9ac4f2777d23601b0fc8b"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "3a6a7dd9d4c2539d94b761cf495a9ef04314ccdd9eb0cc954b7ca07d2617cc49"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "8837b1e9222bdd619f939ac2edae7f0105761f2ca2bec48ef30193352b5e75c9"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "9308614f53bff794cedd4ba33ac83389281fb4a5f6c82fd45613d4f82b014a00"
+        }
+      ]
     }
   ]
 }

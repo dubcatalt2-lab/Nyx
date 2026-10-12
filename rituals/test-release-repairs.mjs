@@ -9,7 +9,20 @@ import {auditRelease} from './audit-release.mjs';
 import {repairLessonCode} from './build-lesson-runtime.mjs';
 import * as compiler from '../scripture/lesson-compiler.mjs';
 import vm from 'node:vm';
-import {gzipSync} from 'node:zlib';
+import {gzipSync,gunzipSync} from 'node:zlib';
+import {prepareOfflineDocument} from './prepare-offline-document.mjs';
+
+test('offline document compression is portable and preserves the edited program',()=>{
+ const code='window.enableSignatureBadge=true;\n//# sourceMappingURL=private.map';
+ const payload=gzipSync(code).toString('base64');
+ const document='<style id="eaglercraftXClientBundle">data:application/octet-stream;base64,'+payload+'</style><style id="eaglercraftXClientSignature">old-signature</style>';
+ const prepared=prepareOfflineDocument(document);
+ const packed=Buffer.from(prepared.source.match(/base64,([^<]+)/)[1],'base64');
+ assert.equal(packed[9],255);
+ assert.equal(gunzipSync(packed).toString(),prepared.code);
+ assert.equal(prepared.code,'window.enableSignatureBadge=false;\n');
+ assert(!prepared.source.includes('old-signature'));
+});
 
 test('AST audit resolves aliases, computed names, constructors, shadowing and WebAssembly methods',()=>{
  const source=`const f=globalThis['Fun'+'ction'];f('return 1');const g=f.bind(null);g('return 2');const {eval:e}=window;e('1');(0,eval)('2');(function(){}).constructor('return 3');Reflect.construct(Function,['return 4']);new WebAssembly.Function({},()=>{});function local(Function,eval,atob){Function();eval();atob()}const localObject={Function(){}};localObject.Function();`;

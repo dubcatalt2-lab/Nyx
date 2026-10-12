@@ -28,6 +28,7 @@ jobs:
       - run: node rituals/test-game-cdn.mjs
       - run: node rituals/test-game-obfuscation.mjs
       - run: node rituals/test-game-delivery.mjs
+      - run: node rituals/test-game-source-stream.mjs
       - run: node rituals/test-game-intercession-routes.mjs
       - run: node rituals/test-game-intercession-stream.mjs
       - run: npm --prefix connection run build
@@ -48,6 +49,7 @@ jobs:
       - run: npm ci
       - run: node rituals/test-dependency-purge.mjs
       - run: npm run build:vps
+      - run: node rituals/check-game-sources.mjs dist
       - run: npx playwright install --with-deps chromium
       - run: node rituals/test-lesson-runtime-browser.mjs
       - run: npm run check:deploy

@@ -9,7 +9,7 @@
     <script>
       window.gameconfig = {
         name: "Mario & Luigi - Partners in Time (USA)",
-        url: "https://cdn.jsdelivr.net/gh/bubbls/ugss@4c4a148370fa0bb80d15ec2cc22d97a955b60fbc/Mario%20%26%20Luigi%20-%20Partners%20in%20Time%20(USA)/Mario%20%26%20Luigi%20-%20Partners%20in%20Time%20(USA).nds",
+        url: "https://raw.githack.com/bubbls/ugss/4c4a148370fa0bb80d15ec2cc22d97a955b60fbc/Mario%20%26%20Luigi%20-%20Partners%20in%20Time%20(USA)/Mario%20%26%20Luigi%20-%20Partners%20in%20Time%20(USA).nds",
         core: "nds",
         min: 1,
         max: 4,
@@ -109,11 +109,11 @@ getParts("asd.js", 0, 100)
           EJS_gameName = window.gameconfig.name;
           EJS_color = "#0064ff";
           EJS_startOnLoaded = true;
-          EJS_pathtodata = "https://cdn.jsdelivr.net/gh/genizy/emu@master/";
+          EJS_pathtodata = "https://raw.githack.com/genizy/emu/master/";
           EJS_gameUrl = gameUrl;
           const script = document.createElement("script");
           script.src =
-            "https://cdn.jsdelivr.net/gh/genizy/emu@master/loader.js";
+            "https://raw.githack.com/genizy/emu/master/loader.js";
           document.body.appendChild(script);
         })
         .catch((error) => {

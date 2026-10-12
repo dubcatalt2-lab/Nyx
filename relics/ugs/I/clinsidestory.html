@@ -9,7 +9,7 @@
     <script>
       window.gameconfig = {
         name: "Mario & Luigi - Bowser's Inside Story (Europe)",
-        url: "https://cdn.jsdelivr.net/gh/bubbls/ugss@292c23bbf5d79f56458131c50c3cc0255016e684/Mario%20%26%20Luigi%20-%20Bowser's%20Inside%20Story%20(Europe)%20(En%2CFr%2CDe%2CEs%2CIt)/Mario%20%26%20Luigi%20-%20Bowser's%20Inside%20Story%20(Europe)%20(En%2CFr%2CDe%2CEs%2CIt).nds",
+        url: "https://raw.githack.com/bubbls/ugss/292c23bbf5d79f56458131c50c3cc0255016e684/Mario%20%26%20Luigi%20-%20Bowser's%20Inside%20Story%20(Europe)%20(En%2CFr%2CDe%2CEs%2CIt)/Mario%20%26%20Luigi%20-%20Bowser's%20Inside%20Story%20(Europe)%20(En%2CFr%2CDe%2CEs%2CIt).nds",
         core: "nds",
         min: 1,
         max: 7,
@@ -109,11 +109,11 @@ getParts("asd.js", 0, 100)
           EJS_gameName = window.gameconfig.name;
           EJS_color = "#0064ff";
           EJS_startOnLoaded = true;
-          EJS_pathtodata = "https://cdn.jsdelivr.net/gh/genizy/emu@master/";
+          EJS_pathtodata = "https://raw.githack.com/genizy/emu/master/";
           EJS_gameUrl = gameUrl;
           const script = document.createElement("script");
           script.src =
-            "https://cdn.jsdelivr.net/gh/genizy/emu@master/loader.js";
+            "https://raw.githack.com/genizy/emu/master/loader.js";
           document.body.appendChild(script);
         })
         .catch((error) => {

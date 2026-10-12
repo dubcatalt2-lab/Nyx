@@ -8,7 +8,7 @@
     <script>
       window.gameconfig = {
         name: "Kingdom Hearts - Re-coded (USA)",
-        url: "https://cdn.jsdelivr.net/gh/bubbls/ugss@480bdac2a331fc777bb15e53ff7c4efca64a4250/Kingdom%20Hearts%20-%20Re-coded%20(USA)%20(En%2CFr%2CEs)/Kingdom%20Hearts%20-%20Re-coded%20(USA)%20(En%2CFr%2CEs).nds",
+        url: "https://raw.githack.com/bubbls/ugss/480bdac2a331fc777bb15e53ff7c4efca64a4250/Kingdom%20Hearts%20-%20Re-coded%20(USA)%20(En%2CFr%2CEs)/Kingdom%20Hearts%20-%20Re-coded%20(USA)%20(En%2CFr%2CEs).nds",
         core: "nds",
         min: 1,
         max: 14,
@@ -108,11 +108,11 @@ getParts("asd.js", 0, 100)
           EJS_gameName = window.gameconfig.name;
           EJS_color = "#0064ff";
           EJS_startOnLoaded = true;
-          EJS_pathtodata = "https://cdn.jsdelivr.net/gh/genizy/emu@master/";
+          EJS_pathtodata = "https://raw.githack.com/genizy/emu/master/";
           EJS_gameUrl = gameUrl;
           const script = document.createElement("script");
           script.src =
-            "https://cdn.jsdelivr.net/gh/genizy/emu@master/loader.js";
+            "https://raw.githack.com/genizy/emu/master/loader.js";
           document.body.appendChild(script);
         })
         .catch((error) => {

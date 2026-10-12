@@ -9,7 +9,7 @@
     <script>
       window.gameconfig = {
         name: "Sonic Rush (USA)",
-        url: "https://cdn.jsdelivr.net/gh/bubbls/ugss@673c9a033209f7a6592e3a1cca55d7e264579651/Sonic%20Rush%20(USA)%20(En%2CJa%2CFr%2CDe%2CEs%2CIt)%20(1)/Sonic%20Rush%20(USA)%20(En%2CJa%2CFr%2CDe%2CEs%2CIt).nds",
+        url: "https://raw.githack.com/bubbls/ugss/673c9a033209f7a6592e3a1cca55d7e264579651/Sonic%20Rush%20(USA)%20(En%2CJa%2CFr%2CDe%2CEs%2CIt)%20(1)/Sonic%20Rush%20(USA)%20(En%2CJa%2CFr%2CDe%2CEs%2CIt).nds",
         core: "nds",
         min: 1,
         max: 4,
@@ -109,11 +109,11 @@ getParts("asd.js", 0, 100)
           EJS_gameName = window.gameconfig.name;
           EJS_color = "#0064ff";
           EJS_startOnLoaded = true;
-          EJS_pathtodata = "https://cdn.jsdelivr.net/gh/genizy/emu@master/";
+          EJS_pathtodata = "https://raw.githack.com/genizy/emu/master/";
           EJS_gameUrl = gameUrl;
           const script = document.createElement("script");
           script.src =
-            "https://cdn.jsdelivr.net/gh/genizy/emu@master/loader.js";
+            "https://raw.githack.com/genizy/emu/master/loader.js";
           document.body.appendChild(script);
         })
         .catch((error) => {

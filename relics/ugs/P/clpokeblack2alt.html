@@ -9,7 +9,7 @@
     <script>
       window.gameconfig = {
         name: "Pokemon - Black Version 2 (USA, Europe)",
-        url: "https://cdn.jsdelivr.net/gh/bubbls/ugss@03c99d367cf1f44f82b11f09dc7a371ce2e5b280/Pokemon%20-%20Black%20Version%202%20(USA%2C%20Europe)%20(NDSi%20Enhanced)%20(1)/Pokemon%20-%20Black%20Version%202%20(USA%2C%20Europe)%20(NDSi%20Enhanced).nds",
+        url: "https://raw.githack.com/bubbls/ugss/03c99d367cf1f44f82b11f09dc7a371ce2e5b280/Pokemon%20-%20Black%20Version%202%20(USA%2C%20Europe)%20(NDSi%20Enhanced)%20(1)/Pokemon%20-%20Black%20Version%202%20(USA%2C%20Europe)%20(NDSi%20Enhanced).nds",
         core: "nds",
         min: 1,
         max: 27,
@@ -109,11 +109,11 @@ getParts("asd.js", 0, 100)
           EJS_gameName = window.gameconfig.name;
           EJS_color = "#0064ff";
           EJS_startOnLoaded = true;
-          EJS_pathtodata = "https://cdn.jsdelivr.net/gh/genizy/emu@master/";
+          EJS_pathtodata = "https://raw.githack.com/genizy/emu/master/";
           EJS_gameUrl = gameUrl;
           const script = document.createElement("script");
           script.src =
-            "https://cdn.jsdelivr.net/gh/genizy/emu@master/loader.js";
+            "https://raw.githack.com/genizy/emu/master/loader.js";
           document.body.appendChild(script);
         })
         .catch((error) => {

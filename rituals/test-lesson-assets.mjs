@@ -30,11 +30,12 @@ const temporary=await mkdtemp(join(tmpdir(),'nyx-lesson-assets-'));
 try{
   const output=join(temporary,'site'),directory=join(output,'assets/ugs'),cacheDirectory=join(temporary,'cache');
   await mkdir(directory,{recursive:true});
-  const path=join(directory,'sample.html'),html='<script>'+script+'</script>';
+  const path=join(directory,'sample.html'),html='<script>'+script+';globalThis.asset="https://cdn.jsdelivr.net/gh/example/source@abc/file.js";</script>';
   await writeFile(path,html);
   const first=await buildLessonAssets(output,{cacheDirectory});
   assert.equal(first.files,1);assert.equal(first.cached,0);
   const expected=await readFile(path,'utf8');
+  assert(!expected.includes('cdn.jsdelivr.net'));assert(expected.includes('https://raw.githack.com/example/source/abc/file.js'));
   await writeFile(path,html);
   const second=await buildLessonAssets(output,{cacheDirectory});
   assert.equal(second.cached,1);assert.equal(await readFile(path,'utf8'),expected);

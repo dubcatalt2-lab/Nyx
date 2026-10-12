@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!-- Ultimate Game Stash file--> 
 <!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
-<!--this is a fun puzzle game. Uses jsdelivr and raw.githubusercontent--!>
+<!--this is a fun puzzle game. Uses repository mirrors and raw.githubusercontent--!>
 <html lang="en-us">
   <head>
     <meta charset="utf-8">
@@ -10,13 +10,13 @@
   </head>
   <body style="text-align: center">
     <canvas id="unity-canvas" width=1200 height=800 style="width: 1200px; height: 800px; background: #FECC80"></canvas>
-    <script src="https://cdn.jsdelivr.net/gh/Stinkalistic/junk@main/handshakes/Build/WebGL.loader.js"></script>
+    <script src="https://raw.githack.com/Stinkalistic/junk/main/handshakes/Build/WebGL.loader.js"></script>
     <script>
       createUnityInstance(document.querySelector("#unity-canvas"), {
         dataUrl: "https://raw.githubusercontent.com/Stinkalistic/junk/refs/heads/main/handshakes/Build/WebGL.data",
-        frameworkUrl: "https://cdn.jsdelivr.net/gh/Stinkalistic/junk@main/handshakes/Build/WebGL.framework.js",
+        frameworkUrl: "https://raw.githack.com/Stinkalistic/junk/main/handshakes/Build/WebGL.framework.js",
         codeUrl: "https://raw.githubusercontent.com/Stinkalistic/junk/refs/heads/main/handshakes/Build/WebGL.wasm",
-        symbolsUrl: "https://cdn.jsdelivr.net/gh/Stinkalistic/junk@main/handshakes/Build/WebGL.framework.js",
+        symbolsUrl: "https://raw.githack.com/Stinkalistic/junk/main/handshakes/Build/WebGL.framework.js",
         streamingAssetsUrl: "StreamingAssets",
         companyName: "Pet Pumpkin, Damaskino, Trumpetguy",
         productName: "Handshakes",

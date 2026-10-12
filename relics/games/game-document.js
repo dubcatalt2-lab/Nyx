@@ -1,4 +1,4 @@
-import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath, gameDeliveryUrl, gameCdnHosts} from './game-cdn.js';
+import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath, gameDeliveryUrl, gameCdnHosts, gameSourceText, gameRoutedSource} from './game-cdn.js';
 
     export function prepareGameDocument(html,path,sourceUrl){
       html=String(html).replaceAll('unityGameInstance.SendMessage(', 'unityGameInstance?.SendMessage(');
@@ -10,9 +10,9 @@ import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath, gameDelive
         .replace(/<script>\s*(?:gadgets\.util\.runOnLoadHandlers\(\)|window\.google\.csi\.tickDl\(\));?\s*<\/script>/g,'');
       if(path==='116.html')html=String(html).replaceAll('/bike.loader.js','/bike1.loader.js');
       if(path==='823-fix2.html')html=String(html).replaceAll('.rrayBuffer()', '.arrayBuffer()').replace('EJS_color = "#0064ff";a','EJS_color = "#0064ff";');
-      if(path==='273.html')html=String(html).replaceAll('https://rawcdn.githack.com/genizy/assets/main/blockpost/', 'https://cdn.jsdelivr.net/gh/taskmaster773/google-class@c7a14eb2fe78c6a9cbe495d84aa3768fa9a38005/blockpost/');
+      if(path==='273.html')html=String(html).replaceAll('https://rawcdn.githack.com/genizy/assets/main/blockpost/', 'https://raw.githack.com/taskmaster773/google-class/c7a14eb2fe78c6a9cbe495d84aa3768fa9a38005/blockpost/');
 
-      if(path==='D/cldoom3pack.html')html=String(html).replace('src="idc about this one"', 'src="https://cdn.jsdelivr.net/gh/Stinkalistic/UGS@main/SWFs/470460_DoomGame.swf"');
+      if(path==='D/cldoom3pack.html')html=String(html).replace('src="idc about this one"', 'src="https://raw.githack.com/Stinkalistic/UGS/main/SWFs/470460_DoomGame.swf"');
 
       if(/type=["'][a-f0-9]+-(?:module|text\/javascript)["']/i.test(html))html=String(html)
         .replace(/(type=["'])[a-f0-9]+-(module|text\/javascript)(["'])/gi,'$1$2$3')
@@ -28,7 +28,7 @@ import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath, gameDelive
         .replace(/<link\b[^>]*href=["']https:\/\/cdn\.jsdelivr\.net\/gh\/AndreajnRcm4\/b398dl2h74v@[^"']+\/style\.css["'][^>]*>/gi,'')
         .replace(
         /https?:\/\/cdn\.jsdelivr\.net\/gh\/genizy\/fnaf@[^/"'<>\s]+/gi,
-        'https://cdn.jsdelivr.net/gh/bubblfan/fnaf@latest'
+        'https://raw.githack.com/bubblfan/fnaf/HEAD'
       )
 
         .replace(/\/axo323lotl-bit\/elitecomposite@main\/2048-merge-run\//g,'/axo323lotl-bit/elitecomposite@dee1ce45905c0d8f3524c4468074671762e48e9c/2048-merge-run/')
@@ -54,7 +54,7 @@ import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath, gameDelive
           return raw;
         }
       };
-      const proxiedHtml=sourceHtml
+      const proxiedHtml=gameSourceText(sourceHtml)
         .replace(/<script\b[^>]*src=["'][^"']*\/ytgame\.js[^"']*["'][^>]*>[\s\S]*?<\/script>/gi,'')
         .replace(/<script\b[^>]*src=["']\/js\/(?:main|lib|all(?:\.min)?)\.js["'][^>]*>\s*<\/script>/gi,'')
         .replace(/<base\b[^>]*>/gi,'')
@@ -134,6 +134,19 @@ import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath, gameDelive
           const prox='${location.origin}/gn-math-resource/';
           const proxHosts=${JSON.stringify([...gameCdnHosts])};
           const delivery=${gameDeliveryUrl.toString()};
+          const gameSourceText=${gameSourceText.toString()};
+          const routedSource=${gameRoutedSource.toString()};
+          const markup=value=>routedSource(String(value),prox.slice(0,-1),gameSourceText);
+          for(const name of ['write','writeln']){
+            const native=Document.prototype[name];
+            Document.prototype[name]=function(...parts){return native.call(this,markup(parts.join('')))};
+          }
+          for(const name of ['innerHTML','outerHTML']){
+            const descriptor=Object.getOwnPropertyDescriptor(Element.prototype,name);
+            if(descriptor?.set)Object.defineProperty(Element.prototype,name,{...descriptor,set(value){descriptor.set.call(this,markup(value))}});
+          }
+          const insertMarkup=Element.prototype.insertAdjacentHTML;
+          Element.prototype.insertAdjacentHTML=function(position,value){return insertMarkup.call(this,position,markup(value))};
           const repairPath=${repairGameResourcePath.toString()};
           // Some older Unity loaders prepend their asset directory to blob URLs.
           // Recover only URLs created in this document, never arbitrary blob text.
@@ -233,9 +246,13 @@ import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath, gameDelive
           ? output.replace(/<head([^>]*)>/i,`<head$1><base href="${proxyUrl(baseHref)}">`)
           : `<base href="${proxyUrl(baseHref)}">${output}`;
       }
+      const bootstrap=adProtection+safeFitScript()+safeFetchGuard+guard;
+      const firstScript=output.search(/<script\b/i),firstHead=output.search(/<head\b/i);
+      // Packed documents may execute before their explicit head starts.
+      if(firstScript>=0&&(firstHead<0||firstScript<firstHead))return output.slice(0,firstScript)+bootstrap+output.slice(firstScript);
       return /<head([^>]*)>/i.test(output)
-        ? output.replace(/<head([^>]*)>/i,`<head$1>${adProtection}${safeFitScript()}${safeFetchGuard}${guard}`)
-        : `${adProtection}${safeFitScript()}${safeFetchGuard}${guard}${output}`;
+        ? output.replace(/<head([^>]*)>/i,`<head$1>${bootstrap}`)
+        : bootstrap+output;
     }
     function safeFitScript(){
       return `<script src="${location.origin}/assets/games/game-viewport.js"><\/script>`;

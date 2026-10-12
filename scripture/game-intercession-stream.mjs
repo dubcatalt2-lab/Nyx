@@ -1,7 +1,20 @@
-import { Readable } from 'node:stream';
+import { Readable, Transform } from 'node:stream';
+import {StringDecoder} from 'node:string_decoder';
 import { pipeline } from 'node:stream/promises';
 import { setTimeout as delay } from 'node:timers/promises';
-import {gameDeliveryUrl} from '../relics/games/game-cdn.js';
+import {gameDeliveryUrl,gameRoutedSource} from '../relics/games/game-cdn.js';
+
+export function gameSourceStream(prefix){
+  const decoder=new StringDecoder('utf8');let pending='';
+  return new Transform({
+    transform(bytes,_encoding,done){
+      const text=gameRoutedSource(pending+decoder.write(bytes),prefix);
+      const end=Math.max(0,text.length-4096);
+      this.push(text.slice(0,end));pending=text.slice(end);done();
+    },
+    flush(done){this.push(gameRoutedSource(pending+decoder.end(),prefix));done();}
+  });
+}
 
 // Large Unity assets must not become one retained ArrayBuffer per player.
 // Only the few resources requiring text edits are buffered, with a shared cap.
@@ -45,6 +58,9 @@ export function createGameProxy({ request = fetch, headerTimeout = 12000,
   function release() { const next = waiting.shift(); if (next) next.resolve(); else transforms--; }
   async function send(req, res, { candidates, validate = () => {}, contentType = (_url, type) => type,
     transform = () => null, cacheControl = 'no-store' }) {
+    const localPeer=['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket?.remoteAddress);
+    const secure=req.socket?.encrypted||localPeer&&req.headers['x-forwarded-proto']==='https';
+    const resourcePrefix=new URL((secure?'https':'http')+'://'+req.headers.host).origin+'/gn-math-resource';
     const controller = new AbortController(), { signal } = controller;
     const disconnect = () => { if (!res.writableFinished) controller.abort(new Error('Player disconnected')); };
     res.once('close', disconnect);
@@ -96,6 +112,7 @@ export function createGameProxy({ request = fetch, headerTimeout = 12000,
           }
           const prefix = Buffer.concat(head, headSize);
           const type = upstream.headers.get('content-type') || 'application/octet-stream';
+          const textSource=/\.(?:[mc]?js|css|json|html?)$/i.test(url.pathname)||/(?:javascript|ecmascript|text\/css|text\/html|application\/json)/i.test(type);
           validate(url, { body: prefix, contentType: type });
           const edit = transform(url, type, prefix);
           async function* chunks() {
@@ -118,14 +135,16 @@ export function createGameProxy({ request = fetch, headerTimeout = 12000,
           res.setHeader('Content-Type', contentType(url, type));
           // Preserve progress totals only when fetch has not decoded the body.
           const length = upstream.headers.get('content-length');
-          if (!edit && !upstream.headers.get('content-encoding') && /^\d+$/.test(length || '')) res.setHeader('Content-Length', length);
+          if (!edit && !textSource && !upstream.headers.get('content-encoding') && /^\d+$/.test(length || '')) res.setHeader('Content-Length', length);
           if (body) {
+            if(textSource)body=Buffer.from(gameRoutedSource(body.toString('utf8'),resourcePrefix));
             // pipeline respects a slow client; keep the transform slot until sent.
             res.setHeader('Content-Length', String(body.byteLength));
             await pipeline(Readable.from([body]), res, { signal: attemptSignal });
           } else {
             const stream = Readable.from(chunks(), { objectMode: false, highWaterMark: 64 * 1024 });
             if (edit?.stream) await pipeline(stream, edit.stream(), res, { signal: attemptSignal });
+            else if(textSource)await pipeline(stream, gameSourceStream(resourcePrefix), res, {signal:attemptSignal});
             else await pipeline(stream, res, { signal: attemptSignal });
           }
           return;

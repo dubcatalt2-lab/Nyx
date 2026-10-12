@@ -60,10 +60,10 @@
         <canvas id="canvas" class="fullscreen"></canvas>
         <div id="banner-container"></div>
         <div id="loading-overlay" class="fullscreen">
-            <img id="icon" src="https://cdn.jsdelivr.net/gh/sz-games/Games8@d12ca56d8b0a51ee19122003c75987a349816837/only-up/icon.png" />
+            <img id="icon" src="https://raw.githack.com/sz-games/Games8/d12ca56d8b0a51ee19122003c75987a349816837/only-up/icon.png" />
             <div id="progress-bar"><div id="progress-bar-fill"></div></div>
         </div>
-        <script src="https://cdn.jsdelivr.net/gh/sz-games/Games8@d12ca56d8b0a51ee19122003c75987a349816837/only-up/instant-games-bridge.js"></script>
+        <script src="https://raw.githack.com/sz-games/Games8/d12ca56d8b0a51ee19122003c75987a349816837/only-up/instant-games-bridge.js"></script>
         <script>
             if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
                 let meta = document.createElement('meta')
@@ -167,14 +167,14 @@
                     bridge.game.on('visibility_state_changed', state => sendMessageToUnity('OnVisibilityStateChanged', state))
 
                     let unityLoader = document.createElement('script')
-                    unityLoader.src = 'https://cdn.jsdelivr.net/gh/sz-games/Games8@d12ca56d8b0a51ee19122003c75987a349816837/only-up/Build/Only Up 230815_3.loader.js'
+                    unityLoader.src = 'https://raw.githack.com/sz-games/Games8/d12ca56d8b0a51ee19122003c75987a349816837/only-up/Build/Only Up 230815_3.loader.js'
                     unityLoader.onload = () => {
                         createUnityInstance(
                             canvas,
                             {
-                                dataUrl: 'https://cdn.jsdelivr.net/gh/sz-games/Games8@d12ca56d8b0a51ee19122003c75987a349816837/only-up/Build/4b94f11ea671fe7b3eae7940f4e15a40.data.unityweb',
-                                frameworkUrl: 'https://cdn.jsdelivr.net/gh/sz-games/Games8@d12ca56d8b0a51ee19122003c75987a349816837/only-up/Build/4c369b9d2386e4063078bac59b580f5d.js.unityweb',
-                                codeUrl: 'https://cdn.jsdelivr.net/gh/sz-games/Games8@d12ca56d8b0a51ee19122003c75987a349816837/only-up/Build/6866d97471f0353df472ed6d8104b1cc.wasm.unityweb',
+                                dataUrl: 'https://raw.githack.com/sz-games/Games8/d12ca56d8b0a51ee19122003c75987a349816837/only-up/Build/4b94f11ea671fe7b3eae7940f4e15a40.data.unityweb',
+                                frameworkUrl: 'https://raw.githack.com/sz-games/Games8/d12ca56d8b0a51ee19122003c75987a349816837/only-up/Build/4c369b9d2386e4063078bac59b580f5d.js.unityweb',
+                                codeUrl: 'https://raw.githack.com/sz-games/Games8/d12ca56d8b0a51ee19122003c75987a349816837/only-up/Build/6866d97471f0353df472ed6d8104b1cc.wasm.unityweb',
                                 streamingAssetsUrl: 'StreamingAssets',
                                 companyName: 'Craft Game World',
                                 productName: 'Only Up! Parkour Running Game',

@@ -23,14 +23,14 @@
 			font-family: 'gameFont';
 			font-style: normal;
 			font-weight: 400;
-			src: url('https://cdn.jsdelivr.net/gh/bessiegasbarro/papman@01527b751e7c26a0579a01fb2fe1d303703a4d7f/assets/fnt/Square.ttf');
+			src: url('https://raw.githack.com/bessiegasbarro/papman/01527b751e7c26a0579a01fb2fe1d303703a4d7f/assets/fnt/Square.ttf');
 		}
 	</style>
 	<link rel="stylesheet"
-		href="https://cdn.jsdelivr.net/gh/bessiegasbarro/papman@01527b751e7c26a0579a01fb2fe1d303703a4d7f/normalize.css"
+		href="https://raw.githack.com/bessiegasbarro/papman/01527b751e7c26a0579a01fb2fe1d303703a4d7f/normalize.css"
 		type="text/css">
 	<link rel="stylesheet"
-		href="https://cdn.jsdelivr.net/gh/bessiegasbarro/papman@01527b751e7c26a0579a01fb2fe1d303703a4d7f/gm.css"
+		href="https://raw.githack.com/bessiegasbarro/papman/01527b751e7c26a0579a01fb2fe1d303703a4d7f/gm.css"
 		type="text/css">
 	<script>
 		window.addEventListener("keydown", function(e) { if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) { e.preventDefault(); } }, false); 
@@ -39,10 +39,10 @@
 
 <body style="background-color: #000000">
 	<div id="wrongRotation">
-		<img src="https://cdn.jsdelivr.net/gh/bessiegasbarro/papman@01527b751e7c26a0579a01fb2fe1d303703a4d7f/assets/img_480/rotate_screen.png" alt=""/> </div>
+		<img src="https://raw.githack.com/bessiegasbarro/papman/01527b751e7c26a0579a01fb2fe1d303703a4d7f/assets/img_480/rotate_screen.png" alt=""/> </div>
 		<div id="game">
 			<script
-				src="https://cdn.jsdelivr.net/gh/bessiegasbarro/papman@01527b751e7c26a0579a01fb2fe1d303703a4d7f/papers.js">
+				src="https://raw.githack.com/bessiegasbarro/papman/01527b751e7c26a0579a01fb2fe1d303703a4d7f/papers.js">
 			</script>
 			<script>
 				document.addEventListener("deviceready", function () { document.addEventListener("backbutton", function () { if (grpSceneInfoDialog.visible) { SceneInfoDialog.instance.OnPressedNo(); } else if (grpScenePause.visible) { ScenePause.instance.OnPressedCloseDialog(); } else if (grpSceneCamera.visible) { SceneCamera.instance.OnPressedPause(); } else if (grpSceneSettings.visible) { SceneSettings.instance.OnPressedCloseDialog(); } else if (grpSceneInstruction.visible) { SceneInstruction.instance.cancelInstruction(); } else if (grpSceneAbout.visible) { SceneAbout.instance.cancelAbout(); } else if (grpSceneBasic.visible && !gameRunning) { quitAppDialog(); } }, false); }, false); 

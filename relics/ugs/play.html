@@ -139,7 +139,7 @@
       fetchDocument(assetUrl).then(source=>{
         if(disposed)return;
         launchStarted=true;
-        if(path==='G/clgetawayshootout.html'||isWrapped(source)||/<base\b[^>]*href=["'][^"']*(?:cdn\.jsdelivr\.net|raw(?:cdn)?\.githack\.com|raw\.githubusercontent\.com)/i.test(source))frame.srcdoc=prepareGameDocument(unwrap(source),path,location.origin+assetUrl);
+        if(path==='G/clgetawayshootout.html'||isWrapped(source)||/(?:jsdelivr\.net|raw(?:cdn)?\.githack\.com|raw\.githubusercontent\.com|unpkg\.com)/i.test(source))frame.srcdoc=prepareGameDocument(unwrap(source),path,location.origin+assetUrl);
         else frame.srcdoc=prepare(source,path);
       }).catch(error=>{if(!disposed)fail(`Could not load game: ${error.message||error}`)});
     }

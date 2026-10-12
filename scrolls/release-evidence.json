@@ -243,106 +243,9 @@
       ]
     },
     {
-      "file": "assets/ugs/B/clbasketbros.html",
-      "sha256": "ef412cafa6b9ccbb571c5cc8310414fdb7a62e645b22e264ace00d15fc04c250",
-      "evidence": "Reviewed OpenFL texture-coordinate arithmetic: rectangle bounds and X/Y divided by texture width/height, then consumed by vertex buffers. These private UV coordinates are graphics data, unrelated to any removed engine.",
-      "matches": [
-        {
-          "section": "raw",
-          "contextHash": "58ad679ac37f4d8be49b4ccfbf647b3ee99e06a80fe4048a7401cd9fc8bf4fab"
-        },
-        {
-          "section": "raw",
-          "contextHash": "789f59a44bd4f1d8761f514a0c62f548e73dddd3f851761653b394145bd933cd"
-        },
-        {
-          "section": "raw",
-          "contextHash": "37410e2d59f39f174a6c10c1c7961c0e6e0d9c56e4121052fdff75c7c58014b0"
-        },
-        {
-          "section": "raw",
-          "contextHash": "cb372cca0641a8ff74e54935f5d5d827650162a7b341545b5b570f443a6dbdf2"
-        },
-        {
-          "section": "raw",
-          "contextHash": "8f7de2c06a3b8674bf71e7cf2f2873aeb147aad77a0945875a6280852bb6b02b"
-        },
-        {
-          "section": "raw",
-          "contextHash": "479acc93bff7d48cae44cdc8d43549c506aec0e911cc9cec4f4d43556872c195"
-        },
-        {
-          "section": "raw",
-          "contextHash": "d6b71c38635af034996172ea216abf101c7d94927677cc5289e75dfcf15628b5"
-        },
-        {
-          "section": "raw",
-          "contextHash": "166a25e614eef7fec1579807c96eba39b57719f252133a6ed8f31e075e0c409c"
-        },
-        {
-          "section": "raw",
-          "contextHash": "40296b294580fe7f50f25fa7df5fab1888dd91a2ce23cce39b922cd2b4d8f441"
-        },
-        {
-          "section": "raw",
-          "contextHash": "0e03c3e7cfaa1ce2a761313b3ffbcf6b62b26a2119019dccef3fac826dcaf83d"
-        },
-        {
-          "section": "raw",
-          "contextHash": "08c5fabbfbb2f1eaf56aa6fad8e56aa3a1e0d31f5efc11cf3439d383697518a3"
-        },
-        {
-          "section": "raw",
-          "contextHash": "d356bda92a8edb523782f7f8db9659ab36a9043741b65c7c9eca32a303e0cc98"
-        },
-        {
-          "section": "raw",
-          "contextHash": "85e7511d4954eae00e29d0f109dbc83c407bc9afc66878a47a6021b47dc61df1"
-        },
-        {
-          "section": "raw",
-          "contextHash": "3ebf707b26766bfa4a2a13034839e7687ad00e757b3970f8361751e16b6a519e"
-        },
-        {
-          "section": "raw",
-          "contextHash": "7c45a2f76482ea258f8600677f37f3dbcb71137fd371cd5c6214db4f267d48bb"
-        },
-        {
-          "section": "raw",
-          "contextHash": "5b22a71a8ddabde60cfadf0524199644c4bdc25d001b76f156aa8c7322eb92b5"
-        }
-      ]
-    },
-    {
-      "file": "assets/ugs/B/clbasketbros.html",
-      "sha256": "ef412cafa6b9ccbb571c5cc8310414fdb7a62e645b22e264ace00d15fc04c250",
-      "evidence": "Reviewed English dictionary used by the bundled game. The plant word is surrounded by unrelated dictionary words; it is game data rather than Nyx branding or an engine reference.",
-      "matches": [
-        {
-          "section": "raw",
-          "contextHash": "d2bfd66e7297a96440634890bc45f2707a8e01c75e8c1f87e39fc3834da9ed28"
-        },
-        {
-          "section": "decoded string",
-          "contextHash": "d2bfd66e7297a96440634890bc45f2707a8e01c75e8c1f87e39fc3834da9ed28"
-        }
-      ]
-    },
-    {
       "file": "assets/ugs/D/cldoodlejump.html",
       "sha256": "9738d0deabe62e14f68623c7ad65f00edd99e04470c0b565dec6d9f939521d7f",
       "evidence": "Reviewed encoded game payload: . The match lies in its base64 representation, not an identifier or import. Decoded payload sizes and SHA256: .",
-      "matches": [
-        {
-          "section": "raw",
-          "contextHash": "5e6c7c5fa2e49f1764f5f7cefdaec48c747bc44deb464ab5b3263e51a5d842ed"
-        }
-      ]
-    },
-    {
-      "file": "assets/ugs/D/cldoodlejumpgoober.html",
-      "sha256": "5a13676c19ad6f69b4fc624cad9441bd974c087b5f1fe372e428f0c3d8ce81aa",
-      "evidence": "Reviewed encoded game payload: PNG. The match lies in its base64 representation, not an identifier or import. Decoded payload sizes and SHA256: 7487 bytes ad869d5459f37f95a8907483ec8f1371701c4c1170fa8f18273704478ca483a2.",
       "matches": [
         {
           "section": "raw",
@@ -1448,48 +1351,6 @@
       ]
     },
     {
-      "file": "assets/ugs/P/clpaperio3d.html",
-      "sha256": "e447f17b328399e2b1f9be4e298d1462e0ac0be5eee91099b2d3806329135639",
-      "evidence": "Reviewed encoded game payload: glTF model. The match lies in its base64 representation, not an identifier or import. Decoded payload sizes and SHA256: 454136 bytes 5daa4bee3c20202c09202bb8c308522c0fcf88614282eb5da833d6c37fc30496.",
-      "matches": [
-        {
-          "section": "raw",
-          "contextHash": "95c062c7ad04ef831599270b92b8a5820f9c375239ff0a64e1dd9ab6c43c8763"
-        },
-        {
-          "section": "raw",
-          "contextHash": "aade5454a84ffff836eed6d11062cd05b9b84a55dfad7978776851659366d6ba"
-        },
-        {
-          "section": "decoded string",
-          "contextHash": "95c062c7ad04ef831599270b92b8a5820f9c375239ff0a64e1dd9ab6c43c8763"
-        },
-        {
-          "section": "decoded string",
-          "contextHash": "aade5454a84ffff836eed6d11062cd05b9b84a55dfad7978776851659366d6ba"
-        }
-      ]
-    },
-    {
-      "file": "assets/ugs/P/clpaperio3d.html",
-      "sha256": "e447f17b328399e2b1f9be4e298d1462e0ac0be5eee91099b2d3806329135639",
-      "evidence": "Reviewed hardware compatibility check against Gamepad.id, alongside Gear VR and Oculus Go identifiers. Both occurrences select controller buttons and tracking; this is not first-party branding.",
-      "matches": [
-        {
-          "section": "raw",
-          "contextHash": "9fb12cd7b6cee5e969422b404f7acdf9e7d93f204b6fe26939c116815a2e3e8f"
-        },
-        {
-          "section": "raw",
-          "contextHash": "b0e9ad11aa0e92900ba48d20bfaf3b2ec2e091364edb8f666ad4eebce990fbff"
-        },
-        {
-          "section": "decoded string",
-          "contextHash": "ba11b00c5148001039025c8dae7169456a33d223b39aa65fc4f4564f39251460"
-        }
-      ]
-    },
-    {
       "file": "assets/ugs/P/clpinkbike.html",
       "sha256": "d91b4e9d04a6a118b5bb6c592631af7b3547b3762e74b262aa331d82af0bc226",
       "evidence": "Reviewed inert HTML attribute name in the supplied game document, containing case-folded encoded bytes. This occurrence is not in a script, a script URL, or a library import. The raw finding remains in the audit report.",
@@ -1497,40 +1358,6 @@
         {
           "section": "raw",
           "contextHash": "4c6e1b53465a25bf637d8cbc96d48aa74956cf32b664d5e18ea0d3b1f2c2e80e"
-        }
-      ]
-    },
-    {
-      "file": "assets/ugs/S/clslowroads.html",
-      "sha256": "a85c0bfe395ded16978e609d37eac7f9362747552ed78673cd9c5ccb5492a17d",
-      "evidence": "Reviewed Socket.IO Engine.IO connection method: it switches polling/WebSocket transports, detaches listeners and sends an upgrade packet. This is the game multiplayer client, not a removed networking package.",
-      "matches": [
-        {
-          "section": "raw",
-          "contextHash": "778994729707e99e37b7b35fd406c9f810449279261a7158be2fe0fd0d9d9b59"
-        },
-        {
-          "section": "raw",
-          "contextHash": "58fd6b55e45de7d0bacd79eda71a6dc0b9078859eb0f1d2245e5c367d295ff8b"
-        },
-        {
-          "section": "raw",
-          "contextHash": "ef4268fe7ff5c2fd49eca4842d71e2a224d84d3fee33c4acdc482280b7c3e757"
-        }
-      ]
-    },
-    {
-      "file": "assets/ugs/S/clstreangeropepolice.html",
-      "sha256": "eecabc12b053937cd84a0f3d861648e30558a98c643629657bbcf8612422e8fa",
-      "evidence": "Decoded 51749 bytes from dec/dictionary.bin.js in the bundled Brotli decoder. The enclosing module exports the static dictionary consumed by dec/dictionary-browser.js; this is compression data, not a connection engine. Decoded SHA256 ca8d200ef8da765eecfb22ce8b4e0a79e26193b37b1551906f6b69cedd12c7e5.",
-      "matches": [
-        {
-          "section": "raw",
-          "contextHash": "5e4f1e551bbf9989c353586bf2124a3bc9ee3d27af4d19c95a21ade619d61467"
-        },
-        {
-          "section": "decoded string",
-          "contextHash": "5e4f1e551bbf9989c353586bf2124a3bc9ee3d27af4d19c95a21ade619d61467"
         }
       ]
     },
@@ -2492,6 +2319,169 @@
         {
           "section": "decoded string",
           "contextHash": "1812509570842334cbee4ec8d5401945242e9f886ca13fae6137f80e1c1de912"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/B/clbasketbros.html",
+      "sha256": "dc9b26a453a1b0ee7ab11e9aa52ec9fcf1caaccd30b4569191fbf6799935c4b7",
+      "evidence": "Reviewed OpenFL texture-coordinate arithmetic: rectangle bounds and X/Y divided by texture width/height, then consumed by vertex buffers. These private UV coordinates are graphics data, unrelated to any removed engine. Reviewed English dictionary used by the bundled game. The plant word is surrounded by unrelated dictionary words; it is game data rather than Nyx branding or an engine reference. Re-reviewed after repository mirror replacement: source comparison verifies only delivery URL substitutions plus line-ending normalization; bundled graphics, dictionaries, payloads and hardware checks are unchanged. Minification offsets change local names; every listed context was reviewed again.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "84ba0158a2c43c83e2558e7f13115b07718cfa0e1dbcc840f7aea75415c09989"
+        },
+        {
+          "section": "raw",
+          "contextHash": "f2fc796d285086d5de374f4de1fd360631870ea098c8e6f1353800eef3a80fd5"
+        },
+        {
+          "section": "raw",
+          "contextHash": "0954b0937185ac28f41c335be44e87c4c2784c818b7ed8800902d7800b8b8850"
+        },
+        {
+          "section": "raw",
+          "contextHash": "e47f4eeb403a1506eb4c01ae72371ca7c86da7dff0dfbdbc5f82b9dbcb52a13a"
+        },
+        {
+          "section": "raw",
+          "contextHash": "a6a4ae2d67a72a3263735488eab9e4eef8ea7be745563a9da481523e6158fa8c"
+        },
+        {
+          "section": "raw",
+          "contextHash": "6fd28bd0db9a646aff66f551418ebfa4cd9edb0d79d2ba6a142670c775ac4ee7"
+        },
+        {
+          "section": "raw",
+          "contextHash": "383b06d402a782f1e064a76e80ddaa7bc76e46d9ad2c614feaaefaf2491dd85a"
+        },
+        {
+          "section": "raw",
+          "contextHash": "ce7a85505c4544ced539679f6adc7f8bd7209f03ee2781662ab67698911f223b"
+        },
+        {
+          "section": "raw",
+          "contextHash": "966d4c69421c69ed7159a63f7664b29483c55943271eec05f442188ffa14ab74"
+        },
+        {
+          "section": "raw",
+          "contextHash": "a4bd4e10567bf430708604485a51118f7861ea49516b0bbed0710a57761fa7e4"
+        },
+        {
+          "section": "raw",
+          "contextHash": "4fd631ff7c02a0cccabb69b192624a04829e4b991046bc0e023bc96339ecc79f"
+        },
+        {
+          "section": "raw",
+          "contextHash": "59b7e5b3cc55fb019a3c1d60c75fc7427a30c1bce559e29e11b909b027ca78fe"
+        },
+        {
+          "section": "raw",
+          "contextHash": "a83299da3135b2f64a146b38468e358e862dbe8833aaa0ad9eab19fba71aa01e"
+        },
+        {
+          "section": "raw",
+          "contextHash": "c5711096c3ff63a8ab8e3ee03a829f0a0eabed4a7d299af36e11541610b9dd1f"
+        },
+        {
+          "section": "raw",
+          "contextHash": "809f7c534d69b2f03d0fdbd94db1b454af0d0258156269e7a82865e5eff95196"
+        },
+        {
+          "section": "raw",
+          "contextHash": "1b091ead34f84a2eff13bcc2ba8c5e79c30f152384ef31abb7a1395674243e1b"
+        },
+        {
+          "section": "raw",
+          "contextHash": "d2bfd66e7297a96440634890bc45f2707a8e01c75e8c1f87e39fc3834da9ed28"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "d2bfd66e7297a96440634890bc45f2707a8e01c75e8c1f87e39fc3834da9ed28"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/D/cldoodlejumpgoober.html",
+      "sha256": "884833fa5e3baa6c5020122470e4adc8d18ff1b85436ada7cd447112213c6673",
+      "evidence": "Reviewed encoded game payload: PNG. The match lies in its base64 representation, not an identifier or import. Decoded payload sizes and SHA256: 7487 bytes ad869d5459f37f95a8907483ec8f1371701c4c1170fa8f18273704478ca483a2. Re-reviewed after repository mirror replacement: source comparison verifies only delivery URL substitutions plus line-ending normalization; bundled graphics, dictionaries, payloads and hardware checks are unchanged. Minification offsets change local names; every listed context was reviewed again.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "5e6c7c5fa2e49f1764f5f7cefdaec48c747bc44deb464ab5b3263e51a5d842ed"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/P/clpaperio3d.html",
+      "sha256": "bf0b2ae5780020761bebbe5fb8768cf59255d4451ba0c51ad40d294a02b3a661",
+      "evidence": "Reviewed encoded game payload: glTF model. The match lies in its base64 representation, not an identifier or import. Decoded payload sizes and SHA256: 454136 bytes 5daa4bee3c20202c09202bb8c308522c0fcf88614282eb5da833d6c37fc30496. Reviewed hardware compatibility check against Gamepad.id, alongside Gear VR and Oculus Go identifiers. Both occurrences select controller buttons and tracking; this is not first-party branding. Re-reviewed after repository mirror replacement: source comparison verifies only delivery URL substitutions plus line-ending normalization; bundled graphics, dictionaries, payloads and hardware checks are unchanged. Minification offsets change local names; every listed context was reviewed again.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "95c062c7ad04ef831599270b92b8a5820f9c375239ff0a64e1dd9ab6c43c8763"
+        },
+        {
+          "section": "raw",
+          "contextHash": "aade5454a84ffff836eed6d11062cd05b9b84a55dfad7978776851659366d6ba"
+        },
+        {
+          "section": "raw",
+          "contextHash": "ca160891e0a194977c4babffd7487a962f69c05ba2f68ebb0a79967b390fb3c7"
+        },
+        {
+          "section": "raw",
+          "contextHash": "6949b0139cadf7cfb9c84dd6960f159c356ac3c7b271903e24816a4f7a119059"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "95c062c7ad04ef831599270b92b8a5820f9c375239ff0a64e1dd9ab6c43c8763"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "aade5454a84ffff836eed6d11062cd05b9b84a55dfad7978776851659366d6ba"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "ba11b00c5148001039025c8dae7169456a33d223b39aa65fc4f4564f39251460"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "ba11b00c5148001039025c8dae7169456a33d223b39aa65fc4f4564f39251460"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/S/clslowroads.html",
+      "sha256": "ee219b92728987fd072bf001f94b685f56b0b4ef490375542b5e40e6f37530c2",
+      "evidence": "Reviewed Socket.IO Engine.IO connection method: it switches polling/WebSocket transports, detaches listeners and sends an upgrade packet. This is the game multiplayer client, not a removed networking package. Re-reviewed after repository mirror replacement: source comparison verifies only delivery URL substitutions plus line-ending normalization; bundled graphics, dictionaries, payloads and hardware checks are unchanged. Minification offsets change local names; every listed context was reviewed again.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "9a194fd4787c1a4671b0d4394097dd4db6993c6e55999133a0fb1b778b4f0d4a"
+        },
+        {
+          "section": "raw",
+          "contextHash": "c321a5a82a9ab537fc8a926347f8da5cf89805431d910c311572857cadf986f6"
+        },
+        {
+          "section": "raw",
+          "contextHash": "203dae831fc3c9a3a0a5e1edc0efd7288d412e3dfcdf0bf377fb6720eec4ed35"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/S/clstreangeropepolice.html",
+      "sha256": "72502a3b42c3eb89cc7658035b7da05124f2bdb25bfeb5424c1374897f4c7b6e",
+      "evidence": "Decoded 51749 bytes from dec/dictionary.bin.js in the bundled Brotli decoder. The enclosing module exports the static dictionary consumed by dec/dictionary-browser.js; this is compression data, not a connection engine. Decoded SHA256 ca8d200ef8da765eecfb22ce8b4e0a79e26193b37b1551906f6b69cedd12c7e5. Re-reviewed after repository mirror replacement: source comparison verifies only delivery URL substitutions plus line-ending normalization; bundled graphics, dictionaries, payloads and hardware checks are unchanged. Minification offsets change local names; every listed context was reviewed again.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "5e4f1e551bbf9989c353586bf2124a3bc9ee3d27af4d19c95a21ade619d61467"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "5e4f1e551bbf9989c353586bf2124a3bc9ee3d27af4d19c95a21ade619d61467"
         }
       ]
     }

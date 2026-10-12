@@ -387,6 +387,8 @@ async function main() {
   await scrambleWorkspaceOutput(output);
   const scatteredAudit=spawnSync(process.execPath,[join(here,'test-scattered-build.mjs'),output],{cwd:root,stdio:'inherit'});
   if(scatteredAudit.status!==0)throw new Error('Scattered runtime import validation failed.');
+  const gameSources=spawnSync(process.execPath,[join(here,'check-game-sources.mjs'),output],{cwd:root,stdio:'inherit'});
+  if(gameSources.status!==0)throw new Error('A retired game CDN target remains in the release.');
   const retiredAudit = spawnSync(process.execPath, [join(here, 'check-retired-engine.mjs'), output], {cwd: root, stdio: 'inherit'});
   if (retiredAudit.status !== 0) throw new Error('Retired engine found in release output.');
   const releaseAudit = spawnSync(process.execPath, [join(here, 'audit-release.mjs'), output], {cwd: root, stdio: 'inherit'});

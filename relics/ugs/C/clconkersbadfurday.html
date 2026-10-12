@@ -8,7 +8,7 @@
     <script>
       window.gameconfig = {
         name: "Conker's Bad Fur Day (USA)",
-        url: "https://cdn.jsdelivr.net/gh/bubbls/ugss@635c9a41a01da7d6c3c0630c9eb4f2e0d8341f0a/conker/Conker's%20Bad%20Fur%20Day%20(USA).z64",
+        url: "https://raw.githack.com/bubbls/ugss/635c9a41a01da7d6c3c0630c9eb4f2e0d8341f0a/conker/Conker's%20Bad%20Fur%20Day%20(USA).z64",
         core: "n64",
         min: 1,
         max: 4,
@@ -106,11 +106,11 @@
           EJS_gameName = window.gameconfig.name;
           EJS_color = "#0064ff";
           EJS_startOnLoaded = true;
-          EJS_pathtodata = "https://cdn.jsdelivr.net/gh/genizy/emu@master/";
+          EJS_pathtodata = "https://raw.githack.com/genizy/emu/master/";
           EJS_gameUrl = gameUrl;
           const script = document.createElement("script");
           script.src =
-            "https://cdn.jsdelivr.net/gh/genizy/emu@master/loader.js";
+            "https://raw.githack.com/genizy/emu/master/loader.js";
           document.body.appendChild(script);
         })
         .catch((error) => {

@@ -3,7 +3,7 @@ const base=process.env.NYX_TEST_BASE_URL||'http://localhost:9192';
 const workspace=await chromium.launch({channel:'msedge',args:['--disable-features=LocalNetworkAccessChecks']});
 await mkdir('.codex-artifacts',{recursive:true});
 try{for(const [name,path] of [['Slope','198.html'],['Run3','177.html'],['CookieClicker','82-a.html'],['BasketRandom','66.html'],['RetroBowl','33-ff.html'],['Gladihoppers','4-pf.html']]){
- const context=await workspace.newContext({viewport:{width:1280,height:720}});await context.route('**/api/**',r=>['GET','HEAD'].includes(r.request().method())?r.continue():r.fulfill({json:{}}));const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const context=await workspace.newContext({viewport:{width:1280,height:720}});await context.route('**/api/**',r=>['GET','HEAD'].includes(r.request().method())?r.continue():r.fulfill({json:{}}));const page=await context.newPage(),errors=[],retiredRequests=[];page.on('request',request=>{if(/(^|\.)jsdelivr\.net$/.test(new URL(request.url()).hostname))retiredRequests.push(request.url())});page.on('pageerror',e=>errors.push(e.message));
  await page.goto(base+'/assets/gn-math/play.html?game='+path);
  let ready=false;
  for(let attempt=0;attempt<60&&!ready;attempt++){
@@ -16,5 +16,5 @@ try{for(const [name,path] of [['Slope','198.html'],['Run3','177.html'],['CookieC
   if(!ready)await page.waitForTimeout(1000);
  }
  assert(ready,name+' must render game content, not just create a canvas');await page.mouse.click(640,name==='Run3'?450:360);await page.keyboard.press('ArrowRight');await page.waitForTimeout(500);await page.screenshot({path:'.codex-artifacts/popular-'+name+'.png'});
- assert.deepEqual(errors,[],name+' startup errors');console.log(name+': rendered game content and input passed');await context.close();
+ assert.deepEqual(errors,[],name+' startup errors');assert.deepEqual(retiredRequests,[],name+' must not request the retired CDN');console.log(name+': rendered game content and input passed; zero jsDelivr requests');await context.close();
 }}finally{await workspace.close();}

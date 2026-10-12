@@ -19,10 +19,25 @@ export function gameDeliveryUrl(value) {
   return url;
 }
 
+// Replace only the repository/package prefix, preserving asset paths and templates.
+export function gameSourceText(text) {
+  return String(text)
+    .replace(/(?:https?:)?\/\/[\w.-]*jsdelivr\.net\/npm\//gi,'https://unpkg.com/')
+    .replace(/(?:https?:)?\/\/[\w.-]*jsdelivr\.net\/gh\/([^/\s"'`<>]+)\/([^/@\s"'`<>]+)(?:@([^/\s"'`<>]+))?\//gi,
+      (_match,owner,repository,ref)=>`https://raw.githack.com/${owner}/${repository}/${!ref||ref==='latest'?'HEAD':ref}/`);
+}
+
+export function gameRoutedSource(text,prefix='/gn-math-resource',convert=gameSourceText) {
+  return convert(text).replace(/https?:\/\/(raw\.githubusercontent\.com|raw(?:cdn)?\.githack\.com|unpkg\.com)\//gi,
+    (_match,host)=>`${prefix}/https/${host.toLowerCase()}/`);
+}
+
 export function repairGameResourcePath(pathname) {
 
   pathname=pathname.replace(/\/genizy\/google-class(?=@|\/)/g,'/taskmaster773/google-class')
-    .replace(/\/gh\/genizy\/ovo-3-dimension@[^/]+\//g,'/gh/bubblfan/ovo-3-dimension@102179bf4242fd237c46c555ba154c2f325d351c/');
+    .replace(/\/gh\/genizy\/ovo-3-dimension@[^/]+\//g,'/gh/bubblfan/ovo-3-dimension@102179bf4242fd237c46c555ba154c2f325d351c/')
+    .replace(/\/genizy\/ovo-3-dimension\/[^/]+\//g,'/bubblfan/ovo-3-dimension/102179bf4242fd237c46c555ba154c2f325d351c/')
+    .replace(/\/genizy\/fnaf\/[^/]+\//g,'/bubblfan/fnaf/HEAD/');
 
   return pathname.replace(/(\/web-ports\/fear-and-hunger-2(?:@[^/]+|\/[^/]+)\/(?:js\/plugins|data)\/)([^/]+\.(?:js|json))$/i,(_all,root,file)=>root+file.toLowerCase());
 }

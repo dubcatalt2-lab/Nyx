@@ -4,6 +4,7 @@ import {join,relative,resolve} from 'node:path';
 import {parse as parseHtml} from 'parse5';
 import {parse} from 'acorn';
 import {minify} from 'terser';
+import {gameSourceText} from '../relics/games/game-cdn.js';
 
 const revision='lesson-assets-3';
 const javascriptType=/^(?:(?:text|application)\/(?:java|ecma)script|text\/javascript1\.[0-5]|module)?$/i;
@@ -78,6 +79,7 @@ export async function buildLessonAssets(output,{cacheDirectory,reportPath}={}){
           result=script?{text:await compactLessonScript(source,{module:file.endsWith('.mjs'),seed:path}),scripts:1}:await compactLessonDocument(source,path);
           if(cachedFile)await writeFile(cachedFile,JSON.stringify(result));
         }
+        result.text=gameSourceText(result.text);
         await writeFile(file,result.text);
         const after=Buffer.byteLength(result.text);
         report.files++;report.scripts+=result.scripts;report.beforeBytes+=bytes.length;report.afterBytes+=after;

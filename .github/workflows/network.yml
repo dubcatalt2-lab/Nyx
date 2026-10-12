@@ -22,6 +22,9 @@ jobs:
       - run: npm run test:lesson-assets
       - run: node --test rituals/test-release-repairs.mjs
       - run: node rituals/test-cached-folder-navigation.mjs
+      - run: node rituals/test-retired-drop.mjs
+      - run: node rituals/test-relay-engine.mjs
+      - run: node rituals/test-relay-routing.mjs
       - run: npm --prefix connection run build
       - run: npm run test:network
       - run: node connection/isolated-smoke.mjs

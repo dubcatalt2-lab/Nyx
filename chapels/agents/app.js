@@ -1,6 +1,6 @@
 import {renderReply,scheduleReply} from './reply-content.js';
-const dropEmbed=new URLSearchParams(location.search).get('shell')==='drop'&&parent!==window;
-import {setupDropEmbed} from '../drop/ai-embed.mjs';
+
+
 import {setupKeys} from './keys.js?v=20261009-key-catalog-v1';
 import {readResponse} from './response.js';
 import {supportsConversationVoice} from './voice-capabilities.js';
@@ -17,10 +17,10 @@ function updateTheme(){const light=document.documentElement.dataset.theme==='lig
 $('themeToggle').onclick=()=>{const theme=document.documentElement.dataset.theme==='light'?'dark':'light';document.documentElement.dataset.theme=theme;try{localStorage.setItem('nook.theme',theme);}catch{}updateTheme();};updateTheme();
 const download=document.querySelector('.aside-bottom a[href="/download/nyx-agents.zip"]');download.innerHTML=icon('download')+'Download companion';
 const welcomeTemplate=document.getElementById('welcome').cloneNode(true);
-const picker=setupPicker($('model'),{compact:dropEmbed});
-if(dropEmbed){for(const [id,label] of [['dictate','Dictate message'],['voice','Voice conversation']]){const button=document.createElement('button');button.id=id;button.type='button';button.title=label;button.setAttribute('aria-label',label);button.setAttribute('aria-pressed','false');$('voiceSettings').before(button);}}
+const picker=setupPicker($('model'),{compact:false});
+
 const media=setupMedia({notice,sizePrompt,canSend:()=>!running&&(chatMode||connected)&&!!auth?.currentUser&&!!$('model').value,voiceModel:()=>{if(!chatMode){notice('Switch to Chat for model voice conversations.');return false;}if(!supportsConversationVoice(models.find(item=>item.id===$('model').value))){picker.openVoice();notice('Choose a model with native voice output.');return false;}return true;}});
-const keys=setupKeys({appName:dropEmbed?'Drop':'Nook',user:()=>auth?.currentUser,busy:()=>running,notice,changed:async()=>{media.stopVoice();await loadModels();}});
+const keys=setupKeys({appName:'Nook',user:()=>auth?.currentUser,busy:()=>running,notice,changed:async()=>{media.stopVoice();await loadModels();}});
 const screen=setupScreen({notice});
 const chats=setupChats({notice,busy:()=>running,changed:renderRecentSuggestions,open:item=>{
  media.reset();screen.stop();history=item.messages||[];
@@ -64,8 +64,8 @@ function showSendCooldown(response){
 }
 function sync(){ $('apiKeys').disabled=running;$('send').disabled=Date.now()<sendCooldownUntil||running||(!chatMode&&!connected)||!auth?.currentUser||!$('model').value;$('stop').hidden=!running;$('model').disabled=running;$('effortTrigger').disabled=running;$('newTask').disabled=running;$('chatMode').disabled=running;$('computerMode').disabled=running;$('connection').classList.toggle('online',connected);$('connection').innerHTML=connected?'<i></i> Companion connected':'<i></i> Companion offline';}
 async function local(route,body,signal){if(!pairingToken())throw Error('Open this page from Start-Nyx-Agents.cmd to pair your companion.');let response;try{response=await fetch('http://127.0.0.1:6768'+route,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+pairingToken(),...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),signal,targetAddressSpace:'loopback'});}catch(error){if(error.name==='AbortError')throw error;throw Error('Cannot reach the companion. Keep its window open and allow local-network access in your workspace.');}const data=await response.json();if(!response.ok)throw Error(data.error||'Companion request failed.');return data;}
-let dropLegacyBackend=false;
-async function api(route,body,signal,onProgress){const originalRoute=route;if(route==='/api/nyx-ai'&&keys.active())return keys.send(body,signal,onProgress);if(dropEmbed&&!dropLegacyBackend)route=route.replace(/^\/api\/nyx-ai(?=\/models|$)/,'/api/drop-ai');if(!dropEmbed)route=route.replace(/^\/api\/nyx-ai(?=\/models|$)/,'/api/nook-ai');const token=await auth?.currentUser?.getIdToken();if(!token)throw Error('Sign in to your account first.');const response=await fetch(route,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,'x-nyx-ai-provider':'shared',...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),signal});if(dropEmbed&&!dropLegacyBackend&&/^(localhost|127\.0\.0\.1)$/.test(location.hostname)&&originalRoute==='/api/nyx-ai/models'&&(response.status===404||response.headers.get('content-type')?.includes('text/html'))){dropLegacyBackend=true;document.querySelector('.footnote').textContent='Local preview uses existing account limits until the Drop backend is deployed.';return api(originalRoute,body,signal,onProgress);}showSendCooldown(response);return readResponse(response,onProgress);}
+
+async function api(route,body,signal,onProgress){if(route==='/api/nyx-ai'&&keys.active())return keys.send(body,signal,onProgress);route=route.replace(/^\/api\/nyx-ai(?=\/models|$)/,'/api/nook-ai');const token=await auth?.currentUser?.getIdToken();if(!token)throw Error('Sign in to your account first.');const response=await fetch(route,{method:body?'POST':'GET',headers:{Authorization:'Bearer '+token,'x-nyx-ai-provider':'shared',...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),signal});showSendCooldown(response);return readResponse(response,onProgress);}
 
 async function loadModels(){const accountId=auth?.currentUser?.uid,revision=keys.revision();try{const data=await keys.models()||await api('/api/nyx-ai/models'+(keys.active()?'?custom=1':''));if(accountId!==auth?.currentUser?.uid||revision!==keys.revision())return;models=(data.models||[]).filter(item=>(item.text!==false||item.outputModalities?.includes('audio'))&&!item.id.endsWith(':batch'));$('model').replaceChildren(...models.map(item=>new Option(item.label||item.id,item.id)));picker.set(models);sync();}catch(error){notice(error.message);}}
 async function files(path=''){const result=await local('/tool',{tool:'list',args:{path}});currentPath=path;$('files').replaceChildren();const add=(label,click,directory=false)=>{const button=document.createElement('button');button.className='file'+(directory?' directory':'');button.innerHTML=icon(directory?'folder':'file');button.append(document.createTextNode(label));button.onclick=()=>click().catch(error=>notice(error.message));$('files').append(button);};if(path)add('Parent folder',()=>files(path.split('/').slice(0,-1).join('/')),true);for(const entry of result.entries)add(entry.name,async()=>{if(entry.directory)return files(entry.path);const file=await local('/tool',{tool:'read',args:{path:entry.path}});$('previewPath').textContent=entry.path;$('previewContent').textContent=file.content;selectPanel(true);},entry.directory);}
@@ -73,12 +73,12 @@ function selectPanel(file){$('preview').hidden=!file;$('activity').hidden=file;$
 $('activityTab').onclick=()=>selectPanel(false);$('fileTab').onclick=()=>selectPanel(true);
 $('refresh').onclick=()=>files(currentPath).catch(error=>notice(error.message));
 $('connect').onclick=async()=>{try{if(!auth?.currentUser){$('login').showModal();return;}notice('Confirm the connection in the Windows dialog.');const result=await local('/connect',{});connected=result.connected;if(!connected)throw Error('Connection declined.');const status=await local('/status');$('folder').textContent=status.workspace;await files();notice('Connected to '+status.workspace);}catch(error){connected=false;notice(error.message);}finally{sync();}};
-async function initialize(){try{const config=await(await fetch('/api/founder-profile/auth-config',{cache:'no-store'})).json();if(!config.enabled)throw Error('Account sign-in is unavailable on this server.');const [appModule,module]=await Promise.all([import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')]);authModule=module;const app=appModule.getApps().find(item=>item.name==='nyx-founder-owner')||appModule.initializeApp({apiKey:config.apiKey,authDomain:config.projectId+'.firebaseapp.com',projectId:config.projectId},'nyx-founder-owner');auth=module.getAuth(app);await module.setPersistence(auth,module.browserLocalPersistence);module.onAuthStateChanged(auth,user=>{keys.bind(user?.uid||'');if(dropEmbed)parent.postMessage({type:'drop:account',signedIn:!!user,name:user?.displayName||'Drop account',uid:user?.uid||'',avatarUrl:user?.photoURL||''},location.origin);welcomeName=cleanGreetingName(user?.displayName);greetingIndex=0;chats.bind(user?.uid);if(user)loadGreetingName(user);$('account').innerHTML=icon('account')+(user?'Sign out':'Sign in');$('account').title=user?'Sign out':'Sign in';$('account').setAttribute('aria-label',user?'Sign out':'Sign in');if(user)loadModels();else{$('model').replaceChildren(new Option('Sign in to load models',''));picker.set([]);media.reset();}sync();});}catch(error){notice(error.message);}}
-$('account').onclick=async()=>{if(auth?.currentUser){await stop();await authModule.signOut(auth);connected=false;history=[];$('feed').replaceChildren();sync();}else {if(dropEmbed)setAuthMode(false);$('login').showModal();}};
+async function initialize(){try{const config=await(await fetch('/api/founder-profile/auth-config',{cache:'no-store'})).json();if(!config.enabled)throw Error('Account sign-in is unavailable on this server.');const [appModule,module]=await Promise.all([import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')]);authModule=module;const app=appModule.getApps().find(item=>item.name==='nyx-founder-owner')||appModule.initializeApp({apiKey:config.apiKey,authDomain:config.projectId+'.firebaseapp.com',projectId:config.projectId},'nyx-founder-owner');auth=module.getAuth(app);await module.setPersistence(auth,module.browserLocalPersistence);module.onAuthStateChanged(auth,user=>{keys.bind(user?.uid||'');welcomeName=cleanGreetingName(user?.displayName);greetingIndex=0;chats.bind(user?.uid);if(user)loadGreetingName(user);$('account').innerHTML=icon('account')+(user?'Sign out':'Sign in');$('account').title=user?'Sign out':'Sign in';$('account').setAttribute('aria-label',user?'Sign out':'Sign in');if(user)loadModels();else{$('model').replaceChildren(new Option('Sign in to load models',''));picker.set([]);media.reset();}sync();});}catch(error){notice(error.message);}}
+$('account').onclick=async()=>{if(auth?.currentUser){await stop();await authModule.signOut(auth);connected=false;history=[];$('feed').replaceChildren();sync();}else {$('login').showModal();}};
 let creatingAccount=false,authBusy=false;
 function setAuthMode(create){
  if(authBusy)return;creatingAccount=create;
- $('authTitle').textContent=dropEmbed?(create?'Create your Drop account':'Sign in to Drop'):(create?'Create an account':'Sign in');
+ $('authTitle').textContent=(create?'Create an account':'Sign in');
  $('authSubmit').textContent=create?'Create account':'Sign in';
  $('authSwitchHint').textContent=create?'Already have an account?':'New here?';
  $('authSwitch').textContent=create?'Sign in':'Create an account';
@@ -100,7 +100,7 @@ $('loginForm').onsubmit=async event=>{
  try{
   if(!auth)throw Error('Sign-in is still loading. Try again shortly.');
   if(creatingAccount){
-   const response=await fetch(dropEmbed?'/api/account/register':'/api/nook-account/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('signupUsername').value.trim().toLowerCase(),email:$('email').value.trim(),password:$('password').value})});
+   const response=await fetch('/api/nook-account/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('signupUsername').value.trim().toLowerCase(),email:$('email').value.trim(),password:$('password').value})});
    const data=await response.json();if(!response.ok)throw Object.assign(new Error(data.error||'Could not create your account.'),{registration:true});
    if(!data.customToken)throw Error('Missing sign-in token');
    try{await authModule.signInWithCustomToken(auth,data.customToken);}catch{throw Object.assign(new Error('Account created. Switch to Sign in to access it.'),{registration:true});}
@@ -229,5 +229,3 @@ $('effortSlider').oninput=()=>{$('effort').value=effortNames[Number($('effortSli
 $('effortPanel').addEventListener('beforetoggle',event=>{if(event.newState==='open'){refreshEffort();const rect=$('effortTrigger').getBoundingClientRect();const panel=$('effortPanel');panel.style.left=Math.max(12,Math.min(innerWidth-292,rect.left-90))+'px';panel.style.top=Math.max(12,$('composer').getBoundingClientRect().top-138)+'px';}});
 $('effortPanel').addEventListener('toggle',event=>{$('effortTrigger').setAttribute('aria-expanded',String(event.newState==='open'));});
 refreshEffort();
-
-if(dropEmbed)setupDropEmbed({user:()=>auth?.currentUser,signup:()=>{setAuthMode(true);$('login').showModal();}});

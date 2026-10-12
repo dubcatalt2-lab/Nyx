@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createServer as httpServer} from 'node:http';
-import {createServer as httpsServer} from 'node:https';
+import {createServer as httpsServer,request as httpsRequest} from 'node:https';
 import {once} from 'node:events';
 import {mkdtemp,readFile,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
@@ -28,6 +28,9 @@ const upstream=httpServer((request,response)=>{
  if(url.pathname==='/delayed'){response.setHeader('content-type','text/html');response.end('<h1>Waiting</h1><link rel="stylesheet" href="/color.css"><script src="/ready.js"></script>');return;}
  if(url.pathname==='/color.css'){response.setHeader('content-type','text/css');response.end('h1{color:rgb(0,128,0)}');return;}
  if(url.pathname==='/ready.js'){response.setHeader('content-type','text/javascript');response.end('document.querySelector("h1").textContent="Loaded"');return;}
+ if(url.pathname==='/heavy'){response.setHeader('content-type','text/html');response.end('<h1>Waiting</h1><link rel="stylesheet" href="/heavy.css"><script src="/heavy.js"></script>');return;}
+ if(url.pathname==='/heavy.css'){response.setHeader('content-type','text/css');response.end('.unused{color:black}'.repeat(3000)+'h1{color:rgb(0,128,0)}');return;}
+ if(url.pathname==='/heavy.js'){response.setHeader('content-type','text/javascript');response.end('var unused=1;'.repeat(6000)+'document.querySelector("h1").textContent="Compiled";');return;}
  if(url.pathname==='/cookies'){response.setHeader('content-type','application/json');response.end(JSON.stringify({cookie:request.headers.cookie||''}));return;}
  if(url.pathname==='/cors'){response.setHeader('access-control-allow-origin','https://a.example');response.setHeader('access-control-allow-credentials','true');response.end('allowed');return;}
  if(url.pathname==='/events'){response.setHeader('content-type','text/event-stream');response.write('data: '+(request.headers.cookie||'none')+'\n\n');return;}
@@ -78,6 +81,16 @@ try{
  assert.equal(await frame.locator('h1').evaluate(element=>getComputedStyle(element).color),'rgb(0, 128, 0)');
  delayRuntime=false;await frame.goto(original);
  console.log('PASS startup deadlock: queued authorization reaches the page before DOMContentLoaded; scripts and styles load');
+ const heavy=await context.newPage();
+ await heavy.goto('https://'+partition('https://large.example','nyx.test')+':'+port+'/content/page/'+encodeURIComponent('https://large.example/heavy'));
+ await heavy.getByRole('heading',{name:'Compiled'}).waitFor();
+ assert.equal(await heavy.locator('h1').evaluate(element=>getComputedStyle(element).color),'rgb(0, 128, 0)');
+ await heavy.close();
+ console.log('PASS large external scripts/styles compiled off the request thread and rendered');
+ const opaqueStatus=await new Promise((resolve,reject)=>{const request=httpsRequest('https://127.0.0.1:'+port+'/content/page/'+encodeURIComponent('https://a.example/color.css'),{rejectUnauthorized:false,headers:{host:partition('https://a.example','nyx.test')+':'+port,origin:'null'}},response=>{response.resume();resolve(response.statusCode)});request.on('error',reject);request.end();});
+ assert.equal(opaqueStatus,200,'Serialized opaque Origin must not break stylesheet loading');
+ assert.equal(requests.at(-1).origin,'null');
+ console.log('PASS opaque-origin stylesheet request preserves Origin null without failing URL parsing');
  assert.equal(await frame.evaluate(()=>document.cookie.includes('secret=')),false);
  assert.equal(await frame.evaluate(()=>globalThis.blocked),true);
  assert.equal(await frame.evaluate(async()=>{const response=await fetch('/cookies');return (await response.json()).cookie;}),'secret=a');

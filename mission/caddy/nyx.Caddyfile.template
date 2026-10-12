@@ -36,6 +36,10 @@
 }
 
 (nyx_proxy) {
+	@retired_app {
+		expression `{host} in ["drop.altarworship.org.uk", "drop.ridgewoodstem.org"] || {path}.matches("(?i)^/(?:drop|(?:apps|chapels)/drop|api/drop-ai)(?:/|$)")`
+	}
+	respond @retired_app "This app has been removed." 410
 	request_body {
 		max_size 2MB
 	}

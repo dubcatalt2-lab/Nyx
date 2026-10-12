@@ -11,10 +11,11 @@ import {source} from './address.mjs';
 import {content} from './transform.mjs';
 import {sessionStore} from './session-store.mjs';
 import {limits} from './frames.mjs';
+import {compiler} from './compiler.mjs';
 
 export function isolatedApplication({suffix=process.env.DOCUMENT_SUFFIX, directory=process.env.DOCUMENT_STATE_DIR, resolveDestination=destination, assetDirectory,protocol='https:'}={}){
   if(!suffix||!directory||!/^[a-z0-9.-]+$/.test(suffix))throw new Error('Document hosting configuration missing');
-  const sessions=sessionStore(directory),known=new Map(),tickets=new Map();
+  const sessions=sessionStore(directory),known=new Map(),tickets=new Map(),compilation=compiler();
   const serve=assets(assetDirectory,{isolated:true});
   function hostOf(request){return new URL(protocol+'//'+request.headers.host).hostname;}
   function targetFor(request,value){
@@ -29,6 +30,7 @@ export function isolatedApplication({suffix=process.env.DOCUMENT_SUFFIX, directo
   }
   function originalOrigin(value){
     if(!value)return '';
+    if(value==='null')return 'null';
     const url=new URL(value);
     const prefix=url.pathname.match(/^\/content\/[a-z0-9-]+\//i)?.[0];
     if(prefix){const target=new URL(source(url.href,prefix));if(partition(target.origin,suffix)===url.hostname)return target.origin;}
@@ -116,7 +118,7 @@ export function isolatedApplication({suffix=process.env.DOCUMENT_SUFFIX, directo
       const broker=new URL(url.origin);broker.hostname='documents.'+suffix;
       let length=0;
       const bounded=upstream.body?.pipeThrough(new TransformStream({transform(bytes,output){length+=bytes.length;if(length>limits.body)throw new Error('Document size limit');output.enqueue(bytes);}}));
-      const result=await content(new Response(bounded,{status:upstream.status,headers:upstream.headers}),target.href,url.origin+prefix,destination,mode,{isolated:true,broker:broker.origin,readyAt:Date.now(),cookies:JSON.stringify(session.cookies.snapshot(target.href))});
+      const result=await content(new Response(bounded,{status:upstream.status,headers:upstream.headers}),target.href,url.origin+prefix,destination,mode,{isolated:true,broker:broker.origin,readyAt:Date.now(),cookies:JSON.stringify(session.cookies.snapshot(target.href)),compile:compilation.compile});
       for(const [name,value]of result.headers){
         if(['set-cookie','content-encoding','transfer-encoding','connection','x-document-cookies','origin-agent-cluster','referrer-policy'].includes(name))continue;
         response.setHeader(name,value);
@@ -134,8 +136,10 @@ export function isolatedApplication({suffix=process.env.DOCUMENT_SUFFIX, directo
   };
   const server=httpServer(handler);
   server.on('upgrade',(request,socket,head)=>void network.upgrade(request,socket,head));
-  server.on('close',()=>network.close());
-  return {server,handler,upgrade:(...args)=>network.upgrade(...args),close:()=>network.close()};
+  let closing;
+  const close=()=>closing||=Promise.resolve().then(()=>{network.close();return compilation.close();});
+  server.on('close',()=>void close());
+  return {server,handler,upgrade:(...args)=>network.upgrade(...args),close};
 }
 function sessionCookie(id,suffix){return '__Secure_document='+id+'; Domain='+suffix+'; Path=/; Max-Age=2592000; Secure; HttpOnly; SameSite=None; Partitioned';}
 async function readBody(request,limit){const chunks=[];let size=0;for await(const bytes of request){size+=bytes.length;if(size>limit)throw new Error('Request limit');chunks.push(bytes);}return Buffer.concat(chunks);}

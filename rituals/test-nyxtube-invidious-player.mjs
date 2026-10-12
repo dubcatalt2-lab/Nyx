@@ -99,9 +99,5 @@ try {
   pending=true;await page.reload();await page.locator('.video-cover').first().click();await iframe.waitFor();assert.equal(detailCalls,beforeShorts+1);
   detailStatus=422;await page.reload();await page.locator('.video-cover').first().click();await page.waitForFunction(()=>document.querySelector('[data-notice]').textContent==='Detail service failed');assert.equal(await iframe.count(),0,'explicit video denials do not fall back');pending=false;
  }
- nativeAvailable=false;
- await page.goto(base+'/apps/drop/tube.html');assert.equal(await page.locator('.video-card').count(),1,'Drop keeps Shorts excluded');
- await page.locator('.video-cover').first().click();await page.locator('[data-watch-backup]').click();await iframe.waitFor();
- await page.evaluate(()=>postMessage({type:'drop:tube-pause'},location.origin));await page.waitForFunction(()=>!document.querySelector('[data-watch-player] iframe'));
- assert.deepEqual(errors,[]);console.log('PASS native-error fallback, explicit Invidious selection, initial state transfer, reachable player controls, return/cleanup, Shorts discovery-independent playback/cleanup, and Drop Shorts/pause isolation');
+ assert.deepEqual(errors,[]);console.log('PASS native-error fallback, explicit Invidious selection, initial state transfer, reachable player controls, return/cleanup, and Shorts discovery-independent playback/cleanup');
 }finally{await workspace.close();}

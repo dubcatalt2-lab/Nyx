@@ -8,7 +8,8 @@ import {gunzipSync} from 'node:zlib';
 
 const signatures=/ultraviolet|__uv|uv-iframe|uv\.(?:config|bundle|sw|handler)|bare-mux|baremux|bareclient|bare-client|libcurl|epoxy|wisp|scramjet|scram|rammerhead|fern|daydream|phproxy|glype|rewriteHTML|rewriteCSS|rewriteJS|rewriteUrl|proxyUrl|unproxyUrl|encodeUrl|decodeUrl|setTransport/gi;
 const prohibitedPaths=/uv|ultraviolet|bare|libcurl|epoxy|wisp|scram|rammerhead|rh|fern|daydream|phproxy|glype/i;
-export const prohibitedDependency=/@mercuryworkshop\/|^(?:bare-mux|baremux|bare-client|libcurl(?:\.js|-transport)?|epoxy(?:-tls|-transport)?|wisp(?:urr)?|scramjet(?:-controller)?|ultraviolet|rammerhead|fern|daydream)$/i;
+// Wispurr is an explicitly retained server dependency; browser output remains audited.
+export const prohibitedDependency=/@mercuryworkshop\/|^(?:bare-mux|baremux|bare-client|libcurl(?:\.js|-transport)?|epoxy(?:-tls|-transport)?|wisp|scramjet(?:-controller)?|ultraviolet|rammerhead|fern|daydream)$/i;
 const engineReference=/(?:@mercuryworkshop\/|\bBareMuxConnection\b|\bBareClient\b|\bScramjetController\b|\$scramjet|__uv\$|\bUVServiceWorker\b|\bUVClient\b|^(?:scramjet|bare-mux|baremux|epoxy|libcurl|wispurr|wisp|ultraviolet|rammerhead)$)/i;
 const digest=value=>createHash('sha256').update(value).digest('hex');
 const evidenceFile=fileURLToPath(new URL('../scrolls/release-evidence.json',import.meta.url));

@@ -10,7 +10,7 @@ assert(formatted.includes(sensitive.split('<textarea>')[0]));
 assert(formatted.includes('<textarea>  draft\n keep </textarea>'));
 assert(formatted.includes('const text="a  b";'));
 assert.match(formatted,/\n  <head>/);
-for(const path of ['index.html','apps/tutsi/index.html','apps/drop/index.html']){
+for(const path of ['index.html','apps/tutsi/index.html']){
  const html=await readFile(sourceFile('dist/'+path),'utf8');assert(html.split('\n').length>20,path);
  const src=[...html.matchAll(/<script\b[^>]*src="([^"]+)"/g)].at(-1)?.[1];assert(src,path);
  const loader=await readFile(sourceFile('dist'+src),'utf8');const tree=parse(loader,{ecmaVersion:'latest'});
@@ -27,4 +27,4 @@ for(const path of ['index.html','apps/tutsi/index.html','apps/drop/index.html'])
 for(const path of ['script.js','styles.css','ai.html']){
  const code=await readFile(sourceFile('dist/'+path),'utf8');assert(code.split('\n').length>30,path);
 }
-console.log('PASS multiline HTML/JS/CSS, intact whitespace-sensitive content and chunked UTF-8 entry payloads for Nyx/Tutsi/Drop');
+console.log('PASS multiline HTML/JS/CSS, intact whitespace-sensitive content and chunked UTF-8 entry payloads for Nyx/Tutsi');

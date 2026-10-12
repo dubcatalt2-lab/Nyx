@@ -20,7 +20,7 @@ Costs $5 and $10.
 
 `+'```js\nconst literal = "$e$ \\{x\\}";\n'+'z'.repeat(500)+'\n```\n\n'+'Long paragraph. '.repeat(3000)+'END OF LONG REPLY';
 try{
- for(const shell of ['nook','drop']){
+ for(const shell of ['nook']){
   const page=await workspace.newPage({viewport:{width:1280,height:900}});
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.route('http://localhost:6767/**',async route=>{
@@ -36,10 +36,8 @@ try{
    if(r.request().method()==='POST'&&/ai/.test(url))return r.fulfill({contentType:'text/event-stream',body:'data: '+JSON.stringify({model:'anthropic/claude-test',choices:[{finish_reason:'stop',delta:{content:answer}}]})+'\n\ndata: [DONE]\n\n'});
    return r.fulfill({json:{profile:{handle:'tester'}}});
   });
-  await page.addInitScript(()=>localStorage.setItem('drop.setupComplete','1'));
-  await page.goto('http://localhost:6767/apps/'+(shell==='drop'?'drop':'agents')+'/');
-  if(shell==='drop')await page.locator('#aiNav').click();
-  const ui=shell==='drop'?page.frameLocator('#aiFrame'):page;
+  await page.goto('http://localhost:6767/apps/agents/');
+  const ui=page;
   await ui.locator('#model option[value="anthropic/claude-test"]').waitFor({state:'attached'});
   await ui.locator('#prompt').fill('Explain the equation');await ui.locator('#send').click();
   const reply=ui.locator('.message.assistant .message-content').last();

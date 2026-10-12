@@ -14,7 +14,8 @@ import {createRemoteDesktop} from './scripture/remote-desktop.mjs';
 import {createNyxCloudDesktop} from './scripture/nyxcloud-desktop.mjs';
 import {createLoremCloud} from './scripture/nyxcloud-lorem.mjs';
 import {isNookRequest} from './scripture/nook-policy.mjs';
-import {createDropOwnerScope} from './scripture/drop-owner.mjs';
+import {retiredDrop,retiredDropHosts} from './scripture/retired-drop.mjs';
+import {startWispurr} from './scripture/relay-engine.mjs';
 import {startMemoryMonitor} from './scripture/memory-monitor.mjs';
 import {createAppTraffic} from './scripture/app-traffic.mjs';
 import {supportsConversationVoice} from './chapels/agents/voice-capabilities.js';
@@ -105,6 +106,7 @@ let catClassGamesCache = { games: [], expires: 0, promise: null };
 let catClassCoverUrls = new Set();
 const nyxCustomRoleLabelLimit = 64;
 const app = express();
+app.use(retiredDrop);
 installNookDesktopRelease(app);
 app.use(retiredLinkGenerator);
 app.use('/nook-desktop',(_req,res)=>res.status(404).end());
@@ -112,11 +114,8 @@ const appTraffic = createAppTraffic({file:process.env.NYX_TRAFFIC_FILE || (proce
 app.use(appTraffic.middleware);
 const gameConnection = createGameConnection();
 startMemoryMonitor({details: () => ({gameProxy: gameConnection.stats()})});
-const dropOwnerScope=createDropOwnerScope({verify:async token=>(await linkGeneratorFirebase()).auth.verifyIdToken(token,true)});
-app.use(dropOwnerScope.middleware);
 app.get(['/agents','/agents/'],(_req,res)=>res.redirect(302,'/apps/agents/'));
 app.get('/',(req,res,next)=>['nook.nyxlearning.org','nook.donateyourboat.us'].includes(req.hostname)?res.set({'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}).sendFile(sourceFile(join(staticRoot,'apps','agents','index.html')),{dotfiles:'allow'}):next());
-app.get('/',(req,res,next)=>['drop.ridgewoodstem.org','drop.altarworship.org.uk'].includes(req.hostname)?res.set({'Cache-Control':'no-store','Referrer-Policy':'no-referrer'}).sendFile(sourceFile(join(staticRoot,'apps','drop','index.html')),{dotfiles:'allow'}):next());
 app.get('/download/nyx-agents.zip',async(_req,res)=>{try{res.set({'Content-Type':'application/zip','Content-Disposition':'attachment; filename="Nyx-Agents.zip"','Cache-Control':'no-store'}).send(await companionZip(__dirname));}catch{res.status(503).send('The companion download is unavailable.');}});
 installTutsiCrawlerControls(app);
 app.get(["/proxy-assets.json", "/frontend-assets.json"], (_req,res)=>res.status(404).end());
@@ -587,7 +586,8 @@ function cacheNyxCustomHostnameDecision(hostname, allowed) {
 async function nyxCustomHostnameAllowed(hostname) {
   const normalized = normalizeNyxCustomHostname(hostname);
   if (!normalized) return false;
-  if(['nook.nyxlearning.org','nook.donateyourboat.us','robotics.ridgewoodstem.org','drop.ridgewoodstem.org','drop.altarworship.org.uk','nyx.ridgewoodstem.org'].includes(normalized))return true;
+  if(retiredDropHosts.has(normalized))return false;
+  if(['nook.nyxlearning.org','nook.donateyourboat.us','robotics.ridgewoodstem.org','nyx.ridgewoodstem.org'].includes(normalized))return true;
   const configuredHostnames = [...applicationAllowedOrigins, process.env.NYX_PUBLIC_ORIGIN, ...tutsiHostnames]
     .map(value => normalizeNyxCustomHostname(value))
     .filter(Boolean);
@@ -2237,7 +2237,7 @@ async function nyxBudgetedAiFetch(provider,url,options) {
 }
 
 app.use((req,res,next)=>{
-  const appRoute=/^\/api\/(drop|nook|tutsi)-ai(?:\/(?:models|usage|media(?:\/[A-Za-z0-9-]+(?:\/content)?)?))?$/.exec(req.path);
+  const appRoute=/^\/api\/(nook|tutsi)-ai(?:\/(?:models|usage|media(?:\/[A-Za-z0-9-]+(?:\/content)?)?))?$/.exec(req.path);
   if(appRoute&&['GET','POST'].includes(req.method)){
     req.nyxAiApp=appRoute[1];req.url=req.url.replace('/api/'+appRoute[1]+'-ai','/api/nyx-ai');
   }
@@ -3782,7 +3782,7 @@ function nyxAvatarDecorationValue(value, fallback = "none") {
 }
 
 function founderProfileConfig() {
-  return { administratorUid: dropOwnerScope.uid() || String(process.env.NYX_FOUNDER_PROFILE_ADMIN_UID || "").trim() };
+  return { administratorUid: String(process.env.NYX_FOUNDER_PROFILE_ADMIN_UID || "").trim() };
 }
 
 function founderProfileText(value, fallback, limit) {
@@ -4435,7 +4435,7 @@ async function ownerDashboardActor(req, requiredPermission = "dashboard:view") {
   let administration = {};
   if (token.uid === ownerUid) {
     administration = { role: "owner" };
-    if (!dropOwnerScope.uid()) await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).set({
+    await firebase.firestore.collection("nyxUserAdministration").doc(token.uid).set({
       role: "owner",
       owner: true,
       updatedAt: new Date().toISOString()
@@ -13898,6 +13898,7 @@ async function startNyxServer() {
   const server = createServer((req, res) => app(req, res));
   const chatSocketServer = attachNyxChatSocketServer(server);
   const serverSockets = new Set();
+  let relayPromise;
 
   server.on("connection", socket => {
     serverSockets.add(socket);
@@ -13910,6 +13911,18 @@ async function startNyxServer() {
       upgradePath = new URL(req.url || "/", "http://localhost").pathname;
     } catch {
       rejectUpgrade(socket, "400 Bad Request");
+      return;
+    }
+    if (retiredDropHosts.has(String(req.headers.host||'').split(':')[0].toLowerCase().replace(/\.$/,''))) { rejectUpgrade(socket,'410 Gone');return; }
+    if (upgradePath === '/api/relay') {
+      let origin;
+      try { origin=new URL(req.headers.origin); } catch { rejectUpgrade(socket);return; }
+      if (!['http:','https:'].includes(origin.protocol) || origin.host!==req.headers.host && !applicationAllowedOrigins.includes(origin.origin)) { rejectUpgrade(socket);return; }
+      try {
+        relayPromise ||= startWispurr({onFailure:()=>{relayPromise=null;console.error('Relay worker stopped.');}}).catch(error=>{relayPromise=null;throw error;});
+        const relay=await relayPromise;
+        if (!socket.destroyed && !shuttingDown) relay.route(req,socket,head);
+      } catch { rejectUpgrade(socket,'503 Service Unavailable'); }
       return;
     }
     if (upgradePath === '/api/nyxcloud/socket') { nyxCloudDesktop.upgrade(req,socket,head);return; }
@@ -13940,7 +13953,8 @@ async function startNyxServer() {
     shuttingDown = true;
 
     chatSocketServer.disconnectSockets(true);
-    server.close(() => Promise.allSettled([appTraffic.close()]).then(() => process.exit(exitCode)));
+    const relayStopped=relayPromise?.then(relay=>relay.stop());
+    server.close(() => Promise.allSettled([appTraffic.close(),relayStopped]).then(() => process.exit(exitCode)));
     setTimeout(() => {
       for (const socket of serverSockets) socket.destroy();
     }, 1_000).unref();

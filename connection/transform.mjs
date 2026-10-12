@@ -53,7 +53,10 @@ function scriptText(text,base,prefix,module){
     const callable = /^(FunctionDeclaration|FunctionExpression|ArrowFunctionExpression)$/.test(node.type);
     if (node.type === 'FunctionDeclaration' || node.type === 'ClassDeclaration') bind(node.id, parent);
     const scope = ['Program','BlockStatement','CatchClause','ForStatement','ForInStatement','ForOfStatement'].includes(node.type) || callable ? {names:new Map(),parent,callable:callable || node.type === 'Program'} : parent;
-    nodes.push({node,scope,parent:owner,key});
+    const callee=node.callee;
+    const callName=callee?.type==='Identifier'?callee.name:callee?.type==='MemberExpression'?(callee.computed?callee.property.value:callee.property.name):'';
+    const memberName=node.type==='MemberExpression'?(node.computed?node.property.value:node.property.name):'';
+    if (node.type === 'Identifier' && node.name === 'location' || ['location','postMessage'].includes(memberName) || ['ImportDeclaration','ExportNamedDeclaration','ExportAllDeclaration','ImportExpression'].includes(node.type) || ['fetch','WebSocket','EventSource','Worker','SharedWorker','importScripts','open'].includes(callName)) nodes.push({node,scope,parent:owner,key});
     if (callable) { bind(node.id,scope);node.params.forEach(parameter => bind(parameter,scope)); }
     if (node.type === 'CatchClause') bind(node.param,scope);
     if (node.type === 'VariableDeclaration') {
@@ -62,6 +65,7 @@ function scriptText(text,base,prefix,module){
       node.declarations.forEach(declaration => bind(declaration.id,owner,{init:declaration.init}));
     }
     if (node.type === 'ImportDeclaration') node.specifiers.forEach(specifier => bind(specifier.local,scope));
+    if (node.type === 'Identifier' || node.type === 'Literal' || node.type === 'PrivateIdentifier') return;
     for (const key in node) {
       const value=node[key];
       if (Array.isArray(value)) { for(const child of value)index(child,scope,node,key); }
@@ -233,7 +237,10 @@ export async function content(response, base, prefix, destination = '', mode = '
   headers.set('cache-control', 'no-store');
   let body = response.body;
   if (/text\/html|application\/xhtml\+xml/i.test(type)) body = document(await response.text(), base, prefix, context);
-  else if (/text\/css/i.test(type)) body = stylesheet(await response.text(), base, prefix);
+  else if (/text\/css/i.test(type)) {
+    const text=await response.text();
+    body=context.compile&&text.length>=32768?await context.compile('css',text,base,prefix,mode):stylesheet(text,base,prefix);
+  }
   else if (/javascript|ecmascript/i.test(type) || ['script','worker','sharedworker'].includes(destination)) {
     const text = await response.text();
     let data=false;
@@ -241,6 +248,7 @@ export async function content(response, base, prefix, destination = '', mode = '
       try{JSON.parse(text);data=true;}catch{}
     }
     if(data)body=text;
+    else if(context.compile&&text.length>=32768)body=await context.compile('js',text,base,prefix,mode);
     else{
       try { body = script(text, base, prefix, true); }
       catch { body = script(text, base, prefix, false); }

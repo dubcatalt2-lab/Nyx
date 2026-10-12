@@ -5,6 +5,7 @@ import {prohibitedDependency as prohibited} from './audit-release.mjs';
 
 const root=resolve(process.argv[2]||'.');
 const manifest=JSON.parse(await readFile(join(root,'package.json'),'utf8'));
+assert.equal(manifest.dependencies.wispurr,'4.2.0','Explicitly retained server relay must stay pinned');
 for(const name of Object.keys({...manifest.dependencies,...manifest.devDependencies}))assert(!prohibited.test(name),name);
 const lock=JSON.parse(await readFile(join(root,'package-lock.json'),'utf8'));
 let entries=0;
@@ -35,7 +36,8 @@ for(const path of ['barebooks','incense','relics/transports','pilgrim.sw.js','ve
 assert(!Object.hasOwn(manifest.scripts,'start:wisp'));
 assert.equal(manifest.scripts['start:relay'],'node relay.js');
 console.log(`PASS manifest: no prohibited dependency`);
+console.log('PASS Wispurr 4.2.0 explicitly retained on the server; other removed engines remain prohibited');
 console.log(`PASS regenerated lockfile: ${entries} entries, no prohibited package or dependency`);
 console.log(`PASS installed tree: ${installed} packages, no prohibited package`);
-console.log('PASS copied runtimes, workers, relay and asset-copy generator are absent');
-console.log('PASS start:relay uses the original implementation');
+console.log('PASS retired browser-engine copies, old entry paths and asset-copy generator are absent');
+console.log('PASS start:relay uses the custom document implementation; retained Wispurr is a separate server endpoint');

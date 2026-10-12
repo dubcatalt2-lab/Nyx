@@ -76,7 +76,7 @@ export async function buildFrontendAssets(output,files,lessonHtml) {
     }
   }
   const entryDocuments={};
-  for(const path of ['index.html','apps/tutsi/index.html','apps/drop/index.html']) {
+  for(const path of ['index.html','apps/tutsi/index.html']) {
     const original=scrambleInlineScripts(await readFile(sourceFile(join(output,path)),'utf8'));
     const loader=posix.join(posix.dirname('/'+path),'@r'+createHash('sha256').update('entry:'+path).digest('hex').slice(0,24)+'!.js');
     // Decode as UTF-8, preserve the original document URL, script order and handlers.

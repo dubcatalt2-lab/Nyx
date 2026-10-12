@@ -52,12 +52,12 @@ try {
   assert(await page.locator('.game-card').count()>0);
   await page.locator('[data-library="gn"]').click();
   assert(await page.locator('.game-card').count()>0);
-  // Exercise the exact player toolbar, including the Drop variant. Game documents
+  // Exercise the exact player toolbar. Game documents
   // are fixtures so this label/navigation regression never contacts providers.
   await page.route('**/*',route=>route.request().isNavigationRequest()&&route.request().frame()!==page.mainFrame()
     ?route.fulfill({contentType:'text/html',body:'<!doctype html><title>Game fixture</title><p>Ready</p>'})
     :route.continue());
-  for(const width of [1365,390])for(const path of ['/assets/games/','/apps/drop/games.html']){
+  for(const width of [1365,390])for(const path of ['/assets/games/']){
     await page.setViewportSize({width,height:900});
     await page.goto(base+path);
     await page.locator('.game-card').first().waitFor({timeout:30000});

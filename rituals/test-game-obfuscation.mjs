@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
-import {readFile} from 'node:fs/promises';
+import {readFile,writeFile,mkdtemp,mkdir,rm} from 'node:fs/promises';
+import {resolve,join,dirname,basename} from 'node:path';
+import {tmpdir} from 'node:os';
 import {obscureGameStrings} from './build-game-strings.mjs';
-import {transformWorkspaceStrings} from './build-workspace-scramble.mjs';
+import {transformWorkspaceStrings,scrambleWorkspaceOutput} from './build-workspace-scramble.mjs';
 
 const fixture=String.raw`"use strict";
 const localStorage=new Map();
@@ -41,3 +43,22 @@ const isolated=vm.createContext({URL});
 vm.runInContext('const gameSourceText='+helpers.gameSourceText.toString()+';const convert='+helpers.gameRoutedSource.toString()+';globalThis.result=convert("https://cdn.jsdelivr.net/gh/a/b@latest/file.js","https://app.test/gn-math-resource",gameSourceText)',isolated);
 assert.equal(isolated.result,'https://app.test/gn-math-resource/https/raw.githack.com/a/b/HEAD/file.js');
 console.log('PASS production string transform: serialized game helpers execute in an isolated realm without module decoder bindings');
+
+const fixtureRoot=await mkdtemp(join(tmpdir(),'nyx-helper-build-'));
+try{
+ for(const path of ['assets/games/game-cdn.js','assets/games/opaque/hash/entry.js']){
+  await mkdir(dirname(join(fixtureRoot,path)),{recursive:true});
+  await writeFile(join(fixtureRoot,path),await readFile('relics/games/game-cdn.js','utf8'));
+ }
+ await scrambleWorkspaceOutput(fixtureRoot);
+ for(const path of ['assets/games/game-cdn.js','assets/games/opaque/hash/entry.js']){
+  const module=await import('data:text/javascript,'+encodeURIComponent(await readFile(join(fixtureRoot,path),'utf8')));
+  const frame=vm.createContext({URL});
+  vm.runInContext('const gameSourceText='+module.gameSourceText.toString()+';const convert='+module.gameRoutedSource.toString()+';globalThis.result=convert("https://cdn.jsdelivr.net/gh/a/b@latest/file.js","https://app.test/gn-math-resource",gameSourceText)',frame);
+  assert.equal(frame.result,'https://app.test/gn-math-resource/https/raw.githack.com/a/b/HEAD/file.js');
+ }
+ console.log('PASS actual workspace build: canonical and scattered module copies retain standalone helper semantics');
+}finally{
+ assert.equal(dirname(resolve(fixtureRoot)),resolve(tmpdir()));assert(basename(fixtureRoot).startsWith('nyx-helper-build-'));
+ await rm(fixtureRoot,{recursive:true,force:true});
+}

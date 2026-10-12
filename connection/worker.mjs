@@ -88,6 +88,7 @@ self.addEventListener('fetch', event => {
     if (!session) return new Response('<!doctype html><title>Reconnect</title><p>Return to the document window and press Open to reconnect.</p>', {status: 409, headers: {'content-type':'text/html'}});
     try {
       const isWorker = ['worker','sharedworker'].includes(event.request.destination);
+      const workerEntry=url.searchParams.has('document-mode');
       const mode = isWorker && url.searchParams.get('document-mode') === 'module' ? 'module' : 'classic';
       if (isWorker) url.searchParams.delete('document-mode');
       if (isWorker) url.searchParams.delete('document-ready-at');
@@ -117,7 +118,7 @@ self.addEventListener('fetch', event => {
           }
         }
       }
-      return await content(response, target, prefix, event.request.destination, mode,{readyAt:session.readyAt,cookies:JSON.stringify(profile.cookies.snapshot(target))});
+      return await content(response, target, prefix, event.request.destination, mode,{workerEntry,readyAt:session.readyAt,cookies:JSON.stringify(profile.cookies.snapshot(target))});
     } catch {
       return new Response('Document request failed', {status: 502, headers: {'content-type': 'text/plain'}});
     }

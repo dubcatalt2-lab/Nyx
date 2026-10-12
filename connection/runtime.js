@@ -2,15 +2,17 @@ import {socketClass} from './socket.mjs';
 import {Cookies} from './cookies.mjs';
 import {eventClass} from './events.mjs';
 import {source,route} from './address.mjs';
-import {partitionOrigin} from './partition.mjs';
+import {partitionOrigin,partitionSuffix} from './partition.mjs';
 import {fragment,stylesheet,candidates} from './transform.mjs';
 
 (() => {
   const current = globalThis.document?.currentScript;
   const path = location.pathname.match(/^\/content\/[a-z0-9-]+\//i)?.[0];
-  const prefix = current?.dataset.route || globalThis.documentContext?.prefix || path;
+  // Static module imports execute before the worker's own initialization statements.
+  const workerSuffix=!globalThis.document&&partitionSuffix(location.hostname);
+  const prefix = current?.dataset.route || globalThis.documentContext?.prefix || (workerSuffix?location.origin+path:path);
   const routePath=/^https?:/.test(prefix||'')?new URL(prefix).pathname:prefix;
-  const isolated=current?.dataset.isolated==='1'||globalThis.documentContext?.isolated===true;
+  const isolated=current?.dataset.isolated==='1'||globalThis.documentContext?.isolated===true||!!workerSuffix;
   const broker=current?.dataset.broker||globalThis.documentContext?.broker||location.origin;
   const base = current?.dataset.document || globalThis.documentContext?.base || (path ? decodeURIComponent(location.pathname.slice(path.length)) : '');
   const readyAt=Number(current?.dataset.readyAt||globalThis.documentContext?.readyAt||new URL(location.href).searchParams.get('document-ready-at')||0);
@@ -26,7 +28,8 @@ import {fragment,stylesheet,candidates} from './transform.mjs';
     }catch{}
     return new URL(initial);
   };
-  const currentBase=()=>globalThis.document?.querySelector('base[href]')?base:pageAddress().href;
+  const nativeBase=globalThis.Node&&Object.getOwnPropertyDescriptor(Node.prototype,'baseURI');
+  const currentBase=()=>globalThis.document&&nativeBase?.get?restore(nativeBase.get.call(document)):pageAddress().href;
   if(typeof document!=='undefined')globalThis.addEventListener('message',event=>{
     if(event.source!==parent||event.origin!==broker||event.data?.type!=='document-history')return;
     if(event.data.action==='back')history.back();
@@ -133,13 +136,18 @@ import {fragment,stylesheet,candidates} from './transform.mjs';
     addEventListener('hashchange',publish);
   }
   let cookieWrites=Promise.resolve();
+  const NativeRequest=globalThis.Request;
+  globalThis.Request=new Proxy(NativeRequest,{construct(target,args,newTarget){
+    if(args.length&&!(args[0] instanceof NativeRequest))args[0]=address(args[0]);
+    return Reflect.construct(target,args,newTarget);
+  }});
   globalThis.fetch = (input, init) => {
     if(isolated){
       const pending=cookieWrites;
       cookieWrites=pending.catch(()=>{});
-      return pending.then(()=>input instanceof Request?nativeFetch(new Request(address(input.url),input),init):nativeFetch(address(input),init));
+      return pending.then(()=>nativeFetch(input instanceof NativeRequest?input:address(input),init));
     }
-    if (input instanceof Request) return nativeFetch(new Request(address(input.url), input), init);
+    if (input instanceof NativeRequest) return nativeFetch(input, init);
     return nativeFetch(address(input), init);
   };
   if (globalThis.XMLHttpRequest) {
@@ -147,11 +155,16 @@ import {fragment,stylesheet,candidates} from './transform.mjs';
     XMLHttpRequest.prototype.open = function(method, url, ...rest) { return open.call(this, method, address(url), ...rest); };
   }
   const restore=value=>{
+    if(!value)return value;
     const url=new URL(value,String(value).startsWith(routePath)?location.href:base);
     if(isolated&&url.pathname.startsWith(routePath)){try{return source(url.href,routePath);}catch{}}
     if(url.origin===location.origin&&url.pathname.startsWith(prefix))return decodeURIComponent(url.pathname.slice(prefix.length))+url.search+url.hash;
     return value;
   };
+  for(const [prototype,key]of [[NativeRequest.prototype,'url'],[Response.prototype,'url'],[globalThis.XMLHttpRequest?.prototype,'responseURL'],[globalThis.Node?.prototype,'baseURI'],[globalThis.Document?.prototype,'URL'],[globalThis.Document?.prototype,'documentURI']]){
+    const descriptor=prototype&&Object.getOwnPropertyDescriptor(prototype,key);
+    if(descriptor?.get&&descriptor.configurable)Object.defineProperty(prototype,key,{...descriptor,get(){return restore(descriptor.get.call(this));}});
+  }
   if(globalThis.WebSocket){
     const Original=globalThis.WebSocket;
     if(globalThis.EventSource){

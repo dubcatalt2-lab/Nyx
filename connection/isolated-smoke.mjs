@@ -35,6 +35,8 @@ const upstream=httpServer((request,response)=>{
  if(url.pathname==='/cors'){response.setHeader('access-control-allow-origin','https://a.example');response.setHeader('access-control-allow-credentials','true');response.end('allowed');return;}
  if(url.pathname==='/events'){response.setHeader('content-type','text/event-stream');response.write('data: '+(request.headers.cookie||'none')+'\n\n');return;}
  if(url.pathname==='/worker'){response.setHeader('content-type','text/javascript');response.end('postMessage("ready")');return;}
+ if(url.pathname==='/module-runtime'){response.setHeader('content-type','text/javascript');response.end('import "./module-dependency";postMessage({dependency:globalThis.dependencyReady,own:typeof globalThis.documentAddress});');return;}
+ if(url.pathname==='/module-dependency'){response.setHeader('content-type','text/javascript');response.end('globalThis.dependencyReady=typeof globalThis.documentAddress;');return;}
  if(url.pathname==='/worker-cookies'){response.setHeader('content-type','text/javascript');response.end('fetch("https://a.example/cookies").then(response=>response.json()).then(value=>postMessage(value.cookie));');return;}
  if(url.pathname==='/shared'){response.setHeader('content-type','text/javascript');response.end('let count=0;onconnect=e=>{e.ports[0].postMessage(++count)}');return;}
  if(url.pathname==='/set-visible'){response.setHeader('set-cookie','serverVisible=yes; Path=/; Secure');response.end('saved');return;}
@@ -64,6 +66,7 @@ try{
   shellUrl='http://127.0.0.1:'+port+'/study.html';
  }
  context=await browser.newContext({ignoreHTTPSErrors:true});const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
+ if(process.env.NYX_ENGINE_DEBUG){page.on('console',event=>{if(event.type()==='error')console.log('Browser:',event.text());});context.on('response',response=>{if(response.status()>=400)console.log('Response:',response.status(),response.url());});page.on('requestfailed',request=>console.log('Request:',request.failure()?.errorText,request.url()));}
  if(shellUrl){
   await page.addInitScript(origin=>{localStorage.setItem('nyx.documentOrigin',origin);localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.releaseNotes.2026-10-02-nyx-1.6.8.seen','2026-10-02-nyx-1.6.8')},origin);
   await page.goto(shellUrl);
@@ -75,6 +78,19 @@ try{
  for(let i=0;i<100;i++){frame=page.frames().find(frame=>frame.url().includes('/content/'));if(frame&&await frame.locator('h1').count())break;await page.waitForTimeout(100);}
  assert.equal(await frame.locator('h1').textContent(),'a');
  await frame.evaluate(()=>Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>setTimeout(()=>reject(Error('Worker not ready')),10000))]));console.log('PASS isolated worker ready');
+ const compatibility=await frame.evaluate(async()=>{
+  const result={};
+  result.request=new Request('/cookies').url;
+  result.base=document.baseURI;
+  result.response=(await fetch('/cookies')).url;
+  result.xhr=await new Promise(resolve=>{const request=new XMLHttpRequest();request.open('GET','/cookies');request.onload=()=>resolve(request.responseURL);request.onerror=()=>resolve('error');request.send();});
+  result.module=await new Promise(resolve=>{const worker=new Worker('/module-runtime',{type:'module'});const finish=value=>{clearTimeout(timer);worker.terminate();resolve(value);};const timer=setTimeout(()=>finish('timeout'),5000);worker.onmessage=e=>finish(e.data);worker.onerror=e=>finish('error: '+e.message);});
+  return result;
+ });
+ console.log('Runtime comparison regression:',JSON.stringify(compatibility));
+ assert.deepEqual(compatibility,{request:'https://a.example/cookies',base:'https://a.example/a',response:'https://a.example/cookies',xhr:'https://a.example/cookies',module:{dependency:'function',own:'function'}});
+ assert.equal(await frame.evaluate(async()=>{const request=new Request('/cookies',{headers:{'x-test':'request'},credentials:'include'});const response=await fetch(request.clone());return (await response.json()).cookie;}),'secret=a');
+ console.log('PASS Request construction/cloning, original request/response/XHR/base addresses, module runtime before dependencies');
  const original=frame.url();delayRuntime=true;
  await frame.goto(original.replace(/%2Fa$/,'%2Fdelayed'));
  await frame.locator('h1').filter({hasText:'Loaded'}).waitFor({timeout:10000});

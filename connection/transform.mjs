@@ -164,13 +164,13 @@ export function candidates(text, base, prefix) {
   return output.join(', ');
 }
 
-function markup(tree, base, prefix, inserted = false) {
+function markup(tree, base, prefix) {
   let effective = base, found = false, head;
   visit(tree, node => {
     if (node.tagName === 'head') head = node;
     if (node.tagName === 'base' && !found) {
       const attr = node.attrs.find(item => item.name === 'href');
-      if (attr) { effective = new URL(attr.value, base).href; found = true; }
+      if (attr) { try { effective = new URL(attr.value, base).href; } catch {} found = true; }
     }
   });
   visit(tree, node => {
@@ -188,14 +188,14 @@ function markup(tree, base, prefix, inserted = false) {
       else if (item.name === 'srcset') item.value = candidates(item.value, effective, prefix);
       else if (item.name === 'style') item.value = stylesheet(item.value, effective, prefix, 'declarationList');
       else if (item.name.startsWith('on')) {
-        try{item.value = script(item.value, effective, prefix);}catch(error){if(!inserted||!(error instanceof SyntaxError))throw error;}
+        try{item.value = script(item.value, effective, prefix);}catch(error){if(!(error instanceof SyntaxError))throw error;}
       }
     }
     if (node.tagName === 'script' && !attr('src')) {
       const type = attr('type')?.value || '';
       if (!type || /^(module|text\/javascript|application\/javascript)$/i.test(type)) {
         for (const child of node.childNodes || []) if (child.nodeName === '#text') {
-          try{child.value = script(child.value, effective, prefix, type === 'module');}catch(error){if(!inserted||!(error instanceof SyntaxError))throw error;}
+          try{child.value = script(child.value, effective, prefix, type === 'module');}catch(error){if(!(error instanceof SyntaxError))throw error;}
         }
       }
     }
@@ -207,7 +207,7 @@ function markup(tree, base, prefix, inserted = false) {
 export function fragment(text, base, prefix, context) {
   const element=context?.localName?{nodeName:context.localName,tagName:context.localName,namespaceURI:context.namespaceURI||'http://www.w3.org/1999/xhtml',attrs:[],childNodes:[]}:null;
   const tree = element ? parseFragment(element, String(text)) : parseFragment(String(text));
-  markup(tree,base,prefix,true);
+  markup(tree,base,prefix);
   return serialize(tree);
 }
 
@@ -223,37 +223,46 @@ export function document(text, base, prefix, context={}) {
   return serialize(tree);
 }
 
+async function decodedText(response,headers){
+  const type=headers.get('content-type')||'';
+  const label=/charset\s*=\s*["']?([^\s;"']+)/i.exec(type)?.[1]||'utf-8';
+  let decoder;
+  try{decoder=new TextDecoder(label);}catch{decoder=new TextDecoder();}
+  const text=decoder.decode(await response.arrayBuffer());
+  if(type)headers.set('content-type',type.replace(/;\s*charset\s*=\s*(?:"[^"]*"|'[^']*'|[^;]*)/i,'')+'; charset=utf-8');
+  return text;
+}
+
 export async function content(response, base, prefix, destination = '', mode = 'classic', context={}) {
   const headers = new Headers(response.headers);
   for (const name of ['content-security-policy','content-security-policy-report-only','x-frame-options','content-length','content-encoding','set-cookie','clear-site-data','x-document-cookies']) headers.delete(name);
   if(context.isolated){
     headers.set('origin-agent-cluster','?1');headers.set('referrer-policy','unsafe-url');
     const allow=headers.get('access-control-allow-origin');
-    if(allow&&allow!=='*'){try{headers.set('access-control-allow-origin',partitionOrigin(new URL(allow).origin,new URL(prefix).origin));}catch{headers.delete('access-control-allow-origin');}}
+    if(allow&&allow!=='*'&&allow!=='null'){try{headers.set('access-control-allow-origin',partitionOrigin(new URL(allow).origin,new URL(prefix).origin));}catch{headers.delete('access-control-allow-origin');}}
   }
   const type = headers.get('content-type') || '';
   const location = headers.get('location');
   if (location) headers.set('location', route(location, base, prefix));
   headers.set('cache-control', 'no-store');
   let body = response.body;
-  if (/text\/html|application\/xhtml\+xml/i.test(type)) body = document(await response.text(), base, prefix, context);
-  else if (/text\/css/i.test(type)) {
-    const text=await response.text();
+  const redirect=[301,302,303,307,308].includes(response.status);
+  const program=['script','worker','sharedworker'].includes(destination);
+  if(redirect||[204,205,304].includes(response.status)||program&&!response.ok)return new Response([204,205,304].includes(response.status)?null:body,{status:response.status,headers});
+  if (['document','iframe','frame'].includes(destination)&&/text\/html|application\/xhtml\+xml/i.test(type)) body = document(await decodedText(response,headers), base, prefix, context);
+  else if (destination==='style'&&/text\/css/i.test(type)) {
+    const text=await decodedText(response,headers);
     body=context.compile&&text.length>=32768?await context.compile('css',text,base,prefix,mode):stylesheet(text,base,prefix);
   }
-  else if (/javascript|ecmascript/i.test(type) || ['script','worker','sharedworker'].includes(destination)) {
-    const text = await response.text();
-    let data=false;
-    if(!['script','worker','sharedworker'].includes(destination)){
-      try{JSON.parse(text);data=true;}catch{}
-    }
-    if(data)body=text;
-    else if(context.compile&&text.length>=32768)body=await context.compile('js',text,base,prefix,mode);
+  else if (program) {
+    if(mode==='module'&&type&&!/javascript|ecmascript/i.test(type))return new Response(body,{status:response.status,headers});
+    const text = await decodedText(response,headers);
+    if(context.compile&&text.length>=32768)body=await context.compile('js',text,base,prefix,mode);
     else{
       try { body = script(text, base, prefix, true); }
       catch { body = script(text, base, prefix, false); }
     }
-    if (['worker','sharedworker'].includes(destination)) {
+    if (['worker','sharedworker'].includes(destination)&&context.workerEntry!==false) {
       const runtime = JSON.stringify('/boot/runtime.js');
       body = 'globalThis.documentContext='+JSON.stringify({base,prefix,isolated:!!context.isolated,broker:context.broker||'',readyAt:context.readyAt||0})+';'+(mode === 'module' ? 'import ' + runtime + ';' : 'importScripts(' + runtime + ');') + '\n' + body;
     }

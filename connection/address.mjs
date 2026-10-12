@@ -3,7 +3,8 @@ import {partitionOrigin,partitionSuffix} from './partition.mjs';
 export function route(value, base, prefix) {
   const text = String(value);
   if (!text || text.startsWith('#')) return text;
-  const url = new URL(text, base);
+  let url;
+  try { url = new URL(text, base); } catch { return text; }
   const absolute=/^https?:/.test(prefix)?new URL(prefix):null;
   const path=absolute?.pathname||prefix;
   if (url.pathname.startsWith(path)) {

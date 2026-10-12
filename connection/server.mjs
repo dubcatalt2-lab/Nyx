@@ -1,7 +1,8 @@
 import {lookup} from 'node:dns/promises';
 import {BlockList, isIP} from 'node:net';
 import {validateHeaderName, validateHeaderValue} from 'node:http';
-import {Agent, fetch} from 'undici';
+import {fetch} from 'undici';
+import {connections} from './connections.mjs';
 import {WebSocketServer} from 'ws';
 import {pack, unpack, limits} from './frames.mjs';
 import {channel} from './channel.mjs';
@@ -50,7 +51,8 @@ function send(socket, bytes, fin) {
   });
 }
 
-export function createServer({allowed = async () => true, resolveDestination = destination, observe = () => {}, prepare=async()=>null,allowCrossOrigin=false} = {}) {
+export function createServer({allowed = async () => true, resolveDestination = destination, observe = () => {}, prepare=async()=>null,allowCrossOrigin=false,upstreamConnections} = {}) {
+  const pool=upstreamConnections||connections();
   const server = new WebSocketServer({noServer: true, maxPayload: limits.upload + limits.metadata + 9, perMessageDeflate: false});
   let active = 0;
   server.on('connection', (socket, request) => {
@@ -68,7 +70,7 @@ export function createServer({allowed = async () => true, resolveDestination = d
       if (busy) { socket.close(1008, 'One request per connection'); return; }
       clearTimeout(idle);
       busy = true;
-      let message, dispatcher, began = false;
+      let message, connection, began = false;
       const timeout = setTimeout(() => { controller.abort(); socket.terminate(); }, 45000);
       active++;
       try {
@@ -80,10 +82,10 @@ export function createServer({allowed = async () => true, resolveDestination = d
         if (!['GET','HEAD','POST','PUT','PATCH','DELETE','OPTIONS'].includes(method) || (['GET','HEAD'].includes(method) && body.length)) throw new Error('Unsupported method');
         const policy=await prepare(request,metadata);
         const headers = requestHeaders(policy?.headers||metadata.headers);
-        const {url, address, addresses = [address]} = await resolveDestination(metadata.url);
+        const resolved=await resolveDestination(metadata.url);
         controller.signal.throwIfAborted();
-        dispatcher = new Agent({connect: {autoSelectFamily: true, lookup: (_host, options, callback) => options?.all ? callback(null, addresses) : callback(null, address.address, address.family)}});
-        const response = await fetch(url, {dispatcher, method, headers, body: body.length ? body : undefined, redirect: 'manual', signal: controller.signal});
+        connection=pool.acquire(resolved);
+        const response = await fetch(resolved.url, {dispatcher:connection.dispatcher, method, headers, body: body.length ? body : undefined, redirect: 'manual', signal: controller.signal});
         const outgoing = [...response.headers].filter(([name]) => !excluded.has(name) && !['content-encoding','set-cookie'].includes(name));
         if(policy)outgoing.push(...await policy.receive(response));
         else for (const value of response.headers.getSetCookie()) outgoing.push(['set-cookie', value]);
@@ -110,7 +112,7 @@ export function createServer({allowed = async () => true, resolveDestination = d
         clearTimeout(timeout);
         active--;
         controller.abort();
-        await dispatcher?.destroy().catch(() => {});
+        connection?.release();
       }
     });
   });
@@ -123,7 +125,7 @@ export function createServer({allowed = async () => true, resolveDestination = d
         if (!socket.destroyed) server.handleUpgrade(request, socket, head, client => server.emit('connection', client, request));
       } catch { socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\nContent-Length: 0\r\n\r\n'); }
     },
-    close() { for (const socket of server.clients) socket.terminate(); server.close(); }
+    close() { for (const socket of server.clients) socket.terminate(); server.close(); if(!upstreamConnections)return pool.close(); }
   };
 }
 

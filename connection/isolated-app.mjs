@@ -149,7 +149,10 @@ export function isolatedApplication({suffix=process.env.DOCUMENT_SUFFIX, directo
   server.on('close',()=>void close());
   return {server,handler,upgrade:(...args)=>network.upgrade(...args),close};
 }
-function sessionCookie(id,suffix){return '__Secure_document='+id+'; Domain='+suffix+'; Path=/; Max-Age=2592000; Secure; HttpOnly; SameSite=None; Partitioned';}
+function sessionCookie(id,suffix){
+  // Browsers reject a parent-domain cookie on the reserved localhost suffix.
+  return '__Secure_document='+id+(suffix==='localhost'?'':'; Domain='+suffix)+'; Path=/; Max-Age=2592000; Secure; HttpOnly; SameSite=None; Partitioned';
+}
 async function readBody(request,limit){const chunks=[];let size=0;for await(const bytes of request){size+=bytes.length;if(size>limit)throw new Error('Request limit');chunks.push(bytes);}return Buffer.concat(chunks);}
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   isolatedApplication().server.listen(Number(process.env.PORT||8082),'127.0.0.1',()=>console.log('Document service listening'));

@@ -1,5 +1,17 @@
 # Engine comparison and regression repairs — 2026-10-12
 
+## Local preview activation
+
+The owner briefly requested restoring the reference engine, then explicitly said to update localhost first. No reference dependency was installed. The current engine and real server Wispurr remain selected.
+
+Localhost:8080 now serves the verified `.nyx-releases/release-20261012-engine-debug/site` artifact. Its document backend is `http://documents.localhost:8082`, with one `d-<hash>.localhost` origin per external site. Both listeners return health 200. Sessions are under the user's local application-data NyxPreview directory. Private launchers remain ignored and must not be printed.
+
+A real Chrome test of the proposed local backend first rejected `Domain=localhost` session cookies, causing `/api/ticket` and subresources to fail. Local sessions now use host-only Secure/HttpOnly cookies; production parent-domain cookie behavior is unchanged. New Chrome and Edge tests confirm ticket authorization and cookie persistence after reload through a localhost parent frame. This local-only change adds `connection/localhost-smoke.mjs` and its CI step.
+
+The live Chrome search at localhost:8080 now renders DuckDuckGo's styled human-verification screen, including its images, without document-resource 502s or page exceptions. Measured first contentful paint was 2,589 ms. Results beyond the challenge remain unverified in this fresh session. The unrelated AI catalog still returns 503. This is a measured local result, not a promise of universal search availability.
+
+Final full build output: 5,170 files; atob 0, eval 2, Function 2; 452 raw matches, all classified; zero blocked findings, forbidden paths, parse errors or maps. Public main and production engine activation remain held while the owner tries localhost. The earlier Drop edge retirement is already active.
+
 ## COMPLETED
 
 - Reviewed the upstream v2 reference at commit `b14b709ac190b786dd03becbd0728ab72bdd3ad6` (package version `2.0.67-alpha.2`) outside this repository. Compared request construction, response addresses, document bases, worker initialization, destination-specific body handling, redirects, cookies, syntax traversal and connection lifetime. No reference source, package, WASM or wrapper was copied into Nyx.

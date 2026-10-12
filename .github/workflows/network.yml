@@ -30,6 +30,7 @@ jobs:
       - run: node connection/isolated-smoke.mjs
         env:
           NYX_TEST_SHELL_URL: auto
+      - run: node connection/localhost-smoke.mjs
       - run: node rituals/test-document-window.mjs
   complete-release-audit:
     runs-on: ubuntu-latest

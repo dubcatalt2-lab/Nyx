@@ -3,6 +3,9 @@ import {parse as cssParse, walk as cssWalk, generate} from 'css-tree';
 import {parse as jsParse} from 'acorn';
 import {route} from './address.mjs';
 import {partitionOrigin} from './partition.mjs';
+import {textCache} from './text-cache.mjs';
+
+const compiledText=textCache();
 
 function visit(node, callback) {
   if (!node || typeof node !== 'object') return;
@@ -15,6 +18,9 @@ function visit(node, callback) {
 }
 
 export function stylesheet(text, base, prefix, context = 'stylesheet') {
+  return compiledText(JSON.stringify(['css',base,prefix,context]),text,()=>styleText(text,base,prefix,context));
+}
+function styleText(text,base,prefix,context){
   const tree = cssParse(text, {context});
   cssWalk(tree, node => {
     if (node.type === 'Url') node.value = route(node.value, base, prefix);
@@ -27,10 +33,13 @@ export function stylesheet(text, base, prefix, context = 'stylesheet') {
 }
 
 export function script(text, base, prefix, module = false) {
+  return compiledText(JSON.stringify(['js',base,prefix,module]),text,()=>scriptText(text,base,prefix,module));
+}
+function scriptText(text,base,prefix,module){
   const tree = jsParse(text, {ecmaVersion: 'latest', sourceType: module ? 'module' : 'script', allowReturnOutsideFunction: !module, allowHashBang: true});
   const edits = [];
   const mapped = new Set();
-  const scopes = new WeakMap();
+  const nodes = [];
   function bind(pattern, scope, value = {}) {
     if (!pattern) return;
     if (pattern.type === 'Identifier') scope.names.set(pattern.name, {...value, scope});
@@ -39,12 +48,12 @@ export function script(text, base, prefix, module = false) {
     else if (pattern.type === 'ArrayPattern') pattern.elements.forEach(item => bind(item, scope, value));
     else if (pattern.type === 'ObjectPattern') pattern.properties.forEach(item => bind(item.type === 'RestElement' ? item.argument : item.value, scope, value));
   }
-  function index(node, parent) {
-    if (!node || typeof node !== 'object') return;
+  function index(node, parent, owner, key) {
+    if (!node || typeof node.type !== 'string') return;
     const callable = /^(FunctionDeclaration|FunctionExpression|ArrowFunctionExpression)$/.test(node.type);
     if (node.type === 'FunctionDeclaration' || node.type === 'ClassDeclaration') bind(node.id, parent);
     const scope = ['Program','BlockStatement','CatchClause','ForStatement','ForInStatement','ForOfStatement'].includes(node.type) || callable ? {names:new Map(),parent,callable:callable || node.type === 'Program'} : parent;
-    scopes.set(node,scope);
+    nodes.push({node,scope,parent:owner,key});
     if (callable) { bind(node.id,scope);node.params.forEach(parameter => bind(parameter,scope)); }
     if (node.type === 'CatchClause') bind(node.param,scope);
     if (node.type === 'VariableDeclaration') {
@@ -53,9 +62,10 @@ export function script(text, base, prefix, module = false) {
       node.declarations.forEach(declaration => bind(declaration.id,owner,{init:declaration.init}));
     }
     if (node.type === 'ImportDeclaration') node.specifiers.forEach(specifier => bind(specifier.local,scope));
-    for (const value of Object.values(node)) {
-      if (Array.isArray(value)) value.forEach(child => index(child,scope));
-      else if (value && typeof value === 'object') index(value,scope);
+    for (const key in node) {
+      const value=node[key];
+      if (Array.isArray(value)) { for(const child of value)index(child,scope,node,key); }
+      else if (value && typeof value === 'object') index(value,scope,node,key);
     }
   }
   index(tree,null);
@@ -77,9 +87,7 @@ export function script(text, base, prefix, module = false) {
       edits.push({start: node.end, end: node.end, text: ',' + JSON.stringify(base) + ')'});
     }
   }
-  function locations(node, parent, key) {
-    if (!node || typeof node !== 'object') return;
-    const scope = scopes.get(node);
+  function locations(node, parent, key, scope) {
     const direct = node.type === 'Identifier' && node.name === 'location' && !binding('location', scope);
     const member = node.type === 'MemberExpression' && ['window','self','globalThis','document'].includes(node.object.name) && !binding(node.object.name, scope) && (node.computed ? node.property.value : node.property.name) === 'location';
     const property = parent?.type === 'MemberExpression' && key === 'property' && !parent.computed;
@@ -99,18 +107,13 @@ export function script(text, base, prefix, module = false) {
         edits.push({start:node.object.end,end:node.object.end,text:')'});
       }
     }
-    for (const [name, value] of Object.entries(node)) {
-      if (Array.isArray(value)) value.forEach(child => locations(child,node,name));
-      else if (value && typeof value === 'object') locations(value,node,name);
-    }
   }
-  locations(tree);
-  visit(tree, node => {
+  for(const {node,scope,parent,key} of nodes){
+    locations(node,parent,key,scope);
     if (['ImportDeclaration','ExportNamedDeclaration','ExportAllDeclaration'].includes(node.type)) argument(node.source);
     if (node.type === 'ImportExpression') argument(node.source, true);
-    if (node.type !== 'CallExpression' && node.type !== 'NewExpression') return;
+    if (node.type !== 'CallExpression' && node.type !== 'NewExpression') continue;
     const target = node.callee;
-    const scope = scopes.get(node);
     const name = target.type === 'Identifier' ? target.name : target.type === 'MemberExpression' ? (target.computed ? target.property.value : target.property.name) : '';
     if (['fetch','WebSocket','EventSource','Worker','SharedWorker'].includes(name) && native(target,name,scope)) argument(node.arguments[0]);
     if (name === 'importScripts' && native(target,name,scope)) node.arguments.forEach(value => argument(value));
@@ -120,7 +123,7 @@ export function script(text, base, prefix, module = false) {
       const value = found?.init || receiver;
       if (value.type === 'NewExpression' && native(value.callee,'XMLHttpRequest',found?.scope || scope)) argument(node.arguments[1]);
     }
-  });
+  }
   edits.sort((a, b) => a.start - b.start || a.end - b.end);
   const parts=[];
   let offset=0;

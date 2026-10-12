@@ -62,10 +62,10 @@
   const NYX_DISPLAY_NAME_FONTS=Object.freeze([['gg-sans','gg sans'],['headline','Headline'],['rounded','Rounded'],['wide','Wide'],['slab','Slab'],['condensed','Condensed'],['mono-block','Mono Block'],['tempo','Tempo'],['sakura','Sakura'],['jellybean','Jellybean'],['modern','Modern'],['medieval','Medieval'],['eight-bit','8Bit'],['vampyre','Vampyre']]);
   const NYX_DISPLAY_NAME_EFFECTS=Object.freeze([['solid','Solid'],['gradient','Gradient'],['neon','Neon'],['toon','Toon'],['pop','Pop']]);
   const nyxFounderProfileDefaults=Object.freeze({displayName:'1aqlla',handle:'@1aqlla',role:'Owner / Founder',bio:'Built Nyx for people who search, study, and create.',avatarUrl:'/assets/icons/founder-1aqlla.jpg',bannerUrl:'',accent:'#8fb8ff',accentPrimary:'#8fb8ff',accentSecondary:'#8ea1ff',bannerColor:'#8ea1ff',displayNameFont:'gg-sans',displayNameEffect:'solid',displayNameColorPrimary:'#ffffff',displayNameColorSecondary:'#8ea1ff',profileEffect:'none',customEffectPattern:'starfield',customEffectColorPrimary:'#ffffff',customEffectColorSecondary:'#8ea1ff',customEffectSpeed:7,customEffectIntensity:70,avatarDecoration:'none',status:'online',roles:['Owner','Developer'],badges:['Founder'],linkLabel:'',linkUrl:''});
-  const NYX_PROFILE_EFFECTS=Object.freeze([["none","None"],["blooming-roses","Blooming Roses"],["fx-cosmic-vortex","Butterfly Sparkles"],["fx-nebula-storm","Drifting Butterflies"],["fx-stellar-burst","Starlit Petals"],["fx-ethereal-flame","Floating Petals"],["fx-quantum-rift","Moonlit Wolf"],["fx-astral-cascade","Night Clouds"],["fx-plasma-wave","Shadow Grins"],["fx-supernova-flash","Peeking Shadows"],["fx-void-shards","Owl in the Mist"],["fx-prismatic-spark","Neon Beast Spiral"],["fx-arcane-pulse","Monochrome Demon"],["fx-solar-surge","Demon Reveal"],["fx-neon-eclipse","Hanging Shadow Grin"],["fx-celestial-drift","Neon Beast Portrait"],["fx-shadow-aura","Pink Lightning"],["fx-hyper-aura","Owl on a Branch"],["fx-starlight-bloom","Clouds & Full Moon"],["fx-galaxy-shimmer","Hello Kitty Blossoms"],["fx-cyber-lattice","Moonlit Vine Border"],["fx-abyssal-ring","Spider-Man Swing"],["fx-dimension-rift","Shark Whirlpool"],["fx-chrono-spark","Circling Sharks"],["fx-zenith-glow","Deep Sea Silhouettes"],["fx-infrared-pulse","Deep Sea Drift"],["fx-glitch-storm","Ocean Shadows"],["fx-phantom-flame","Spider-Man Peek"],["fx-vortex-surge","Spiderweb Border"],["fx-nebula-spark","Moonlit Vine Canopy"],["fx-starlight-echo","Moonlit Vine Sparkles"],["fx-spectral-surge","Glowing Butterflies"],["fx-cyber-matrix","Glowing Rose Wreath"],["fx-dark-void","Cloud Halo"],["fx-nebula-rift","Black Thorn Ring"],["fx-solar-flare","Skeletal Embrace"],["fx-sakura-blossom","Blushing Cat Ears"],["fx-arcane-prism","Phoenix Swirl"],["fx-abyssal-pulse","Black Roses & Butterfly"],["fx-neon-stardust","Dark Angel Wings"],["fx-retro-wave","Comic Anger"],["fx-glitch-mirage","Prismatic Eclipse"],["fx-celestial-shine","Luminous Moth"],["fx-phantom-mist","Crimson Butterfly"],["fx-hyperdrive","Moonlit Vines"],["fx-quantum-bloom","Silver Orbits"],["fx-prismatic-aura","Moonlit Clouds"],["fx-astral-spark","Flaming Skulls"],["fx-thunderstorm","Golden Moon"],["fx-crimson-eclipse","Golden Star Crown"],["fx-electric-dream","Ocean Glow"],["fx-frozen-shards","White Angel Wings"],["fx-vortex-horizon","Ember Moon"],["fx-nova-beam","Aurora Wisps"],["fx-cybernetic-pulse","White Roses & Butterfly"],["fx-radiant-orbit","Starlight Mist"]]);
-  const NYX_AVATAR_DECORATIONS=Object.freeze([["none","None"],["candlelight","Candlelight"],["astral-ring-alpha","Starlight Mist"],["celestial-crown","Ember Moon"],["neon-vortex","Aurora Wisps"],["solar-flare-ring","White Roses & Butterfly"],["void-ring","Golden Moon"],["cybernetic-halo","Flaming Skulls"],["crimson-shield","White Angel Wings"],["quantum-ring","Luminous Moth"],["ethereal-aura","Prismatic Eclipse"],["static-frost","Moonlit Clouds"],["prismatic-glow","Golden Star Crown"],["supernova-ring","Ocean Glow"],["neon-pulse","Crimson Butterfly"],["arcane-circle","Moonlit Vines"],["cosmic-dust","Silver Orbits"],["stellar-ring","Comic Anger"],["gilded-halo","Blushing Cat Ears"],["plasma-ring","Black Roses & Butterfly"],["hyperdrive","Phoenix Swirl"],["infernal-ring","Dark Angel Wings"],["solar-ring","Skeletal Embrace"],["nebula-ring","Black Thorn Ring"],["prism-crown","Cloud Halo"],["ember-ring","Glowing Rose Wreath"],["vortex-crown","Glowing Butterflies"]]);
+  const NYX_PROFILE_EFFECTS=Object.freeze([["none","None"],["blooming-roses","Blooming Roses"],["fx-cosmic-vortex","Butterfly Sparkles"],["fx-nebula-storm","Drifting Butterflies"],["fx-stellar-burst","Starlit Petals"],["fx-ethereal-flame","Floating Petals"],["fx-quantum-rift","Moonlit Wolf"],["fx-astral-cascade","Night Clouds"],["fx-plasma-wave","Shadow Grins"],["fx-supernova-flash","Peeking Shadows"],["fx-void-shards","Owl in the Mist"],["fx-prismatic-spark","Neon Beast Spiral"],["fx-arcane-pulse","Monochrome Demon"],["fx-solar-surge","Demon Reveal"],["fx-neon-eclipse","Hanging Shadow Grin"],["fx-celestial-drift","Neon Beast Portrait"],["fx-shadow-aura","Pink Lightning"],["fx-hyper-aura","Owl on a Branch"],["fx-starlight-bloom","Clouds & Full Moon"],["fx-galaxy-shimmer","Hello Kitty Blossoms"],["fx-cyber-lattice","Moonlit Vine Border"],["fx-abyssal-ring","Spider-Man Swing"],["fx-dimension-rift","Shark Whirlpool"],["fx-chrono-spark","Circling Sharks"],["fx-zenith-glow","Deep Sea Silhouettes"],["fx-infrared-pulse","Deep Sea Drift"],["fx-glitch-storm","Ocean Shadows"],["fx-phantom-flame","Spider-Man Peek"],["fx-vortex-surge","Spiderweb Border"],["fx-nebula-spark","Moonlit Vine Canopy"],["fx-starlight-echo","Moonlit Vine Sparkles"],["fx-spectral-surge","Glowing Butterflies"],["fx-cyber-matrix","Glowing Rose Wreath"],["fx-dark-void","Cloud Halo"],["fx-nebula-rift","Black Thorn Ring"],["fx-solar-flare","Skeletal Embrace"],["fx-sakura-blossom","Blushing Cat Ears"],["fx-arcane-prism","Phoenix Swirl"],["fx-abyssal-pulse","Black Roses & Butterfly"],["fx-neon-stardust","Dark Angel Wings"],["fx-retro-wave","Comic Anger"],["fx-glitch-mirage","Prismatic Eclipse"],["fx-celestial-shine","Luminous Moth"],["fx-phantom-mist","Crimson Butterfly"],["fx-hyperdrive","Moonlit Vines"],["fx-quantum-bloom","Silver Orbits"],["fx-prismatic-aura","Moonlit Clouds"],["fx-astral-spark","Flaming Skulls"],["fx-thunderstorm","Golden Moon"],["fx-crimson-eclipse","Golden Star Crown"],["fx-electric-dream","Ocean Glow"],["fx-frozen-shards","White Angel Wings"],["fx-vortex-horizon","Ember Moon"],["fx-nova-beam","Aurora Ribbons"],["fx-cybernetic-pulse","White Roses & Butterfly"],["fx-radiant-orbit","Starlight Mist"]]);
+  const NYX_AVATAR_DECORATIONS=Object.freeze([["none","None"],["candlelight","Candlelight"],["astral-ring-alpha","Starlight Mist"],["celestial-crown","Ember Moon"],["neon-vortex","Aurora Ribbons"],["solar-flare-ring","White Roses & Butterfly"],["void-ring","Golden Moon"],["cybernetic-halo","Flaming Skulls"],["crimson-shield","White Angel Wings"],["quantum-ring","Luminous Moth"],["ethereal-aura","Prismatic Eclipse"],["static-frost","Moonlit Clouds"],["prismatic-glow","Golden Star Crown"],["supernova-ring","Ocean Glow"],["neon-pulse","Crimson Butterfly"],["arcane-circle","Moonlit Vines"],["cosmic-dust","Silver Orbits"],["stellar-ring","Comic Anger"],["gilded-halo","Blushing Cat Ears"],["plasma-ring","Black Roses & Butterfly"],["hyperdrive","Phoenix Swirl"],["scholar-ring","Dark Angel Wings"],["solar-ring","Skeletal Embrace"],["nebula-ring","Black Thorn Ring"],["prism-crown","Cloud Halo"],["ember-ring","Glowing Rose Wreath"],["vortex-crown","Glowing Butterflies"]]);
   const NYX_LEGACY_PROFILE_EFFECTS=Object.freeze({glow:'blooming-roses',sparkle:'blooming-roses',aurora:'blooming-roses',holographic:'blooming-roses',fireflies:'blooming-roses','cosmic-dust':'blooming-roses','electric-storm':'blooming-roses','meteor-shower':'blooming-roses','cyber-grid':'blooming-roses',plasma:'blooming-roses',snowfall:'blooming-roses',embers:'blooming-roses',bubbles:'blooming-roses','starlight-ribbon':'blooming-roses','cherry-bloom':'blooming-roses','ocean-caustics':'blooming-roses','chromatic-inferno':'blooming-roses',ghostfire:'blooming-roses','pirate-breach':'blooming-roses','kraken-depths':'blooming-roses','celestial-rift':'blooming-roses',stormforged:'blooming-roses',custom:'blooming-roses'});
-  const NYX_LEGACY_AVATAR_DECORATIONS=Object.freeze({starfall:'candlelight',orbit:'candlelight',laurel:'candlelight','neon-wings':'candlelight','crystal-crown':'candlelight','lunar-halo':'candlelight','rose-vines':'candlelight','inferno-crown':'candlelight','corsair-crest':'candlelight','kraken-grasp':'candlelight','eclipse-halo':'candlelight','phoenix-wings':'candlelight','crystal-aegis':'candlelight'});
+  const NYX_LEGACY_AVATAR_DECORATIONS=Object.freeze({'infernal-ring':'scholar-ring',starfall:'candlelight',orbit:'candlelight',laurel:'candlelight','neon-wings':'candlelight','crystal-crown':'candlelight','lunar-halo':'candlelight','rose-vines':'candlelight','inferno-crown':'candlelight','corsair-crest':'candlelight','kraken-grasp':'candlelight','eclipse-halo':'candlelight','phoenix-wings':'candlelight','crystal-aegis':'candlelight'});
   const nyxProfileEffectValue=(value,fallback='none')=>{const candidate=String(value||'').toLowerCase();const migrated=NYX_LEGACY_PROFILE_EFFECTS[candidate]||candidate;return NYX_PROFILE_EFFECTS.some(([id])=>id===migrated)?migrated:fallback};
   const nyxAvatarDecorationValue=(value,fallback='none')=>{const candidate=String(value||'').toLowerCase();const migrated=NYX_LEGACY_AVATAR_DECORATIONS[candidate]||candidate;return NYX_AVATAR_DECORATIONS.some(([id])=>id===migrated)?migrated:fallback};
   const nyxProfileOptions=(options,selected)=>options.map(([value,label])=>`<option value="${value}" ${selected===value?'selected':''}>${label}</option>`).join('');
@@ -2194,13 +2194,20 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(window.eruda) return Promise.resolve(window.eruda);
     if(nyxErudaLoadPromise) return nyxErudaLoadPromise;
     nyxErudaLoadPromise=new Promise((resolve,reject)=>{
+      if(window.LessonCompiler)return resolve();
+      const compiler=document.createElement('script');
+      compiler.src='/assets/vendor/lesson-compiler.js';
+      compiler.onload=()=>window.LessonCompiler?resolve():reject(new Error('Console runtime did not initialize'));
+      compiler.onerror=()=>reject(new Error('Console runtime could not be downloaded'));
+      document.head.appendChild(compiler);
+    }).then(()=>new Promise((resolve,reject)=>{
       const loader=document.createElement('script');
       loader.src='/assets/vendor/eruda.min.js?v=3.4.3';
       loader.dataset.nyxErudaLoader='true';
       loader.onload=()=>window.eruda ? resolve(window.eruda) : reject(new Error('Eruda did not initialize'));
       loader.onerror=()=>reject(new Error('Eruda could not be downloaded'));
       document.head.appendChild(loader);
-    }).catch(error=>{
+    })).catch(error=>{
       nyxErudaLoadPromise=null;
       throw error;
     });
@@ -3544,7 +3551,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function renderChromeFixed(){
     const top=document.querySelector('.top-os');
     if(top){
-      top.innerHTML="<div class=\"brand-mini\"><button class=\"workspace-mode-app-button active\" data-workspace-shell-home title=\"Current page\"><span class=\"workspace-home-icon\" aria-hidden=\"true\"></span><span class=\"workspace-home-label\">Home</span></button><button class=\"workspace-mode-tab\" data-workspace-shell-new-course heading=\"New page\"><span>New page</span></button></div><span class=\"workspace-top-clock\" data-workspace-shell-clock>--:--:--</span><form class=\"j5d9t\" data-f6p2r><button class=\"workspace-nav-control\" data-workspace-shell-back type=\"button\" title=\"Back\" aria-label=\"Back\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m15 18-6-6 6-6\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-forward type=\"button\" title=\"Forward\" aria-label=\"Forward\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-reload type=\"button\" title=\"Reload\" aria-label=\"Reload\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 11a8 8 0 1 0-2.35 5.65\"></path><path d=\"M20 4v7h-7\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-home-nav type=\"button\" title=\"Home\" aria-label=\"Home\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m3 11 9-8 9 8\"></path><path d=\"M5 10v10h14V10\"></path><path d=\"M9 20v-6h6v6\"></path></svg></button><input class=\"workspace-mode-url\" data-workspace-shell-url placeholder=\"find your lessons\" autocomplete=\"off\"><button class=\"workspace-mode-bookmark workspace-mode-settings\" data-workspace-shell-settings data-open=\"settings\" type=\"button\" title=\"Settings\" aria-label=\"Settings\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3\"></circle><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\"></path></svg></button><button class=\"workspace-mode-weather\" data-open=\"weather\" type=\"button\" title=\"Weather\" aria-label=\"Weather\"><span class=\"weather-cloud-icon\" aria-hidden=\"true\"></span></button><button data-workspace-shell-menu type=\"button\" title=\"Menu\"><span class=\"fresh-real-icon\" aria-hidden=\"true\">⋮</span></button></form><div class=\"workspace-bookmark-panel\" id=\"workspaceBookmarkPanel\" hidden></div><div class=\"workspace-mode-menu\" id=\"workspaceModeMenu\"><button data-workspace-shell-new-tab type=\"button\">New page</button><button data-workspace-bookmarks-toggle type=\"button\">Bookmarks</button><button data-open=\"apps\" type=\"button\">Apps</button><hr><button data-open=\"settings\" type=\"button\">Settings</button><button data-workspace-hieroglyph-toggle type=\"button\">Hieroglyph Mode</button><button data-app-url=\"/assets/games/index.html\" type=\"button\">GAMES</button><button data-app-url=\"/apps/chat/\" type=\"button\">Chat</button><button data-app-url=\"https://discord.com/app\" type=\"button\">Discord</button><hr><button data-page-fullscreen type=\"button\">Fullscreen</button><button data-shell-about type=\"button\">Open About:Blank</button><button data-shell-about-tab type=\"button\">Open Page in Abt:Blank</button></div>";
+      top.innerHTML="<div class=\"brand-mini\"><button class=\"workspace-mode-app-button active\" data-workspace-shell-home title=\"Current page\"><span class=\"workspace-home-icon\" aria-hidden=\"true\"></span><span class=\"workspace-home-label\">Home</span></button><button class=\"workspace-mode-tab\" data-workspace-shell-new-tab heading=\"New page\"><span>New page</span></button></div><span class=\"workspace-top-clock\" data-workspace-shell-clock>--:--:--</span><form class=\"j5d9t\" data-f6p2r><button class=\"workspace-nav-control\" data-workspace-shell-back type=\"button\" title=\"Back\" aria-label=\"Back\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m15 18-6-6 6-6\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-forward type=\"button\" title=\"Forward\" aria-label=\"Forward\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-reload type=\"button\" title=\"Reload\" aria-label=\"Reload\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 11a8 8 0 1 0-2.35 5.65\"></path><path d=\"M20 4v7h-7\"></path></svg></button><button class=\"workspace-nav-control\" data-workspace-shell-home-nav type=\"button\" title=\"Home\" aria-label=\"Home\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m3 11 9-8 9 8\"></path><path d=\"M5 10v10h14V10\"></path><path d=\"M9 20v-6h6v6\"></path></svg></button><input class=\"workspace-mode-url\" data-workspace-shell-url placeholder=\"find your lessons\" autocomplete=\"off\"><button class=\"workspace-mode-bookmark workspace-mode-settings\" data-workspace-shell-settings data-open=\"settings\" type=\"button\" title=\"Settings\" aria-label=\"Settings\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3\"></circle><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\"></path></svg></button><button class=\"workspace-mode-weather\" data-open=\"weather\" type=\"button\" title=\"Weather\" aria-label=\"Weather\"><span class=\"weather-cloud-icon\" aria-hidden=\"true\"></span></button><button data-workspace-shell-menu type=\"button\" title=\"Menu\"><span class=\"fresh-real-icon\" aria-hidden=\"true\">⋮</span></button></form><div class=\"workspace-bookmark-panel\" id=\"workspaceBookmarkPanel\" hidden></div><div class=\"workspace-mode-menu\" id=\"workspaceModeMenu\"><button data-workspace-shell-new-tab type=\"button\">New page</button><button data-workspace-bookmarks-toggle type=\"button\">Bookmarks</button><button data-open=\"apps\" type=\"button\">Apps</button><hr><button data-open=\"settings\" type=\"button\">Settings</button><button data-workspace-hieroglyph-toggle type=\"button\">Hieroglyph Mode</button><button data-app-url=\"/assets/games/index.html\" type=\"button\">GAMES</button><button data-app-url=\"/apps/chat/\" type=\"button\">Chat</button><button data-app-url=\"https://discord.com/app\" type=\"button\">Discord</button><hr><button data-page-fullscreen type=\"button\">Fullscreen</button><button data-shell-about type=\"button\">Open About:Blank</button><button data-shell-about-tab type=\"button\">Open Page in Abt:Blank</button></div>";
       const homeNav=top.querySelector('[data-workspace-shell-home-nav]');
       if(homeNav) homeNav.innerHTML=nyxDashboardIcon('home');
       const shellAddress=top.querySelector('form.j5d9t');
@@ -3667,7 +3674,6 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const parsed=new URL(raw,location.href);
       const retiredPrefix='/service/';
       const retiredStart=parsed.origin + retiredPrefix;
-      const studyjetStart=parsed.origin + '/scramjet/service/';
       const retiredEnginePath=parsed.pathname.match(/^\/~\/(?:sj|study)-v[0-9]+\/(.*)$/);
       const studyjetV2Match=parsed.pathname.match(/^\/~\/sj\/[^/]+\/[^/]+\/([^?#]*)/);
       if(parsed.origin===location.origin && retiredEnginePath){
@@ -3686,10 +3692,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         }
         try{return new URL(decoded).href}catch{return decoded}
       }
-      if(parsed.origin===location.origin && parsed.href.startsWith(studyjetStart)){
-        const decoded=decodeUriPart(parsed.href.slice(studyjetStart.length));
-        try{return new URL(decoded).href}catch{return decoded}
-      }
+
       if(parsed.origin===location.origin && studyjetV2Match){
         const decodedHash=parsed.hash ? `#${decodeUriPart(parsed.hash.slice(1))}` : '';
         const decoded=decodeUriPart(studyjetV2Match[1]) + decodedHash;
@@ -3733,7 +3736,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       if(workspaceShellIsTransientConnectionPath(parsed.pathname)) return true;
       if(parsed.origin!==location.origin) return false;
-      if(parsed.pathname.startsWith('/service/') || parsed.pathname.startsWith('/~/sj/') || parsed.pathname.startsWith('/scramjet/service/')) return true;
+      if(parsed.pathname.startsWith('/service/') || parsed.pathname.startsWith('/~/sj/')) return true;
       if(!previous) return false;
       const previousUrl=new URL(previous,location.href);
       return /^https?:$/.test(previousUrl.protocol) && previousUrl.origin!==location.origin;
@@ -3757,7 +3760,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const raw=String(value || '');
     const trimmed=raw.trim();
     if(!trimmed) return raw;
-    if(!/^https?:\/\//i.test(trimmed) && !/^\/(?:service\/|~\/sj\/|scramjet\/service\/)/i.test(trimmed) && !/^\/?unidentified(?:[/?#]|$)/i.test(trimmed)) return raw;
+    if(!/^https?:\/\//i.test(trimmed) && !/^\/(?:service\/|~\/sj\/)/i.test(trimmed) && !/^\/?unidentified(?:[/?#]|$)/i.test(trimmed)) return raw;
     const decoded=workspaceShellSourceUrl(trimmed) || trimmed;
     if(workspaceShellRejectFrameLocation(decoded,expected)){
       const fallback=workspaceShellSourceUrl(expected) || String(expected || '').trim();
@@ -4437,7 +4440,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     sidebar.id='nyxWorkspaceTabSidebar';
     sidebar.className='nyx-workspace-tab-sidebar';
     sidebar.setAttribute('aria-label','Workspace pages');
-    sidebar.innerHTML='<header><strong>Tabs</strong><div><button type="button" data-workspace-bookmarks-toggle title="Bookmarks" aria-label="Bookmarks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h5l1.5 2H19v11H5z"></path></svg></button><button type="button" data-workspace-shell-new-course heading="New page" aria-label="New page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></header><div class="nyx-workspace-tab-list" data-workspace-shell-tab-list role="tablist" aria-label="Open pages"></div>';
+    sidebar.innerHTML='<header><strong>Tabs</strong><div><button type="button" data-workspace-bookmarks-toggle title="Bookmarks" aria-label="Bookmarks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h5l1.5 2H19v11H5z"></path></svg></button><button type="button" data-workspace-shell-new-tab heading="New page" aria-label="New page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></header><div class="nyx-workspace-tab-list" data-workspace-shell-tab-list role="tablist" aria-label="Open pages"></div>';
     sidebar.querySelector('[data-workspace-shell-new-tab]')?.addEventListener('click',event=>{
       event.preventDefault();
       event.stopPropagation();
@@ -5108,7 +5111,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           ['ruby','Ruby','Deep reds with crisp highlights',['#fb7185','#5b2231','#201218']],
           ['emerald','Emerald','Rich green, balanced and clear',['#63e6a5','#1d4a36','#101b16']],
           ['sakura','Sakura','Cherry blossom pinks and creams',['#f4a3c7','#553044','#21161c']],
-          ['fresh','Fern','Muted green, quiet and natural',['#a6e7b9','#2d4b3d','#141c17']],
+          ['fresh','Botany','Muted green, quiet and natural',['#a6e7b9','#2d4b3d','#141c17']],
           ['custom','Custom','Build a palette from one color',[customColor,'#2b3140','#15171c']]
         ];
         heading.textContent='Color theme';
@@ -5479,7 +5482,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
 
 
     scheduleNyxVisualDockViewportRepair();
-    const connectionInternal=/^(?:\/service\/|\/~\/sj\/|\/scramjet\/service\/|nyx:\/\/)/i.test(raw);
+    const connectionInternal=/^(?:\/service\/|\/~\/sj\/|nyx:\/\/)/i.test(raw);
     const looksLikeUrl=/^(?:[a-z][a-z0-9+.-]*:|[\w.-]+\.[a-z]{2,}(?:\/|$)|\/|\.\/|\.\.\/|assets\/)/i.test(raw);
     const isSearchQuery=raw && !looksLikeUrl && !connectionInternal;
     if(isSearchQuery) rememberNyxRecentSearch(raw);
@@ -6217,11 +6220,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(!freshOption){
         const option=document.createElement('option');
         option.value='fresh';
-        option.textContent='Fern';
+        option.textContent='Botany';
         select.appendChild(option);
         freshOption=option;
       }
-      freshOption.textContent='Fern';
+      freshOption.textContent='Botany';
       if(!select.querySelector('option[value="midnight"]')){
         const option=document.createElement('option');
         option.value='midnight';
@@ -8179,7 +8182,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     try{
       const url=new URL(value,location.href);
       if(url.origin!==location.origin||!/(?:\/apps\/[^/]+|\/assets\/games)\/*$/.test(url.pathname))return value;
-      url.pathname=url.pathname.replace(/\/+$/,'')+'/index.html';
+      url.pathname=new URL('index.html',url.origin+url.pathname.replace(/\/*$/,'/')).pathname;
       return url.href;
     }catch{return value;}
   }
@@ -8230,6 +8233,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function saveHomeShortcuts(items){
     store.setText('nyx.homeShortcuts',JSON.stringify(items.slice(0,32)));
   }
+  if(store.text('nyx.homeShortcuts','')) homeShortcuts();
   function homeShortcutDomain(url,title=''){
     try{return new URL(url,location.href).hostname.replace(/^www\./,'') || title.toLowerCase()}
     catch{return String(title || 'apps').toLowerCase().replace(/\s+/g,'')}
@@ -8515,7 +8519,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         }
         canvas.dataset.particleCount=String(state.dots.length);
         canvas.dataset.constellationCount=String(clusterCount);
-        canvas.dataset.backgroundStyle='fern-star-network';
+        canvas.dataset.backgroundStyle='botany-star-network';
         canvas.dataset.pointerEffect='constellation-repel-and-return';
         requestFrame();
       };
@@ -10193,7 +10197,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         'allow-presentation',
         'allow-storage-access-by-user-activation'
       ];
-      if(!containPopups){
+      if(!containPopups||t.expectedEngine==='document'){
         tokens.push('allow-popups','allow-popups-to-escape-sandbox','allow-top-navigation-by-user-activation');
       }
       t.frame.setAttribute('sandbox',tokens.join(' '));
@@ -10286,7 +10290,6 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const frameSrc=String(t?.frame?.getAttribute?.('src') || '');
       if(t?.expectedEngine==='document' || raw.startsWith('/~/sj/') || frameSrc.includes('/~/sj/')) return 'document';
       if(raw.startsWith('/service/') || frameSrc.startsWith('/service/')) return 'document';
-      if(raw.startsWith('/scramjet/service/') || frameSrc.startsWith('/scramjet/service/')) return 'document';
       if(/^https?:/i.test(raw)) return 'direct';
       if(raw.startsWith('nyx://')) return 'nyx';
       return raw ? 'iframe' : 'blank';
@@ -10434,7 +10437,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         t.frame.classList.add('active');
       }
       installPopupBridge(t);
-      const proxied=url.startsWith('/service/') || url.startsWith('/scramjet/service/') || url.startsWith('/~/sj/');
+      const proxied=url.startsWith('/service/') || url.startsWith('/~/sj/');
       setFrameSandbox(t,true);
       clearFrameDocument(t);
       if(normalizeWorkspaceModeName(store.text('nyx.workspaceMode',DEFAULT_WORKSPACE_MODE))==='auto' && directOnly(url) && !proxied){
@@ -10478,7 +10481,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
  setTabLoading(t,true);setTabMeta(t,url,false);clearFrameDocument(t);setFrameSandbox(t,true);
  import('/js/document-window.mjs').then(({openDocument})=>{
   if(!state.tabs.includes(t)||t.sourceUrl!==url)return;
-  openDocument(t.frame,url,{onError:error=>{setTabLoading(t,false);console.warn('Document startup:',error);},onNavigate:next=>{
+  openDocument(t.frame,url,{onLinkMenu:link=>showWorkspaceLinkMenu(link.url,link.x,link.y),onError:error=>{setTabLoading(t,false);console.warn('Document startup:',error);},onNavigate:next=>{
    if(!state.tabs.includes(t))return;
    if(t.sourceUrl!==next.url){t.history=t.history.slice(0,t.index+1);t.history.push(next.url);t.index=t.history.length-1;}
    t.sourceUrl=next.url;t.url=next.url;setTabMeta(t,next.url,false);setTabLoading(t,false);
@@ -10572,7 +10575,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         return;
       }
       const rawText=canonicalAddressInput(raw);
-      const connectionInternal=/^(?:\/service\/|\/~\/sj\/|\/scramjet\/service\/|nyx:\/\/)/i.test(rawText);
+      const connectionInternal=/^(?:\/service\/|\/~\/sj\/|nyx:\/\/)/i.test(rawText);
       const looksLikeUrl=/^(?:[a-z][a-z0-9+.-]*:|[\w.-]+\.[a-z]{2,}(?:\/|$)|\/|\.\/|\.\.\/|assets\/|apps\/)/i.test(rawText);
       const isSearchQuery=rawText && !forceMode && !looksLikeUrl && !connectionInternal;
       if(isSearchQuery){
@@ -11117,7 +11120,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return win;
   }
   function openUpdates(){
-    makeWindow({title:'ռʏӼ Fixes',left:'24px',top:'60px',width:'520px',height:'620px',autoMaximize:true,body:`<div class="panel"><h1>ռʏӼ Fixes</h1><p class="home-sub">Click ռʏӼ in the top-left anytime to see this.</p><div class="glass-grid" style="grid-template-columns:1fr"><div class="glass-card"><h2>Latest fixes</h2><p>- Added animated windows that eject from the bottom dock and fade when closed.</p><p>- Made the Updates window open fullscreen every time.</p><p>- Added one-time Updates popup on startup.</p><p>- Added multiple weather location choices for ambiguous searches.</p><p>- Added hot and freezing weather themes.</p><p>- Updated glassmorphism so 100%+ lowers blur instead of over-brightening.</p><p>- Replaced the Discord logo with the new attached icon.</p><p>- Removed the left desktop Workspace and Updates buttons.</p><p>- Changed Weather from an app into a right-side liquid glass panel.</p><p>- Added visible background previews and background upload.</p><p>- Rebuilt the loading screen so it types the welcome text.</p><p>- Added local app icons to avoid blocked favicon requests.</p></div><div class="glass-card"><h2>Workspace fixes</h2><p>- Replaced the old Wisp server package.</p><p>- Pinned the compatible Epoxy transport.</p></div></div></div>`});
+    makeWindow({title:'ռʏӼ Fixes',left:'24px',top:'60px',width:'520px',height:'620px',autoMaximize:true,body:`<div class="panel"><h1>ռʏӼ Fixes</h1><p class="home-sub">Click ռʏӼ in the top-left anytime to see this.</p><div class="glass-grid" style="grid-template-columns:1fr"><div class="glass-card"><h2>Latest fixes</h2><p>- Added animated windows that eject from the bottom dock and fade when closed.</p><p>- Made the Updates window open fullscreen every time.</p><p>- Added one-time Updates popup on startup.</p><p>- Added multiple weather location choices for ambiguous searches.</p><p>- Added hot and freezing weather themes.</p><p>- Updated glassmorphism so 100%+ lowers blur instead of over-brightening.</p><p>- Replaced the Discord logo with the new attached icon.</p><p>- Removed the left desktop Workspace and Updates buttons.</p><p>- Changed Weather from an app into a right-side liquid glass panel.</p><p>- Added visible background previews and background upload.</p><p>- Rebuilt the loading screen so it types the welcome text.</p><p>- Added local app icons to avoid blocked favicon requests.</p></div><div class="glass-card"><h2>Workspace fixes</h2><p>- Updated document loading and connection recovery.</p></div></div></div>`});
   }
   function weatherDescription(code){
     const map={0:'Clear',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Rime fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',56:'Freezing drizzle',57:'Freezing drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',66:'Freezing rain',67:'Freezing rain',71:'Light snow',73:'Snow',75:'Heavy snow',77:'Snow grains',80:'Light showers',81:'Showers',82:'Heavy showers',85:'Snow showers',86:'Snow showers',95:'Thunderstorm',96:'Thunderstorm',99:'Thunderstorm, hail'};

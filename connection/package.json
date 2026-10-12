@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "test": "node --test test.mjs assets.test.mjs && node smoke.mjs && node dynamic-smoke.mjs",
+    "test": "node --test test.mjs assets.test.mjs session.test.mjs && node smoke.mjs && node dynamic-smoke.mjs",
     "measure:loading": "node measure-loading.mjs",
     "audit": "node ../rituals/audit-release.mjs dist",
     "start": "node app.mjs"

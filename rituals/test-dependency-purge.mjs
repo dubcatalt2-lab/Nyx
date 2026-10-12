@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import {readFile,readdir,stat} from 'node:fs/promises';
 import {resolve,join} from 'node:path';
+import {prohibitedDependency as prohibited} from './audit-release.mjs';
 
 const root=resolve(process.argv[2]||'.');
-const prohibited=/@mercuryworkshop\/|^(?:libcurl\.js|wispurr)$/i;
 const manifest=JSON.parse(await readFile(join(root,'package.json'),'utf8'));
 for(const name of Object.keys({...manifest.dependencies,...manifest.devDependencies}))assert(!prohibited.test(name),name);
 const lock=JSON.parse(await readFile(join(root,'package-lock.json'),'utf8'));

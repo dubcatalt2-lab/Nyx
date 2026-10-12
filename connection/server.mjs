@@ -28,7 +28,7 @@ export async function destination(value, resolveAddresses = lookup) {
 }
 
 const excluded = new Set(['host','connection','upgrade','transfer-encoding','keep-alive','te','trailer','content-length','accept-encoding','proxy-authorization','proxy-authenticate']);
-function requestHeaders(entries) {
+export function requestHeaders(entries) {
   if (!Array.isArray(entries) || entries.length > 128) throw new Error('Invalid headers');
   const result = [];
   const nominated = new Set(entries.filter(pair => Array.isArray(pair) && String(pair[0]).toLowerCase() === 'connection').flatMap(pair => String(pair[1]).toLowerCase().split(',').map(value => value.trim())));
@@ -50,12 +50,12 @@ function send(socket, bytes, fin) {
   });
 }
 
-export function createServer({allowed = async () => true, resolveDestination = destination, observe = () => {}} = {}) {
+export function createServer({allowed = async () => true, resolveDestination = destination, observe = () => {}, prepare=async()=>null,allowCrossOrigin=false} = {}) {
   const server = new WebSocketServer({noServer: true, maxPayload: limits.upload + limits.metadata + 9, perMessageDeflate: false});
   let active = 0;
   server.on('connection', (socket, request) => {
     if(new URL(request.url,'http://localhost').pathname==='/api/channel'){
-      channel(socket,resolveDestination,requestHeaders);
+      channel(socket,resolveDestination,requestHeaders,metadata=>prepare(request,metadata));
       return;
     }
     const events=new URL(request.url,'http://localhost').pathname==='/api/events';
@@ -78,13 +78,15 @@ export function createServer({allowed = async () => true, resolveDestination = d
         if (type !== 0 || Object.keys(metadata).sort().join(',') !== 'headers,method,url' || body.length > limits.upload) throw new Error('Invalid request');
         const method = String(metadata.method).toUpperCase();
         if (!['GET','HEAD','POST','PUT','PATCH','DELETE','OPTIONS'].includes(method) || (['GET','HEAD'].includes(method) && body.length)) throw new Error('Unsupported method');
-        const headers = requestHeaders(metadata.headers);
+        const policy=await prepare(request,metadata);
+        const headers = requestHeaders(policy?.headers||metadata.headers);
         const {url, address, addresses = [address]} = await resolveDestination(metadata.url);
         controller.signal.throwIfAborted();
         dispatcher = new Agent({connect: {autoSelectFamily: true, lookup: (_host, options, callback) => options?.all ? callback(null, addresses) : callback(null, address.address, address.family)}});
         const response = await fetch(url, {dispatcher, method, headers, body: body.length ? body : undefined, redirect: 'manual', signal: controller.signal});
         const outgoing = [...response.headers].filter(([name]) => !excluded.has(name) && !['content-encoding','set-cookie'].includes(name));
-        for (const value of response.headers.getSetCookie()) outgoing.push(['set-cookie', value]);
+        if(policy)outgoing.push(...await policy.receive(response));
+        else for (const value of response.headers.getSetCookie()) outgoing.push(['set-cookie', value]);
         const header = pack(id, 0, {status: response.status, headers: outgoing});
         began = true;
         await send(socket, header, events);
@@ -117,7 +119,7 @@ export function createServer({allowed = async () => true, resolveDestination = d
       try {
         const origin = new URL(request.headers.origin || '');
         const route = new URL(request.url, origin);
-        if (!['/api/sync','/api/presence','/api/channel','/api/events'].includes(route.pathname) || route.search || origin.host !== request.headers.host || !['http:','https:'].includes(origin.protocol) || server.clients.size >= 64 || !await allowed(request) || server.clients.size >= 64) throw new Error('Not permitted');
+        if (!['/api/sync','/api/presence','/api/channel','/api/events'].includes(route.pathname) || route.search || origin.host !== request.headers.host&&!(allowCrossOrigin&&route.pathname==='/api/channel') || !['http:','https:'].includes(origin.protocol) || server.clients.size >= 64 || !await allowed(request) || server.clients.size >= 64) throw new Error('Not permitted');
         if (!socket.destroyed) server.handleUpgrade(request, socket, head, client => server.emit('connection', client, request));
       } catch { socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\nContent-Length: 0\r\n\r\n'); }
     },

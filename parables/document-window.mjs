@@ -11,7 +11,7 @@ export function documentOrigin(config=globalThis.__NYX_RUNTIME_CONFIG__||{},page
   return url.origin;
 }
 
-export function openDocument(element,value,{signal,config,page=location,onNavigate,onError}={}){
+export function openDocument(element,value,{signal,config,page=location,onNavigate,onError,onLinkMenu}={}){
   signal?.throwIfAborted();
   const target=new URL(value);
   if(!['http:','https:'].includes(target.protocol)||target.username||target.password)throw Error('Unsupported document address.');
@@ -28,6 +28,11 @@ export function openDocument(element,value,{signal,config,page=location,onNaviga
     if(event.source!==element.contentWindow||event.origin!==origin||element.src!==address)return;
     if(event.data?.type==='document-ready'&&readyAt)element.contentWindow.postMessage({type:'document-start',url:target.href,readyAt},origin);
     if(event.data?.type==='document-error')onError?.(String(event.data.message||'Document startup failed'));
+    if(event.data?.type==='document-link-menu'){
+      try{const link=new URL(event.data.url),bounds=element.getBoundingClientRect();
+        if(['http:','https:'].includes(link.protocol))onLinkMenu?.({url:link.href,x:bounds.left+Number(event.data.x||0),y:bounds.top+Number(event.data.y||0)});
+      }catch{}
+    }
     if(event.data?.type==='document-navigation'){
       try{
         const next=new URL(event.data.url);

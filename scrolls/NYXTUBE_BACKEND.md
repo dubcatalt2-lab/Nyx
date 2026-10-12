@@ -146,6 +146,41 @@ Incognito cookie-export procedure, privately replace the server file, then use
 Check now after the cooldown. Cookies can expire, be revoked, or be restricted;
 there is no guaranteed refresh interval.
 
+### Renew the YouTube session used by the server
+
+This is the YouTube account cookie file read by yt-dlp. Signing out of Nyx or
+renewing a Nyx account token does not replace it.
+
+1. Open a new private/incognito window and sign into the dedicated YouTube account.
+2. In that same tab, open `https://www.youtube.com/robots.txt`. Keep it as the only
+   private tab. Export the `youtube.com` cookies in Netscape cookies.txt format
+   using an extension recommended in the yt-dlp FAQ, then close the private window.
+   Do not reopen that exported session. Follow the
+   [official cookie-export instructions](https://github.com/yt-dlp/yt-dlp/wiki/Extractors#exporting-youtube-cookies).
+3. Upload the export privately to the VPS, outside its web root and repository.
+   Replace the file configured by `NYX_YOUTUBE_COOKIES_FILE`. The deployment default
+   is `/etc/nyx/youtube-cookies.txt`. For example, after uploading to your private
+   home directory, run these commands in the VPS terminal:
+
+   ```sh
+   sudo install -o root -g nyx -m 0640 "$HOME/youtube-cookies.txt" /etc/nyx/youtube-cookies.txt.new
+   sudo mv -f /etc/nyx/youtube-cookies.txt.new /etc/nyx/youtube-cookies.txt
+   rm -- "$HOME/youtube-cookies.txt"
+   ```
+
+   Run the replacement only after the upload succeeds. If the configured cookie
+   path differs, use that path for both destination names. The final rename is
+   atomic within the same directory; active requests can finish using their
+   existing isolated copy. A service restart is unnecessary when the configured
+   path stays the same. Changing the environment setting requires a restart.
+4. After any five-minute cooldown expires, open the Owner dashboard's YouTube
+   status and select **Check now**. Confirm **Working**, then play an uncached
+   public video. Cached playback alone does not validate the new session.
+
+Keep the export private. Do not paste its contents into chat or commit it.
+If the check still fails, use its reported category to distinguish authentication
+from a provider restriction, rate limit, unavailable video, or extractor failure.
+
 ## Limits and behavior
 
 NyxTube's Invidious option first resolves the public embed's MP4 source through

@@ -58,6 +58,7 @@ const source=`<!doctype html><html><head><meta charset="utf-8"><title>Interactio
 <template><script>function dormantHook(longParameter){return longParameter+1}</script></template>
 </body></html>`;
 const built=await compactLessonDocument(source);
+assert.equal((await compactLessonDocument(source.replaceAll('\n','\r\n'))).text,built.text);
 assert.equal(built.scripts,3);
 assert(built.text.includes('{"message":"keep whitespace"}'));
 assert(!built.text.includes('nextScore'));

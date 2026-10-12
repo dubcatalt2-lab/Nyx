@@ -152,7 +152,7 @@
   function closeDrawers(){refs.app.classList.remove('channels-open','members-open');refs.shade.hidden=true}
   function openDrawer(name){closeDrawers();refs.app.classList.add(`${name}-open`);refs.shade.hidden=false}
   function initials(value){return String(value||'N').trim().split(/\s+/).slice(0,2).map(part=>part[0]||'').join('').toUpperCase()||'N'}
-  const avatarDecorations=new Set(["none","candlelight","astral-ring-alpha","celestial-crown","neon-vortex","solar-flare-ring","void-ring","cybernetic-halo","crimson-shield","quantum-ring","ethereal-aura","static-frost","prismatic-glow","supernova-ring","neon-pulse","arcane-circle","cosmic-dust","stellar-ring","gilded-halo","plasma-ring","hyperdrive","infernal-ring","solar-ring","nebula-ring","prism-crown","ember-ring","vortex-crown"]);
+  const avatarDecorations=new Set(["none","candlelight","astral-ring-alpha","celestial-crown","neon-vortex","solar-flare-ring","void-ring","cybernetic-halo","crimson-shield","quantum-ring","ethereal-aura","static-frost","prismatic-glow","supernova-ring","neon-pulse","arcane-circle","cosmic-dust","stellar-ring","gilded-halo","plasma-ring","hyperdrive","scholar-ring","solar-ring","nebula-ring","prism-crown","ember-ring","vortex-crown"]);
   const profileEffects=new Set(["fx-cosmic-vortex","fx-nebula-storm","fx-stellar-burst","fx-ethereal-flame","fx-quantum-rift","fx-astral-cascade","fx-plasma-wave","fx-supernova-flash","fx-void-shards","fx-prismatic-spark","fx-arcane-pulse","fx-solar-surge","fx-neon-eclipse","fx-celestial-drift","fx-shadow-aura","fx-hyper-aura","fx-starlight-bloom","fx-galaxy-shimmer","fx-cyber-lattice","fx-abyssal-ring","fx-dimension-rift","fx-chrono-spark","fx-zenith-glow","fx-infrared-pulse","fx-glitch-storm","fx-phantom-flame","fx-vortex-surge","fx-nebula-spark","fx-starlight-echo","fx-spectral-surge","fx-cyber-matrix","fx-dark-void","fx-nebula-rift","fx-solar-flare","fx-sakura-blossom","fx-arcane-prism","fx-abyssal-pulse","fx-neon-stardust","fx-retro-wave","fx-glitch-mirage","fx-celestial-shine","fx-phantom-mist","fx-hyperdrive","fx-quantum-bloom","fx-prismatic-aura","fx-astral-spark","fx-thunderstorm","fx-crimson-eclipse","fx-electric-dream","fx-frozen-shards","fx-vortex-horizon","fx-nova-beam","fx-cybernetic-pulse","fx-radiant-orbit"]);
   const social=window.createNyxChatSocial({request:(...args)=>fetchJson(...args),me:()=>state.me,members:()=>state.members,avatar:avatarElement,name:roleNameElement,badge:caffeineBadge,startDm,closeDrawers,changed:()=>{renderMessages();renderDirects();updateComposer()}});
   function selectChatSection(section){
@@ -168,7 +168,8 @@
     const face=document.createElement('span');face.className='avatar-face';face.textContent=initials(person?.displayName);avatar.append(face);
     const source=String(person?.avatarUrl||'').trim();
     if(source){const image=document.createElement('img');image.alt='';image.referrerPolicy='no-referrer';image.src=source;image.addEventListener('error',()=>{face.textContent=initials(person?.displayName)},{once:true});face.replaceChildren(image);}
-    const decoration=currentCosmetics(person).avatarDecoration;
+    const storedDecoration=currentCosmetics(person).avatarDecoration;
+    const decoration=storedDecoration==='infernal-ring'?'scholar-ring':storedDecoration;
     if(avatarDecorations.has(decoration)&&decoration!=='none'){avatar.classList.add('nyx-avatar-decoration-'+decoration);const art=document.createElement('i');art.className='nyx-avatar-decoration';art.setAttribute('aria-hidden','true');avatar.append(art);}
     return avatar;
   }

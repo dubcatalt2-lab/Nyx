@@ -14,11 +14,11 @@ const made = spawnSync(require('@ffmpeg-installer/ffmpeg').path, ['-v', 'error',
 assert.equal(made.status, 0);
 const bytes = await readFile(sourceFile(fixture));
 const staticRoot = join(folder, 'site');
-await symlink(resolve(process.env.NYX_TEST_ASSET_ROOT || '.'), staticRoot, process.platform === 'win32' ? 'junction' : 'dir');
+await symlink(resolve(process.env.NYX_TEST_ASSET_ROOT || 'dist'), staticRoot, process.platform === 'win32' ? 'junction' : 'dir');
 const origin = process.env.NYX_TEST_BASE_URL || 'http://127.0.0.1:8198';
 const server = process.env.NYX_TEST_BASE_URL ? null : spawn(process.execPath, ['shepherd.js'], { env: { ...process.env, PORT: '8198', NYX_STATIC_ROOT: staticRoot }, stdio: 'ignore' });
 let workspace;
-const tracks = [1, 2].map(id => ({ id: String(id), title: `Music fixture ${id}`, artist: 'Nyx test', duration: 125, catalog: 'deezer', cover: '', album: 'Test album' }));
+const tracks = [1, 2].map(id => ({ id: String(id), title: `Audio fixture ${id}`, artist: 'Nyx test', duration: 125, catalog: 'deezer', cover: '', album: 'Test album' }));
 try {
   for (let i = 0; i < 100; i++) { try { if ((await fetch(origin + '/healthz')).ok) break; } catch {} await new Promise(r => setTimeout(r, 150)); }
   const removedPreview = await fetch(origin + '/api/nyxify/stream/1', { headers: { Origin: origin } });
@@ -50,7 +50,7 @@ try {
         if (delayLookup) await new Promise(r => setTimeout(r, 300));
         if (failLookup) return route.fulfill({ status: 404, json: { error: 'No matching full recording is available.' } });
         const id = path.split('/').pop();
-        return route.fulfill({ json: { mode: 'meting', streamUrl: `/api/nyxify/audio/${id}`, title: `Music fixture ${id}`, durationSeconds: 125 } });
+        return route.fulfill({ json: { mode: 'meting', streamUrl: `/api/nyxify/audio/${id}`, title: `Audio fixture ${id}`, durationSeconds: 125 } });
       }
       if (path.startsWith('/api/nyxify/audio/') || path.startsWith('/api/nyxify/stream/')) {
         if (path.includes('/audio/') && failAudio > 0) { failAudio--; return route.fulfill({ status: 502, body: 'Temporary audio failure' }); }
@@ -119,7 +119,7 @@ try {
       };
     });
     await selectFirst();
-    await page.waitForFunction(() => document.querySelector('#playerPlaybackStatus').textContent.includes('press play'));
+    await page.waitForFunction(() => /press pl(?:a|@)y/i.test(document.querySelector('#playerPlaybackStatus').textContent.normalize('NFKC')));
     await page.locator('#playBtn').click(); await playing();
     delayLookup = true;
     await page.evaluate(() => sessionStorage.clear());

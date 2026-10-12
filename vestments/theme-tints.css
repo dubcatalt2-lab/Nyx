@@ -119,15 +119,15 @@ html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"] bod
 
 
 html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
-  body.theme-fresh:is(body,#nyx-fern-text-specificity){
-  --nyx-fern-text:#f1f3f7;
-  --nyx-fern-muted:#929aaa;
-  --nyx-fern-accent:#a6c99c;
-  --fresh-ink:var(--nyx-fern-text)!important;
-  --fresh-blue:var(--nyx-fern-accent)!important;
-  --fresh-blue-deep:var(--nyx-fern-accent)!important;
-  --fresh-electric:var(--nyx-fern-accent)!important;
-  --fresh-electric-deep:var(--nyx-fern-muted)!important;
+  body.theme-fresh:is(body,#nyx-botany-text-specificity){
+  --nyx-botany-text:#f1f3f7;
+  --nyx-botany-muted:#929aaa;
+  --nyx-botany-accent:#a6c99c;
+  --fresh-ink:var(--nyx-botany-text)!important;
+  --fresh-blue:var(--nyx-botany-accent)!important;
+  --fresh-blue-deep:var(--nyx-botany-accent)!important;
+  --fresh-electric:var(--nyx-botany-accent)!important;
+  --fresh-electric-deep:var(--nyx-botany-muted)!important;
   --fresh-electric-glow:rgba(166,201,156,.18)!important;
 }
 
@@ -135,21 +135,21 @@ html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
 
 
 html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
-  body.theme-fresh:is(body,#nyx-fern-weather-specificity) .weather-panel,html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
-  body.theme-fresh:is(body,#nyx-fern-weather-specificity) .weather-restore{
-  --weather-accent:var(--nyx-fern-accent)!important;
+  body.theme-fresh:is(body,#nyx-botany-weather-specificity) .weather-panel,html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
+  body.theme-fresh:is(body,#nyx-botany-weather-specificity) .weather-restore{
+  --weather-accent:var(--nyx-botany-accent)!important;
   --weather-accent-soft:rgba(162,189,154,.15)!important;
   --weather-panel-bg:#0c140e!important;
   --weather-card-bg:rgba(27,40,29,.72)!important;
   --weather-card-hover:rgba(36,53,39,.84)!important;
   --weather-line:rgba(134,167,126,.27)!important;
-  --weather-text:var(--nyx-fern-text)!important;
-  --weather-muted:var(--nyx-fern-muted)!important;
-  color:var(--nyx-fern-text)!important;
-  -webkit-text-fill-color:var(--nyx-fern-text)!important;
+  --weather-text:var(--nyx-botany-text)!important;
+  --weather-muted:var(--nyx-botany-muted)!important;
+  color:var(--nyx-botany-text)!important;
+  -webkit-text-fill-color:var(--nyx-botany-text)!important;
 }
 html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
-  body.theme-fresh:is(body,#nyx-fern-weather-specificity) .weather-panel :is(
+  body.theme-fresh:is(body,#nyx-botany-weather-specificity) .weather-panel :is(
     .weather-panel-title,.weather-search-symbol,.weather-search input,
     .weather-search button,.weather-options,.weather-temp,.weather-desc,
     .weather-place,.weather-region-time,.weather-stat,.weather-stat strong,
@@ -157,42 +157,42 @@ html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
     .weather-rain-chance,.weather-high-low,.weather-high-low span,.weather-status,
     .weather-icon-btn
   ),html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
-  body.theme-fresh:is(body,#nyx-fern-weather-specificity) .weather-restore::after{
-  color:var(--nyx-fern-text)!important;
-  -webkit-text-fill-color:var(--nyx-fern-text)!important;
+  body.theme-fresh:is(body,#nyx-botany-weather-specificity) .weather-restore::after{
+  color:var(--nyx-botany-text)!important;
+  -webkit-text-fill-color:var(--nyx-botany-text)!important;
   text-shadow:none!important;
 }
 html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
-  body.theme-fresh:is(body,#nyx-fern-weather-specificity) .weather-panel :is(
+  body.theme-fresh:is(body,#nyx-botany-weather-specificity) .weather-panel :is(
     .weather-search-symbol,.weather-search button,.weather-rain-chance,.weather-icon-btn
   ){
-  color:var(--nyx-fern-accent)!important;
-  -webkit-text-fill-color:var(--nyx-fern-accent)!important;
+  color:var(--nyx-botany-accent)!important;
+  -webkit-text-fill-color:var(--nyx-botany-accent)!important;
 }
 html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
-  body.theme-fresh:is(body,#nyx-fern-weather-specificity) .weather-panel .weather-search input::placeholder{
-  color:var(--nyx-fern-muted)!important;
-  -webkit-text-fill-color:var(--nyx-fern-muted)!important;
+  body.theme-fresh:is(body,#nyx-botany-weather-specificity) .weather-panel .weather-search input::placeholder{
+  color:var(--nyx-botany-muted)!important;
+  -webkit-text-fill-color:var(--nyx-botany-muted)!important;
 }
 
 html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
-  body.theme-fresh:is(body,#nyx-fern-global-specificity){
-  --nyx-fern-line:rgba(255,255,255,.085);
+  body.theme-fresh:is(body,#nyx-botany-global-specificity){
+  --nyx-botany-line:rgba(255,255,255,.085);
   --theme-a:#a6c99c!important;
   --theme-b:#b8d5b0!important;
   --theme-strong:#f1f3f7!important;
   --accent:#a6c99c!important;
-  --nyx-purple-edge:var(--nyx-fern-line)!important;
-  color:var(--nyx-fern-text)!important;
-  -webkit-text-fill-color:var(--nyx-fern-text)!important;
+  --nyx-purple-edge:var(--nyx-botany-line)!important;
+  color:var(--nyx-botany-text)!important;
+  -webkit-text-fill-color:var(--nyx-botany-text)!important;
 }
 html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
-  body.theme-fresh:is(body,#nyx-fern-global-specificity):not(.custom-bg-active):not(.three-d-backgrounds) #whiteVantaBg{
+  body.theme-fresh:is(body,#nyx-botany-global-specificity):not(.custom-bg-active):not(.three-d-backgrounds) #whiteVantaBg{
   opacity:0!important;
   background:#080a0f!important;
 }
 html[data-nyx-theme="fresh"][data-nyx-theme="fresh"][data-nyx-theme="fresh"]
-  body.theme-fresh:is(body,#nyx-fern-global-specificity) .user-chip.needs-name{
+  body.theme-fresh:is(body,#nyx-botany-global-specificity) .user-chip.needs-name{
   color:#f1f3f7!important;
   -webkit-text-fill-color:#f1f3f7!important;
   border:1px solid rgba(255,255,255,.085)!important;

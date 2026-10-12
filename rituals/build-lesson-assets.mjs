@@ -5,7 +5,7 @@ import {parse as parseHtml} from 'parse5';
 import {parse} from 'acorn';
 import {minify} from 'terser';
 
-const revision='lesson-assets-2';
+const revision='lesson-assets-3';
 const javascriptType=/^(?:(?:text|application)\/(?:java|ecma)script|text\/javascript1\.[0-5]|module)?$/i;
 
 export async function compactLessonScript(source,{module=false,seed='lesson'}={}){
@@ -32,6 +32,7 @@ export async function compactLessonScript(source,{module=false,seed='lesson'}={}
 }
 
 export async function compactLessonDocument(source,seed='lesson'){
+  source=source.replace(/\r\n?/g,'\n');
   const scripts=[];
   const visit=node=>{
     if(node.tagName==='script'&&!node.attrs.some(a=>a.name==='src')){

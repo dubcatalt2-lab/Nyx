@@ -19,7 +19,8 @@ try{
   await page.locator('[data-nyx-theme-card="default"]').waitFor();
  }
  await ready();
- for(const theme of ['halloween','midnight','custom','ruby','default']){
+ for(const theme of ['halloween','midnight','custom','ruby','fresh','default']){
+  if(theme==='fresh')assert.match(await page.locator('[data-nyx-theme-card="fresh"]').textContent(),/Botany/);
   await page.locator(`[data-nyx-theme-card="${theme}"]`).click();
   assert.equal(await page.locator('html').getAttribute('data-nyx-theme'),theme);
   await ready();
@@ -28,5 +29,5 @@ try{
   assert.equal(await page.locator('html').getAttribute('data-nyx-theme'),theme,'restored palette');
  }
  assert.deepEqual(errors,[]);
- console.log('Theme selection, reload, palette and selected-card restoration passed for Halloween, Midnight, Custom, Ruby and Default.');
+ console.log('Theme selection, reload, palette and selected-card restoration passed for Halloween, Midnight, Custom, Ruby, Botany and Default.');
 }finally{await workspace.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}

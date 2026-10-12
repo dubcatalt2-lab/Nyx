@@ -2,6 +2,7 @@ import {installNookDesktopRelease} from './scripture/nook-desktop-release.mjs';
 import {addModelCredits,modelCreditRef} from './scripture/ai-model-credits.mjs';
 import {learningRoutes} from './parables/learning-routes.js';
 import {sourceFile} from './scripture/source-layout.mjs';
+import {catalogDocuments} from './scripture/catalog-documents.mjs';
 import {adFreeStatus, installAdFreeRoutes} from './scripture/ad-free-keys.mjs';
 import {publicAssetBoundary} from './scripture/public-assets.mjs';
 import {readChatRelationships, changeChatRelationship, assertChatContact} from './scripture/chat-social.mjs';
@@ -1359,6 +1360,7 @@ const gnMathTitleCache = new Map();
 const gnMathRepos = new Set(["html", "covers", "assets"]);
 const gnMathOwner = "freebuisness";
 const gnMathZonesUrl = `https://raw.githubusercontent.com/${gnMathOwner}/assets/main/zones.json`;
+const gnMathDocument=catalogDocuments({loadCatalog:async()=>JSON.parse(readFileSync(sourceFile(join(__dirname,'assets/gn-math/games.json')),'utf8'))});
 
 function safeGnMathPath(path) {
   const clean = String(path || "").replace(/^\/+/, "");
@@ -1468,7 +1470,7 @@ app.get("/gn-math-title", async (req, res) => {
     return;
   }
   try {
-    const html = await fetchText(`https://raw.githubusercontent.com/${gnMathOwner}/html/main/${path}`);
+    const {html}=await gnMathDocument(path);
     const title = extractTitle(html, "");
     if (title) gnMathTitleCache.set(path, title);
     res.setHeader("Cache-Control", "public, max-age=86400");
@@ -1486,7 +1488,8 @@ app.get("/gn-math-fetch", async (req, res) => {
     return;
   }
   try {
-    const html = await fetchText(`https://raw.githubusercontent.com/${gnMathOwner}/html/main/${path}`);
+    const {html,url}=await gnMathDocument(path);
+    res.setHeader('X-Document-Source',url);
     const title = extractTitle(html, "");
     if (title) gnMathTitleCache.set(path, title);
     res.setHeader("Cache-Control", "public, max-age=300");
@@ -3331,13 +3334,23 @@ app.get("/apps/chat/emoji-catalog.js", (_req, res) => {
   res.type("application/javascript").set("Cache-Control", "public, max-age=31536000, immutable").send(nyxChatEmojiCatalogScript);
 });
 
-app.get("/assets/vendor/eruda.min.js", (_req, res) => {
-  res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-  res.type("application/javascript").sendFile(erudaPath, { dotfiles: "allow" });
+let localConsoleRuntime;
+app.get(["/assets/vendor/eruda.min.js", "/assets/vendor/lesson-compiler.js"], async (req, res, next) => {
+  res.setHeader("Cache-Control", "no-cache");
+  if(staticRoot!==__dirname)return res.type("application/javascript").sendFile(join(staticRoot,req.path),{dotfiles:"allow"});
+  try{
+    if(req.path.endsWith('/eruda.min.js')){
+      const {repairLessonCode}=await import('./rituals/build-lesson-runtime.mjs');
+      return res.type('application/javascript').send(repairLessonCode(readFileSync(erudaPath,'utf8'),'assets/vendor/eruda.min.js').text);
+    }
+    localConsoleRuntime ||= import('esbuild').then(({build})=>build({entryPoints:[join(__dirname,'rituals/lesson-compiler-entry.mjs')],bundle:true,format:'iife',platform:'browser',target:'es2022',minify:true,write:false})).catch(error=>{localConsoleRuntime=null;throw error});
+    const result=await localConsoleRuntime;
+    res.type('application/javascript').send(result.outputFiles[0].text);
+  }catch(error){next(error)}
 });
 app.get("/assets/vendor/hls.min.js", (_req, res) => {
-  res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-  res.type("application/javascript").sendFile(hlsPath, { dotfiles: "allow" });
+  res.setHeader("Cache-Control", "no-cache");
+  res.type("application/javascript").sendFile(staticRoot===__dirname?hlsPath:join(staticRoot,'assets/vendor/hls.min.js'), { dotfiles: "allow" });
 });
 
 function linkGeneratorConfig() {
@@ -3712,13 +3725,8 @@ const founderProfileDefaults = Object.freeze({
   linkLabel: "",
   linkUrl: ""
 });
-app.get(/^\/controller\/(controller\.(?:api|inject|sw)\.js)$/, (req, res) => {
-  res.setHeader("Cache-Control", "no-store");
-  res.type("application/javascript").send(patchedStudyjetControllerAsset(req.params[0]));
-});
-
 const nyxProfileEffectValues = Object.freeze(["none","blooming-roses","fx-cosmic-vortex","fx-nebula-storm","fx-stellar-burst","fx-ethereal-flame","fx-quantum-rift","fx-astral-cascade","fx-plasma-wave","fx-supernova-flash","fx-void-shards","fx-prismatic-spark","fx-arcane-pulse","fx-solar-surge","fx-neon-eclipse","fx-celestial-drift","fx-shadow-aura","fx-hyper-aura","fx-starlight-bloom","fx-galaxy-shimmer","fx-cyber-lattice","fx-abyssal-ring","fx-dimension-rift","fx-chrono-spark","fx-zenith-glow","fx-infrared-pulse","fx-glitch-storm","fx-phantom-flame","fx-vortex-surge","fx-nebula-spark","fx-starlight-echo","fx-spectral-surge","fx-cyber-matrix","fx-dark-void","fx-nebula-rift","fx-solar-flare","fx-sakura-blossom","fx-arcane-prism","fx-abyssal-pulse","fx-neon-stardust","fx-retro-wave","fx-glitch-mirage","fx-celestial-shine","fx-phantom-mist","fx-hyperdrive","fx-quantum-bloom","fx-prismatic-aura","fx-astral-spark","fx-thunderstorm","fx-crimson-eclipse","fx-electric-dream","fx-frozen-shards","fx-vortex-horizon","fx-nova-beam","fx-cybernetic-pulse","fx-radiant-orbit"]);
-const nyxAvatarDecorationValues = Object.freeze(["none","candlelight","astral-ring-alpha","celestial-crown","neon-vortex","solar-flare-ring","void-ring","cybernetic-halo","crimson-shield","quantum-ring","ethereal-aura","static-frost","prismatic-glow","supernova-ring","neon-pulse","arcane-circle","cosmic-dust","stellar-ring","gilded-halo","plasma-ring","hyperdrive","infernal-ring","solar-ring","nebula-ring","prism-crown","ember-ring","vortex-crown"]);
+const nyxAvatarDecorationValues = Object.freeze(["none","candlelight","astral-ring-alpha","celestial-crown","neon-vortex","solar-flare-ring","void-ring","cybernetic-halo","crimson-shield","quantum-ring","ethereal-aura","static-frost","prismatic-glow","supernova-ring","neon-pulse","arcane-circle","cosmic-dust","stellar-ring","gilded-halo","plasma-ring","hyperdrive","scholar-ring","solar-ring","nebula-ring","prism-crown","ember-ring","vortex-crown"]);
 const nyxLegacyProfileEffectMap = Object.freeze({
   glow: "blooming-roses",
   sparkle: "blooming-roses",
@@ -3745,6 +3753,7 @@ const nyxLegacyProfileEffectMap = Object.freeze({
   custom: "blooming-roses"
 });
 const nyxLegacyAvatarDecorationMap = Object.freeze({
+  "infernal-ring": "scholar-ring",
   starfall: "candlelight",
   orbit: "candlelight",
   laurel: "candlelight",

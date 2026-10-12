@@ -182,7 +182,7 @@ function renderArcadeFeatures(games) {
     number.className = 'arcade-feature-number';
     number.textContent = `0${index + 1}`;
     number.setAttribute('aria-hidden', 'true');
-    card.append(makeCover(game), number, copy);
+    card.append(makeCover(game,true), number, copy);
     fragment.append(card);
   }
   arcadeFeatured.replaceChildren(fragment);
@@ -640,7 +640,7 @@ async function adaptCatalog(catalog) {
 
     if (catalog.format === 'ugs') {
       player = ugsPlayerOverrides.get(path) || player;
-      const thumbnail = ugsThumbnailName(path);
+      const thumbnail = item.thumbnail || ugsThumbnailName(path);
       if (knownCovers.has(thumbnail)) covers.push(`/assets/ugs/thumbs/${encodeURIComponent(thumbnail)}`);
     } else if (catalog.format === 'gn') {
 
@@ -712,7 +712,7 @@ function mergeCatalogs(catalogs) {
 
   const fallback = state.manifest?.fallbackCover || '';
   return [...unique.values()].map(game => {
-    const suppliedCovers = [...new Set(game.covers.filter(Boolean))];
+    const suppliedCovers = [...new Set(game.covers.filter(Boolean))].sort((a,b)=>Number(b.startsWith('/assets/'))-Number(a.startsWith('/assets/')));
     return {
       ...game,
       hasIcon: suppliedCovers.length > 0,
@@ -731,7 +731,7 @@ function makeFallback(title) {
   return fallback;
 }
 
-function makeCover(game) {
+function makeCover(game,featured=false) {
   const cover = document.createElement('span');
   cover.className = 'game-cover';
   const fallback = makeFallback(resourceName(game.title));
@@ -744,7 +744,8 @@ function makeCover(game) {
   image.alt = nyxArcade ? `${resourceName(game.title)} cover` : '';
 
 
-  image.loading = 'eager';
+  image.loading = featured ? 'eager' : 'lazy';
+  image.fetchPriority = featured ? 'high' : 'auto';
   image.decoding = 'async';
   image.referrerPolicy = 'no-referrer';
   let index = 0;
@@ -767,7 +768,6 @@ function makeCover(game) {
       image.dispatchEvent(new Event('error'));
     }
   };
-  void setImageSource(game.covers[index]);
   image.addEventListener('load', () => {
     image.classList.add('loaded');
     fallback.remove();
@@ -781,6 +781,7 @@ function makeCover(game) {
     }
   });
   cover.append(image);
+  void setImageSource(game.covers[index]);
   return cover;
 }
 

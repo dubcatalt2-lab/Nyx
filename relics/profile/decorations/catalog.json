@@ -21,7 +21,7 @@
   },
   {
     "id": "neon-vortex",
-    "label": "Aurora Wisps",
+    "label": "Aurora Ribbons",
     "path": "/assets/profile/decorations/neon-vortex.png",
     "staticPath": "/assets/profile/decorations/neon-vortex-still.png",
     "animated": true,
@@ -190,14 +190,14 @@
     "sourceLabel": "Hyperdrive"
   },
   {
-    "id": "infernal-ring",
+    "id": "scholar-ring",
     "label": "Dark Angel Wings",
-    "path": "/assets/profile/decorations/infernal-ring.png",
-    "staticPath": "/assets/profile/decorations/infernal-ring-still.png",
+    "path": "/assets/profile/decorations/scholar-ring.png",
+    "staticPath": "/assets/profile/decorations/scholar-ring-still.png",
     "animated": true,
     "source": "https://cdn.discordapp.com/media/v1/collectibles-shop/1462116613682757888/animated",
     "bytes": 1239357,
-    "sourceLabel": "Infernal Ring"
+    "sourceLabel": "Scholar Ring"
   },
   {
     "id": "solar-ring",

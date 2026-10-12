@@ -226,11 +226,13 @@
     }else{
       startGameProgress();
       const rawUrl=`https://raw.githubusercontent.com/freebuisness/html/main/${encodeURIComponent(gamePath)}`;
+      let documentSource=rawUrl;
       setGameProgress(22);
       const localGame={'4-pf.html':'/assets/games/gladihoppers.html','435.html':'/assets/games/small-world-cup.html'}[gamePath];
       fetch(localGame||`/gn-math-fetch?path=${encodeURIComponent(gamePath)}`,{cache:'no-store'})
         .then(response=>{
           if(response.ok){
+            documentSource=response.headers.get('X-Document-Source')||documentSource;
             setGameProgress(48);
             return response;
           }
@@ -245,7 +247,7 @@
         })
         .then(html=>{
           setGameProgress(76);
-          frame.srcdoc=prepareGameDocument(html,gamePath);
+          frame.srcdoc=prepareGameDocument(html,gamePath,documentSource);
           setGameProgress(88);
           setTimeout(finishGameProgress,7000);
         })

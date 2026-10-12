@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { fork } from 'node:child_process';
 import { once } from 'node:events';
-import { mkdtemp, symlink, unlink, rmdir } from 'node:fs/promises';
+import { mkdtemp, symlink, unlink, rmdir, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { chromium } from 'playwright';
@@ -32,6 +32,12 @@ try {
   assert.equal(health.ok, true);
   assert.equal(health.service, 'nyx');
   assert.equal(health.chatRealtime, 'socket.io');
+  for(const name of ['eruda.min.js','hls.min.js','lesson-compiler.js']){
+    const response=await fetch(base+'/assets/vendor/'+name);
+    assert.equal(response.status,200);
+    assert.equal(await response.text(),await readFile(resolve('dist/assets/vendor',name),'utf8'));
+  }
+  console.log('PASS backend serves the audited developer console, media library and compiler build bytes');
   workspace = await chromium.launch({ channel: 'msedge', headless: true });
   const page=await workspace.newPage();
   const errors=[]; page.on('pageerror',error=>errors.push(error.message));

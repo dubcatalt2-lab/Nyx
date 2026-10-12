@@ -19,7 +19,7 @@ function encoding(header=''){
   return choices.sort((a,b)=>b[1]-a[1]).find(([,value])=>value>0)?.[0];
 }
 
-export function assets(directory=new URL('./dist/',import.meta.url)){
+export function assets(directory=new URL('./dist/',import.meta.url),{isolated=false}={}){
   const cache=new Map();
   async function load(name){
     const path=new URL(name,directory),info=await stat(path,{bigint:true});
@@ -33,7 +33,9 @@ export function assets(directory=new URL('./dist/',import.meta.url)){
     return entry.promise;
   }
   return async(request,response,path)=>{
-    const name=names.get(path);
+    let name=names.get(path);
+    if(isolated&&name==='client.js')name='isolated-client.js';
+    if(isolated&&name==='worker.js')name='isolated-worker.js';
     if(!name){response.writeHead(404);response.end('Not found');return;}
     if(!['GET','HEAD'].includes(request.method)){response.writeHead(405,{allow:'GET, HEAD'});response.end();return;}
     const kind=encoding(request.headers['accept-encoding']);

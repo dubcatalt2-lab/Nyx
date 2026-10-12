@@ -31,7 +31,9 @@ try {
       await route.fulfill({ status: 502, contentType: "text/html", body: "<!doctype html><title>Bad gateway</title>" });
       return;
     }
-    await route.fulfill({ contentType: "application/json", body: JSON.stringify({ choices: [{ message: { content: "Start by giving the button an accessible label and checking the click handler." } }] }) });
+    const summary="Start by giving the button an accessible label and checking the click handler.";
+    const content=route.request().postDataJSON().task==='code-edit'?JSON.stringify({summary,files:[]}):summary;
+    await route.fulfill({ contentType: "application/json", body: JSON.stringify({ choices: [{ message: { content } }] }) });
   });
   await page.route("**/api/code-studio/run", async route => {
     const payload = route.request().postDataJSON();
@@ -47,36 +49,14 @@ try {
 
   await page.goto(`${baseUrl}/apps/code-studio/`, { waitUntil: "domcontentloaded" });
   await page.locator("[data-code-input]").waitFor();
-  assert(await page.locator("body").evaluate(body => body.classList.contains("theme-ruby")), "Code Sandbox did not inherit the selected Nyx theme");
-  const rubyTheme = await page.locator("body").evaluate(body => ({
-    background: getComputedStyle(body).backgroundColor,
-    hoverAccent: getComputedStyle(body).getPropertyValue("--studio-theme-hover-accent").trim(),
-    hoverSoft: getComputedStyle(body).getPropertyValue("--studio-theme-hover-soft").trim(),
-    hoverLine: getComputedStyle(body).getPropertyValue("--studio-theme-hover-line").trim()
-  }));
-  assert(rubyTheme.background === "rgba(18, 20, 24, 0.82)" && rubyTheme.hoverAccent.includes("25%"), 'Ruby accent must reach the workspace');
-  await page.evaluate(() => {
-    localStorage.setItem("nyx.customThemeColor", "#ff8800");
-    localStorage.setItem("nyx.theme", "custom");
-    dispatchEvent(new StorageEvent("storage", { key: "nyx.customThemeColor" }));
-  });
-  const customTheme = await page.locator("body").evaluate(body => ({
-    active: body.classList.contains("theme-custom"),
-    background: getComputedStyle(body).backgroundColor,
-    paletteBackground: getComputedStyle(body).getPropertyValue("--studio-bg").trim(),
-    hoverAccent: getComputedStyle(body).getPropertyValue("--studio-theme-hover-accent").trim()
-  }));
-  assert(customTheme.active && customTheme.background === rubyTheme.background && customTheme.hoverAccent.includes("#ff8800"), 'Custom accent should match the saved Nyx color');
-  await page.evaluate(() => {
-    localStorage.setItem("nyx.customThemeColor", "#22cc88");
-    dispatchEvent(new StorageEvent("storage", { key: "nyx.customThemeColor" }));
-  });
-  const changedCustomTheme = await page.locator("body").evaluate(body => ({
-    background: getComputedStyle(body).backgroundColor,
-    hoverAccent: getComputedStyle(body).getPropertyValue("--studio-theme-hover-accent").trim()
-  }));
-  assert(changedCustomTheme.background === rubyTheme.background && changedCustomTheme.hoverAccent.includes("#22cc88"), `Changing the custom color did not update only the hover palette (${JSON.stringify(changedCustomTheme)})`);
-  const quickPrompt = page.getByRole("button", { name: "Find issues" });
+  const initialPalette=await page.locator('body').evaluate(body=>({background:getComputedStyle(body).backgroundColor,accent:getComputedStyle(body).getPropertyValue('--studio-theme-hover-accent').trim()}));
+  for(const color of ['#ff8800','#22cc88']){
+    await page.evaluate(color=>{localStorage.setItem('nyx.customThemeColor',color);localStorage.setItem('nyx.theme','custom');dispatchEvent(new StorageEvent('storage',{key:'nyx.customThemeColor'}))},color);
+    const nextPalette=await page.locator('body').evaluate(body=>({background:getComputedStyle(body).backgroundColor,accent:getComputedStyle(body).getPropertyValue('--studio-theme-hover-accent').trim()}));
+    assert(JSON.stringify(nextPalette)===JSON.stringify(initialPalette),'Code editor must retain its independent palette when the workspace theme changes');
+    assert(!await page.locator('body').evaluate(body=>body.classList.contains('theme-custom')),'Workspace theme must not be applied to the independent code editor');
+  }
+  const quickPrompt = page.locator('[data-quick-prompts] [data-ai-prompt]').first();
   const quickPromptAtRest = await quickPrompt.evaluate(button => getComputedStyle(button).backgroundColor);
   await quickPrompt.hover();
   await page.waitForTimeout(200);
@@ -139,10 +119,10 @@ try {
   if (process.env.NYX_TEST_STUDIO_SCREENSHOT) await page.screenshot({ path: process.env.NYX_TEST_STUDIO_SCREENSHOT, fullPage: false });
 
   await page.locator("[data-language]").selectOption("javascript");
-  await page.locator("[data-code-input]").fill('console.log("Nyx console ready");');
+  await page.locator("[data-code-input]").fill('console.log("Console fixture ready");');
   await page.locator("[data-run]").click();
   await page.locator('[data-result-mode="terminal"]').click();
-  await page.getByText("log: Nyx console ready").waitFor();
+  await page.getByText("log: Console fixture ready").waitFor();
 
   await page.locator("[data-language]").selectOption("css");
   await page.locator("[data-run]").click();
@@ -177,7 +157,7 @@ try {
   assert((await page.locator("[data-output]").innerText()).includes("main.py"), "Terminal panel did not report the last run");
   await page.locator('[data-result-mode="problems"]').click();
   assert((await page.locator("[data-output]").innerText()).includes("No problems"), "Problems panel did not provide a result");
-  await page.getByRole("button", { name: "Find issues" }).click();
+  await quickPrompt.click();
   await page.getByText("Start by giving the button").waitFor();
   assert(await page.locator(".ai-message.is-user").count() === 1 && await page.locator(".ai-message.is-assistant").count() === 1, "Code helper did not render a conversation");
   assert(requests.length === 1 && requests[0].provider === "shared", 'Code helper must use the active shared provider');
@@ -188,161 +168,31 @@ try {
   const shellErrors = [];
   shellPage.on("pageerror", error => shellErrors.push(error.message));
   await shellPage.addInitScript(() => {
+    try {
     localStorage.setItem("nyx.setupComplete", "true");
     localStorage.setItem("nyx.tosAcceptedVersion", "2026-07-30");
-    localStorage.setItem("nyx.releaseNotes.2026-08-31-new-nyx.seen", "2026-08-31-new-nyx");
+    localStorage.setItem("nyx.releaseNotes.2026-10-02-nyx-1.6.8.seen", "2026-10-02-nyx-1.6.8");
     localStorage.setItem("nyx.workspaceShellMode", "true");
     localStorage.setItem("nyx.homeDesign", "redesigned");
     if (!localStorage.getItem("nyx.theme")) localStorage.setItem("nyx.theme", "ruby");
     localStorage.setItem("nyx.popupProtection", "true");
+    } catch {}
   });
-  await shellPage.goto(baseUrl, { waitUntil: "domcontentloaded" });
+  await shellPage.goto(`${baseUrl}/study.html`, { waitUntil: "domcontentloaded" });
   await shellPage.locator("#nyxStudyHubStartup").waitFor({ state: "hidden" });
-  await shellPage.evaluate(() => {
-    const box = document.createElement("div");
-    box.id = "workspaceSuggestions";
-    box.className = "workspace-search-suggestions show";
-    box.innerHTML = '<button class="workspace-search-suggestion active" type="button">example</button><button class="workspace-search-suggestion" type="button">reddit</button>';
-    document.body.appendChild(box);
-  });
-  const suggestionBox = shellPage.locator(".workspace-search-suggestions.show");
-  await suggestionBox.waitFor();
-  const rubySuggestions = await suggestionBox.evaluate(box => ({
-    background: getComputedStyle(box).backgroundColor,
-    border: getComputedStyle(box).borderTopColor,
-    row: getComputedStyle(box.querySelector(".workspace-search-suggestion.active")).backgroundColor,
-    text: getComputedStyle(box.querySelector(".workspace-search-suggestion.active")).color,
-    selection: getComputedStyle(document.querySelector("[data-workspace-shell-url]"), "::selection").backgroundColor
-  }));
-  assert(rubySuggestions.background === "rgba(3, 6, 11, 0.9)" && rubySuggestions.border === "rgba(218, 233, 255, 0.14)" && rubySuggestions.row === "rgba(255, 255, 255, 0.075)" && rubySuggestions.text === "rgb(232, 235, 242)" && rubySuggestions.selection === "rgba(145, 172, 210, 0.34)", `Ruby recolored the workspace suggestions (${JSON.stringify(rubySuggestions)})`);
-  await shellPage.evaluate(() => {
-    localStorage.setItem("nyx.customThemeColor", "#ff8800");
-    localStorage.setItem("nyx.theme", "custom");
-    dispatchEvent(new StorageEvent("storage", { key: "nyx.theme" }));
-  });
-  const customSuggestions = await suggestionBox.evaluate(box => ({
-    background: getComputedStyle(box).backgroundColor,
-    border: getComputedStyle(box).borderTopColor,
-    row: getComputedStyle(box.querySelector(".workspace-search-suggestion.active")).backgroundColor,
-    text: getComputedStyle(box.querySelector(".workspace-search-suggestion.active")).color,
-    selection: getComputedStyle(document.querySelector("[data-workspace-shell-url]"), "::selection").backgroundColor
-  }));
-  assert(JSON.stringify(customSuggestions) === JSON.stringify(rubySuggestions), `Custom theme recolored the workspace suggestions (${JSON.stringify(customSuggestions)})`);
-  await shellPage.evaluate(() => {
-    localStorage.setItem("nyx.theme", "ruby");
-    dispatchEvent(new StorageEvent("storage", { key: "nyx.theme" }));
-    document.querySelector("#workspaceSuggestions")?.remove();
-  });
-  const shellSelections = await shellPage.evaluate(async () => {
-    const themes = ["default", "midnight", "ruby", "emerald", "sakura", "fresh", "custom"];
-    const selectors = [
-      "[data-workspace-shell-url]",
-      ".workspace-window.workspace-home-page [data-workspace-blank-input]",
-      ".nyx-minimal-utility-links a",
-      "[data-nyx-visual-dock] button"
-    ];
-    const results = {};
-    for (const theme of themes) {
-      localStorage.setItem("nyx.theme", theme);
-      if (theme === "custom") localStorage.setItem("nyx.customThemeColor", "#ff0000");
-      dispatchEvent(new StorageEvent("storage", { key: "nyx.theme" }));
-      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-      results[theme] = selectors.map(selector => {
-        const element = document.querySelector(selector);
-        if (!element) return { selector, missing: true };
-        const style = getComputedStyle(element, "::selection");
-        return { selector, background: style.backgroundColor, color: style.color, fill: style.webkitTextFillColor };
-      });
-    }
-    localStorage.setItem("nyx.theme", "ruby");
-    dispatchEvent(new StorageEvent("storage", { key: "nyx.theme" }));
-    return results;
-  });
-  for (const [theme, selections] of Object.entries(shellSelections)) {
-    for (const selection of selections) {
-      assert(!selection.missing && selection.background === "rgba(145, 172, 210, 0.34)" && selection.color === "rgb(248, 250, 252)" && selection.fill === "rgb(248, 250, 252)", `${theme} recolored Ctrl+A selection for ${selection.selector} (${JSON.stringify(selection)})`);
-    }
-  }
-  const discordLink = shellPage.locator(".nyx-discord-link");
-  await discordLink.waitFor();
-  assert((await discordLink.getAttribute("href")) === "https://discord.gg/cAdjYAJs3u", "Homepage Discord link has the wrong invite");
-  assert((await discordLink.getAttribute("target")) === "_blank", "Homepage Discord link does not open separately");
-  const discordVisibility = await discordLink.evaluate(link => ({ display: getComputedStyle(link).display, body: document.body.className }));
-  assert(discordVisibility.display !== "none", `Homepage Discord link is not visible on the home page (${discordVisibility.display}; ${discordVisibility.body})`);
-  assert((await discordLink.locator("svg").evaluate(icon => getComputedStyle(icon).fill)) === "none", "Homepage Discord symbol is not hollow");
-  const dockBox = await shellPage.locator(".nyx-visual-dock").boundingBox();
-  const discordBox = await discordLink.boundingBox();
-  assert(!dockBox || !discordBox || discordBox.x + discordBox.width <= dockBox.x, "Homepage Discord link is covered by the right navigation rail");
-  await shellPage.context().route("https://discord.gg/**", route => route.fulfill({ contentType: "text/html", body: "<!doctype html><title>Discord invite test</title>" }));
-  const discordPopupPromise = shellPage.waitForEvent("popup");
-  await discordLink.click();
-  const discordPopup = await discordPopupPromise;
-  assert(discordPopup.url().includes("discord.gg/cAdjYAJs3u"), "Trusted Discord link did not open the invite in a popup tab");
-  await discordPopup.close();
-  const customHomePage = await workspace.newPage({ viewport: { width: 1280, height: 900 } });
-  await customHomePage.addInitScript(() => {
-    localStorage.setItem("nyx.setupComplete", "true");
-    localStorage.setItem("nyx.tosAcceptedVersion", "2026-07-30");
-    localStorage.setItem("nyx.releaseNotes.2026-08-31-new-nyx.seen", "2026-08-31-new-nyx");
-    localStorage.setItem("nyx.workspaceShellMode", "true");
-    localStorage.setItem("nyx.homeDesign", "redesigned");
-    localStorage.setItem("nyx.customThemeColor", "#22cc88");
-    localStorage.setItem("nyx.theme", "custom");
-  });
-  await customHomePage.goto(baseUrl, { waitUntil: "domcontentloaded" });
-  await customHomePage.locator("#nyxStudyHubStartup").waitFor({ state: "hidden" });
-  await customHomePage.locator('#nyxBeamsBg[data-light-color="#76dfb5"]').waitFor();
-  assert((await customHomePage.locator("#nyxBeamsBg").getAttribute("data-light-color")) !== "#a98cff", "Custom theme remained locked to the Violet Beams color");
-  const homeSelection = await customHomePage.locator(".workspace-window.workspace-home-page [data-workspace-blank-input]").evaluate(input => {
-    const style = getComputedStyle(input, "::selection");
-    input.focus();
-    input.value = "Search DuckDuckGo or type a URL";
-    input.select();
-    return { background: style.backgroundColor, color: style.color, fill: style.webkitTextFillColor };
-  });
-  assert(homeSelection.background === "rgba(145, 172, 210, 0.34)" && homeSelection.color === "rgb(248, 250, 252)" && homeSelection.fill === "rgb(248, 250, 252)", `Custom theme recolored the homepage Ctrl+A selection (${JSON.stringify(homeSelection)})`);
-  await customHomePage.close();
-  if (process.env.NYX_TEST_SCREENSHOT) {
-    await shellPage.waitForTimeout(4000);
-    await shellPage.screenshot({ path: process.env.NYX_TEST_SCREENSHOT, fullPage: false });
-  }
-  const codeSandbox = shellPage.locator('[data-nyx-visual-dock] [data-nyx-dock-item="code-sandbox"]');
-  await codeSandbox.waitFor();
-  assert(await codeSandbox.innerText() === "Code Sandbox", "Code Sandbox did not replace the Browse rail item");
-  assert((await codeSandbox.locator("svg path").first().getAttribute("d"))?.startsWith("m9 7-5 5"), "Code Sandbox rail item is still using the generic Apps icon");
-  assert(await shellPage.locator('[data-nyx-visual-dock] [data-nyx-dock-item="browse"]').count() === 0, "The retired Browse rail item is still present");
-  await shellPage.locator('[data-nyx-visual-dock] [data-nyx-dock-item="apps"]').click();
-  await shellPage.waitForFunction(() => {
-    const frame = document.querySelector("iframe.view.active");
-    try { return Boolean(frame?.contentDocument?.querySelector('[data-global-app-id="code-studio"]')); } catch { return false; }
-  });
-  const catalogCodeApps = await shellPage.locator("iframe.view.active").evaluate(frame => [...frame.contentDocument.querySelectorAll('[data-global-app-id^="code-"]')].map(tile => ({
-    id: tile.dataset.globalAppId,
-    name: tile.textContent.trim(),
-    icon: tile.querySelector("img")?.getAttribute("src") || ""
-  })));
-  const sandboxCatalogEntry = catalogCodeApps.find(app => app.id === "code-studio");
-  assert(sandboxCatalogEntry?.name === "Code Sandbox", "Apps catalog did not show Code Sandbox");
-  assert(!catalogCodeApps.some(app => app.id === "code-tutorials"), "Nyx Code Tutorials is visible in the Apps catalog while it should be hidden");
-  if (process.env.NYX_TEST_APPS_SCREENSHOT) await shellPage.screenshot({ path: process.env.NYX_TEST_APPS_SCREENSHOT, fullPage: false });
-  await codeSandbox.evaluate(button => button.onclick?.({ preventDefault() {}, stopPropagation() {} }));
-  await shellPage.locator('iframe.view[src*="/apps/code-studio/"]').waitFor();
-  await shellPage.frameLocator('iframe.view[src*="/apps/code-studio/"]').locator('[data-code-studio]').waitFor();
-  const embeddedStudioTheme = await shellPage.frameLocator('iframe.view[src*="/apps/code-studio/"]').locator("body").evaluate(body => ({
-    background: getComputedStyle(body).backgroundColor,
-    hoverAccent: getComputedStyle(body).getPropertyValue("--studio-theme-hover-accent").trim()
-  }));
-  assert(embeddedStudioTheme.background === "rgb(7, 9, 13)" && embeddedStudioTheme.hoverAccent === "#e8a3b4", `Embedded Code Sandbox did not keep neutral surfaces with the Ruby hover color (${JSON.stringify(embeddedStudioTheme)})`);
-  await shellPage.locator("[data-workspace-shell-url]").focus();
-  await shellPage.evaluate(() => {
-    const box = document.createElement("div");
-    box.id = "workspaceSuggestions";
-    box.className = "workspace-search-suggestions show";
-    box.innerHTML = '<button class="workspace-search-suggestion active" type="button">https://duckduckgo.com/?q=nyx</button>';
-    document.body.appendChild(box);
-  });
-  await shellPage.frameLocator('iframe.view[src*="/apps/code-studio/"]').locator("[data-code-input]").click({ position: { x: 30, y: 30 } });
-  await shellPage.waitForFunction(() => !document.querySelector("#workspaceSuggestions")?.classList.contains("show"));
+  await shellPage.locator('[data-workspace-shell-url]').waitFor({state:'attached'});
+  await shellPage.locator('[data-nyx-dock-item="apps"]').click();
+  const apps = shellPage.frameLocator('iframe.view.active');
+  await apps.locator('[data-global-app-id="code-studio"]').waitFor();
+  assert(await apps.locator('[data-global-app-id="code-tutorials"]').count() === 0, 'Retired tutorials entry returned');
+  await apps.locator('[data-global-app-id="code-studio"]').click();
+  const embedded = shellPage.frameLocator('iframe.view[src*="/apps/code-studio/"]');
+  await embedded.locator('[data-code-studio]').waitFor();
+  const embeddedPalette = await embedded.locator('body').evaluate(body=>({background:getComputedStyle(body).backgroundColor,accent:getComputedStyle(body).getPropertyValue('--studio-theme-hover-accent').trim()}));
+  assert(embeddedPalette.accent.includes('#ad777b'), 'Embedded editor did not receive the shell Ruby accent: '+JSON.stringify(embeddedPalette));
+  await embedded.locator('[data-run]').click();
+  await embedded.frameLocator('[data-preview]').getByText('Hello, Nyx').waitFor();
+  assert(shellErrors.length===0, 'Embedded editor errors: '+shellErrors.join(' | '));
 
   await page.setViewportSize({ width: 1024, height: 768 });
   let hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);

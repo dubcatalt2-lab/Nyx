@@ -1,7 +1,7 @@
 import {WebSocket} from 'ws';
 import {pack, unpack, limits} from './frames.mjs';
 
-export function channel(socket, resolveDestination, headersFor) {
+export function channel(socket, resolveDestination, headersFor,prepare=async()=>null) {
   let upstream, started=false, ready=false;
   const timer=setTimeout(()=>socket.terminate(),15000);
   const stop=()=>{
@@ -32,13 +32,15 @@ export function channel(socket, resolveDestination, headersFor) {
       if(socket.readyState!==WebSocket.OPEN)return;
       const target=new URL(resolved.url);
       target.protocol=target.protocol==='https:'?'wss:':'ws:';
-      const headers=Object.fromEntries(headersFor(metadata.headers));
+      const policy=await prepare(metadata);
+      const headers=Object.fromEntries(headersFor(policy?.headers||metadata.headers));
       const protocols=metadata.headers.filter(([name])=>name.toLowerCase()==='sec-websocket-protocol').flatMap(([,value])=>value.split(',').map(item=>item.trim()));
       const addresses=resolved.addresses||[resolved.address];
       upstream=new WebSocket(target,protocols,{
         headers,perMessageDeflate:false,maxPayload:limits.upload,handshakeTimeout:10000,
         lookup:(_host,options,callback)=>options?.all?callback(null,addresses):callback(null,resolved.address.address,resolved.address.family)
       });
+      if(policy)upstream.once('upgrade',response=>void policy.receive({headers:{getSetCookie:()=>response.headers['set-cookie']||[]}}).catch(()=>socket.terminate()));
       upstream.once('open',()=>{
         clearTimeout(timer);
         if(socket.readyState!==WebSocket.OPEN){stop();return;}

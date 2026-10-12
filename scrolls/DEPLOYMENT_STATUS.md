@@ -1,3 +1,15 @@
+# Current verification candidate ? 2026-10-12 UTC
+
+The full code-aware release audit passes: 5,220 files; atob 0, eval 2, Function 2; 452 raw matches reviewed; zero blocked findings, paths, parse errors or source maps. GN Math catalog/cover repairs, nested login-popup/session fixes, private cookie persistence and current UI regression tests pass. The isolated HTTPS document service is active; the main production application and public main are still pending. See RELEASE_REPAIRS.md for raw outputs and explicit compatibility limits. The user-provided YouTube session was renewed privately. Earlier status below is historical.
+
+# Release repairs — 2026-10-11; still blocked
+
+Code-aware audit now retains all raw findings and per-match hash-bound reviews. Botany/theme restoration, twelve asset-path changes, saved-decoration normalization, explicit game callback registries/property accessors and the shared compiler are implemented locally. Browser games remain minified/obfuscated, with stable line endings; no streaming. Built compiler, console and media routes are verified.
+
+Final distribution audit: 3550 files; atob 0, eval 2, Function 2; 450 raw findings, 450 reviewed, 0 unclassified; 0 flagged paths, 0 parse failures; **1 source-map reference remains inside a compressed signed game program**. The gate correctly FAILS. Do not deploy or describe the release as complete. Hosted document origin/isolation and comprehensive game compatibility remain open. Public main and production are unchanged.
+
+See RELEASE_REPAIRS.md for scoped changes, raw outputs and limits, and NYXTUBE_BACKEND.md for renewing the server's YouTube cookie session. The real cookie session was not replaced. Unrelated Nook/cloud changes are preserved.
+
 # Current follow-up ? 2026-10-11
 
 Browser games retained at the user's request; remote streaming is not enabled. The new bundled-game build pass processes 1,586 files / 2,412 scripts with zero failures and reduces 169,222,971 bytes to 161,787,238 bytes. Chrome/Edge game and fixture interactions, generated-build checks, desktop/mobile catalog controls, and the narrow deployment check pass. See LESSON_DELIVERY_VERIFICATION.md for raw output and limits.

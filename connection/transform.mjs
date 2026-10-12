@@ -2,6 +2,7 @@ import {parse, parseFragment, serialize} from 'parse5';
 import {parse as cssParse, walk as cssWalk, generate} from 'css-tree';
 import {parse as jsParse} from 'acorn';
 import {route} from './address.mjs';
+import {partitionOrigin} from './partition.mjs';
 
 function visit(node, callback) {
   if (!node || typeof node !== 'object') return;
@@ -90,11 +91,11 @@ export function script(text, base, prefix, module = false) {
       edits.push({start:node.start,end:node.end,text:(shorthand?'location:':'')+'globalThis.documentLocation'+(assignment?'.href':'')});
       return;
     }
-    if(node.type==='MemberExpression'&&node.object.type!=='Super'&&node.property.type!=='PrivateIdentifier'&&(node.computed?node.property.value:node.property.name)==='location'){
+    if(node.type==='MemberExpression'&&node.object.type!=='Super'&&node.property.type!=='PrivateIdentifier'&&['location','postMessage'].includes(node.computed?node.property.value:node.property.name)){
       let optional=false;
       for(let item=node.object;item?.type==='MemberExpression'||item?.type==='CallExpression';item=item.object||item.callee)optional ||= item.optional===true;
       if(!optional){
-        edits.push({start:node.object.start,end:node.object.start,text:'globalThis.documentOwner('});
+        edits.push({start:node.object.start,end:node.object.start,text:'globalThis.'+((node.computed?node.property.value:node.property.name)==='location'?'documentOwner':'documentMessenger')+'('});
         edits.push({start:node.object.end,end:node.object.end,text:')'});
       }
     }
@@ -209,6 +210,7 @@ export function document(text, base, prefix, context={}) {
   const entry = parseFragment('<script src="/boot/runtime.js"></script>').childNodes[0];
   entry.attrs.push({name: 'data-document', value: effective}, {name: 'data-location', value: base}, {name: 'data-route', value: prefix});
   entry.attrs.push({name:'data-ready-at',value:String(context.readyAt||0)},{name:'data-cookies',value:context.cookies||''});
+  if(context.isolated)entry.attrs.push({name:'data-isolated',value:'1'},{name:'data-broker',value:context.broker||''});
   entry.parentNode = head;
   head.childNodes.unshift(entry);
   return serialize(tree);
@@ -216,7 +218,12 @@ export function document(text, base, prefix, context={}) {
 
 export async function content(response, base, prefix, destination = '', mode = 'classic', context={}) {
   const headers = new Headers(response.headers);
-  for (const name of ['content-security-policy','content-security-policy-report-only','x-frame-options','content-length','content-encoding','set-cookie','clear-site-data']) headers.delete(name);
+  for (const name of ['content-security-policy','content-security-policy-report-only','x-frame-options','content-length','content-encoding','set-cookie','clear-site-data','x-document-cookies']) headers.delete(name);
+  if(context.isolated){
+    headers.set('origin-agent-cluster','?1');headers.set('referrer-policy','unsafe-url');
+    const allow=headers.get('access-control-allow-origin');
+    if(allow&&allow!=='*'){try{headers.set('access-control-allow-origin',partitionOrigin(new URL(allow).origin,new URL(prefix).origin));}catch{headers.delete('access-control-allow-origin');}}
+  }
   const type = headers.get('content-type') || '';
   const location = headers.get('location');
   if (location) headers.set('location', route(location, base, prefix));
@@ -237,7 +244,7 @@ export async function content(response, base, prefix, destination = '', mode = '
     }
     if (['worker','sharedworker'].includes(destination)) {
       const runtime = JSON.stringify('/boot/runtime.js');
-      body = 'globalThis.documentContext='+JSON.stringify({base,prefix,readyAt:context.readyAt||0})+';'+(mode === 'module' ? 'import ' + runtime + ';' : 'importScripts(' + runtime + ');') + '\n' + body;
+      body = 'globalThis.documentContext='+JSON.stringify({base,prefix,isolated:!!context.isolated,broker:context.broker||'',readyAt:context.readyAt||0})+';'+(mode === 'module' ? 'import ' + runtime + ';' : 'importScripts(' + runtime + ');') + '\n' + body;
     }
   }
   return new Response([204,205,304].includes(response.status) ? null : body, {status: response.status, headers});

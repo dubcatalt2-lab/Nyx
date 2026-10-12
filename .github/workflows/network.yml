@@ -1,7 +1,7 @@
 name: Document connection and release audit
 on:
   push:
-    branches: [main, agent/pirate-cove]
+    branches: [main, agent/pirate-cove, agent/nyx-page-wording-20261008]
   pull_request:
 permissions:
   contents: read
@@ -20,9 +20,13 @@ jobs:
       - run: npm ci --prefix connection
       - run: npx playwright install --with-deps chromium
       - run: npm run test:lesson-assets
+      - run: node --test rituals/test-release-repairs.mjs
       - run: node rituals/test-cached-folder-navigation.mjs
       - run: npm --prefix connection run build
       - run: npm run test:network
+      - run: node connection/isolated-smoke.mjs
+        env:
+          NYX_TEST_SHELL_URL: auto
       - run: node rituals/test-document-window.mjs
   complete-release-audit:
     runs-on: ubuntu-latest
@@ -35,5 +39,12 @@ jobs:
       - run: npm ci
       - run: node rituals/test-dependency-purge.mjs
       - run: npm run build:vps
+      - run: npx playwright install --with-deps chromium
+      - run: node rituals/test-lesson-runtime-browser.mjs
       - run: npm run check:deploy
       - run: npm run check:release-audit
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-audit
+          path: .codex-artifacts/release-audit.json

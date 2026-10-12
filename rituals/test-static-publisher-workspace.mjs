@@ -94,10 +94,10 @@ try {
   assert.equal(await page.locator('#nyxAwayCover').isVisible(),true);
   await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));});
   assert.equal(await page.locator('#nyxAwayCover').isVisible(),false);
-  const legacyModule=Object.keys(JSON.parse(published.get('public-modules.json').toString()).aliases).find(name=>name.endsWith('/header-utils.mjs'));
-  assert(legacyModule,'Legacy shared module mapping is missing');
-  const exports=await page.evaluate(async url=>Object.keys(await import(url)),origin+base+legacyModule);
-  assert(exports.length,'Legacy module must execute through the static worker');
+  const documentModule=Object.keys(JSON.parse(published.get('public-modules.json').toString()).aliases).find(name=>name.endsWith('/document-window.mjs'));
+  assert(documentModule,'Document window module mapping is missing');
+  const exports=await page.evaluate(async url=>Object.keys(await import(url)),origin+base+documentModule);
+  assert(exports.includes('openDocument'),'Document module must execute through the static worker');
   assert.equal(new URL(page.url()).pathname, base+'Nyx.svg');
   await page.evaluate(async()=>{for(const registration of await navigator.serviceWorker.getRegistrations())await registration.unregister();});
   await page.goto(origin+'/cache-fixture');
@@ -112,7 +112,9 @@ try {
   }
   await page.locator('[data-nyx-dock-item="games"]').click();
   const games = page.frameLocator('iframe.view.active');
-  await games.locator('#catalogProgress.done').waitFor({ state: 'attached' });
+  await games.locator('#catalogProgress.done').waitFor({ state: 'attached' }).catch(async error=>{
+    console.error(JSON.stringify({errors,failures,frames:await Promise.all(page.frames().map(async frame=>({url:frame.url(),text:(await frame.locator('body').innerText().catch(()=>'' )).slice(0,1000)})))},null,2));throw error;
+  });
   const allCount = Number((await games.locator('[data-library="all"] .library-tab-count').innerText()).replaceAll(',', ''));
   assert(versionedArcadeRequests.some(path=>path.endsWith('/games.json')), 'Catalog must refresh despite the old workspace cache');
   assert(versionedArcadeRequests.some(path=>path.endsWith('.js')), 'Game renderer must use the current package revision');

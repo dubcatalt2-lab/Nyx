@@ -16,7 +16,7 @@ export class TubeError extends Error {
   constructor(code, message, status = 503) { super(message); this.code = code; this.status = status; }
 }
 export function extractionFailure(stderr = '') {
-  if (/not a bot|cookies are no longer valid|cookies.*expired|login required/i.test(stderr)) return new TubeError('authentication', 'YouTube login needs checking.');
+  if (/not a bot|cookies are no longer valid|cookies.*expired|login required/i.test(stderr)) return new TubeError('authentication', 'The server\u2019s YouTube session needs renewal. The site owner must reconnect it; signing into Nyx will not fix this.');
   if (/private video|members.only/i.test(stderr)) return new TubeError('video', 'This video requires access through its YouTube account or membership.', 422);
   if (/age.restricted|confirm your age/i.test(stderr)) return new TubeError('video', 'YouTube requires age verification for this video.', 422);
   if (/not available in your country|not made.*available in your country|geo.restricted/i.test(stderr)) return new TubeError('video', 'YouTube does not make this video available in the server’s region.', 422);

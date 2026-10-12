@@ -23,7 +23,7 @@
     "test:nyxify-covers": "node rituals/test-nyxify-playlist-covers.mjs",
     "test:nyxify-live": "node rituals/test-nyxify-live-playback.mjs",
     "test:nyxify-match": "node rituals/test-nyxify-full-track-match.mjs",
-    "test:nyxify-player": "node rituals/test-nyxify-player.mjs",
+    "test:nyxify-player": "node rituals/test-nyxify-native-player.mjs",
     "test:jsdelivr-publisher": "node rituals/test-jsdelivr-publisher.mjs",
     "test:link-generator-global-jsdelivr": "node rituals/test-link-generator-global-jsdelivr.mjs",
     "test:link-generator-variants": "node rituals/test-link-generator-variants.mjs",

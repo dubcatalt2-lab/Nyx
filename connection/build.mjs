@@ -11,9 +11,9 @@ const output = resolve(root, 'dist');
 const packages = new Set();
 await mkdir(output, {recursive: true});
 for (const name of await readdir(output)) {
-  if (!['worker.js','client.js','runtime.js','index.html','THIRD_PARTY_NOTICES.txt'].includes(name)) throw new Error('Unexpected output entry: ' + name);
+  if (!['worker.js','client.js','isolated-worker.js','isolated-client.js','runtime.js','index.html','THIRD_PARTY_NOTICES.txt'].includes(name)) throw new Error('Unexpected output entry: ' + name);
 }
-for (const [source, name] of [['worker.mjs','worker.js'],['client.mjs','client.js'],['runtime.js','runtime.js']]) {
+for (const [source, name] of [['worker.mjs','worker.js'],['client.mjs','client.js'],['isolated-worker.mjs','isolated-worker.js'],['isolated-client.mjs','isolated-client.js'],['runtime.js','runtime.js']]) {
   const built = await build({absWorkingDir: root, entryPoints: [source], bundle: true, write: false, metafile: true, format: 'iife', platform: 'browser', target: 'es2022', legalComments: 'none', sourcemap: false});
   for (const file of Object.keys(built.metafile.inputs)) {
     const match = file.match(/^(?:\.\.\/)?node_modules\/(?:@[^/]+\/)?[^/]+/);
@@ -32,7 +32,7 @@ for (const directory of [...packages].sort()) {
   for (const file of files) notices.push(await readFile(resolve(root, directory, file), 'utf8'));
 }
 await writeFile(resolve(output, 'THIRD_PARTY_NOTICES.txt'), notices.join('\n\n'));
-const audit = spawnSync(process.execPath, [resolve(root, '../rituals/audit-release.mjs'), output], {stdio: 'inherit'});
+const audit = spawnSync(process.execPath, [resolve(root, '../rituals/audit-release.mjs'), output, resolve(root, '../.codex-artifacts/connection-audit.json')], {stdio: 'inherit'});
 if (audit.status !== 0) process.exit(audit.status || 1);
 console.log('PASS original document application build');
 

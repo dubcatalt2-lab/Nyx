@@ -1,0 +1,2072 @@
+{
+  "version": 1,
+  "reviews": [
+    {
+      "file": "@28b23060/e60f9b50/@r916d1a4bd4a3a776f746a5a7!.js",
+      "sha256": "f0f72b9bfe03c590335725aca900c1d0c6429d6840ed0daf51f4e1e026041488",
+      "evidence": "Read-only saved-preference migration key. The former decoration value is normalized to the current catalog value before rendering; retaining the input key protects existing accounts until stored records are migrated. The connection key occurs only in the historical preference export denylist.",
+      "matches": [
+        {
+          "section": "decoded string",
+          "contextHash": "9c581cc23b88ddd1379abae8f2a98a24382c6f45ecb66e8ac8a11ecdacf88d2c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "829ce8b39281e87ca0e005168df28ceb45b2a07d1ed3d214834bcbb38e0f8d9d"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "0db1ab372ee63e24b783ed1fc49846a77c3f19c55c50b924a876ccf0ad9b9e32"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "1812509570842334cbee4ec8d5401945242e9f886ca13fae6137f80e1c1de912"
+        }
+      ]
+    },
+    {
+      "file": "@r525f31eeb43c82e14a860e31!.js",
+      "sha256": "05723c24d008f4497260013eafac825081a33ad5834bb990e6090fb41706e2df",
+      "evidence": "Read-only saved-preference migration key. The former decoration value is normalized to the current catalog value before rendering; retaining the input key protects existing accounts until stored records are migrated. The connection key occurs only in the historical preference export denylist.",
+      "matches": [
+        {
+          "section": "decoded string",
+          "contextHash": "9c581cc23b88ddd1379abae8f2a98a24382c6f45ecb66e8ac8a11ecdacf88d2c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "829ce8b39281e87ca0e005168df28ceb45b2a07d1ed3d214834bcbb38e0f8d9d"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "0db1ab372ee63e24b783ed1fc49846a77c3f19c55c50b924a876ccf0ad9b9e32"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "1812509570842334cbee4ec8d5401945242e9f886ca13fae6137f80e1c1de912"
+        }
+      ]
+    },
+    {
+      "file": "apps/chat/@14b42d8f/9d95570a/@r1b17d201ff3beb3972140573!.js",
+      "sha256": "51441dc9a04ca982789c1b87451e63a0a38fa0213df57398fe1db0a407210d44",
+      "evidence": "Read-only saved-preference migration key. The former decoration value is normalized to the current catalog value before rendering; retaining the input key protects existing accounts until stored records are migrated. The connection key occurs only in the historical preference export denylist.",
+      "matches": [
+        {
+          "section": "decoded string",
+          "contextHash": "829ce8b39281e87ca0e005168df28ceb45b2a07d1ed3d214834bcbb38e0f8d9d"
+        }
+      ]
+    },
+    {
+      "file": "apps/jsdelivr-publisher/static-package/files/@28b23060/e60f9b50/@r916d1a4bd4a3a776f746a5a7!.js",
+      "sha256": "65df402055b069ad64e54e53011fffe2817bb87c47e0d91f33508133cb21ab29",
+      "evidence": "Read-only saved-preference migration key. The former decoration value is normalized to the current catalog value before rendering; retaining the input key protects existing accounts until stored records are migrated. The connection key occurs only in the historical preference export denylist.",
+      "matches": [
+        {
+          "section": "decoded string",
+          "contextHash": "9c581cc23b88ddd1379abae8f2a98a24382c6f45ecb66e8ac8a11ecdacf88d2c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "829ce8b39281e87ca0e005168df28ceb45b2a07d1ed3d214834bcbb38e0f8d9d"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "0db1ab372ee63e24b783ed1fc49846a77c3f19c55c50b924a876ccf0ad9b9e32"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "1812509570842334cbee4ec8d5401945242e9f886ca13fae6137f80e1c1de912"
+        }
+      ]
+    },
+    {
+      "file": "apps/jsdelivr-publisher/static-package/files/@r525f31eeb43c82e14a860e31!.js",
+      "sha256": "3746a7ef35476382db430fed88bbc15cb7f3f0a22957fcec3301b252f719a961",
+      "evidence": "Read-only saved-preference migration key. The former decoration value is normalized to the current catalog value before rendering; retaining the input key protects existing accounts until stored records are migrated. The connection key occurs only in the historical preference export denylist.",
+      "matches": [
+        {
+          "section": "decoded string",
+          "contextHash": "9c581cc23b88ddd1379abae8f2a98a24382c6f45ecb66e8ac8a11ecdacf88d2c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "829ce8b39281e87ca0e005168df28ceb45b2a07d1ed3d214834bcbb38e0f8d9d"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "0db1ab372ee63e24b783ed1fc49846a77c3f19c55c50b924a876ccf0ad9b9e32"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "1812509570842334cbee4ec8d5401945242e9f886ca13fae6137f80e1c1de912"
+        }
+      ]
+    },
+    {
+      "file": "apps/jsdelivr-publisher/static-package/files/apps/chat/@14b42d8f/9d95570a/@r1b17d201ff3beb3972140573!.js",
+      "sha256": "803881badca6dd32b4b82f2d430d6f927e8954bd8c115917eabf865815a7db5c",
+      "evidence": "Read-only saved-preference migration key. The former decoration value is normalized to the current catalog value before rendering; retaining the input key protects existing accounts until stored records are migrated. The connection key occurs only in the historical preference export denylist.",
+      "matches": [
+        {
+          "section": "decoded string",
+          "contextHash": "829ce8b39281e87ca0e005168df28ceb45b2a07d1ed3d214834bcbb38e0f8d9d"
+        }
+      ]
+    },
+    {
+      "file": "apps/jsdelivr-publisher/static-package/files/assets/vendor/balatro/love.wasm",
+      "sha256": "ecc9e098bb8af918d20fbe3f26d23495c5184ff6b5d203d2e4b27bf17a771d6f",
+      "evidence": "Validated WebAssembly module. These matches cross the word boundary in NUL-terminated OpenGL NV extension symbols (framebuffer, renderbuffer and buffer residency); they do not identify a removed library.",
+      "matches": [
+        {
+          "section": "binary strings",
+          "contextHash": "b962a1453bdeb0b8686c4d93bf69b669b8080dc0ec1edfa570bc02b0da42d08f"
+        },
+        {
+          "section": "binary strings",
+          "contextHash": "404c599701bd9b9932b62fa9bfdcc703e2b38f32cbd329a690db300d821492a1"
+        },
+        {
+          "section": "binary strings",
+          "contextHash": "d5c51a7d572d65858ab6f22167ab07899eb52ab8994885a586d65ec502ebea08"
+        },
+        {
+          "section": "binary strings",
+          "contextHash": "e0314aae31002a715af6d915c3fdc6a3a49f62fa3786e59938b6ec713be397cd"
+        },
+        {
+          "section": "binary strings",
+          "contextHash": "f028cd83c48cf5b7b099d94f78b48ea9bab2a4ce64d3fea51eb8dcfb007d39ec"
+        },
+        {
+          "section": "binary strings",
+          "contextHash": "f36bc0c867b603265c5b5ea3aca77ce532eb49e3037d93cce4d9f3f0dceea265"
+        }
+      ]
+    },
+    {
+      "file": "apps/jsdelivr-publisher/static-package/files/assets/vendor/hls.min.js",
+      "sha256": "531d328cadbca63292ae7d7d9d253d4eb61ee3a54fe4fdf1e989dc87dfc82270",
+      "evidence": "Reviewed HLS media library fields: bufferNudgeOnStall, rebufferNotice and sourceBufferName. Each match crosses buffer/Notice or buffer/Name; these fields control media buffer errors and are not a removed engine.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "019dc4055cc17de666b52878178ef754ed7c0db10585cc4a282c46e5a2464753"
+        },
+        {
+          "section": "raw",
+          "contextHash": "ad0121eeaae27d55fd8d70bcb4318dc71f2ce22e581d2166df0762d092571cdf"
+        },
+        {
+          "section": "raw",
+          "contextHash": "9732943036774601a32992c9ee397fc0059b5131dd4ec471d1bf60f69bee419a"
+        },
+        {
+          "section": "raw",
+          "contextHash": "8d6b97e1edd7d98d3d2e1b3c4310307316fb5a41b2f6f90729105568204d93a0"
+        },
+        {
+          "section": "raw",
+          "contextHash": "ceb4bb4af2b2114117397d6c11855e4e1676e3c6f3ca116f46e3e4ccb1ffbb86"
+        },
+        {
+          "section": "raw",
+          "contextHash": "256cd2dfa1cdc41238ca9c8acd14b1e94428ef86d2b353f0378b509b8330a942"
+        },
+        {
+          "section": "raw",
+          "contextHash": "d1fb57eee4ff9a2d902282710ea0dff257a369de5b6199d4649eb7b4c462142a"
+        },
+        {
+          "section": "raw",
+          "contextHash": "5dbc28f5cfd2b55b1d81fb19fbe5bf2551b127848fdfe63cbc787b0db64e1973"
+        },
+        {
+          "section": "raw",
+          "contextHash": "7ddd3d90a05ec0db0c60c58eaba332f68a854814f393c6591a506e9bbdaead6d"
+        },
+        {
+          "section": "raw",
+          "contextHash": "035457c71a8a9c0146301d11a5913949a00767fd7b0fde8be8fdd9061260d419"
+        },
+        {
+          "section": "raw",
+          "contextHash": "59f0682e527e68789bdc6b02878ead045f42ff5e407856bd4e9cea47aaa51b31"
+        },
+        {
+          "section": "raw",
+          "contextHash": "b88b74dd5fb67691458d4391781ea5b2fc1d134fc03256bcfd7f1aa6127e74fd"
+        },
+        {
+          "section": "raw",
+          "contextHash": "a2f390a85aa0d87fa721a6b16fcefea1a88bb9e8fbc52c9b2325e1d0e09d67c1"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "f5863adbf63159164abf91c29dc74154f32207edb020c5958384f87197374a8f"
+        }
+      ]
+    },
+    {
+      "file": "assets/profile/decorations/cybernetic-halo.png",
+      "sha256": "ae04ef65ecb6c62305b97d24117e1172fdffc9becad84d9fe1845c5700ea33f0",
+      "evidence": "Decoded PNG 288x288; the matching bytes are inside compressed fdAT image samples, not a JavaScript program or a metadata label.",
+      "matches": [
+        {
+          "section": "binary strings",
+          "contextHash": "51820ade2c81d8d8712d50420802639a22388243e4977f77729dfab16ba6a496"
+        }
+      ]
+    },
+    {
+      "file": "assets/profile/effects/fx-solar-surge.png",
+      "sha256": "84168a5adc7db3805121683b85f398b21ebfd9e0396bc9a2bbf70591acb482fb",
+      "evidence": "Decoded PNG 450x880; the matching bytes are inside compressed fdAT image samples, not a JavaScript program or a metadata label.",
+      "matches": [
+        {
+          "section": "binary strings",
+          "contextHash": "67c53e5095ac07d5162e62a8dda4e0d7cdaeb3ac5ed582bb84de6c280c5d8e8f"
+        }
+      ]
+    },
+    {
+      "file": "assets/profile/effects/fx-supernova-flash.png",
+      "sha256": "41bdd75fdbffcb851d65825cd0f6a13d2876d29c145b888074c0af55b7dfba9c",
+      "evidence": "Decoded PNG 450x880; the matching bytes are inside compressed fdAT image samples, not a JavaScript program or a metadata label.",
+      "matches": [
+        {
+          "section": "binary strings",
+          "contextHash": "b6a9c1c33cc873102c066b1340f8531d6d6dc60ec5cdf8b1f1a53495549879db"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/B/clbasketbros.html",
+      "sha256": "ef412cafa6b9ccbb571c5cc8310414fdb7a62e645b22e264ace00d15fc04c250",
+      "evidence": "Reviewed OpenFL texture-coordinate arithmetic: rectangle bounds and X/Y divided by texture width/height, then consumed by vertex buffers. These private UV coordinates are graphics data, unrelated to any removed engine.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "58ad679ac37f4d8be49b4ccfbf647b3ee99e06a80fe4048a7401cd9fc8bf4fab"
+        },
+        {
+          "section": "raw",
+          "contextHash": "789f59a44bd4f1d8761f514a0c62f548e73dddd3f851761653b394145bd933cd"
+        },
+        {
+          "section": "raw",
+          "contextHash": "37410e2d59f39f174a6c10c1c7961c0e6e0d9c56e4121052fdff75c7c58014b0"
+        },
+        {
+          "section": "raw",
+          "contextHash": "cb372cca0641a8ff74e54935f5d5d827650162a7b341545b5b570f443a6dbdf2"
+        },
+        {
+          "section": "raw",
+          "contextHash": "8f7de2c06a3b8674bf71e7cf2f2873aeb147aad77a0945875a6280852bb6b02b"
+        },
+        {
+          "section": "raw",
+          "contextHash": "479acc93bff7d48cae44cdc8d43549c506aec0e911cc9cec4f4d43556872c195"
+        },
+        {
+          "section": "raw",
+          "contextHash": "d6b71c38635af034996172ea216abf101c7d94927677cc5289e75dfcf15628b5"
+        },
+        {
+          "section": "raw",
+          "contextHash": "166a25e614eef7fec1579807c96eba39b57719f252133a6ed8f31e075e0c409c"
+        },
+        {
+          "section": "raw",
+          "contextHash": "40296b294580fe7f50f25fa7df5fab1888dd91a2ce23cce39b922cd2b4d8f441"
+        },
+        {
+          "section": "raw",
+          "contextHash": "0e03c3e7cfaa1ce2a761313b3ffbcf6b62b26a2119019dccef3fac826dcaf83d"
+        },
+        {
+          "section": "raw",
+          "contextHash": "08c5fabbfbb2f1eaf56aa6fad8e56aa3a1e0d31f5efc11cf3439d383697518a3"
+        },
+        {
+          "section": "raw",
+          "contextHash": "d356bda92a8edb523782f7f8db9659ab36a9043741b65c7c9eca32a303e0cc98"
+        },
+        {
+          "section": "raw",
+          "contextHash": "85e7511d4954eae00e29d0f109dbc83c407bc9afc66878a47a6021b47dc61df1"
+        },
+        {
+          "section": "raw",
+          "contextHash": "3ebf707b26766bfa4a2a13034839e7687ad00e757b3970f8361751e16b6a519e"
+        },
+        {
+          "section": "raw",
+          "contextHash": "7c45a2f76482ea258f8600677f37f3dbcb71137fd371cd5c6214db4f267d48bb"
+        },
+        {
+          "section": "raw",
+          "contextHash": "5b22a71a8ddabde60cfadf0524199644c4bdc25d001b76f156aa8c7322eb92b5"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/B/clbasketbros.html",
+      "sha256": "ef412cafa6b9ccbb571c5cc8310414fdb7a62e645b22e264ace00d15fc04c250",
+      "evidence": "Reviewed English dictionary used by the bundled game. The plant word is surrounded by unrelated dictionary words; it is game data rather than Nyx branding or an engine reference.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "d2bfd66e7297a96440634890bc45f2707a8e01c75e8c1f87e39fc3834da9ed28"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "d2bfd66e7297a96440634890bc45f2707a8e01c75e8c1f87e39fc3834da9ed28"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/D/cldoodlejump.html",
+      "sha256": "9738d0deabe62e14f68623c7ad65f00edd99e04470c0b565dec6d9f939521d7f",
+      "evidence": "Reviewed encoded game payload: . The match lies in its base64 representation, not an identifier or import. Decoded payload sizes and SHA256: .",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "5e6c7c5fa2e49f1764f5f7cefdaec48c747bc44deb464ab5b3263e51a5d842ed"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/D/cldoodlejumpgoober.html",
+      "sha256": "5a13676c19ad6f69b4fc624cad9441bd974c087b5f1fe372e428f0c3d8ce81aa",
+      "evidence": "Reviewed encoded game payload: PNG. The match lies in its base64 representation, not an identifier or import. Decoded payload sizes and SHA256: 7487 bytes ad869d5459f37f95a8907483ec8f1371701c4c1170fa8f18273704478ca483a2.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "5e6c7c5fa2e49f1764f5f7cefdaec48c747bc44deb464ab5b3263e51a5d842ed"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/G/clgeometrydashscratch.html",
+      "sha256": "93c1044990189eae783ec7116f7eba74da2792af5c51060bd396f9f5f663f889",
+      "evidence": "Reviewed encoded game payload: WOFF2 font. The match lies in its base64 representation, not an identifier or import. Decoded payload sizes and SHA256: 169496 bytes af01ec721b82baf79e15d53f9b946b51ceec09bdc5e255dc9592937ef8eab78a.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "ec7def9fdb0d55ce35aec25512319ce8b525d39086af871de38d8cf599bad9fe"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "ec7def9fdb0d55ce35aec25512319ce8b525d39086af871de38d8cf599bad9fe"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/G/clgeometrydashscratch.html",
+      "sha256": "93c1044990189eae783ec7116f7eba74da2792af5c51060bd396f9f5f663f889",
+      "evidence": "Reviewed packed Scratch project asset payload using the ASCII85-style asset encoding in this document. These mixed-case fragments lie in encoded project data, not executable names; exact context and complete file hash are pinned.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "f0503d1993cceedfe89e81eec973aa717d0144fae933235da29c47822bda3dc1"
+        },
+        {
+          "section": "raw",
+          "contextHash": "510c0a48fed7c9800d48096033aad0e06295d0a505368cd69f83af68adcc3b44"
+        },
+        {
+          "section": "raw",
+          "contextHash": "09c6115a249382469fe9fd397036a02a6ee106065141c2670f341a58a6cc414e"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/minecraft/Dragonxclient.html",
+      "sha256": "cfa46b19b2e4225698158a728056d3448788edc8faf14d4d4d622a1a8ea33778",
+      "evidence": "Reviewed game data: plant/block enumeration names, world-generation preset or graphics uniform. Renaming serialized block values would change existing worlds; these literals are not Nyx branding or references to a removed package.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "4fd193825a9854e143c9fae2900ac5901e23d4038079c56d5a503a0f4c7bcd0b"
+        },
+        {
+          "section": "raw",
+          "contextHash": "8b8259390668dc1eaf39cf38e58d5ba55c8fda774bd1fd8f8f5a8f91b444fb8a"
+        },
+        {
+          "section": "raw",
+          "contextHash": "44c04bbbd6e3a493ab2a506666d2b97a9d51e56c34f54fca570b61c4991b9a78"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "f0a5da17e0ffa3a21c2b07c964d465799eb0deb62905ccb1b271ce7716614746"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "4fe831c4651a51934e696d7717fde5b5a1ab2dabf05ababb459f3d136a0d23f4"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "6865dc4b519964bf8febec001854b9f7d871469e68999ef5124b48902e34e70a"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/minecraft/Dragonxclient.html",
+      "sha256": "cfa46b19b2e4225698158a728056d3448788edc8faf14d4d4d622a1a8ea33778",
+      "evidence": "Reviewed encoded game payload: EAGPKG resource archive. The match lies in its base64 representation, not an identifier or import. Decoded payload sizes and SHA256: 6350798 bytes 3638bd720d5ff41f13ffe94e8bba2a2b0bcbc9f20f7de0ee6793aacfd3752809; 1931198 bytes 577b68514ae4310ab559d58bb9069918b4748e06dc129b615c8c1592785f90e5.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "a58bf85b47087247f972538867eed9df618f6f864b03e6ae2109575f0db60c24"
+        },
+        {
+          "section": "raw",
+          "contextHash": "da9467ce5458b74cbe71695e1881ca96c3fe60b326b7d9d6e1fcdc1db958d58c"
+        },
+        {
+          "section": "raw",
+          "contextHash": "04f404ce7d6f5e8402ae4213adf30d9ad2160b5d13b9447d9f3aeb46b8a7aec5"
+        },
+        {
+          "section": "raw",
+          "contextHash": "b8716a668d4961a096f7e3106830c0fbe3441fa5761559a5ac293feee3ee4618"
+        },
+        {
+          "section": "raw",
+          "contextHash": "5e404478d529cc3557e6b7514da352726cd7dbbfab463ee1346d9779788524ae"
+        },
+        {
+          "section": "raw",
+          "contextHash": "44dcda8cd39b6b97940e74950f7c7c14e14b5e58f9b6ccbf62a0a57e93b660c8"
+        },
+        {
+          "section": "raw",
+          "contextHash": "40db6964f87b373c42821be0a217019b5591767b0602b7631e8c061b1884eb79"
+        },
+        {
+          "section": "raw",
+          "contextHash": "42cdd4c03f92c2441e61b402196a081553cc0691375282be4433be49ef06a507"
+        },
+        {
+          "section": "raw",
+          "contextHash": "60c7d56e5c6358f15d1117e462048482d8f38e35856954f253fa32acd23d28c9"
+        },
+        {
+          "section": "raw",
+          "contextHash": "730cf744f01c3c0f136750860bf1f739370eb0d0b4fb76f6bc21935b9b3f9c02"
+        },
+        {
+          "section": "raw",
+          "contextHash": "ab16ff1a45a614652fedb9c8607f0556b4082d973a87c0628db1afdb97eda140"
+        },
+        {
+          "section": "raw",
+          "contextHash": "4eefde4d63be40df71cdc150b6a76cb6c94fe1d75258cb27dda0d946f0027194"
+        },
+        {
+          "section": "raw",
+          "contextHash": "8ef94a08b576cfb656da372901052d253f487d5e6fbf0ad972b58e25736d586a"
+        },
+        {
+          "section": "raw",
+          "contextHash": "f6db83edf551375c545af0242e48cc22f2e58e7dca736e3e31f67a5a752b6afa"
+        },
+        {
+          "section": "raw",
+          "contextHash": "23f0172bd6201cb0f157d43573d21c56b18b0a309a02f614fa5bdcaee1f8ebae"
+        },
+        {
+          "section": "raw",
+          "contextHash": "05d782bee2f48c2a1628a00a24ad0d6c931a9f04c918b665ac96bc46adde045c"
+        },
+        {
+          "section": "raw",
+          "contextHash": "6467c643f3f62325c989b6d7eb3c73e5a60ba7d7ef2d35367877df95c2271f35"
+        },
+        {
+          "section": "raw",
+          "contextHash": "5f1b67153daaba59b37b9eb703a59c0c1215a38fd6642e4e0dbb90232fa71782"
+        },
+        {
+          "section": "raw",
+          "contextHash": "4343b33dcfd2c6333eb44997af691cfb1a75df1511498451bd3235cc62159e55"
+        },
+        {
+          "section": "raw",
+          "contextHash": "77f31c0146facb343b8828d98992c20240d90de96b2d9ad947aac2a0904c4387"
+        },
+        {
+          "section": "raw",
+          "contextHash": "417aef2fde88b45406e2cf4e0bf9e2d209574192111ff81ef99d5719b1e6a2b8"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "a58bf85b47087247f972538867eed9df618f6f864b03e6ae2109575f0db60c24"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "da9467ce5458b74cbe71695e1881ca96c3fe60b326b7d9d6e1fcdc1db958d58c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "04f404ce7d6f5e8402ae4213adf30d9ad2160b5d13b9447d9f3aeb46b8a7aec5"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "b8716a668d4961a096f7e3106830c0fbe3441fa5761559a5ac293feee3ee4618"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "5e404478d529cc3557e6b7514da352726cd7dbbfab463ee1346d9779788524ae"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "44dcda8cd39b6b97940e74950f7c7c14e14b5e58f9b6ccbf62a0a57e93b660c8"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "40db6964f87b373c42821be0a217019b5591767b0602b7631e8c061b1884eb79"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "42cdd4c03f92c2441e61b402196a081553cc0691375282be4433be49ef06a507"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "60c7d56e5c6358f15d1117e462048482d8f38e35856954f253fa32acd23d28c9"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "730cf744f01c3c0f136750860bf1f739370eb0d0b4fb76f6bc21935b9b3f9c02"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "ab16ff1a45a614652fedb9c8607f0556b4082d973a87c0628db1afdb97eda140"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "4eefde4d63be40df71cdc150b6a76cb6c94fe1d75258cb27dda0d946f0027194"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "8ef94a08b576cfb656da372901052d253f487d5e6fbf0ad972b58e25736d586a"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "f6db83edf551375c545af0242e48cc22f2e58e7dca736e3e31f67a5a752b6afa"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "23f0172bd6201cb0f157d43573d21c56b18b0a309a02f614fa5bdcaee1f8ebae"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "05d782bee2f48c2a1628a00a24ad0d6c931a9f04c918b665ac96bc46adde045c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "6467c643f3f62325c989b6d7eb3c73e5a60ba7d7ef2d35367877df95c2271f35"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "5f1b67153daaba59b37b9eb703a59c0c1215a38fd6642e4e0dbb90232fa71782"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "4343b33dcfd2c6333eb44997af691cfb1a75df1511498451bd3235cc62159e55"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "77f31c0146facb343b8828d98992c20240d90de96b2d9ad947aac2a0904c4387"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "417aef2fde88b45406e2cf4e0bf9e2d209574192111ff81ef99d5719b1e6a2b8"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/minecraft/Eaglercraft-Alpha-1.2.6-Offline.html",
+      "sha256": "c5c54ae9fe54096d1a66dea4af9fc8ab4295010170105e6c4347a98aef98d4f0",
+      "evidence": "Reviewed encoded game payload: EAGPKG resource archive. The match lies in its base64 representation, not an identifier or import. Decoded payload sizes and SHA256: 4930610 bytes 286d4d066574cfab1a60f3a38798d670a846873140a8881b693e4a1eea1785d6.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "79b55f20c5cb90dac6c3b98e266caad8178653b26e58712a2474e0665471db4b"
+        },
+        {
+          "section": "raw",
+          "contextHash": "42488d8573e3efadbf8bad7bb0b7733e4f12d5c3321180b4ba8cdb07137413a8"
+        },
+        {
+          "section": "raw",
+          "contextHash": "d57fa0eb5ad976ec67a0bfe8b43795541ffb8f3e8eaaff68a210e00155d2d632"
+        },
+        {
+          "section": "raw",
+          "contextHash": "56f3f1bd8e9b5d6890637a2d62360b2c3b9fc2c3e76bd2205cd59a4e9529921e"
+        },
+        {
+          "section": "raw",
+          "contextHash": "90240af73b25cb9a58517f2ffcf22fd0afc2c8bec6562f84c3f48cac673b3021"
+        },
+        {
+          "section": "raw",
+          "contextHash": "1ef39a2603d563d4bb5ab30fda7554e3c24bdfc35254fb29445aa84a14eca103"
+        },
+        {
+          "section": "raw",
+          "contextHash": "3d3d055baa39bf3943a9281214efb7cc53dc656b4c5c07b32bc554ac5beadc06"
+        },
+        {
+          "section": "raw",
+          "contextHash": "d804fab2260597a6483bfc9426f513da8cff5971dbb77efc189971720ccba38c"
+        },
+        {
+          "section": "raw",
+          "contextHash": "2c70db10f08c3c68f9cece67c7176f5e752cc0be4c5d5cd9e2b315817b88c927"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/minecraft/Eaglercraft-Beta-1.3-Offline.html",
+      "sha256": "4854987e1110837131de0f344fa079f71bbb716629fe61b8bb135c7265755134",
+      "evidence": "Reviewed encoded game payload: EAGPKG resource archive. The match lies in its base64 representation, not an identifier or import. Decoded payload sizes and SHA256: 1863814 bytes a6dfdfcbbc0a46387148ede14ec1e0276754252530b0a6f5a5c2ad0168aadbaa.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "3ee10d48592a78301971a8b9255c9f46cbc3fc0ce451974dc2037f1ffcb798f9"
+        },
+        {
+          "section": "raw",
+          "contextHash": "95d4b0fb3613819f2a5040666d22caa938b1f52d6d8e57b2a260879366346275"
+        },
+        {
+          "section": "raw",
+          "contextHash": "cb066ea4a94583d8d8e6192c1fb648ec9bb9b1d05f0a69d701b5e7104254e2da"
+        },
+        {
+          "section": "raw",
+          "contextHash": "e0cdc4cc6bfef3bcc8f7c7b098fce6af45f4896a5ab4151724d6f5e2a231f080"
+        },
+        {
+          "section": "raw",
+          "contextHash": "6e71ef23c1cf5da6cd89137bf774b56088ab7b171ac5e0fd9f8e1043f1a557ce"
+        },
+        {
+          "section": "raw",
+          "contextHash": "ff8d65e1f172d6e53bc071a5938491c4b1ea4fee89a011beba99d5c34d7cad2d"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/minecraft/eaglercraft.1.5.2.html",
+      "sha256": "f7b4fff497ba3c404382226d060947bd653b267cdb398d7316e1a62b61e12bc8",
+      "evidence": "Reviewed encoded game payload: EAGPKG resource archive. The match lies in its base64 representation, not an identifier or import. Decoded payload sizes and SHA256: 6509604 bytes 202eadc6a957ea351875535abe31f6ddff4d187894b61b6fcbd0e2d756c9597f.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "76f556f4623e2721b24b8298f95063918040e579479b5abae99a5e73c1c3698b"
+        },
+        {
+          "section": "raw",
+          "contextHash": "252e6b916460d66421c965d53a3ee057c10140feb3fbbb2d8281f61053666f13"
+        },
+        {
+          "section": "raw",
+          "contextHash": "54490cddda960d3ab677d41973ecbdd793f659e2fd9cf28c2539365a979e786b"
+        },
+        {
+          "section": "raw",
+          "contextHash": "26268746b573736dee6237f89858def8e357db9aae836ad1e2947b816f0353f2"
+        },
+        {
+          "section": "raw",
+          "contextHash": "ce1cfcd3b5bfade09e33de47775f556c4f206f1b18779ba016c1a11517a9e233"
+        },
+        {
+          "section": "raw",
+          "contextHash": "28ff8d54ac606dc5f8f38aa39a05ef38c3182342c086314ad97c0e4b2b392f7b"
+        },
+        {
+          "section": "raw",
+          "contextHash": "5eda5fa80f3de86b1c51b58a14da89c764ac714630497c2913c506397b2f4b94"
+        },
+        {
+          "section": "raw",
+          "contextHash": "63c0aa8c43606cd782e997990b37b00ebb2fd4190197f921366e131a5047f611"
+        },
+        {
+          "section": "raw",
+          "contextHash": "6b78d397f875b6315392df67178b04b30d61b2c3a1fbd7b9a1cd7d5f18060fc0"
+        },
+        {
+          "section": "raw",
+          "contextHash": "3c96311d6752b132c1bd7d0311f3398a276aa43f3645f3e96c65e0b149143247"
+        },
+        {
+          "section": "raw",
+          "contextHash": "888e28c164122493f08cda9afa7f15391a91a4a6f4dc65f0ba9e2f6a30c23384"
+        },
+        {
+          "section": "raw",
+          "contextHash": "d63656e2d2f98f4af5a9942e54a17fb067a54c05fd425fcf5d162018f268cd06"
+        },
+        {
+          "section": "raw",
+          "contextHash": "ad827198d44a6ef0da4881ec04a9a53c3b93544042d904859176e0996f94e8fe"
+        },
+        {
+          "section": "raw",
+          "contextHash": "8be3fa23e0203c2e7ce513a061f340b33fd11699ee52280e1f28956cca49eda6"
+        },
+        {
+          "section": "raw",
+          "contextHash": "6d3d523231c24275ccc6942a9178aa738ceeb69b7b4713c187eeb14a33d671e9"
+        },
+        {
+          "section": "raw",
+          "contextHash": "3c4f39cd290b0cbd6654856e145da6b3f4a60a5cae55ec4ee8010a08699c85f3"
+        },
+        {
+          "section": "raw",
+          "contextHash": "96fa7ec400cc2dbd590fa35d0361724a38fe4f84f91d554f64036ca910c2a528"
+        },
+        {
+          "section": "raw",
+          "contextHash": "0238e22e77ff1f15e8b0ae8cb849ad07a39f1faba26a4d096ea645d64b03041b"
+        },
+        {
+          "section": "raw",
+          "contextHash": "7b75b32eb15d0eb1d0404f06325edc1ebb71588694857dd079443e54310b18de"
+        },
+        {
+          "section": "raw",
+          "contextHash": "2ccd1f919be3a3c9ad67218de6b4bbf9de75082ae592deb113c9283ab075cdb5"
+        },
+        {
+          "section": "raw",
+          "contextHash": "00342b2906a5eb62b9050c5febad7dc2f03ec3111e43c7aea081e7efca8cb667"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "76f556f4623e2721b24b8298f95063918040e579479b5abae99a5e73c1c3698b"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "252e6b916460d66421c965d53a3ee057c10140feb3fbbb2d8281f61053666f13"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "54490cddda960d3ab677d41973ecbdd793f659e2fd9cf28c2539365a979e786b"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "26268746b573736dee6237f89858def8e357db9aae836ad1e2947b816f0353f2"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "ce1cfcd3b5bfade09e33de47775f556c4f206f1b18779ba016c1a11517a9e233"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "28ff8d54ac606dc5f8f38aa39a05ef38c3182342c086314ad97c0e4b2b392f7b"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "5eda5fa80f3de86b1c51b58a14da89c764ac714630497c2913c506397b2f4b94"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "63c0aa8c43606cd782e997990b37b00ebb2fd4190197f921366e131a5047f611"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "6b78d397f875b6315392df67178b04b30d61b2c3a1fbd7b9a1cd7d5f18060fc0"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "3c96311d6752b132c1bd7d0311f3398a276aa43f3645f3e96c65e0b149143247"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "888e28c164122493f08cda9afa7f15391a91a4a6f4dc65f0ba9e2f6a30c23384"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "d63656e2d2f98f4af5a9942e54a17fb067a54c05fd425fcf5d162018f268cd06"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "ad827198d44a6ef0da4881ec04a9a53c3b93544042d904859176e0996f94e8fe"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "8be3fa23e0203c2e7ce513a061f340b33fd11699ee52280e1f28956cca49eda6"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "6d3d523231c24275ccc6942a9178aa738ceeb69b7b4713c187eeb14a33d671e9"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "3c4f39cd290b0cbd6654856e145da6b3f4a60a5cae55ec4ee8010a08699c85f3"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "96fa7ec400cc2dbd590fa35d0361724a38fe4f84f91d554f64036ca910c2a528"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "0238e22e77ff1f15e8b0ae8cb849ad07a39f1faba26a4d096ea645d64b03041b"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "7b75b32eb15d0eb1d0404f06325edc1ebb71588694857dd079443e54310b18de"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "2ccd1f919be3a3c9ad67218de6b4bbf9de75082ae592deb113c9283ab075cdb5"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "00342b2906a5eb62b9050c5febad7dc2f03ec3111e43c7aea081e7efca8cb667"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/minecraft/eaglercraft.1.5.2.html",
+      "sha256": "f7b4fff497ba3c404382226d060947bd653b267cdb398d7316e1a62b61e12bc8",
+      "evidence": "Reviewed game data: plant/block enumeration names, world-generation preset or graphics uniform. Renaming serialized block values would change existing worlds; these literals are not Nyx branding or references to a removed package.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "a89cf3bb0a2ae9c42d06eae0a47273319ff13b51a161abf658abec0e24840352"
+        },
+        {
+          "section": "raw",
+          "contextHash": "a30dd9528afc809138d5a2c06c77481ddc7cf2952ec6f2c6682321822f8a015a"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "f0a5da17e0ffa3a21c2b07c964d465799eb0deb62905ccb1b271ce7716614746"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/minecraft/EaglercraftX 1.8.8(u29).html",
+      "sha256": "9559fa49ab14d10388454f396b9b52e2ca126aa1ccbaf35b938896c6f73e44a1",
+      "evidence": "Reviewed game data: plant/block enumeration names, world-generation preset or graphics uniform. Renaming serialized block values would change existing worlds; these literals are not Nyx branding or references to a removed package.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "4fd193825a9854e143c9fae2900ac5901e23d4038079c56d5a503a0f4c7bcd0b"
+        },
+        {
+          "section": "raw",
+          "contextHash": "d20665f2ef667469b4d49e5fdaa66a9499ee0db21acf7a48cb2b53a8091467fe"
+        },
+        {
+          "section": "raw",
+          "contextHash": "44c04bbbd6e3a493ab2a506666d2b97a9d51e56c34f54fca570b61c4991b9a78"
+        },
+        {
+          "section": "raw",
+          "contextHash": "19f9c15ec33e03f700f16aedc0b49239d36ebcf8ea3cdba9ee45765872a6c9c4"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "f0a5da17e0ffa3a21c2b07c964d465799eb0deb62905ccb1b271ce7716614746"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "4fe831c4651a51934e696d7717fde5b5a1ab2dabf05ababb459f3d136a0d23f4"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "6865dc4b519964bf8febec001854b9f7d871469e68999ef5124b48902e34e70a"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "731643cf8686c7516488f68f4ee0a3e2f31e37f4113cf3155adec4ef14492938"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/minecraft/EaglercraftX 1.8.8(u29).html",
+      "sha256": "9559fa49ab14d10388454f396b9b52e2ca126aa1ccbaf35b938896c6f73e44a1",
+      "evidence": "Reviewed encoded game payload: EAGPKG resource archive. The match lies in its base64 representation, not an identifier or import. Decoded payload sizes and SHA256: 7236850 bytes f4edff66660ba8fe44525205a18b48b822db7be6687d16fb914058992aed31d3; 1928210 bytes dd82528616d9d6b9d4a1479fc4b5230304c39a2ada0b44d972a9d11e7e3376a6.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "a79e09aef4c49411abf0512821cce7ee5f3bd4793ce5fa09a3c479d7a5e2af04"
+        },
+        {
+          "section": "raw",
+          "contextHash": "6f590967081a541047f4d28ec2ed5b15dbed5a0011f875c86a5ed94d6f489c0d"
+        },
+        {
+          "section": "raw",
+          "contextHash": "1a54d5a54c6050252378c503d27cd6bb082a21a2f2ab3f26c211530ccb38e94a"
+        },
+        {
+          "section": "raw",
+          "contextHash": "46e009870cbe2c61b9fc30cbec0d1c4089a9f60dcd9c47e9652b54b42d162263"
+        },
+        {
+          "section": "raw",
+          "contextHash": "84079857800e192b99997082a5d25627803d34fd5577d94a339458782476d0cb"
+        },
+        {
+          "section": "raw",
+          "contextHash": "b667be9d5940a3488a85975f5177a898d29f7393a7302a852879205c883b306d"
+        },
+        {
+          "section": "raw",
+          "contextHash": "cd395a66449f76387c15d9a86e31f58baccec8fa09b72be233bbb6488668f3b2"
+        },
+        {
+          "section": "raw",
+          "contextHash": "dd516547d7571912542167642277a995a909015fa70a789bea029d7759d28b2c"
+        },
+        {
+          "section": "raw",
+          "contextHash": "6cdf2d500d42aee44fc34fefc18c5ac382ca6ccf6b56b6b2307a7b374b3bbba3"
+        },
+        {
+          "section": "raw",
+          "contextHash": "954e80b75637f2a3aa2aaaa10dc8bc24813266fd7f830fc3c78a0b1b22122d18"
+        },
+        {
+          "section": "raw",
+          "contextHash": "409988a62e8e40cb29cf34e127efe020710a4fe1a624ce6e89a80a3f47383bd9"
+        },
+        {
+          "section": "raw",
+          "contextHash": "79a90db563171ca77063f1b92d2bcb957e029d9afbf958ac470d63d9d8859b0f"
+        },
+        {
+          "section": "raw",
+          "contextHash": "98e3a82edf93c23688a5b938fd1f5bfe5c146bc5a9cbc406583846399fd81c9e"
+        },
+        {
+          "section": "raw",
+          "contextHash": "efb9e7b32cc05398329fda380634e5dacce41852756053ef51cc84a6711d8534"
+        },
+        {
+          "section": "raw",
+          "contextHash": "20d551398578a8f207dd37f36b74c4aa8e68046091eed38f91f8338a8d8a3d9b"
+        },
+        {
+          "section": "raw",
+          "contextHash": "3e7ad98e515b87ea65df792cfc6aaaec2ecdaffcbe2efe050375e496fc5b61be"
+        },
+        {
+          "section": "raw",
+          "contextHash": "98ad897be8a8875eaa6edd07a3e4a50a2413443240e0856bcabc1245573bde71"
+        },
+        {
+          "section": "raw",
+          "contextHash": "12c559644479e5b62ac8d6ae35b0be3e90b0e426b60d6834a39572f1d94e3da9"
+        },
+        {
+          "section": "raw",
+          "contextHash": "97256f8a8dd8158b0515adbec0247533042ba3a77c3c141313f945b26ff158cb"
+        },
+        {
+          "section": "raw",
+          "contextHash": "010f34206856d87a42e91c0e9270ff80ad04939e35b9cb482e9ded35a83a35cc"
+        },
+        {
+          "section": "raw",
+          "contextHash": "ddbe5b614c1746307562905716862bdc0b6d986c5a0218397c2b950e753a540f"
+        },
+        {
+          "section": "raw",
+          "contextHash": "ee6519802b7009f50a6a8c72f06a78d7dbe9cad9f79ee00a9a41239e17fd5bee"
+        },
+        {
+          "section": "raw",
+          "contextHash": "e3de8204363c785a436a98dfc120ef309305e4e52e947f37b338ef229cfded40"
+        },
+        {
+          "section": "raw",
+          "contextHash": "8671c9400c8024628f548c80d8feed8c8c4a957ffdeb67c04fe2ea38f187a3e5"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "a79e09aef4c49411abf0512821cce7ee5f3bd4793ce5fa09a3c479d7a5e2af04"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "6f590967081a541047f4d28ec2ed5b15dbed5a0011f875c86a5ed94d6f489c0d"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "1a54d5a54c6050252378c503d27cd6bb082a21a2f2ab3f26c211530ccb38e94a"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "46e009870cbe2c61b9fc30cbec0d1c4089a9f60dcd9c47e9652b54b42d162263"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "84079857800e192b99997082a5d25627803d34fd5577d94a339458782476d0cb"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "b667be9d5940a3488a85975f5177a898d29f7393a7302a852879205c883b306d"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "cd395a66449f76387c15d9a86e31f58baccec8fa09b72be233bbb6488668f3b2"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "dd516547d7571912542167642277a995a909015fa70a789bea029d7759d28b2c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "6cdf2d500d42aee44fc34fefc18c5ac382ca6ccf6b56b6b2307a7b374b3bbba3"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "954e80b75637f2a3aa2aaaa10dc8bc24813266fd7f830fc3c78a0b1b22122d18"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "409988a62e8e40cb29cf34e127efe020710a4fe1a624ce6e89a80a3f47383bd9"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "79a90db563171ca77063f1b92d2bcb957e029d9afbf958ac470d63d9d8859b0f"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "98e3a82edf93c23688a5b938fd1f5bfe5c146bc5a9cbc406583846399fd81c9e"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "efb9e7b32cc05398329fda380634e5dacce41852756053ef51cc84a6711d8534"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "20d551398578a8f207dd37f36b74c4aa8e68046091eed38f91f8338a8d8a3d9b"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "3e7ad98e515b87ea65df792cfc6aaaec2ecdaffcbe2efe050375e496fc5b61be"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "98ad897be8a8875eaa6edd07a3e4a50a2413443240e0856bcabc1245573bde71"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "12c559644479e5b62ac8d6ae35b0be3e90b0e426b60d6834a39572f1d94e3da9"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "97256f8a8dd8158b0515adbec0247533042ba3a77c3c141313f945b26ff158cb"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "010f34206856d87a42e91c0e9270ff80ad04939e35b9cb482e9ded35a83a35cc"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "ddbe5b614c1746307562905716862bdc0b6d986c5a0218397c2b950e753a540f"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "ee6519802b7009f50a6a8c72f06a78d7dbe9cad9f79ee00a9a41239e17fd5bee"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "e3de8204363c785a436a98dfc120ef309305e4e52e947f37b338ef229cfded40"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "8671c9400c8024628f548c80d8feed8c8c4a957ffdeb67c04fe2ea38f187a3e5"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/minecraft/EaglercraftZ_1.11.2.html",
+      "sha256": "d61f4b2064be54b476ea4d149b23aeea72c489a068cc9524701350c388aae492",
+      "evidence": "Reviewed encoded game payload: EAGPKG resource archive. The match lies in its base64 representation, not an identifier or import. Decoded payload sizes and SHA256: 9036773 bytes e7914e5dd9821216582cbb124de4f31c76d7596e21724aa7365e86166b2084d0; 1941251 bytes aecfc523270b8be82d3beeadd0c6cc830e170b54f5e3a109754134e52c6007c6.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "3cd5492a82d0a472f7f6f691d4a59435b00e79d38044dbda56484e032f71c206"
+        },
+        {
+          "section": "raw",
+          "contextHash": "3e0846a3857280b1983ab1d7d936691b8fa1ecc305285fc026631f7c35986fd5"
+        },
+        {
+          "section": "raw",
+          "contextHash": "66f850b41645adb1d460f0edccaf8c5ad2ada3f349fe995b0435d33a748c5f57"
+        },
+        {
+          "section": "raw",
+          "contextHash": "4f39f3cfa0574d05b3550889ec59d3ec2647f88e611eb614fee8c1d66b103eac"
+        },
+        {
+          "section": "raw",
+          "contextHash": "9281fcd96cc3e941cfdef6d2d57699b5eab29df92b9a3f2017eb029e08897802"
+        },
+        {
+          "section": "raw",
+          "contextHash": "34c74348705414fe29fac33469019dc831e033a448b9e8a3f9eed8df1d2a909d"
+        },
+        {
+          "section": "raw",
+          "contextHash": "96515a3404036de70b67f96f422dcf1d7adc91a55e1a4115a162ad7c451be2de"
+        },
+        {
+          "section": "raw",
+          "contextHash": "9f4542afb91c7374072a0a08b2d4ba08dd5150da4a572dba4b8c3bc0ed5a5cc4"
+        },
+        {
+          "section": "raw",
+          "contextHash": "0b77b79f52ff4495578cd43ae36f76ee84bdf74bfdf6704ea02ebee34f63a3bb"
+        },
+        {
+          "section": "raw",
+          "contextHash": "c1a476e055f7bd906bf234ad39d6d168afabcabd51b3082c7c596b9593932ee1"
+        },
+        {
+          "section": "raw",
+          "contextHash": "9f8e355de92eefbef5ea8b1c6cf897f5c9d619a4a180bb6bacc2a339a0825dbd"
+        },
+        {
+          "section": "raw",
+          "contextHash": "479048e21f1a2d852d15ae2787c442643c8c9b1963eb99552299a0aad11392da"
+        },
+        {
+          "section": "raw",
+          "contextHash": "ea82b3b851151f32040398a2b7689e36c5d158870689bc19aa7c654d97fb3d8e"
+        },
+        {
+          "section": "raw",
+          "contextHash": "0d664cde23035a75dbe37b4e149a33d86ff955584ab19eddad611df4089aae6b"
+        },
+        {
+          "section": "raw",
+          "contextHash": "480767b3bc7d86728066059394f087c791275426b7b2974d05d9a48dcf33f0a3"
+        },
+        {
+          "section": "raw",
+          "contextHash": "335c04b7047637f9d4c3ec234ed15a9c5345445be6a131a522871ae30b2b2d6f"
+        },
+        {
+          "section": "raw",
+          "contextHash": "7b0650fcbdb58f9c0330aad9154c35a18edc2440b9c40f7fc0da516870533421"
+        },
+        {
+          "section": "raw",
+          "contextHash": "47829aa4afb3b888b4bffe188e13c7b584fadb4ac292111f8b0c842555c6d1b4"
+        },
+        {
+          "section": "raw",
+          "contextHash": "43eb643d3a0bb4776868a8b66faff6c4a929a2f03dca6883d1b7c9070798377a"
+        },
+        {
+          "section": "raw",
+          "contextHash": "b4eb5e4d18b12c20818738285188c8096c1d07632ddd65954ef993f90ce9753f"
+        },
+        {
+          "section": "raw",
+          "contextHash": "c8eef69484d01527690d0ddddbb180bbe0ad50fea63f6adee45b7178a2fae7a4"
+        },
+        {
+          "section": "raw",
+          "contextHash": "04135a726a8ceca2d0e3c24c0fe4c7e6f0dd207ca11519dfbd97ff524ee38151"
+        },
+        {
+          "section": "raw",
+          "contextHash": "43352e114f3dfa27fa39203c72f660c39430e793f11f1f17ed8ec38d30dee52a"
+        },
+        {
+          "section": "raw",
+          "contextHash": "e272d5ae3df6fc3d704e43b67551fbe2aeb5f3543e87fd925374d8a98458f0db"
+        },
+        {
+          "section": "raw",
+          "contextHash": "1d7f7ab2e319b13437d210506add802c060ea8f4e7990db9784133a4d060b03f"
+        },
+        {
+          "section": "raw",
+          "contextHash": "a289ffc7da40471a9bde80761530b8e585d10af1cd79d7daef6df159391dc77e"
+        },
+        {
+          "section": "raw",
+          "contextHash": "dc7b4bac9b02e2d6984b4f450c70c4d3bec369127a7aaea89a0b92074bb3514e"
+        },
+        {
+          "section": "raw",
+          "contextHash": "84686d68b1d36d2d1e0fc465bcb3901bca7388f627c2ffcda6cff3f5e671fe67"
+        },
+        {
+          "section": "raw",
+          "contextHash": "c3038f801c64e93cdea7a5f579ccece927a8d1d3cb13acd96f1ae462fae0c9ab"
+        },
+        {
+          "section": "raw",
+          "contextHash": "6066f9bba1ae9817550626fba8d483008216ff4e1fbab70324e8422510ace249"
+        },
+        {
+          "section": "raw",
+          "contextHash": "d1ce505b71fb7df4db6db938a6914c298c281599ddd634b956de39c16a564ffb"
+        },
+        {
+          "section": "raw",
+          "contextHash": "151a35734bcac1fcbf1947ccf15e39423bb2100da47265e2d2cba5c311c83e92"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "3cd5492a82d0a472f7f6f691d4a59435b00e79d38044dbda56484e032f71c206"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "3e0846a3857280b1983ab1d7d936691b8fa1ecc305285fc026631f7c35986fd5"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "66f850b41645adb1d460f0edccaf8c5ad2ada3f349fe995b0435d33a748c5f57"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "4f39f3cfa0574d05b3550889ec59d3ec2647f88e611eb614fee8c1d66b103eac"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "9281fcd96cc3e941cfdef6d2d57699b5eab29df92b9a3f2017eb029e08897802"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "34c74348705414fe29fac33469019dc831e033a448b9e8a3f9eed8df1d2a909d"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "96515a3404036de70b67f96f422dcf1d7adc91a55e1a4115a162ad7c451be2de"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "9f4542afb91c7374072a0a08b2d4ba08dd5150da4a572dba4b8c3bc0ed5a5cc4"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "0b77b79f52ff4495578cd43ae36f76ee84bdf74bfdf6704ea02ebee34f63a3bb"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "c1a476e055f7bd906bf234ad39d6d168afabcabd51b3082c7c596b9593932ee1"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "9f8e355de92eefbef5ea8b1c6cf897f5c9d619a4a180bb6bacc2a339a0825dbd"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "479048e21f1a2d852d15ae2787c442643c8c9b1963eb99552299a0aad11392da"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "ea82b3b851151f32040398a2b7689e36c5d158870689bc19aa7c654d97fb3d8e"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "0d664cde23035a75dbe37b4e149a33d86ff955584ab19eddad611df4089aae6b"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "480767b3bc7d86728066059394f087c791275426b7b2974d05d9a48dcf33f0a3"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "335c04b7047637f9d4c3ec234ed15a9c5345445be6a131a522871ae30b2b2d6f"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "7b0650fcbdb58f9c0330aad9154c35a18edc2440b9c40f7fc0da516870533421"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "47829aa4afb3b888b4bffe188e13c7b584fadb4ac292111f8b0c842555c6d1b4"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "43eb643d3a0bb4776868a8b66faff6c4a929a2f03dca6883d1b7c9070798377a"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "b4eb5e4d18b12c20818738285188c8096c1d07632ddd65954ef993f90ce9753f"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "c8eef69484d01527690d0ddddbb180bbe0ad50fea63f6adee45b7178a2fae7a4"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "04135a726a8ceca2d0e3c24c0fe4c7e6f0dd207ca11519dfbd97ff524ee38151"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "43352e114f3dfa27fa39203c72f660c39430e793f11f1f17ed8ec38d30dee52a"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "e272d5ae3df6fc3d704e43b67551fbe2aeb5f3543e87fd925374d8a98458f0db"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "1d7f7ab2e319b13437d210506add802c060ea8f4e7990db9784133a4d060b03f"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "a289ffc7da40471a9bde80761530b8e585d10af1cd79d7daef6df159391dc77e"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "dc7b4bac9b02e2d6984b4f450c70c4d3bec369127a7aaea89a0b92074bb3514e"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "84686d68b1d36d2d1e0fc465bcb3901bca7388f627c2ffcda6cff3f5e671fe67"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "c3038f801c64e93cdea7a5f579ccece927a8d1d3cb13acd96f1ae462fae0c9ab"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "6066f9bba1ae9817550626fba8d483008216ff4e1fbab70324e8422510ace249"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "d1ce505b71fb7df4db6db938a6914c298c281599ddd634b956de39c16a564ffb"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "151a35734bcac1fcbf1947ccf15e39423bb2100da47265e2d2cba5c311c83e92"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/minecraft/EaglercraftZ_1.11.2.html",
+      "sha256": "d61f4b2064be54b476ea4d149b23aeea72c489a068cc9524701350c388aae492",
+      "evidence": "Reviewed game data: plant/block enumeration names, world-generation preset or graphics uniform. Renaming serialized block values would change existing worlds; these literals are not Nyx branding or references to a removed package.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "4fd193825a9854e143c9fae2900ac5901e23d4038079c56d5a503a0f4c7bcd0b"
+        },
+        {
+          "section": "raw",
+          "contextHash": "d20665f2ef667469b4d49e5fdaa66a9499ee0db21acf7a48cb2b53a8091467fe"
+        },
+        {
+          "section": "raw",
+          "contextHash": "44c04bbbd6e3a493ab2a506666d2b97a9d51e56c34f54fca570b61c4991b9a78"
+        },
+        {
+          "section": "raw",
+          "contextHash": "19f9c15ec33e03f700f16aedc0b49239d36ebcf8ea3cdba9ee45765872a6c9c4"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "f0a5da17e0ffa3a21c2b07c964d465799eb0deb62905ccb1b271ce7716614746"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "4fe831c4651a51934e696d7717fde5b5a1ab2dabf05ababb459f3d136a0d23f4"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "6865dc4b519964bf8febec001854b9f7d871469e68999ef5124b48902e34e70a"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "731643cf8686c7516488f68f4ee0a3e2f31e37f4113cf3155adec4ef14492938"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/minecraft/Minceraft-I-NotMine_V6.html",
+      "sha256": "0c787d50bdfeca187abfcc1e53d70cd8028458de8e68f7ab66dec9e9dbe02cd9",
+      "evidence": "Reviewed encoded game payload: MP3, EAGPKG resource archive. The match lies in its base64 representation, not an identifier or import. Decoded payload sizes and SHA256: 1113988 bytes 4f87ccf20a576cbf6c08069c0c0b718edb64dee66767b9111a93439187f46b5c; 324224 bytes da2f6e823b18ee49f4187f5834d722a603f942f58b7af34ac00f9d65994dc4bf.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "764ac924cf55459ab8e17c4955d052afdc59939b7bb3cacd9ebfe677a5ccd527"
+        },
+        {
+          "section": "raw",
+          "contextHash": "3323c753599e0f1bb2242250504c94c31bc4285e4a32549c904f5a779db1e2c3"
+        },
+        {
+          "section": "raw",
+          "contextHash": "bed3d2e3092bfe4d702e9ddc702e318b72757d231ef172e6d72f135847134cce"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/minecraft/Minceraft-I-NotMine_V6.html",
+      "sha256": "0c787d50bdfeca187abfcc1e53d70cd8028458de8e68f7ab66dec9e9dbe02cd9",
+      "evidence": "Reviewed game data: plant/block enumeration names, world-generation preset or graphics uniform. Renaming serialized block values would change existing worlds; these literals are not Nyx branding or references to a removed package.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "dc16d63e5e96950e921a53d014b1c83f35eae5e6076e7e75cbd1a774bb984029"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "b08dcbcab9cb9856ca0bf5cdbb2f4a2958f328a9449be220117dc294accb2d1b"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/O/cloperius.html",
+      "sha256": "69f84076dc3273f66f6c7286a86ed3c16c49d69533edc01e6bcbfad4154667eb",
+      "evidence": "Reviewed encoded game payload: Ogg. The match lies in its base64 representation, not an identifier or import. Decoded payload sizes and SHA256: 21972 bytes e9fb93c493b6535d52158dee589a0e3e6efc3ebc7828467a2050ea32a60de1d7.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "f68651f7c32e8065b51340e6bedbea42c902a57d357beab6afebedd6a33b4c12"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "f68651f7c32e8065b51340e6bedbea42c902a57d357beab6afebedd6a33b4c12"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/P/clpaperio3d.html",
+      "sha256": "e447f17b328399e2b1f9be4e298d1462e0ac0be5eee91099b2d3806329135639",
+      "evidence": "Reviewed encoded game payload: glTF model. The match lies in its base64 representation, not an identifier or import. Decoded payload sizes and SHA256: 454136 bytes 5daa4bee3c20202c09202bb8c308522c0fcf88614282eb5da833d6c37fc30496.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "95c062c7ad04ef831599270b92b8a5820f9c375239ff0a64e1dd9ab6c43c8763"
+        },
+        {
+          "section": "raw",
+          "contextHash": "aade5454a84ffff836eed6d11062cd05b9b84a55dfad7978776851659366d6ba"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "95c062c7ad04ef831599270b92b8a5820f9c375239ff0a64e1dd9ab6c43c8763"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "aade5454a84ffff836eed6d11062cd05b9b84a55dfad7978776851659366d6ba"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/P/clpaperio3d.html",
+      "sha256": "e447f17b328399e2b1f9be4e298d1462e0ac0be5eee91099b2d3806329135639",
+      "evidence": "Reviewed hardware compatibility check against Gamepad.id, alongside Gear VR and Oculus Go identifiers. Both occurrences select controller buttons and tracking; this is not first-party branding.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "9fb12cd7b6cee5e969422b404f7acdf9e7d93f204b6fe26939c116815a2e3e8f"
+        },
+        {
+          "section": "raw",
+          "contextHash": "b0e9ad11aa0e92900ba48d20bfaf3b2ec2e091364edb8f666ad4eebce990fbff"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "ba11b00c5148001039025c8dae7169456a33d223b39aa65fc4f4564f39251460"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/P/clpinkbike.html",
+      "sha256": "d91b4e9d04a6a118b5bb6c592631af7b3547b3762e74b262aa331d82af0bc226",
+      "evidence": "Reviewed inert HTML attribute name in the supplied game document, containing case-folded encoded bytes. This occurrence is not in a script, a script URL, or a library import. The raw finding remains in the audit report.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "4c6e1b53465a25bf637d8cbc96d48aa74956cf32b664d5e18ea0d3b1f2c2e80e"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/S/clslowroads.html",
+      "sha256": "a85c0bfe395ded16978e609d37eac7f9362747552ed78673cd9c5ccb5492a17d",
+      "evidence": "Reviewed Socket.IO Engine.IO connection method: it switches polling/WebSocket transports, detaches listeners and sends an upgrade packet. This is the game multiplayer client, not a removed networking package.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "778994729707e99e37b7b35fd406c9f810449279261a7158be2fe0fd0d9d9b59"
+        },
+        {
+          "section": "raw",
+          "contextHash": "58fd6b55e45de7d0bacd79eda71a6dc0b9078859eb0f1d2245e5c367d295ff8b"
+        },
+        {
+          "section": "raw",
+          "contextHash": "ef4268fe7ff5c2fd49eca4842d71e2a224d84d3fee33c4acdc482280b7c3e757"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/S/clstreangeropepolice.html",
+      "sha256": "eecabc12b053937cd84a0f3d861648e30558a98c643629657bbcf8612422e8fa",
+      "evidence": "Decoded 51749 bytes from dec/dictionary.bin.js in the bundled Brotli decoder. The enclosing module exports the static dictionary consumed by dec/dictionary-browser.js; this is compression data, not a connection engine. Decoded SHA256 ca8d200ef8da765eecfb22ce8b4e0a79e26193b37b1551906f6b69cedd12c7e5.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "5e4f1e551bbf9989c353586bf2124a3bc9ee3d27af4d19c95a21ade619d61467"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "5e4f1e551bbf9989c353586bf2124a3bc9ee3d27af4d19c95a21ade619d61467"
+        }
+      ]
+    },
+    {
+      "file": "assets/vendor/hls.min.js",
+      "sha256": "8802a37b9818815c71932536f53d2151ebb9d88c313904d4c430fe42678ab28f",
+      "evidence": "Reviewed HLS media library fields: bufferNudgeOnStall, rebufferNotice and sourceBufferName. Each match crosses buffer/Notice or buffer/Name; these fields control media buffer errors and are not a removed engine.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "019dc4055cc17de666b52878178ef754ed7c0db10585cc4a282c46e5a2464753"
+        },
+        {
+          "section": "raw",
+          "contextHash": "ad0121eeaae27d55fd8d70bcb4318dc71f2ce22e581d2166df0762d092571cdf"
+        },
+        {
+          "section": "raw",
+          "contextHash": "9732943036774601a32992c9ee397fc0059b5131dd4ec471d1bf60f69bee419a"
+        },
+        {
+          "section": "raw",
+          "contextHash": "8d6b97e1edd7d98d3d2e1b3c4310307316fb5a41b2f6f90729105568204d93a0"
+        },
+        {
+          "section": "raw",
+          "contextHash": "ceb4bb4af2b2114117397d6c11855e4e1676e3c6f3ca116f46e3e4ccb1ffbb86"
+        },
+        {
+          "section": "raw",
+          "contextHash": "256cd2dfa1cdc41238ca9c8acd14b1e94428ef86d2b353f0378b509b8330a942"
+        },
+        {
+          "section": "raw",
+          "contextHash": "d1fb57eee4ff9a2d902282710ea0dff257a369de5b6199d4649eb7b4c462142a"
+        },
+        {
+          "section": "raw",
+          "contextHash": "5dbc28f5cfd2b55b1d81fb19fbe5bf2551b127848fdfe63cbc787b0db64e1973"
+        },
+        {
+          "section": "raw",
+          "contextHash": "7ddd3d90a05ec0db0c60c58eaba332f68a854814f393c6591a506e9bbdaead6d"
+        },
+        {
+          "section": "raw",
+          "contextHash": "035457c71a8a9c0146301d11a5913949a00767fd7b0fde8be8fdd9061260d419"
+        },
+        {
+          "section": "raw",
+          "contextHash": "59f0682e527e68789bdc6b02878ead045f42ff5e407856bd4e9cea47aaa51b31"
+        },
+        {
+          "section": "raw",
+          "contextHash": "b88b74dd5fb67691458d4391781ea5b2fc1d134fc03256bcfd7f1aa6127e74fd"
+        },
+        {
+          "section": "raw",
+          "contextHash": "a2f390a85aa0d87fa721a6b16fcefea1a88bb9e8fbc52c9b2325e1d0e09d67c1"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "f5863adbf63159164abf91c29dc74154f32207edb020c5958384f87197374a8f"
+        }
+      ]
+    },
+    {
+      "file": "assets/ugs/minecraft/EaglercraftL_1.9_v0_7_0_Offline_Signed.html",
+      "sha256": "70a69da7d0db7d545643f332b140e2122cdf8bb60efe955285a87002a270bb66",
+      "evidence": "Reclassified modified offline game after AST-verified removal of one source-map comment and disabling the original signature badge. Raw hits are inside recompressed base64; decompressed JavaScript is parsed separately. All decoded contexts match the prior reviewed game: plant block IDs fern/FERN/double_fern, gbufferNormalTexture shader uniform and resource base64. These are saved-world compatibility values, not Nyx branding or removed networking code. Hash changes require new review.",
+      "matches": [
+        {
+          "section": "raw",
+          "contextHash": "3ff8e24e49857d8cecb9105f98e0cedfcba853e67ba3fbcbec19ea775aacc258"
+        },
+        {
+          "section": "raw",
+          "contextHash": "1b9418eceee6475d2681c955040a93d0da4b26c714f9b86c6e1df8363b36bb09"
+        },
+        {
+          "section": "raw",
+          "contextHash": "a6a2e74eeb5b180e468128f1796b0002ffe1d1ca6ac3f98e9b2aacc824ad3150"
+        },
+        {
+          "section": "raw",
+          "contextHash": "d48ee2c639e89540ba01c7ee15eac97fa62e5e128d8717c2358113649e16a531"
+        },
+        {
+          "section": "raw",
+          "contextHash": "15bae0e04d15d5d1313200f321657bd3650b48c100500a8a5b02c2300ec0d14a"
+        },
+        {
+          "section": "raw",
+          "contextHash": "331d31e9e0ef9875624f8d2ee8115fd2561357859124549b873f6094bb769337"
+        },
+        {
+          "section": "raw",
+          "contextHash": "b98d23f558787e04c22a20a1a40d512ad3761609600aeb3f1d02149b8b195182"
+        },
+        {
+          "section": "raw",
+          "contextHash": "7bcb7918f0499ecf63306850e8d9a8f283e05f4d656fb577ff69db8864146113"
+        },
+        {
+          "section": "raw",
+          "contextHash": "9fa876f23823a4ae03cb8996e6170afbf9546f21206d6b4fde35567427b6725d"
+        },
+        {
+          "section": "raw",
+          "contextHash": "9546e7e1fbc33524d4e35a37946f0bd507d25e9944ed5b2fab0bc46fe4ab5a13"
+        },
+        {
+          "section": "raw",
+          "contextHash": "2382bafe2576d7424cc847eccb027a0d3f2db18795da824631e8a53be3c518b8"
+        },
+        {
+          "section": "raw",
+          "contextHash": "99990e2383c577c59d33a5fefb805f1ceca6501a204209fcd287f82e972d72df"
+        },
+        {
+          "section": "raw",
+          "contextHash": "2c71f2eeb3c3c16433e4820aaf39d024122c29ef34da152189b397d85dc91cb9"
+        },
+        {
+          "section": "raw",
+          "contextHash": "7ab2c48f5aa7f068cec961f265a7b9190ea0a5797919b44713366cab2a8b3f21"
+        },
+        {
+          "section": "raw",
+          "contextHash": "782a44fb660e21819d00834575a8f58327dc20292e11e18deb59bfc6af73be26"
+        },
+        {
+          "section": "raw",
+          "contextHash": "16e78226118e72cc983a65aced3515afe1e623ce5682bfb225985cd7be0621ae"
+        },
+        {
+          "section": "raw",
+          "contextHash": "9aed1e97371a27705c0f8bfd25717d8dcd0c72dc0ad4a6f089f103f90045a2c3"
+        },
+        {
+          "section": "raw",
+          "contextHash": "0459447ee2d78590ca8012eeaa56c90e8561591b7c12cd333f3e79e026b02036"
+        },
+        {
+          "section": "raw",
+          "contextHash": "553301374248abf82f5eca56dfcd684b04efc9306361ded85ce35f0ad60e2bd1"
+        },
+        {
+          "section": "raw",
+          "contextHash": "4fd69120f43465b65a6787c4532589cfd506bac9e8762ca946954ebed36173cc"
+        },
+        {
+          "section": "raw",
+          "contextHash": "d714d02d3d291f98574be6c9ebb62cc5257990ce0263483064bc81c8e6cc6d33"
+        },
+        {
+          "section": "raw",
+          "contextHash": "f770ef49dbaf8807c366d32a25aee539fce49c184fe0ea7d109b29e284edc356"
+        },
+        {
+          "section": "raw",
+          "contextHash": "3286be6aba5c4b0c5edccb5c323c69d00760335cabc8001c9ff0ad51e0966c78"
+        },
+        {
+          "section": "raw",
+          "contextHash": "db0d15423059605d03755e1b7143ed6e4d2590322c4ede7595e44a82e2ff0af2"
+        },
+        {
+          "section": "raw",
+          "contextHash": "68408f2da3ca33e331ed64e239c3d409b8af8920cb815e8127ea1909d9b0ab5e"
+        },
+        {
+          "section": "raw",
+          "contextHash": "f2ab323f35615f99e9d4ad6ff9547a06d044fc53bd4595a9f4a4e7eccbfff841"
+        },
+        {
+          "section": "raw",
+          "contextHash": "3ac20062040bd3bb899cf2248bfef9e19aa2d8d015491554f8e863f0843ce698"
+        },
+        {
+          "section": "raw",
+          "contextHash": "d67b3a33375416bf172f4de251ee482f0281f87a32417b6d4af032f2e9bdd277"
+        },
+        {
+          "section": "raw",
+          "contextHash": "8d48d9508b5ab41b8cb7787e4e0d1cc22b0d7901396e49563fcd54cd072081fb"
+        },
+        {
+          "section": "raw",
+          "contextHash": "330f1470ac19f9c6f8c4e19216d3c1b1b1901929eed62fe2f5c6f0e03be5e2a3"
+        },
+        {
+          "section": "raw",
+          "contextHash": "fd6600ec90b51f957c6ff035cf85e511a1a99678e382c826ea09ef8745aaf02e"
+        },
+        {
+          "section": "raw",
+          "contextHash": "4ef94d538b7fbac039859c574c6bd1f70f8f95d9dc586ae985c64fd566eaf191"
+        },
+        {
+          "section": "raw",
+          "contextHash": "e2fddd7d3e356330cc34461990f5a1b7086e8a3b0a6335fe6087be8081618ac4"
+        },
+        {
+          "section": "raw",
+          "contextHash": "dfd723a49cad3c7f982b7d32ce0a5e34d74ad68b33a0c7d4e41573a094bb910b"
+        },
+        {
+          "section": "raw",
+          "contextHash": "2cb47a078fd22712da4b69957358c9e0af08c0ef3ce188b3d4f93f001234b049"
+        },
+        {
+          "section": "raw",
+          "contextHash": "7972776b4683a41921bc4261fba4370d215148fce22772465658dac0b3a075f3"
+        },
+        {
+          "section": "raw",
+          "contextHash": "aeffcd562b034a853c7de14ceab88e9fcbba6383f7c08d2e35bcc32215da24a8"
+        },
+        {
+          "section": "raw",
+          "contextHash": "58da7bf35b351c5d838673eeea18ba0617a806894705f6e5e4544e62f3bc9e1b"
+        },
+        {
+          "section": "raw",
+          "contextHash": "5af948a6e388f21277f8fd6b39c11dfcdd14e9b5889d625eea1df5a7e4749e96"
+        },
+        {
+          "section": "raw",
+          "contextHash": "81416e6534d3d5e44556bd4300cb5a6b43272ce437e69c5ef0f1510d269f9e79"
+        },
+        {
+          "section": "raw",
+          "contextHash": "1961589895a5671cbcb4998b87f670bcbdc8104a5930f9d29dc5563657ad2d74"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "f0a5da17e0ffa3a21c2b07c964d465799eb0deb62905ccb1b271ce7716614746"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "4fe831c4651a51934e696d7717fde5b5a1ab2dabf05ababb459f3d136a0d23f4"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "6865dc4b519964bf8febec001854b9f7d871469e68999ef5124b48902e34e70a"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "731643cf8686c7516488f68f4ee0a3e2f31e37f4113cf3155adec4ef14492938"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "92bd0772c4ac86ce8ffdedea6af42477b712eee59f2878ebc1f1db891d6a07a9"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "b5faf1cc3f04502c8d4c8529cca3595510bff619094a29108f3f5feab0c3d37d"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "ba394e5ce06dacef50442054819b401419fd8e30bcfc6c70640b17e9787ae935"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "28aed9f39ce80577d89c816afcffde09a2406beb882b6fb2e24739c696c2036c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "f52aad13cac6321e9c79245688661263eb66c4ffb862e25337dbc96a4c404965"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "9a5c72ebd85a5912c4b3da708ba9684872b92f4a5bb57670c03c1372f842fd5a"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "7b0271b63dc2f039bbf3862ef36dd3fb32bc319fa2bd8c143d6b9839e6c7788c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "0ae45e4dd9506751b7c670216458d86a7d65144d42930f3af34e0d6acd4808ef"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "c314b3bffd92000daaa036bfbfe8ef7f6f8010a88f7b2fb8d5ca8b8f328cb87c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "a9c487d469200b593bd3795048de6527f21e32842c97bf03403f61786b9f2e05"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "6b8a615de6bfd229a2338dd72941fb050c47c67f6341d020d591d55c6b16aa9a"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "856fc7feab5f95c06a14aa797f88e4d0f021cac52fafb4258340e03f2857b80c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "67d25239970abfa9b444b8e0ea495f15a8f587c9064c79217ffe940ad43b8d3f"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "3196153e650d86507b1d9324126675bb4ddf111c9dc1f021da77ec0a3dcb94f4"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "815266f6ff31ff91ef3423195abd9d7dc3147a2359474e4e390de3104d7be0b4"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "769c1bb938ca74a0c1fe79ecd5857fc9be9f60e91f0df460f149ef4357e90ea7"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "2a4115d8f5e151d54d06fb80c9611eff927f33b74e2ac0b22881230efff08cec"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "a0171152f4bf55e1c2833f7844cc802fc9929979ab40b604faad96c2a084d511"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "96043c11122d401ad888e0eeb4b206993153bb79ec5cf697055b88a9307f92c1"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "6edad8c75d2d0308b8896c04dc4218c72176079b0d7211e45ecdd769326dffa1"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "08563a3abe6b614b51ecd626d3b3d427136ed06c13422c8a11b5bbe740adb2de"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "f3bcb8d0c1ed1ed38969f31fd34490b7607aad1517ba1bcf5d33ab8c79e9f026"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "9acc1a46e189a23a5966c5126f480abeb930405718dfdda57fd5ba05b4a07b11"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "918f26113ca523e19a6368393c9fca0a4290695b3cc9ac4f2777d23601b0fc8b"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "3a6a7dd9d4c2539d94b761cf495a9ef04314ccdd9eb0cc954b7ca07d2617cc49"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "8837b1e9222bdd619f939ac2edae7f0105761f2ca2bec48ef30193352b5e75c9"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "9308614f53bff794cedd4ba33ac83389281fb4a5f6c82fd45613d4f82b014a00"
+        }
+      ]
+    },
+    {
+      "sha256": "065de60cba1e4deb589aeccea03a7aa779f144dc43852aaeef2d0ba76229fd7d",
+      "matches": [
+        {
+          "section": "decoded string",
+          "contextHash": "9c581cc23b88ddd1379abae8f2a98a24382c6f45ecb66e8ac8a11ecdacf88d2c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "829ce8b39281e87ca0e005168df28ceb45b2a07d1ed3d214834bcbb38e0f8d9d"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "0db1ab372ee63e24b783ed1fc49846a77c3f19c55c50b924a876ccf0ad9b9e32"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "1812509570842334cbee4ec8d5401945242e9f886ca13fae6137f80e1c1de912"
+        }
+      ],
+      "evidence": "Reviewed source gospel.js: former decoration IDs are read-only migration inputs normalized to the current catalog before rendering. The historical connection setting occurs only in NYX_PORTABLE_BACKUP_DENIED_KEYS, which excludes it from exports; no transport implementation or runtime selection uses it. Parsed built strings match these four source constants."
+    },
+    {
+      "sha256": "fc59a0813f459e998fabc87266f040b12a8539cae82c03e52daa3d2d5eb51a4a",
+      "matches": [
+        {
+          "section": "decoded string",
+          "contextHash": "9c581cc23b88ddd1379abae8f2a98a24382c6f45ecb66e8ac8a11ecdacf88d2c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "829ce8b39281e87ca0e005168df28ceb45b2a07d1ed3d214834bcbb38e0f8d9d"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "0db1ab372ee63e24b783ed1fc49846a77c3f19c55c50b924a876ccf0ad9b9e32"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "1812509570842334cbee4ec8d5401945242e9f886ca13fae6137f80e1c1de912"
+        }
+      ],
+      "evidence": "Reviewed source gospel.js: former decoration IDs are read-only migration inputs normalized to the current catalog before rendering. The historical connection setting occurs only in NYX_PORTABLE_BACKUP_DENIED_KEYS, which excludes it from exports; no transport implementation or runtime selection uses it. Parsed built strings match these four source constants."
+    },
+    {
+      "sha256": "c7c604a108b5b53b617822d4b18c81cbcbe67eeae86d6a68e93e8f2cd8455ae7",
+      "matches": [
+        {
+          "section": "decoded string",
+          "contextHash": "9c581cc23b88ddd1379abae8f2a98a24382c6f45ecb66e8ac8a11ecdacf88d2c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "829ce8b39281e87ca0e005168df28ceb45b2a07d1ed3d214834bcbb38e0f8d9d"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "0db1ab372ee63e24b783ed1fc49846a77c3f19c55c50b924a876ccf0ad9b9e32"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "1812509570842334cbee4ec8d5401945242e9f886ca13fae6137f80e1c1de912"
+        }
+      ],
+      "evidence": "Reviewed source gospel.js: former decoration IDs are read-only migration inputs normalized to the current catalog before rendering. The historical connection setting occurs only in NYX_PORTABLE_BACKUP_DENIED_KEYS, which excludes it from exports; no transport implementation or runtime selection uses it. Parsed built strings match these four source constants."
+    },
+    {
+      "sha256": "91825292d8c8fb2829af11b13be818cf696124f1213e0219ff4c93f7e06625f9",
+      "matches": [
+        {
+          "section": "decoded string",
+          "contextHash": "9c581cc23b88ddd1379abae8f2a98a24382c6f45ecb66e8ac8a11ecdacf88d2c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "829ce8b39281e87ca0e005168df28ceb45b2a07d1ed3d214834bcbb38e0f8d9d"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "0db1ab372ee63e24b783ed1fc49846a77c3f19c55c50b924a876ccf0ad9b9e32"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "1812509570842334cbee4ec8d5401945242e9f886ca13fae6137f80e1c1de912"
+        }
+      ],
+      "evidence": "Reviewed source gospel.js: former decoration IDs are read-only migration inputs normalized to the current catalog before rendering. The historical connection setting occurs only in NYX_PORTABLE_BACKUP_DENIED_KEYS, which excludes it from exports; no transport implementation or runtime selection uses it. Parsed built strings match these four source constants."
+    },
+    {
+      "sha256": "1d95ed2a4d4bc13f3f8dad6dcd5c8e330c3135d079a2adf696da3542136e696a",
+      "matches": [
+        {
+          "section": "decoded string",
+          "contextHash": "9c581cc23b88ddd1379abae8f2a98a24382c6f45ecb66e8ac8a11ecdacf88d2c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "829ce8b39281e87ca0e005168df28ceb45b2a07d1ed3d214834bcbb38e0f8d9d"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "0db1ab372ee63e24b783ed1fc49846a77c3f19c55c50b924a876ccf0ad9b9e32"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "1812509570842334cbee4ec8d5401945242e9f886ca13fae6137f80e1c1de912"
+        }
+      ],
+      "evidence": "Reviewed source gospel.js: former decoration IDs are read-only migration inputs normalized to the current catalog before rendering. The historical connection setting occurs only in NYX_PORTABLE_BACKUP_DENIED_KEYS, which excludes it from exports; no transport implementation or runtime selection uses it. Parsed built strings match these four source constants."
+    },
+    {
+      "sha256": "4d65f6193f27d07c87b4bae7ed07ba41dcffca7ca82203796e6fcbc3714ff6e1",
+      "matches": [
+        {
+          "section": "decoded string",
+          "contextHash": "9c581cc23b88ddd1379abae8f2a98a24382c6f45ecb66e8ac8a11ecdacf88d2c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "829ce8b39281e87ca0e005168df28ceb45b2a07d1ed3d214834bcbb38e0f8d9d"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "0db1ab372ee63e24b783ed1fc49846a77c3f19c55c50b924a876ccf0ad9b9e32"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "1812509570842334cbee4ec8d5401945242e9f886ca13fae6137f80e1c1de912"
+        }
+      ],
+      "evidence": "Reviewed source gospel.js: former decoration IDs are read-only migration inputs normalized to the current catalog before rendering. The historical connection setting occurs only in NYX_PORTABLE_BACKUP_DENIED_KEYS, which excludes it from exports; no transport implementation or runtime selection uses it. Parsed built strings match these four source constants."
+    },
+    {
+      "sha256": "1c11a13fa3debbe80e4f1ae14d2b84cf1926d519479b5900b5ac5f17082769ba",
+      "matches": [
+        {
+          "section": "decoded string",
+          "contextHash": "9c581cc23b88ddd1379abae8f2a98a24382c6f45ecb66e8ac8a11ecdacf88d2c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "829ce8b39281e87ca0e005168df28ceb45b2a07d1ed3d214834bcbb38e0f8d9d"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "0db1ab372ee63e24b783ed1fc49846a77c3f19c55c50b924a876ccf0ad9b9e32"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "1812509570842334cbee4ec8d5401945242e9f886ca13fae6137f80e1c1de912"
+        }
+      ],
+      "evidence": "Reviewed source gospel.js: former decoration IDs are read-only migration inputs normalized to the current catalog before rendering. The historical connection setting occurs only in NYX_PORTABLE_BACKUP_DENIED_KEYS, which excludes it from exports; no transport implementation or runtime selection uses it. Parsed built strings match these four source constants."
+    },
+    {
+      "sha256": "7d60545292958245a5c85d77b05f6bc2e8e7e979b80ca907d9e6c7c66a266ff7",
+      "matches": [
+        {
+          "section": "decoded string",
+          "contextHash": "9c581cc23b88ddd1379abae8f2a98a24382c6f45ecb66e8ac8a11ecdacf88d2c"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "829ce8b39281e87ca0e005168df28ceb45b2a07d1ed3d214834bcbb38e0f8d9d"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "0db1ab372ee63e24b783ed1fc49846a77c3f19c55c50b924a876ccf0ad9b9e32"
+        },
+        {
+          "section": "decoded string",
+          "contextHash": "1812509570842334cbee4ec8d5401945242e9f886ca13fae6137f80e1c1de912"
+        }
+      ],
+      "evidence": "Reviewed source gospel.js: former decoration IDs are read-only migration inputs normalized to the current catalog before rendering. The historical connection setting occurs only in NYX_PORTABLE_BACKUP_DENIED_KEYS, which excludes it from exports; no transport implementation or runtime selection uses it. Parsed built strings match these four source constants."
+    }
+  ]
+}

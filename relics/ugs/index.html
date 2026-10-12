@@ -75,7 +75,7 @@ function render(){
   const shown=games.filter(game=>!term || game.title.toLowerCase().includes(term));
   grid.innerHTML=shown.map(game=>{
     const title=cleanTitle(game.title);
-    const thumb=thumbName(game.path);
+    const thumb=game.thumbnail||thumbName(game.path);
     const src=thumbs.has(thumb) ? `thumbs/${escapeAttr(thumb)}` : fallbackThumb(title);
     return `<a class="game" href="${encodeURI(game.path)}"><div class="cover"><img loading="lazy" decoding="async" src="${src}" alt="" onerror="this.onerror=null;this.src=fallbackThumb('${escapeJs(title)}');"></div><span class="game-title">${escapeHtml(title)}</span></a>`;
   }).join('');

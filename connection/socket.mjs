@@ -1,6 +1,6 @@
 import {pack,unpack} from './frames.mjs';
 
-export function socketClass(Original,base,readyAt,restore=value=>value){
+export function socketClass(Original,base,readyAt,restore=value=>value,endpointOrigin=()=>location.origin){
   class Connection extends EventTarget{
     static CONNECTING=0;
     static OPEN=1;
@@ -27,7 +27,7 @@ export function socketClass(Original,base,readyAt,restore=value=>value){
       if(!Number.isFinite(readyAt)||readyAt<=0)throw new DOMException('A user action is required','InvalidStateError');
       this.#url=target.href;
       this.#timer=setTimeout(()=>{
-        const endpoint=new URL('/api/channel',location.origin);
+        const endpoint=new URL('/api/channel',endpointOrigin(target.href));
         endpoint.protocol=endpoint.protocol==='https:'?'wss:':'ws:';
         const socket=this.#socket=new Original(endpoint);
         socket.binaryType='arraybuffer';

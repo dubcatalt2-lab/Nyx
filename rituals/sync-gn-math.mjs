@@ -1,9 +1,13 @@
-import { writeFile } from "node:fs/promises";
+import { writeFile, readFile, mkdir } from "node:fs/promises";
+import sharp from 'sharp';
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const outputPath = join(root, "assets", "gn-math", "games.json");
+const outputPath = join(root, "relics", "gn-math", "games.json");
+const coverDirectory=join(root,'relics','gn-math','covers');
+const previous=JSON.parse(await readFile(outputPath,'utf8'));
+const identities=new Map(previous.games.map(game=>[game.id,game.title]));
 const source = "https://github.com/genizy/npm";
 const catalogSource = "https://raw.githubusercontent.com/freebuisness/assets/main/zones.json";
 const htmlSource = "https://github.com/freebuisness/html";
@@ -30,7 +34,7 @@ const games = zones.map(zone => {
   return {
     id: String(zone.id ?? ""),
     path,
-    title: String(zone.name || path.replace(/\.html(?:-[a-z0-9]+)?$/i, "")),
+    title: identities.get(String(zone.id)) || String(zone.name || path.replace(/\.html(?:-[a-z0-9]+)?$/i, "")),
     author: String(zone.author || ""),
     authorLink: String(zone.authorLink || ""),
     tags: Array.isArray(zone.special) ? zone.special.map(tag => String(tag)) : [],
@@ -42,6 +46,20 @@ const games = zones.map(zone => {
 
 if (games.length < 100) throw new Error(`GN Math catalog unexpectedly contains only ${games.length} games`);
 if (new Set(games.map(game => game.id)).size !== games.length) throw new Error("GN Math catalog contains duplicate game IDs");
+await mkdir(coverDirectory,{recursive:true});
+let next=0,downloaded=0;const failures=[];
+await Promise.all(Array.from({length:6},async()=>{
+  while(next<games.length){const game=games[next++];if(!game.coverFallback)continue;
+    try{
+      const response=await fetch(game.coverFallback,{signal:AbortSignal.timeout(15000)});
+      if(!response.ok)throw Error('HTTP '+response.status);
+      const bytes=Buffer.from(await response.arrayBuffer());if(bytes.length>5*1024*1024)throw Error('Image size limit');
+      const filename='lesson-'+game.id+'.webp';
+      await sharp(bytes,{limitInputPixels:16000000}).resize({width:['33','198','785'].includes(game.id)?640:320,withoutEnlargement:true}).webp({quality:80}).toFile(join(coverDirectory,filename));
+      game.cover='/assets/gn-math/covers/'+filename;downloaded++;
+    }catch(error){failures.push({id:game.id,error:error.message});}
+  }
+}));
 
 const catalog = {
   source,
@@ -54,3 +72,4 @@ const catalog = {
 };
 await writeFile(outputPath, `${JSON.stringify(catalog, null, 2)}\n`, "utf8");
 console.log(`Updated ${outputPath} with ${games.length} GN Math games.`);
+console.log(JSON.stringify({localCovers:downloaded,failures}));

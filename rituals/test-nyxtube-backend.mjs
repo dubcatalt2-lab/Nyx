@@ -11,6 +11,10 @@ import { tubeStreamingRoutes } from '../scripture/nyxtube-routes.mjs';
 const exec=promisify(execFile), root=await mkdtemp(join(tmpdir(),'nyx-tube-test-'));
 const id='YE7VzlLtp-4'; let backend,server;
 try {
+  const expired=extractionFailure('cookies are no longer valid');
+  assert.equal(expired.code,'authentication');
+  assert.match(expired.message,/server.*YouTube session needs renewal/);
+  assert.match(expired.message,/signing into Nyx will not fix this/);
   const ffmpeg=process.env.NYX_FFMPEG_BIN||'ffmpeg';
   await exec(ffmpeg,['-nostdin','-v','error','-f','lavfi','-i','color=c=blue:s=320x180:r=24','-t','4','-c:v','libx264','-pix_fmt','yuv420p',join(root,'video.mp4')]);
   await exec(ffmpeg,['-nostdin','-v','error','-f','lavfi','-i','sine=frequency=440:sample_rate=44100','-t','4','-c:a','aac',join(root,'audio.m4a')]);

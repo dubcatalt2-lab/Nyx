@@ -524,7 +524,7 @@
   },
   {
     "id": "fx-nova-beam",
-    "label": "Aurora Wisps",
+    "label": "Aurora Ribbons",
     "path": "/assets/profile/effects/fx-nova-beam.png",
     "staticPath": "/assets/profile/effects/fx-nova-beam-still.png",
     "animated": true,

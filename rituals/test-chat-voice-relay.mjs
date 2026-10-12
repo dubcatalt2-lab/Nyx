@@ -1,4 +1,4 @@
-import {sourceFile} from '../scripture/source-layout.mjs';
+import {sourceFile,publicSourceText} from '../scripture/source-layout.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
@@ -85,6 +85,14 @@ const voiceState=(uid,sessionId)=>({channels,participants:[...liveSessions.value
 app.get('/api/chat/voice/state',(req,res)=>res.json(voiceState(user(req),req.query.sessionId)));
 app.post('/api/chat/voice/join',(req,res)=>{const uid=user(req);liveSessions.set(uid,{...makeSession(uid),...req.body,...identity(uid)});io.emit('nyx:voice:refresh');res.json(voiceState(uid,req.body.sessionId))});
 app.post('/api/chat/voice/leave',(req,res)=>{if(liveSessions.get(user(req))?.sessionId===req.body.sessionId)liveSessions.delete(user(req));io.emit('nyx:voice:refresh');res.json({ok:true})});
+app.use((req,res,next)=>{
+  if(process.env.NYX_TEST_STATIC_ROOT)return next();
+  try{let path=decodeURIComponent(req.path).replace(/^\//,'');if(!path||path.endsWith('/'))path+='index.html';
+    const file=sourceFile(path);if(file===path)return next();
+    if(/\.(?:html|js|mjs|css)$/.test(file))return res.type(file.split('.').at(-1)).send(publicSourceText(readFileSync(file,'utf8')));
+    return res.sendFile(file);
+  }catch{next();}
+});
 app.use(express.static(process.env.NYX_TEST_STATIC_ROOT||process.cwd(),{dotfiles:'allow'}));
 await new Promise(r=>server.listen(0,'127.0.0.1',r));
 const origin=`http://127.0.0.1:${server.address().port}`;

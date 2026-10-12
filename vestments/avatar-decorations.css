@@ -18,7 +18,7 @@
 .nyx-avatar-decoration-gilded-halo { --nyx-decoration-image: url("/assets/profile/decorations/gilded-halo.png"); --nyx-decoration-still: url("/assets/profile/decorations/gilded-halo-still.png"); }
 .nyx-avatar-decoration-plasma-ring { --nyx-decoration-image: url("/assets/profile/decorations/plasma-ring.png"); --nyx-decoration-still: url("/assets/profile/decorations/plasma-ring-still.png"); }
 .nyx-avatar-decoration-hyperdrive { --nyx-decoration-image: url("/assets/profile/decorations/hyperdrive.png"); --nyx-decoration-still: url("/assets/profile/decorations/hyperdrive-still.png"); }
-.nyx-avatar-decoration-infernal-ring { --nyx-decoration-image: url("/assets/profile/decorations/infernal-ring.png"); --nyx-decoration-still: url("/assets/profile/decorations/infernal-ring-still.png"); }
+.nyx-avatar-decoration-scholar-ring { --nyx-decoration-image: url("/assets/profile/decorations/scholar-ring.png"); --nyx-decoration-still: url("/assets/profile/decorations/scholar-ring-still.png"); }
 .nyx-avatar-decoration-solar-ring { --nyx-decoration-image: url("/assets/profile/decorations/solar-ring.png"); --nyx-decoration-still: url("/assets/profile/decorations/solar-ring-still.png"); }
 .nyx-avatar-decoration-nebula-ring { --nyx-decoration-image: url("/assets/profile/decorations/nebula-ring.png"); --nyx-decoration-still: url("/assets/profile/decorations/nebula-ring-still.png"); }
 .nyx-avatar-decoration-prism-crown { --nyx-decoration-image: url("/assets/profile/decorations/prism-crown.png"); --nyx-decoration-still: url("/assets/profile/decorations/prism-crown-still.png"); }
@@ -43,7 +43,7 @@
 .nyx-avatar-decoration-gilded-halo>.nyx-avatar-decoration,
 .nyx-avatar-decoration-plasma-ring>.nyx-avatar-decoration,
 .nyx-avatar-decoration-hyperdrive>.nyx-avatar-decoration,
-.nyx-avatar-decoration-infernal-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-scholar-ring>.nyx-avatar-decoration,
 .nyx-avatar-decoration-solar-ring>.nyx-avatar-decoration,
 .nyx-avatar-decoration-nebula-ring>.nyx-avatar-decoration,
 .nyx-avatar-decoration-prism-crown>.nyx-avatar-decoration,
@@ -119,9 +119,9 @@
 .nyx-avatar-decoration-hyperdrive>.nyx-avatar-decoration::before,
 .nyx-avatar-decoration-hyperdrive>.nyx-avatar-decoration::after,
 .nyx-avatar-decoration-hyperdrive>.nyx-avatar-decoration>span,
-.nyx-avatar-decoration-infernal-ring>.nyx-avatar-decoration::before,
-.nyx-avatar-decoration-infernal-ring>.nyx-avatar-decoration::after,
-.nyx-avatar-decoration-infernal-ring>.nyx-avatar-decoration>span,
+.nyx-avatar-decoration-scholar-ring>.nyx-avatar-decoration::before,
+.nyx-avatar-decoration-scholar-ring>.nyx-avatar-decoration::after,
+.nyx-avatar-decoration-scholar-ring>.nyx-avatar-decoration>span,
 .nyx-avatar-decoration-solar-ring>.nyx-avatar-decoration::before,
 .nyx-avatar-decoration-solar-ring>.nyx-avatar-decoration::after,
 .nyx-avatar-decoration-solar-ring>.nyx-avatar-decoration>span,
@@ -157,7 +157,7 @@
 .nyx-avatar-decoration-gilded-halo>.nyx-avatar-decoration,
 .nyx-avatar-decoration-plasma-ring>.nyx-avatar-decoration,
 .nyx-avatar-decoration-hyperdrive>.nyx-avatar-decoration,
-.nyx-avatar-decoration-infernal-ring>.nyx-avatar-decoration,
+.nyx-avatar-decoration-scholar-ring>.nyx-avatar-decoration,
 .nyx-avatar-decoration-solar-ring>.nyx-avatar-decoration,
 .nyx-avatar-decoration-nebula-ring>.nyx-avatar-decoration,
 .nyx-avatar-decoration-prism-crown>.nyx-avatar-decoration,
@@ -183,7 +183,7 @@ body.lag-reducer .nyx-avatar-decoration-stellar-ring>.nyx-avatar-decoration,
 body.lag-reducer .nyx-avatar-decoration-gilded-halo>.nyx-avatar-decoration,
 body.lag-reducer .nyx-avatar-decoration-plasma-ring>.nyx-avatar-decoration,
 body.lag-reducer .nyx-avatar-decoration-hyperdrive>.nyx-avatar-decoration,
-body.lag-reducer .nyx-avatar-decoration-infernal-ring>.nyx-avatar-decoration,
+body.lag-reducer .nyx-avatar-decoration-scholar-ring>.nyx-avatar-decoration,
 body.lag-reducer .nyx-avatar-decoration-solar-ring>.nyx-avatar-decoration,
 body.lag-reducer .nyx-avatar-decoration-nebula-ring>.nyx-avatar-decoration,
 body.lag-reducer .nyx-avatar-decoration-prism-crown>.nyx-avatar-decoration,

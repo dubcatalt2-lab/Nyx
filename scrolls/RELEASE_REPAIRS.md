@@ -63,6 +63,8 @@
 
 ## VERIFICATION OUTPUT
 
+Machine-local workspace paths below are abbreviated; the original raw logs remain in .codex-artifacts.
+
 Raw matches and their classifications remain in `.codex-artifacts/release-audit.json`. CI uploads the complete report, including failed audits. The literal scan is retained; exact hashes and contexts classify incidental matches without directory exemptions.
 
 ```text
@@ -83,9 +85,9 @@ Raw matches and their classifications remain in `.codex-artifacts/release-audit.
   "unreadable": 0,
   "sourceMaps": 0,
   "embeddedPrograms": 1,
-  "report": "C:\\Users\\dubca\\Downloads\\GoodLion\\.worktrees\\nyx-page-wording-20261008\\.codex-artifacts\\release-audit.json"
+  "report": "C:\\Users\\dubca\\Downloads\\<workspace>\\.worktrees\\nyx-page-wording-20261008\\.codex-artifacts\\release-audit.json"
 }
-VPS build ready in C:\Users\dubca\Downloads\GoodLion\.worktrees\nyx-page-wording-20261008\dist
+VPS build ready in C:\Users\dubca\Downloads\<workspace>\.worktrees\nyx-page-wording-20261008\dist
 ```
 
 ```text

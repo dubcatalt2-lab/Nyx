@@ -62,7 +62,7 @@ export function replaceBinaryCalls(text,mode,staticOnly=false){
     }
     if(!staticOnly&&node.type==='CallExpression'){
       const callee=node.callee;
-      if(callee.type==='Identifier'&&callee.name==='atob'&&!bound('atob',node)||callee.type==='MemberExpression'&&['globalThis','window','self'].includes(callee.object.name)&&!bound(callee.object.name,node)&&(callee.computed?callee.property.value:callee.property.name)==='atob')edits.push({start:callee.start,end:callee.end,text:'('+binaryText.toString()+')'});
+      if(callee.type==='Identifier'&&callee.name==='atob'&&!bound('atob',node)||callee.type==='MemberExpression'&&['globalThis','window','self'].includes(callee.object.name)&&!bound(callee.object.name,node)&&(callee.computed?callee.property.value:callee.property.name)==='atob')edits.push({start:callee.start,end:callee.end,text:'('+binaryText.toString().replace(/\r\n?/g,'\n')+')'});
     }
     for(const value of Object.values(node))if(Array.isArray(value))value.forEach(visit);else if(value&&typeof value==='object')visit(value);
   };

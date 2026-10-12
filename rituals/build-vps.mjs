@@ -82,7 +82,7 @@ async function copyRepositoryStaticFiles() {
     if (!info.isFile()) continue;
     const destination = join(output, ...relative.split("/"));
     await mkdir(dirname(destination), { recursive: true });
-    if (/\.(?:js|mjs|html|css)$/.test(relative) && !relative.startsWith('assets/ugs/') && !relative.startsWith('assets/vendor/')) await writeFile(destination,publicSourceText(await readFile(sourceFile(source),'utf8')));
+    if (/\.(?:js|mjs|html|css)$/.test(relative) && !relative.startsWith('assets/ugs/') && !relative.startsWith('assets/vendor/')) await writeFile(destination,publicSourceText((await readFile(sourceFile(source),'utf8')).replace(/\r\n?/g,'\n')));
     else await cp(sourceFile(source), destination);
   }
 }

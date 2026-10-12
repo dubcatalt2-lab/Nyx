@@ -201,6 +201,8 @@ import {fragment,stylesheet,candidates} from './transform.mjs';
     }
     if(event.data?.type==='cookies'&&(event.data.base===pageAddress().href||isolated&&event.data.origin===pageAddress().origin))cookies=new Cookies(event.data.value);
   });
+  // Parser-blocking resources need authorization before DOMContentLoaded can fire.
+  navigator.serviceWorker?.startMessages();
   document.addEventListener('contextmenu',event=>{
     if(parent===globalThis)return;
     const link=event.composedPath().find(node=>node?.matches?.('a[href],area[href]'));

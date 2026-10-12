@@ -25,6 +25,9 @@ const upstream=httpServer((request,response)=>{
   const label=url.pathname.slice(1);response.setHeader('content-type','text/html');response.setHeader('set-cookie','secret='+label+'; Path=/; Secure; HttpOnly; SameSite=None');
   response.end('<!doctype html><h1>'+label+'</h1><a href="https://'+(label==='a'?'b':'a')+'.example/'+(label==='a'?'b':'a')+'">Next</a><button onclick="window.open(\'/login\',\'signin\')">Sign in</button><button onclick="window.open(\'https://b.example/login\',\'provider\')">Provider</button><script>localStorage.setItem("site","'+label+'");globalThis.ready=true;globalThis.blocked=window.open("/unwanted")===null;addEventListener("message",e=>{if(e.origin==="https://b.example"&&e.data==="signed-in"){globalThis.callback=e.data;e.source.postMessage("received",e.origin)}});</script>');return;
  }
+ if(url.pathname==='/delayed'){response.setHeader('content-type','text/html');response.end('<h1>Waiting</h1><link rel="stylesheet" href="/color.css"><script src="/ready.js"></script>');return;}
+ if(url.pathname==='/color.css'){response.setHeader('content-type','text/css');response.end('h1{color:rgb(0,128,0)}');return;}
+ if(url.pathname==='/ready.js'){response.setHeader('content-type','text/javascript');response.end('document.querySelector("h1").textContent="Loaded"');return;}
  if(url.pathname==='/cookies'){response.setHeader('content-type','application/json');response.end(JSON.stringify({cookie:request.headers.cookie||''}));return;}
  if(url.pathname==='/cors'){response.setHeader('access-control-allow-origin','https://a.example');response.setHeader('access-control-allow-credentials','true');response.end('allowed');return;}
  if(url.pathname==='/events'){response.setHeader('content-type','text/event-stream');response.write('data: '+(request.headers.cookie||'none')+'\n\n');return;}
@@ -38,9 +41,10 @@ const upstream=httpServer((request,response)=>{
 const service=isolatedApplication({suffix:'nyx.test',directory:join(temporary,'sessions'),resolveDestination:async value=>{
  const remote=new URL(value);return {url:new URL(remote.pathname+remote.search,'http://127.0.0.1:'+upstream.address().port),address:{address:'127.0.0.1',family:4}};
 }});
-let rejectCookie=false;
+let rejectCookie=false,delayRuntime=false;
 const server=httpsServer({key:await readFile(key),cert:await readFile(cert)},(request,response)=>{
  if(rejectCookie&&request.url==='/api/cookies'){rejectCookie=false;response.writeHead(503).end();return;}
+ if(delayRuntime&&request.url==='/boot/runtime.js'){setTimeout(()=>service.handler(request,response),700);return;}
  return service.handler(request,response);
 });
 server.on('upgrade',service.upgrade);server.listen(0,'127.0.0.1');await once(server,'listening');
@@ -68,6 +72,12 @@ try{
  for(let i=0;i<100;i++){frame=page.frames().find(frame=>frame.url().includes('/content/'));if(frame&&await frame.locator('h1').count())break;await page.waitForTimeout(100);}
  assert.equal(await frame.locator('h1').textContent(),'a');
  await frame.evaluate(()=>Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>setTimeout(()=>reject(Error('Worker not ready')),10000))]));console.log('PASS isolated worker ready');
+ const original=frame.url();delayRuntime=true;
+ await frame.goto(original.replace(/%2Fa$/,'%2Fdelayed'));
+ await frame.locator('h1').filter({hasText:'Loaded'}).waitFor({timeout:10000});
+ assert.equal(await frame.locator('h1').evaluate(element=>getComputedStyle(element).color),'rgb(0, 128, 0)');
+ delayRuntime=false;await frame.goto(original);
+ console.log('PASS startup deadlock: queued authorization reaches the page before DOMContentLoaded; scripts and styles load');
  assert.equal(await frame.evaluate(()=>document.cookie.includes('secret=')),false);
  assert.equal(await frame.evaluate(()=>globalThis.blocked),true);
  assert.equal(await frame.evaluate(async()=>{const response=await fetch('/cookies');return (await response.json()).cookie;}),'secret=a');

@@ -1,4 +1,4 @@
-export function textCache({limit=32*1024*1024,entries=64,lifetime=60000,now=Date.now}={}){
+export function textCache({limit=32*1024*1024,entries=64,lifetime=300000,now=Date.now}={}){
   const values=new Map();let size=0;
   function remove(key){const value=values.get(key);if(value){size-=value.size;values.delete(key);}}
   return (key,text,compute)=>{

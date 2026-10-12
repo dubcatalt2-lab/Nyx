@@ -42,6 +42,7 @@ html[data-nyx-appearance="light"] body.workspace-shell :is(#nyxBeamsBg,#nyxLineW
 html[data-nyx-beam-wallpaper="obsidian"] body:not(.custom-bg-active)::before {
   background:var(--obsidian-bg) url('../assets/backgrounds/obsidian-fabric.svg') bottom right/cover no-repeat;
 }
+html[data-nyx-beam-wallpaper^="photo-moonrise-"] { --nyx-photo-wallpaper:url("../assets/backgrounds/moonrise.jpg") }
 html[data-nyx-beam-wallpaper^="photo-leaves-"] { --nyx-photo-wallpaper:url("../assets/backgrounds/leaves.jpg") }
 html[data-nyx-beam-wallpaper^="photo-moonlight-"] { --nyx-photo-wallpaper:url("../assets/backgrounds/moonlight.jpg") }
 html[data-nyx-beam-wallpaper^="photo-rain-"] { --nyx-photo-wallpaper:url("../assets/backgrounds/rain.jpg") }

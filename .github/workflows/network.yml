@@ -25,6 +25,11 @@ jobs:
       - run: node rituals/test-retired-drop.mjs
       - run: node rituals/test-relay-engine.mjs
       - run: node rituals/test-relay-routing.mjs
+      - run: node rituals/test-game-cdn.mjs
+      - run: node rituals/test-game-obfuscation.mjs
+      - run: node rituals/test-game-delivery.mjs
+      - run: node rituals/test-game-intercession-routes.mjs
+      - run: node rituals/test-game-intercession-stream.mjs
       - run: npm --prefix connection run build
       - run: npm run test:network
       - run: node connection/isolated-smoke.mjs

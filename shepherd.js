@@ -25,7 +25,7 @@ import {companionZip} from './scripture/agent-download.mjs';
 import {installAiMedia} from './scripture/ai-media.mjs';
 import {publishSurgeLink,validateSurgeToken} from './scripture/surge-publisher.mjs';
 import {createGameReports} from './scripture/game-reports.mjs';
-import {gameResourceTarget} from "./relics/games/game-cdn.js";
+import {gameResourceTarget, gameDeliveryUrl, gameCdnHosts} from "./relics/games/game-cdn.js";
 import {gameResourceEdit} from './scripture/game-resource-repairs.mjs';
 import {createGameProxy as createGameConnection} from './scripture/game-intercession-stream.mjs';
 import { exchangeVoiceAudio, createVoiceAudioAccess, cleanupVoiceAudio } from './scripture/chat-voice-relay.mjs';
@@ -1516,12 +1516,7 @@ app.get("/gn-math-asset", async (req, res) => {
 
 });
 
-const gnMathConnectionHosts = new Set([
-  "cdn.jsdelivr.net",
-  "raw.githubusercontent.com",
-  "rawcdn.githack.com",
-  "raw.githack.com"
-]);
+const gnMathConnectionHosts = gameCdnHosts;
 
 function safeGnMathConnectionUrl(value) {
   try {
@@ -1529,7 +1524,7 @@ function safeGnMathConnectionUrl(value) {
     if (url.protocol !== "https:" && url.protocol !== "http:") return null;
     if (!gnMathConnectionHosts.has(url.hostname)) return null;
     if (/(?:googletagmanager|google-analytics|googlesyndication|doubleclick|facebook|recaptcha|pagead|cdn\.r9x\.in)/i.test(url.href)) return null;
-    return url;
+    return gameDeliveryUrl(url);
   } catch {
     return null;
   }
@@ -1556,31 +1551,14 @@ function isHtmlConnectionPayload(url, result) {
 }
 
 function gnMathConnectionCandidates(url) {
+  url = gameDeliveryUrl(url);
   const candidates = [url];
 
 
-  if(url.hostname==='cdn.jsdelivr.net' && /^\/gh\/web-ports\/fear-and-hunger-2@[^/]+\//i.test(url.pathname)) {
-    const lower=new URL(url);
-    lower.pathname=lower.pathname.replace(/^(\/gh\/web-ports\/fear-and-hunger-2@[^/]+\/)(.*)$/i,(_all,root,path)=>root+path.toLowerCase());
-    if(lower.href!==url.href)candidates.push(lower);
-  }
-  const parts = url.pathname.split("/").filter(Boolean);
-  if (url.hostname === "cdn.jsdelivr.net" && parts[0] === "gh" && parts.length >= 4) {
-    const [owner, repoRef, ...resourcePath] = parts.slice(1);
-    const separator = repoRef.lastIndexOf("@");
-    if (separator > 0) {
-      const repository = repoRef.slice(0, separator);
-      const ref = repoRef.slice(separator + 1);
-      candidates.push(new URL(`https://raw.githubusercontent.com/${owner}/${repository}/${ref}/${resourcePath.join("/")}`));
-      candidates.push(new URL(`https://raw.githack.com/${owner}/${repository}/${ref}/${resourcePath.join("/")}`));
-    }
-  } else if (
-    ["raw.githubusercontent.com", "raw.githack.com", "rawcdn.githack.com"].includes(url.hostname) &&
-    parts.length >= 4
-  ) {
+  const parts = url.pathname.split('/').filter(Boolean);
+  if (['raw.githubusercontent.com','raw.githack.com','rawcdn.githack.com'].includes(url.hostname) && parts.length >= 4) {
     const [owner, repository, ref, ...resourcePath] = parts;
     candidates.push(new URL(`https://raw.githubusercontent.com/${owner}/${repository}/${ref}/${resourcePath.join("/")}`));
-    candidates.push(new URL(`https://cdn.jsdelivr.net/gh/${owner}/${repository}@${ref}/${resourcePath.join("/")}`));
     candidates.push(new URL(`https://raw.githack.com/${owner}/${repository}/${ref}/${resourcePath.join("/")}`));
   }
   return candidates.filter((candidate, index, list) =>
@@ -1663,12 +1641,7 @@ app.get(/^\/gn-math-resource\//, async (req, res) => {
 
 });
 
-const redsMiscConnectionHosts = new Set([
-  "raw.githubusercontent.com",
-  "cdn.jsdelivr.net",
-  "rawcdn.githack.com",
-  "raw.githack.com"
-]);
+const redsMiscConnectionHosts = gameCdnHosts;
 
 function safeRedsMiscPath(path) {
   const clean = String(path || "").replace(/^\/+/, "");
@@ -1691,7 +1664,7 @@ function safeRedsMiscConnectionUrl(value) {
       if (!allowed) return null;
     }
     if (/(?:googletagmanager|google-analytics|googlesyndication|doubleclick|facebook|recaptcha|pagead|cdn\.r9x\.in)/i.test(url.href)) return null;
-    return url;
+    return gameDeliveryUrl(url);
   } catch {
     return null;
   }

@@ -1,6 +1,7 @@
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { setTimeout as delay } from 'node:timers/promises';
+import {gameDeliveryUrl} from '../relics/games/game-cdn.js';
 
 // Large Unity assets must not become one retained ArrayBuffer per player.
 // Only the few resources requiring text edits are buffered, with a shared cap.
@@ -63,7 +64,16 @@ export function createGameProxy({ request = fetch, headerTimeout = 12000,
           for (let retry = 0; retry < 3; retry++) {
             arm(headerTimeout);
             try {
-              upstream = await request(url, { headers: { accept: '*/*', 'user-agent': 'nyx/1.0' }, signal: attemptSignal });
+              let target=gameDeliveryUrl(url);
+              for(let hop=0;hop<=8;hop++) {
+                upstream = await request(target, { headers: { accept: '*/*', 'user-agent': 'nyx/1.0' }, signal: attemptSignal, redirect:'manual' });
+                if(![301,302,303,307,308].includes(upstream.status))break;
+                const next=upstream.headers.get('location');
+                await upstream.body?.cancel();
+                if(!next||hop===8)throw failure('Game source redirect failed');
+                target=gameDeliveryUrl(new URL(next,target));
+                if(!['http:','https:'].includes(target.protocol)||target.username||target.password)throw failure('Invalid game source redirect');
+              }
             } catch (error) {
               clearTimeout(idle);
               if (attemptSignal.aborted || retry === 2) throw error;

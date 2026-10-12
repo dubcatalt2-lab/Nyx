@@ -28,4 +28,8 @@ assert.equal(run(transformWorkspaceStrings(output,{decode:true})),run(fixture));
 assert.equal(run(obscureGameStrings(output,'second-pass')),run(fixture));
 const module=obscureGameStrings('import {readFile} from "node:fs";export {readFile};export const title="Ready";','module');
 assert(module.includes('from "node:fs"'));
+const repeated=obscureGameStrings('(()=>{if(globalThis.ready)return;globalThis.ready="Ready";globalThis.calls=(globalThis.calls||0)+1})()','reload-safe-helper');
+const repeatedContext=vm.createContext({});
+vm.runInContext(repeated,repeatedContext);vm.runInContext(repeated,repeatedContext);
+assert.equal(repeatedContext.ready,'Ready');assert.equal(repeatedContext.calls,1);
 console.log('PASS deterministic game string pools, saved values, Unicode, directives, keys, classes, templates, module imports and static rebasing.');

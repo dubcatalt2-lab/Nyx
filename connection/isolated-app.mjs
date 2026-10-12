@@ -29,14 +29,15 @@ export function isolatedApplication({suffix=process.env.DOCUMENT_SUFFIX, directo
     if(known.size>10000)known.delete(known.keys().next().value);
     return target;
   }
-  function originalOrigin(value){
+  function originalAddress(value){
     if(!value)return '';
     if(value==='null')return 'null';
     const url=new URL(value);
     const prefix=url.pathname.match(/^\/content\/[a-z0-9-]+\//i)?.[0];
-    if(prefix){const target=new URL(source(url.href,prefix));if(partition(target.origin,suffix)===url.hostname)return target.origin;}
+    if(prefix){const target=new URL(source(url.href,prefix));if(partition(target.origin,suffix)===url.hostname){target.hash='';return target.href;}}
     return known.get(url.hostname)||'';
   }
+  function originalOrigin(value){const address=originalAddress(value);return !address||address==='null'?address:new URL(address).origin;}
   async function prepare(request,metadata){
     const target=targetFor(request,metadata.url);
     const supplied=new Headers(metadata.headers);
@@ -53,7 +54,7 @@ export function isolatedApplication({suffix=process.env.DOCUMENT_SUFFIX, directo
     if(supplied.has('authorization'))headers.push(['authorization',supplied.get('authorization')]);
     if(request.headers.origin||supplied.has('origin'))headers.push(['origin',origin]);
     const referer=supplied.get('referer');
-    if(referer){try{const url=new URL(referer);if(['http:','https:'].includes(url.protocol)&&url.origin===origin)headers.push(['referer',url.href]);}catch{}}
+    if(referer){try{const url=new URL(originalAddress(referer)||referer);if(['http:','https:'].includes(url.protocol)&&url.origin===origin)headers.push(['referer',url.href]);}catch{}}
     if(!omit){const value=session.cookies.header(target.href,origin===target.origin?'strict':request.headers['sec-fetch-mode']==='navigate'&&metadata.method==='GET'?'lax':'none');if(value)headers.push(['cookie',value]);}
     return {headers,session,target,async receive(response){
       if(!omit&&session.cookies.receive(target.href,response.headers.getSetCookie().map(value=>['set-cookie',value])))await session.save();
@@ -137,7 +138,7 @@ export function isolatedApplication({suffix=process.env.DOCUMENT_SUFFIX, directo
       }else response.end();
     }catch(error){
       const knownErrors=['Document origin mismatch','Document session missing','Document session capacity','Document cookie storage limit','Request limit','Document size limit'];
-      console.warn(JSON.stringify({event:'document-request-error',route:request.url?.split('?')[0]==='/api/cookies'?'cookies':'document',kind:knownErrors.includes(error.message)?error.message:error.code||error.name}));
+      console.warn(JSON.stringify({event:'document-request-error',route:request.url?.split('?')[0]==='/api/cookies'?'cookies':'document',stage,kind:knownErrors.includes(error.message)?error.message:error.code||error.name,frames:error.stack?.split('\n').slice(1,5).map(line=>/^\s+at ([\w.<>]+)/.exec(line)?.[1]).filter(Boolean)}));
       if(!response.headersSent)response.writeHead(502,{'content-type':'text/plain','cache-control':'no-store','x-document-failure':stage}).end('Document request failed');else response.destroy();
     }
     finally{clearTimeout(timeout);active--;controller.abort();connection?.release();}

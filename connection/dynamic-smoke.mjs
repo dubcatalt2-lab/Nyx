@@ -106,13 +106,14 @@ try{
         const copy=make();copy.innerHTML=mount.querySelector('img').outerHTML;await copy.querySelector('img').decode();
         const inert=make();inert.innerHTML='<script>invalid javascript syntax</script><span>Still inserted</span>';
         if(inert.querySelector('span')?.textContent!=='Still inserted')throw new Error('Inert markup changed');
-        return {images:all.map(image=>({width:image.naturalWidth,src:image.currentSrc})),backgrounds:styles.map(element=>getComputedStyle(element).backgroundImage),table:table.rows.length,priority:second.style.getPropertyPriority('background-image'),copy:copy.querySelector('img').src,data:data.srcset};
+        return {images:all.map(image=>({width:image.naturalWidth,src:image.currentSrc})),backgrounds:styles.map(element=>getComputedStyle(element).backgroundImage),table:table.rows.length,priority:second.style.getPropertyPriority('background-image'),copy:copy.querySelector('img').currentSrc,originalCopy:copy.querySelector('img').src,data:data.srcset};
       });
       assert.equal(results.table,1);assert.equal(results.priority,'important');
       assert.ok(results.images.length>=9);
       for(const image of results.images){assert.equal(image.width,12);assert.ok(image.src.includes('/content/'));}
       for(const background of results.backgrounds)assert.ok(background.includes('/content/'),background);
       assert.equal(results.copy.split('/content/').length,2);
+      assert.equal(results.originalCopy.includes('/content/'),false);
       assert.ok(results.data.startsWith('data:'));
       await frame.getByRole('link',{name:'Details',exact:true}).click();await frame.getByRole('heading',{name:'Details',exact:true}).waitFor();
       assert.match(await page.locator('input').inputValue(),/details\?q=waterloo/);

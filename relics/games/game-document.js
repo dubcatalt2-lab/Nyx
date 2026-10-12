@@ -1,4 +1,4 @@
-import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath} from './game-cdn.js';
+import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath, gameDeliveryUrl, gameCdnHosts} from './game-cdn.js';
 
     export function prepareGameDocument(html,path,sourceUrl){
       html=String(html).replaceAll('unityGameInstance.SendMessage(', 'unityGameInstance?.SendMessage(');
@@ -47,7 +47,7 @@ import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath} from './ga
         try{
           const value=String(raw || '').trim();
           const url=value.startsWith('//')?new URL('https:'+value):new URL(value.startsWith('/') ? value.slice(1) : value,value.startsWith('/') ? repoRoot : base);
-          if(!['cdn.jsdelivr.net','raw.githubusercontent.com','rawcdn.githack.com','raw.githack.com'].includes(url.hostname)) return raw;
+          if(!gameCdnHosts.has(url.hostname)) return raw;
           if(/adinplay|googletagmanager|google-analytics|googlesyndication|doubleclick|facebook|recaptcha|pagead|cdn\.r9x\.in/i.test(url.href)) return raw;
           return proxyUrl(url.href);
         }catch{
@@ -132,7 +132,8 @@ import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath} from './ga
           const important=/\\.(?:wasm|data|unityweb|json|swf|zip|7z|js)(?:[?#]|$)|\\/Build\\//i;
           const repoRoot=${JSON.stringify(repoRoot)};
           const prox='${location.origin}/gn-math-resource/';
-          const proxHosts=['cdn.jsdelivr.net','raw.githubusercontent.com','rawcdn.githack.com','raw.githack.com'];
+          const proxHosts=${JSON.stringify([...gameCdnHosts])};
+          const delivery=${gameDeliveryUrl.toString()};
           const repairPath=${repairGameResourcePath.toString()};
           // Some older Unity loaders prepend their asset directory to blob URLs.
           // Recover only URLs created in this document, never arbitrary blob text.
@@ -153,7 +154,8 @@ import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath} from './ga
               if(ignorable.test(parsed.href)) return 'about:blank';
               if(proxHosts.includes(parsed.hostname)) {
                 if(parsed.hostname==='cdn.jsdelivr.net' && /^\\/(?!gh\\/|npm\\/|combine\\/)[\\w.-]+\\/[\\w.-]+@[^/]+\\//.test(parsed.pathname))parsed.pathname='/gh'+parsed.pathname;
-                return prox+parsed.protocol.slice(0,-1)+'/'+parsed.host+parsed.pathname+parsed.search+parsed.hash;
+                const target=delivery(parsed);
+                return prox+target.protocol.slice(0,-1)+'/'+target.host+target.pathname+target.search+target.hash;
               }
               return parsed.href;
             }catch{return url}

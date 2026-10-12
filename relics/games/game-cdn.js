@@ -1,13 +1,30 @@
 
 
-export const gameCdnHosts = new Set(['cdn.jsdelivr.net', 'raw.githubusercontent.com', 'rawcdn.githack.com', 'raw.githack.com']);
+export const gameCdnHosts = new Set(['cdn.jsdelivr.net', 'fastly.jsdelivr.net', 'gcore.jsdelivr.net', 'raw.githubusercontent.com', 'rawcdn.githack.com', 'raw.githack.com', 'unpkg.com']);
+
+// Old catalogs are accepted as inputs; delivery uses the repository or npm mirror.
+export function gameDeliveryUrl(value) {
+  const url = new URL(value);
+  if (!/(^|\.)jsdelivr\.net$/.test(url.hostname)) return url;
+  let path = url.pathname;
+  if (/^\/(?!gh\/|npm\/|combine\/)[\w.-]+\/[\w.-]+@[^/]+\//.test(path)) path = '/gh' + path;
+  if (path.startsWith('/npm/')) {
+    url.hostname = 'unpkg.com'; url.pathname = path.slice(4); return url;
+  }
+  const match = path.match(/^\/gh\/([^/]+)\/([^/@]+)(?:@([^/]+))?(\/.*)?$/);
+  if (!match) throw new TypeError('Unsupported game source address');
+  const ref = !match[3] || match[3] === 'latest' ? 'HEAD' : match[3];
+  url.hostname = 'raw.githack.com';
+  url.pathname = `/${match[1]}/${match[2]}/${ref}${match[4] || '/'}`;
+  return url;
+}
 
 export function repairGameResourcePath(pathname) {
 
   pathname=pathname.replace(/\/genizy\/google-class(?=@|\/)/g,'/taskmaster773/google-class')
     .replace(/\/gh\/genizy\/ovo-3-dimension@[^/]+\//g,'/gh/bubblfan/ovo-3-dimension@102179bf4242fd237c46c555ba154c2f325d351c/');
 
-  return pathname.replace(/(\/web-ports\/fear-and-hunger-2@[^/]+\/(?:js\/plugins|data)\/)([^/]+\.(?:js|json))$/i,(_all,root,file)=>root+file.toLowerCase());
+  return pathname.replace(/(\/web-ports\/fear-and-hunger-2(?:@[^/]+|\/[^/]+)\/(?:js\/plugins|data)\/)([^/]+\.(?:js|json))$/i,(_all,root,file)=>root+file.toLowerCase());
 }
 
 export function normalizeGameCdnUrl(value, base) {
@@ -16,7 +33,7 @@ export function normalizeGameCdnUrl(value, base) {
     if (!['http:', 'https:'].includes(url.protocol) || !gameCdnHosts.has(url.hostname) || url.username || url.password || url.port) return null;
     if (url.hostname === 'cdn.jsdelivr.net' && /^\/(?!gh\/|npm\/|combine\/)[\w.-]+\/[\w.-]+@[^/]+\//.test(url.pathname)) url.pathname = '/gh' + url.pathname;
     url.pathname=repairGameResourcePath(url.pathname);
-    return url;
+    return gameDeliveryUrl(url);
   } catch { return null; }
 }
 

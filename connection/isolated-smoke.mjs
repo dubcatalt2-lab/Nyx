@@ -20,7 +20,7 @@ const generated=spawnSync(openssl,['req','-x509','-newkey','rsa:2048','-nodes','
 assert.equal(generated.status,0,generated.stderr);
 const requests=[];
 const upstream=httpServer((request,response)=>{
- const url=new URL(request.url,'http://fixture');requests.push({path:url.pathname,cookie:request.headers.cookie||'',origin:request.headers.origin||''});
+ const url=new URL(request.url,'http://fixture');requests.push({path:url.pathname,cookie:request.headers.cookie||'',origin:request.headers.origin||'',referer:request.headers.referer||''});
  if(url.pathname==='/a'||url.pathname==='/b'){
   const label=url.pathname.slice(1);response.setHeader('content-type','text/html');response.setHeader('set-cookie','secret='+label+'; Path=/; Secure; HttpOnly; SameSite=None');
   response.end('<!doctype html><h1>'+label+'</h1><a href="https://'+(label==='a'?'b':'a')+'.example/'+(label==='a'?'b':'a')+'">Next</a><button onclick="window.open(\'/login\',\'signin\')">Sign in</button><button onclick="window.open(\'https://b.example/login\',\'provider\')">Provider</button><script>localStorage.setItem("site","'+label+'");globalThis.ready=true;globalThis.blocked=window.open("/unwanted")===null;addEventListener("message",e=>{if(e.origin==="https://b.example"&&e.data==="signed-in"){globalThis.callback=e.data;e.source.postMessage("received",e.origin)}});</script>');return;
@@ -31,6 +31,8 @@ const upstream=httpServer((request,response)=>{
  if(url.pathname==='/heavy'){response.setHeader('content-type','text/html');response.end('<h1>Waiting</h1><link rel="stylesheet" href="/heavy.css"><script src="/heavy.js"></script>');return;}
  if(url.pathname==='/heavy.css'){response.setHeader('content-type','text/css');response.end('.unused{color:black}'.repeat(3000)+'h1{color:rgb(0,128,0)}');return;}
  if(url.pathname==='/heavy.js'){response.setHeader('content-type','text/javascript');response.end('var unused=1;'.repeat(6000)+'document.querySelector("h1").textContent="Compiled";');return;}
+ if(url.pathname==='/integrity.js'){response.setHeader('content-type','text/javascript');response.end('globalThis.integrityLoaded=(globalThis.integrityLoaded||0)+1;fetch("/cookies");');return;}
+ if(url.pathname==='/integrity.css'){response.setHeader('content-type','text/css');response.end('h1{background-image:url("/image")}');return;}
  if(url.pathname==='/cookies'){response.setHeader('content-type','application/json');response.end(JSON.stringify({cookie:request.headers.cookie||''}));return;}
  if(url.pathname==='/cors'){response.setHeader('access-control-allow-origin','https://a.example');response.setHeader('access-control-allow-credentials','true');response.end('allowed');return;}
  if(url.pathname==='/events'){response.setHeader('content-type','text/event-stream');response.write('data: '+(request.headers.cookie||'none')+'\n\n');return;}
@@ -77,20 +79,44 @@ try{
  let frame;
  for(let i=0;i<100;i++){frame=page.frames().find(frame=>frame.url().includes('/content/'));if(frame&&await frame.locator('h1').count())break;await page.waitForTimeout(100);}
  assert.equal(await frame.locator('h1').textContent(),'a');
+ const permissions=await frame.evaluate(()=>['autoplay','encrypted-media','fullscreen','picture-in-picture'].map(name=>[name,document.featurePolicy.allowsFeature(name)]));
+ assert.ok(permissions.every(([,allowed])=>allowed),JSON.stringify(permissions));
+ console.log('PASS nested media permission delegation: autoplay, encrypted media, fullscreen and picture-in-picture');
  await frame.evaluate(()=>Promise.race([navigator.serviceWorker.ready,new Promise((_,reject)=>setTimeout(()=>reject(Error('Worker not ready')),10000))]));console.log('PASS isolated worker ready');
  const compatibility=await frame.evaluate(async()=>{
   const result={};
   result.request=new Request('/cookies').url;
   result.base=document.baseURI;
+  const script=document.createElement('script');script.src='https://cdn.example/library/start.js';result.script=script.src;
+  const video=document.createElement('video');video.src='https://media.example/clip.mp4';result.video=video.src;
   result.response=(await fetch('/cookies')).url;
   result.xhr=await new Promise(resolve=>{const request=new XMLHttpRequest();request.open('GET','/cookies');request.onload=()=>resolve(request.responseURL);request.onerror=()=>resolve('error');request.send();});
   result.module=await new Promise(resolve=>{const worker=new Worker('/module-runtime',{type:'module'});const finish=value=>{clearTimeout(timer);worker.terminate();resolve(value);};const timer=setTimeout(()=>finish('timeout'),5000);worker.onmessage=e=>finish(e.data);worker.onerror=e=>finish('error: '+e.message);});
   return result;
  });
  console.log('Runtime comparison regression:',JSON.stringify(compatibility));
- assert.deepEqual(compatibility,{request:'https://a.example/cookies',base:'https://a.example/a',response:'https://a.example/cookies',xhr:'https://a.example/cookies',module:{dependency:'function',own:'function'}});
+ assert.deepEqual(compatibility,{request:'https://a.example/cookies',base:'https://a.example/a',script:'https://cdn.example/library/start.js',video:'https://media.example/clip.mp4',response:'https://a.example/cookies',xhr:'https://a.example/cookies',module:{dependency:'function',own:'function'}});
  assert.equal(await frame.evaluate(async()=>{const request=new Request('/cookies',{headers:{'x-test':'request'},credentials:'include'});const response=await fetch(request.clone());return (await response.json()).cookie;}),'secret=a');
  console.log('PASS Request construction/cloning, original request/response/XHR/base addresses, module runtime before dependencies');
+ const sri='sha384-'+createHash('sha384').update('globalThis.integrityLoaded=(globalThis.integrityLoaded||0)+1;fetch("/cookies");').digest('base64');
+ const styleSri='sha384-'+createHash('sha384').update('h1{background-image:url("/image")}').digest('base64');
+ const integrity=await frame.evaluate(async({sri,styleSri})=>{
+  const results=[];
+  for(const kind of ['property','attribute','namespace'])for(const tag of ['script','link']){
+   results.push(await new Promise(resolve=>{
+    const element=document.createElement(tag);if(tag==='link')element.rel='stylesheet';
+    const value=tag==='script'?sri:styleSri;
+    if(kind==='property')element.integrity=value;
+    else if(kind==='attribute')element.setAttribute('integrity',value);
+    else element.setAttributeNS(null,'integrity',value);
+    element.onload=()=>resolve('loaded');element.onerror=()=>resolve('error');
+    element[tag==='script'?'src':'href']='/integrity.'+(tag==='script'?'js':'css');document.head.append(element);
+   }));
+  }
+  return results;
+ },{sri,styleSri});
+ assert.deepEqual(integrity,Array(6).fill('loaded'));
+ console.log('PASS dynamic script/style integrity: property, attribute and namespaced setters allow transformed resources');
  const original=frame.url();delayRuntime=true;
  await frame.goto(original.replace(/%2Fa$/,'%2Fdelayed'));
  await frame.locator('h1').filter({hasText:'Loaded'}).waitFor({timeout:10000});

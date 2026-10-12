@@ -161,7 +161,7 @@ import {fragment,stylesheet,candidates} from './transform.mjs';
     if(url.origin===location.origin&&url.pathname.startsWith(prefix))return decodeURIComponent(url.pathname.slice(prefix.length))+url.search+url.hash;
     return value;
   };
-  for(const [prototype,key]of [[NativeRequest.prototype,'url'],[Response.prototype,'url'],[globalThis.XMLHttpRequest?.prototype,'responseURL'],[globalThis.Node?.prototype,'baseURI'],[globalThis.Document?.prototype,'URL'],[globalThis.Document?.prototype,'documentURI']]){
+  for(const [prototype,key]of [[NativeRequest.prototype,'url'],[Response.prototype,'url'],[globalThis.XMLHttpRequest?.prototype,'responseURL'],[globalThis.Node?.prototype,'baseURI'],[globalThis.Document?.prototype,'URL'],[globalThis.Document?.prototype,'documentURI'],[globalThis.Document?.prototype,'referrer']]){
     const descriptor=prototype&&Object.getOwnPropertyDescriptor(prototype,key);
     if(descriptor?.get&&descriptor.configurable)Object.defineProperty(prototype,key,{...descriptor,get(){return restore(descriptor.get.call(this));}});
   }
@@ -241,22 +241,30 @@ import {fragment,stylesheet,candidates} from './transform.mjs';
     if(!/url\s*\(|@import/i.test(text))return text;
     try{return stylesheet(text,currentBase(),prefix,context);}catch{return text;}
   };
-  const attribute=(name,value)=>{
+  const attribute=(name,value,element)=>{
     name=String(name).toLowerCase();
+    // Transformed scripts and styles no longer match their upstream byte hashes.
+    if(name==='integrity'&&['script','link'].includes(element?.localName))return '';
     if(['src','href','action','formaction','poster','data-src'].includes(name))return address(value);
     if(name==='srcset')return candidates(String(value),currentBase(),prefix);
     if(name==='style')return css(value,'declarationList');
     return value;
   };
   Element.prototype.setAttribute = function(name, value) {
-    return nativeSet.call(this, name, attribute(name,value));
+    return nativeSet.call(this, name, attribute(name,value,this));
   };
-  for (const [name, keys] of Object.entries({HTMLImageElement:['src','srcset'],HTMLScriptElement:['src'],HTMLLinkElement:['href'],HTMLAnchorElement:['href'],HTMLIFrameElement:['src'],HTMLFormElement:['action'],HTMLInputElement:['src','formAction'],HTMLButtonElement:['formAction'],HTMLMediaElement:['src'],HTMLVideoElement:['poster'],HTMLSourceElement:['src','srcset']})) {
+  const nativeSetNS=Element.prototype.setAttributeNS;
+  Element.prototype.setAttributeNS=function(namespace,name,value){
+    return nativeSetNS.call(this,namespace,name,namespace==null||namespace===''?attribute(name,value,this):value);
+  };
+  for (const [name, keys] of Object.entries({HTMLImageElement:['src','srcset'],HTMLScriptElement:['src','integrity'],HTMLLinkElement:['href','integrity'],HTMLAnchorElement:['href'],HTMLIFrameElement:['src'],HTMLFormElement:['action'],HTMLInputElement:['src','formAction'],HTMLButtonElement:['formAction'],HTMLMediaElement:['src'],HTMLVideoElement:['poster'],HTMLSourceElement:['src','srcset']})) {
     const prototype = globalThis[name]?.prototype;
     if (!prototype) continue;
     for (const key of keys) {
       const descriptor = Object.getOwnPropertyDescriptor(prototype, key);
-      if (descriptor?.set) Object.defineProperty(prototype, key, {...descriptor, set(value) { descriptor.set.call(this, attribute(key,value)); }});
+      if (descriptor?.set) Object.defineProperty(prototype, key, {...descriptor,
+        ...(descriptor.get&&!['srcset','integrity'].includes(key)?{get(){return restore(descriptor.get.call(this));}}:{}),
+        set(value) { descriptor.set.call(this, attribute(key,value,this)); }});
     }
   }
   const html=(value,context)=>context?.localName==='style'?css(value):fragment(value==null?'':String(value),currentBase(),prefix,context);

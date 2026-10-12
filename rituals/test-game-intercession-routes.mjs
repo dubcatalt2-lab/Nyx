@@ -4,8 +4,10 @@ const originalFetch=globalThis.fetch;
 globalThis.fetch=async (url, options)=>{
   const target=new URL(url);
   if(target.hostname==='127.0.0.1')return originalFetch(url,options);
-  assert.ok(['cdn.jsdelivr.net','raw.githubusercontent.com'].includes(target.hostname));
+  assert.ok(['raw.githack.com','raw.githubusercontent.com','unpkg.com'].includes(target.hostname));
   assert.ok(options.signal,'upstream request must be cancellable');
+  assert.equal(options.redirect,'manual','redirects must be normalized before network access');
+  if(target.pathname.endsWith('redirect.js'))return new Response(null,{status:302,headers:{location:'https://cdn.jsdelivr.net/gh/fixture/test@main/resolved.js'}});
   if(target.pathname.endsWith('.wasm'))return new Response(Buffer.alloc(1024*1024,7));
   if(target.pathname.endsWith('main.js'))return new Response('var clickedFake = false;',{headers:{'content-type':'text/plain'}});
   if(target.pathname.endsWith('.json'))return Response.json({dataUrl:'game.data'});
@@ -30,6 +32,7 @@ try{
     assert.equal(response.status,200);assert.match(response.headers.get('content-type'),mime);await response.body.cancel();
   }
   const image=await originalFetch(base+'/gn-math-asset?repo=covers&path=1.png');assert.equal(image.headers.get('cache-control'),'public, max-age=3600');assert.equal(await image.text(),'fixture');
+  const redirected=await originalFetch(base+'/gn-math-resource/https/raw.githack.com/fixture/test/main/redirect.js');assert.equal(redirected.status,200);assert.equal(await redirected.text(),'fixture');
   assert.equal((await originalFetch(base+'/gn-math-proxy?url=http://localhost/private')).status,400);
   console.log('PASS real Express routes: streamed binary, loader repair, MIME, JSON/CSS rewriting, cover cache and denied upstream host');
 }finally{globalThis.fetch=originalFetch;server.closeAllConnections();await new Promise(r=>server.close(r));}

@@ -3,8 +3,11 @@
 import {createBrotliDecompress} from 'node:zlib';
 
 function resourceUrl(url) {
-  if(['raw.githubusercontent.com','rawcdn.githack.com','raw.githack.com'].includes(url.hostname) && url.pathname.startsWith('/genizy/assets/main/papery-planes/'))
-    return new URL('https://cdn.jsdelivr.net/gh/genizy/assets@main/papery-planes/'+url.pathname.split('/papery-planes/')[1]+url.search);
+  // Normalize only the comparison key for existing, verified loader repairs.
+  if(['raw.githubusercontent.com','rawcdn.githack.com','raw.githack.com'].includes(url.hostname)) {
+    const match=url.pathname.match(/^\/([^/]+)\/([^/]+)\/([^/]+)(\/.*)$/);
+    if(match)return new URL('https://cdn.jsdelivr.net/gh/'+match[1]+'/'+match[2]+'@'+match[3]+match[4]+url.search);
+  }
   return url;
 }
 

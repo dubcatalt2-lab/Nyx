@@ -26,7 +26,7 @@ export function obscureGameStrings(source,seed='games'){
   visit(tree,null);
   if(!edits.length)return source;
   const encoded=[...values.keys()].map(value=>Array.from({length:value.length},(_,i)=>value.charCodeAt(i)^((key+i*31)&65535)));
-  const decoder=`const ${table}=${JSON.stringify(encoded)},${cache}=[];function ${name}(i){return ${cache}[i]??(${cache}[i]=${table}[i].map((v,j)=>String.fromCharCode(v^((${key}+j*31)&65535))).join(''))}`;
+  const decoder=`var ${table}=${JSON.stringify(encoded)},${cache}=[];function ${name}(i){return ${cache}[i]??(${cache}[i]=${table}[i].map((v,j)=>String.fromCharCode(v^((${key}+j*31)&65535))).join(''))}`;
   const directives=tree.body.filter(node=>node.type==='ExpressionStatement'&&node.directive);
   const position=directives.at(-1)?.end||0;
   for(const edit of edits.sort((a,b)=>b.start-a.start))source=source.slice(0,edit.start)+edit.text+source.slice(edit.end);

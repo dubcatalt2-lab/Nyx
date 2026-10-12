@@ -1,5 +1,6 @@
 import "../../parables/display-names.js";
 import {activityName} from "./activity-names.js";
+import {gameDeliveryUrl,gameResourceUrl,gameCdnHosts} from './game-cdn.js';
 import {createGameCloudSave} from "./game-cloud-save.js";
 import {createGameSponsors} from "../../parables/publisher-placements.js";
 
@@ -236,7 +237,7 @@ function loadLuminSdk(sdkUrl, sdkIntegrity = '') {
   luminSdkPromise = new Promise((resolve, reject) => {
     const script = document.createElement('script');
     let settled = false;
-    script.src = sdkUrl;
+    script.src = gameResourceUrl(sdkUrl, location.href, location.origin);
     script.async = true;
     script.referrerPolicy = 'no-referrer';
     if (sdkIntegrity) {
@@ -522,8 +523,8 @@ function ugsThumbnailName(path) {
 function safeCover(url) {
   if (!url) return '';
   try {
-    const parsed = new URL(url, location.href);
-    const proxiedHosts = new Set(['raw.githubusercontent.com', 'cdn.jsdelivr.net', 'rawcdn.githack.com', 'raw.githack.com']);
+    const parsed = gameDeliveryUrl(new URL(url, location.href));
+    const proxiedHosts = gameCdnHosts;
     return proxiedHosts.has(parsed.hostname)
       ? `/gms-games-proxy?url=${encodeURIComponent(parsed.href)}`
       : parsed.href;
@@ -535,7 +536,7 @@ function safeCover(url) {
 function directCover(url) {
   if (!url) return '';
   try {
-    const parsed = new URL(url, location.href);
+    const parsed = gameDeliveryUrl(new URL(url, location.href));
     if (parsed.hostname === 'raw.githubusercontent.com') {
       const parts = parsed.pathname.split('/').filter(Boolean);
       if (parts.length >= 4) {
@@ -543,7 +544,7 @@ function directCover(url) {
         if (owner.toLowerCase() === 'gn-math' && repository.toLowerCase() === 'covers') {
           return `https://raw.githack.com/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/${encodeURIComponent(branch)}/${path.map(encodeURIComponent).join('/')}`;
         }
-        return `https://cdn.jsdelivr.net/gh/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}@${encodeURIComponent(branch)}/${path.map(encodeURIComponent).join('/')}`;
+        return `https://raw.githack.com/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/${encodeURIComponent(branch)}/${path.map(encodeURIComponent).join('/')}`;
       }
     }
     return parsed.protocol === 'https:' ? parsed.href : '';

@@ -9,22 +9,22 @@ import {repairGameResource} from '../scripture/game-resource-repairs.mjs';
 const origin='https://games.test';
 const upstream='https://cdn.jsdelivr.net/owner/repo@main/Build/game.json';
 const proxied=gameResourceUrl(upstream,undefined,origin);
-assert.equal(proxied,origin+'/gn-math-resource/https/cdn.jsdelivr.net/gh/owner/repo@main/Build/game.json');
+assert.equal(proxied,origin+'/gn-math-resource/https/raw.githack.com/owner/repo/main/Build/game.json');
 for(const dependency of ['game.wasm','../StreamingAssets/config.json','chunks/a.js?version=2']){
  const resolved=new URL(dependency,proxied);
  assert.equal(gameResourceTarget(resolved.href).href,new URL(dependency,normalizeGameCdnUrl(upstream)).href);
 }
 assert.equal(gameResourceUrl(proxied,undefined,origin),proxied);
-assert.equal(normalizeGameCdnUrl('https://cdn.jsdelivr.net/gh/web-ports/fear-and-hunger-2@latest/data/Map028.json').pathname,'/gh/web-ports/fear-and-hunger-2@latest/data/map028.json');
-assert.equal(normalizeGameCdnUrl('https://cdn.jsdelivr.net/npm/library@1/index.js').pathname,'/npm/library@1/index.js');
+assert.equal(normalizeGameCdnUrl('https://cdn.jsdelivr.net/gh/web-ports/fear-and-hunger-2@latest/data/Map028.json').pathname,'/web-ports/fear-and-hunger-2/HEAD/data/map028.json');
+assert.equal(normalizeGameCdnUrl('https://cdn.jsdelivr.net/npm/library@1/index.js').pathname,'/library@1/index.js');
 assert.equal(normalizeGameCdnUrl('https://rawcdn.githack.com/genizy/google-class/commit/blockpost/master-loader.js').pathname,'/taskmaster773/google-class/commit/blockpost/master-loader.js');
-assert(normalizeGameCdnUrl('https://cdn.jsdelivr.net/gh/genizy/ovo-3-dimension@old/runtime.js').pathname.startsWith('/gh/bubblfan/ovo-3-dimension@102179bf4242fd237c46c555ba154c2f325d351c/'));
+assert(normalizeGameCdnUrl('https://cdn.jsdelivr.net/gh/genizy/ovo-3-dimension@old/runtime.js').pathname.startsWith('/bubblfan/ovo-3-dimension/102179bf4242fd237c46c555ba154c2f325d351c/'));
 for(const bad of ['https://evil.test/a','https://cdn.jsdelivr.net.evil.test/a','https://user:secret@cdn.jsdelivr.net/a','https://cdn.jsdelivr.net:8080/a','file:///tmp/a'])assert.equal(normalizeGameCdnUrl(bad),null);
 for(const bad of ['/gn-math-resource/https/localhost/a','/gn-math-resource/file/cdn.jsdelivr.net/a','/gn-math-resource/https/cdn.jsdelivr.net@evil.test/a'])assert.equal(gameResourceTarget(bad),null);
 globalThis.location={origin};
 const html=prepareGameDocument('<html><head><base href="https://cdn.jsdelivr.net/owner/repo@main/"><script src="game.js"></script></head><body><script>const config={streamingAssetsUrl:"StreamingAssets"};</script></body></html>','test.html');
-assert(html.includes(origin+'/gn-math-resource/https/cdn.jsdelivr.net/gh/owner/repo@main/game.js'));
-assert(html.includes('streamingAssetsUrl:"'+origin+'/gn-math-resource/https/cdn.jsdelivr.net/gh/owner/repo@main/StreamingAssets"'));
+assert(html.includes(origin+'/gn-math-resource/https/raw.githack.com/owner/repo/main/game.js'));
+assert(html.includes('streamingAssetsUrl:"'+origin+'/gn-math-resource/https/raw.githack.com/owner/repo/main/StreamingAssets"'));
 assert(!html.includes('gn-math-proxy?'));
 const cloudflare=prepareGameDocument('<script type="abcd1234-module" src="game.js"></script><script src="scripts/rocket-loader.min.js"></script>','test.html');
 assert(cloudflare.includes('type="module"'));

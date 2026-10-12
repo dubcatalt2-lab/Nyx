@@ -2452,7 +2452,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     dark:'Black Gradient',
     violet:'Violet Glass'
   };
-  const nyxPhotoWallpapers={leaves:'Leaves',moonlight:'Moonlight',rain:'Rain',halloween:'Halloween'};
+  const nyxPhotoWallpapers={moonrise:'Moonrise',leaves:'Leaves',moonlight:'Moonlight',rain:'Rain',halloween:'Halloween'};
   const nyxPhotoVariants={soft:'Soft',deep:'Deep',mono:'Mono'};
   function nyxBeamWallpaperPresets(){
     const photos={};
@@ -2515,7 +2515,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     window.NyxLineWavesWallpaper?.apply(value,currentNyxLineWavesOptions());
   }
   function nyxThemeBeamWallpaper(theme=store.text('nyx.theme','default')){
-    return ({default:'obsidian',midnight:'obsidian',ruby:'rose',emerald:'mint',sakura:'rose',fresh:'mint',halloween:'photo-halloween-soft',custom:'violet'})[normalizeNyxTheme(theme)] || 'frost';
+    return ({default:'photo-moonrise-soft',midnight:'obsidian',ruby:'rose',emerald:'mint',sakura:'rose',fresh:'mint',halloween:'photo-halloween-soft',custom:'violet'})[normalizeNyxTheme(theme)] || 'frost';
   }
   function nyxThemeWavesColor(theme=store.text('nyx.theme','default')){
     return ({default:'frost',midnight:'arctic',ruby:'rose',emerald:'mint',sakura:'rose',fresh:'mint',halloween:'ember',custom:'violet'})[normalizeNyxTheme(theme)] || 'frost';

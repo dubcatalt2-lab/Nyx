@@ -35,7 +35,7 @@
     {
       "id": "lumin",
       "format": "lumin",
-      "sdkUrl": "https://cdn.jsdelivr.net/gh/luminsdk/script@e1107337f26529e032d7873cbbb310d485d5d403/lumin.min.js",
+      "sdkUrl": "https://raw.githack.com/luminsdk/script/e1107337f26529e032d7873cbbb310d485d5d403/lumin.min.js",
       "sdkIntegrity": "sha384-SgXJY217C22inNWfmmJ3ffxB1rIh4BmSkT9PDfvMqXoNI1p/td9wKrAjt8SboUHv",
       "priority": 20
     },

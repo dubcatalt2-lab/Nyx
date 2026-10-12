@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {join} from 'node:path';
 import {chromium} from 'playwright';
 import {build} from 'esbuild';
 import {sourceFile} from '../scripture/source-layout.mjs';
@@ -34,7 +35,7 @@ try {
    if(url.pathname.endsWith('.json'))return route.fulfill({json:{ok:'loaded'}});
    return route.fulfill({contentType:'text/javascript',body:'window.loadedScripts=(window.loadedScripts||0)+1;'});
   }
-  try{return route.fulfill({contentType:'text/javascript',body:await readFile(sourceFile(url.pathname.slice(1)))});}
+  try{return route.fulfill({contentType:'text/javascript',body:await readFile(process.env.NYX_TEST_STATIC_ROOT?join(process.env.NYX_TEST_STATIC_ROOT,url.pathname.slice(1)):sourceFile(url.pathname.slice(1)))});}
   catch{return route.fulfill({contentType:'text/javascript',body:''});}
  });
  await page.goto('https://fixture.test/');

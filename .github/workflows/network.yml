@@ -51,6 +51,9 @@ jobs:
       - run: npm run build:vps
       - run: node rituals/check-game-sources.mjs dist
       - run: npx playwright install --with-deps chromium
+      - run: node rituals/test-game-delivery.mjs
+        env:
+          NYX_TEST_STATIC_ROOT: dist
       - run: node rituals/test-lesson-runtime-browser.mjs
       - run: npm run check:deploy
       - run: npm run check:release-audit

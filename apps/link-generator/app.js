@@ -47,8 +47,8 @@
     refs.generationMethod.closest('label').hidden=bunny||surge;
     cdnSelect.closest('label').hidden=bunny||surge;
     $('[data-provider-hint]').textContent=surge ? 'Publish one new surge.sh site on the configured Surge account. The label gets a random suffix; existing sites are not replaced.' : bunny
-      ? 'Create separate b-cdn.net hostnames pointing to Nyx. Bunny bandwidth charges and account limits apply; these still share the Nyx backend.'
-      : 'Publish the static Nyx app and choose a delivery hostname.';
+      ? "Create separate b-cdn.net hostnames pointing to Nyx. Bunny bandwidth charges and account limits apply; these still share the N7X backend."
+      : "Publish the static N7X app and choose a delivery hostname.";
     refs.confirm.checked=false;
     updateGenerationMethod();
     updateServiceStatus();
@@ -188,7 +188,7 @@
     if(!authSession) throw new Error('Sign in to use the Link Generator.');
     if(authSession.viaHost){
       const token=await requestHostToken();
-      if(!token){clearSession();throw new Error('Sign in to Nyx again to continue.');}
+      if(!token){clearSession();throw new Error("Sign in to N7X again to continue.");}
       authSession={...authSession,idToken:token};
     }else if(authSession.expiresAt-Date.now()<60_000) await refreshSession();
     await refreshNyxAccess();
@@ -251,19 +251,19 @@
     const p2p=refs.generationMethod.value==='p2p';
     refs.reviewAmountRow.hidden=false;
     refs.reviewAmount.textContent=`${amount} link${amount===1?'':'s'}`;
-    refs.confirmText.textContent=selectedProvider()==='surge' ? 'I understand this publishes a public Nyx wrapper on the configured Surge account. Surge account limits apply.' : selectedProvider()==='bunny'
+    refs.confirmText.textContent=selectedProvider()==='surge' ? "I understand this publishes a public N7X wrapper on the configured Surge account. Surge account limits apply." : selectedProvider()==='bunny'
       ? `I understand this creates ${amount} Bunny pull zone${amount===1?'':'s'} on the configured Bunny account, with its bandwidth charges and limits.`
       : p2p
-      ? `I understand P2P bulk-publishes ${amount===1?'one Nyx launcher':`${amount} Nyx launchers`} through Nyx's protected server publisher.`
-      : `I understand this publishes ${amount===1?'one Nyx launcher':`${amount} Nyx launchers`} through a GitHub repository.`;
+      ? `I understand P2P bulk-publishes ${amount===1?"one N7X launcher":`${amount} N7X launchers`} through N7X's protected server publisher.`
+      : `I understand this publishes ${amount===1?"one N7X launcher":`${amount} N7X launchers`} through a GitHub repository.`;
     if(!refs.button.disabled) refs.button.querySelector('span').textContent=singleLink?'Create link':`Generate ${amount===1?'link':`${amount} links`}`;
   }
   function updateGenerationMethod(){
     document.querySelectorAll('[data-method-choice]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.methodChoice===refs.generationMethod.value)));
     const p2p=refs.generationMethod.value==='p2p';
     refs.generationMethodHint.textContent=p2p
-      ? `P2P bulk-publishes up to ${p2pPremiumBatchLimit.toLocaleString()} Nyx links directly and keeps the GitHub credential on the Nyx server.`
-      : 'Nyx managed uses the protected server publisher; its GitHub credential never reaches your browser.';
+      ? `P2P bulk-publishes up to ${p2pPremiumBatchLimit.toLocaleString()} N7X links directly and keeps the GitHub credential on the N7X server.`
+      : "N7X managed uses the protected server publisher; its GitHub credential never reaches your browser.";
     setPremiumLayout();
   }
   function setWizardStep(nextStep,direction=nextStep>=wizardStep?'forward':'back'){
@@ -293,8 +293,8 @@
     refs.reviewAccess.textContent=accessMode==='account' ? (accountHasPremium() ? `${authSession?.email || 'Account'} · Premium` : (authSession?.email || 'Free account')) : 'Premium access code';
     refs.reviewLabel.textContent=refs.label.value.trim() || 'Automatic';
     refs.reviewFilter.textContent=refs.filter.options[refs.filter.selectedIndex]?.textContent || 'Not selected';
-    refs.reviewOrigin.textContent=refs.origin.textContent || 'Official Nyx origin';
-    refs.reviewMethod.textContent=selectedProvider()==='surge'?'Nyx Surge publisher':refs.generationMethod.value==='p2p' ? 'P2P' : (singleLink?'Nyx':'Nyx managed');
+    refs.reviewOrigin.textContent=refs.origin.textContent || "Official N7X origin";
+    refs.reviewMethod.textContent=selectedProvider()==='surge'?"N7X Surge publisher":refs.generationMethod.value==='p2p' ? 'P2P' : (singleLink?"N7X":"N7X managed");
     updateAmountCopy();
   }
   async function validateAccessStep(){
@@ -479,7 +479,7 @@
     const counts={allowed:0,blocked:0,info:0,error:0};
     const groups=generatedFilterGroups(urls);
     const representative=groups.length<urls.length;
-    showFilterResult('checking',filterName,`Checking 0 of ${urls.length}`,representative?`Nyx is checking ${groups.length} shared CDN source${groups.length===1?'':'s'} for ${urls.length} identical generated links.`:`Nyx is checking ${urls.length===1?'this link':'each generated link'} once.`);
+    showFilterResult('checking',filterName,`Checking 0 of ${urls.length}`,representative?`N7X is checking ${groups.length} shared CDN source${groups.length===1?'':'s'} for ${urls.length} identical generated links.`:`N7X is checking ${urls.length===1?'this link':'each generated link'} once.`);
     let nextIndex=0,completed=0;
     const worker=async()=>{
       while(nextIndex<groups.length){
@@ -494,7 +494,7 @@
     if(counts.blocked){showFilterResult('blocked',filterName,`${counts.blocked} blocked`,`Sorry, but ${counts.blocked===urls.length?'all of those links are':`${counts.blocked} of ${urls.length} links are`} currently blocked.`);return}
     if(counts.error){showFilterResult('error',filterName,`${counts.error} unchecked`,`${counts.allowed} allowed; ${counts.error} could not be checked.`);return}
     if(counts.info){showFilterResult('info',filterName,`${counts.info} informational`,`${counts.allowed} allowed; ${counts.info} did not return a blocked or allowed decision.`);return}
-    showFilterResult('allowed',filterName,`${counts.allowed} allowed`,urls.length===1?'The selected filter currently reports this link as allowed.':representative?`One representative check covered all ${urls.length} identical Nyx SVG links from the shared CDN source.`:'The selected filter currently reports every generated link as allowed.');
+    showFilterResult('allowed',filterName,`${counts.allowed} allowed`,urls.length===1?'The selected filter currently reports this link as allowed.':representative?`One representative check covered all ${urls.length} identical N7X SVG links from the shared CDN source.`:'The selected filter currently reports every generated link as allowed.');
   }
   async function loadStatus(){
     try{
@@ -507,7 +507,7 @@
       bunnyOption.textContent=status.bunnyAvailable?'Bunny.net pull zones':'Bunny.net pull zones (server key not configured)';
       regularHourlyLimit=Math.max(1,Math.min(100,Number.parseInt(status.freeHourlyLimit,10) || 100));freeWindowMinutes=Math.max(1,Number.parseInt(status.freeWindowMinutes,10) || 60);premiumBatchLimit=Math.max(regularHourlyLimit,Math.min(10000,Number.parseInt(status.premiumBatchLimit,10) || regularHourlyLimit));p2pPremiumBatchLimit=Math.max(premiumBatchLimit,Math.min(10000,Number.parseInt(status.p2pPremiumBatchLimit,10) || 1000));premiumImmediateCooldownAt=Math.max(1,Number.parseInt(status.premiumImmediateCooldownAt,10) || 5);premiumAccumulatedLimit=Math.max(premiumImmediateCooldownAt,Number.parseInt(status.premiumAccumulatedLimit,10) || 30);premiumCooldownMinutes=Math.max(1,Number.parseInt(status.premiumCooldownMinutes,10) || 10);renderAccount();setPremiumLayout();
       refs.origin.textContent=status.origin || 'Not configured';publisherStatus=status;updateServiceStatus();
-      if(!status.available) showNotice('The Nyx administrator still needs to finish the Link Generator server settings.','error');
+      if(!status.available) showNotice("The N7X administrator still needs to finish the Link Generator server settings.",'error');
     }catch(error){refs.origin.textContent='Unavailable';setStatus(false,'Unavailable');showNotice(`Could not check the generator: ${error.message}`,'error')}
   }
 
@@ -604,7 +604,7 @@
       if(!links.length) throw new Error('The link provider did not return any generated links.');
       resultProvider=provider;
       const isJsdelivr=provider!=='bunny';
-      refs.resultUrl.value=links.join('\n');refs.resultCount.textContent=`${links.length} link${links.length===1?'':'s'}`;refs.resultTitle.textContent=links.length===1?'Your Nyx link is ready':'Your Nyx links are ready';refs.resultSubtitle.textContent=result.partial?`${links.length} of ${result.requested} requested links were created.`:`${links.length===1?'The link was':'All links were'} created successfully.`;refs.open.href=links[0];setOpenReady(isJsdelivr);refs.resultCard.hidden=false;refs.accessCode.value='';setWizardStep(3);requestAnimationFrame(()=>refs.resultCard.scrollIntoView({behavior:'smooth',block:'nearest'}));
+      refs.resultUrl.value=links.join('\n');refs.resultCount.textContent=`${links.length} link${links.length===1?'':'s'}`;refs.resultTitle.textContent=links.length===1?"Your N7X link is ready":"Your N7X links are ready";refs.resultSubtitle.textContent=result.partial?`${links.length} of ${result.requested} requested links were created.`:`${links.length===1?'The link was':'All links were'} created successfully.`;refs.open.href=links[0];setOpenReady(isJsdelivr);refs.resultCard.hidden=false;refs.accessCode.value='';setWizardStep(3);requestAnimationFrame(()=>refs.resultCard.scrollIntoView({behavior:'smooth',block:'nearest'}));
       const [,cdnReady]=await Promise.all([checkGeneratedLinks(links,selectedFilter,selectedFilterName),isJsdelivr?Promise.resolve(true):waitForCdnReadiness(links[0])]);
       const cooldown=result.premiumCooldown;
       const premiumResult=result.access==='administrator'||result.access==='premium';

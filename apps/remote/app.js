@@ -6,7 +6,7 @@ const retryable=error=>![401,403,404].includes(error.status)&&!['auth/user-disab
 const connectionError=error=>error instanceof TypeError||['TimeoutError','auth/network-request-failed'].includes(error.name)||error.code==='auth/network-request-failed'?'The connection request could not reach the server.':error.message;
 let accessTimer,accessVersion=0,initializeTimer;
 async function api(path,body,method,refresh=false){
- const token=await auth?.currentUser?.getIdToken(refresh);if(!token)throw Object.assign(Error('Sign in to Nyx with your owner account.'),{status:401});
+ const token=await auth?.currentUser?.getIdToken(refresh);if(!token)throw Object.assign(Error("Sign in to N7X with your owner account."),{status:401});
  const response=await fetch('/api/private-remote'+path,{method:method||(body?'POST':'GET'),headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),cache:'no-store',signal:AbortSignal.timeout(15000)});
  if(response.status===401&&!refresh)return api(path,body,method,true);
  if(!response.ok){const result=await response.json().catch(()=>({}));throw Object.assign(Error(result.error||'Not available.'),{status:response.status});}return response;
@@ -67,7 +67,7 @@ async function initialize(){try{
  const [appModule,module]=await Promise.all([import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')]);
  const app=appModule.getApps().find(item=>item.name==='nyx-founder-owner')||appModule.initializeApp({apiKey:config.apiKey,authDomain:config.projectId+'.firebaseapp.com',projectId:config.projectId},'nyx-founder-owner');
  auth=module.getAuth(app);await module.setPersistence(auth,module.browserLocalPersistence);
- module.onAuthStateChanged(auth,user=>{disconnect();clearTimeout(accessTimer);const version=++accessVersion;$('workspace').hidden=true;$('locked').hidden=false;if(!user){$('accessState').textContent='Sign in to Nyx, then return here.';return;}void openWorkspace(user,version);});
+ module.onAuthStateChanged(auth,user=>{disconnect();clearTimeout(accessTimer);const version=++accessVersion;$('workspace').hidden=true;$('locked').hidden=false;if(!user){$('accessState').textContent="Sign in to N7X, then return here.";return;}void openWorkspace(user,version);});
 }catch(error){$('accessState').textContent=connectionError(error)+' Retrying…';initializeTimer=setTimeout(initialize,5000);}}
 async function openWorkspace(user,version){
  try{await api('/access');if(version!==accessVersion||auth.currentUser!==user)return;await list();if(version!==accessVersion||auth.currentUser!==user)return;$('locked').hidden=true;$('workspace').hidden=false;}

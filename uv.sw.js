@@ -8,7 +8,7 @@ const UV_ASSET_RETRY_DELAYS = [0, 180, 520];
 const NYX_PROXY_PRIVACY_GUARD = `<script data-nyx-proxy-privacy>(${function () {
   if (globalThis.__nyxProxyPrivacyInstalled) return;
   globalThis.__nyxProxyPrivacyInstalled = true;
-  const denied = Object.freeze({ code: 1, message: "Location access is disabled in Nyx private tabs." });
+  const denied = Object.freeze({ code: 1, message: "Location access is disabled in N7X private tabs." });
   const fail = callback => {
     if (typeof callback === "function") queueMicrotask(() => callback(denied));
   };

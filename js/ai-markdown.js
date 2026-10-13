@@ -20,7 +20,7 @@
         });
       }
     }catch(error){
-      console.warn('Nyx AI could not render math:',error);
+      console.warn("N7X AI could not render math:",error);
     }
     const readable=source
       .replace(/\\text\{([^{}]*)\}/g,'$1')

@@ -153,7 +153,7 @@ async function nyxifyjson(path, options = {}) {
       });
     }
     if (!payload || typeof payload !== 'object') {
-      throw new Error('Nyxify received a web page instead of music data. Reload Nyx and try again.');
+      throw new Error("Nyxify received a web page instead of music data. Reload N7X and try again.");
     }
     return payload;
   } finally { clearTimeout(deadline); }

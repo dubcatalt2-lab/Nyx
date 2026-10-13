@@ -332,7 +332,7 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
     rendererFailed=true;
     try{failed?.dispose()}catch{}
     if(canvas) canvas.dataset.renderer='fallback';
-    console.warn('Nyx Beams renderer unavailable',error);
+    console.warn("N7X Beams renderer unavailable",error);
   }
 
   function shouldAnimate(){

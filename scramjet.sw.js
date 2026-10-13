@@ -18,7 +18,7 @@ function nyxScramjetRouteMissHtml() {
 </style>
 <main>
   <h1>Reconnecting Scramjet</h1>
-  <p>Nyx is reconnecting this tab to the proxy service worker.</p>
+  <p>N7X is reconnecting this tab to the proxy service worker.</p>
   <button type="button" onclick="location.reload()">Retry now</button>
 </main>
 <script>

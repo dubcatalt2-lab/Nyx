@@ -71,9 +71,11 @@ export async function buildFrontendAssets(output,files,lessonHtml) {
     // Compression can fold the chunk array back into one huge literal. Keep
     // chunks intact while retaining local-name mangling and readable layout.
     await writeFile(join(output,loader.slice(1)),formatPublishedJs((await minify(boot,{mangle:{toplevel:true},compress:false,format:{beautify:true,indent_level:2}})).code));
-    const shell=lessonHtml.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'').replaceAll('/learning/','/apps/tutsi/studyready/').replace('</body>',`<script src="${loader}"></script></body>`);
+    const shell=path==='index.html'
+      ? `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>N7X</title><link rel="icon" href="/assets/icons/nyx-cat-moon-small.svg?v=3"></head><body><script src="${loader}"></script></body></html>`
+      : lessonHtml.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'').replaceAll('/learning/','/apps/tutsi/studyready/').replace('</body>',`<script src="${loader}"></script></body>`);
     await writeFile(join(output,path),formatPublishedHtml(shell));
   }
   await writeFile(join(output,'frontend-assets.json'),JSON.stringify({version:1,aliases}));
-  console.log(`Frontend build: ${candidates.length} stable script aliases; lesson entry documents for Nyx, Tutsi and Drop.`);
+  console.log(`Frontend build: ${candidates.length} stable script aliases; N7X entry without a lesson cover.`);
 }

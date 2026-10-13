@@ -14,11 +14,11 @@
 <body class="utility-neutral link-tool">
   <main class="utility-shell generator-shell">
     <header class="utility-header">
-      <span class="brand-lockup" aria-label="Nyx utilities">
+      <span class="brand-lockup" aria-label="N7X utilities">
         <span class="brand-mark" aria-hidden="true"><img src="../../assets/icons/nyx-cat-moon-small.svg" alt=""></span>
         <span class="brand-copy"><strong>nyx</strong><span>utilities</span></span>
       </span>
-      <div class="utility-nav" aria-label="Nyx utility pages">
+      <div class="utility-nav" aria-label="N7X utility pages">
         <a class="utility-nav-item" href="../link-checker/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a5 5 0 007.5.5l2-2a5 5 0 00-7-7l-1.1 1.1M14 10a5 5 0 00-7.5-.5l-2 2a5 5 0 007 7l1.1-1.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>Link Checker</span></a>
         <a class="utility-nav-item" href="../link-generator/" ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18M3 12h18M5.5 5.5l13 13M18.5 5.5l-13 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Generator</span></a>
         <a class="utility-nav-item" href="../jsdelivr-publisher/" aria-label="Personal publisher"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14M5 12h14M5 18.5h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="m16 17 1.8 1.8L21 15.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Personal publisher</span></a>
@@ -92,7 +92,7 @@
         <section class="wizard-step" data-wizard-step="1" hidden aria-labelledby="details-step-title">
           <div class="wizard-step-heading">
             <span class="wizard-step-number" aria-hidden="true">02</span>
-            <div><p class="eyebrow">Details</p><h3 id="details-step-title">Set up the new link</h3><p>Choose a short label and the filter Nyx should check after publishing.</p></div>
+            <div><p class="eyebrow">Details</p><h3 id="details-step-title">Set up the new link</h3><p>Choose a short label and the filter N7X should check after publishing.</p></div>
           </div>
           <div class="details-panel form-panel">
             <div class="details-grid" data-details-grid>
@@ -102,7 +102,7 @@
                   <option value="surge" hidden disabled>Surge &middot; surge.sh</option><option value="jsdelivr" selected>jsDelivr files</option>
                   <option value="bunny" disabled>Bunny.net pull zones (checking setup…)</option>
                 </select>
-                <small data-provider-hint>Publish the static Nyx app through GitHub and open it from jsDelivr.</small>
+                <small data-provider-hint>Publish the static N7X app through GitHub and open it from jsDelivr.</small>
               </label>
               <label>
                 <span>Link label</span>
@@ -114,7 +114,7 @@
                 <select name="filter" data-filter-select required disabled>
                   <option value="">Loading filters...</option>
                 </select>
-                <small>Nyx checks the generated link with this filter once.</small>
+                <small>N7X checks the generated link with this filter once.</small>
               </label>
               <label class="amount-field" data-premium-amount-field>
                 <span>Amount</span>
@@ -124,10 +124,10 @@
               <label class="generation-method-field">
                 <span>Generation method</span>
                 <select name="method" data-generation-method>
-                  <option value="managed">Nyx managed</option>
+                  <option value="managed">N7X managed</option>
                   <option value="p2p">P2P</option>
                 </select>
-                <small data-generation-method-hint>Nyx managed uses the standard server limit. P2P uses the protected server publisher for larger Premium batches.</small>
+                <small data-generation-method-hint>N7X managed uses the standard server limit. P2P uses the protected server publisher for larger Premium batches.</small>
               </label>
               <label><span>CDN hostname</span><select data-cdn-host><option value="cdn.jsdelivr.net">cdn.jsdelivr.net (default)</option><option value="gcore.jsdelivr.net">gcore.jsdelivr.net</option><option value="fastly.jsdelivr.net">fastly.jsdelivr.net</option><option value="quantil.jsdelivr.net">quantil.jsdelivr.net</option><option value="originfastly.jsdelivr.net">originfastly.jsdelivr.net</option><option value="testingcf.jsdelivr.net">testingcf.jsdelivr.net</option><option value="jsdelivr.b-cdn.net">jsdelivr.b-cdn.net</option><option value="esm.sh">esm.sh</option><option value="raw.esm.sh">raw.esm.sh</option></select><small>Alternate addresses for the same published file. Availability varies by network.</small></label>
             </div>
@@ -141,7 +141,7 @@
         <section class="wizard-step" data-wizard-step="2" hidden aria-labelledby="review-step-title">
           <div class="wizard-step-heading">
             <span class="wizard-step-number" aria-hidden="true">03</span>
-            <div><p class="eyebrow">Review</p><h3 id="review-step-title">Ready to create?</h3><p>Check the details below before Nyx makes the link.</p></div>
+            <div><p class="eyebrow">Review</p><h3 id="review-step-title">Ready to create?</h3><p>Check the details below before N7X makes the link.</p></div>
           </div>
           <div class="review-panel form-panel">
             <dl class="review-list">
@@ -149,13 +149,13 @@
               <div><dt>Label</dt><dd data-review-label>Automatic</dd></div>
               <div><dt>Filter</dt><dd data-review-filter>Not selected</dd></div>
               <div><dt>Destination</dt><dd data-review-origin>Loading...</dd></div>
-              <div><dt>Method</dt><dd data-review-method>Nyx managed</dd></div>
+              <div><dt>Method</dt><dd data-review-method>N7X managed</dd></div>
               <div><dt>CDN</dt><dd data-review-cdn>cdn.jsdelivr.net</dd></div>
               <div data-review-amount-row hidden><dt>Amount</dt><dd data-review-amount>1 link</dd></div>
             </dl>
             <label class="confirmation">
               <input data-confirm type="checkbox" required>
-              <span data-confirm-text>I understand this publishes the static Nyx app and launcher links to a public GitHub repository.</span>
+              <span data-confirm-text>I understand this publishes the static N7X app and launcher links to a public GitHub repository.</span>
             </label>
           </div>
           <div class="wizard-actions">
@@ -168,10 +168,10 @@
       <div class="notice" data-notice role="status" aria-live="polite" hidden></div>
 
       <section class="wizard-step result-card" data-wizard-step="3" data-result-card hidden aria-labelledby="result-title">
-        <div class="result-heading"><span class="result-icon"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><p class="eyebrow">Created</p><h2 id="result-title" data-result-title>Your Nyx link is ready</h2><p data-result-subtitle>The link was created and checked successfully.</p></div></div>
+        <div class="result-heading"><span class="result-icon"><svg viewBox="0 0 24 24"><path d="M4 12l5 5L20 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><p class="eyebrow">Created</p><h2 id="result-title" data-result-title>Your N7X link is ready</h2><p data-result-subtitle>The link was created and checked successfully.</p></div></div>
         <div class="bulk-link-box">
           <div class="bulk-link-head"><span>Generated links</span><strong data-result-count>1 link</strong></div>
-          <textarea data-result-url readonly rows="7" spellcheck="false" aria-label="Generated Nyx URLs"></textarea>
+          <textarea data-result-url readonly rows="7" spellcheck="false" aria-label="Generated N7X URLs"></textarea>
           <div class="bulk-link-actions">
             <button data-copy type="button">Copy all</button>
             <button data-download-links type="button">Download .txt</button>
@@ -181,7 +181,7 @@
         <div class="filter-check checking" data-filter-check role="status" aria-live="polite">
           <span data-filter-check-label>Selected filter</span>
           <strong data-filter-check-state>Waiting to check</strong>
-          <small data-filter-check-detail>Nyx checks this link once and does not generate replacements automatically.</small>
+          <small data-filter-check-detail>N7X checks this link once and does not generate replacements automatically.</small>
         </div>
         <p class="propagation-note">New CDN files can take a short time to become available everywhere.</p>
         <div class="wizard-actions result-actions"><button class="secondary-action" data-wizard-restart type="button">Create another link</button></div>
@@ -189,9 +189,9 @@
     </section>
 
     <section class="bulk-variants-card surface" aria-labelledby="bulk-variants-title">
-      <div class="section-bar bulk-variants-heading"><div><p class="eyebrow">Nyx links</p><h2 id="bulk-variants-title">Bulk jsDelivr links</h2></div></div>
-      <p class="bulk-variants-intro">Create Nyx links with a different random filename ending for each link. Choose your label, amount, and CDN below.</p>
-      <div class="bulk-alias-destination"><span>Included app</span><span>Nyx static package &middot; shared files, separate launcher links</span></div>
+      <div class="section-bar bulk-variants-heading"><div><p class="eyebrow">N7X links</p><h2 id="bulk-variants-title">Bulk jsDelivr links</h2></div></div>
+      <p class="bulk-variants-intro">Create N7X links with a different random filename ending for each link. Choose your label, amount, and CDN below.</p>
+      <div class="bulk-alias-destination"><span>Included app</span><span>N7X static package &middot; shared files, separate launcher links</span></div>
       <form class="bulk-variants-form" data-bulk-setup>
         <div class="bulk-variants-grid">
           <label><span>Filename label</span><input data-bulk-label value="34" maxlength="30" pattern="[a-zA-Z0-9-]+" required></label>

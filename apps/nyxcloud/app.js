@@ -22,7 +22,7 @@ function notice(title,text){
   card.append(heading,message);panel.append(card);$('screen').replaceChildren(panel);
 }
 async function api(path,method='GET',refresh=false){
-  const token=await auth?.currentUser?.getIdToken(refresh);if(!token)throw Object.assign(Error('Sign in to Nyx to open a desktop.'),{status:401});
+  const token=await auth?.currentUser?.getIdToken(refresh);if(!token)throw Object.assign(Error("Sign in to N7X to open a desktop."),{status:401});
   const response=await fetch('/api/nyxcloud'+path,{method,headers:{Authorization:'Bearer '+token},cache:'no-store',signal:AbortSignal.timeout(path.startsWith('/lorem/')?65000:12000)});
   if(response.status===401&&!refresh)return api(path,method,true);
   const data=await response.json().catch(()=>({}));if(!response.ok)throw Object.assign(Error(data.error||'Not available.'),{status:response.status});return data;
@@ -33,7 +33,7 @@ function renew(version,delay=60000){renewTimer=setTimeout(async()=>{
   try{await api('/session','POST');}catch(error){if(version===generation){if([401,403,404].includes(error.status))retry(error);else renew(version,5000);}return;}
   if(version===generation)renew(version);
 },delay);}
-function retry(error){stop();if([401,403,404].includes(error.status)){wanted=false;status('Sign in to Nyx again to reconnect.');return;}if(!wanted)return;const delay=Math.min(30000,2000*2**Math.min(attempt++,4));status(error.message+' Retrying in '+delay/1000+' seconds…');timer=setTimeout(connect,delay);$('disconnect').disabled=false;}
+function retry(error){stop();if([401,403,404].includes(error.status)){wanted=false;status("Sign in to N7X again to reconnect.");return;}if(!wanted)return;const delay=Math.min(30000,2000*2**Math.min(attempt++,4));status(error.message+' Retrying in '+delay/1000+' seconds…');timer=setTimeout(connect,delay);$('disconnect').disabled=false;}
 async function connect(){
   if(new URLSearchParams(location.search).get('desktop')!=='local'){
     stop();wanted=false;const version=generation;$('connect').disabled=true;
@@ -80,6 +80,6 @@ async function initialize(){try{
   const [apps,accounts]=await Promise.all([import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')]);
   const app=apps.getApps().find(item=>item.name==='nyx-founder-owner')||apps.initializeApp({apiKey:config.apiKey,authDomain:config.projectId+'.firebaseapp.com',projectId:config.projectId},'nyx-founder-owner');
   auth=accounts.getAuth(app);await accounts.setPersistence(auth,accounts.browserLocalPersistence);
-  accounts.onAuthStateChanged(auth,async user=>{wanted=false;stop();const version=generation;$('connect').disabled=true;if(!user){notice('Sign in to use VMs','Sign in to Nyx, then reopen VMs. Desktops are available to all accounts.');return;}try{await api(new URLSearchParams(location.search).get('desktop')==='local'?'/access':'/lorem/status');if(version!==generation)return;$('connect').disabled=false;connect();}catch(error){if(version!==generation)return;$('connect').disabled=false;notice('Unable to open desktop',error.message);}});
+  accounts.onAuthStateChanged(auth,async user=>{wanted=false;stop();const version=generation;$('connect').disabled=true;if(!user){notice('Sign in to use VMs',"Sign in to N7X, then reopen VMs. Desktops are available to all accounts.");return;}try{await api(new URLSearchParams(location.search).get('desktop')==='local'?'/access':'/lorem/status');if(version!==generation)return;$('connect').disabled=false;connect();}catch(error){if(version!==generation)return;$('connect').disabled=false;notice('Unable to open desktop',error.message);}});
 }catch(error){status(error.message);}}
 initialize();

@@ -128,13 +128,13 @@ function initializePreset() {
   countInput.value = String(requestedCount);
   fileInput.required = false;
   fileField.dataset.preset = 'nyx';
-  fileDisplay.textContent = 'Nyx static app included';
-  fileHint.textContent = 'Publishes the static app once per repository, with a launcher for each link. Accounts, AI, chat and server media require the full Nyx backend.';
-  document.getElementById('publisher-title').textContent = 'Publish Nyx links';
+  fileDisplay.textContent = "N7X static app included";
+  fileHint.textContent = "Publishes the static app once per repository, with a launcher for each link. Accounts, AI, chat and server media require the full N7X backend.";
+  document.getElementById('publisher-title').textContent = "Publish N7X links";
   if (presetMethod === 'p2p') {
     modeInput.value = 'auto';
     document.getElementById('page-title').textContent = 'P2P Publisher';
-    document.getElementById('publisher-title').textContent = 'Publish P2P Nyx links';
+    document.getElementById('publisher-title').textContent = "Publish P2P N7X links";
   }
   presetPromise = Promise.all([
     import('./static-publish.js'),
@@ -150,7 +150,7 @@ function initializePreset() {
     })
     .catch(error => {
       presetSvg = '';
-      setMessage(`The static Nyx package could not be loaded: ${error.message}`, 'error');
+      setMessage(`The static N7X package could not be loaded: ${error.message}`, 'error');
     });
 }
 
@@ -242,7 +242,7 @@ async function createRepository(name, token) {
   await githubJson('/user/repos', token, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, description: 'Nyx JSDelivr SVG publisher output', private: false, auto_init: true })
+    body: JSON.stringify({ name, description: "N7X JSDelivr SVG publisher output", private: false, auto_init: true })
   });
 }
 
@@ -282,7 +282,7 @@ async function publishTree(repository, fileNames, svg, token, onProgress, static
     writeIntervalMs: 1100,
     readBytes: async path => {
       const response = await fetch('./static-package/files/' + path.split('/').map(encodeURIComponent).join('/'), { credentials: 'omit', cache: 'no-store' });
-      if (!response.ok) throw Error('A static Nyx asset could not be loaded. Please retry.');
+      if (!response.ok) throw Error("A static N7X asset could not be loaded. Please retry.");
       return response.arrayBuffer();
     },
     onProgress: (done, total) => setMessage(`Preparing the static app: ${done} of ${total} files`)
@@ -485,7 +485,7 @@ modeInput.addEventListener('change', () => {
 
 fileInput.addEventListener('change', () => {
   const file = fileInput.files?.[0];
-  fileDisplay.textContent = file ? `${file.name} · ${(file.size / 1024).toFixed(1)} KB` : (presetName === 'nyx' ? 'Nyx static app included' : 'Choose a self-contained SVG file');
+  fileDisplay.textContent = file ? `${file.name} · ${(file.size / 1024).toFixed(1)} KB` : (presetName === 'nyx' ? "N7X static app included" : 'Choose a self-contained SVG file');
 });
 
 form.addEventListener('submit', async event => {
@@ -510,7 +510,7 @@ form.addEventListener('submit', async event => {
 
   if (!file) await presetPromise;
   const svg = file ? await file.text() : presetSvg;
-  if (!svg) return setMessage('The included Nyx SVG is unavailable. Choose an SVG file and try again.', 'error');
+  if (!svg) return setMessage("The included N7X SVG is unavailable. Choose an SVG file and try again.", 'error');
   if (new TextEncoder().encode(svg).length > maxSvgBytes) return setMessage('The SVG must be no larger than 2 MB.', 'error');
   const parsed = new DOMParser().parseFromString(svg, 'image/svg+xml');
   if (parsed.querySelector('parsererror') || parsed.documentElement?.localName !== 'svg') return setMessage('The selected file is not valid SVG XML.', 'error');

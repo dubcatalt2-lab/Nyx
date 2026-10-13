@@ -30,9 +30,7 @@
     unlockPage(splash);
     lockedPageElements = Array.from(document.body?.children || [])
       .filter(element => (
-        element !== splash
-        && element.id !== 'nyxStudyHubStartup'
-        && !['SCRIPT', 'STYLE', 'LINK'].includes(element.tagName)
+        element !== splash        && !['SCRIPT', 'STYLE', 'LINK'].includes(element.tagName)
       ))
       .map(element => {
         const hadInert = element.hasAttribute('inert');
@@ -162,7 +160,7 @@
       if (document.hidden) backgroundedSession = session;
       splash.classList.remove('show', 'leaving');
       fill.getAnimations().forEach(animation => animation.cancel());
-      updateProgress(splash, 0, 'Preparing Nyx');
+      updateProgress(splash, 0, "Preparing N7X");
       void splash.offsetWidth;
       splash.classList.add('show');
       splash.setAttribute('aria-hidden', 'false');
@@ -187,7 +185,7 @@
           return { ok: !error, result, error };
         },
 
-        async complete(label = 'Nyx is ready') {
+        async complete(label = "N7X is ready") {
           if (session !== activeSession) return;
           await animateProgress(splash, 100, label, 300, session);
           await waitForVisualDelay(620, session);
@@ -197,7 +195,7 @@
           if (session !== activeSession) return;
           splash.classList.remove('show', 'leaving');
           splash.setAttribute('aria-hidden', 'true');
-          updateProgress(splash, 0, 'Preparing Nyx');
+          updateProgress(splash, 0, "Preparing N7X");
           unlockPage(splash);
         }
       };

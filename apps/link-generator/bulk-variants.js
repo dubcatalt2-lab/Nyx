@@ -4,10 +4,10 @@ const CHUNK_SIZE = 10_000;
 
 export function prepareAliasBase(origin, namespace) {
   let url;
-  try { url = new URL(String(origin || "").trim()); } catch { throw new Error("Nyx could not determine the address for these links."); }
-  if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) throw new Error("Nyx links require a public http:// or https:// address.");
+  try { url = new URL(String(origin || "").trim()); } catch { throw new Error("N7X could not determine the address for these links."); }
+  if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) throw new Error("N7X links require a public http:// or https:// address.");
   const group = String(namespace || "").trim();
-  if (!/^[A-Za-z0-9_-]{8,24}$/.test(group)) throw new Error("Nyx could not create a safe link group.");
+  if (!/^[A-Za-z0-9_-]{8,24}$/.test(group)) throw new Error("N7X could not create a safe link group.");
   url.pathname = "/l/";
   url.search = "";
   url.hash = "";
@@ -168,7 +168,7 @@ function initBulkLinks() {
       previewLines.textContent = [...new Set(previewValues)].join("\n");
       previewCount.textContent = `${completed.toLocaleString()} links`;
       preview.hidden = false;
-      showProgress(`${completed.toLocaleString()} different Nyx links saved to ${name}.`, 1, "complete");
+      showProgress(`${completed.toLocaleString()} different N7X links saved to ${name}.`, 1, "complete");
     } catch (error) {
       if (writable) await writable.abort().catch(() => {});
       showProgress(error?.name === "AbortError" ? "Save cancelled." : (error?.message || "The link list could not be created."), completed / amount, "error");

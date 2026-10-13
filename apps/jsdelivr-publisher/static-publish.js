@@ -7,7 +7,7 @@ const markerName = 'nyx-package.json';
 
 export function validateStaticManifest(value) {
   if (value?.format !== 'nyx-static-package' || value.schema !== 1 || !/^[a-f0-9]{64}$/.test(value.revision)
-    || !Array.isArray(value.files) || !value.files.length || value.files.length > 3000) throw Error('The static Nyx package is invalid. Rebuild Nyx before publishing.');
+    || !Array.isArray(value.files) || !value.files.length || value.files.length > 3000) throw Error("The static N7X package is invalid. Rebuild N7X before publishing.");
   const paths = new Set();
   let bytes = 0;
   for (const file of value.files) {
@@ -26,7 +26,7 @@ export function validateStaticManifest(value) {
 export function staticLauncher() {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
-  <title>Nyx</title><desc>Opens the packaged Nyx application from this repository.</desc>
+  <title>N7X</title><desc>Opens the packaged N7X application from this repository.</desc>
   <foreignObject width="100%" height="100%"><body xmlns="http://www.w3.org/1999/xhtml" style="margin:0;background:#080b09;color:#e3e9e5;font:16px system-ui;min-height:100vh;display:grid;place-content:center"><p>Opening Nyx...</p><a href="./${staticFolder}/Nyx.svg" style="color:inherit">Continue</a></body></foreignObject>
   <script><![CDATA[location.replace(new URL('./${staticFolder}/Nyx.svg', location.href).href);]]></script>
 </svg>\n`;
@@ -66,7 +66,7 @@ export async function prepareStaticPackage({ api, repository, branch, headTree, 
     const subtree = await api(`${apiRoot}/trees/${encodeURIComponent(existing.sha)}`);
     if (subtree.truncated || !Array.isArray(subtree.tree)) throw Error('The existing static package could not be verified.');
     const saved = subtree.tree.find(entry => entry.path === markerName && entry.type === 'blob');
-    if (!saved) throw Error('The nyx-static folder is not a Nyx package. Choose another repository.');
+    if (!saved) throw Error("The nyx-static folder is not a N7X package. Choose another repository.");
     if (saved.sha === await blobSha(marker)) return { path: staticFolder, mode: '040000', type: 'tree', sha: existing.sha };
     const blob = await api(`${apiRoot}/blobs/${encodeURIComponent(saved.sha)}`);
     let previous;

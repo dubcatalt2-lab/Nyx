@@ -117,7 +117,7 @@ try{
     return json({});
   });
 
-  await page.goto(origin,{waitUntil:'domcontentloaded'});
+  await page.goto(origin+'/nyx',{waitUntil:'domcontentloaded'});
   await page.waitForSelector('#nyxAccountButton.nyx-account-button-rich');
   await page.waitForFunction(()=>!document.querySelector('.nyx-preflight,.nyx-tos-gate'));
   for(const [width,email] of [[1280,'optional@example.com'],[390,'']]) {

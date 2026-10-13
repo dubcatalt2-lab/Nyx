@@ -7,7 +7,7 @@ function aiLabels(scope) {
   for (const node of scope.querySelectorAll(
     ".ai-message-assistant .ai-message-meta > strong",
   )) {
-    if (node.textContent === "Nyx AI") node.textContent = "Tutsi AI";
+    if (node.textContent === "N7X AI") node.textContent = "Tutsi AI";
   }
   const welcome = scope.querySelector("[data-ai-welcome]");
   if (welcome) {

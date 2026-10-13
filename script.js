@@ -46,7 +46,7 @@
   document.addEventListener('keydown',unlockNyxChatNotificationSound,{once:true,capture:true});
   const NYX_DISPLAY_NAME_FONTS=Object.freeze([['gg-sans','gg sans'],['headline','Headline'],['rounded','Rounded'],['wide','Wide'],['slab','Slab'],['condensed','Condensed'],['mono-block','Mono Block'],['tempo','Tempo'],['sakura','Sakura'],['jellybean','Jellybean'],['modern','Modern'],['medieval','Medieval'],['eight-bit','8Bit'],['vampyre','Vampyre']]);
   const NYX_DISPLAY_NAME_EFFECTS=Object.freeze([['solid','Solid'],['gradient','Gradient'],['neon','Neon'],['toon','Toon'],['pop','Pop']]);
-  const nyxFounderProfileDefaults=Object.freeze({displayName:'1aqlla',handle:'@1aqlla',role:'Owner / Founder',bio:'Built Nyx for people who search, study, and create.',avatarUrl:'/assets/icons/founder-1aqlla.jpg',bannerUrl:'',accent:'#8fb8ff',accentPrimary:'#8fb8ff',accentSecondary:'#8ea1ff',bannerColor:'#8ea1ff',displayNameFont:'gg-sans',displayNameEffect:'solid',displayNameColorPrimary:'#ffffff',displayNameColorSecondary:'#8ea1ff',profileEffect:'none',customEffectPattern:'starfield',customEffectColorPrimary:'#ffffff',customEffectColorSecondary:'#8ea1ff',customEffectSpeed:7,customEffectIntensity:70,avatarDecoration:'none',status:'online',roles:['Owner','Developer'],badges:['Founder'],linkLabel:'',linkUrl:''});
+  const nyxFounderProfileDefaults=Object.freeze({displayName:'1aqlla',handle:'@1aqlla',role:'Owner / Founder',bio:"Built N7X for people who search, study, and create.",avatarUrl:'/assets/icons/founder-1aqlla.jpg',bannerUrl:'',accent:'#8fb8ff',accentPrimary:'#8fb8ff',accentSecondary:'#8ea1ff',bannerColor:'#8ea1ff',displayNameFont:'gg-sans',displayNameEffect:'solid',displayNameColorPrimary:'#ffffff',displayNameColorSecondary:'#8ea1ff',profileEffect:'none',customEffectPattern:'starfield',customEffectColorPrimary:'#ffffff',customEffectColorSecondary:'#8ea1ff',customEffectSpeed:7,customEffectIntensity:70,avatarDecoration:'none',status:'online',roles:['Owner','Developer'],badges:['Founder'],linkLabel:'',linkUrl:''});
   const NYX_PROFILE_EFFECTS=Object.freeze([["none","None"],["blooming-roses","Blooming Roses"],["fx-cosmic-vortex","Butterfly Sparkles"],["fx-nebula-storm","Drifting Butterflies"],["fx-stellar-burst","Starlit Petals"],["fx-ethereal-flame","Floating Petals"],["fx-quantum-rift","Moonlit Wolf"],["fx-astral-cascade","Night Clouds"],["fx-plasma-wave","Shadow Grins"],["fx-supernova-flash","Peeking Shadows"],["fx-void-shards","Owl in the Mist"],["fx-prismatic-spark","Neon Beast Spiral"],["fx-arcane-pulse","Monochrome Demon"],["fx-solar-surge","Demon Reveal"],["fx-neon-eclipse","Hanging Shadow Grin"],["fx-celestial-drift","Neon Beast Portrait"],["fx-shadow-aura","Pink Lightning"],["fx-hyper-aura","Owl on a Branch"],["fx-starlight-bloom","Clouds & Full Moon"],["fx-galaxy-shimmer","Hello Kitty Blossoms"],["fx-cyber-lattice","Moonlit Vine Border"],["fx-abyssal-ring","Spider-Man Swing"],["fx-dimension-rift","Shark Whirlpool"],["fx-chrono-spark","Circling Sharks"],["fx-zenith-glow","Deep Sea Silhouettes"],["fx-infrared-pulse","Deep Sea Drift"],["fx-glitch-storm","Ocean Shadows"],["fx-phantom-flame","Spider-Man Peek"],["fx-vortex-surge","Spiderweb Border"],["fx-nebula-spark","Moonlit Vine Canopy"],["fx-starlight-echo","Moonlit Vine Sparkles"],["fx-spectral-surge","Glowing Butterflies"],["fx-cyber-matrix","Glowing Rose Wreath"],["fx-dark-void","Cloud Halo"],["fx-nebula-rift","Black Thorn Ring"],["fx-solar-flare","Skeletal Embrace"],["fx-sakura-blossom","Blushing Cat Ears"],["fx-arcane-prism","Phoenix Swirl"],["fx-abyssal-pulse","Black Roses & Butterfly"],["fx-neon-stardust","Dark Angel Wings"],["fx-retro-wave","Comic Anger"],["fx-glitch-mirage","Prismatic Eclipse"],["fx-celestial-shine","Luminous Moth"],["fx-phantom-mist","Crimson Butterfly"],["fx-hyperdrive","Moonlit Vines"],["fx-quantum-bloom","Silver Orbits"],["fx-prismatic-aura","Moonlit Clouds"],["fx-astral-spark","Flaming Skulls"],["fx-thunderstorm","Golden Moon"],["fx-crimson-eclipse","Golden Star Crown"],["fx-electric-dream","Ocean Glow"],["fx-frozen-shards","White Angel Wings"],["fx-vortex-horizon","Ember Moon"],["fx-nova-beam","Aurora Wisps"],["fx-cybernetic-pulse","White Roses & Butterfly"],["fx-radiant-orbit","Starlight Mist"]]);
   const NYX_AVATAR_DECORATIONS=Object.freeze([["none","None"],["candlelight","Candlelight"],["astral-ring-alpha","Starlight Mist"],["celestial-crown","Ember Moon"],["neon-vortex","Aurora Wisps"],["solar-flare-ring","White Roses & Butterfly"],["void-ring","Golden Moon"],["cybernetic-halo","Flaming Skulls"],["crimson-shield","White Angel Wings"],["quantum-ring","Luminous Moth"],["ethereal-aura","Prismatic Eclipse"],["static-frost","Moonlit Clouds"],["prismatic-glow","Golden Star Crown"],["supernova-ring","Ocean Glow"],["neon-pulse","Crimson Butterfly"],["arcane-circle","Moonlit Vines"],["cosmic-dust","Silver Orbits"],["stellar-ring","Comic Anger"],["gilded-halo","Blushing Cat Ears"],["plasma-ring","Black Roses & Butterfly"],["hyperdrive","Phoenix Swirl"],["infernal-ring","Dark Angel Wings"],["solar-ring","Skeletal Embrace"],["nebula-ring","Black Thorn Ring"],["prism-crown","Cloud Halo"],["ember-ring","Glowing Rose Wreath"],["vortex-crown","Glowing Butterflies"]]);
   const NYX_LEGACY_PROFILE_EFFECTS=Object.freeze({glow:'blooming-roses',sparkle:'blooming-roses',aurora:'blooming-roses',holographic:'blooming-roses',fireflies:'blooming-roses','cosmic-dust':'blooming-roses','electric-storm':'blooming-roses','meteor-shower':'blooming-roses','cyber-grid':'blooming-roses',plasma:'blooming-roses',snowfall:'blooming-roses',embers:'blooming-roses',bubbles:'blooming-roses','starlight-ribbon':'blooming-roses','cherry-bloom':'blooming-roses','ocean-caustics':'blooming-roses','chromatic-inferno':'blooming-roses',ghostfire:'blooming-roses','pirate-breach':'blooming-roses','kraken-depths':'blooming-roses','celestial-rift':'blooming-roses',stormforged:'blooming-roses',custom:'blooming-roses'});
@@ -231,7 +231,7 @@
       nyxApplyCompactProfileImage(host,image,mediaPath,media.url,media.mime==='image/gif',maxSize);
     }).catch(error=>{
       if(host.dataset.nyxProfileMediaSource!==mediaPath)return;
-      console.warn('Nyx profile media could not load:',error);
+      console.warn("N7X profile media could not load:",error);
       if(image.getAttribute('src')!==mediaPath)image.setAttribute('src',mediaPath);
     });
   }
@@ -380,7 +380,7 @@
     if(nyxFounderSignedInUser?.uid!==user.uid) throw new Error('Your account changed. Please try again.');
     const response=await fetch(path,{...options,headers:{...(options.headers||{}),Authorization:`Bearer ${token}`},cache:'no-store'});
     const payload=await response.json().catch(()=>({}));
-    if(!response.ok) throw new Error(payload.error||'Nyx cloud save is unavailable.');
+    if(!response.ok) throw new Error(payload.error||"N7X cloud save is unavailable.");
     return payload;
   }
   async function loadNyxCloudPreferences(){
@@ -470,9 +470,9 @@
     const code=String(error?.code||'').toLowerCase();
     const message=String(error?.message||'');
     if(code.includes('user-token-expired')||/user token has expired|sign-in has expired/i.test(message))return 'Your session expired. Log in again to continue.';
-    if(code.includes('network-request-failed')||/network request failed/i.test(message))return 'Nyx could not reach Firebase. Check your connection and try again.';
+    if(code.includes('network-request-failed')||/network request failed/i.test(message))return "N7X could not reach Firebase. Check your connection and try again.";
     if(code.includes('too-many-requests'))return 'Too many attempts. Wait a few minutes and try again.';
-    if(code.includes('invalid-custom-token')||code.includes('custom-token-mismatch'))return 'Nyx could not start the Firebase session. Try logging in again.';
+    if(code.includes('invalid-custom-token')||code.includes('custom-token-mismatch'))return "N7X could not start the Firebase session. Try logging in again.";
     return message&&!/^firebase:/i.test(message)?message:fallback;
   }
   async function loadNyxUserProfile(){
@@ -490,7 +490,7 @@
       nyxUserAccountEmail=String(account.email||'');
       syncFounderOwnerControls();
       return {...data,account};
-    }catch(error){console.warn('Nyx Profile could not load:',error);return null}
+    }catch(error){console.warn("N7X Profile could not load:",error);return null}
   }
   function stopNyxUserActivity(){
     clearInterval(nyxUserActivityTimer);
@@ -671,7 +671,7 @@
   function openNyxOwnerDashboard(){
     closeNyxAccountMenu();
     if(!nyxFounderSignedInUser||!nyxFounderIsOwner||!nyxOwnerDashboardAccess){
-      toast('Only the Nyx owner can open this dashboard');
+      toast("Only the N7X owner can open this dashboard");
       return;
     }
     if(!globalThis.NyxOwnerDashboard?.open){
@@ -692,14 +692,14 @@
     const overlay=document.createElement('div');
     overlay.className='nyx-profile-directory-overlay'+(requestedProfileUid?' profile-card-only':'');
     overlay.innerHTML=`<section class="nyx-profile-directory" role="dialog" aria-modal="true" aria-labelledby="nyxProfileDirectoryTitle">
-      <header class="nyx-profile-directory-header"><div><span>NYX COMMUNITY</span><h2 id="nyxProfileDirectoryTitle">${requestedProfileUid?'Profile':'Browse Profiles'}</h2><p>Discover the people using Nyx.</p></div><button type="button" data-close-profile-directory aria-label="Close profile browser">${nyxAccountMenuIcon('close')}</button></header>
+      <header class="nyx-profile-directory-header"><div><span>N7X COMMUNITY</span><h2 id="nyxProfileDirectoryTitle">${requestedProfileUid?'Profile':'Browse Profiles'}</h2><p>Discover the people using Nyx.</p></div><button type="button" data-close-profile-directory aria-label="Close profile browser">${nyxAccountMenuIcon('close')}</button></header>
       <div class="nyx-profile-directory-layout">
         <aside class="nyx-profile-directory-sidebar">
           <label class="nyx-profile-directory-search">${nyxAccountMenuIcon('people')}<input type="search" data-profile-directory-search placeholder="S3ARC4 name, username, or role" autocomplete="off"></label>
           <p data-profile-directory-summary>Loading profiles…</p>
           <div class="nyx-profile-directory-results" data-profile-directory-results aria-live="polite"></div>
         </aside>
-        <main class="nyx-profile-directory-view" data-profile-directory-view><div class="nyx-profile-directory-empty"><span>${nyxAccountMenuIcon('people')}</span><h3>Select a profile</h3><p>Choose someone to view their public Nyx profile.</p></div></main>
+        <main class="nyx-profile-directory-view" data-profile-directory-view><div class="nyx-profile-directory-empty"><span>${nyxAccountMenuIcon('people')}</span><h3>Select a profile</h3><p>Choose someone to view their public N7X profile.</p></div></main>
       </div>
     </section>`;
     document.body.appendChild(overlay);
@@ -890,15 +890,15 @@
     document.querySelectorAll('[data-founder-profile-settings-card]').forEach(card=>{card.hidden=!nyxFounderIsOwner});
     document.querySelectorAll('[data-owner-dashboard-card]').forEach(card=>{card.hidden=!nyxOwnerDashboardAccess});
     document.querySelectorAll('[data-founder-account-status]').forEach(status=>{
-      if(!configured){status.textContent='Nyx accounts are not configured.';return}
-      if(!signedIn){status.textContent='Sign in to create and manage your Nyx profile.';return}
+      if(!configured){status.textContent="N7X accounts are not configured.";return}
+      if(!signedIn){status.textContent="Sign in to create and manage your N7X profile.";return}
       const accountId=String(signedIn.uid||'');
       const roleName=String(nyxUserAccountRole||'member').replaceAll('_',' ').replace(/\b\w/g,letter=>letter.toUpperCase());
-      status.textContent=nyxFounderIsOwner?'Signed in as the Nyx founder.':nyxOwnerDashboardAccess?`Signed in as ${roleName}.`:`Signed in. Firebase account ID: ${accountId}`;
+      status.textContent=nyxFounderIsOwner?"Signed in as the N7X founder.":nyxOwnerDashboardAccess?`Signed in as ${roleName}.`:`Signed in. Firebase account ID: ${accountId}`;
     });
     document.querySelectorAll('[data-nyx-cloud-save-status]').forEach(status=>{
-      if(!configured){status.textContent='Cloud saves become available when Nyx accounts are configured.';return}
-      if(!signedIn){status.textContent='Sign in to sync supported game progress and Nyx preferences.';return}
+      if(!configured){status.textContent="Cloud saves become available when N7X accounts are configured.";return}
+      if(!signedIn){status.textContent="Sign in to sync supported game progress and N7X preferences.";return}
       status.textContent='Cloud saves are enabled for this account.';
     });
     document.querySelectorAll('[data-open-nyx-account]').forEach(button=>{button.hidden=!configured||Boolean(signedIn);});
@@ -942,13 +942,13 @@
         const app=getApps().find(item=>item.name==='nyx-founder-owner')||initializeApp({apiKey:nyxFounderAuthConfig.apiKey,authDomain:`${nyxFounderAuthConfig.projectId}.firebaseapp.com`,projectId:nyxFounderAuthConfig.projectId},'nyx-founder-owner');
         nyxFounderFirebaseAuth=getAuth(app);
         try{await setPersistence(nyxFounderFirebaseAuth,browserLocalPersistence)}
-        catch(error){console.warn('Nyx could not enable persistent sign-in:',error)}
+        catch(error){console.warn("N7X could not enable persistent sign-in:",error)}
         if(typeof nyxFounderFirebaseAuth.authStateReady==='function')await nyxFounderFirebaseAuth.authStateReady();
         onAuthStateChanged(nyxFounderFirebaseAuth,async user=>{nyxFounderSignedInUser=user||null;
           document.querySelectorAll('iframe').forEach(frame=>{try{frame.contentWindow?.postMessage({type:'nyx:account-changed'},location.origin)}catch{}});
           if(user&&new URLSearchParams(location.search).get('nyx-api-login')==='1'){location.replace('/api');return}
           syncSetupAccountStep();if(!user){stopNyxUserActivity();stopNyxCloudPreferenceSync();nyxUserProfile=null;nyxUserProfileCreatedAt='';nyxFounderIsOwner=false;nyxOwnerDashboardAccess=false;nyxUserPermissions=[];nyxUserAccountRole='member';nyxUserSubscriptionStatus='free';syncNyxAccountEntitlements();nyxUserAccountEmail='';await refreshFounderOwnerAccess();return}startNyxUserActivity(user);await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile(),startNyxCloudPreferenceSync()]);syncSetupAccountStep()});
-      }catch(error){console.warn('Nyx owner sign-in could not initialize:',error);nyxFounderAuthConfig={enabled:false,ownerConfigured:false}}
+      }catch(error){console.warn("N7X owner sign-in could not initialize:",error);nyxFounderAuthConfig={enabled:false,ownerConfigured:false}}
       finally{syncFounderOwnerControls();if(new URLSearchParams(location.search).get('nyx-api-login')==='1'&&!nyxFounderSignedInUser)setTimeout(()=>void openNyxAccountAccess({mode:'signin'}),0)}
     })();
     return nyxFounderAuthReadyPromise;
@@ -956,7 +956,7 @@
   async function openNyxAccountAccess(options={}){
     closeNyxAccountMenu();
     await initializeFounderOwnerAccess();
-    if(!nyxFounderFirebaseAuth) return toast('Nyx accounts are not configured yet.');
+    if(!nyxFounderFirebaseAuth) return toast("N7X accounts are not configured yet.");
     const switching=Boolean(options.switching&&nyxFounderSignedInUser);
     const previousUid=String(nyxFounderSignedInUser?.uid||'');
     document.querySelector('.nyx-account-overlay')?.remove();
@@ -977,10 +977,10 @@
     const error=form.querySelector('.nyx-founder-editor-error');
     const accountStatusNotice=form.querySelector('[data-nyx-account-status]');
     if(switching)overlay.querySelector('#nyxAccountTitle').textContent='Switch accounts';
-    else if(mode==='register')overlay.querySelector('#nyxAccountTitle').textContent='Create your Nyx account';
+    else if(mode==='register')overlay.querySelector('#nyxAccountTitle').textContent="Create your N7X account";
     if(mode==='register'&&options.username)identifier.value=nyxAccountUsername(options.username);
     const clearAccountStatusNotice=()=>{accountStatusNotice.hidden=true;accountStatusNotice.className='nyx-account-status-notice';accountStatusNotice.querySelector('strong').textContent='';accountStatusNotice.querySelector('p').textContent=''};
-    const showAccountStatusNotice=status=>{const accountStatus=status&&typeof status==='object'?status:{};accountStatusNotice.className=`nyx-account-status-notice nyx-account-status-${String(accountStatus.status||'disabled').replace(/[^a-z-]/g,'')}`;accountStatusNotice.querySelector('strong').textContent=String(accountStatus.title||'This account is unavailable');accountStatusNotice.querySelector('p').textContent=String(accountStatus.message||'Contact Nyx staff for help.');accountStatusNotice.hidden=false};
+    const showAccountStatusNotice=status=>{const accountStatus=status&&typeof status==='object'?status:{};accountStatusNotice.className=`nyx-account-status-notice nyx-account-status-${String(accountStatus.status||'disabled').replace(/[^a-z-]/g,'')}`;accountStatusNotice.querySelector('strong').textContent=String(accountStatus.title||'This account is unavailable');accountStatusNotice.querySelector('p').textContent=String(accountStatus.message||"Contact N7X staff for help.");accountStatusNotice.hidden=false};
     const update=()=>{
       const registering=mode==='register';
       overlay.querySelectorAll('[data-nyx-account-tab]').forEach(tab=>{const active=tab.dataset.nyxAccountTab===mode;tab.classList.toggle('active',active);tab.setAttribute('aria-selected',String(active))});
@@ -1046,7 +1046,7 @@
         await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile()]);
         syncSetupAccountStep();
         close();
-        toast(mode==='register'?'Nyx profile created':switching?(String(credential.user.uid||'')===previousUid?'Already signed in to this account':'Account switched'):'Signed in');
+        toast(mode==='register'?"N7X profile created":switching?(String(credential.user.uid||'')===previousUid?'Already signed in to this account':'Account switched'):'Signed in');
       }catch(authError){
         error.textContent=authError?.accountStatus?'':nyxFriendlyFirebaseError(authError,'Account could not be completed. Try again.');
         submit.disabled=false;
@@ -1102,7 +1102,7 @@
       const previewActions=`<div class="nyx-account-menu-group nyx-editor-menu-preview-actions" aria-hidden="true"><button type="button" tabindex="-1">${nyxAccountMenuIcon('edit')}<span>Edit Profile</span></button><hr><button type="button" tabindex="-1"><i class="nyx-user-status nyx-user-status-${esc(profile.status)}"></i><span>${esc(statusLabel)}</span>${nyxAccountMenuIcon('chevron')}</button></div><div class="nyx-account-menu-group nyx-editor-menu-preview-actions" aria-hidden="true"><button type="button" tabindex="-1">${nyxAccountMenuIcon('switch')}<span>Switch Accounts</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" tabindex="-1">${nyxAccountMenuIcon('id')}<span>Copy User ID</span></button></div>`;
       return `<section class="nyx-editor-menu-preview nyx-account-menu show ${nyxProfileEffectClass(profile)}" style="--nyx-account-primary:${profile.accentPrimary};--nyx-account-secondary:${profile.accentSecondary};--nyx-account-banner:${profile.bannerColor};--nyx-user-accent-primary:${profile.accentPrimary};--nyx-user-accent-secondary:${profile.accentSecondary};--nyx-user-banner-color:${profile.bannerColor};${nyxProfileEffectVars(profile)}"><i class="nyx-user-profile-effect nyx-account-menu-profile-effect" aria-hidden="true">${nyxProfileEffectArtwork(profile)}</i><div class="nyx-account-menu-banner">${background}${mediaEdit('banner','Edit profile banner')}</div><div class="nyx-account-menu-profile"><div class="nyx-account-menu-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}" data-nyx-direct-edit="avatar">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i></div><span class="nyx-account-menu-status"><span>${esc(profile.customStatus||statusLabel)}</span></span><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p class="nyx-account-menu-handle">${esc(profile.handle)}</p><p class="nyx-account-menu-bio">${esc(profile.bio||'No bio yet.')}</p></div>${previewActions}</section>`;
     }
-    return `<section class="nyx-user-profile-card ${nyxProfileEffectClass(profile)}" style="--nyx-user-accent-primary:${profile.accentPrimary};--nyx-user-accent-secondary:${profile.accentSecondary};--nyx-user-banner-color:${profile.bannerColor};${nyxProfileEffectVars(profile)}"><i class="nyx-user-profile-effect" aria-hidden="true">${nyxProfileEffectArtwork(profile)}</i><div class="nyx-user-profile-banner">${background}${mediaEdit('banner','Edit profile banner')}</div><div class="nyx-user-profile-chrome"><div class="nyx-user-profile-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i>${mediaEdit('avatar','Edit profile picture')}</div></div><div class="nyx-user-profile-body"><div class="nyx-user-profile-heading"><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p>${esc(profile.handle)}</p></div><p class="nyx-user-profile-custom-status">${symbol('status')} ${esc(profile.customStatus||`${statusLabel} on Nyx`)}</p><section class="nyx-user-profile-about"><h3>About me</h3><p class="nyx-user-profile-bio">${esc(profile.bio||'No bio yet.')}</p></section><section class="nyx-user-profile-roles"><h3>Roles</h3><div class="nyx-user-role-list">${roles}</div></section><section class="nyx-user-profile-details"><h3>Nyx member since</h3><p>${esc(joined)}</p></section>${ownerActions}</div></section>`;
+    return `<section class="nyx-user-profile-card ${nyxProfileEffectClass(profile)}" style="--nyx-user-accent-primary:${profile.accentPrimary};--nyx-user-accent-secondary:${profile.accentSecondary};--nyx-user-banner-color:${profile.bannerColor};${nyxProfileEffectVars(profile)}"><i class="nyx-user-profile-effect" aria-hidden="true">${nyxProfileEffectArtwork(profile)}</i><div class="nyx-user-profile-banner">${background}${mediaEdit('banner','Edit profile banner')}</div><div class="nyx-user-profile-chrome"><div class="nyx-user-profile-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i>${mediaEdit('avatar','Edit profile picture')}</div></div><div class="nyx-user-profile-body"><div class="nyx-user-profile-heading"><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p>${esc(profile.handle)}</p></div><p class="nyx-user-profile-custom-status">${symbol('status')} ${esc(profile.customStatus||`${statusLabel} on N7X`)}</p><section class="nyx-user-profile-about"><h3>About me</h3><p class="nyx-user-profile-bio">${esc(profile.bio||'No bio yet.')}</p></section><section class="nyx-user-profile-roles"><h3>Roles</h3><div class="nyx-user-role-list">${roles}</div></section><section class="nyx-user-profile-details"><h3>N7X member since</h3><p>${esc(joined)}</p></section>${ownerActions}</div></section>`;
   }
   async function nyxProfileImageFromFile(file,maxWidth,maxHeight){
     if(!file||!/^image\/(?:png|jpe?g|webp|gif)$/i.test(String(file.type||'')))throw new Error('Choose a PNG, JPG, WebP, or GIF image.');
@@ -1221,7 +1221,7 @@
                   <h4>Profile information</h4>
                   <div class="nyx-profile-field-grid">
                     <label class="nyx-profile-field">Display name<input name="displayName" maxlength="48" required value="${esc(profile.displayName)}"></label>
-                    <label class="nyx-profile-field">Profile username<input name="handle" maxlength="33" pattern="@?[A-Za-z0-9_.-]{3,32}" autocomplete="username" required value="${esc(profile.handle)}"><small>Unique across Nyx · 3–32 letters, numbers, dots, dashes, or underscores.</small></label>
+                    <label class="nyx-profile-field">Profile username<input name="handle" maxlength="33" pattern="@?[A-Za-z0-9_.-]{3,32}" autocomplete="username" required value="${esc(profile.handle)}"><small>Unique across N7X · 3–32 letters, numbers, dots, dashes, or underscores.</small></label>
                     <label class="nyx-profile-field nyx-profile-field-wide">About me<textarea name="bio" maxlength="280" rows="4" placeholder="You can use text and emoji.">${esc(profile.bio)}</textarea><small><span data-nyx-bio-count>${profile.bio.length}</span>/280</small></label>
                     <label class="nyx-profile-field">Status<select name="status"><option value="online" ${profile.status==='online'?'selected':''}>Online</option><option value="idle" ${profile.status==='idle'?'selected':''}>Idle</option><option value="dnd" ${profile.status==='dnd'?'selected':''}>Do not disturb</option><option value="offline" ${profile.status==='offline'?'selected':''}>Invisible</option></select></label>
                     <label class="nyx-profile-field">Custom status<input name="customStatus" maxlength="80" value="${esc(profile.customStatus)}" placeholder="What are you up to?"></label>
@@ -1301,7 +1301,7 @@
         </div>
         <button type="button" role="menuitem" data-nyx-switch-profile>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 4 4-4 4"/><path d="M20 7H9a4 4 0 0 0-4 4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h11a4 4 0 0 0 4-4"/></svg>
-          <span><strong>Switch Profile</strong><small>Sign in to another Nyx profile</small></span>
+          <span><strong>Switch Profile</strong><small>Sign in to another N7X profile</small></span>
         </button>
         <div class="nyx-profile-switch-confirm" data-nyx-profile-switch-confirm hidden>
           <strong>Discard unsaved changes?</strong>
@@ -1695,7 +1695,7 @@
         syncFounderOwnerControls();
         close();
         if(location.pathname==='/apps/tutsi/profiles.html'&&parent!==window)parent.postMessage({type:'tutsi:profile-saved',displayName:nyxUserProfile.displayName},location.origin);
-        toast(nyxFounderIsOwner?'Profile and About Nyx updated':'Profile saved');
+        toast(nyxFounderIsOwner?"Profile and About N7X updated":'Profile saved');
       }catch(saveError){
         error.textContent=nyxFriendlyFirebaseError(saveError,'Profile could not be saved.');
         button.disabled=false;
@@ -1741,7 +1741,7 @@
     const badges=profile.badges.map(badge=>`<span class="nyx-founder-badge">${esc(badge)}</span>`).join('');
     const link=profile.linkUrl?`<a class="nyx-founder-link" href="${esc(profile.linkUrl)}" target="_blank" rel="noreferrer noopener">${esc(profile.linkLabel||'Open profile')}<span aria-hidden="true">↗</span></a>`:'';
     const banner=profile.bannerUrl?`<img src="${esc(nyxProfileStillSource(profile.bannerUrl))}" alt="" aria-hidden="true">`:'';
-    return `<article class="nyx-founder-profile nyx-founder-profile-standard nyx-founder-effect-${esc(profile.profileEffect)} ${nyxProfileEffectClass(profile)}" data-nyx-founder-profile style="--nyx-founder-accent:${profile.accentPrimary};--nyx-founder-accent-primary:${profile.accentPrimary};--nyx-founder-accent-secondary:${profile.accentSecondary};--nyx-founder-banner-color:${profile.bannerColor};--nyx-user-accent-primary:${profile.accentPrimary};--nyx-user-accent-secondary:${profile.accentSecondary};${nyxProfileEffectVars(profile)}"><i class="nyx-founder-profile-effect nyx-user-profile-effect" aria-hidden="true">${nyxProfileEffectArtwork(profile)}</i><div class="nyx-founder-banner" aria-hidden="true">${banner}</div><div class="nyx-founder-profile-content"><div class="nyx-founder-image-wrap nyx-avatar-decoration-${esc(profile.avatarDecoration)}"><img class="nyx-founder-image" src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="${esc(profile.displayName)} profile picture"><i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><span class="nyx-founder-status nyx-founder-status-${esc(profile.status)}" title="${esc(profile.status)}" aria-label="${esc(profile.status)}"></span></div><div class="nyx-founder-copy"><div class="nyx-founder-name-row"><h3 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h3>${profile.roles.some(role=>role.toLowerCase()==='owner')?'<span class="nyx-founder-owner-crown" title="Nyx owner" aria-label="Nyx owner">♛</span>':''}</div><p class="nyx-founder-handle">${esc(profile.handle)}</p><p class="nyx-founder-role">${esc(profile.role)}</p>${roles?`<div class="nyx-founder-role-list" aria-label="Profile roles">${roles}</div>`:''}${badges?`<div class="nyx-founder-badges" aria-label="Profile badges">${badges}</div>`:''}<div class="nyx-founder-about"><strong>About me</strong><p class="nyx-founder-bio">${esc(profile.bio)}</p></div>${link}</div></div></article>`;
+    return `<article class="nyx-founder-profile nyx-founder-profile-standard nyx-founder-effect-${esc(profile.profileEffect)} ${nyxProfileEffectClass(profile)}" data-nyx-founder-profile style="--nyx-founder-accent:${profile.accentPrimary};--nyx-founder-accent-primary:${profile.accentPrimary};--nyx-founder-accent-secondary:${profile.accentSecondary};--nyx-founder-banner-color:${profile.bannerColor};--nyx-user-accent-primary:${profile.accentPrimary};--nyx-user-accent-secondary:${profile.accentSecondary};${nyxProfileEffectVars(profile)}"><i class="nyx-founder-profile-effect nyx-user-profile-effect" aria-hidden="true">${nyxProfileEffectArtwork(profile)}</i><div class="nyx-founder-banner" aria-hidden="true">${banner}</div><div class="nyx-founder-profile-content"><div class="nyx-founder-image-wrap nyx-avatar-decoration-${esc(profile.avatarDecoration)}"><img class="nyx-founder-image" src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="${esc(profile.displayName)} profile picture"><i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><span class="nyx-founder-status nyx-founder-status-${esc(profile.status)}" title="${esc(profile.status)}" aria-label="${esc(profile.status)}"></span></div><div class="nyx-founder-copy"><div class="nyx-founder-name-row"><h3 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h3>${profile.roles.some(role=>role.toLowerCase()==='owner')?"<span class=\"nyx-founder-owner-crown\" title=\"N7X owner\" aria-label=\"N7X owner\">♛</span>":''}</div><p class="nyx-founder-handle">${esc(profile.handle)}</p><p class="nyx-founder-role">${esc(profile.role)}</p>${roles?`<div class="nyx-founder-role-list" aria-label="Profile roles">${roles}</div>`:''}${badges?`<div class="nyx-founder-badges" aria-label="Profile badges">${badges}</div>`:''}<div class="nyx-founder-about"><strong>About me</strong><p class="nyx-founder-bio">${esc(profile.bio)}</p></div>${link}</div></div></article>`;
   }
   function refreshFounderProfileViews(){
     const update=root=>{try{root.querySelectorAll?.('[data-nyx-founder-profile]').forEach(card=>{card.outerHTML=nyxFounderProfileCardMarkup()});root.querySelectorAll?.('[data-nyx-credits-founder]').forEach(card=>{card.outerHTML=nyxCreditsFounderCardMarkup()});nyxManageFounderProfileGifs(root)}catch{}};
@@ -1756,17 +1756,17 @@
       nyxFounderProfile=normalizeNyxFounderProfile(data?.profile);
       refreshFounderProfileViews();
       return data;
-    }).catch(error=>{console.warn('Nyx Founder Profile could not load:',error);return {profile:nyxFounderProfile,persistent:false,editingEnabled:false}}).finally(()=>{nyxFounderProfileLoadPromise=null});
+    }).catch(error=>{console.warn("N7X Founder Profile could not load:",error);return {profile:nyxFounderProfile,persistent:false,editingEnabled:false}}).finally(()=>{nyxFounderProfileLoadPromise=null});
     return nyxFounderProfileLoadPromise;
   }
   async function openFounderProfileEditor(){
-    if(!nyxFounderIsOwner){toast('Sign in with the founder Nyx account first.');return}
+    if(!nyxFounderIsOwner){toast("Sign in with the founder N7X account first.");return}
     await loadFounderProfile();
     document.querySelector('.nyx-founder-editor-overlay')?.remove();
     const profile=normalizeNyxFounderProfile(nyxFounderProfile);
     const overlay=document.createElement('div');
     overlay.className='nyx-founder-editor-overlay';
-    overlay.innerHTML=`<section class="nyx-founder-editor" role="dialog" aria-modal="true" aria-labelledby="nyxFounderEditorTitle"><header><div><p class="utility-kicker">About Nyx</p><h2 id="nyxFounderEditorTitle">Customize Founder Profile</h2><p>Publishing as your signed-in founder account.</p></div><button type="button" class="nyx-founder-editor-close" data-close-founder-editor aria-label="Close">×</button></header><form class="nyx-founder-editor-form"><div class="nyx-founder-editor-grid"><label>Display name<input name="displayName" maxlength="48" required value="${esc(profile.displayName)}"></label><label>Handle<input name="handle" maxlength="40" required value="${esc(profile.handle)}"></label><label>Profile subtitle<input name="role" maxlength="64" required value="${esc(profile.role)}"></label><label>Status<select name="status"><option value="online" ${profile.status==='online'?'selected':''}>Online</option><option value="idle" ${profile.status==='idle'?'selected':''}>Idle</option><option value="dnd" ${profile.status==='dnd'?'selected':''}>Do not disturb</option><option value="offline" ${profile.status==='offline'?'selected':''}>Offline</option></select></label><label class="nyx-founder-editor-wide">Bio<textarea name="bio" maxlength="500" rows="4" required>${esc(profile.bio)}</textarea></label><label>Avatar U3L<input name="avatarUrl" type="url" value="${esc(profile.avatarUrl)}"></label><label>Banner U3L <small>Optional</small><input name="bannerUrl" type="url" value="${esc(profile.bannerUrl)}"></label><label>Accent color<input name="accent" type="color" value="${esc(profile.accent)}"></label><label>Roles <small>Comma-separated; access remains tied to your Firebase account ID.</small><input name="roles" maxlength="280" value="${esc(profile.roles.join(', '))}"></label><label>Badges <small>Comma-separated</small><input name="badges" maxlength="280" value="${esc(profile.badges.join(', '))}"></label><label>Profile link label <small>Optional</small><input name="linkLabel" maxlength="40" value="${esc(profile.linkLabel)}"></label><label>Profile link U3L <small>Optional</small><input name="linkUrl" type="url" value="${esc(profile.linkUrl)}"></label></div><footer><p class="nyx-founder-editor-error" aria-live="polite"></p><div><button type="button" class="settings-action" data-close-founder-editor>Cancel</button><button type="submit" class="settings-action on">Publish profile</button></div></footer></form></section>`;
+    overlay.innerHTML=`<section class="nyx-founder-editor" role="dialog" aria-modal="true" aria-labelledby="nyxFounderEditorTitle"><header><div><p class="utility-kicker">About N7X</p><h2 id="nyxFounderEditorTitle">Customize Founder Profile</h2><p>Publishing as your signed-in founder account.</p></div><button type="button" class="nyx-founder-editor-close" data-close-founder-editor aria-label="Close">×</button></header><form class="nyx-founder-editor-form"><div class="nyx-founder-editor-grid"><label>Display name<input name="displayName" maxlength="48" required value="${esc(profile.displayName)}"></label><label>Handle<input name="handle" maxlength="40" required value="${esc(profile.handle)}"></label><label>Profile subtitle<input name="role" maxlength="64" required value="${esc(profile.role)}"></label><label>Status<select name="status"><option value="online" ${profile.status==='online'?'selected':''}>Online</option><option value="idle" ${profile.status==='idle'?'selected':''}>Idle</option><option value="dnd" ${profile.status==='dnd'?'selected':''}>Do not disturb</option><option value="offline" ${profile.status==='offline'?'selected':''}>Offline</option></select></label><label class="nyx-founder-editor-wide">Bio<textarea name="bio" maxlength="500" rows="4" required>${esc(profile.bio)}</textarea></label><label>Avatar U3L<input name="avatarUrl" type="url" value="${esc(profile.avatarUrl)}"></label><label>Banner U3L <small>Optional</small><input name="bannerUrl" type="url" value="${esc(profile.bannerUrl)}"></label><label>Accent color<input name="accent" type="color" value="${esc(profile.accent)}"></label><label>Roles <small>Comma-separated; access remains tied to your Firebase account ID.</small><input name="roles" maxlength="280" value="${esc(profile.roles.join(', '))}"></label><label>Badges <small>Comma-separated</small><input name="badges" maxlength="280" value="${esc(profile.badges.join(', '))}"></label><label>Profile link label <small>Optional</small><input name="linkLabel" maxlength="40" value="${esc(profile.linkLabel)}"></label><label>Profile link U3L <small>Optional</small><input name="linkUrl" type="url" value="${esc(profile.linkUrl)}"></label></div><footer><p class="nyx-founder-editor-error" aria-live="polite"></p><div><button type="button" class="settings-action" data-close-founder-editor>Cancel</button><button type="submit" class="settings-action on">Publish profile</button></div></footer></form></section>`;
     document.body.appendChild(overlay);
     const close=()=>overlay.remove();
     overlay.addEventListener('click',event=>{if(event.target===overlay||event.target.closest('[data-close-founder-editor]')) close()});
@@ -1796,25 +1796,25 @@
   }
   const NYX_TERMS_VERSION='2026-07-30';
   function nyxTermsSectionsMarkup(){
-    return `<section><h2>1. Eligibility</h2><p>You must comply with all applicable laws when using Nyx. If you are under the age required by your jurisdiction to enter into a binding agreement, you may only use Nyx with the permission of a parent or legal guardian.</p></section>
-      <section><h2>2. Description of the Service</h2><p>Nyx is a platform that may provide features including, but not limited to:</p><ul><li>S3ARC4 and discovery tools</li><li>A1-powered transcription and summarization</li><li>Productivity and educational tools</li><li>Entertainment applications</li><li>Links to third-party websites and services</li><li>Experimental features released for testing</li></ul><p>Features may change, be added, modified, or removed at any time without notice.</p></section>
-      <section><h2>3. Acceptable Use</h2><p>You agree not to:</p><ul><li>Violate any applicable law or regulation.</li><li>Attempt to gain unauthorized access to Nyx, its servers, or other users' systems.</li><li>Upload or distribute malware, viruses, or malicious code.</li><li>Interfere with or disrupt the operation of the Service.</li><li>Circumvent security measures, authentication systems, or rate limits.</li><li>Use automated systems that excessively burden our infrastructure.</li><li>Impersonate another person or entity.</li><li>Infringe upon the intellectual property or other legal rights of others.</li><li>Use Nyx in a manner that harms other users or the availability of the Service.</li></ul><p>We reserve the right to suspend, restrict, or terminate access for users who violate these Terms.</p></section>
-      <section><h2>4. User Content</h2><p>Some features may allow you to submit text, media, links, or other content ("User Content").</p><p>You retain ownership of your User Content.</p><p>By submitting User Content, you grant Nyx a non-exclusive, worldwide, royalty-free license to host, process, reproduce, and display that content solely for the purpose of operating, maintaining, and improving the Service.</p><p>You represent that you have the necessary rights and permissions to submit any User Content you provide.</p></section>
-      <section><h2>5. A1 Features</h2><p>Nyx may provide A1-generated content such as summaries, transcriptions, recommendations, or other generated material.</p><p>A1-generated output may be inaccurate, incomplete, or outdated. It should not be relied upon as professional, legal, financial, medical, or other expert advice.</p><p>Users are responsible for reviewing and verifying A1-generated content before relying on it.</p></section>
-      <section><h2>6. Media Processing</h2><p>Nyx may process publicly available or user-submitted media to provide requested functionality.</p><p>You are solely responsible for ensuring that you have the necessary rights and permissions to submit or process any content through the Service.</p><p>Nyx does not claim ownership of submitted content.</p></section>
-      <section><h2>7. Third-Party Services</h2><p>Nyx may contain links to or integrate with third-party websites, APIs, applications, or services.</p><p>We do not control or endorse third-party content and are not responsible for its availability, accuracy, security, functionality, or privacy practices.</p><p>Your use of third-party services is governed by their own terms and policies.</p></section>
-      <section><h2>8. Intellectual Property</h2><p>Unless otherwise stated, Nyx, including its software, branding, design, graphics, logos, interface, and original content, is owned by Nyx or its licensors and is protected by applicable intellectual property laws.</p><p>You may not copy, modify, distribute, reverse engineer, sell, or commercially exploit any portion of the Service without prior written permission unless permitted by applicable law.</p></section>
-      <section><h2>9. Availability</h2><p>The Service is provided on an <strong>"AS IS"</strong> and <strong>"AS AVAILABLE"</strong> basis.</p><p>We do not guarantee that Nyx will always be available, uninterrupted, secure, or error-free.</p><p>Features may be modified, suspended, or discontinued at any time.</p></section>
-      <section><h2>10. Privacy</h2><p>Your use of Nyx is also subject to our Privacy Policy.</p><p>By using the Service, you acknowledge that Nyx may collect and process information necessary to operate, maintain, improve, and secure the Service.</p></section>
-      <section><h2>11. Cookies</h2><p>Nyx may use cookies, local storage, or similar technologies to:</p><ul><li>Remember user preferences.</li><li>Improve website performance.</li><li>Analyze anonymous usage statistics.</li><li>Enhance the overall user experience.</li></ul><p>You may disable cookies through your browser settings, although doing so may affect certain features of the Service.</p></section>
-      <section><h2>12. Limitation of Liability</h2><p>To the fullest extent permitted by applicable law, Nyx and its owners, developers, contributors, affiliates, and service providers shall not be liable for any indirect, incidental, special, exemplary, consequential, or punitive damages arising from or relating to the use of the Service.</p></section>
-      <section><h2>13. Indemnification</h2><p>You agree to defend, indemnify, and hold harmless Nyx, its developers, affiliates, contributors, and service providers from any claims, damages, losses, liabilities, and expenses arising from:</p><ul><li>Your use of the Service.</li><li>Your violation of these Terms.</li><li>Your submitted content.</li><li>Your violation of any applicable law or the rights of another person.</li></ul></section>
-      <section><h2>14. Termination</h2><p>We may suspend, restrict, or terminate your access to Nyx at any time, with or without notice, if we reasonably believe you have violated these Terms, abused the Service, or created a security or legal risk.</p><p>We may also discontinue the Service, in whole or in part, at any time.</p></section>
+    return `<section><h2>1. Eligibility</h2><p>You must comply with all applicable laws when using Nyx. If you are under the age required by your jurisdiction to enter into a binding agreement, you may only use N7X with the permission of a parent or legal guardian.</p></section>
+      <section><h2>2. Description of the Service</h2><p>N7X is a platform that may provide features including, but not limited to:</p><ul><li>S3ARC4 and discovery tools</li><li>A1-powered transcription and summarization</li><li>Productivity and educational tools</li><li>Entertainment applications</li><li>Links to third-party websites and services</li><li>Experimental features released for testing</li></ul><p>Features may change, be added, modified, or removed at any time without notice.</p></section>
+      <section><h2>3. Acceptable Use</h2><p>You agree not to:</p><ul><li>Violate any applicable law or regulation.</li><li>Attempt to gain unauthorized access to N7X, its servers, or other users' systems.</li><li>Upload or distribute malware, viruses, or malicious code.</li><li>Interfere with or disrupt the operation of the Service.</li><li>Circumvent security measures, authentication systems, or rate limits.</li><li>Use automated systems that excessively burden our infrastructure.</li><li>Impersonate another person or entity.</li><li>Infringe upon the intellectual property or other legal rights of others.</li><li>Use N7X in a manner that harms other users or the availability of the Service.</li></ul><p>We reserve the right to suspend, restrict, or terminate access for users who violate these Terms.</p></section>
+      <section><h2>4. User Content</h2><p>Some features may allow you to submit text, media, links, or other content ("User Content").</p><p>You retain ownership of your User Content.</p><p>By submitting User Content, you grant N7X a non-exclusive, worldwide, royalty-free license to host, process, reproduce, and display that content solely for the purpose of operating, maintaining, and improving the Service.</p><p>You represent that you have the necessary rights and permissions to submit any User Content you provide.</p></section>
+      <section><h2>5. A1 Features</h2><p>N7X may provide A1-generated content such as summaries, transcriptions, recommendations, or other generated material.</p><p>A1-generated output may be inaccurate, incomplete, or outdated. It should not be relied upon as professional, legal, financial, medical, or other expert advice.</p><p>Users are responsible for reviewing and verifying A1-generated content before relying on it.</p></section>
+      <section><h2>6. Media Processing</h2><p>N7X may process publicly available or user-submitted media to provide requested functionality.</p><p>You are solely responsible for ensuring that you have the necessary rights and permissions to submit or process any content through the Service.</p><p>N7X does not claim ownership of submitted content.</p></section>
+      <section><h2>7. Third-Party Services</h2><p>N7X may contain links to or integrate with third-party websites, APIs, applications, or services.</p><p>We do not control or endorse third-party content and are not responsible for its availability, accuracy, security, functionality, or privacy practices.</p><p>Your use of third-party services is governed by their own terms and policies.</p></section>
+      <section><h2>8. Intellectual Property</h2><p>Unless otherwise stated, N7X, including its software, branding, design, graphics, logos, interface, and original content, is owned by N7X or its licensors and is protected by applicable intellectual property laws.</p><p>You may not copy, modify, distribute, reverse engineer, sell, or commercially exploit any portion of the Service without prior written permission unless permitted by applicable law.</p></section>
+      <section><h2>9. Availability</h2><p>The Service is provided on an <strong>"AS IS"</strong> and <strong>"AS AVAILABLE"</strong> basis.</p><p>We do not guarantee that N7X will always be available, uninterrupted, secure, or error-free.</p><p>Features may be modified, suspended, or discontinued at any time.</p></section>
+      <section><h2>10. Privacy</h2><p>Your use of N7X is also subject to our Privacy Policy.</p><p>By using the Service, you acknowledge that N7X may collect and process information necessary to operate, maintain, improve, and secure the Service.</p></section>
+      <section><h2>11. Cookies</h2><p>N7X may use cookies, local storage, or similar technologies to:</p><ul><li>Remember user preferences.</li><li>Improve website performance.</li><li>Analyze anonymous usage statistics.</li><li>Enhance the overall user experience.</li></ul><p>You may disable cookies through your browser settings, although doing so may affect certain features of the Service.</p></section>
+      <section><h2>12. Limitation of Liability</h2><p>To the fullest extent permitted by applicable law, N7X and its owners, developers, contributors, affiliates, and service providers shall not be liable for any indirect, incidental, special, exemplary, consequential, or punitive damages arising from or relating to the use of the Service.</p></section>
+      <section><h2>13. Indemnification</h2><p>You agree to defend, indemnify, and hold harmless N7X, its developers, affiliates, contributors, and service providers from any claims, damages, losses, liabilities, and expenses arising from:</p><ul><li>Your use of the Service.</li><li>Your violation of these Terms.</li><li>Your submitted content.</li><li>Your violation of any applicable law or the rights of another person.</li></ul></section>
+      <section><h2>14. Termination</h2><p>We may suspend, restrict, or terminate your access to N7X at any time, with or without notice, if we reasonably believe you have violated these Terms, abused the Service, or created a security or legal risk.</p><p>We may also discontinue the Service, in whole or in part, at any time.</p></section>
       <section><h2>15. Changes to These Terms</h2><p>We reserve the right to update or modify these Terms at any time.</p><p>The updated version becomes effective when posted on Nyx.</p><p>Your continued use of the Service after changes are posted constitutes your acceptance of the revised Terms.</p></section>
-      <section><h2>16. Copyright &amp; DMCA Notice</h2><p>Nyx respects the intellectual property rights of others and responds to valid notices of alleged copyright infringement in accordance with the Digital Millennium Copyright Act ("DMCA") and other applicable laws.</p><p>A copyright owner or authorized agent submitting a takedown notice must provide:</p><ul><li>A physical or electronic signature of the copyright owner or authorized agent.</li><li>Identification of the copyrighted work claimed to have been infringed.</li><li>Identification and location of the allegedly infringing material, including the relevant Nyx page or U3L.</li><li>Contact information sufficient for Nyx to reach the complaining party.</li><li>A good-faith statement that the disputed use is not authorized by the copyright owner, its agent, or the law.</li><li>A statement, made under penalty of perjury, that the notice is accurate and that the complaining party is authorized to act for the copyright owner.</li></ul><p>After receiving a valid notice through Nyx's published copyright contact, Nyx may remove or disable access to the material and notify the affected user. An affected user may submit a valid counter-notice identifying the removed material, consenting to the appropriate court jurisdiction, and stating under penalty of perjury that the material was removed because of mistake or misidentification.</p><p>Nyx may restore material when permitted by law and may suspend or terminate repeat infringers. Knowingly making a material misrepresentation in a notice or counter-notice may result in legal liability.</p></section>`;
+      <section><h2>16. Copyright &amp; DMCA Notice</h2><p>N7X respects the intellectual property rights of others and responds to valid notices of alleged copyright infringement in accordance with the Digital Millennium Copyright Act ("DMCA") and other applicable laws.</p><p>A copyright owner or authorized agent submitting a takedown notice must provide:</p><ul><li>A physical or electronic signature of the copyright owner or authorized agent.</li><li>Identification of the copyrighted work claimed to have been infringed.</li><li>Identification and location of the allegedly infringing material, including the relevant N7X page or U3L.</li><li>Contact information sufficient for N7X to reach the complaining party.</li><li>A good-faith statement that the disputed use is not authorized by the copyright owner, its agent, or the law.</li><li>A statement, made under penalty of perjury, that the notice is accurate and that the complaining party is authorized to act for the copyright owner.</li></ul><p>After receiving a valid notice through N7X's published copyright contact, N7X may remove or disable access to the material and notify the affected user. An affected user may submit a valid counter-notice identifying the removed material, consenting to the appropriate court jurisdiction, and stating under penalty of perjury that the material was removed because of mistake or misidentification.</p><p>N7X may restore material when permitted by law and may suspend or terminate repeat infringers. Knowingly making a material misrepresentation in a notice or counter-notice may result in legal liability.</p></section>`;
   }
   function nyxTermsPageMarkup(className='nyx-utility-tab nyx-terms-tab'){
-    return `<article class="${esc(className)}"><p class="utility-kicker">Nyx</p><h1>Terms of Service</h1><p class="utility-updated"><strong>Effective Date:</strong> July 30, 2026</p><p class="utility-intro">Welcome to <strong>Nyx</strong> ("Nyx," "we," "our," or "us"). By accessing or using our website, applications, or services (collectively, the "Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use the Service.</p>${nyxTermsSectionsMarkup()}</article>`;
+    return `<article class="${esc(className)}"><p class="utility-kicker">N7X</p><h1>Terms of Service</h1><p class="utility-updated"><strong>Effective Date:</strong> July 30, 2026</p><p class="utility-intro">Welcome to <strong>N7X</strong> ("N7X," "we," "our," or "us"). By accessing or using our website, applications, or services (collectively, the "Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use the Service.</p>${nyxTermsSectionsMarkup()}</article>`;
   }
   function nyxCreditsPageMarkup(className='nyx-utility-tab nyx-credits-tab'){
     return `<article class="${esc(className)}">
@@ -1939,10 +1939,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   const knownNyxOverlaySelector='.nyx-prompt-shade,.nyx-modal-shade,.nyx-download-safety-shade,.nyx-tos-gate,.nyx-release-notes-overlay,.setup-screen,.setup-panel,.lock-screen,.nyx-browser-tab-sidebar,.nyx-visual-dock,.browser-shell-settings-overlay,.nyx-dashboard-menu,.nyx-account-menu,.nyx-account-overlay,.nyx-user-profile-overlay,.nyx-profile-directory-overlay,.nyx-founder-editor-overlay,.nyx-owner-dashboard-overlay,.context-menu,[data-nyx-owned-overlay]';
   function isBrowserInjectedOverlay(node){
     if(!(node instanceof Element) || node===document.body || node===document.documentElement) return false;
-    if(node.matches('#desktop,.top-os,.window,.browser-window,.browser-body,.browser-home,#nyxStudyHubStartup,#nyxStudyHubBackground,#nyxPrivacyCover,#nyxWaveBg,#setupLaunchScreen,.nyx-prompt-shade,.nyx-modal-shade')) return false;
+    if(node.matches('#desktop,.top-os,.window,.browser-window,.browser-body,.browser-home,#nyxPrivacyCover,#nyxWaveBg,#setupLaunchScreen,.nyx-prompt-shade,.nyx-modal-shade')) return false;
     if(node.closest(knownNyxOverlaySelector)) return false;
     const frames=node.matches('iframe') ? [node] : [...node.querySelectorAll('iframe')];
-    if(frames.some(frame=>!frame.matches('#nyxStudyHubStartup,#nyxStudyHubBackground,#nyxPrivacyCover,#nyxWaveBg,.browser-body > iframe.view,iframe[title="nyx"]'))) return true;
+    if(frames.some(frame=>!frame.matches('#nyxPrivacyCover,#nyxWaveBg,.browser-body > iframe.view,iframe[title="nyx"]'))) return true;
     const resource=String(node.getAttribute('src') || node.getAttribute('href') || node.getAttribute('data-src') || '');
     if(resource && browserAdResourceSignature.test(resource)) return true;
     const text=String(node.innerText || node.textContent || '').replace(/\s+/g,' ').trim().slice(0,1200);
@@ -1982,7 +1982,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(!overlay || removed.has(overlay) || !overlay.isConnected) continue;
       removed.add(overlay);
       overlay.remove();
-      console.info('Nyx removed an ad overlay that escaped its browser tab.');
+      console.info("N7X removed an ad overlay that escaped its browser tab.");
     }
     return removed.size;
   }
@@ -1995,7 +1995,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const overlay=browserInjectedOverlayRoot(root);
       if(overlay?.isConnected){
         overlay.remove();
-        console.info('Nyx blocked an ad overlay from leaving its browser tab.');
+        console.info("N7X blocked an ad overlay from leaving its browser tab.");
       }
     };
     const inspect=records=>{
@@ -2073,9 +2073,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           <h2 id="nyxDownloadSafetyTitle">${blocked?'Download blocked':'Check this download'}</h2>
           <p class="nyx-download-safety-file">${esc(filename || 'download')}</p>
           <p class="nyx-download-safety-source">From ${esc(host)}</p>
-          <p id="nyxDownloadSafetyMessage">${esc(result?.message || 'Nyx could not verify this download.')}</p>
+          <p id="nyxDownloadSafetyMessage">${esc(result?.message || "N7X could not verify this download.")}</p>
           ${threatList}
-          <p class="nyx-download-safety-note">Nyx checked the U3L reputation only. The file bytes were not uploaded or antivirus-scanned.</p>
+          <p class="nyx-download-safety-note">N7X checked the U3L reputation only. The file bytes were not uploaded or antivirus-scanned.</p>
         </div>
         <footer>
           <button class="settings-action" data-nyx-download-cancel type="button">${blocked?'Close':'Cancel'}</button>
@@ -2094,7 +2094,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   async function nyxRequestBrowserDownload(downloadUrl,filename='',sourceUrl=''){
     const href=String(downloadUrl || '').trim();
     if(!href || /^(?:javascript|vbscript):/i.test(href)){
-      toast('Nyx blocked an invalid download address');
+      toast("N7X blocked an invalid download address");
       return false;
     }
     const displayName=nyxDownloadDisplayName(filename,href);
@@ -2103,7 +2103,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       verdict:'unverified',
       threats:[],
       fileScanned:false,
-      message:"Nyx could not identify the source U3L. The file contents were not antivirus-scanned."
+      message:"N7X could not identify the source U3L. The file contents were not antivirus-scanned."
     };
     if(/^https?:\/\//i.test(checkUrl)){
       toast('Checking download source…');
@@ -2117,7 +2117,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         if(!response.ok) throw new Error(payload.error || `Download check failed (${response.status})`);
         result=payload;
       }catch(error){
-        console.warn('Nyx download safety check failed:',error?.message || error);
+        console.warn("N7X download safety check failed:",error?.message || error);
         result={
           verdict:'unverified',
           threats:[],
@@ -2256,7 +2256,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         status.classList.add('error');
         status.textContent='Eruda could not load. Check your connection and reopen this tab.';
       }
-      console.error('Nyx Eruda failed to load',error);
+      console.error("N7X Eruda failed to load",error);
     }
   }
   const engines = {
@@ -2339,15 +2339,15 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       };
       let result=await send(false);
       if(result.response.status===401) result=await send(true);
-      if(!result.response.ok || result.payload?.stored!==true) throw new Error(result.payload?.error || 'Nyx did not confirm the search-history write.');
+      if(!result.response.ok || result.payload?.stored!==true) throw new Error(result.payload?.error || "N7X did not confirm the search-history write.");
       if(!store.get('nyx.searchHistoryNoticeSeen',false)){
         store.set('nyx.searchHistoryNoticeSeen',true);
         toast('Signed-in searches are retained for 30 days and visible to authorized staff.');
       }
       return true;
     }catch(error){
-      console.warn('Nyx search history could not save:',error?.message || error);
-      toast("Nyx could not save this s3arc4 to S3ARC4 history.");
+      console.warn("N7X search history could not save:",error?.message || error);
+      toast("N7X could not save this s3arc4 to S3ARC4 history.");
       return false;
     }
   }
@@ -2403,8 +2403,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     violet: 'linear-gradient(135deg,#020617 0%,#312e81 48%,#0f172a 100%)'
   };
   const bgNames = {
-    dragon:'Nyx Blue',
-    lofiPurple:'Nyx Blue',
+    dragon:"N7X Blue",
+    lofiPurple:"N7X Blue",
     sunset:'Sunset Deer',
     yosemiteFog:'Yosemite Fog',
     yosemiteGold:'Yosemite Gold',
@@ -2597,33 +2597,26 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
 
   const favicons = {
-    nyx:'./assets/icons/nyx-cat-moon-small.svg?v=3',
-    studyhub:'./assets/icons/studyhub.svg?v=20260903-cap-v3',
-    classroom:`data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23fbbc04'/%3E%3Crect x='8' y='10' width='48' height='40' rx='3' fill='%2334a853'/%3E%3Ccircle cx='32' cy='25' r='6' fill='white'/%3E%3Cpath d='M18 42c4-9 20-9 24 0' fill='white'/%3E%3C/svg%3E`,
+    nyx:'./assets/icons/nyx-cat-moon-small.svg?v=3',    classroom:`data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23fbbc04'/%3E%3Crect x='8' y='10' width='48' height='40' rx='3' fill='%2334a853'/%3E%3Ccircle cx='32' cy='25' r='6' fill='white'/%3E%3Cpath d='M18 42c4-9 20-9 24 0' fill='white'/%3E%3C/svg%3E`,
     drive:'./assets/icons/googledrive-logo.webp',
     google:'./assets/icons/google-logo.png',
     classlink:'./assets/icons/classlink-logo.png'
   };
-  const nyxTabTitle = '\u057c\u028f\u04fc';
-  const studyHubTabTitle = 'StudyHub — Where Education Is Achievable';
-  const studyHubTabFavicon = './assets/icons/studyhub.svg?v=20260903-cap-v3';
+  const nyxTabTitle = 'N7X';
   let nyxTabFavicon = './assets/icons/nyx-cat-moon-small.svg?v=3';
   const nyxFaviconHref = () => $('appFavicon')?.href || nyxTabFavicon;
-  function migrateStudyHubTabIdentity(){
-    if(store.text('nyx.tabIdentityVersion','')==='studyhub-cap-v3') return;
-    const savedPreset=store.text('nyx.logo','').trim();
-    const savedTitle=store.text('nyx.tabTitle','').trim();
-    const savedFavicon=store.text('nyx.tabFavicon','').trim();
-    const usesStudyHubIdentity=(!savedPreset || savedPreset==='nyx')
-      && (!savedTitle || savedTitle===studyHubTabTitle)
-      && (!savedFavicon || /(?:^|\/)assets\/icons\/studyhub\.svg(?:[?#].*)?$/i.test(savedFavicon));
-    if(usesStudyHubIdentity){
-      store.setText('nyx.tabTitle',studyHubTabTitle);
-      store.setText('nyx.tabFavicon',studyHubTabFavicon);
+  function migrateTabIdentity(){
+    const title=store.text('nyx.tabTitle','').trim();
+    const icon=store.text('nyx.tabFavicon','').trim();
+    const preset=store.text('nyx.logo','').trim();
+    const retired=/studyhub|delta\s*math/i;
+    if(!title || retired.test(title) || retired.test(icon) || retired.test(preset) || /^(?:Nyx|NYX|ռʏӼ)$/.test(title)){
+      store.setText('nyx.logo','nyx');
+      store.setText('nyx.tabTitle',nyxTabTitle);
+      store.setText('nyx.tabFavicon',nyxTabFavicon);
     }
-    store.setText('nyx.tabIdentityVersion','studyhub-cap-v3');
   }
-  migrateStudyHubTabIdentity();
+  migrateTabIdentity();
   async function applyNyxLogoTheme(theme=store.text('nyx.theme','default')){
     if(!window.NyxLogo) return;
     try{
@@ -2651,7 +2644,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       activeBrowser?.renderTabs?.();
       if(nyxPresetSelected) setCurrentTabCloak(store.text('nyx.tabTitle',nyxTabTitle),compactUrl,false);
     }catch(error){
-      console.warn('Nyx logo theme could not be applied:',error);
+      console.warn("N7X logo theme could not be applied:",error);
     }
   }
   function makeIcon(label,bg='#111827',fg='#fff'){
@@ -2846,13 +2839,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function titleForUrl(url){
     const raw=String(url || '').trim();
     if(!raw || raw==='about:blank') return 'New Tab';
-    if(/(?:^|\/)apps\/chat(?:\/|$)/i.test(raw)) return 'Nyx Chat';
+    if(/(?:^|\/)apps\/chat(?:\/|$)/i.test(raw)) return "N7X Chat";
     if(/(?:^|\/)apps\/link-checker(?:\/|$)/i.test(raw)) return 'Link Checker';
     if(/(?:^|\/)apps\/link-generator(?:\/|$)/i.test(raw)) return 'Link Generator';
-    if(/(?:^|\/)apps\/api-keys(?:\/|$)/i.test(raw)) return 'Nyx API Keys';
+    if(/(?:^|\/)apps\/api-keys(?:\/|$)/i.test(raw)) return "N7X API Keys";
     if(/(?:^|\/)apps\/code-studio(?:\/|$)/i.test(raw)) return 'Code Sandbox';
-    if(/(?:^|\/)apps\/code-tutorials(?:\/|$)/i.test(raw)) return 'Nyx Code Tutorials';
-    if(raw==='nyx://ai') return "Nyx A1";
+    if(/(?:^|\/)apps\/code-tutorials(?:\/|$)/i.test(raw)) return "N7X Code Tutorials";
+    if(raw==='nyx://ai') return "N7X A1";
     if(raw.startsWith('nyx://')) return raw.replace('nyx://','nyx ');
     if(raw.startsWith('assets/games/') || raw.startsWith('assets/ugs/') || raw.startsWith('/assets/games/') || raw.startsWith('/assets/ugs/')) return 'GAMES';
     try{return new URL(raw,location.href).hostname.replace(/^www\./,'') || 'New Tab'}catch{return 'New Tab'}
@@ -2906,7 +2899,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   const proxyPrivacyGuardSource=`(() => {
     if (typeof globalThis === "undefined" || globalThis.__nyxProxyPrivacyInstalled) return;
     globalThis.__nyxProxyPrivacyInstalled = true;
-    const denied = Object.freeze({ code: 1, message: "Location access is disabled in Nyx private tabs." });
+    const denied = Object.freeze({ code: 1, message: "Location access is disabled in N7X private tabs." });
     const fail = callback => {
       if (typeof callback === "function") queueMicrotask(() => callback(denied));
     };
@@ -3788,9 +3781,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       dock=document.createElement('aside');
       dock.className='nyx-visual-dock';
       dock.dataset.nyxVisualDock='';
-      dock.setAttribute('aria-label','Nyx navigation');
-      dock.innerHTML=`<div class="nyx-visual-dock-head"><a class="nyx-rail-brand" href="#" data-browser-shell-home-nav aria-label="Nyx home"><img src="/assets/icons/nyx-cat-moon-small.svg?v=3" alt=""><span>NYX</span></a><button class="nyx-visual-dock-expand" data-nyx-dock-expand type="button" aria-expanded="true" aria-label="Collapse sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 3v18"/><path data-sidebar-arrow d="m15 8-4 4 4 4"/></svg></button></div>
-      <nav aria-label="Nyx destinations">
+      dock.setAttribute('aria-label',"N7X navigation");
+      dock.innerHTML=`<div class="nyx-visual-dock-head"><a class="nyx-rail-brand" href="#" data-browser-shell-home-nav aria-label="N7X home"><img src="/assets/icons/nyx-cat-moon-small.svg?v=3" alt=""><span>N7X</span></a><button class="nyx-visual-dock-expand" data-nyx-dock-expand type="button" aria-expanded="true" aria-label="Collapse sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 3v18"/><path data-sidebar-arrow d="m15 8-4 4 4 4"/></svg></button></div>
+      <nav aria-label="N7X destinations">
         <button type="button" data-nyx-dock-item="home" data-browser-shell-home-nav aria-label="Home">${nyxDashboardIcon('home')}<span>Home</span></button>
         <button type="button" data-nyx-dock-item="games" data-app-url="/assets/games/" aria-label="Games">${nyxDashboardIcon('games')}<span>Games</span></button>
         <button type="button" data-nyx-dock-item="music" data-app-url="/apps/nyxify/" aria-label="Music">${nyxDashboardIcon('music')}<span>Music</span></button>
@@ -3800,7 +3793,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         <button type="button" data-nyx-dock-item="vms" data-app-url="/apps/nyxcloud/" aria-label="VMs" title="VMs" hidden style="display:none"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="13" rx="2"/><path d="M8 21h8m-4-5v5"/></svg><span>VMs</span></button>
         <button type="button" data-nyx-dock-item="apps" data-app-url="nyx://apps" aria-label="Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="7" height="7" rx="1"/><rect x="3" y="16" width="7" height="6" rx="1"/><rect x="12" y="14" width="7" height="8" rx="1"/><rect x="14" y="2" width="7" height="7" rx="1"/></svg><span>Apps</span></button>
       </nav>
-      <div class="nyx-rail-footer"><a class="nyx-rail-discord" data-nyx-trusted-external="discord" data-nyx-dock-item="discord" href="https://discord.com/invite/cAdjYAJs3u" target="_blank" rel="noopener noreferrer" aria-label="Join the Nyx Discord server (opens in a new tab)" title="Join our Discord"><i class="nyx-rail-discord-icon" aria-hidden="true"></i><span>Discord</span></a><button type="button" data-nyx-dock-item="settings" data-open="settings" aria-label="Settings">${nyxDashboardIcon('settings')}<span>Settings</span></button><div class="nyx-visual-dock-profile" data-nyx-profile-slot></div></div>`;
+      <div class="nyx-rail-footer"><a class="nyx-rail-discord" data-nyx-trusted-external="discord" data-nyx-dock-item="discord" href="https://discord.com/invite/cAdjYAJs3u" target="_blank" rel="noopener noreferrer" aria-label="Join the N7X Discord server (opens in a new tab)" title="Join our Discord"><i class="nyx-rail-discord-icon" aria-hidden="true"></i><span>Discord</span></a><button type="button" data-nyx-dock-item="settings" data-open="settings" aria-label="Settings">${nyxDashboardIcon('settings')}<span>Settings</span></button><div class="nyx-visual-dock-profile" data-nyx-profile-slot></div></div>`;
       document.body.appendChild(dock);
       watchNyxVisualDock();
       if(navigator.getBattery){
@@ -3895,8 +3888,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const secureIndicator=document.createElement('span');
         secureIndicator.className='browser-mode-secure-indicator';
         secureIndicator.setAttribute('role','img');
-        secureIndicator.setAttribute('aria-label','Nyx page');
-        secureIndicator.title='Nyx page';
+        secureIndicator.setAttribute('aria-label',"N7X page");
+        secureIndicator.title="N7X page";
         secureIndicator.innerHTML='<svg viewBox="0 0 24 24"><rect x="6" y="10" width="12" height="9" rx="2"></rect><path d="M9 10V7a3 3 0 0 1 6 0v3"></path></svg>';
         shellAddress.replaceChildren(backButton,forwardButton,reloadButton,secureIndicator,urlField,bookmarkButton,menuButton);
       }
@@ -4086,13 +4079,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(String(url).trim().toLowerCase()==='nyx://settings') return 'Settings';
     if(String(url).trim().toLowerCase()==='nyx://terms') return 'Terms Of Service';
     if(String(url).trim().toLowerCase()==='nyx://developer') return 'Developer Console';
-    if(/^nyx:\/\/(?:about|credits)$/i.test(String(url).trim())) return 'About Nyx';
+    if(/^nyx:\/\/(?:about|credits)$/i.test(String(url).trim())) return "About N7X";
     try{
       const parsed=new URL(browserShellSourceUrl(url),location.href);
       if(parsed.origin===location.origin && parsed.pathname==='/search') return parsed.searchParams.get('q') || "S3ARC4";
       if(parsed.origin===location.origin && parsed.pathname.includes('/assets/games/')) return 'GAMES';
       if(parsed.origin===location.origin && parsed.pathname.includes('/assets/ugs/')) return 'GAMES';
-      if(parsed.origin===location.origin && parsed.pathname.includes('/apps/chat/')) return 'Nyx Chat';
+      if(parsed.origin===location.origin && parsed.pathname.includes('/apps/chat/')) return "N7X Chat";
       if(parsed.origin===location.origin && parsed.pathname.includes('/apps/cloud-gaming/')) return 'Cloud Gaming';
       if(parsed.origin===location.origin && parsed.pathname.includes('/apps/link-checker/')) return 'Link Checker';
       if(parsed.origin===location.origin && parsed.pathname.includes('/apps/link-generator/')) return 'Link Generator';
@@ -4895,7 +4888,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const label=state==='secure' ? 'Secure HTTPS connection'
       : state==='insecure' ? 'Connection is not secure'
       : state==='unknown' ? 'Connection security is not verified'
-      : 'Nyx page';
+      : "N7X page";
     indicator.dataset.securityState=state;
     indicator.setAttribute('aria-label',label);
     indicator.title=label;
@@ -4957,7 +4950,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(contentStateChanged) queueMicrotask(()=>syncThemeVantaBackgrounds());
     if(home){
       home.style.display='';
-      home.innerHTML='<span class="browser-home-icon" aria-hidden="true"></span><span class="browser-home-label">Nyx</span>';
+      home.innerHTML="<span class=\"browser-home-icon\" aria-hidden=\"true\"></span><span class=\"browser-home-label\">N7X</span>";
       delete home.dataset.browserShellTab;
       home.title='Home';
       home.classList.toggle('active',active.title==='Home' && !active.url);
@@ -5285,7 +5278,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
 
   function browserShellSettingsMarkup(presetTiles){
-    const savedTitle=esc(store.text('nyx.tabTitle',document.title || 'ռʏӼ'));
+    const savedTitle=esc(store.text('nyx.tabTitle',document.title || "N7X"));
     const savedFavicon=esc(store.text('nyx.tabFavicon',nyxFaviconHref()));
     const currentPreset=esc(store.text('nyx.logo','nyx'));
     const engine=esc(store.text('nyx.engine','duckduckgo'));
@@ -5296,10 +5289,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const effect=esc(store.text('nyx.visualEffect','none'));
     const effectSpeed=esc(store.text('nyx.visualEffectSpeed','1.1'));
     const effectAmount=esc(store.text('nyx.visualEffectAmount','16'));
-    return `<section class="settings-app settings-single-pane browser-only-settings"><main class="settings-main"><h1>Browser Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset==='nyx'?'selected':''}>ռʏӼ</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original tab redirect U3L"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Auto Cloak</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>S3ARC4 Engine</h2><select class="settings-select" data-browser-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>DuckDuckGo</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Proxy Engine</h2><select class="settings-select" data-browser-mode-select><option value="auto" ${browserMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${browserMode==='scramjet'?'selected':''}>Scrapmmy</option><option value="ultraviolet" ${browserMode==='ultraviolet'?'selected':''}>U1TR4V10L$T</option></select></section><section class="settings-block"><h2>HTTP bridge</h2><p>Recommended for devices or networks that block WebSockets. Turn off to use direct WebSocket connections. Applies to the default relay; custom relays keep their saved choice. Reload website tabs after changing.</p><div class="settings-row"><span>Use HTTP bridge</span><button class="settings-action ${store.get('nyx.httpBridge',true)?'on':''}" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-browser-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Eppy over Relay</option><option value="wisp" ${transport==='wisp'?'selected':''}>Relay endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Libby over Relay</option></select><div class="settings-actions"><button class="settings-action" data-browser-settings-save type="button">Save Browser Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
+    return `<section class="settings-app settings-single-pane browser-only-settings"><main class="settings-main"><h1>Browser Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset==='nyx'?'selected':''}>N7X</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original tab redirect U3L"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Auto Cloak</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>S3ARC4 Engine</h2><select class="settings-select" data-browser-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>DuckDuckGo</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Proxy Engine</h2><select class="settings-select" data-browser-mode-select><option value="auto" ${browserMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${browserMode==='scramjet'?'selected':''}>Scrapmmy</option><option value="ultraviolet" ${browserMode==='ultraviolet'?'selected':''}>U1TR4V10L$T</option></select></section><section class="settings-block"><h2>HTTP bridge</h2><p>Recommended for devices or networks that block WebSockets. Turn off to use direct WebSocket connections. Applies to the default relay; custom relays keep their saved choice. Reload website tabs after changing.</p><div class="settings-row"><span>Use HTTP bridge</span><button class="settings-action ${store.get('nyx.httpBridge',true)?'on':''}" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-browser-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Eppy over Relay</option><option value="wisp" ${transport==='wisp'?'selected':''}>Relay endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Libby over Relay</option></select><div class="settings-actions"><button class="settings-action" data-browser-settings-save type="button">Save Browser Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
   }
   function browserShellPresetTiles(){
-    return `<button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${nyxTabFavicon}"><span>ռʏӼ tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
+    return `<button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${nyxTabFavicon}"><span>N7X tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
   }
   function saveBrowserShellSettings(root=document){
     const engine=root.querySelector('[data-browser-engine]');
@@ -5354,13 +5347,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       advanced:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"/></svg>'
     };
     const definitions=[
-      ['general','General',settingsIcons.advanced,'Choose Nyx defaults and everyday behavior.',['nyx','home design','search engine']],
-      ['appearance','Appearance',settingsIcons.customize,'Make Nyx feel like yours.',['theme','homepage','sidebar','custom theme','effects','wallpapers','line waves','performance']],
+      ['general','General',settingsIcons.advanced,"Choose N7X defaults and everyday behavior.",['nyx','home design','search engine']],
+      ['appearance','Appearance',settingsIcons.customize,"Make N7X feel like yours.",['theme','homepage','sidebar','custom theme','effects','wallpapers','line waves','performance']],
       ['browser','Browser',settingsIcons.browsing,'Manage tabs, search, and browsing controls.',['tab cloak','preset cloak','cloaking','tab design']],
       ['privacy','Privacy',settingsIcons.privacy,'Keep your browsing surface private and protected.',['private tabs','popup protection']],
-      ['proxy','Proxy',settingsIcons.browsing,'Choose how Nyx reaches the web.',['proxy engine','http bridge','transport','wisp url']],
+      ['proxy','Proxy',settingsIcons.browsing,"Choose how N7X reaches the web.",['proxy engine','http bridge','transport','wisp url']],
       ['accounts','Accounts',settingsIcons.account,'Manage your identity, cloud saves, and staff tools.',['account','cloud saves','owner dashboard','founder profile']],
-      ['data','Data',settingsIcons.advanced,'Move, download, or reset local Nyx data.',['data transfer','clear cache']],
+      ['data','Data',settingsIcons.advanced,"Move, download, or reset local N7X data.",['data transfer','clear cache']],
       ['advanced','Advanced',settingsIcons.advanced,'Configure power-user browser controls.',['panic key','font']],
       ['credits','Credits',settingsIcons.account,'Thanks to the people who help make Nyx.',[]]
     ];
@@ -5438,7 +5431,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       if(categoryFor(title)==='browser'){
         block.classList.add('nyx-browser-settings-card');
-        const labels=[['[data-tab-title]','Tab title'],['[data-tab-favicon-file]','Tab icon'],['[data-cloak-type]','Open Nyx in'],['[data-cloak-redirect-url]','Redirect address']];
+        const labels=[['[data-tab-title]','Tab title'],['[data-tab-favicon-file]','Tab icon'],['[data-cloak-type]',"Open N7X in"],['[data-cloak-redirect-url]','Redirect address']];
         labels.forEach(([selector,text])=>{
           const field=controls.querySelector(selector);
           if(!field)return;
@@ -5472,7 +5465,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const about=document.createElement('section');
     about.className='settings-block';
     about.dataset.settingsSearch='about nyx version support reset cache';
-    about.innerHTML='<div class="nyx-settings-copy"><h2>Nyx</h2><p>Nyx Learning browser workspace. Settings are stored on this device unless they belong to your signed-in account.</p></div><div class="nyx-settings-control"><p class="nyx-settings-version">Version 2</p><div class="settings-actions"><button class="settings-action" data-clear-nyx-cache type="button">Reset local settings</button></div></div>';
+    about.innerHTML="<div class=\"nyx-settings-copy\"><h2>N7X</h2><p>N7X Learning browser workspace. Settings are stored on this device unless they belong to your signed-in account.</p></div><div class=\"nyx-settings-control\"><p class=\"nyx-settings-version\">Version 2</p><div class=\"settings-actions\"><button class=\"settings-action\" data-clear-nyx-cache type=\"button\">Reset local settings</button></div></div>";
     categories.get('general').querySelector('.nyx-settings-group').appendChild(about);
 
     const credits=document.createElement('section');
@@ -5486,7 +5479,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     side.innerHTML=`<label class="nyx-settings-filter"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input type="search" placeholder="Filter settings" aria-label="Filter settings"></label><nav class="nyx-settings-nav" aria-label="Settings categories">${definitions.map(([key,label,icon])=>`<button class="${key==='appearance'?'active':''}" data-settings-category-button="${key}" type="button"><span aria-hidden="true">${icon}</span>${label}</button>`).join('')}</nav>`;
     const header=document.createElement('header');
     header.className='nyx-settings-header';
-    header.innerHTML='<h1>Appearance</h1><p>Customize Nyx’s look and visual experience.</p>';
+    header.innerHTML="<h1>Appearance</h1><p>Customize N7X’s look and visual experience.</p>";
     app.prepend(side);
     main.prepend(header);
     categories.forEach(section=>main.appendChild(section));
@@ -5504,7 +5497,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       buttons.forEach(button=>button.classList.toggle('active',button.dataset.settingsCategoryButton===key));
       const definition=definitions.find(([category])=>category===key);
       title.textContent=definition?.[1] || 'Settings';
-      header.querySelector('p').textContent=definition?.[3] || 'Adjust your Nyx preferences.';
+      header.querySelector('p').textContent=definition?.[3] || "Adjust your N7X preferences.";
       main.scrollTop=0;
     };
     buttons.forEach(button=>button.addEventListener('click',()=>activate(button.dataset.settingsCategoryButton)));
@@ -5565,11 +5558,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const customWisp=storedCustomWispUrl();
       const wispBlock=document.createElement('section');
       wispBlock.className='settings-block nyx-wisp-setting';
-      wispBlock.innerHTML=`<h2>Wisp U3L</h2><p>Use a custom Wisp relay for Nyx proxy transports. Only use a relay you trust because it carries your proxied traffic.</p><div class="settings-form-row"><input class="settings-input" data-browser-wisp-url type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(customWisp)}" placeholder="${esc(defaultWispUrl())}" aria-label="Custom Wisp U3L"></div><p class="settings-hint" data-browser-wisp-status>${customWisp ? `Custom relay: ${esc(customWisp)}` : `Default relay: ${esc(defaultWispUrl())}`}</p><div class="settings-actions"><button class="settings-action" data-browser-wisp-save type="button">Save Wisp U3L</button><button class="settings-action" data-browser-wisp-reset type="button">Use default</button></div>`;
+      wispBlock.innerHTML=`<h2>Wisp U3L</h2><p>Use a custom Wisp relay for N7X proxy transports. Only use a relay you trust because it carries your proxied traffic.</p><div class="settings-form-row"><input class="settings-input" data-browser-wisp-url type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(customWisp)}" placeholder="${esc(defaultWispUrl())}" aria-label="Custom Wisp U3L"></div><p class="settings-hint" data-browser-wisp-status>${customWisp ? `Custom relay: ${esc(customWisp)}` : `Default relay: ${esc(defaultWispUrl())}`}</p><div class="settings-actions"><button class="settings-action" data-browser-wisp-save type="button">Save Wisp U3L</button><button class="settings-action" data-browser-wisp-reset type="button">Use default</button></div>`;
       transportBlock.after(wispBlock);
       const transferBlock=document.createElement('section');
       transferBlock.className='settings-block nyx-data-transfer-setting';
-      transferBlock.innerHTML="<h2>Data Transfer</h2><p>Move supported game saves, A1 conversations, utility history, shortcuts, and safe device preferences between Nyx links. Authentication sessions, personal API keys, and custom relay credentials are never included.</p><p class=\"settings-hint\" data-nyx-data-transfer-status>Export on this link, then import the downloaded JSON backup on another Nyx link.</p><input data-nyx-data-import-file type=\"file\" accept=\"application/json,.json\" hidden><div class=\"settings-actions\"><button class=\"settings-action\" data-nyx-data-export type=\"button\">Export data</button><button class=\"settings-action\" data-nyx-data-import type=\"button\">Import data</button><button class=\"settings-action\" data-nyx-data-reload type=\"button\" hidden>Reload Nyx</button></div><p class=\"settings-hint\">Backups can contain private browsing, game, and conversation data. Keep the file private.</p>";
+      transferBlock.innerHTML="<h2>Data Transfer</h2><p>Move supported game saves, A1 conversations, utility history, shortcuts, and safe device preferences between N7X links. Authentication sessions, personal API keys, and custom relay credentials are never included.</p><p class=\"settings-hint\" data-nyx-data-transfer-status>Export on this link, then import the downloaded JSON backup on another N7X link.</p><input data-nyx-data-import-file type=\"file\" accept=\"application/json,.json\" hidden><div class=\"settings-actions\"><button class=\"settings-action\" data-nyx-data-export type=\"button\">Export data</button><button class=\"settings-action\" data-nyx-data-import type=\"button\">Import data</button><button class=\"settings-action\" data-nyx-data-reload type=\"button\" hidden>Reload N7X</button></div><p class=\"settings-hint\">Backups can contain private browsing, game, and conversation data. Keep the file private.</p>";
       wispBlock.after(transferBlock);
     }
     const effectBlock=overlay.querySelector('[data-effect-value]')?.closest('.settings-block');
@@ -5584,7 +5577,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       effectBlock.before(fontBlock);
       const homepageBlock=document.createElement('section');
       homepageBlock.className='settings-block nyx-homepage-appearance-setting';
-      homepageBlock.innerHTML='<h2>Homepage</h2><p>Keep new tabs focused on the Nyx title and wallpaper.</p><div class="settings-row"><span>New tab opens</span><strong>Home</strong></div>';
+      homepageBlock.innerHTML="<h2>Homepage</h2><p>Keep new tabs focused on the N7X title and wallpaper.</p><div class=\"settings-row\"><span>New tab opens</span><strong>Home</strong></div>";
 
       const lagBlock=document.createElement('section');
       lagBlock.className='settings-block';
@@ -5623,7 +5616,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const customThemeBlock=document.createElement('section');
       customThemeBlock.className='settings-block nyx-custom-theme-maker';
       const customColor=nyxThemeHex(store.text('nyx.customThemeColor',nyxCustomThemeDefaults.base));
-      customThemeBlock.innerHTML=`<h2>Custom Theme</h2><p>Choose one color and Nyx generates the canvas, panels, borders, and accents from it.</p><div class="nyx-custom-theme-controls"><label class="nyx-custom-theme-picker"><input type="color" value="${customColor}" data-custom-theme-color aria-label="Custom theme color"><span class="nyx-custom-theme-swatch" data-custom-theme-swatch style="--nyx-swatch:${customColor}"></span></label><input class="settings-input" value="${customColor}" data-custom-theme-hex aria-label="Custom theme color hex" maxlength="7" spellcheck="false"></div><div class="settings-actions"><button class="settings-action" data-apply-custom-theme type="button">Apply Custom Theme</button><button class="settings-action" data-reset-custom-theme type="button">Reset Color</button></div>`;
+      customThemeBlock.innerHTML=`<h2>Custom Theme</h2><p>Choose one color and N7X generates the canvas, panels, borders, and accents from it.</p><div class="nyx-custom-theme-controls"><label class="nyx-custom-theme-picker"><input type="color" value="${customColor}" data-custom-theme-color aria-label="Custom theme color"><span class="nyx-custom-theme-swatch" data-custom-theme-swatch style="--nyx-swatch:${customColor}"></span></label><input class="settings-input" value="${customColor}" data-custom-theme-hex aria-label="Custom theme color hex" maxlength="7" spellcheck="false"></div><div class="settings-actions"><button class="settings-action" data-apply-custom-theme type="button">Apply Custom Theme</button><button class="settings-action" data-reset-custom-theme type="button">Reset Color</button></div>`;
       const founderProfileBlock=document.createElement('section');
       founderProfileBlock.className='settings-block';
       founderProfileBlock.hidden=true;
@@ -5638,10 +5631,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       accountBlock.className='settings-block';
       accountBlock.hidden=true;
       accountBlock.dataset.founderAccountCard='';
-      accountBlock.innerHTML='<h2><button class="nyx-account-settings-link" data-open-nyx-account-settings type="button">Account</button></h2><p data-founder-account-status>Sign in to manage your Nyx account.</p><div class="settings-actions"><button class="settings-action" data-open-nyx-account type="button">Create or sign in</button><button class="settings-action" data-open-nyx-profile type="button" hidden>Edit account</button><button class="settings-action" data-nyx-account-sign-out type="button" hidden>Sign out</button></div>';
+      accountBlock.innerHTML="<h2><button class=\"nyx-account-settings-link\" data-open-nyx-account-settings type=\"button\">Account</button></h2><p data-founder-account-status>Sign in to manage your N7X account.</p><div class=\"settings-actions\"><button class=\"settings-action\" data-open-nyx-account type=\"button\">Create or sign in</button><button class=\"settings-action\" data-open-nyx-profile type=\"button\" hidden>Edit account</button><button class=\"settings-action\" data-nyx-account-sign-out type=\"button\" hidden>Sign out</button></div>";
       const cloudSaveBlock=document.createElement('section');
       cloudSaveBlock.className='settings-block';
-      cloudSaveBlock.innerHTML='<h2>Cloud Saves</h2><p data-nyx-cloud-save-status>Sign in to sync supported game progress and Nyx preferences.</p>';
+      cloudSaveBlock.innerHTML="<h2>Cloud Saves</h2><p data-nyx-cloud-save-status>Sign in to sync supported game progress and N7X preferences.</p>";
       const resetBlock=document.createElement('section');
       resetBlock.className='settings-block';
       resetBlock.innerHTML=`<h2>Clear Cache</h2><p>Removes cookies, cache files, saved settings, proxy storage, and service workers, then reloads nyx like a fresh install.</p><div class="settings-actions"><button class="settings-action danger-action" data-clear-nyx-cache type="button">Clear Cache and Reset</button></div>`;
@@ -5935,7 +5928,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(!tab) return false;
     if(/^ai$/i.test(String(name || ''))){
       tab.url='nyx://ai';
-      tab.title="Nyx A1";
+      tab.title="N7X A1";
       tab.icon=favicons.nyx;
       state.win.classList.remove('internal-clear','browser-blank');
       tab.frame.classList.remove('transparent-internal-page');
@@ -5947,7 +5940,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       updateBrowserShellLocation(tab.url);
       return true;
     }
-    const presetTiles=`<button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${favicons.nyx}"><span>ռʏӼ tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
+    const presetTiles=`<button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${favicons.nyx}"><span>N7X tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
     const utilityPageStyle=`
       html,body{min-height:100%!important;background:#0a1220!important;color:#eaf2ff!important}
       .nyx-utility-tab{width:min(860px,calc(100vw - 44px));min-height:100vh;margin:0 auto;padding:clamp(34px,6vw,72px) clamp(22px,5vw,58px) 90px!important;background:transparent!important;color:#eaf2ff!important}
@@ -6002,13 +5995,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       .nyx-founder-effect-bubbles .nyx-founder-profile-effect{display:block;opacity:.72;background-image:radial-gradient(circle,transparent 0 5px,rgba(255,255,255,.58) 6px 7px,transparent 8px),radial-gradient(circle,transparent 0 9px,color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 72%,#fff) 10px 11px,transparent 12px),radial-gradient(circle,transparent 0 13px,rgba(213,243,255,.5) 14px 15px,transparent 16px);background-size:93px 131px,157px 191px,229px 271px;background-position:9px 120%,62px 135%,133px 150%;mix-blend-mode:screen;filter:drop-shadow(0 0 4px rgba(207,239,255,.55));animation:nyx-founder-bubbles 10s linear infinite}
       @keyframes nyx-founder-name-gradient{0%,100%{background-position:0 50%}50%{background-position:100% 50%}}@keyframes nyx-founder-name-neon{0%,100%{filter:brightness(.9)}50%{filter:brightness(1.28)}}@keyframes nyx-founder-name-pop{0%,82%,100%{transform:translateY(0) scale(1)}88%{transform:translateY(-2px) scale(1.035)}93%{transform:translateY(0) scale(.985)}}@keyframes nyx-founder-sparkle{to{background-position:150px -150px,-193px -193px,221px -221px,-169px 169px,247px -247px}}@keyframes nyx-founder-aurora{50%{background-position:100% 0}}@keyframes nyx-founder-holographic{to{background-position:250% 0}}@keyframes nyx-founder-fireflies{50%{background-position:35px -54px;transform:translateY(-10px)}}@keyframes nyx-founder-cosmic-dust{to{background-position:0 0,127px -149px,-181px -167px,211px -193px,-157px 223px,239px -179px}}@keyframes nyx-founder-electric-storm{0%,16%,18%,55%,57%,100%{opacity:.08}17%,56%{opacity:.88}17.4%,56.4%{opacity:.28}17.8%,56.8%{opacity:.72}40%{background-position:-50% 90%,140% -20%}}@keyframes nyx-founder-meteor-shower{to{background-position:18% 260px,72% 320px,38% 300px}}@keyframes nyx-founder-cyber-grid{to{background-position:0 68px,68px 0,0 0}}@keyframes nyx-founder-plasma{to{transform:rotate(360deg) scale(1.06)}}@keyframes nyx-founder-snowfall{to{background-position:12px 650px,63px 620px,116px 590px}}@keyframes nyx-founder-embers{to{background-position:18px -280px,56px -370px,174px -450px}}@keyframes nyx-founder-bubbles{to{background-position:31px -290px,39px -390px,178px -510px}}@keyframes nyx-founder-decoration-orbit{to{transform:rotate(360deg)}}@keyframes nyx-founder-decoration-twinkle{0%,100%{opacity:.55;filter:brightness(.85)}50%{opacity:1;filter:brightness(1.35)}}@media(prefers-reduced-motion:reduce){.nyx-founder-profile-effect,.nyx-avatar-decoration,.nyx-styled-display-name{animation:none!important}}
     `;
-    const terminalPageScript=`(()=>{const output=document.querySelector('[data-nyx-terminal-output]');const input=document.querySelector('[data-nyx-terminal-input]');const write=(text,type='')=>{const row=document.createElement('div');row.className='nyx-terminal-line'+(type?' '+type:'');row.textContent=String(text);output.appendChild(row);output.scrollTop=output.scrollHeight};const run=raw=>{const command=String(raw||'').trim();if(!command)return;write('nyx> '+command,'command');const name=command.toLowerCase();if(name==='clear'){output.textContent='';return}if(name==='help'){write('Commands: help, status, theme, origin, storage, date, clear');return}if(name==='status'){write('Nyx is '+(navigator.onLine?'online':'offline')+' · '+(navigator.platform||'browser'));return}if(name==='theme'){write('Theme: '+(document.body.className.match(/theme-([^ ]+)/)?.[1]||'default'));return}if(name==='origin'){write('Origin: '+parent.location.origin);return}if(name==='storage'){write('Local settings entries: '+localStorage.length);return}if(name==='date'){write(new Date().toLocaleString());return}write('Unknown command: '+command+'. Type "help" for the command list.','error')};write('Nyx Developer Console');write('Type "help" to list commands. Browser DevTools cannot be opened by a webpage.');document.querySelector('[data-nyx-terminal-form]')?.addEventListener('submit',event=>{event.preventDefault();run(input?.value);if(input)input.value=''});setTimeout(()=>input?.focus(),50)})();`;
+    const terminalPageScript=`(()=>{const output=document.querySelector('[data-nyx-terminal-output]');const input=document.querySelector('[data-nyx-terminal-input]');const write=(text,type='')=>{const row=document.createElement('div');row.className='nyx-terminal-line'+(type?' '+type:'');row.textContent=String(text);output.appendChild(row);output.scrollTop=output.scrollHeight};const run=raw=>{const command=String(raw||'').trim();if(!command)return;write('nyx> '+command,'command');const name=command.toLowerCase();if(name==='clear'){output.textContent='';return}if(name==='help'){write('Commands: help, status, theme, origin, storage, date, clear');return}if(name==='status'){write('N7X is '+(navigator.onLine?'online':'offline')+' · '+(navigator.platform||'browser'));return}if(name==='theme'){write('Theme: '+(document.body.className.match(/theme-([^ ]+)/)?.[1]||'default'));return}if(name==='origin'){write('Origin: '+parent.location.origin);return}if(name==='storage'){write('Local settings entries: '+localStorage.length);return}if(name==='date'){write(new Date().toLocaleString());return}write('Unknown command: '+command+'. Type "help" for the command list.','error')};write('N7X Developer Console');write('Type "help" to list commands. Browser DevTools cannot be opened by a webpage.');document.querySelector('[data-nyx-terminal-form]')?.addEventListener('submit',event=>{event.preventDefault();run(input?.value);if(input)input.value=''});setTimeout(()=>input?.focus(),50)})();`;
     const pages={
       apps:{title:'Apps',body:`<style>html,body,.apps-shell-page{background:transparent!important;background-image:none!important}</style><section class="shell-page apps-shell-page"><h1>Apps</h1><p>Everything in Nyx.</p><div class="quick-grid apps-launch-grid" data-nyx-global-app-grid>${quickTiles()}</div></section>`},
       links:{title:'Bookmarks',body:`<section class="shell-page"><h1>Bookmarks</h1><p>Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>DuckDuckGo</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></section>`},
       terms:{title:'Terms Of Service',style:utilityPageStyle,body:nyxTermsPageMarkup()},
-      about:{title:'About Nyx',style:utilityPageStyle+nyxCreditsPresentationStyle+nyxCreditsOwnerImageStyle,script:nyxCreditsLinkScript,body:nyxCreditsPageMarkup()},
-      credits:{title:'About Nyx',style:utilityPageStyle+nyxCreditsPresentationStyle+nyxCreditsOwnerImageStyle,script:nyxCreditsLinkScript,body:nyxCreditsPageMarkup()},
+      about:{title:"About N7X",style:utilityPageStyle+nyxCreditsPresentationStyle+nyxCreditsOwnerImageStyle,script:nyxCreditsLinkScript,body:nyxCreditsPageMarkup()},
+      credits:{title:"About N7X",style:utilityPageStyle+nyxCreditsPresentationStyle+nyxCreditsOwnerImageStyle,script:nyxCreditsLinkScript,body:nyxCreditsPageMarkup()},
       developer:{title:'Developer Console',style:utilityPageStyle,body:`<section aria-label="Eruda developer console"></section>`},
       ephesians1:{title:'Ephesians 1',body:`<section class="shell-page ephesians-diagram"><style>
         .ephesians-diagram{--ink:#f8fafc;--muted:#cbd5e1;--line:rgba(255,255,255,.24);max-width:1120px;margin:auto;padding-bottom:64px}.ephesians-diagram h1{text-align:center;font-size:clamp(30px,5vw,48px);margin:4px 0 6px}.ephesians-diagram>.diagram-sub{text-align:center;margin:0 0 28px;color:var(--muted);font-size:15px}.eph-flow{display:grid;gap:12px}.eph-block{padding:17px 20px;border:1px solid var(--line);border-left:6px solid #94a3b8;border-radius:14px;background:rgba(15,23,42,.58);box-shadow:0 12px 28px rgba(0,0,0,.16)}.eph-block h2{font-size:19px;margin:5px 0 7px}.eph-block p{margin:0;color:#e2e8f0;line-height:1.48;font-size:14px}.eph-verse{color:#cbd5e1;font-size:11px;font-weight:800;letter-spacing:.11em}.eph-father{border-left-color:#60a5fa}.eph-son{border-left-color:#fbbf24}.eph-spirit{border-left-color:#4ade80}.eph-prayer{border-left-color:#c084fc}.eph-arrow{text-align:center;height:22px;font:700 24px/22px Arial,sans-serif;color:#cbd5e1}.eph-purpose{text-align:center;padding:16px;border:1px solid rgba(255,255,255,.34);border-radius:14px;background:rgba(255,255,255,.10);font-size:17px;font-weight:800}.eph-purpose small{display:block;margin-bottom:5px;color:#cbd5e1;font-size:11px;letter-spacing:.1em}.eph-triad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.eph-triad .eph-block{padding:15px}.eph-triad h2{font-size:17px}@media(max-width:720px){.eph-triad{grid-template-columns:1fr}.ephesians-diagram{padding:20px 4px 50px!important}}</style>
@@ -7263,9 +7256,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         Boolean(document.body && $('desktop') && $('visualEffects') && $('customBgImage'))
         && window.__nyxStartupErrors.length===0
       ))],
-      ['Launching Nyx',async()=>doubleCheck(async()=>Boolean($('browserShell') || $('desktop')))]
+      ["Launching N7X",async()=>doubleCheck(async()=>Boolean($('browserShell') || $('desktop')))]
     ];
-    setProgress(0,'Checking Nyx');
+    setProgress(0,"Checking N7X");
     for(let i=0;i<checks.length;i++){
       const [text,run]=checks[i];
       setProgress((i/checks.length)*100,text);
@@ -7282,7 +7275,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     loader.setAttribute('aria-hidden','true');
     setTimeout(()=>{
       loader.dataset.running='0';
-      setProgress(0,'Checking Nyx');
+      setProgress(0,"Checking N7X");
     },260);
     return true;
   }
@@ -7356,7 +7349,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         }
       },440);
 
-      await startupProgress?.complete?.('Nyx is ready');
+      await startupProgress?.complete?.("N7X is ready");
       scheduleNyxTermsAcceptanceGate(360);
       scheduleNyxReleaseNotes(980);
     },0);
@@ -7434,7 +7427,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const target=proxyTargetUrl(url);
     if(!target) return '';
     const ready=await installScramjet();
-    if(!ready) throw new Error('Nyx game proxy is unavailable.');
+    if(!ready) throw new Error("N7X game proxy is unavailable.");
     return scramjetUrl(target);
   };
   const nyxManagedGameFrames=new WeakMap();
@@ -7509,7 +7502,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
     }
     if(mode==='iframe') return {managed:false,engine:'iframe',url:target};
-    throw new Error('Nyx game proxy is unavailable.');
+    throw new Error("N7X game proxy is unavailable.");
   };
 
   window.nyxLaunchMovieFrame=async(frame,url,{signal,recover=false}={})=>{
@@ -7638,9 +7631,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const encode=typeof config.codec?.encode==='function' ? config.codec.encode : encodeURIComponent;
     return config.prefix + encode(target);
   }
-  function proxyFailureHtml(message,engine='Nyx',{allowDirect=false,heading=''}={}){
+  function proxyFailureHtml(message,engine="N7X",{allowDirect=false,heading=''}={}){
     const safe=String(message || 'Refresh this page once so the updated service worker can take over, then search again.').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const safeHeading=String(heading || `${engine || 'Nyx'} did not start`).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const safeHeading=String(heading || `${engine || "N7X"} did not start`).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const directAction=allowDirect?'<button type="button" onclick="parent.postMessage({type:\'nyx:proxy-direct-fallback\'},\'*\')">Try direct mode</button><small>Direct mode works only when the site allows embedding.</small>':'';
     return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font-family:Outfit,Arial,sans-serif;background:#101318;color:#f5f7fb;display:grid;place-items:center;min-height:100vh}main{box-sizing:border-box;width:min(560px,100%);padding:28px;text-align:center}h1{font-size:20px;margin:0 0 10px}p{margin:0;color:#c8ced8;line-height:1.45}button{min-height:42px;margin:18px 0 0;padding:0 18px;border:1px solid #6379a0;border-radius:12px;background:#1a2841;color:#f5f7fb;font:700 14px Outfit,Arial,sans-serif;cursor:pointer}small{display:block;margin-top:9px;color:#98a6bb;line-height:1.4}@media(max-width:480px) and (max-height:520px){main{padding:18px}h1{font-size:18px}p{font-size:13px}button{width:100%}}</style><main><h1>${safeHeading}</h1><p>${safe}</p>${directAction}</main>`;
   }
@@ -7719,7 +7712,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(endpoint.protocol!=='ws:' && endpoint.protocol!=='wss:') throw new Error('A Wisp URL must start with ws:// or wss://.');
     if(endpoint.username || endpoint.password) throw new Error('Wisp URLs cannot contain a username or password.');
     if(endpoint.hash) throw new Error('Wisp URLs cannot contain a # fragment.');
-    if(location.protocol==='https:' && endpoint.protocol!=='wss:') throw new Error('Secure Nyx pages require a wss:// Wisp URL.');
+    if(location.protocol==='https:' && endpoint.protocol!=='wss:') throw new Error("Secure N7X pages require a wss:// Wisp URL.");
     return endpoint.href;
   }
   function defaultWispUrl(){
@@ -7844,16 +7837,16 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const count=Object.keys(storage).length;
     const status=root?.querySelector('[data-nyx-data-transfer-status]');
     if(status) status.textContent=`Exported ${count} safe data ${count===1?'entry':'entries'} from ${location.hostname}.`;
-    toast(`Exported ${count} Nyx data ${count===1?'entry':'entries'}`);
+    toast(`Exported ${count} N7X data ${count===1?'entry':'entries'}`);
     return payload;
   }
   async function importNyxPortableBackup(file,root=document){
     if(!file) return false;
-    if(file.size>NYX_PORTABLE_BACKUP_MAX_BYTES+250_000){toast('That Nyx backup is too large.');return false}
+    if(file.size>NYX_PORTABLE_BACKUP_MAX_BYTES+250_000){toast("That N7X backup is too large.");return false}
     let payload;
-    try{payload=JSON.parse(await file.text())}catch{toast('Choose a valid Nyx JSON backup.');return false}
+    try{payload=JSON.parse(await file.text())}catch{toast("Choose a valid N7X JSON backup.");return false}
     if(payload?.format!==NYX_PORTABLE_BACKUP_FORMAT || Number(payload?.version)!==NYX_PORTABLE_BACKUP_VERSION || !payload.storage || typeof payload.storage!=='object' || Array.isArray(payload.storage)){
-      toast('That file is not a supported Nyx backup.');
+      toast("That file is not a supported N7X backup.");
       return false;
     }
     const entries=[];
@@ -7866,23 +7859,23 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       totalBytes+=bytes;
       entries.push([key,rawValue]);
     }
-    if(!entries.length){toast('That backup has no portable Nyx data.');return false}
-    const source=String(payload.sourceOrigin || 'another Nyx link').replace(/[\u0000-\u001f]/g,' ').slice(0,120);
+    if(!entries.length){toast("That backup has no portable N7X data.");return false}
+    const source=String(payload.sourceOrigin || "another N7X link").replace(/[\u0000-\u001f]/g,' ').slice(0,120);
     if(!confirm(`Import ${entries.length} data ${entries.length===1?'entry':'entries'} from ${source}? Existing entries with the same names will be replaced.`)) return false;
     const previous=new Map(entries.map(([key])=>[key,localStorage.getItem(key)]));
     try{entries.forEach(([key,value])=>localStorage.setItem(key,value))}catch{
       entries.forEach(([key])=>{try{localStorage.removeItem(key)}catch{}});
       previous.forEach((value,key)=>{if(value!==null){try{localStorage.setItem(key,value)}catch{}}});
-      toast('Nyx could not import the complete backup. No data was changed.');
+      toast("N7X could not import the complete backup. No data was changed.");
       return false;
     }
     applyUserSettings();
     queueNyxCloudPreferencesSave();
     const status=root?.querySelector('[data-nyx-data-transfer-status]');
-    if(status) status.textContent=`Imported ${entries.length} data ${entries.length===1?'entry':'entries'}. Reload Nyx to finish applying the backup.`;
+    if(status) status.textContent=`Imported ${entries.length} data ${entries.length===1?'entry':'entries'}. Reload N7X to finish applying the backup.`;
     const reload=root?.querySelector('[data-nyx-data-reload]');
     if(reload) reload.hidden=false;
-    toast(`Imported ${entries.length} Nyx data ${entries.length===1?'entry':'entries'}`);
+    toast(`Imported ${entries.length} N7X data ${entries.length===1?'entry':'entries'}`);
     return true;
   }
   function nyxPresenceUrl(){
@@ -8947,7 +8940,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     scramjetInstallPromise=(async()=>{
       step='checking browser support';
       if(location.protocol==='file:'){
-        scramjetInstallError='Scramjet needs Nyx to be opened from its website, not as a local file.';
+        scramjetInstallError="Scramjet needs N7X to be opened from its website, not as a local file.";
         return false;
       }
       if(!('serviceWorker' in navigator)){
@@ -9265,7 +9258,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     {
       const searchEngine=selectedSearchEngineMeta();
       const searchLabel=`S3ARC4 ${searchEngine.label} or type a U3L`;
-      return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="S3ARC4"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home nyx-minimal-home nyx-visual-home"><main class="browser-shell-start nyx-minimal-hero"><div class="nyx-minimal-brand"><img class="nyx-home-logo" data-nyx-logo src="/assets/icons/nyx-cat-moon.svg?v=3" alt="Nyx"><h1>NYX</h1></div><form class="browser-blank-search nyx-minimal-search" data-browser-blank-search><svg class="nyx-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input data-browser-blank-input data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"></form><nav class="nyx-home-links" data-nyx-recent-searches aria-label="Recent searches" hidden></nav></main><nav class="nyx-minimal-utility-links" aria-label="Nyx tools and terms"><a data-open="terms" href="nyx://terms">Terms</a></nav><button class="nyx-appearance-toggle" data-nyx-appearance type="button" aria-label="Use light appearance" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button><button class="nyx-visual-customize" data-open="settings" type="button">${nyxDashboardIcon('settings')}<span>Customize</span></button><div class="nyx-home-presence${nyxFounderIsOwner&&nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'button':'status'}" tabindex="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${minimalPresenceText}</span></div></div></div>`;
+      return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="S3ARC4"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home nyx-minimal-home nyx-visual-home"><main class="browser-shell-start nyx-minimal-hero"><div class="nyx-minimal-brand"><img class="nyx-home-logo" data-nyx-logo src="/assets/icons/nyx-cat-moon.svg?v=3" alt="N7X"><h1>N7X</h1></div><form class="browser-blank-search nyx-minimal-search" data-browser-blank-search><svg class="nyx-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input data-browser-blank-input data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"></form><nav class="nyx-home-links" data-nyx-recent-searches aria-label="Recent searches" hidden></nav></main><nav class="nyx-minimal-utility-links" aria-label="N7X tools and terms"><a data-open="terms" href="nyx://terms">Terms</a></nav><button class="nyx-appearance-toggle" data-nyx-appearance type="button" aria-label="Use light appearance" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button><button class="nyx-visual-customize" data-open="settings" type="button">${nyxDashboardIcon('settings')}<span>Customize</span></button><div class="nyx-home-presence${nyxFounderIsOwner&&nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'button':'status'}" tabindex="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${minimalPresenceText}</span></div></div></div>`;
     }
   }
 
@@ -9992,13 +9985,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     ['link-checker','link-checker','Link Checker','/apps/link-checker/'],
     ['link-generator','link-generator','Link Generator','/apps/link-generator/'],
     ['jsdelivr-publisher','jsdelivr-publisher','JSDelivr Publisher','/apps/jsdelivr-publisher/'],
-    ['nyx-api-keys','api-keys','Nyx API Keys','/apps/api-keys/'],
+    ['nyx-api-keys','api-keys',"N7X API Keys",'/apps/api-keys/'],
     ['youtube','youtube.com','YouTube','/apps/nyxtube/'],
     ['pirate-cove','games','GAMES','/assets/games/'],
-    ['nyx-chat','nyx-chat','Nyx Chat','/apps/chat/'],
+    ['nyx-chat','nyx-chat',"N7X Chat",'/apps/chat/'],
     ['nyxify','nyxify','Nyxify/built in music','/apps/nyxify/'],
     ['duck-ai','duck.ai',"Duck A1",'https://duck.ai/'],
-    ['nyx-ai','nyx-ai',"Nyx A1",'nyx://ai'],
+    ['nyx-ai','nyx-ai',"N7X A1",'nyx://ai'],
     ['movies','nyx-movies','Movies','/apps/movies/'],
     ['more-movie-sites','fmhy.net','More Movie Sites','https://fmhy.net/video#p-stream-forks'],
     ['tiktok','tiktok.com','TikTok','https://www.tiktok.com/'],
@@ -10044,7 +10037,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(!response.ok || !Array.isArray(payload?.apps)) throw new Error(payload?.error||'App catalog unavailable');
       nyxGlobalApps=payload.apps.map(normalizeNyxGlobalApp).filter(app=>app&&!['nyxtube','nyx-tube'].includes(app.id)&&!nyxHiddenGlobalAppIds.has(app.id));
       renderNyxGlobalApps();
-    }catch(error){console.warn('Nyx app catalog is using built-in defaults:',error?.message||error)}
+    }catch(error){console.warn("N7X app catalog is using built-in defaults:",error?.message||error)}
     return nyxGlobalApps;
   }
   function startNyxGlobalApps(){
@@ -10255,9 +10248,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
     if(kind==='startup-diagnostics'){
       return appendFinal([
-        {label:'Checking Nyx files',run:preflightStateCurrent},
+        {label:"Checking N7X files",run:preflightStateCurrent},
         {label:'Preparing interface',run:async()=>{await preflightDelay(60); return true}},
-        {label:'Launching Nyx',run:async()=>{await preflightDelay(80); return true}}
+        {label:"Launching N7X",run:async()=>{await preflightDelay(80); return true}}
       ]);
     }
     return appendFinal([
@@ -11046,7 +11039,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
               event.preventDefault();
               event.stopImmediatePropagation();
               const generatedTab=addTab(href,appCompatibilityMode(href));
-              if(!generatedTab) toast('Nyx could not open the generated link. Select Open first again.');
+              if(!generatedTab) toast("N7X could not open the generated link. Select Open first again.");
               return;
             }
             event.preventDefault();
@@ -11574,8 +11567,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const certificateFailure=tlsCertificateErrorText(reason);
       const failedSecurityState=certificateFailure ? 'insecure' : 'unknown';
       const failureMessage=certificateFailure
-        ? `Nyx blocked ${browserShellLabel(key)} because its HTTPS certificate could not be verified. Check the address, or try again after the site fixes its certificate.`
-        : `Nyx could not connect to ${browserShellLabel(key)}. Check that the address exists and is spelled correctly, then try again.`;
+        ? `N7X blocked ${browserShellLabel(key)} because its HTTPS certificate could not be verified. Check the address, or try again after the site fixes its certificate.`
+        : `N7X could not connect to ${browserShellLabel(key)}. Check that the address exists and is spelled correctly, then try again.`;
       t.selectedSearchFallbackKey=key;
       t.url=key;
       t.sourceUrl=key;
@@ -12152,7 +12145,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         t.actualEngine='scramjet-failed';
         setFrameSandbox(t,true);
         clearFrameDocument(t);
-        t.frame.srcdoc=proxyFailureHtml('The private tab session could not start. Reload Nyx and try again.','Scramjet',{allowDirect:true});
+        t.frame.srcdoc=proxyFailureHtml("The private tab session could not start. Reload N7X and try again.",'Scramjet',{allowDirect:true});
       });
     }
     function waitForTabResultPaint(t,timeout=4200){
@@ -12796,7 +12789,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return win;
   }
   function openUpdates(){
-    makeWindow({title:'ռʏӼ Fixes',left:'24px',top:'60px',width:'520px',height:'620px',autoMaximize:true,body:`<div class="panel"><h1>ռʏӼ Fixes</h1><p class="home-sub">Click ռʏӼ in the top-left anytime to see this.</p><div class="glass-grid" style="grid-template-columns:1fr"><div class="glass-card"><h2>Latest fixes</h2><p>- Added animated windows that eject from the bottom dock and fade when closed.</p><p>- Made the Updates window open fullscreen every time.</p><p>- Added one-time Updates popup on startup.</p><p>- Added multiple weather location choices for ambiguous searches.</p><p>- Added hot and freezing weather themes.</p><p>- Updated glassmorphism so 100%+ lowers blur instead of over-brightening.</p><p>- Replaced the Discord logo with the new attached icon.</p><p>- Removed the left desktop Browser and Updates buttons.</p><p>- Changed Weather from an app into a right-side liquid glass panel.</p><p>- Added visible background previews and background upload.</p><p>- Rebuilt the loading screen so it types the welcome text.</p><p>- Added local app icons to avoid blocked favicon requests.</p></div><div class="glass-card"><h2>Browser fixes</h2><p>- Added a Node server for Ultraviolet.</p><p>- Fixed UV static routes for /uv, /baremux, /epoxy, and /wisp.</p><p>- Replaced the old Wisp server package.</p><p>- Pinned the compatible Epoxy transport.</p><p>- Removed hard UV script loading from Live Server mode.</p></div></div></div>`});
+    makeWindow({title:"N7X Fixes",left:'24px',top:'60px',width:'520px',height:'620px',autoMaximize:true,body:`<div class="panel"><h1>N7X Fixes</h1><p class="home-sub">Click N7X in the top-left anytime to see this.</p><div class="glass-grid" style="grid-template-columns:1fr"><div class="glass-card"><h2>Latest fixes</h2><p>- Added animated windows that eject from the bottom dock and fade when closed.</p><p>- Made the Updates window open fullscreen every time.</p><p>- Added one-time Updates popup on startup.</p><p>- Added multiple weather location choices for ambiguous searches.</p><p>- Added hot and freezing weather themes.</p><p>- Updated glassmorphism so 100%+ lowers blur instead of over-brightening.</p><p>- Replaced the Discord logo with the new attached icon.</p><p>- Removed the left desktop Browser and Updates buttons.</p><p>- Changed Weather from an app into a right-side liquid glass panel.</p><p>- Added visible background previews and background upload.</p><p>- Rebuilt the loading screen so it types the welcome text.</p><p>- Added local app icons to avoid blocked favicon requests.</p></div><div class="glass-card"><h2>Browser fixes</h2><p>- Added a Node server for Ultraviolet.</p><p>- Fixed UV static routes for /uv, /baremux, /epoxy, and /wisp.</p><p>- Replaced the old Wisp server package.</p><p>- Pinned the compatible Epoxy transport.</p><p>- Removed hard UV script loading from Live Server mode.</p></div></div></div>`});
   }
   function weatherDescription(code){
     const map={0:'Clear',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Rime fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',56:'Freezing drizzle',57:'Freezing drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',66:'Freezing rain',67:'Freezing rain',71:'Light snow',73:'Snow',75:'Heavy snow',77:'Snow grains',80:'Light showers',81:'Showers',82:'Heavy showers',85:'Snow showers',86:'Snow showers',95:'Thunderstorm',96:'Thunderstorm',99:'Thunderstorm, hail'};
@@ -13252,14 +13245,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       });
       document.querySelectorAll('[data-nyx-ai-model-label]').forEach(label=>{label.textContent=nyxAiModelLabel(selected)});
     }catch(error){
-      console.warn("Nyx A1 model catalog could not be loaded:",error);
+      console.warn("N7X A1 model catalog could not be loaded:",error);
     }
   }
   void nyxAiLoadModels();
   function lionAiEmptyState(){
     return `<section class="lion-ai-empty" data-lion-ai-empty>
       <div class="lion-ai-orb" data-nyx-logo aria-hidden="true"></div>
-      <p class="lion-ai-eyebrow">NYX INTELLIGENCE</p>
+      <p class="lion-ai-eyebrow">N7X INTELLIGENCE</p>
       <h2>What can I help you with?</h2>
       <p class="lion-ai-empty-copy">Ask a question, work through an idea, or start creating.</p>
       <div class="lion-ai-starters">
@@ -13291,10 +13284,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       <main class="lion-ai-main">
         <header class="lion-ai-head">
           <div class="lion-ai-header-brand">
-            <div class="lion-ai-mark" data-nyx-logo aria-label="Nyx"></div>
+            <div class="lion-ai-mark" data-nyx-logo aria-label="N7X"></div>
             <div class="lion-ai-title">
               <h1 data-lion-ai-thread-title>New chat</h1>
-              <span>Nyx A1 workspace</span>
+              <span>N7X A1 workspace</span>
             </div>
           </div>
           <div class="lion-ai-head-actions">
@@ -13317,16 +13310,16 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
               <span aria-hidden="true">＋</span>
               <input type="file" accept="image/*" data-lion-ai-image>
             </label>
-            <textarea class="lion-ai-input" data-lion-ai-input placeholder="Ask Nyx A1 anything..." autocomplete="off" spellcheck="true"></textarea>
+            <textarea class="lion-ai-input" data-lion-ai-input placeholder="Ask N7X A1 anything..." autocomplete="off" spellcheck="true"></textarea>
             <button class="lion-ai-send" type="submit" title="Send" aria-label="Send">↑</button>
           </form>
-          <p>Nyx A1 can make mistakes. Verify important information.</p>
+          <p>N7X A1 can make mistakes. Verify important information.</p>
         </footer>
       </main>
     </div>`;
   }
   function openLionAI(){
-    const win=makeWindow({title:"Nyx A1",className:'lion-ai-window',left:'7vw',top:'52px',width:'min(1080px,88vw)',height:'min(760px,calc(100vh - 76px))',autoMaximize:false,body:lionAiBody()});
+    const win=makeWindow({title:"N7X A1",className:'lion-ai-window',left:'7vw',top:'52px',width:'min(1080px,88vw)',height:'min(760px,calc(100vh - 76px))',autoMaximize:false,body:lionAiBody()});
     lionAiRestoreChat(win);
     setTimeout(()=>win.querySelector('[data-lion-ai-input]')?.focus(),80);
   }
@@ -13950,7 +13943,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         stream:true
       })
     });
-    if(!res.ok){const data=await res.json().catch(()=>({}));throw new Error(data?.error || `Nyx AI failed (${res.status})`)}
+    if(!res.ok){const data=await res.json().catch(()=>({}));throw new Error(data?.error || `N7X AI failed (${res.status})`)}
     if(!res.body) throw new Error('The selected model did not return a stream.');
     const reader=res.body.getReader(),decoder=new TextDecoder();
     let buffer='',text='';
@@ -13976,7 +13969,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     try{
       return await nyxAiModelAnswer(prompt,win,imageContext,onChunk);
     }catch(err){
-      return `Nyx AI could not reach the selected model.\n\n${err.message}\n\nSet NYX_AI_API_KEY on the server. The configured Vilen model can be changed with the matching NYX_AI_MODEL_* environment variable.`;
+      return `N7X AI could not reach the selected model.\n\n${err.message}\n\nSet NYX_AI_API_KEY on the server. The configured Vilen model can be changed with the matching NYX_AI_MODEL_* environment variable.`;
     }
   }
   function lionAiRespond(prompt){
@@ -14035,7 +14028,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function openAboutNyx(){
     if(document.body.classList.contains('browser-shell')) return showBrowserShellInternalPage('credits');
     makeWindow({
-      title:'About Nyx',
+      title:"About N7X",
       left:'22vw',
       top:'110px',
       width:'620px',
@@ -14097,7 +14090,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       return;
     }
     if(name==='status'){
-      nyxTerminalWrite(output,`Nyx is ${navigator.onLine?'online':'offline'} · ${navigator.platform || 'browser'} · ${location.hostname || 'local'}`);
+      nyxTerminalWrite(output,`N7X is ${navigator.onLine?'online':'offline'} · ${navigator.platform || 'browser'} · ${location.hostname || 'local'}`);
       return;
     }
     if(name==='theme'){
@@ -14179,7 +14172,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         </section>
         <section class="settings-card" data-founder-account-card hidden>
           <h2><button class="nyx-account-settings-link" data-open-nyx-account-settings type="button">Account</button></h2>
-          <p data-founder-account-status>Sign in to manage your Nyx account.</p>
+          <p data-founder-account-status>Sign in to manage your N7X account.</p>
           <div class="settings-actions"><button data-open-nyx-account type="button">Create or sign in</button><button data-open-nyx-profile type="button" hidden>Edit account</button><button data-nyx-account-sign-out type="button" hidden>Sign out</button></div>
         </section>
         <section class="settings-card" data-founder-profile-settings-card hidden>
@@ -14218,7 +14211,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         </section>
         <section class="settings-card">
           <h2>Hide Website Details</h2>
-          <p>Replace external website names and icons in Nyx tabs with a generic hidden label.</p>
+          <p>Replace external website names and icons in N7X tabs with a generic hidden label.</p>
           <div class="settings-row"><span>Hide Names and Icons</span><button class="switch ${websiteDetailsHidden()?'on':''}" data-switch="nyx.hideWebsiteDetails" aria-label="Hide website names and icons"></button></div>
         </section>
         <section class="settings-card">
@@ -14235,7 +14228,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         </section>
         <section class="settings-card wide settings-backgrounds">
           <h2>${document.body.classList.contains('browser-shell') ? 'Browser Background' : 'Change Background'}</h2>
-          <p>Pick one of your current ռʏӼ backgrounds.</p>
+          <p>Pick one of your current N7X backgrounds.</p>
           <div class="background-picker" data-bg-picker data-bg-scope="${document.body.classList.contains('browser-shell') ? 'browser' : 'windows'}"></div>
           <div class="settings-row"><span>3D Backgrounds</span><button class="switch ${store.get('nyx.threeDBackgrounds',false)?'on':''}" data-switch="nyx.threeDBackgrounds" aria-label="3D backgrounds"></button></div>
           <div class="settings-row"><span>Background Enhancer</span><button class="switch ${store.get('nyx.backgroundEnhancer',false)?'on':''}" data-bg-enhancer aria-label="Background enhancer"></button></div>
@@ -14252,7 +14245,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       <div class="settings-grid">
         <section class="settings-card">
           <h2>Change Proxy</h2>
-          <p>Choose the browser engine Nyx uses for external sites.
+          <p>Choose the browser engine N7X uses for external sites.
 Scramjet supports more websites, while Ultraviolet can work better for some pages.
 Auto uses Scramjet with Libcurl by default and can recover with another relay if the connection fails.</p>
           <select id="settingBrowserMode">
@@ -14334,7 +14327,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     card?.classList.toggle('is-ready',signedIn);
     if(title)title.textContent=signedIn?'Account ready':'Create a free account';
     if(status)status.textContent=signedIn
-      ?`Signed in${nyxFounderSignedInUser?.displayName?` as ${nyxFounderSignedInUser.displayName}`:''}. Nyx will skip this step.`
+      ?`Signed in${nyxFounderSignedInUser?.displayName?` as ${nyxFounderSignedInUser.displayName}`:''}. N7X will skip this step.`
       :'Your username will be filled in automatically. Add a password to finish creating the account. Email is optional.';
     if(actions)actions.hidden=signedIn;
     if(signedIn&&setup.classList.contains('show')&&setupStepIndex===2)setTimeout(()=>{if(setup.classList.contains('show')&&setupStepIndex===2&&nyxFounderSignedInUser)setSetupStep(3)},120);
@@ -14516,7 +14509,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     if($('setupScreen')?.classList.contains('show')) return false;
     const gate=document.createElement('div');
     gate.className='nyx-tos-gate';
-    gate.innerHTML=`<section class="nyx-tos-dialog" role="dialog" aria-modal="true" aria-labelledby="nyxTosGateTitle" aria-describedby="nyxTosGateIntro"><header class="nyx-tos-gate-header"><span class="nyx-tos-gate-logo" aria-hidden="true"></span><div><span>Before you continue</span><h1 id="nyxTosGateTitle" tabindex="-1">Nyx Terms of Service</h1></div></header><div class="nyx-tos-scroll" data-nyx-tos-scroll>${nyxTermsPageMarkup('nyx-tos-document')}<div class="nyx-tos-declined" hidden><span aria-hidden="true">ⓘ</span><h2 tabindex="-1">Terms declined</h2><p>You cannot use Nyx without accepting the Terms of Service. You can review the terms again or leave Nyx.</p></div></div><footer class="nyx-tos-actions"><p id="nyxTosGateIntro">By selecting Agree, you confirm that you have read and accept these Terms.</p><div><button class="nyx-tos-disagree" data-nyx-tos-disagree type="button">Disagree</button><button class="nyx-tos-agree" data-nyx-tos-agree type="button">Agree</button></div></footer></section>`;
+    gate.innerHTML=`<section class="nyx-tos-dialog" role="dialog" aria-modal="true" aria-labelledby="nyxTosGateTitle" aria-describedby="nyxTosGateIntro"><header class="nyx-tos-gate-header"><span class="nyx-tos-gate-logo" aria-hidden="true"></span><div><span>Before you continue</span><h1 id="nyxTosGateTitle" tabindex="-1">N7X Terms of Service</h1></div></header><div class="nyx-tos-scroll" data-nyx-tos-scroll>${nyxTermsPageMarkup('nyx-tos-document')}<div class="nyx-tos-declined" hidden><span aria-hidden="true">ⓘ</span><h2 tabindex="-1">Terms declined</h2><p>You cannot use N7X without accepting the Terms of Service. You can review the terms again or leave Nyx.</p></div></div><footer class="nyx-tos-actions"><p id="nyxTosGateIntro">By selecting Agree, you confirm that you have read and accept these Terms.</p><div><button class="nyx-tos-disagree" data-nyx-tos-disagree type="button">Disagree</button><button class="nyx-tos-agree" data-nyx-tos-agree type="button">Agree</button></div></footer></section>`;
     document.body.appendChild(gate);
     document.body.classList.add('nyx-tos-active');
     const agree=gate.querySelector('[data-nyx-tos-agree]');
@@ -14551,7 +14544,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       documentView.hidden=true;
       declinedView.hidden=false;
       agree.textContent='Review Terms';
-      disagree.textContent='Leave Nyx';
+      disagree.textContent="Leave N7X";
       scroll.scrollTop=0;
       declinedView.querySelector('h2')?.focus();
     });
@@ -14598,7 +14591,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     const overlay=document.createElement('div');
     overlay.className='nyx-release-notes-overlay';
     overlay.innerHTML=`<section class="nyx-release-notes" role="dialog" aria-modal="true" aria-labelledby="nyxReleaseNotesTitle" aria-describedby="nyxReleaseNotesIntro">
-      <header><div><span>Update</span><h1 id="nyxReleaseNotesTitle" tabindex="-1">Nyx v1.6.8</h1></div><button type="button" data-nyx-release-notes-close aria-label="Close update log">&times;</button></header>
+      <header><div><span>Update</span><h1 id="nyxReleaseNotesTitle" tabindex="-1">N7X v1.6.8</h1></div><button type="button" data-nyx-release-notes-close aria-label="Close update log">&times;</button></header>
       <div class="nyx-release-message" id="nyxReleaseNotesIntro">
         <p class="nyx-release-greeting"><strong>What's new?</strong></p>
         <ul class="nyx-release-changes">
@@ -14758,7 +14751,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
   }
   function repairBlankBrowserShellPresetTabs(previousCloakTitle=''){
     if(!Array.isArray(browserShellTabs) || !browserShellTabs.length) return;
-    const presetTitles=new Set([nyxTabTitle,'ռʏӼ','Õ¼ÊÓ¼','Google Classroom','Google Drive','ClassLink','Google']);
+    const presetTitles=new Set([nyxTabTitle,"N7X",'Õ¼ÊÓ¼','Google Classroom','Google Drive','ClassLink','Google']);
     if(previousCloakTitle) presetTitles.add(previousCloakTitle);
     let changed=false;
     browserShellTabs.forEach((tab,index)=>{
@@ -15041,7 +15034,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     if(!popup) URL.revokeObjectURL(url);
     return popup;
   }
-  function openThroughDeltaMath(finalUrl=location.href, afterRedirect, forcedHop){
+  function openLaunchWindow(finalUrl=location.href, afterRedirect, forcedHop){
     const w=opennyxInternalPopup(finalUrl);
     if(!w) return null;
     setTimeout(()=>{
@@ -15053,7 +15046,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     const html=cloakHtml();
     if(options.anchor) applyTabAnchor();
     if(kind==='about'){
-      return openThroughDeltaMath('about:blank',w=>{
+      return openLaunchWindow('about:blank',w=>{
         writeAboutBlankCloak(w,html);
       },options.hop);
     }
@@ -16213,7 +16206,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
       if(e.target.closest('[data-clear-nyx-cache]')){
         e.preventDefault();
-        const ok=confirm('Clear cache, cookies, saved settings, and reset Nyx? This cannot be undone.');
+        const ok=confirm("Clear cache, cookies, saved settings, and reset N7X? This cannot be undone.");
         if(!ok) return;
         clearAllNyxData();
         return;
@@ -16431,7 +16424,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         finish();
         if(wallpaperUser){
           try{const saved=await saveNyxCloudPreferences();toast(saved?'Wallpaper saved to your account':'Wallpaper applied. Account sync is still connecting.');}
-          catch{toast('Wallpaper applied here. Account sync failed; Nyx will retry.');}
+          catch{toast("Wallpaper applied here. Account sync failed; N7X will retry.");}
         }else toast('Uploaded wallpaper applied');
       };
       reader.readAsDataURL(imageFile);
@@ -16626,7 +16619,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     const qualityLabel={excellent:'Excellent',good:'Good',fair:'Fair',slow:'Slow',offline:'Offline',sampling:'Measuring'}[nyxLatencyQuality] || 'Measuring';
     bubble.className=`nyx-latency-bubble is-${nyxLatencyQuality}`;
     if(value) value.textContent=text;
-    const label=Number.isFinite(nyxLatencyMs) ? `Nyx latency ${nyxLatencyMs} milliseconds, ${qualityLabel}` : `Nyx status ${qualityLabel}`;
+    const label=Number.isFinite(nyxLatencyMs) ? `N7X latency ${nyxLatencyMs} milliseconds, ${qualityLabel}` : `N7X status ${qualityLabel}`;
     bubble.setAttribute('aria-label',label);
     const setText=(selector,next)=>{const target=bubble.querySelector(selector);if(target) target.textContent=next};
     const finiteHistory=nyxLatencyHistory.filter(entry=>Number.isFinite(entry.ms));
@@ -16813,7 +16806,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     if(finishNyxOpenStartup.done) return;
     finishNyxOpenStartup.done=true;
     if(store.text('nyx.tabTitle','') || store.text('nyx.tabFavicon','')) enforceStoredTabCloak();
-    else setCurrentTabCloak(studyHubTabTitle,studyHubTabFavicon,false);
+    else setCurrentTabCloak(nyxTabTitle,nyxTabFavicon,false);
     migrateGlassDefault();
     applyAutoHieroglyphPreference();
   }

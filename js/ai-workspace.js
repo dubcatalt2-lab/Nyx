@@ -153,9 +153,9 @@
   document.getElementById('customKeyButton')?.addEventListener('click',()=>keyDialog.showModal());
   document.getElementById('customKeyClose')?.addEventListener('click',()=>keyDialog.close());
   document.getElementById('customKeyRemove')?.addEventListener('click',()=>{customKey='';document.getElementById('customKeyInput').value='';keyDialog.close();renderProviders();void loadModels();void renderUsage();});
-  document.getElementById('customKeyForm')?.addEventListener('submit',event=>{event.preventDefault();const field=document.getElementById('customKeyInput'),value=field.value.trim();if(!/^n_api_[A-Za-z0-9_-]{43}$/.test(value)&&!/^sk-or-[A-Za-z0-9_-]{20,}$/.test(value)){document.getElementById('customKeyError').textContent='Enter a valid Nyx or OpenRouter API key.';return;}customKey=value;field.value='';document.getElementById('customKeyError').textContent='';keyDialog.close();renderProviders();void loadModels();void renderUsage();});
+  document.getElementById('customKeyForm')?.addEventListener('submit',event=>{event.preventDefault();const field=document.getElementById('customKeyInput'),value=field.value.trim();if(!/^n_api_[A-Za-z0-9_-]{43}$/.test(value)&&!/^sk-or-[A-Za-z0-9_-]{20,}$/.test(value)){document.getElementById('customKeyError').textContent="Enter a valid N7X or OpenRouter API key.";return;}customKey=value;field.value='';document.getElementById('customKeyError').textContent='';keyDialog.close();renderProviders();void loadModels();void renderUsage();});
   function selectedProvider(){return 'shared'}
-  function syncProviderControl(){providerSelect.disabled=true;providerSelect.title=customKey?(customKind()==='nyx'?'Nyx custom key':'OpenRouter custom key'):'Nyx shared';if(customKey)providerSelect.options[0].textContent=providerSelect.title;if(providerState)providerState.hidden=true;}
+  function syncProviderControl(){providerSelect.disabled=true;providerSelect.title=customKey?(customKind()==='nyx'?"N7X custom key":'OpenRouter custom key'):"N7X shared";if(customKey)providerSelect.options[0].textContent=providerSelect.title;if(providerState)providerState.hidden=true;}
 
   function renderProviders(){
     const selected=selectedProvider();
@@ -449,7 +449,7 @@
       if(document.getElementById('ai-save-warning'))return;
       const warning=document.createElement('div');
       warning.id='ai-save-warning';warning.className='ai-save-warning';warning.setAttribute('role','alert');
-      warning.append('Nyx could not save your chat on this device. Download your chats before reloading. ');
+      warning.append("N7X could not save your chat on this device. Download your chats before reloading. ");
       const button=document.createElement('button');button.type='button';button.textContent='Download chats';
       button.addEventListener('click',()=>{
         const url=URL.createObjectURL(new Blob([JSON.stringify({version:1,threads},null,2)],{type:'application/json'}));
@@ -630,7 +630,7 @@
         resolve(image);
       };
       reader.onerror=()=>{
-        showAttachmentError('Nyx could not read that image.');
+        showAttachmentError("N7X could not read that image.");
         resolve(null);
       };
       reader.readAsDataURL(file);
@@ -664,11 +664,11 @@
             if(prepared.length<=MAX_PREPARED_IMAGE_CHARS) break;
             scale*=.82;
           }
-          if(!prepared||prepared.length>MAX_PREPARED_IMAGE_CHARS) throw new Error('Nyx could not prepare that image within the upload limit.');
+          if(!prepared||prepared.length>MAX_PREPARED_IMAGE_CHARS) throw new Error("N7X could not prepare that image within the upload limit.");
           resolve({dataUrl:prepared,mime:'image/jpeg',width:originalWidth,height:originalHeight,screenCapture:source.screenCapture===true});
         }catch(error){reject(error)}
       };
-      image.onerror=()=>reject(new Error('Nyx could not decode that image.'));
+      image.onerror=()=>reject(new Error("N7X could not decode that image."));
       image.src=source.dataUrl;
     });
   }
@@ -709,7 +709,7 @@
       if(screenStream===stream)screenChat.start();
     }catch(error){
       stopScreenSharing();
-      if(error?.name!=='NotAllowedError') showAttachmentError(error?.message||'Nyx could not start screen sharing.','Screen sharing unavailable');
+      if(error?.name!=='NotAllowedError') showAttachmentError(error?.message||"N7X could not start screen sharing.",'Screen sharing unavailable');
     }
   }
 
@@ -731,7 +731,7 @@
       quality-=.08;
       dataUrl=canvas.toDataURL('image/jpeg',quality);
     }
-    if(dataUrl.length>MAX_PREPARED_IMAGE_CHARS) return Promise.reject(new Error('Nyx could not prepare that screen frame within the upload limit.'));
+    if(dataUrl.length>MAX_PREPARED_IMAGE_CHARS) return Promise.reject(new Error("N7X could not prepare that screen frame within the upload limit."));
     return Promise.resolve({name:'Shared screen',size:Math.ceil(dataUrl.length*.75),type:'image/jpeg',dataUrl,screenCapture:true});
   }
 
@@ -804,7 +804,7 @@
     section.append(heading,links);content.appendChild(section);
   }
 
-  const aiBrand=()=>document.documentElement.dataset.tutsiApp==='ai'?'Tutsi AI':'Nyx AI';
+  const aiBrand=()=>document.documentElement.dataset.tutsiApp==='ai'?'Tutsi AI':"N7X AI";
   const aiStatusText=value=>String(value||'').replace(/\bNyx AI\b/g,aiBrand());
 
   function setMessageContent(message,text,{error=false,thinking=false}={}){
@@ -1077,7 +1077,7 @@
   function updateProfile(profile={}){
     const fallbackName=String(localStorage.getItem('nyx.userName')||'Profile').trim()||'Profile';
     const name=String(profile.displayName||fallbackName).trim()||'Profile';
-    const handle=String(profile.handle||'Open your Nyx profile').trim();
+    const handle=String(profile.handle||"Open your N7X profile").trim();
     const avatar=String(profile.avatarUrl||'').trim();
     renderProfileName(profileName,name);
     profileHandle.textContent=handle;
@@ -1434,11 +1434,11 @@
         if(status){status.classList.remove('is-warning');status.title=`${next.length} models available`}
       }else if(status){
         status.classList.add('is-warning');
-        status.title=`${savedLabel} is temporarily unavailable. Nyx will restore it when it returns.`;
+        status.title=`${savedLabel} is temporarily unavailable. N7X will restore it when it returns.`;
       }
       return true;
     }catch(error){
-      console.warn('Nyx AI model catalog could not be loaded:',error);
+      console.warn("N7X AI model catalog could not be loaded:",error);
       modelCatalog=[];
       renderModelOptions([],"");
       modelSelected.textContent='Models unavailable';
@@ -1534,7 +1534,7 @@
         screenStatus.textContent='Capturing the current frame…';
         imageAttachment=await captureSharedScreen();
       }catch(error){
-        screenStatus.textContent=error?.message||'Nyx could not capture the shared screen.';
+        screenStatus.textContent=error?.message||"N7X could not capture the shared screen.";
         return;
       }
     }
@@ -1545,7 +1545,7 @@
     const generateVideo=Boolean(modelInfo?.outputModalities?.includes('video'));
     const nativeImage=(ownerMediaAccess||modelInfo?.text===false)&&modelInfo?.imageGeneration;
     const dedicatedMedia=generateVideo||nativeImage;
-    if(dedicatedMedia&&customKey){addMessage('assistant','Use Nyx shared for dedicated image and video generation, or open the model on OpenRouter.',{error:true,modelId:requestedModel});return;}
+    if(dedicatedMedia&&customKey){addMessage('assistant',"Use N7X shared for dedicated image and video generation, or open the model on OpenRouter.",{error:true,modelId:requestedModel});return;}
     const generateImage=Boolean(modelInfo?.imageGeneration)&&!generateVideo;
     const userText=prompt||(sharing?'Please analyze what is currently on my screen.':imageAttachment?'Please analyze this image.':'Please review the attached text file.');
     const history=savedMessages();
@@ -1575,13 +1575,13 @@
       const preparedImage=imageAttachment?await prepareImageForModel(imageAttachment):null;
       const imageContext=preparedImage?`Original image dimensions: ${preparedImage.width}x${preparedImage.height}px.`:'';
       if(preparedImage){
-        if(sharing) screenStatus.textContent=`Nyx is reading this screen frame for ${modelLabel(requestedModel)}…`;
-        else setAttachmentStatus(`Nyx is reading this image for ${modelLabel(requestedModel)}…`);
+        if(sharing) screenStatus.textContent=`N7X is reading this screen frame for ${modelLabel(requestedModel)}…`;
+        else setAttachmentStatus(`N7X is reading this image for ${modelLabel(requestedModel)}…`);
       }
       let response;
       if(customKey){
         const kind=customKind();
-        if((preparedImage||generateImage)&&kind==='nyx')throw new Error('Nyx API keys currently support text only. Use Nyx shared or an OpenRouter key for images.');
+        if((preparedImage||generateImage)&&kind==='nyx')throw new Error("N7X API keys currently support text only. Use N7X shared or an OpenRouter key for images.");
         const messages=history.slice(-MODEL_CONTEXT_MESSAGES).map(item=>({role:item.role,content:item.content+(item.textAttachment?'\n\n'+item.textAttachment.content:'')}));
         if(preparedImage)messages[messages.length-1].content=[{type:'text',text:messages[messages.length-1].content},{type:'image_url',image_url:{url:preparedImage.dataUrl}}];
         response=await fetch(kind==='nyx'?'/api/v1/ai':'https://openrouter.ai/api/v1/chat/completions',{method:'POST',signal:activeController.signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+customKey},body:JSON.stringify({model:requestedModel,messages,max_tokens:generateImage?2200:512,stream:!generateImage&&kind!=='nyx',...(generateImage?{modalities:['text','image']}:{})})});
@@ -1597,7 +1597,7 @@
       if(!response.ok){
         showSendCooldown(response);
         const data=await response.json().catch(()=>({}));
-        throw new Error(data?.error?.message||data?.error||(generateImage&&[502,504].includes(response.status)?'The image provider failed or timed out before finishing. Try again or choose another image model.':`Nyx AI failed (${response.status})`));
+        throw new Error(data?.error?.message||data?.error||(generateImage&&[502,504].includes(response.status)?'The image provider failed or timed out before finishing. Try again or choose another image model.':`N7X AI failed (${response.status})`));
       }
       if(dedicatedMedia){
         const data=await response.json();
@@ -1683,7 +1683,7 @@
       requestSucceeded=true;
     }catch(error){
       if(error?.name==='AbortError') return;
-      setMessageContent(pending,error?.message||'Nyx AI could not complete that request.',{error:true});
+      setMessageContent(pending,error?.message||"N7X AI could not complete that request.",{error:true});
       if(!customKey)void loadModels();
     }finally{
       clearInterval(timingTimer);showTiming(pending,getTiming());

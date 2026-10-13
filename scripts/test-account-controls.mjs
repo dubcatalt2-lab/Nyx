@@ -111,7 +111,7 @@ try{
     return route.continue();
   });
 
-  await page.goto(origin,{waitUntil:'domcontentloaded'});
+  await page.goto(origin+'/nyx',{waitUntil:'domcontentloaded'});
   assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.homeDesign')),'redesigned','Original home preference was not migrated');
   await page.waitForSelector('#nyxBeamsBg[data-preset]');
   const setupScreen=page.locator('#setupScreen');

@@ -16,7 +16,7 @@
       return "In Safari, tap Share, then Add to Home Screen.";
     }
     if (/Firefox/i.test(agent)) {
-      return "Firefox desktop does not offer PWA installation. Open Nyx in Chrome or Edge to install it.";
+      return "Firefox desktop does not offer PWA installation. Open N7X in Chrome or Edge to install it.";
     }
     if (/Safari/i.test(agent) && !/Chrome|Chromium|Edg/i.test(agent)) {
       return "In Safari, choose File, then Add to Dock.";
@@ -29,10 +29,10 @@
     card.dataset.nyxInstallCard = "true";
     card.className = kind === "legacy" ? "settings-card" : "settings-block";
     const copy = `
-      <h2>Install Nyx</h2>
-      <p data-install-nyx-status>Installs Nyx as an app with its own window and desktop icon.</p>`;
+      <h2>Install N7X</h2>
+      <p data-install-nyx-status>Installs N7X as an app with its own window and desktop icon.</p>`;
     const control = `<div class="settings-actions nyx-install-actions">
-      <button class="${kind === "legacy" ? "" : "settings-action"}" data-install-nyx type="button">Install Nyx</button>
+      <button class="${kind === "legacy" ? "" : "settings-action"}" data-install-nyx type="button">Install N7X</button>
       <button class="${kind === "legacy" ? "" : "settings-action"}" data-download-nyx-singlefile type="button">Download Single File</button>
     </div>`;
     card.innerHTML = kind === "dashboard"
@@ -73,15 +73,15 @@
     document.querySelectorAll("[data-install-nyx]").forEach((button) => {
       button.disabled = installed;
       button.setAttribute("aria-disabled", String(installed));
-      const label = installed ? "Nyx is Installed" : "Install Nyx";
+      const label = installed ? "N7X is Installed" : "Install N7X";
       if (button.textContent !== label) button.textContent = label;
     });
     document.querySelectorAll("[data-install-nyx-status]").forEach((status) => {
       const text = installed
-        ? "Nyx is installed on this device and opens in its own app window."
+        ? "N7X is installed on this device and opens in its own app window."
         : message || (installPrompt
           ? "Ready to install on this device."
-          : "Installs Nyx as an app with its own window and desktop icon.");
+          : "Installs N7X as an app with its own window and desktop icon.");
       if (status.textContent !== text) status.textContent = text;
     });
     document.querySelectorAll("[data-download-nyx-singlefile]").forEach((button) => {
@@ -109,7 +109,7 @@
     try {
       const result = await prompt.prompt();
       updateControls(result?.outcome === "accepted"
-        ? "Finishing the Nyx installation..."
+        ? "Finishing the N7X installation..."
         : "Installation was cancelled. You can try again anytime.");
     } catch {
       updateControls(platformHelp());
@@ -128,9 +128,9 @@
     const status = button?.closest("[data-nyx-install-card]")?.querySelector("[data-install-nyx-status]");
     try {
       const response = await fetch(source, { cache: "no-store", credentials: "same-origin" });
-      if (!response.ok) throw new Error("The Nyx file is unavailable.");
+      if (!response.ok) throw new Error("The N7X file is unavailable.");
       const markup = await response.text();
-      if (!markup.trim().toLowerCase().startsWith("<!doctype html")) throw new Error("The Nyx file was incomplete.");
+      if (!markup.trim().toLowerCase().startsWith("<!doctype html")) throw new Error("The N7X file was incomplete.");
       const objectUrl = URL.createObjectURL(new Blob([markup], { type: "text/html;charset=utf-8" }));
       const link = document.createElement("a");
       link.href = objectUrl;
@@ -141,7 +141,7 @@
       window.setTimeout(() => { link.remove(); URL.revokeObjectURL(objectUrl); }, 60_000);
       if (status) status.textContent = "Nyx-Download.html was saved. Open it from your Downloads folder.";
     } catch {
-      if (status) status.textContent = "Nyx could not create the download. Check your connection and try again.";
+      if (status) status.textContent = "N7X could not create the download. Check your connection and try again.";
     } finally {
       if (button) {
         button.disabled = false;

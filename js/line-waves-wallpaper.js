@@ -63,12 +63,12 @@ void main(){vec2 coords=gl_FragCoord.xy/uResolution.xy;coords=coords*2.0-1.0;coo
   function syncVisibility(){
     canvas=document.getElementById('nyxLineWavesBg')||canvas;if(!canvas)return;
     const show=shouldShow();canvas.hidden=!show;if(!show){renderer?.stop();return;}
-    try{renderer||=(makeRenderer(canvas));renderer.draw(performance.now());if(shouldAnimate())renderer.start();else renderer.stop();canvas.dataset.renderer='react-bits-line-waves';}catch(error){canvas.hidden=true;console.warn('Nyx Line Waves renderer unavailable',error);}
+    try{renderer||=(makeRenderer(canvas));renderer.draw(performance.now());if(shouldAnimate())renderer.start();else renderer.stop();canvas.dataset.renderer='react-bits-line-waves';}catch(error){canvas.hidden=true;console.warn("N7X Line Waves renderer unavailable",error);}
   }
   function apply(_selected,nextOptions={}){options={...defaults,...nextOptions};renderer?.update(options);syncVisibility();}
   function renderPreview(target,colorVariant){
     if(!target)return;
-    try{const preview=makeRenderer(target,true,{...options,colorVariant});preview.draw(860);preview.dispose(false);}catch(error){console.warn('Nyx Line Waves preview unavailable',error);const context=target.getContext('2d');if(context){context.fillStyle='#080c13';context.fillRect(0,0,target.width,target.height);}}
+    try{const preview=makeRenderer(target,true,{...options,colorVariant});preview.draw(860);preview.dispose(false);}catch(error){console.warn("N7X Line Waves preview unavailable",error);const context=target.getContext('2d');if(context){context.fillStyle='#080c13';context.fillRect(0,0,target.width,target.height);}}
   }
   function init(){
     canvas=document.getElementById('nyxLineWavesBg');if(!canvas)return;

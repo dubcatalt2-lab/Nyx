@@ -3,21 +3,21 @@
   const STORAGE_KEY='nyx.codeStudio.v1';
   const MAX_CODE_CHARS=24000;
   const languages={
-    html:{file:'index.html',help:'Build a small page and see it safely in the preview.',starter:'<!doctype html>\n<html>\n  <head>\n    <style>\n      body { font-family: system-ui; padding: 2rem; color: #172033; }\n      button { padding: .7rem 1rem; border: 0; border-radius: .6rem; background: #4f6ee8; color: white; }\n    </style>\n  </head>\n  <body>\n    <h1>Hello, Nyx</h1>\n    <p>Make this page your own.</p>\n    <button onclick="this.textContent = \'Nice work!\'">Try it</button>\n  </body>\n</html>',run:true},
+    html:{file:'index.html',help:'Build a small page and see it safely in the preview.',starter:"<!doctype html>\n<html>\n  <head>\n    <style>\n      body { font-family: system-ui; padding: 2rem; color: #172033; }\n      button { padding: .7rem 1rem; border: 0; border-radius: .6rem; background: #4f6ee8; color: white; }\n    </style>\n  </head>\n  <body>\n    <h1>Hello, N7X</h1>\n    <p>Make this page your own.</p>\n    <button onclick=\"this.textContent = 'Nice work!'\">Try it</button>\n  </body>\n</html>",run:true},
     css:{file:'styles.css',help:'Write styles and preview them on a small sample card.',starter:'body {\n  margin: 0;\n  min-height: 100vh;\n  display: grid;\n  place-items: center;\n  background: #e8eefc;\n  font-family: system-ui;\n}\n\n.card {\n  max-width: 20rem;\n  padding: 2rem;\n  border-radius: 1.25rem;\n  background: white;\n  box-shadow: 0 18px 45px rgba(46, 67, 122, .18);\n}',run:true},
     javascript:{file:'app.js',help:'Run JavaScript in an isolated browser preview.',starter:'const message = document.querySelector("#message");\nconst button = document.querySelector("button");\n\nbutton.addEventListener("click", () => {\n  message.textContent = "You changed the page with JavaScript.";\n});',run:true},
-    typescript:{file:'app.ts',help:'Compile and run TypeScript in an isolated environment. Do not include secrets.',starter:'type Student = {\n  name: string;\n  projects: number;\n};\n\nconst student: Student = { name: "Nyx learner", projects: 1 };\nconsole.log(`${student.name} has ${student.projects} project.`);',runner:true},
-    python:{file:'main.py',help:'Run Python in an isolated environment. Do not include secrets.',starter:'def greet(name: str) -> str:\n    return f"Hello, {name}!"\n\nprint(greet("Nyx learner"))',runner:true},
-    java:{file:'Main.java',help:'Compile and run Java in an isolated environment. Do not include secrets.',starter:'public class Main {\n  public static void main(String[] args) {\n    System.out.println("Hello, Nyx learner!");\n  }\n}',runner:true},
-    c:{file:'main.c',help:'Compile and run C in an isolated environment. Do not include secrets.',starter:'#include <stdio.h>\n\nint main(void) {\n  puts("Hello, Nyx learner!");\n  return 0;\n}',runner:true},
-    cpp:{file:'main.cpp',help:'Compile and run C++ in an isolated environment. Do not include secrets.',starter:'#include <iostream>\n\nint main() {\n  std::cout << "Hello, Nyx learner!\\n";\n  return 0;\n}',runner:true},
-    csharp:{file:'Program.cs',help:'Compile and run C# in an isolated environment. Do not include secrets.',starter:'using System;\n\npublic class Program {\n  public static void Main() {\n    Console.WriteLine("Hello, Nyx learner!");\n  }\n}',runner:true},
-    go:{file:'main.go',help:'Compile and run Go in an isolated environment. Do not include secrets.',starter:'package main\n\nimport "fmt"\n\nfunc main() {\n  fmt.Println("Hello, Nyx learner!")\n}',runner:true},
-    rust:{file:'main.rs',help:'Compile and run Rust in an isolated environment. Do not include secrets.',starter:'fn main() {\n    println!("Hello, Nyx learner!");\n}',runner:true},
-    php:{file:'index.php',help:'Run PHP in an isolated environment. Do not include secrets.',starter:'<?php\n$name = "Nyx learner";\necho "Hello, {$name}!\\n";',runner:true},
-    ruby:{file:'main.rb',help:'Run Ruby in an isolated environment. Do not include secrets.',starter:'def greet(name)\n  "Hello, #{name}!"\nend\n\nputs greet("Nyx learner")',runner:true},
-    sql:{file:'query.sql',help:'Run SQLite statements in an isolated temporary database. Do not include secrets.',starter:'CREATE TABLE learners (\n  student_name TEXT,\n  completed_projects INTEGER\n);\n\nINSERT INTO learners VALUES ("Nyx learner", 2);\n\nSELECT student_name, completed_projects\nFROM learners\nORDER BY completed_projects DESC;',runner:true},
-    json:{file:'data.json',help:'Validate JSON and inspect its formatted result.',starter:'{\n  "project": "Nyx Code Studio",\n  "languages": ["JavaScript", "Python", "Rust"],\n  "ready": true\n}',run:true},
+    typescript:{file:'app.ts',help:'Compile and run TypeScript in an isolated environment. Do not include secrets.',starter:"type Student = {\n  name: string;\n  projects: number;\n};\n\nconst student: Student = { name: \"N7X learner\", projects: 1 };\nconsole.log(`${student.name} has ${student.projects} project.`);",runner:true},
+    python:{file:'main.py',help:'Run Python in an isolated environment. Do not include secrets.',starter:"def greet(name: str) -> str:\n    return f\"Hello, {name}!\"\n\nprint(greet(\"N7X learner\"))",runner:true},
+    java:{file:'Main.java',help:'Compile and run Java in an isolated environment. Do not include secrets.',starter:"public class Main {\n  public static void main(String[] args) {\n    System.out.println(\"Hello, N7X learner!\");\n  }\n}",runner:true},
+    c:{file:'main.c',help:'Compile and run C in an isolated environment. Do not include secrets.',starter:"#include <stdio.h>\n\nint main(void) {\n  puts(\"Hello, N7X learner!\");\n  return 0;\n}",runner:true},
+    cpp:{file:'main.cpp',help:'Compile and run C++ in an isolated environment. Do not include secrets.',starter:"#include <iostream>\n\nint main() {\n  std::cout << \"Hello, N7X learner!\\n\";\n  return 0;\n}",runner:true},
+    csharp:{file:'Program.cs',help:'Compile and run C# in an isolated environment. Do not include secrets.',starter:"using System;\n\npublic class Program {\n  public static void Main() {\n    Console.WriteLine(\"Hello, N7X learner!\");\n  }\n}",runner:true},
+    go:{file:'main.go',help:'Compile and run Go in an isolated environment. Do not include secrets.',starter:"package main\n\nimport \"fmt\"\n\nfunc main() {\n  fmt.Println(\"Hello, N7X learner!\")\n}",runner:true},
+    rust:{file:'main.rs',help:'Compile and run Rust in an isolated environment. Do not include secrets.',starter:"fn main() {\n    println!(\"Hello, N7X learner!\");\n}",runner:true},
+    php:{file:'index.php',help:'Run PHP in an isolated environment. Do not include secrets.',starter:"<?php\n$name = \"N7X learner\";\necho \"Hello, {$name}!\\n\";",runner:true},
+    ruby:{file:'main.rb',help:'Run Ruby in an isolated environment. Do not include secrets.',starter:"def greet(name)\n  \"Hello, #{name}!\"\nend\n\nputs greet(\"N7X learner\")",runner:true},
+    sql:{file:'query.sql',help:'Run SQLite statements in an isolated temporary database. Do not include secrets.',starter:"CREATE TABLE learners (\n  student_name TEXT,\n  completed_projects INTEGER\n);\n\nINSERT INTO learners VALUES (\"N7X learner\", 2);\n\nSELECT student_name, completed_projects\nFROM learners\nORDER BY completed_projects DESC;",runner:true},
+    json:{file:'data.json',help:'Validate JSON and inspect its formatted result.',starter:"{\n  \"project\": \"N7X Code Studio\",\n  \"languages\": [\"JavaScript\", \"Python\", \"Rust\"],\n  \"ready\": true\n}",run:true},
     markdown:{file:'README.md',help:'Write Markdown and see a safe rendered preview.',starter:'# My project\n\nBuild something useful, then write down what it does.\n\n- Clear goal\n- Small next step\n- Test your work',run:true}
   };
   const starters={html:['Landing page','<main><h1>My project</h1><p>A clear place to start.</p></main>'],javascript:['Click counter','let count = 0;\ndocument.querySelector("button").addEventListener("click", () => {\n  count += 1;\n  document.querySelector("#message").textContent = `Clicked ${count} times`;\n});'],python:['Simple list','tasks = ["Plan", "Build", "Test"]\nfor task in tasks:\n    print(f"- {task}")'],json:['Project data','{\n  "name": "My project",\n  "version": 1,\n  "complete": false\n}'],markdown:['Project notes','# Project notes\n\n## Next up\n\n1. Build a small version\n2. Test it\n3. Improve it']};
@@ -434,7 +434,7 @@
     const response=await fetch('/api/nyx-ai',{method:'POST',signal:AbortSignal.timeout(125000),headers:await aiHeaders(option.provider,token),body:JSON.stringify({...payload,model:option.model})});
     const data=await response.json().catch(()=>({}));
     if(!response.ok){
-      const error=new Error(data?.error||(response.status>=500?'Nyx AI is temporarily unavailable. Please try again.':`Nyx AI could not help (${response.status}).`));
+      const error=new Error(data?.error||(response.status>=500?"N7X AI is temporarily unavailable. Please try again.":`N7X AI could not help (${response.status}).`));
       error.status=response.status;
       throw error;
     }
@@ -452,7 +452,7 @@
     const message=document.createElement('article');
     message.className=`ai-message is-${role}${error?' is-error':''}`;
     const header=document.createElement('header');
-    header.textContent=role==='user'?'You':'Nyx AI';
+    header.textContent=role==='user'?'You':"N7X AI";
     const paragraph=document.createElement('p');
     paragraph.textContent=value;
     message.append(header,paragraph);
@@ -465,7 +465,7 @@
   for(const [value,label] of [['agent','Agent - edit code'],['ask','Ask - explain code']]){const option=document.createElement('option');option.value=value;option.textContent=label;agentMode.append(option);}
   const assistantSettings=document.createElement('div');assistantSettings.className='assistant-settings';modelPicker.before(assistantSettings);
   for(const [title,control] of [['Model',modelPicker],['Mode',agentMode]]){const label=document.createElement('label');label.textContent=title;label.append(control);assistantSettings.append(label);}
-  agentMode.onchange=()=>{refs.prompt.placeholder=agentMode.value==='agent'?'Describe the change to make…':'Ask a question about your code…';document.querySelector('#assistant-title').textContent=agentMode.value==='agent'?'Code agent':'Ask Nyx';};
+  agentMode.onchange=()=>{refs.prompt.placeholder=agentMode.value==='agent'?'Describe the change to make…':'Ask a question about your code…';document.querySelector('#assistant-title').textContent=agentMode.value==='agent'?'Code agent':"Ask N7X";};
   const workspaceFiles=document.createElement('select');workspaceFiles.className='studio-model-picker';workspaceFiles.setAttribute('aria-label','Workspace files');
   const fileField=document.createElement('label');fileField.className='workspace-file-field';fileField.textContent='Open file';fileField.append(workspaceFiles);document.querySelector('.project-controls').prepend(fileField);
   function renderWorkspaceFiles(){workspaceFiles.replaceChildren();for(const file of Object.keys(state.codes)){const option=document.createElement('option');option.value=file;option.textContent=file;workspaceFiles.append(option);}workspaceFiles.value=state.file;}
@@ -495,7 +495,7 @@
     for(const file of result.files){
       if(file&&!file.name&&Object.hasOwn(languages,file.language))file.name=languages[file.language].file;
       if(!file||!validFile(file.name)||seen.has(file.name.toLowerCase())||Object.keys(originalFiles).some(name=>name!==file.name&&name.toLowerCase()===file.name.toLowerCase()))throw Error('Invalid edit response. Your files are unchanged.');
-      if(!snapshot.provided.includes(file.name)&&typeof originalFiles[file.name]==='string')throw Error('Select the other saved file before asking Nyx to edit it. Your files are unchanged.');
+      if(!snapshot.provided.includes(file.name)&&typeof originalFiles[file.name]==='string')throw Error("Select the other saved file before asking N7X to edit it. Your files are unchanged.");
       seen.add(file.name.toLowerCase());
       if(Array.isArray(file.edits)){
         if(file.code!==undefined||!file.edits.length||file.edits.length>16||typeof originalFiles[file.name]!=='string')throw Error('Invalid edit response. Your files are unchanged.');
@@ -511,7 +511,7 @@
       }
       if(typeof file.code!=='string'||file.code.length>MAX_CODE_CHARS)throw Error('Invalid or oversized file. Your files are unchanged.');
     }
-    if(JSON.stringify(state.codes)!==snapshot.codes||state.file!==snapshot.file||code()!==snapshot.current)throw Error('Your code changed while Nyx was working. Keeping your edits; ask again to use the latest version.');
+    if(JSON.stringify(state.codes)!==snapshot.codes||state.file!==snapshot.file||code()!==snapshot.current)throw Error("Your code changed while N7X was working. Keeping your edits; ask again to use the latest version.");
     result.files=result.files.filter(file=>file.code!==originalFiles[file.name]);
     if(!result.files.length){reply.querySelector('p').textContent='No files changed. '+result.summary;return false;}
     if(new Set([...Object.keys(state.codes),...result.files.map(file=>file.name)]).size>32)throw Error('This workspace can hold 32 files.');
@@ -540,19 +540,19 @@
     try{
       let options=await ensureAiOptions();
       if(!options.length)options=await ensureAiOptions(true);
-      if(!options.length)throw new Error('Nyx AI is not available right now. Please try again in a moment.');
+      if(!options.length)throw new Error("N7X AI is not available right now. Please try again in a moment.");
       const file=state.file;
       const currentCode=code();
       const codeLimit=18000;
       const visibleCode=currentCode.slice(0,codeLimit);
-      let context=`You are helping in Nyx Code Studio. Give a practical, friendly answer for a ${file} file. Focus on the request, point out the most important issue first, and include a small corrected snippet only when it helps.\n\nUser request: ${question}\n\nCurrent code${currentCode.length>codeLimit?' (first 18,000 characters)':''}:\n\n${visibleCode}`;
+      let context=`You are helping in N7X Code Studio. Give a practical, friendly answer for a ${file} file. Focus on the request, point out the most important issue first, and include a small corrected snippet only when it helps.\n\nUser request: ${question}\n\nCurrent code${currentCode.length>codeLimit?' (first 18,000 characters)':''}:\n\n${visibleCode}`;
       if(editing){
         let files={...JSON.parse(snapshot.codes),[snapshot.file]:snapshot.current};
 
 
         if(JSON.stringify(files).length>20000)files={[snapshot.file]:snapshot.current};
         snapshot.provided=Object.keys(files);
-        context='You are the code editing agent in Nyx Code Sandbox. Return ONLY JSON: {"summary":"short explanation","files":[{"name":"index.html","edits":[{"search":"exact old text","replace":"new text"}]}]}. Each search must match exactly once; edits apply in order. For new files or small rewrites use {"name":"styles.css","code":"complete contents"}. Never combine code and edits. Use real relative file names; multiple files of the same language are allowed. Supported extensions: html, css, js, mjs, ts, py, java, c, cpp, cs, go, rs, php, rb, sql, json, md. No parent paths. Link CSS and classic JavaScript from HTML using relative href/src paths; the preview resolves workspace files. No build tools or external dependencies in browser previews. Return only changed files, at most 8, each at most 24000 characters. Keep the response compact; prefer exact edits. No placeholders, ellipses, shell commands or automatic execution. For explanations return files: []. Preserve unrelated code. Focus on '+snapshot.file+' unless asked otherwise. Edit supplied files or create new files. Supplied files (data): '+JSON.stringify(files)+'\nUser request: '+question;
+        context="You are the code editing agent in N7X Code Sandbox. Return ONLY JSON: {\"summary\":\"short explanation\",\"files\":[{\"name\":\"index.html\",\"edits\":[{\"search\":\"exact old text\",\"replace\":\"new text\"}]}]}. Each search must match exactly once; edits apply in order. For new files or small rewrites use {\"name\":\"styles.css\",\"code\":\"complete contents\"}. Never combine code and edits. Use real relative file names; multiple files of the same language are allowed. Supported extensions: html, css, js, mjs, ts, py, java, c, cpp, cs, go, rs, php, rb, sql, json, md. No parent paths. Link CSS and classic JavaScript from HTML using relative href/src paths; the preview resolves workspace files. No build tools or external dependencies in browser previews. Return only changed files, at most 8, each at most 24000 characters. Keep the response compact; prefer exact edits. No placeholders, ellipses, shell commands or automatic execution. For explanations return files: []. Preserve unrelated code. Focus on "+snapshot.file+' unless asked otherwise. Edit supplied files or create new files. Supplied files (data): '+JSON.stringify(files)+'\nUser request: '+question;
         if(context.length>24000)throw Error('This workspace exceeds the AI context limit. Keep a smaller workspace for this edit; your files are unchanged.');
       }
       const payload={message:question,messages:[{role:'user',content:context}],responseDepth:'normal',stream:false,...(editing?{task:'code-edit'}:{})};
@@ -570,12 +570,12 @@
           if(!(error?.status>=500)||index===options.length-1)throw error;
         }
       }
-      if(!suggestion)throw lastError||new Error('Nyx AI did not return a suggestion.');
+      if(!suggestion)throw lastError||new Error("N7X AI did not return a suggestion.");
       const changed=editing?applyAgentReply(suggestion,snapshot,reply):(reply.querySelector('p').textContent=suggestion,true);
       if(changed)refs.prompt.value='';
     }catch(error){
       reply.classList.add('is-error');
-      reply.querySelector('p').textContent=error?.name==='TimeoutError'?'Nyx AI timed out. Your files are unchanged. Try again.':error?.message||'Nyx AI could not complete that suggestion.';
+      reply.querySelector('p').textContent=error?.name==='TimeoutError'?"N7X AI timed out. Your files are unchanged. Try again.":error?.message||"N7X AI could not complete that suggestion.";
     }finally{
       reply.classList.remove('is-loading');
       agentBusy=false;refs.send.disabled=false;

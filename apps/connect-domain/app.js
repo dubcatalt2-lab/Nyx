@@ -5,7 +5,7 @@
   const submit = document.querySelector("[data-submit]");
   const status = document.querySelector("[data-status]");
   const site = document.body.dataset.site === "tutsi" ? "tutsi" : "nyx";
-  const brand = site === "tutsi" ? "Tutsi" : "Nyx";
+  const brand = site === "tutsi" ? "Tutsi" : "N7X";
   let targetIp = "";
 
   function showStatus(message, type = "") {

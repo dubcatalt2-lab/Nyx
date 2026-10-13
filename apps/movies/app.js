@@ -256,7 +256,7 @@ async function watch(preferred){
   if(playbackSession){fetch('/api/movies/playback/'+encodeURIComponent(playbackSession),{method:'DELETE',keepalive:true}).catch(()=>{});playbackSession='';}
   $('player').replaceChildren();
   playbackVideo=null;$('watch-area').classList.remove('external-playback');$('watch-area').insertBefore(document.querySelector('.playback-controls'),$('episode-picker'));
-  if(index>=order.length&&!recovered&&order.some(source=>source.proxy)){recovered=true;recoverNext=true;providerStates={};renderSources();sourcePanel(true);$('player-status').textContent='Reconnecting to Nyx?';return attempt(0);}
+  if(index>=order.length&&!recovered&&order.some(source=>source.proxy)){recovered=true;recoverNext=true;providerStates={};renderSources();sourcePanel(true);$('player-status').textContent="Reconnecting to N7X?";return attempt(0);}
   if(index>=order.length){playbackVideo=null;currentProvider='';renderSources();sourcePanel(true);$('player-status').textContent='No source could start this movie. Try again shortly.';$('retry-player').hidden=false;return;}
   const source=order[index];currentProvider=source.id;providerStates[source.id]='Checking';renderSources();sourcePanel(true);
   const controller=playbackRequest=new AbortController();let failed=false,started=false,startRequested=false;
@@ -370,7 +370,7 @@ document.querySelectorAll('[data-icon]').forEach(element=>icon(element,element.d
 for(const [selector,name,label] of [
  ['#featured-open','info','View movie details'],['#watch','play','Play movie'],['#search button','search','Search movies'],
  ['#clear-search','close','Clear search'],['#retry-search','reload','Retry movie search'],['#retry-detail','reload','Retry movie details'],
- ['#retry-player','reload','Reload player'],['#previous','previous','Previous page'],['#next','next','Next page'],['#choose-source','sources','Video sources'],['.home-link','home','Back to Nyx']
+ ['#retry-player','reload','Reload player'],['#previous','previous','Previous page'],['#next','next','Next page'],['#choose-source','sources','Video sources'],['.home-link','home',"Back to N7X"]
 ]){const button=document.querySelector(selector);button.classList.add('icon-control');button.setAttribute('aria-label',label);button.title=label;icon(button,name);}
 document.querySelectorAll('button[aria-label]').forEach(button=>button.title=button.getAttribute('aria-label'));
 

@@ -1,8 +1,8 @@
 (()=>{
   const key='nyx.linkGenerator.walkthrough.v1';
   const steps=[
-    [['.access-tabs','Start with your Nyx account','Sign in below, or use your Premium access code. Then select Continue. Nothing is published yet.']],
-    [['[data-provider]','Choose where to host it','jsDelivr uses the Nyx publisher. Other configured providers appear here when available.'],
+    [['.access-tabs',"Start with your N7X account",'Sign in below, or use your Premium access code. Then select Continue. Nothing is published yet.']],
+    [['[data-provider]','Choose where to host it',"jsDelivr uses the N7X publisher. Other configured providers appear here when available."],
      ['[data-label-input]','Give it a name','Choose a short label, such as study-room. A random suffix keeps each new link separate.'],
      ['[data-filter-select]','Check your network','Select a filter for a one-time availability report. A report cannot guarantee a link will work on every network.'],
      ['[data-wizard-step="1"] .wizard-actions','Review before publishing','Choose the amount if shown, then select Review. Surge creates one link at a time.']],

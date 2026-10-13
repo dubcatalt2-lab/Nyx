@@ -147,7 +147,7 @@
     const text=await response.text();let body=null;
     try{body=text?JSON.parse(text):null}catch{
       const path=(()=>{try{return new URL(url,location.href).pathname}catch{return String(url)}})();
-      throw new Error(`Nyx received a web page instead of API data from ${path}. Refresh Nyx and try again.`);
+      throw new Error(`N7X received a web page instead of API data from ${path}. Refresh N7X and try again.`);
     }
     if(!response.ok){
       let message=`Request failed (${response.status})`;
@@ -156,7 +156,7 @@
       const retryAfterMs=/^\d+$/.test(retryAfter)?Number(retryAfter)*1000:Math.max(0,(Date.parse(retryAfter)||0)-Date.now());
       const error=new Error(message);error.status=response.status;error.retryAfterMs=retryAfterMs;throw error;
     }
-    if(body===null)throw new Error('Nyx received an empty API response.');
+    if(body===null)throw new Error("N7X received an empty API response.");
     return body;
   }
   async function loadVendors(){
@@ -206,7 +206,7 @@
     if(parentAuth?.available)return {currentUser:parentAuth.token?{getIdToken:async()=>String((await freednsParentAuth())?.token||'')}:null};
     if(!freednsBulkAuthPromise)freednsBulkAuthPromise=(async()=>{
       const config=await fetchJson('/api/founder-profile/auth-config',{cache:'no-store'});
-      if(!config?.enabled)throw new Error('Nyx account sign-in is not configured.');
+      if(!config?.enabled)throw new Error("N7X account sign-in is not configured.");
       const [{initializeApp,getApps},{getAuth,setPersistence,browserLocalPersistence}]=await Promise.all([
         import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),
         import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')
@@ -223,7 +223,7 @@
     if(freednsBulkAccess.promise)return freednsBulkAccess.promise;
     const operation=(async()=>{
       const auth=await freednsBulkAuth();
-      if(!auth.currentUser)return {resolved:true,premium:false,expiresAt:Date.now()+FREEDNS_BULK_ACCESS_TTL_MS,error:'Sign in to Nyx to use Premium full scans.',auth};
+      if(!auth.currentUser)return {resolved:true,premium:false,expiresAt:Date.now()+FREEDNS_BULK_ACCESS_TTL_MS,error:"Sign in to N7X to use Premium full scans.",auth};
       const token=await auth.currentUser.getIdToken();
       const account=await fetchJson('/api/account/me',{cache:'no-store',headers:{Authorization:`Bearer ${token}`}});
       const staffAccess=['owner','co_owner','admin','manager','developer','moderator'].includes(String(account?.role||''));
@@ -237,7 +237,7 @@
   }
   async function freednsBulkToken({force=false}={}){
     const access=await refreshFreednsBulkAccess(force);
-    if(!access.auth?.currentUser)throw new Error(access.error||'Sign in to Nyx on the homepage before starting a full registry scan.');
+    if(!access.auth?.currentUser)throw new Error(access.error||"Sign in to N7X on the homepage before starting a full registry scan.");
     if(!access.premium)throw new Error(access.error||'Premium, Trial, or Moderator access is required to check all domains.');
     return access.auth.currentUser.getIdToken();
   }
@@ -632,7 +632,7 @@
     if(!candidates.length){if(!automatic)showNotice('Every domain on this page already has results for the selected vendors.');return;}
     freednsScanController?.abort();freednsScanController=new AbortController();const {signal}=freednsScanController;
     freednsPageScanning=true;candidates.forEach(entry=>freednsChecking.add(entry.domain));updateFreednsActions();renderFreedns();showNotice('');setFreednsScanProgress(0,candidates.length);
-    $('[data-freedns-progress-detail]').textContent='Nyx is checking this page through the paid server session. The page will not pause between domains.';
+    $('[data-freedns-progress-detail]').textContent="N7X is checking this page through the paid server session. The page will not pause between domains.";
     let completed=0;let failed=0;let requestError=null;
     try{
       const payload=await fetchJson(`${CHECK_API}/page-scan`,{method:'POST',signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({urls:candidates.map(entry=>`https://${entry.domain}/`),...(vendor?{vendor}:{})})});
@@ -678,7 +678,7 @@
           if(!transient)throw error;
           failures+=1;
           const waitMs=Math.max(3000,Math.min(60000,Number(error.retryAfterMs)||3000+failures*1000));
-          $('[data-freedns-progress-detail]').textContent='Nocturne is busy. Nyx is retrying automatically without stopping the full scan.';
+          $('[data-freedns-progress-detail]').textContent="Nocturne is busy. N7X is retrying automatically without stopping the full scan.";
           await freednsDelay(waitMs,signal);
         }
       }
@@ -725,7 +725,7 @@
       freednsFullScanning=false;freednsChecking.clear();renderWorkspace();
       if(storageFailed)showNotice(`The full scan stopped because this browser could not save more verdicts. ${persistedTotal.toLocaleString()} domain results remain saved.`,'error',true);
       else if(error)showNotice(`The full scan could not finish: ${error.message}`,'error',true);
-      else if(signal.aborted)showNotice('Nyx stopped watching the full scan. The Nocturne server job may continue; click Check all domains to reconnect and import its results.');
+      else if(signal.aborted)showNotice("N7X stopped watching the full scan. The Nocturne server job may continue; click Check all domains to reconnect and import its results.");
       else if(wanted.size)showNotice(`The server scan finished and imported ${imported.toLocaleString()} new domains. ${wanted.size.toLocaleString()} ${wanted.size===1?'domain still needs':'domains still need'} results; use Double check to retry only ${wanted.size===1?'that domain':'those domains'}.`,'error',true);
       else showNotice(`Full scan complete: all ${total.toLocaleString()} cached domains have saved vendor results.`);
     }
@@ -789,6 +789,6 @@
   const verdictMigrationFailed=freednsVerdictsNeedsMigration&&!saveFreednsVerdicts();
   applyTheme();wireEvents();renderWorkspace();loadVendors();void refreshFreednsBulkAccess().catch(()=>{});
   if(freednsCacheExpiredOnLoad)showNotice('Cached FreeDNS domains and verdicts expired after eight hours and were removed from this device.');
-  else if(verdictMigrationFailed)showNotice('Nyx could not compact the existing verdict cache. Clear the FreeDNS cache before starting another full scan.','error',true);
+  else if(verdictMigrationFailed)showNotice("N7X could not compact the existing verdict cache. Clear the FreeDNS cache before starting another full scan.",'error',true);
   setInterval(()=>expireFreednsCacheIfNeeded({render:true,notify:true}),FREEDNS_CACHE_EXPIRY_POLL_MS);
 })();

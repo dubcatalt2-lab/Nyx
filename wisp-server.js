@@ -18,7 +18,7 @@ const presenceSessions = new Map();
 const presenceTtlMs = 45_000;
 
 const wisp = await startWispurr({
-  onFailure: () => { console.error("Nyx relay worker stopped."); shutdown("worker", 1); }
+  onFailure: () => { console.error("N7X relay worker stopped."); shutdown("worker", 1); }
 });
 
 function originAllowed(origin) {
@@ -113,7 +113,7 @@ const server = createServer((req, res) => {
     return;
   }
   res.writeHead(200, { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" });
-  res.end("Nyx Wisp is running. WebSocket endpoint: /wisp/\n");
+  res.end("N7X Wisp is running. WebSocket endpoint: /wisp/\n");
 });
 
 server.on("upgrade", (req, socket, head) => {

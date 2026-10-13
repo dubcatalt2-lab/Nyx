@@ -396,7 +396,7 @@
     overlay.innerHTML = `
       <main class="nyx-owner-dashboard">
         <header class="nyx-owner-header">
-          <div><span class="nyx-owner-eyebrow">${dashboardIcon("shield")}NYX ADMINISTRATION</span><h1 id="nyxOwnerDashboardTitle">Owner Dashboard</h1><p data-owner-access-copy>Loading your role permissions…</p></div>
+          <div><span class="nyx-owner-eyebrow">${dashboardIcon("shield")}N7X ADMINISTRATION</span><h1 id="nyxOwnerDashboardTitle">Owner Dashboard</h1><p data-owner-access-copy>Loading your role permissions…</p></div>
           <div class="nyx-owner-header-actions">
             <button type="button" data-owner-refresh>${dashboardIcon("refresh")}<span>Refresh</span></button>
             <button class="nyx-owner-close" type="button" data-owner-close aria-label="Close owner dashboard">${dashboardIcon("close")}</button>
@@ -540,7 +540,7 @@
         const warning=data.state==='low'||data.state==='paused';
         aiStatusHost.dataset.aiState=data.state;
         aiStatusHost.style.borderColor=warning?'#d9ad55':'';
-        aiStatusHost.innerHTML=`<div><strong>${esc(titles[data.state]||titles.unknown)}${data.state!=='unknown'?` <span>$${money(data.balanceUsd)}</span>`:''}</strong><p>${data.state==='unknown'?'Balance is unavailable. Shared AI pauses if its balance check fails.':`Account balance: $${money(data.balanceUsd)} &middot; Nyx key allowance: ${data.keyRemainingUsd===null?'No key limit':`$${money(data.keyRemainingUsd)}`} &middot; Daily site cap: $${money(data.dailyCapUsd)}`}</p>${warning?`<p>${data.state==='paused'?'The account balance or key allowance has reached the $0.10 cutoff.':'The account balance or Nyx key allowance is below $0.50.'} Add credits or review the key limit in OpenRouter. Daily usage limits still apply.</p>`:''}<small>Checked ${esc(dateLabel(data.checkedAt))}</small><p><a href="/api#owner" target="_blank" rel="noopener">Manage AI API keys and token balances</a></p></div>`;
+        aiStatusHost.innerHTML=`<div><strong>${esc(titles[data.state]||titles.unknown)}${data.state!=='unknown'?` <span>$${money(data.balanceUsd)}</span>`:''}</strong><p>${data.state==='unknown'?'Balance is unavailable. Shared AI pauses if its balance check fails.':`Account balance: $${money(data.balanceUsd)} &middot; N7X key allowance: ${data.keyRemainingUsd===null?'No key limit':`$${money(data.keyRemainingUsd)}`} &middot; Daily site cap: $${money(data.dailyCapUsd)}`}</p>${warning?`<p>${data.state==='paused'?'The account balance or key allowance has reached the $0.10 cutoff.':"The account balance or N7X key allowance is below $0.50."} Add credits or review the key limit in OpenRouter. Daily usage limits still apply.</p>`:''}<small>Checked ${esc(dateLabel(data.checkedAt))}</small><p><a href="/api#owner" target="_blank" rel="noopener">Manage AI API keys and token balances</a></p></div>`;
       } catch {
         if(overlay.isConnected&&state.access?.founder){
           aiStatusHost.hidden=false;
@@ -695,8 +695,8 @@
 
     function renderIpBans() {
       const bans = state.ipBans || [];
-      const clientNote = state.ipBanClientIp ? ` Your current IP is ${state.ipBanClientIp}; Nyx will not let you block it from this session.` : "";
-      drawer.innerHTML = `<header><div><span>${dashboardIcon("shield")}</span><h2>Network access</h2><p>IP bans apply to Nyx server and function requests.</p></div><button type="button" data-owner-drawer-close aria-label="Close IP bans">${dashboardIcon("close")}</button></header>
+      const clientNote = state.ipBanClientIp ? ` Your current IP is ${state.ipBanClientIp}; N7X will not let you block it from this session.` : "";
+      drawer.innerHTML = `<header><div><span>${dashboardIcon("shield")}</span><h2>Network access</h2><p>IP bans apply to N7X server and function requests.</p></div><button type="button" data-owner-drawer-close aria-label="Close IP bans">${dashboardIcon("close")}</button></header>
         <div class="nyx-owner-drawer-scroll nyx-owner-ip-ban-drawer">
           <section class="nyx-owner-detail-section"><h3>Block an IP address</h3><p class="nyx-owner-action-note">Use a full IPv4 or IPv6 address. This does not configure Cloudflare's edge firewall.${esc(clientNote)}</p><form class="nyx-owner-ip-ban-form" data-owner-ip-ban-form><label>IP address<input name="ip" inputmode="text" autocomplete="off" maxlength="45" required placeholder="203.0.113.10 or 2001:db8::10"></label><label>Reason <input name="reason" maxlength="160" autocomplete="off" placeholder="Optional internal note"></label><div class="nyx-owner-detail-actions"><button type="submit">${dashboardIcon("shield")}Block IP</button></div></form></section>
           <section class="nyx-owner-detail-section"><h3>Blocked IP addresses</h3>${bans.length ? `<div class="nyx-owner-ip-ban-list">${bans.map(ban => `<article><div><strong>${esc(ban.ip)}</strong><span>${esc(ban.reason || "No reason recorded")}</span><small>Blocked ${esc(relativeLabel(ban.createdAt))}${ban.createdBy ? ` by ${esc(ban.createdBy)}` : ""}</small></div><button class="danger" type="button" data-owner-unban="${esc(ban.id)}">${dashboardIcon("refresh")}Unblock</button></article>`).join("")}</div>` : '<p class="nyx-owner-action-note">No IP addresses are blocked.</p>'}</section>
@@ -724,7 +724,7 @@
     async function removeIpBan(id) {
       const ban = state.ipBans.find(entry => entry.id === id);
       if (!ban) return;
-      const confirmed = await confirmAction({ title: "Unblock this IP address?", message: `${ban.ip} will regain access to Nyx server requests.`, confirmLabel: "Unblock", requireText: ban.ip });
+      const confirmed = await confirmAction({ title: "Unblock this IP address?", message: `${ban.ip} will regain access to N7X server requests.`, confirmLabel: "Unblock", requireText: ban.ip });
       if (!confirmed) return;
       try {
         await api(`/api/owner-dashboard/ip-bans/${encodeURIComponent(id)}`, { method: "DELETE" });
@@ -915,7 +915,7 @@
         drawer.innerHTML = `<header><div class="nyx-owner-detail-avatar">${avatar}<i class="online"></i></div><div><span>${roleIcon("guest")}Guest session</span><h2>${esc(guest.displayName)}</h2><p class="nyx-owner-drawer-identity">@${esc(guest.username)} <span class="nyx-owner-presence-state online"><i></i>Online</span></p></div><button type="button" data-owner-drawer-close aria-label="Close guest details">${dashboardIcon("close")}</button></header>
           <div class="nyx-owner-drawer-scroll">
             <section class="nyx-owner-detail-grid">${detailValue("Identity", guest.displayName)}${detailValue("Guest ID", `@${guest.username}`)}${detailValue("Account", "No account created")}${detailValue("Presence", "Online now")}${detailValue("First seen", dateLabel(guest.createdAt))}${detailValue("Last active", dateLabel(guest.lastActiveAt))}${networkDetails}</section>
-            <section class="nyx-owner-detail-section"><h3>Guest visitor</h3><p class="nyx-owner-action-note">Nyx uses the username saved by this browser's startup wizard. If the visitor skipped it, Nyx assigns a stable random guest name instead.${canViewNetwork ? " The last-seen IP is available only to staff who can manage network bans; shared or changing IPs may represent more than one person." : ""} Account, role, subscription, profile, and account-management controls become available only after the visitor signs in or creates an account.</p></section>
+            <section class="nyx-owner-detail-section"><h3>Guest visitor</h3><p class="nyx-owner-action-note">N7X uses the username saved by this browser's startup wizard. If the visitor skipped it, N7X assigns a stable random guest name instead.${canViewNetwork ? " The last-seen IP is available only to staff who can manage network bans; shared or changing IPs may represent more than one person." : ""} Account, role, subscription, profile, and account-management controls become available only after the visitor signs in or creates an account.</p></section>
           </div>`;
         requestAnimationFrame(() => drawer.classList.add("show"));
         return;
@@ -948,7 +948,7 @@
           capabilities.canDisableAccount && capabilities.canManageNetworkBans && !user.disabled && user.lastSeenIp ? `<button class="danger" type="button" data-owner-user-action="disable_with_ip_ban">${dashboardIcon("ban")}Disable + block IP</button>` : "",
           capabilities.canDeleteAccount ? `<button class="danger" type="button" data-owner-user-action="delete">${dashboardIcon("trash")}Delete account</button>` : ""
         ].filter(Boolean).join("");
-        const ipBanNote = capabilities.canManageNetworkBans ? (user.lastSeenIp ? `<p class="nyx-owner-action-note">Last seen IP: ${esc(user.lastSeenIp)} · ${esc(dateLabel(user.lastSeenIpAt))}. IP addresses can be shared or change over time.</p>` : '<p class="nyx-owner-action-note">No IP has been recorded for this account yet. Nyx records one after its next authenticated activity.</p>') : "";
+        const ipBanNote = capabilities.canManageNetworkBans ? (user.lastSeenIp ? `<p class="nyx-owner-action-note">Last seen IP: ${esc(user.lastSeenIp)} · ${esc(dateLabel(user.lastSeenIpAt))}. IP addresses can be shared or change over time.</p>` : "<p class=\"nyx-owner-action-note\">No IP has been recorded for this account yet. N7X records one after its next authenticated activity.</p>") : "";
         const accountActionsSection = accountActions ? `<section class="nyx-owner-detail-section"><h3>Account actions</h3>${!user.deliverableEmail && capabilities.canResetPassword ? '<p class="nyx-owner-action-note">This username-only account has no inbox. Create a secure reset link and give it directly to the account owner.</p>' : ""}${ipBanNote}<div class="nyx-owner-action-grid">${accountActions}</div></section>` : "";
         const recentActivitySection = capabilities.canViewAudit ? `<section class="nyx-owner-detail-section"><h3>Recent user activity</h3><div class="nyx-owner-user-activity">${(user.recentActivity || []).length ? user.recentActivity.map(event => `<p><strong>${esc(actionLabel(event.action))}</strong><span>${esc(relativeLabel(event.createdAt))}</span></p>`).join("") : "<span>No recorded account actions.</span>"}</div></section>` : "";
         drawer.innerHTML = `<header><div class="nyx-owner-detail-avatar">${avatar}<i class="${user.online ? "online" : ""}"></i></div><div><span>${roleIcon(user.role)}<span class="nyx-minecraft-text">${esc(userRoleLabel(user))}</span> account</span><h2>${esc(user.displayName)}</h2><p class="nyx-owner-drawer-identity">@${esc(user.username)} <span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></p></div><button type="button" data-owner-drawer-close aria-label="Close user details">${dashboardIcon("close")}</button></header>
@@ -979,7 +979,7 @@
 
     let studyReadyData={domains:[],targetIps:[]};
     function renderStudyReady(){
-      drawer.innerHTML=`<header class="nyx-owner-global-app-header"><div><span>${dashboardIcon("apps")}</span><div><h2>StudyReady domains</h2><p>Manage the learning site on your domains.</p></div></div><button type="button" data-owner-drawer-close aria-label="Close StudyReady">${dashboardIcon("close")}</button></header><div class="nyx-owner-drawer-scroll nyx-owner-global-app-drawer"><section class="nyx-owner-detail-section"><p><a href="/studyready" target="_blank" rel="noopener">Preview StudyReady</a> &middot; <a href="/textbook.pdf" target="_blank" rel="noopener">Textbook PDF</a></p><p>Nyx stays available at <a href="/nyx" target="_blank" rel="noopener">/nyx</a>. These domains show the same learning pages to every visitor.</p><h3>Add or update a domain</h3><form class="nyx-owner-global-app-form" data-owner-studyready-form><label>Domain<input name="hostname" required maxlength="253" placeholder="learn.example.com"></label><label>Page title<input name="title" required maxlength="80" value="StudyReady"></label><button type="submit">Save domain</button></form><p class="nyx-owner-action-note">Point the domain's A record to ${esc(studyReadyData.targetIps.join(' or ')||'your VPS address')}. New domains need working DNS before HTTPS can be issued. Existing sites at the same hostname will use StudyReady as their homepage.</p></section><section class="nyx-owner-detail-section"><h3>Configured domains</h3>${studyReadyData.domains.map(row=>`<article class="nyx-owner-detail-section"><strong>${esc(row.hostname)}</strong><p>${esc(row.title)}</p><div class="nyx-owner-detail-actions"><a href="https://${esc(row.hostname)}/" target="_blank" rel="noopener">Open site</a><button type="button" data-studyready-edit="${esc(row.hostname)}">Edit title</button><button type="button" data-studyready-check="${esc(row.hostname)}">Check DNS</button><button class="danger" type="button" data-studyready-remove="${esc(row.hostname)}">Remove</button></div></article>`).join('')||'<p>No domains configured.</p>'}<p data-studyready-status role="status"></p></section><section class="nyx-owner-detail-section"><h3>Category reviews</h3><p>Publishing lessons does not automatically change a filter category. Lightspeed review tools require administrator access.</p><a href="https://help.lightspeedsystems.com/s/article/kb-4019650636-lightspeed-filter---policies---verifying-access-and-troubleshooting" target="_blank" rel="noopener">Access Checker instructions</a></section></div>`;
+      drawer.innerHTML=`<header class="nyx-owner-global-app-header"><div><span>${dashboardIcon("apps")}</span><div><h2>StudyReady domains</h2><p>Manage the learning site on your domains.</p></div></div><button type="button" data-owner-drawer-close aria-label="Close StudyReady">${dashboardIcon("close")}</button></header><div class="nyx-owner-drawer-scroll nyx-owner-global-app-drawer"><section class="nyx-owner-detail-section"><p><a href="/studyready" target="_blank" rel="noopener">Preview StudyReady</a> &middot; <a href="/textbook.pdf" target="_blank" rel="noopener">Textbook PDF</a></p><p>N7X stays available at <a href="/nyx" target="_blank" rel="noopener">/nyx</a>. These domains show the same learning pages to every visitor.</p><h3>Add or update a domain</h3><form class="nyx-owner-global-app-form" data-owner-studyready-form><label>Domain<input name="hostname" required maxlength="253" placeholder="learn.example.com"></label><label>Page title<input name="title" required maxlength="80" value="StudyReady"></label><button type="submit">Save domain</button></form><p class="nyx-owner-action-note">Point the domain's A record to ${esc(studyReadyData.targetIps.join(' or ')||'your VPS address')}. New domains need working DNS before HTTPS can be issued. Existing sites at the same hostname will use StudyReady as their homepage.</p></section><section class="nyx-owner-detail-section"><h3>Configured domains</h3>${studyReadyData.domains.map(row=>`<article class="nyx-owner-detail-section"><strong>${esc(row.hostname)}</strong><p>${esc(row.title)}</p><div class="nyx-owner-detail-actions"><a href="https://${esc(row.hostname)}/" target="_blank" rel="noopener">Open site</a><button type="button" data-studyready-edit="${esc(row.hostname)}">Edit title</button><button type="button" data-studyready-check="${esc(row.hostname)}">Check DNS</button><button class="danger" type="button" data-studyready-remove="${esc(row.hostname)}">Remove</button></div></article>`).join('')||'<p>No domains configured.</p>'}<p data-studyready-status role="status"></p></section><section class="nyx-owner-detail-section"><h3>Category reviews</h3><p>Publishing lessons does not automatically change a filter category. Lightspeed review tools require administrator access.</p><a href="https://help.lightspeedsystems.com/s/article/kb-4019650636-lightspeed-filter---policies---verifying-access-and-troubleshooting" target="_blank" rel="noopener">Access Checker instructions</a></section></div>`;
     }
     async function openStudyReady(){
       drawer.hidden=false;drawer.classList.add('show');state.selectedUser=null;state.selectedCapabilities=null;
@@ -1003,8 +1003,8 @@
     function renderGlobalApps() {
       drawer.innerHTML = `<header class="nyx-owner-global-app-header"><div><span>${dashboardIcon("apps")}</span><div><h2>Apps for everyone</h2><p>Add or remove apps from every user's Apps page.</p></div></div><button type="button" data-owner-drawer-close aria-label="Close global apps">${dashboardIcon("close")}</button></header>
         <div class="nyx-owner-drawer-scroll nyx-owner-global-app-drawer">
-          <section class="nyx-owner-detail-section"><h3>Add an app</h3><form class="nyx-owner-global-app-form" data-owner-global-app-form><label>Name<input name="name" minlength="2" maxlength="48" autocomplete="off" required placeholder="Example app"></label><label>URL or Nyx path<input name="url" maxlength="2048" autocomplete="off" spellcheck="false" required placeholder="https://example.com/ or /apps/example/"></label><div class="nyx-owner-detail-actions"><button type="submit">${dashboardIcon("apps")}<span>Add for everyone</span></button></div></form></section>
-          <section class="nyx-owner-detail-section"><div class="nyx-owner-global-app-heading"><div><h3>Published apps</h3><p class="nyx-owner-action-note">Changes appear in open Nyx sessions within one minute.</p></div><span>${state.globalApps.length}</span></div>${state.globalApps.length ? `<div class="nyx-owner-global-app-list">${state.globalApps.map(app => `<article><span class="nyx-owner-global-app-icon">${dashboardIcon("apps")}</span><div><strong>${esc(app.name)}</strong><small>${esc(app.url)}</small></div><button class="danger" type="button" data-owner-global-app-delete="${esc(app.id)}" aria-label="Remove ${esc(app.name)}">${dashboardIcon("trash")}Remove</button></article>`).join("")}</div>` : '<p class="nyx-owner-action-note">No apps are currently published.</p>'}</section>
+          <section class="nyx-owner-detail-section"><h3>Add an app</h3><form class="nyx-owner-global-app-form" data-owner-global-app-form><label>Name<input name="name" minlength="2" maxlength="48" autocomplete="off" required placeholder="Example app"></label><label>URL or N7X path<input name="url" maxlength="2048" autocomplete="off" spellcheck="false" required placeholder="https://example.com/ or /apps/example/"></label><div class="nyx-owner-detail-actions"><button type="submit">${dashboardIcon("apps")}<span>Add for everyone</span></button></div></form></section>
+          <section class="nyx-owner-detail-section"><div class="nyx-owner-global-app-heading"><div><h3>Published apps</h3><p class="nyx-owner-action-note">Changes appear in open N7X sessions within one minute.</p></div><span>${state.globalApps.length}</span></div>${state.globalApps.length ? `<div class="nyx-owner-global-app-list">${state.globalApps.map(app => `<article><span class="nyx-owner-global-app-icon">${dashboardIcon("apps")}</span><div><strong>${esc(app.name)}</strong><small>${esc(app.url)}</small></div><button class="danger" type="button" data-owner-global-app-delete="${esc(app.id)}" aria-label="Remove ${esc(app.name)}">${dashboardIcon("trash")}Remove</button></article>`).join("")}</div>` : '<p class="nyx-owner-action-note">No apps are currently published.</p>'}</section>
         </div>`;
     }
 
@@ -1028,7 +1028,7 @@
     async function deleteGlobalApp(id) {
       const app = state.globalApps.find(entry => entry.id === id);
       if (!app) return;
-      const confirmed = await confirmAction({ title: "Remove this app for everyone?", message: `${app.name} will disappear from the Nyx app catalog for every user.`, confirmLabel: "Remove app", danger: true });
+      const confirmed = await confirmAction({ title: "Remove this app for everyone?", message: `${app.name} will disappear from the N7X app catalog for every user.`, confirmLabel: "Remove app", danger: true });
       if (!confirmed) return;
       try {
         const result = await api(`/api/owner-dashboard/apps/${encodeURIComponent(id)}`, { method: "DELETE" });
@@ -1108,7 +1108,7 @@
       state.selectedUser = user;
       const avatar = ownerProfileImageMarkup(user.photoUrl, "", (user.displayName || "?").slice(0, 1).toUpperCase());
       drawer.innerHTML = `<header><div class="nyx-owner-detail-avatar">${avatar}<i class="${user.online ? "online" : ""}"></i></div><div><span>${dashboardIcon("shield")}Search review</span><h2>${esc(user.displayName)}</h2><p class="nyx-owner-drawer-identity">@${esc(user.username)}</p></div><button type="button" data-owner-drawer-close aria-label="Close search history">${dashboardIcon("close")}</button></header>
-        <div class="nyx-owner-drawer-scroll"><section class="nyx-owner-detail-section nyx-owner-flagged-searches"><div class="nyx-owner-search-history-heading"><h3>Search history</h3><button type="button" data-owner-clear-search-history="${esc(user.uid)}" hidden>${dashboardIcon("trash")}Clear history</button></div><p class="nyx-owner-action-note">Searches made through Nyx while this account is signed in are retained for 30 days. Policy-classified searches are highlighted, but a match is a moderation signal rather than proof.</p><div class="nyx-owner-flagged-search-list"><div class="nyx-owner-drawer-loading"><i></i><i></i><i></i></div></div></section></div>`;
+        <div class="nyx-owner-drawer-scroll"><section class="nyx-owner-detail-section nyx-owner-flagged-searches"><div class="nyx-owner-search-history-heading"><h3>Search history</h3><button type="button" data-owner-clear-search-history="${esc(user.uid)}" hidden>${dashboardIcon("trash")}Clear history</button></div><p class="nyx-owner-action-note">Searches made through N7X while this account is signed in are retained for 30 days. Policy-classified searches are highlighted, but a match is a moderation signal rather than proof.</p><div class="nyx-owner-flagged-search-list"><div class="nyx-owner-drawer-loading"><i></i><i></i><i></i></div></div></section></div>`;
       requestAnimationFrame(() => drawer.classList.add("show"));
       void hydrateOwnerProfileMedia(drawer);
       const list = drawer.querySelector(".nyx-owner-flagged-search-list");
@@ -1120,7 +1120,7 @@
         if (clearButton) clearButton.hidden = !(result.canClear && searches.length);
         list.innerHTML = searches.length
           ? searches.map(search => `<article class="${search.flagged ? "policy" : ""}"><header><strong>${esc(search.category || "Standard search")}</strong><time datetime="${esc(search.createdAt)}" title="${esc(dateLabel(search.createdAt))}">${esc(relativeLabel(search.createdAt))}</time></header><p>${esc(search.query)}</p></article>`).join("")
-          : '<div class="nyx-owner-empty compact"><strong>No retained searches</strong><span>This account has no Nyx searches from the last 30 days.</span></div>';
+          : "<div class=\"nyx-owner-empty compact\"><strong>No retained searches</strong><span>This account has no N7X searches from the last 30 days.</span></div>";
       } catch (error) {
         if (!list?.isConnected) return;
         list.innerHTML = `<div class="nyx-owner-error"><strong>Search history could not load</strong><span>${esc(error.message)}</span></div>`;
@@ -1131,7 +1131,7 @@
       if (!user || user.guest) return;
       const confirmed = await confirmAction({
         title: "Clear this search history?",
-        message: `All retained Nyx searches for ${user.displayName} will be permanently deleted. This cannot be undone.`,
+        message: `All retained N7X searches for ${user.displayName} will be permanently deleted. This cannot be undone.`,
         confirmLabel: "Clear history",
         danger: true
       });
@@ -1214,7 +1214,7 @@
 
     function showResetLink(resetLink) {
       confirmHost.hidden = false;
-      confirmHost.innerHTML = `<form><h2>Password reset link</h2><p>Give this one-time Firebase link directly to the account owner. Nyx never reveals or stores their password.</p><label>Reset link<input name="resetLink" value="${esc(resetLink)}" readonly></label><div><button type="button" data-owner-reset-close>Close</button><button type="button" data-owner-reset-copy>Copy link</button></div></form>`;
+      confirmHost.innerHTML = `<form><h2>Password reset link</h2><p>Give this one-time Firebase link directly to the account owner. N7X never reveals or stores their password.</p><label>Reset link<input name="resetLink" value="${esc(resetLink)}" readonly></label><div><button type="button" data-owner-reset-close>Close</button><button type="button" data-owner-reset-copy>Copy link</button></div></form>`;
       const input = confirmHost.querySelector('[name="resetLink"]');
       const close = () => { confirmHost.hidden = true; confirmHost.innerHTML = ""; };
       confirmHost.querySelector("[data-owner-reset-close]").addEventListener("click", close);
@@ -1238,7 +1238,7 @@
         enable: ["Re-enable account?", `${user.email || user.displayName} will be able to sign in again.`, "Re-enable", false],
         verify_email: ["Verify this email?", `Mark ${user.email} as verified in Firebase Authentication.`, "Verify", false],
         ai_trust: ["Approve AI allowance?", "This account will use the established-user allowance. Daily limits still apply.", "Approve", false],
-        ai_restrict: ["Restrict shared AI?", "This account will lose shared AI access. Other Nyx features remain available.", "Restrict", false],
+        ai_restrict: ["Restrict shared AI?", "This account will lose shared AI access. Other N7X features remain available.", "Restrict", false],
         ai_reset: ["Use automatic AI access?", "This account's shared AI access will follow its account history and subscription again.", "Reset", false],
         create_password_reset_link: ["Create a password reset link?", "The current password will remain private. Give the generated one-time link only to the account owner.", "Create link", false],
         send_password_reset: ["Send password reset?", `Firebase will email a password-reset link to ${user.email}.`, "Send email", false]
@@ -1249,7 +1249,7 @@
         body={password};
       } else if (action === "delete") {
         const phrase = user.email || user.uid;
-        const memberMessage = await confirmAccountStatusAction({ title: "Permanently delete account?", message: "This removes the Firebase Authentication account and its Nyx profile data. Audit history is retained, and the member will see your message if they try to use this account again.", confirmLabel: "Delete permanently", requireText: phrase });
+        const memberMessage = await confirmAccountStatusAction({ title: "Permanently delete account?", message: "This removes the Firebase Authentication account and its N7X profile data. Audit history is retained, and the member will see your message if they try to use this account again.", confirmLabel: "Delete permanently", requireText: phrase });
         if (memberMessage === null) return;
         body = { ...body, reason: memberMessage };
       } else if (action === "disable" || action === "ban" || action === "disable_with_ip_ban") {
@@ -1259,7 +1259,7 @@
             ? `${user.email || user.displayName} will immediately lose access until re-enabled.`
             : action === "ban"
               ? `${user.email || user.displayName} will immediately lose access and see this as an account ban until re-enabled.`
-              : `${user.email || user.displayName} will lose access, and ${user.lastSeenIp} will be blocked from Nyx server requests. Shared or changing IPs can affect other people.`,
+              : `${user.email || user.displayName} will lose access, and ${user.lastSeenIp} will be blocked from N7X server requests. Shared or changing IPs can affect other people.`,
           confirmLabel: action === "disable" ? "Disable" : action === "ban" ? "Ban account" : "Disable and block"
         });
         if (memberMessage === null) return;

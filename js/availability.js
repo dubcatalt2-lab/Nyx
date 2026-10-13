@@ -5,7 +5,7 @@
   function render(){
     const offline=navigator.onLine===false;
     const message=offline ? 'You are offline. Check your internet connection.' : hostDown
-      ? 'Nyx VPS is unreachable and may be down. Report to vdrtes on Discord immediately!'
+      ? "N7X VPS is unreachable and may be down. Report to vdrtes on Discord immediately!"
       : relayDown ? (getRelay?.().custom
         ? 'Having trouble connecting to your custom Wisp relay. Retrying automatically...'
         : 'Having trouble connecting to Wisp. Retrying automatically...') : '';

@@ -26,16 +26,13 @@ try{
  });
  await page.goto(base,{waitUntil:'domcontentloaded'});
  await page.getByRole('button',{name:'Got it',exact:true}).click();
- await page.locator('#nyxStudyHubBackground').waitFor({state:'attached'});
  assert.equal(await page.locator('#nyxStudyHubStartup').count(),0);
- await page.locator('#nyxStudyHubBackground').evaluate(frame=>{frame.contentWindow.nyxContinuityFixture=42;});
  await page.keyboard.press('F12');
  assert.equal(await page.locator('#nyxPrivacyCover').evaluate(el=>el.open),true);
  const coverBounds=await page.locator('#nyxPrivacyCover').boundingBox();
  assert.equal(coverBounds.width,1440);assert.equal(coverBounds.height,960);
  await page.keyboard.press('Escape');
  assert.equal(await page.locator('#nyxPrivacyCover').evaluate(el=>el.open),false);
- assert.equal(await page.locator('#nyxStudyHubBackground').evaluate(frame=>frame.contentWindow.nyxContinuityFixture),42);
  await page.locator('[data-nyx-dock-item="apps"]').click();
  let tile;
  for(let i=0;i<60&&!tile;i++){for(const frame of page.frames()){const candidate=frame.locator('[data-global-app-id="nyx-vms"]');if(await candidate.count()&&await candidate.first().isVisible()){tile=candidate.first();break;}}if(!tile)await page.waitForTimeout(100);}

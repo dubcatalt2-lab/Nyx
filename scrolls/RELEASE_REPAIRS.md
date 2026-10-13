@@ -299,7 +299,7 @@ A	.github/workflows/folder-navigation.yml
 M	.github/workflows/network.yml
 M	chapels/chat/app.js
 M	connection/README.md
-M	connection/address.mjs
+M	connection/passage.mjs
 M	connection/assets.mjs
 M	connection/build.mjs
 M	connection/channel.mjs
@@ -311,11 +311,11 @@ A	connection/isolated-worker.mjs
 M	connection/package.json
 A	connection/partition.mjs
 M	connection/runtime.js
-M	connection/server.mjs
-A	connection/session-store.mjs
+M	connection/sanctuary.mjs
+A	connection/vestry.mjs
 A	connection/session.test.mjs
-M	connection/socket.mjs
-M	connection/transform.mjs
+M	connection/communion.mjs
+M	connection/liturgy.mjs
 M	gospel.js
 A	mission/install-document-service.sh
 A	mission/systemd/nyx-document.service.template

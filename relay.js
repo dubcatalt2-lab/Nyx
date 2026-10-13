@@ -1,4 +1,4 @@
-import {application} from './connection/app.mjs';
+import {application} from './connection/assembly.mjs';
 
 const server=application();
 server.listen(Number(process.env.DOCUMENT_PORT||8082),process.env.DOCUMENT_HOST||'127.0.0.1');

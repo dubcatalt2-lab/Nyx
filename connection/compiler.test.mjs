@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {compiler} from './compiler.mjs';
-import {content,script,stylesheet} from './transform.mjs';
+import {content,script,stylesheet} from './liturgy.mjs';
 
 test('large script/CSS compilation preserves output and leaves request thread responsive',async()=>{
   const pool=compiler({workers:2});

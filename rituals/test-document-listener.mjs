@@ -1,6 +1,6 @@
 ﻿import assert from 'node:assert/strict';
 import {once} from 'node:events';
-import {application} from '../connection/app.mjs';
+import {application} from '../connection/assembly.mjs';
 const first=application();first.listen(0,'127.0.0.1');await once(first,'listening');
 const second=application();
 try{

@@ -3,8 +3,8 @@
   "reviews": [
     {
       "file": "@28b23060/e60f9b50/@r916d1a4bd4a3a776f746a5a7!.js",
-      "sha256": "418159ba20c76b442d595f91e41379625d0c12a5986b2f35fe0986eca9af23e3",
-      "evidence": "Read-only saved-preference migration key. The former decoration value is normalized to the current catalog value before rendering; retaining the input key protects existing accounts until stored records are migrated. The connection key occurs only in the historical preference export denylist. Re-reviewed after the Moonrise default change: all four decoded contexts and their migration/export-only uses remain unchanged.",
+      "sha256": "61fe4ae13168e420fef4c2a3b0eaa1663078353ceb47ae00d15283f94e055926",
+      "evidence": "Reviewed after the A1 popup text correction. Source diff changes only the displayed AI label to A1; the four decoded contexts remain identical: three saved-decoration migration keys and one historical preference export denylist key. None executes a retired engine. All compiled copies retain these exact context hashes.",
       "matches": [
         {
           "section": "decoded string",
@@ -26,8 +26,8 @@
     },
     {
       "file": "@r525f31eeb43c82e14a860e31!.js",
-      "sha256": "65f7664ff1e42bdf645787a49150af74e9fc2511daa93a59e4797693281c1e20",
-      "evidence": "Read-only saved-preference migration key. The former decoration value is normalized to the current catalog value before rendering; retaining the input key protects existing accounts until stored records are migrated. The connection key occurs only in the historical preference export denylist. Re-reviewed after the Moonrise default change: all four decoded contexts and their migration/export-only uses remain unchanged.",
+      "sha256": "3bb0f904617e1e6aae7296e2c5dbbdea92ced316f0e0f3a41ed3997cf8e92644",
+      "evidence": "Reviewed after the A1 popup text correction. Source diff changes only the displayed AI label to A1; the four decoded contexts remain identical: three saved-decoration migration keys and one historical preference export denylist key. None executes a retired engine. All compiled copies retain these exact context hashes.",
       "matches": [
         {
           "section": "decoded string",
@@ -60,8 +60,8 @@
     },
     {
       "file": "apps/jsdelivr-publisher/static-package/files/@28b23060/e60f9b50/@r916d1a4bd4a3a776f746a5a7!.js",
-      "sha256": "c6ebbdb14274109ffb8f4d567121a669a568910d37c680437cf6d4ddd802d243",
-      "evidence": "Read-only saved-preference migration key. The former decoration value is normalized to the current catalog value before rendering; retaining the input key protects existing accounts until stored records are migrated. The connection key occurs only in the historical preference export denylist. Re-reviewed after the Moonrise default change: all four decoded contexts and their migration/export-only uses remain unchanged.",
+      "sha256": "0dd4459af182e1642a4e6df140a6e393d8bb089d3c713776ff2bc9cba72b423b",
+      "evidence": "Reviewed after the A1 popup text correction. Source diff changes only the displayed AI label to A1; the four decoded contexts remain identical: three saved-decoration migration keys and one historical preference export denylist key. None executes a retired engine. All compiled copies retain these exact context hashes.",
       "matches": [
         {
           "section": "decoded string",
@@ -83,8 +83,8 @@
     },
     {
       "file": "apps/jsdelivr-publisher/static-package/files/@r525f31eeb43c82e14a860e31!.js",
-      "sha256": "d38768d639c0e6c9a7dd9d4f3f034d060713c8c1302274d189038444fe1029da",
-      "evidence": "Read-only saved-preference migration key. The former decoration value is normalized to the current catalog value before rendering; retaining the input key protects existing accounts until stored records are migrated. The connection key occurs only in the historical preference export denylist. Re-reviewed after the Moonrise default change: all four decoded contexts and their migration/export-only uses remain unchanged.",
+      "sha256": "ad4a4d44069cd3dd45ab56ce80b8f1db14e2206f7121b429c703b530d5cf6add",
+      "evidence": "Reviewed after the A1 popup text correction. Source diff changes only the displayed AI label to A1; the four decoded contexts remain identical: three saved-decoration migration keys and one historical preference export denylist key. None executes a retired engine. All compiled copies retain these exact context hashes.",
       "matches": [
         {
           "section": "decoded string",
@@ -2278,8 +2278,8 @@
     },
     {
       "file": "apps/jsdelivr-publisher/static-package/files/script.js",
-      "sha256": "c6ebbdb14274109ffb8f4d567121a669a568910d37c680437cf6d4ddd802d243",
-      "evidence": "Read-only saved-preference migration key. The former decoration value is normalized to the current catalog value before rendering; retaining the input key protects existing accounts until stored records are migrated. The connection key occurs only in the historical preference export denylist. Re-reviewed after the Moonrise default change: all four decoded contexts and their migration/export-only uses remain unchanged. Re-reviewed after the Moonrise default change: all four decoded contexts and their migration/export-only uses remain unchanged.",
+      "sha256": "0dd4459af182e1642a4e6df140a6e393d8bb089d3c713776ff2bc9cba72b423b",
+      "evidence": "Reviewed after the A1 popup text correction. Source diff changes only the displayed AI label to A1; the four decoded contexts remain identical: three saved-decoration migration keys and one historical preference export denylist key. None executes a retired engine. All compiled copies retain these exact context hashes.",
       "matches": [
         {
           "section": "decoded string",
@@ -2301,8 +2301,8 @@
     },
     {
       "file": "script.js",
-      "sha256": "65f7664ff1e42bdf645787a49150af74e9fc2511daa93a59e4797693281c1e20",
-      "evidence": "Read-only saved-preference migration key. The former decoration value is normalized to the current catalog value before rendering; retaining the input key protects existing accounts until stored records are migrated. The connection key occurs only in the historical preference export denylist. Re-reviewed after the Moonrise default change: all four decoded contexts and their migration/export-only uses remain unchanged. Re-reviewed after the Moonrise default change: all four decoded contexts and their migration/export-only uses remain unchanged.",
+      "sha256": "3bb0f904617e1e6aae7296e2c5dbbdea92ced316f0e0f3a41ed3997cf8e92644",
+      "evidence": "Reviewed after the A1 popup text correction. Source diff changes only the displayed AI label to A1; the four decoded contexts remain identical: three saved-decoration migration keys and one historical preference export denylist key. None executes a retired engine. All compiled copies retain these exact context hashes.",
       "matches": [
         {
           "section": "decoded string",

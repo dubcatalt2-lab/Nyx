@@ -1,6 +1,6 @@
-import {source} from './address.mjs';
-import {content} from './transform.mjs';
-import {cookieStore} from './cookies.mjs';
+import {source} from './passage.mjs';
+import {content} from './liturgy.mjs';
+import {cookieStore} from './covenant.mjs';
 const profiles=new Map();
 const storage=cookieStore();
 function profileFor(id){

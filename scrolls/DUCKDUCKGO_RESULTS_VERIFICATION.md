@@ -284,8 +284,8 @@ Historical result: FAIL. The complete original report, including its raw match l
 
 Files changed specifically for this repair (earlier worktree changes are inventoried in SEARCH_AND_UI_VERIFICATION.md):
 
-- connection/address.mjs - make repeated routing idempotent for already mapped addresses.
-- connection/transform.mjs - shared markup traversal, contextual fragment transformation, preserve JSON data with a JavaScript MIME type.
+- connection/passage.mjs - make repeated routing idempotent for already mapped addresses.
+- connection/liturgy.mjs - shared markup traversal, contextual fragment transformation, preserve JSON data with a JavaScript MIME type.
 - connection/runtime.js - intercept dynamic HTML, image and CSS entry points.
 - connection/client.mjs - wait for worker updates, coalesce connection attempts, reconnect on a worker request.
 - connection/worker.mjs - recover document sessions after worker restart/update.

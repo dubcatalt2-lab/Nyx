@@ -7,9 +7,9 @@ import {createServer,request} from 'node:http';
 import {once} from 'node:events';
 import {WebSocket} from 'ws';
 import {isolatedApplication} from './isolated-app.mjs';
-import {sessionStore} from './session-store.mjs';
+import {sessionStore} from './vestry.mjs';
 import {partition} from './partition.mjs';
-import {pack,unpack} from './frames.mjs';
+import {pack,unpack} from './verses.mjs';
 
 test('session cookies persist across stores and stay isolated',async()=>{
   const directory=await mkdtemp(join(tmpdir(),'document-session-'));

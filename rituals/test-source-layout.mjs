@@ -13,7 +13,7 @@ for(const [from,to] of Object.entries({...sourceLayout,...sourceFileLayout})){
 assert.equal(publicSourcePath('chapels/movies/intercession.mjs'),'apps/movies/proxy.mjs');
 assert.equal(publicSourcePath('study.html'),'index.html');
 assert(privateSourcePath('/relay.js'));
-assert(privateSourcePath('/connection/server.mjs'));
+assert(privateSourcePath('/connection/sanctuary.mjs'));
 assert.equal(publicSourcePath('parables/document-window.mjs'),'js/document-window.mjs');
 assert.equal(publicSourceText('import("/chapels/tutsi/intercession.mjs")'),'import("/apps/tutsi/proxy.mjs")');
 for(const name of ['scripture','ministries','hermitage','deacon','lectionary','scrolls'])assert(privateSourcePath('/'+name+'/anything.js'));

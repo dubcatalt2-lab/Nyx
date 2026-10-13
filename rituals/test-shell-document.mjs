@@ -3,7 +3,7 @@ import {createServer} from 'node:http';
 import {once} from 'node:events';
 import {fork} from 'node:child_process';
 import {chromium} from 'playwright';
-import {application} from '../connection/app.mjs';
+import {application} from '../connection/assembly.mjs';
 
 const upstream=createServer((request,response)=>{
  const url=new URL(request.url,'https://fixture.test');

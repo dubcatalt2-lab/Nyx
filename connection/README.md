@@ -1,4 +1,4 @@
-# Document connection
+# Covenant engine
 
 The release service is `isolated-app.mjs`. Set `DOCUMENT_SUFFIX`,
 `DOCUMENT_STATE_DIR`, and `PORT`, then run `node connection/isolated-app.mjs`.

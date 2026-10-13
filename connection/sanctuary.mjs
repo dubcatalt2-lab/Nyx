@@ -2,9 +2,9 @@ import {lookup} from 'node:dns/promises';
 import {BlockList, isIP} from 'node:net';
 import {validateHeaderName, validateHeaderValue} from 'node:http';
 import {fetch} from 'undici';
-import {connections} from './connections.mjs';
+import {connections} from './fellowship.mjs';
 import {WebSocketServer} from 'ws';
-import {pack, unpack, limits} from './frames.mjs';
+import {pack, unpack, limits} from './verses.mjs';
 import {channel} from './channel.mjs';
 
 const blocked = new BlockList();

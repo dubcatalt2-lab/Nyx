@@ -1,4 +1,4 @@
-import {pack,unpack} from './frames.mjs';
+import {pack,unpack} from './verses.mjs';
 
 export class EventLines{
   constructor(emit,retry){this.emit=emit;this.retry=retry;this.text='';this.data=[];this.name='';this.id='';}

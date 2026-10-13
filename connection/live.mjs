@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {once} from 'node:events';
 import {chromium} from '@playwright/test';
-import {application} from './app.mjs';
+import {application} from './assembly.mjs';
 const server=application({observe:(name,value)=>{if(name==='failure')console.error('UPSTREAM',value);}});
 server.listen(0,'127.0.0.1');await once(server,'listening');
 const browser=await chromium.launch({headless:true,...(process.platform==='win32'?{channel:'msedge'}:{})});

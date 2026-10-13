@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import {createServer as httpServer} from 'node:http';
 import {once} from 'node:events';
 import {WebSocket} from 'ws';
-import {createServer} from './server.mjs';
-import {pack,unpack} from './frames.mjs';
-import {connections as connectionPool} from './connections.mjs';
+import {createServer} from './sanctuary.mjs';
+import {pack,unpack} from './verses.mjs';
+import {connections as connectionPool} from './fellowship.mjs';
 
 test('connection reuse separates origins and DNS changes, bounds active entries and closes cleanly',async()=>{
   const pool=connectionPool({capacity:2});

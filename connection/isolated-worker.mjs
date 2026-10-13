@@ -1,6 +1,6 @@
-import {Transport} from './transport.mjs';
-import {source} from './address.mjs';
-import {content} from './transform.mjs';
+import {Transport} from './pilgrimage.mjs';
+import {source} from './passage.mjs';
+import {content} from './liturgy.mjs';
 import {partitionSuffix} from './partition.mjs';
 
 const transport=new Transport();

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {textCache} from './text-cache.mjs';
-import {script,stylesheet,content} from './transform.mjs';
+import {textCache} from './lectionary.mjs';
+import {script,stylesheet,content} from './liturgy.mjs';
 
 test('compiled text requires exact source and context, expires, and stays bounded',()=>{
   let time=0,calls=0;const cache=textCache({limit:10000,entries:2,lifetime:10,now:()=>time});

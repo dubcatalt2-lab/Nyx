@@ -1,4 +1,4 @@
-import {pack,unpack} from './frames.mjs';
+import {pack,unpack} from './verses.mjs';
 
 export function socketClass(Original,base,readyAt,restore=value=>value,endpointOrigin=()=>location.origin){
   class Connection extends EventTarget{

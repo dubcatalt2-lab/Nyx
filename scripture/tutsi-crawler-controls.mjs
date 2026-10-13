@@ -1,7 +1,6 @@
 import { isTutsiHostname } from "./tutsi-hostnames.mjs";
-// Honest crawler opt-out and a bounded trap counter; not a human-verification system.
+// Private workspace indexing policy and a bounded diagnostic counter.
 export function installTutsiCrawlerControls(app) {
-  const crawler=/(?:googlebot|bingbot|duckduckbot|baiduspider|yandexbot|ahrefsbot|semrushbot|mj12bot|dotbot|petalbot|applebot|gptbot|chatgpt-user|oai-searchbot|claudebot|claude-user|claude-searchbot|anthropic-ai|perplexitybot|perplexity-user|bytespider|ccbot|amazonbot|cohere-ai)/i;
   let trapHits=0;
   app.get('/tutsi/resource-index',(_req,res)=>{
     trapHits++;
@@ -15,8 +14,6 @@ export function installTutsiCrawlerControls(app) {
     res.set('X-Robots-Tag','noindex, nofollow, noarchive');
     if(isTutsiHostname(host)&&req.path==='/robots.txt')return res.type('text').send('User-agent: *\nDisallow: /\n');
     if(req.path==='/healthz')return next();
-    res.vary('User-Agent');
-    if(crawler.test(String(req.get('user-agent')||'')))return res.set('Cache-Control','private, no-store').status(403).type('text').send('Automated access is not permitted.');
     next();
   });
 }

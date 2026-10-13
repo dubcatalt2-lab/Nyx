@@ -2,8 +2,8 @@
 import {createServer} from 'node:http';
 import {once} from 'node:events';
 import WebSocket from 'ws';
-import {application} from '../connection/app.mjs';
-import {pack,unpack} from '../connection/frames.mjs';
+import {application} from '../connection/assembly.mjs';
+import {pack,unpack} from '../connection/verses.mjs';
 const upstream=createServer((request,response)=>{
  const bytes=[];request.on('data',chunk=>bytes.push(chunk));request.on('end',()=>{
   response.writeHead(201,{'content-type':'application/json','set-cookie':['first=1','second=2']});

@@ -42,7 +42,6 @@ export const sourceFileLayout=Object.freeze({
   "rituals/test-ai-image-output-browser.mjs": "rituals/test-ai-image-output-workspace.mjs",
   "rituals/test-ai-usage-browser.mjs": "rituals/test-ai-usage-workspace.mjs",
   "rituals/test-ai-web-browser.mjs": "rituals/test-ai-web-workspace.mjs",
-  "rituals/test-browser-loading-recovery.mjs": "rituals/test-workspace-loading-recovery.mjs",
   "rituals/test-browser-only.mjs": "rituals/test-workspace-only.mjs",
   "rituals/test-browser-scramble.mjs": "rituals/test-workspace-scramble.mjs",
   "rituals/test-browser-settings-layout.mjs": "rituals/test-workspace-settings-layout.mjs",
@@ -53,7 +52,6 @@ export const sourceFileLayout=Object.freeze({
   "rituals/test-fellowship-browser.mjs": "rituals/test-fellowship-workspace.mjs",
   "rituals/test-http-relay-browser.mjs": "rituals/test-http-relay-workspace.mjs",
   "rituals/test-intercession-build-browser.mjs": "rituals/test-intercession-build-workspace.mjs",
-  "rituals/test-intercession-spa-browser.mjs": "rituals/test-intercession-spa-workspace.mjs",
   "rituals/test-nyxcloud-browser.mjs": "rituals/test-nyxcloud-workspace.mjs",
   "rituals/test-nyxcloud-lorem-browser.mjs": "rituals/test-nyxcloud-lorem-workspace.mjs",
   "rituals/test-owner-only-browser.mjs": "rituals/test-owner-only-workspace.mjs",
@@ -75,21 +73,12 @@ export const sourceFileLayout=Object.freeze({
   "rituals/test-nyxify-search-recovery.mjs": "rituals/test-nyxify-discernment-recovery.mjs",
   "rituals/test-proxy-activation.mjs": "rituals/test-intercession-activation.mjs",
   "rituals/test-proxy-build-browser.mjs": "rituals/test-intercession-build-workspace.mjs",
-  "rituals/test-proxy-build.mjs": "rituals/test-intercession-build.mjs",
-  "rituals/test-proxy-channel-navigation.mjs": "rituals/test-intercession-channel-navigation.mjs",
-  "rituals/test-proxy-consent-policy.mjs": "rituals/test-intercession-consent-policy.mjs",
   "rituals/test-proxy-dom-budget.mjs": "rituals/test-intercession-dom-budget.mjs",
   "rituals/test-proxy-engine-policy.mjs": "rituals/test-intercession-engine-policy.mjs",
   "rituals/test-proxy-presentation-recovery.mjs": "rituals/test-intercession-presentation-recovery.mjs",
   "rituals/test-proxy-scope-repair.mjs": "rituals/test-intercession-scope-repair.mjs",
-  "rituals/test-proxy-spa-browser.mjs": "rituals/test-intercession-spa-workspace.mjs",
-  "rituals/test-proxy-spa-recovery.mjs": "rituals/test-intercession-spa-recovery.mjs",
   "rituals/test-proxy-startup.mjs": "rituals/test-intercession-startup.mjs",
-  "rituals/test-proxy-transport-init.mjs": "rituals/test-intercession-transport-init.mjs",
-  "rituals/test-proxy-worker-recovery.mjs": "rituals/test-intercession-worker-recovery.mjs",
-  "rituals/test-search-transition.mjs": "rituals/test-discernment-transition.mjs",
-  "rituals/test-tutsi-first-search.mjs": "rituals/test-tutsi-first-discernment.mjs",
-  "rituals/test-tutsi-image-search.mjs": "rituals/test-tutsi-image-discernment.mjs"
+  "rituals/test-proxy-transport-init.mjs": "rituals/test-intercession-transport-init.mjs"
 });
 export function sourceFile(value){
  if(typeof value!=='string'&&!(value instanceof URL))return value;

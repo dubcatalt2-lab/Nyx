@@ -5,7 +5,7 @@ import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 import {once} from 'node:events';
 import {chromium} from 'playwright';
-import {application} from '../connection/app.mjs';
+import {application} from '../connection/assembly.mjs';
 import {documentOrigin} from '../parables/document-window.mjs';
 
 for(const hostname of ['localhost','127.0.0.1'])assert.equal(documentOrigin({},new URL('http://'+hostname+':8080')),'http://'+hostname+':8082');

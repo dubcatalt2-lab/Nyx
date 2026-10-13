@@ -1,5 +1,5 @@
 import {WebSocket} from 'ws';
-import {pack, unpack, limits} from './frames.mjs';
+import {pack, unpack, limits} from './verses.mjs';
 
 export function channel(socket, resolveDestination, headersFor,prepare=async()=>null) {
   let upstream, started=false, ready=false;

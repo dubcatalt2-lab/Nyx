@@ -1,4 +1,4 @@
-import {pack, unpack, limits} from './frames.mjs';
+import {pack, unpack, limits} from './verses.mjs';
 
 export class Transport {
   constructor(endpoint = '/api/sync') {

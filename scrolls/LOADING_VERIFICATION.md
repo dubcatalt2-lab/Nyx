@@ -356,7 +356,7 @@ These are the files changed in this optimization, not the full pre-existing dirt
 
 - `connection/assets.mjs (new)`
 - `connection/assets.test.mjs (new)`
-- `connection/app.mjs`
+- `connection/assembly.mjs`
 - `connection/dynamic-smoke.mjs`
 - `connection/measure-loading.mjs (new)`
 - `connection/package.json`

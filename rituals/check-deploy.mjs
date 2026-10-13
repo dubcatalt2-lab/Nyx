@@ -4,7 +4,7 @@ import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
   "relay.js",
-  "connection/server.mjs",
+  "connection/sanctuary.mjs",
   "connection/worker.mjs",
   "js/document-window.mjs",
   "js/document-controls.js",

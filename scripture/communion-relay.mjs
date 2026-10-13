@@ -9,12 +9,12 @@ const serverInfo = Buffer.from([5, 0, 0, 0, 0, 2, 1]);
 // Wispurr 4.2 has no bind-address setting. Require a fresh private password on
 // every worker connection, including when its port is reachable off-host.
 // Terminate that handshake here so existing v1/v2 workspace clients need no secret.
-export async function startWispurr({ port = 6001, onFailure = () => {} } = {}) {
+export async function startCommunion({ port = 6001, onFailure = () => {} } = {}) {
   const { wispurr } = await import('wispurr');
   // Upstream detect-port enumerates interfaces via AF_NETLINK on Linux. The
   // production service intentionally forbids that family; upstream retries
   // indefinitely. Probe only the actual listener family, with bounded attempts.
-  class NyxWispurr extends wispurr {
+  class CommunionWorker extends wispurr {
     async getAvailablePort(first) {
       for (let candidate = first; candidate <= Math.min(first + 99, 65535); candidate++) {
         const available = await new Promise((resolve, reject) => {
@@ -24,7 +24,7 @@ export async function startWispurr({ port = 6001, onFailure = () => {} } = {}) {
         });
         if (available) return candidate;
       }
-      throw new Error('No available Wispurr worker port in the bounded range.');
+      throw new Error('No available worker port in the bounded range.');
     }
   }
   const password = randomBytes(32).toString('hex');
@@ -35,7 +35,7 @@ export async function startWispurr({ port = 6001, onFailure = () => {} } = {}) {
   authInfo[7] = 2;
   authInfo.writeUInt32LE(auth.length, 8);
   auth.copy(authInfo, 12);
-  const worker = new NyxWispurr({
+  const worker = new CommunionWorker({
     port,
     allowTCP: true,
     allowUDP: false,
@@ -72,7 +72,7 @@ export async function startWispurr({ port = 6001, onFailure = () => {} } = {}) {
     child.once('exit', () => {
       if (!stopping) {
         for (const dispose of sessions) dispose();
-        onFailure(new Error('Wispurr worker exited unexpectedly.'));
+        onFailure(new Error('Connection worker exited unexpectedly.'));
       }
     });
   }

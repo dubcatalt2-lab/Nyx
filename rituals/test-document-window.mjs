@@ -3,7 +3,7 @@ import {createServer} from 'node:http';
 import {readFile} from 'node:fs/promises';
 import {once} from 'node:events';
 import {chromium} from '@playwright/test';
-import {application} from '../connection/app.mjs';
+import {application} from '../connection/assembly.mjs';
 
 const upstream=createServer((_request,response)=>{
   response.setHeader('content-type','text/html');

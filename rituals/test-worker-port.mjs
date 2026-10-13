@@ -1,7 +1,7 @@
 ﻿import assert from 'node:assert/strict';
 import {createServer} from 'node:net';
 import {once} from 'node:events';
-import {application} from '../connection/app.mjs';
+import {application} from '../connection/assembly.mjs';
 const occupied=createServer(socket=>socket.end());
 occupied.listen(0,'::');await once(occupied,'listening');
 const server=application();

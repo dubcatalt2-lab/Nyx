@@ -17,6 +17,8 @@ jobs:
           cache-dependency-path: connection/package-lock.json
       - run: npm ci
       - run: node rituals/test-dependency-purge.mjs
+      - run: node rituals/test-source-layout.mjs
+      - run: node rituals/test-decoy.mjs
       - run: npm ci --prefix connection
       - run: npx playwright install --with-deps chromium
       - run: npm run test:lesson-assets

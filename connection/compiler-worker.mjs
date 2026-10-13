@@ -1,5 +1,5 @@
 import {parentPort} from 'node:worker_threads';
-import {script,stylesheet} from './transform.mjs';
+import {script,stylesheet} from './liturgy.mjs';
 
 parentPort.on('message',({kind,text,base,prefix,mode})=>{
   try {

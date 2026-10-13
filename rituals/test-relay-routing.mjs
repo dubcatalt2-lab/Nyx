@@ -11,7 +11,7 @@ try {
   console.log('App started for relay routing check');
   const base='ws://127.0.0.1:'+port;
   async function denied(headers,status){
-    const ws=new WebSocket(base+'/api/relay',{headers});
+    const ws=new WebSocket(base+'/api/communion',{headers});
     ws.on('error',()=>{});
     const [,response]=await once(ws,'unexpected-response');
     assert.equal(response.statusCode,status);response.resume();ws.terminate();
@@ -22,7 +22,7 @@ try {
   console.log('Foreign origin rejected');
   await denied({origin:'https://drop.altarworship.org.uk',host:'drop.altarworship.org.uk'},410);
   console.log('Retired domain rejected');
-  socket=new WebSocket(base+'/api/relay',{origin:'http://127.0.0.1:'+port});
+  socket=new WebSocket(base+'/api/communion',{origin:'http://127.0.0.1:'+port});
   const [frame]=await once(socket,'message');
   assert.equal(frame[0],3);assert.equal(frame.readUInt32LE(1),0);
   socket.close();

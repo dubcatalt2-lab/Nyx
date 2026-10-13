@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {content,document,stylesheet} from './transform.mjs';
-import {route} from './address.mjs';
+import {content,document,stylesheet} from './liturgy.mjs';
+import {route} from './passage.mjs';
 
 const base='https://fixture.test/folder/page';
 const prefix='https://d-test.nyx.test/content/page/';

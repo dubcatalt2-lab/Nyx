@@ -7,7 +7,7 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {pathToFileURL} from 'node:url';
 import {brotliDecompressSync,gunzipSync} from 'node:zlib';
-import {application} from './app.mjs';
+import {application} from './assembly.mjs';
 
 test('assets compress, revalidate, negotiate and invalidate after a new build',async()=>{
   const directory=await mkdtemp(join(tmpdir(),'document-asset-test-'));

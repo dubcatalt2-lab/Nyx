@@ -1,6 +1,6 @@
-import {Transport} from './transport.mjs';
+import {Transport} from './pilgrimage.mjs';
 import {activeWorker} from './registration.mjs';
-import {route,source} from './address.mjs';
+import {route,source} from './passage.mjs';
 const transport = new Transport();
 const form = document.querySelector('form');
 const frame = document.querySelector('iframe');

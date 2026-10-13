@@ -10,7 +10,7 @@ import {createHash} from 'node:crypto';
 import {chromium} from 'playwright';
 import {isolatedApplication} from './isolated-app.mjs';
 import {partition,digest} from './partition.mjs';
-import {route} from './address.mjs';
+import {route} from './passage.mjs';
 
 for(const value of ['','abc','https://example.com','https://a.example:443','a'.repeat(500)])assert.equal(digest(value),createHash('sha256').update(value).digest('hex'));
 const temporary=await mkdtemp(join(tmpdir(),'document-isolation-'));

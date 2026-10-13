@@ -1,7 +1,7 @@
 import {createServer as createHttpServer} from 'node:http';
 import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
-import {createServer} from './server.mjs';
+import {createServer} from './sanctuary.mjs';
 import {assets} from './assets.mjs';
 
 export function application(options = {}) {

@@ -4,14 +4,14 @@ import {resolve} from 'node:path';
 import {Readable} from 'node:stream';
 import {randomBytes} from 'node:crypto';
 import {fetch} from 'undici';
-import {connections} from './connections.mjs';
+import {connections} from './fellowship.mjs';
 import {assets} from './assets.mjs';
-import {createServer,destination,requestHeaders} from './server.mjs';
+import {createServer,destination,requestHeaders} from './sanctuary.mjs';
 import {partition,partitionSuffix} from './partition.mjs';
-import {source} from './address.mjs';
-import {content} from './transform.mjs';
-import {sessionStore} from './session-store.mjs';
-import {limits} from './frames.mjs';
+import {source} from './passage.mjs';
+import {content} from './liturgy.mjs';
+import {sessionStore} from './vestry.mjs';
+import {limits} from './verses.mjs';
 import {compiler} from './compiler.mjs';
 
 export function isolatedApplication({suffix=process.env.DOCUMENT_SUFFIX, directory=process.env.DOCUMENT_STATE_DIR, resolveDestination=destination, assetDirectory,protocol='https:'}={}){

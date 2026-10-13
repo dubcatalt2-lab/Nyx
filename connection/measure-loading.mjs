@@ -1,4 +1,4 @@
-import {application} from './app.mjs';
+import {application} from './assembly.mjs';
 import {createServer, get} from 'node:http';
 import {once} from 'node:events';
 import {chromium} from 'playwright';

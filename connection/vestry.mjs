@@ -1,7 +1,7 @@
 import {mkdir,readFile,writeFile,rename,readdir,stat,unlink} from 'node:fs/promises';
 import {join} from 'node:path';
 import {randomBytes} from 'node:crypto';
-import {Cookies} from './cookies.mjs';
+import {Cookies} from './covenant.mjs';
 
 export function sessionStore(directory){
   const entries=new Map();

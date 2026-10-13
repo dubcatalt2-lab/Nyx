@@ -1,9 +1,9 @@
-import {socketClass} from './socket.mjs';
-import {Cookies} from './cookies.mjs';
-import {eventClass} from './events.mjs';
-import {source,route} from './address.mjs';
+import {socketClass} from './communion.mjs';
+import {Cookies} from './covenant.mjs';
+import {eventClass} from './canticle.mjs';
+import {source,route} from './passage.mjs';
 import {partitionOrigin,partitionSuffix} from './partition.mjs';
-import {fragment,stylesheet,candidates} from './transform.mjs';
+import {fragment,stylesheet,candidates} from './liturgy.mjs';
 
 (() => {
   const current = globalThis.document?.currentScript;

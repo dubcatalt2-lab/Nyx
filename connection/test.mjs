@@ -7,16 +7,16 @@ import {createServer as httpServer} from 'node:http';
 import {gzipSync} from 'node:zlib';
 import {WebSocket,WebSocketServer} from 'ws';
 import {indexedDB} from 'fake-indexeddb';
-import {Cookies,cookieStore} from './cookies.mjs';
+import {Cookies,cookieStore} from './covenant.mjs';
 import {constants} from './constants.mjs';
 import {runInNewContext} from 'node:vm';
-import {EventLines} from './events.mjs';
+import {EventLines} from './canticle.mjs';
 import {parse as htmlParse} from 'parse5';
-import {pack, unpack} from './frames.mjs';
-import {Transport} from './transport.mjs';
-import {application} from './app.mjs';
-import {destination, publicAddress} from './server.mjs';
-import {script, stylesheet, document, candidates, content} from './transform.mjs';
+import {pack, unpack} from './verses.mjs';
+import {Transport} from './pilgrimage.mjs';
+import {application} from './assembly.mjs';
+import {destination, publicAddress} from './sanctuary.mjs';
+import {script, stylesheet, document, candidates, content} from './liturgy.mjs';
 
 test('data responses retain valid JSON despite a JavaScript media type',async()=>{
   const input=JSON.stringify({results:[{title:'Example',image:'https://images.test/photo.jpg'}],next:'/results?page=2'});

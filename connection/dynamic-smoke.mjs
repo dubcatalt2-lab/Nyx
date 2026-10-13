@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {createServer} from 'node:http';
 import {once} from 'node:events';
 import {chromium} from '@playwright/test';
-import {application} from './app.mjs';
+import {application} from './assembly.mjs';
 import {mkdtemp, copyFile, readFile, writeFile, unlink, rmdir} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';

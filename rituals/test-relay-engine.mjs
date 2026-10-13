@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { once } from 'node:events';
 import WebSocket from 'ws';
-import { startWispurr } from '../scripture/relay-engine.mjs';
+import { startCommunion } from '../scripture/communion-relay.mjs';
 
-const relay = await startWispurr({ port: 16960 });
+const relay = await startCommunion({ port: 16960 });
 const server = createServer();
 server.on('upgrade', (req, socket, head) => relay.route(req, socket, head));
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -51,7 +51,7 @@ try {
   }
   console.log('Direct worker access rejects missing and incorrect internal credentials.');
   // Public endpoints must work without a site login, credential or password.
-  for (const path of ['/api/relay']) {
+  for (const path of ['/api/communion', '/api/relay']) {
     for (const v2 of [false, true]) {
       const { ws, frames } = connection(base + path, v2 ? 'wisp-v2' : undefined);
       if (v2) {

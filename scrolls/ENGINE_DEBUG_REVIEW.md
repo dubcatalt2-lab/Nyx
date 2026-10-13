@@ -80,17 +80,17 @@ Component build audit:
 
 ## FILES CHANGED
 
-- `connection/address.mjs`
+- `connection/passage.mjs`
 - `connection/compatibility.test.mjs` (new)
-- `connection/connections.mjs` (new)
+- `connection/fellowship.mjs` (new)
 - `connection/connections.test.mjs` (new)
 - `connection/isolated-app.mjs`
 - `connection/isolated-smoke.mjs`
 - `connection/isolated-worker.mjs`
 - `connection/package.json`
 - `connection/runtime.js`
-- `connection/server.mjs`
-- `connection/transform.mjs`
+- `connection/sanctuary.mjs`
+- `connection/liturgy.mjs`
 - `connection/worker.mjs`
 - `scrolls/ENGINE_DEBUG_REVIEW.md` (this report)
 

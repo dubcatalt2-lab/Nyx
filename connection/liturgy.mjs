@@ -1,9 +1,9 @@
 import {parse, parseFragment, serialize} from 'parse5';
 import {parse as cssParse, walk as cssWalk, generate} from 'css-tree';
 import {parse as jsParse} from 'acorn';
-import {route} from './address.mjs';
+import {route} from './passage.mjs';
 import {partitionOrigin} from './partition.mjs';
-import {textCache} from './text-cache.mjs';
+import {textCache} from './lectionary.mjs';
 
 const compiledText=textCache();
 

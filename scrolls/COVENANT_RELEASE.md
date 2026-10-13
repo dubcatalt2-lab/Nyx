@@ -1,6 +1,6 @@
 ﻿# Covenant engine release
 
-The browser engine is independently implemented; no removed engine source is bundled. All five browser bundles now use mangled Psalm-prefixed local identifiers and AST-verified string escaping, in addition to existing minification, internal-property mangling and source-map removal. Escaping is performed at build time and does not add an execution-time string decoder.
+The browser engine is independently implemented; no removed engine source is bundled. All five browser bundles now use short mangled local identifiers and AST-verified string escaping, in addition to existing minification, internal-property mangling and source-map removal. Escaping is performed at build time and does not add an execution-time string decoder. Religious names apply to project-owned source modules; generated variable names stay short to limit download and parsing overhead.
 
 Thirteen project-owned engine modules now use Covenant vocabulary for addresses, transport, cookies, frames, streams, session persistence, caching and server connections. Native browser APIs, protocol fields, saved cookie/session schemas, and stable worker URLs are preserved. Existing `/boot/start.js` registration has no `.sw.js` filename. The document wrapper uses chapel/vestry/nave containers without rearranging upstream page markup.
 

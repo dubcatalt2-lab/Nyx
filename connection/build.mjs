@@ -20,7 +20,7 @@ for (const [source, name] of [['worker.mjs','worker.js'],['client.mjs','client.j
     const match = file.match(/^(?:\.\.\/)?node_modules\/(?:@[^/]+\/)?[^/]+/);
     if (match) packages.add(match[0]);
   }
-  const result = await minify(built.outputFiles[0].text, {mangle: {toplevel: true, nth_identifier: {get: index => '_psalm'+index.toString(36)}, properties: {regex: /^_/}}, compress: {drop_console: true, dead_code: true, unused: true, passes: 3}, format: {comments: false}});
+  const result = await minify(built.outputFiles[0].text, {mangle: {toplevel: true, properties: {regex: /^_/}}, compress: {drop_console: true, dead_code: true, unused: true, passes: 3}, format: {comments: false}});
   await writeFile(resolve(output, name), transformWorkspaceStrings(constants(result.code)));
 }
 await writeFile(resolve(output, 'index.html'), await readFile(resolve(root, 'index.html')));

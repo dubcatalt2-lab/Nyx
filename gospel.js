@@ -12775,7 +12775,7 @@ Open an external resource using your configured document service.</p>
         <p class="nyx-release-greeting"><strong>What's new?</strong></p>
         <ul class="nyx-release-changes">
           <li><strong>Fixed a lot of games</strong></li>
-          <li><strong>Fixed AI issues</strong></li>
+          <li><strong>Fixed A1 issues</strong></li>
           <li><strong>Added more themes</strong></li>
         </ul>
         <p class="nyx-release-community">Join the <a href="https://discord.com/invite/cAdjYAJs3u" target="_blank" rel="noopener noreferrer">Discord</a> for more links and updates!</p>

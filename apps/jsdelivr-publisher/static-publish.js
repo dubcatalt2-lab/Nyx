@@ -19,7 +19,7 @@ export function validateStaticManifest(value) {
     paths.add(file.path.toLowerCase());
     bytes += file.bytes;
   }
-  if (bytes > 100_000_000 || !['index.html', 'nyx.svg', 'library-worker.js'].every(path => paths.has(path))) throw Error('The static package is incomplete or too large.');
+  if (bytes > 100_000_000 || !['index.html', 'n7x.svg', 'library-worker.js'].every(path => paths.has(path))) throw Error('The static package is incomplete or too large.');
   return value;
 }
 
@@ -27,8 +27,8 @@ export function staticLauncher() {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
   <title>N7X</title><desc>Opens the packaged N7X application from this repository.</desc>
-  <foreignObject width="100%" height="100%"><body xmlns="http://www.w3.org/1999/xhtml" style="margin:0;background:#080b09;color:#e3e9e5;font:16px system-ui;min-height:100vh;display:grid;place-content:center"><p>Opening Nyx...</p><a href="./${staticFolder}/Nyx.svg" style="color:inherit">Continue</a></body></foreignObject>
-  <script><![CDATA[location.replace(new URL('./${staticFolder}/Nyx.svg', location.href).href);]]></script>
+  <foreignObject width="100%" height="100%"><body xmlns="http://www.w3.org/1999/xhtml" style="margin:0;background:#080b09;color:#e3e9e5;font:16px system-ui;min-height:100vh;display:grid;place-content:center"><p>Opening N7X...</p><a href="./${staticFolder}/N7X.svg" style="color:inherit">Continue</a></body></foreignObject>
+  <script><![CDATA[location.replace(new URL('./${staticFolder}/N7X.svg', location.href).href);]]></script>
 </svg>\n`;
 }
 

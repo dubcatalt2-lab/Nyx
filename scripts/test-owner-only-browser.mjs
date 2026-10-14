@@ -18,10 +18,10 @@ try{for(const role of ['admin','owner']){
  if(path.startsWith('/api/owner-dashboard')){dashboardRequests++;return r.fulfill({status:403,json:{error:'Fixture dashboard data is intentionally empty'}});}
  return r.fulfill({json:{ok:true}});
  });
- await page.goto(`http://127.0.0.1:${server.address().port}/`);await page.locator('#nyxStudyHubStartup').waitFor({state:'hidden'});await page.waitForFunction(()=>!document.body.classList.contains('nyx-loading-active'));
- await page.locator('#nyxAccountButton').click();await page.locator('[data-nyx-account-menu-action="edit"]').waitFor();
- const entry=page.locator('[data-nyx-account-menu-action="owner-dashboard"]');assert.equal(await entry.count(),founder?1:0);
- if(founder){await entry.click();await page.locator('.nyx-owner-dashboard-overlay').waitFor();await page.waitForFunction(()=>document.querySelector('.nyx-owner-dashboard-overlay')?.textContent.includes('Fixture dashboard'));assert(dashboardRequests>0);}else assert.equal(dashboardRequests,0);
+ await page.goto(`http://127.0.0.1:${server.address().port}/`);await page.locator('#n7xStudyHubStartup').waitFor({state:'hidden'});await page.waitForFunction(()=>!document.body.classList.contains('n7x-loading-active'));
+ await page.locator('#n7xAccountButton').click();await page.locator('[data-n7x-account-menu-action="edit"]').waitFor();
+ const entry=page.locator('[data-n7x-account-menu-action="owner-dashboard"]');assert.equal(await entry.count(),founder?1:0);
+ if(founder){await entry.click();await page.locator('.n7x-owner-dashboard-overlay').waitFor();await page.waitForFunction(()=>document.querySelector('.n7x-owner-dashboard-overlay')?.textContent.includes('Fixture dashboard'));assert(dashboardRequests>0);}else assert.equal(dashboardRequests,0);
  await page.close();
 }console.log('PASS built shell hides Owner Dashboard from staff even with stale dashboard grants; owner entry opens dashboard');
 }finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

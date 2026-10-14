@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#070910">
   <meta name="nyx-release" content="2026.09.18.1">
-  <title>Nyx</title>
+  <title>N7X</title>
   <style>
     :root {
       color-scheme: dark;
@@ -29,7 +29,7 @@
     button,
     a { font: inherit; }
 
-    .nyx-launcher {
+    .n7x-launcher {
       position: fixed;
       inset: 0;
       display: grid;
@@ -40,7 +40,7 @@
         #070910;
     }
 
-    .nyx-launcher::before {
+    .n7x-launcher::before {
       position: absolute;
       inset: 0;
       background-image: radial-gradient(circle, rgba(196, 202, 220, 0.12) 1px, transparent 1.2px);
@@ -50,7 +50,7 @@
       pointer-events: none;
     }
 
-    .nyx-boot {
+    .n7x-boot {
       position: relative;
       z-index: 1;
       display: grid;
@@ -62,28 +62,28 @@
       transition: opacity 180ms ease, visibility 180ms ease;
     }
 
-    .nyx-boot[hidden] {
+    .n7x-boot[hidden] {
       display: grid;
       visibility: hidden;
       opacity: 0;
       pointer-events: none;
     }
 
-    .nyx-mark {
+    .n7x-mark {
       width: 3.25rem;
       height: 3.25rem;
       filter: drop-shadow(0 0 1.25rem rgba(147, 130, 245, 0.3));
       animation: nyx-float 2.8s ease-in-out infinite;
     }
 
-    .nyx-title {
+    .n7x-title {
       margin: 0;
       font-size: 1.5rem;
       font-weight: 650;
       letter-spacing: -0.025em;
     }
 
-    .nyx-status {
+    .n7x-status {
       min-height: 1.25rem;
       margin: 0;
       color: #929aaa;
@@ -91,7 +91,7 @@
       line-height: 1.5;
     }
 
-    .nyx-actions {
+    .n7x-actions {
       display: none;
       flex-wrap: wrap;
       justify-content: center;
@@ -99,10 +99,10 @@
       margin-top: 0.35rem;
     }
 
-    .nyx-boot.is-delayed .nyx-actions,
-    .nyx-boot.is-offline .nyx-actions { display: flex; }
+    .n7x-boot.is-delayed .n7x-actions,
+    .n7x-boot.is-offline .n7x-actions { display: flex; }
 
-    .nyx-action {
+    .n7x-action {
       min-height: 2.5rem;
       border: 1px solid rgba(255, 255, 255, 0.09);
       border-radius: 0.75rem;
@@ -114,20 +114,20 @@
       transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
     }
 
-    .nyx-action:hover {
+    .n7x-action:hover {
       border-color: rgba(147, 130, 245, 0.42);
       background: rgba(24, 29, 45, 0.96);
       transform: translateY(-1px);
     }
 
-    .nyx-action:active { transform: scale(0.98); }
+    .n7x-action:active { transform: scale(0.98); }
 
-    .nyx-action:focus-visible {
+    .n7x-action:focus-visible {
       outline: 3px solid rgba(147, 130, 245, 0.44);
       outline-offset: 2px;
     }
 
-    #nyxApp {
+    #n7xApp {
       position: absolute;
       z-index: 2;
       inset: 0;
@@ -140,7 +140,7 @@
       transition: opacity 180ms ease;
     }
 
-    #nyxApp.is-ready { opacity: 1; }
+    #n7xApp.is-ready { opacity: 1; }
 
     @keyframes nyx-float {
       50% { transform: translateY(-0.3rem); }
@@ -159,29 +159,29 @@
   </style>
 </head>
 <body>
-  <main class="nyx-launcher">
-    <section class="nyx-boot" id="nyxBoot" aria-live="polite">
-      <svg class="nyx-mark" viewBox="0 0 64 64" aria-hidden="true">
+  <main class="n7x-launcher">
+    <section class="n7x-boot" id="n7xBoot" aria-live="polite">
+      <svg class="n7x-mark" viewBox="0 0 64 64" aria-hidden="true">
         <defs>
-          <linearGradient id="nyxMoon" x1="0" y1="0" x2="1" y2="1">
+          <linearGradient id="n7xMoon" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stop-color="#d9d3ff"/>
             <stop offset="1" stop-color="#8b7bea"/>
           </linearGradient>
         </defs>
-        <circle cx="32" cy="32" r="27" fill="url(#nyxMoon)"/>
+        <circle cx="32" cy="32" r="27" fill="url(#n7xMoon)"/>
         <circle cx="44" cy="21" r="25" fill="#070910"/>
       </svg>
-      <h1 class="nyx-title">Opening Nyx</h1>
-      <p class="nyx-status" id="nyxStatus">Loading the latest Nyx release&hellip;</p>
-      <div class="nyx-actions">
-        <button class="nyx-action" id="nyxRetry" type="button">Try again</button>
-        <a class="nyx-action" href="https://nyxlearning.org/?source=single-file" target="_blank" rel="noopener noreferrer">Open directly</a>
+      <h1 class="n7x-title">Opening N7X</h1>
+      <p class="n7x-status" id="n7xStatus">Loading the latest N7X release…</p>
+      <div class="n7x-actions">
+        <button class="n7x-action" id="n7xRetry" type="button">Try again</button>
+        <a class="n7x-action" href="https://nyxlearning.org/?source=single-file" target="_blank" rel="noopener noreferrer">Open directly</a>
       </div>
     </section>
 
     <iframe
-      id="nyxApp"
-      title="Nyx"
+      id="n7xApp"
+      title="N7X"
       allow="autoplay; camera; clipboard-read; clipboard-write; display-capture; fullscreen; gamepad; geolocation; microphone; picture-in-picture; pointer-lock"
       allowfullscreen
       referrerpolicy="no-referrer"
@@ -194,10 +194,10 @@
 
       const NYX_URL = "https://nyxlearning.org/";
       const NYX_RELEASE = "2026.09.18.1";
-      const frame = document.getElementById("nyxApp");
-      const boot = document.getElementById("nyxBoot");
-      const status = document.getElementById("nyxStatus");
-      const retry = document.getElementById("nyxRetry");
+      const frame = document.getElementById("n7xApp");
+      const boot = document.getElementById("n7xBoot");
+      const status = document.getElementById("n7xStatus");
+      const retry = document.getElementById("n7xRetry");
       let delayedTimer = 0;
 
       const latestNyxUrl = () => {
@@ -212,8 +212,8 @@
         boot.hidden = false;
         boot.classList.remove("is-delayed", "is-offline");
         status.textContent = navigator.onLine
-          ? "Loading the latest Nyx release…"
-          : "You appear to be offline. Nyx needs an internet connection.";
+          ? "Loading the latest N7X release…"
+          : "You appear to be offline. N7X needs an internet connection.";
         if (!navigator.onLine) boot.classList.add("is-offline");
       };
 
@@ -229,7 +229,7 @@
         delayedTimer = window.setTimeout(() => {
           if (frame.classList.contains("is-ready")) return;
           boot.classList.add("is-delayed");
-          status.textContent = "Nyx is taking longer than expected to respond.";
+          status.textContent = "N7X is taking longer than expected to respond.";
         }, 12000);
       };
 

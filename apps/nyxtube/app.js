@@ -48,13 +48,13 @@
     try {
       const value = localStorage.getItem('nyx.theme') || 'default';
       const theme = themes.includes(value) ? value : 'default';
-      root.dataset.nyxTheme = theme;
-      root.dataset.nyxAppearance = localStorage.getItem('nyx.appearance') === 'light' ? 'light' : 'dark';
+      root.dataset.n7xTheme = theme;
+      root.dataset.n7xAppearance = localStorage.getItem('nyx.appearance') === 'light' ? 'light' : 'dark';
       document.body.classList.remove(...themes.map(name => `theme-${name}`));
       document.body.classList.add(`theme-${theme}`);
       const custom = localStorage.getItem('nyx.customThemeColor');
-      if (theme === 'custom' && /^#[a-f0-9]{6}$/i.test(custom || '')) root.style.setProperty('--nyx-custom-base', custom);
-      else root.style.removeProperty('--nyx-custom-base');
+      if (theme === 'custom' && /^#[a-f0-9]{6}$/i.test(custom || '')) root.style.setProperty('--n7x-custom-base', custom);
+      else root.style.removeProperty('--n7x-custom-base');
     } catch {   }
   }
   addEventListener('storage', event => {
@@ -181,7 +181,7 @@
     if (!/^[A-Za-z0-9_-]{11}$/.test(videoId)) return loadFeed();
     const payload = await json(`/api/nyxtube/video?id=${encodeURIComponent(videoId)}`);
     const video = Array.isArray(payload?.videos) ? payload.videos[0] : null;
-    if (!video?.id) throw new Error("That video could not be loaded in NyxTube.");
+    if (!video?.id) throw new Error("That video could not be loaded in N7X7UB3.");
     if (!allowedVideo(video)) { await loadFeed(); notice("This video is not available in DropTube."); return; }
     state.catalog = [video];
     openWatch(video);
@@ -389,7 +389,7 @@
     refs.watchEngine.value = backup ? "invidious" : native ? "native" : "youtube";
     refs.watchEngine.hidden = !state.nativeAvailable && !backup;
     refs.watchBackup.setAttribute("aria-pressed", String(backup));
-    refs.watchEngine.textContent = native ? "Switch to embedded" : !state.nativeAvailable ? "Switch to YouTube" : (dropTube ? "Switch to DropTube" : "Switch to NyxTube");
+    refs.watchEngine.textContent = native ? "Switch to embedded" : !state.nativeAvailable ? "Switch to YouTube" : (dropTube ? "Switch to DropTube" : "Switch to N7X7UB3");
   }
   async function createWatch(video, forceDirect = false, fallback = false, restore = null, playerOverride = "", embedOnly = false) {
     finishWatchSpace({ cancel: true });
@@ -836,7 +836,7 @@
       const detail=await shortDetail(video),YT=await youtubeApi();
       if(entry.removed||state.view!=='shorts')return;
       entry.detail=detail;
-      const node=entry.node=document.createElement('div');node.id='nyxtube-prepared-short-'+(++shortMountNumber);const mountNode=document.createElement('div');mountNode.id=node.id+'-player';mountNode.style.cssText='width:100%;height:100%';node.append(mountNode);
+      const node=entry.node=document.createElement('div');node.id='n7xtube-prepared-short-'+(++shortMountNumber);const mountNode=document.createElement('div');mountNode.id=node.id+'-player';mountNode.style.cssText='width:100%;height:100%';node.append(mountNode);
       node.style.cssText='position:absolute;inset:0;visibility:hidden;pointer-events:none';node.setAttribute('aria-hidden','true');refs.shortPlayer.append(node);
       const config=options(video.id,true);config.playerVars.autoplay=0;config.expectedDuration=detail.durationSeconds;
       config.events={
@@ -1160,7 +1160,7 @@
   if(dropTube)addEventListener('message',event=>{if(event.origin===location.origin&&event.source===parent&&event.data?.type==='drop:tube-pause'){if(state.watchPlayer?.isInvidious){stopWatch();notice('Press Invidious to reopen the video.');}else state.watchPlayer?.pauseVideo?.();}});
   applyTheme(); bind(); skeletons(); requestProfile();
   json("/api/nyxtube/status").then(status => {
-    if (!status?.configured) throw new Error("NyxTube is not configured yet.");
+    if (!status?.configured) throw new Error("N7X7UB3 is not configured yet.");
     try {
       const url = new URL(status.invidiousEmbedOrigin);
       if(url.protocol==='https:'&&!url.username&&!url.password&&!url.port&&url.href===url.origin+'/')state.invidiousEmbedOrigin=url.origin;
@@ -1168,5 +1168,5 @@
     refs.watchBackup.hidden = !state.invidiousEmbedOrigin;
     state.nativeAvailable = status.nativeAvailable === true; refs.watchEngine.hidden = !state.nativeAvailable;
     return loadInitialView();
-  }).catch(error => { renderVideos([]); notice(error.message || "NyxTube could not be started."); });
+  }).catch(error => { renderVideos([]); notice(error.message || "N7X7UB3 could not be started."); });
 })();

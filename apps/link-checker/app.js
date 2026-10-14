@@ -610,7 +610,7 @@
   function exportFreedns(){
     if(!freednsCache.domains.length){showNotice('Scrape the FreeDNS registry before exporting it.','error',true);return;}
     const content=[['id','domain','status','hostsInUse','owner','added'],...freednsCache.domains.map(entry=>[entry.id,entry.domain,entry.status,entry.hosts,entry.owner,entry.added])].map(row=>row.map(csvCell).join(',')).join('\n');
-    const blob=new Blob([content],{type:'text/csv'});const url=URL.createObjectURL(blob);const anchor=document.createElement('a');anchor.href=url;anchor.download=`nyx-freedns-registry-${new Date().toISOString().slice(0,10)}.csv`;anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000);showNotice('FreeDNS registry CSV created.');
+    const blob=new Blob([content],{type:'text/csv'});const url=URL.createObjectURL(blob);const anchor=document.createElement('a');anchor.href=url;anchor.download=`n7x-freedns-registry-${new Date().toISOString().slice(0,10)}.csv`;anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000);showNotice('FreeDNS registry CSV created.');
   }
   async function checkFreednsDomain(domain){
     if(freednsChecking.has(domain)||freednsFullScanning||freednsPageScanning||freednsScraping)return;
@@ -758,14 +758,14 @@
     if(!history.length){showNotice('There is no scan data to export.','error',true);return;}
     const rows=history.map(entry=>({checkedAt:entry.checkedAt,source:entry.source,url:entry.url,target:entry.target,verdict:verdictFor(entry),blockedBy:(entry.blockedBy||[]).join('|'),vendors:entry.results||[]}));
     const content=format==='csv'?[['checkedAt','source','url','target','verdict','blockedBy','vendorResults'],...rows.map(row=>[row.checkedAt,row.source,row.url,row.target,row.verdict,row.blockedBy,JSON.stringify(row.vendors)])].map(row=>row.map(csvCell).join(',')).join('\n'):JSON.stringify(rows,null,2);
-    const blob=new Blob([content],{type:format==='csv'?'text/csv':'application/json'});const url=URL.createObjectURL(blob);const anchor=document.createElement('a');anchor.href=url;anchor.download=`nyx-link-checker-${new Date().toISOString().slice(0,10)}.${format}`;anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000);showNotice(`${format.toUpperCase()} export created.`);
+    const blob=new Blob([content],{type:format==='csv'?'text/csv':'application/json'});const url=URL.createObjectURL(blob);const anchor=document.createElement('a');anchor.href=url;anchor.download=`n7x-link-checker-${new Date().toISOString().slice(0,10)}.${format}`;anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000);showNotice(`${format.toUpperCase()} export created.`);
   }
   function clearHistory(){
     if(!history.length)return;if(!confirm('Clear all Link Checker history stored on this device?'))return;history=[];writeJsonStorage(HISTORY_KEY,history);renderWorkspace();showNotice('Local scan history cleared.');
   }
   function saveSettings(){writeJsonStorage(SETTINGS_KEY,settings);applyTheme();renderDashboard();}
   function wireEvents(){
-    $('[data-back-to-nyx]').addEventListener('click',event=>{if(window.parent===window)return;event.preventDefault();window.parent.postMessage({type:'nyx:close-tab'},location.origin);});
+    $('[data-back-to-n7x]').addEventListener('click',event=>{if(window.parent===window)return;event.preventDefault();window.parent.postMessage({type:'nyx:close-tab'},location.origin);});
     refs.form.addEventListener('submit',runCheck);$('[data-copy-results]').addEventListener('click',copyReport);
     $('[data-recheck]').addEventListener('click',()=>{if(currentTarget){refs.input.value=currentTarget;void runCheck();}});
     $$('[data-view-button]').forEach(button=>button.addEventListener('click',()=>switchView(button.dataset.viewButton)));

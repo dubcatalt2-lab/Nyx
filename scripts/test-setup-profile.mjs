@@ -13,9 +13,9 @@ try{
  await page.route('**/api/**',r=>{const p=new URL(r.request().url()).pathname;let body={};if(p.endsWith('/auth-config'))body={enabled:true,projectId:'test',apiKey:'test'};if(p==='/api/account/register')body={customToken:'mock'};if(p==='/api/account/me')body={email:'',role:'member',subscriptionStatus:'free'};if(p==='/api/profiles/me'){if(r.request().method()==='PUT'){profile=r.request().postDataJSON().profile;saved=true}body={uid:'new-user',profile}}return r.fulfill({contentType:'application/json',body:JSON.stringify(body)})});
  await page.goto('http://localhost:8301');await page.locator('#setupScreen.show').waitFor();await page.waitForTimeout(2000);
  const next=page.locator('[data-setup-next]');await next.click();await page.locator('#setupName').fill('newuser');await next.click();
- const account=page.locator('.nyx-account-overlay');await account.waitFor();await account.locator('[name=password]').fill('test-password-123');await account.locator('[name=password]').press('Enter');
+ const account=page.locator('.n7x-account-overlay');await account.waitFor();await account.locator('[name=password]').fill('test-password-123');await account.locator('[name=password]').press('Enter');
  await page.locator('[data-setup-step="3"].active').waitFor();await account.waitFor({state:'detached'});
- await page.locator('[data-setup-edit-profile]').focus();await page.keyboard.press('Enter');const editor=page.locator('.nyx-user-profile-overlay');await editor.waitFor();await editor.locator('[data-nyx-display-style-toggle]').click();
+ await page.locator('[data-setup-edit-profile]').focus();await page.keyboard.press('Enter');const editor=page.locator('.n7x-user-profile-overlay');await editor.waitFor();await editor.locator('[data-n7x-display-style-toggle]').click();
  await editor.locator('[name=displayName]').fill('My new profile');await editor.locator('[name=bio]').fill('My first bio');await editor.locator('[name=displayName]').press('Enter');
  await editor.waitFor({state:'detached'});assert(saved);assert.equal(profile.displayName,'My new profile');assert.equal(await page.locator('[data-setup-step="3"].active').count(),1);
  await next.click();assert.equal(await page.locator('[data-setup-step="4"].active').count(),1);

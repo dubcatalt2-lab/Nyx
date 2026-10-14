@@ -10,7 +10,7 @@
   const blockedInputEvents = ['pointerdown', 'pointerup', 'click', 'dblclick', 'contextmenu', 'wheel', 'touchstart', 'touchmove', 'keydown', 'keyup'];
   blockedInputEvents.forEach(type => {
     window.addEventListener(type, event => {
-      if (!document.body?.classList.contains('nyx-loading-active')) return;
+      if (!document.body?.classList.contains('n7x-loading-active')) return;
       event.preventDefault();
       event.stopImmediatePropagation();
     }, { capture: true, passive: false });
@@ -22,7 +22,7 @@
       element.removeAttribute('inert');
     });
     lockedPageElements = [];
-    document.body?.classList.remove('nyx-loading-active');
+    document.body?.classList.remove('n7x-loading-active');
     splash?.blur?.();
   }
 
@@ -37,7 +37,7 @@
         if (!hadInert) element.setAttribute('inert', '');
         return { element, hadInert };
       });
-    document.body?.classList.add('nyx-loading-active');
+    document.body?.classList.add('n7x-loading-active');
     splash.setAttribute('role', 'dialog');
     splash.setAttribute('aria-modal', 'true');
     splash.tabIndex = -1;
@@ -64,10 +64,10 @@
   }
 
   function updateProgress(splash, value, label, emit = true, updateFill = true) {
-    const progress = splash.querySelector('.nyx-loading-progress');
+    const progress = splash.querySelector('.n7x-loading-progress');
     const fill = progress?.querySelector('span');
-    const percent = splash.querySelector('[data-nyx-loading-percent]');
-    const stage = splash.querySelector('[data-nyx-loading-stage]');
+    const percent = splash.querySelector('[data-n7x-loading-percent]');
+    const stage = splash.querySelector('[data-n7x-loading-stage]');
     const visualValue = Math.max(0, Math.min(100, Number(value) || 0));
     const next = Math.round(visualValue);
     if (fill && updateFill) fill.style.transform = `scaleX(${visualValue / 100})`;
@@ -79,13 +79,13 @@
   }
 
   function progressValue(splash) {
-    return Number(splash.querySelector('.nyx-loading-progress')?.getAttribute('aria-valuenow')) || 0;
+    return Number(splash.querySelector('.n7x-loading-progress')?.getAttribute('aria-valuenow')) || 0;
   }
 
   function animateProgress(splash, target, label, duration, session) {
     const start = progressValue(splash);
     const end = Math.max(start, Math.min(100, Number(target) || 0));
-    const fill = splash.querySelector('.nyx-loading-progress span');
+    const fill = splash.querySelector('.n7x-loading-progress span');
     if (end === start) {
       updateProgress(splash, end, label);
       return Promise.resolve();
@@ -153,7 +153,7 @@
   window.nyxLoadingScreen = {
     show() {
       const splash = document.getElementById('setupLaunchScreen');
-      const fill = splash?.querySelector('.nyx-loading-progress span');
+      const fill = splash?.querySelector('.n7x-loading-progress span');
       if (!splash || !fill) return null;
 
       const session = ++activeSession;

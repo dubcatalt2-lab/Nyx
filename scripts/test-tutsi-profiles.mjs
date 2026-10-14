@@ -159,7 +159,7 @@ try {
   await page.screenshot({
     path: process.env.TEMP + "/tutsi-profile-editor.png",
   });
-  await f.locator(".nyx-user-profile-form [type=submit]").click();
+  await f.locator(".n7x-user-profile-form [type=submit]").click();
   await page.waitForFunction(() => location.hash !== "#profiles", {
     timeout: 10000,
   });
@@ -196,7 +196,7 @@ try {
   await page.locator('#account-button').click();
   await page.locator("#view-profile").click();
   await f
-    .locator(".nyx-user-profile-heading h2")
+    .locator(".n7x-user-profile-heading h2")
     .filter({ hasText: "Tutsi friend" })
     .waitFor();
   await page.locator("#browser-home").click();
@@ -234,7 +234,7 @@ try {
         location.origin,
       ),
     );
-  await f.locator(".nyx-user-profile-heading h2").waitFor();
+  await f.locator(".n7x-user-profile-heading h2").waitFor();
   await page.setViewportSize({ width: 390, height: 844 });
   if(await page.locator("#browser-home").isVisible()) await page.locator("#browser-home").click();
   await page.locator("#account-button").click();
@@ -250,13 +250,13 @@ try {
   await page.screenshot({
     path: process.env.TEMP + "/tutsi-profile-mobile.png",
   });
-  const bounds = await f.locator(".nyx-user-profile-dialog").boundingBox();
+  const bounds = await f.locator(".n7x-user-profile-dialog").boundingBox();
   assert(bounds.x >= 0 && bounds.width <= 390);
   rejectSave = true;
   await f.locator("[name=bio]").fill("Rejected change");
-  await f.locator(".nyx-user-profile-form [type=submit]").click();
+  await f.locator(".n7x-user-profile-form [type=submit]").click();
   await f
-    .locator(".nyx-founder-editor-error")
+    .locator(".n7x-founder-editor-error")
     .filter({ hasText: "Profile changes are not allowed." })
     .waitFor();
   assert.equal(profile.bio, "Shared profile fixture");

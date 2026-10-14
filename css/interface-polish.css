@@ -7,102 +7,9 @@ html body.performance-lite #visualEffects i:nth-child(n+17){
 }
 
 html body.theme-fresh{
-  --nyx-purple-edge:#00f5d4!important;
+  --n7x-purple-edge:#00f5d4!important;
   --fresh-line:rgba(0,245,212,.68)!important;
 }
-
-html body.browser-shell #weatherRestore,
-html body.browser-shell #weatherRestore.show{
-  display:none!important;
-  opacity:0!important;
-  pointer-events:none!important;
-}
-html body.browser-shell .weather-panel{
-  top:94px!important;
-  right:14px!important;
-  width:min(368px,calc(100vw - 28px))!important;
-  max-height:calc(100dvh - 114px)!important;
-  overflow:auto!important;
-  padding:18px!important;
-  border-radius:24px!important;
-  background:radial-gradient(circle at 88% 12%,rgba(141,124,255,.28),transparent 26%),radial-gradient(circle at 18% 8%,rgba(255,255,255,.08),transparent 24%),linear-gradient(155deg,rgba(17,18,32,.96),rgba(12,13,25,.94) 58%,rgba(22,18,39,.96))!important;
-  border:1px solid color-mix(in srgb,var(--theme-a,#8b5cf6) 42%,rgba(255,255,255,.12))!important;
-  box-shadow:0 22px 64px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.08)!important;
-  backdrop-filter:blur(18px) saturate(1.12)!important;
-  -webkit-backdrop-filter:blur(18px) saturate(1.12)!important;
-}
-html body.browser-shell .weather-panel::-webkit-scrollbar{width:0}
-html body.browser-shell .weather-search{grid-template-columns:minmax(0,1fr) 44px!important;gap:9px!important;margin-bottom:16px!important}
-html body.browser-shell .weather-search input{
-  height:44px!important;
-  border-radius:13px!important;
-  padding:0 13px 0 40px!important;
-  text-align:left!important;
-  direction:ltr!important;
-  font-size:14px!important;
-  font-weight:650!important;
-  letter-spacing:0!important;
-  background-color:rgba(8,9,20,.64)!important;
-  background-position:8px 50%,24px 26px!important;
-  color:#f4f1ff!important;
-  border-color:rgba(164,144,255,.22)!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.05)!important;
-}
-html body.browser-shell .weather-search input::placeholder{color:#8f87ad!important;text-align:left!important}
-html body.browser-shell .weather-search button{
-  width:44px!important;
-  height:44px!important;
-  border-radius:13px!important;
-  background:rgba(12,13,26,.72)!important;
-  border-color:rgba(164,144,255,.22)!important;
-}
-html body.browser-shell .weather-options{height:38px!important;margin:-8px 0 13px!important;font-size:13px!important}
-html body.browser-shell .weather-current{gap:13px!important}
-html body.browser-shell .weather-now{grid-template-columns:56px minmax(0,1fr) minmax(78px,auto)!important;gap:10px!important}
-html body.browser-shell .weather-glyph{width:50px!important;height:50px!important;font-size:34px!important}
-html body.browser-shell .weather-panel .weather-temp{font-size:42px!important;line-height:.9!important}
-html body.browser-shell .weather-panel .weather-desc{font-size:14px!important}
-html body.browser-shell .weather-panel .weather-place{max-width:108px!important;font-size:14px!important;color:#aaa2c8!important}
-html body.browser-shell .weather-region-time{margin-top:-6px!important;font-size:12px!important}
-html body.browser-shell .weather-stat-grid{gap:8px!important}
-html body.browser-shell .weather-stat{
-  min-height:36px!important;
-  padding:0 12px!important;
-  border-radius:12px!important;
-  background:rgba(7,8,18,.52)!important;
-  color:#9188aa!important;
-  font-size:14px!important;
-}
-html body.browser-shell .weather-stat strong{font-size:15px!important}
-html body.browser-shell .weather-forecast-title{margin:2px 0 -1px!important;font-size:12px!important;letter-spacing:.14em!important}
-html body.browser-shell .weather-forecast{gap:6px!important}
-html body.browser-shell .weather-forecast-row{
-  grid-template-columns:58px 30px 52px 1fr!important;
-  min-height:30px!important;
-  padding:0 10px!important;
-  border-radius:10px!important;
-  background:rgba(7,8,18,.42)!important;
-  color:#d8d4ea!important;
-  font-size:14px!important;
-  pointer-events:none!important;
-  cursor:default!important;
-}
-html body.browser-shell .weather-forecast-row .weather-rain-chance{color:#8ec9ff!important}
-html body.browser-shell .weather-forecast-row .weather-high-low{font-size:14px!important}
-html body.browser-shell .weather-status{min-height:12px!important;font-size:11px!important}
-html body.browser-shell.theme-fresh .weather-panel{
-  background:rgba(238,253,255,.74)!important;
-  border-color:rgba(0,245,212,.62)!important;
-  box-shadow:0 18px 54px rgba(20,120,150,.16),inset 0 1px 0 rgba(255,255,255,.75)!important;
-}
-html body.browser-shell.theme-fresh .weather-search input,
-html body.browser-shell.theme-fresh .weather-search button,
-html body.browser-shell.theme-fresh .weather-stat,
-html body.browser-shell.theme-fresh .weather-forecast-row{
-  background:rgba(255,255,255,.42)!important;
-  border-color:rgba(0,245,212,.42)!important;
-}
-html body.browser-shell.theme-fresh .weather-search input{color:#167b8f!important}
 
 body.browser-shell{
   --chrome-black:#04050a;
@@ -115,10 +22,6 @@ body.browser-shell{
 body.browser-shell .fresh-real-icon{
   font-size:17px!important;
   line-height:1!important;
-}
-body.browser-shell .browser-mode-weather > .weather-cloud-icon{
-  width:15px!important;
-  height:15px!important;
 }
 body.browser-shell .browser-mode-menu{
   top:56px!important;
@@ -138,12 +41,6 @@ body.browser-shell .browser-mode-menu button{
 }
 body.browser-shell .browser-mode-menu hr{
   margin:2px 3px!important;
-}
-
-html body.browser-shell .browser-mode-weather > .weather-cloud-icon{
-  width:14px!important;
-  height:14px!important;
-  margin:0!important;
 }
 
 body.browser-shell #centerClock{
@@ -201,15 +98,11 @@ body,
 body ::placeholder,
 body *::before,
 body *::after{
-  font-family:var(--nyx-font,Inter),Arial,sans-serif!important;
+  font-family:var(--n7x-font,Inter),Arial,sans-serif!important;
 }
 
 html body.browser-shell .fresh-real-icon{
   font-size:18px!important;
-}
-html body.browser-shell .browser-mode-weather > .weather-cloud-icon{
-  width:18px!important;
-  height:18px!important;
 }
 html body.browser-shell .browser-mode-menu{
   top:68px!important;
@@ -346,7 +239,7 @@ html body.browser-shell [data-home-shortcuts]{
   padding:5px 7px!important;
   margin:0!important;
   overflow:visible!important;
-  border:1px solid var(--nyx-shortcut-border,rgba(190,148,255,.72))!important;
+  border:1px solid var(--n7x-shortcut-border,rgba(190,148,255,.72))!important;
   border-radius:14px!important;
   background:rgba(7,7,17,.58)!important;
   background-image:none!important;
@@ -364,10 +257,10 @@ html body.browser-shell .home-shortcut-glyph{
   width:22px!important;
   height:22px!important;
   display:block!important;
-  background:var(--nyx-shell-icon,#f8fafc)!important;
+  background:var(--n7x-shell-icon,#f8fafc)!important;
   -webkit-mask:var(--shortcut-mask) center/contain no-repeat!important;
   mask:var(--shortcut-mask) center/contain no-repeat!important;
-  filter:drop-shadow(0 0 8px color-mix(in srgb,var(--nyx-shell-icon,#f8fafc) 54%,transparent))!important;
+  filter:drop-shadow(0 0 8px color-mix(in srgb,var(--n7x-shell-icon,#f8fafc) 54%,transparent))!important;
 }
 html body.browser-shell .home-shortcut-menu{
   bottom:42px!important;
@@ -490,77 +383,35 @@ html body.browser-shell .home-shortcut-glyph{
 }
 
 html body.browser-shell{
-  --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(97%) sepia(5%) saturate(851%) hue-rotate(181deg) brightness(103%) contrast(98%);
+  --n7x-shortcut-image-filter:brightness(0) saturate(100%) invert(97%) sepia(5%) saturate(851%) hue-rotate(181deg) brightness(103%) contrast(98%);
 }
 html body.browser-shell.theme-sakura{
-  --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(83%) sepia(30%) saturate(793%) hue-rotate(286deg) brightness(101%) contrast(95%);
+  --n7x-shortcut-image-filter:brightness(0) saturate(100%) invert(83%) sepia(30%) saturate(793%) hue-rotate(286deg) brightness(101%) contrast(95%);
 }
 html body.browser-shell.theme-emerald{
-  --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(83%) sepia(19%) saturate(1317%) hue-rotate(96deg) brightness(92%) contrast(94%);
+  --n7x-shortcut-image-filter:brightness(0) saturate(100%) invert(83%) sepia(19%) saturate(1317%) hue-rotate(96deg) brightness(92%) contrast(94%);
 }
 html body.browser-shell.theme-ruby{
-  --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(75%) sepia(31%) saturate(1336%) hue-rotate(309deg) brightness(101%) contrast(98%);
+  --n7x-shortcut-image-filter:brightness(0) saturate(100%) invert(75%) sepia(31%) saturate(1336%) hue-rotate(309deg) brightness(101%) contrast(98%);
 }
 html body.browser-shell.theme-fresh{
-  --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(78%) sepia(96%) saturate(1138%) hue-rotate(106deg) brightness(101%) contrast(101%);
+  --n7x-shortcut-image-filter:brightness(0) saturate(100%) invert(78%) sepia(96%) saturate(1138%) hue-rotate(106deg) brightness(101%) contrast(101%);
 }
 
 html body.browser-shell{
-  --nyx-final-shortcut-icon:#f8fafc;
+  --n7x-final-shortcut-icon:#f8fafc;
 }
 html body.browser-shell.theme-sakura{
-  --nyx-final-shortcut-icon:#f9a8d4;
+  --n7x-final-shortcut-icon:#f9a8d4;
 }
 html body.browser-shell.theme-emerald{
-  --nyx-final-shortcut-icon:#6ee7b7;
+  --n7x-final-shortcut-icon:#6ee7b7;
 }
 html body.browser-shell.theme-ruby{
-  --nyx-final-shortcut-icon:#fca5a5;
+  --n7x-final-shortcut-icon:#fca5a5;
 }
 html body.browser-shell.theme-fresh{
-  --nyx-final-shortcut-icon:#00f5d4;
-}
-
-html body.browser-shell .weather-panel{
-  transform-origin:top right!important;
-  transition:
-    transform .62s cubic-bezier(.16,1,.3,1),
-    opacity .62s ease,
-    filter .62s ease!important;
-  animation:none!important;
-  will-change:transform,opacity,filter;
-}
-html body.browser-shell .weather-panel.opening{
-  display:block!important;
-  animation:nyxWeatherOpenSlow .62s cubic-bezier(.16,1,.3,1) both!important;
-}
-html body.browser-shell .weather-panel.closing{
-  pointer-events:none!important;
-  animation:nyxWeatherCloseSlow .52s cubic-bezier(.7,0,.2,1) both!important;
-}
-html body.browser-shell .weather-restore{
-  transition:
-    transform .62s cubic-bezier(.16,1,.3,1),
-    opacity .62s ease,
-    background-color .62s ease,
-    border-color .62s ease,
-    box-shadow .62s ease!important;
-}
-html body.browser-shell .weather-restore.show{
-  animation:nyxWeatherRestoreIn .56s cubic-bezier(.16,1,.3,1) both!important;
-}
-@keyframes nyxWeatherOpenSlow{
-  0%{opacity:0;transform:translateY(-36px) scale(.965);filter:blur(10px)}
-  58%{opacity:1;filter:blur(1px)}
-  100%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}
-}
-@keyframes nyxWeatherCloseSlow{
-  0%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}
-  100%{opacity:0;transform:translateY(-32px) scale(.965);filter:blur(8px)}
-}
-@keyframes nyxWeatherRestoreIn{
-  0%{opacity:0;transform:translateY(-10px) scale(.9)}
-  100%{opacity:1;transform:translateY(0) scale(1)}
+  --n7x-final-shortcut-icon:#00f5d4;
 }
 
 html body.browser-shell .browser-mode-menu > [data-browser-shell-new-tab]{
@@ -585,7 +436,7 @@ html body.browser-shell .browser-mode-menu hr{
   height:1px!important;
   margin:0!important;
   border:0!important;
-  background:var(--nyx-surface-line,rgba(255,255,255,.1))!important;
+  background:var(--n7x-surface-line,rgba(255,255,255,.1))!important;
 }
 html body.browser-shell.menu-open .browser-mode-menu,
 html body.browser-shell .browser-mode-menu{
@@ -689,24 +540,24 @@ html body.browser-shell:not(.theme-ruby):not(.theme-emerald):not(.theme-sakura):
 }
 
 html body.browser-shell{
-  --nyx-final-shortcut-icon:#c7a7ff!important;
-  --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(68%) sepia(57%) saturate(1206%) hue-rotate(218deg) brightness(101%) contrast(102%)!important;
+  --n7x-final-shortcut-icon:#c7a7ff!important;
+  --n7x-shortcut-image-filter:brightness(0) saturate(100%) invert(68%) sepia(57%) saturate(1206%) hue-rotate(218deg) brightness(101%) contrast(102%)!important;
 }
 html body.browser-shell.theme-ruby{
-  --nyx-final-shortcut-icon:#fca5a5!important;
-  --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(76%) sepia(22%) saturate(1828%) hue-rotate(310deg) brightness(102%) contrast(98%)!important;
+  --n7x-final-shortcut-icon:#fca5a5!important;
+  --n7x-shortcut-image-filter:brightness(0) saturate(100%) invert(76%) sepia(22%) saturate(1828%) hue-rotate(310deg) brightness(102%) contrast(98%)!important;
 }
 html body.browser-shell.theme-emerald{
-  --nyx-final-shortcut-icon:#6ee7b7!important;
-  --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(79%) sepia(28%) saturate(1029%) hue-rotate(98deg) brightness(93%) contrast(92%)!important;
+  --n7x-final-shortcut-icon:#6ee7b7!important;
+  --n7x-shortcut-image-filter:brightness(0) saturate(100%) invert(79%) sepia(28%) saturate(1029%) hue-rotate(98deg) brightness(93%) contrast(92%)!important;
 }
 html body.browser-shell.theme-sakura{
-  --nyx-final-shortcut-icon:#f9a8d4!important;
-  --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(84%) sepia(31%) saturate(938%) hue-rotate(286deg) brightness(102%) contrast(96%)!important;
+  --n7x-final-shortcut-icon:#f9a8d4!important;
+  --n7x-shortcut-image-filter:brightness(0) saturate(100%) invert(84%) sepia(31%) saturate(938%) hue-rotate(286deg) brightness(102%) contrast(96%)!important;
 }
 html body.browser-shell.theme-fresh{
-  --nyx-final-shortcut-icon:#0f8fa3!important;
-  --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(47%) sepia(97%) saturate(974%) hue-rotate(146deg) brightness(91%) contrast(92%)!important;
+  --n7x-final-shortcut-icon:#0f8fa3!important;
+  --n7x-shortcut-image-filter:brightness(0) saturate(100%) invert(47%) sepia(97%) saturate(974%) hue-rotate(146deg) brightness(91%) contrast(92%)!important;
 }
 
 @keyframes nyxShellTabOpenSmooth{
@@ -733,7 +584,7 @@ html body.browser-shell.menu-open #browserModeMenu{
   right:8px!important;
   z-index:50000!important;
 }
-html body,html body *:not(.fresh-real-icon):not(.weather-cloud-icon){font-family:var(--nyx-font)!important}
+html body,html body *:not(.fresh-real-icon){font-family:var(--n7x-font)!important}
 
 html body.browser-shell .window.maximized{
   top:84px!important;

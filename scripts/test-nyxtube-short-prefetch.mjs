@@ -97,7 +97,7 @@ try {
   await page.locator('[data-short-stage]').hover();await page.mouse.wheel(0,120);
 
   await page.getByText("Next test Short").waitFor();
-  if(!livePlayer)assert(await page.locator('[data-short-player] > [id^=nyxtube-prepared-short-]').count()<=4,'Shorts warm pool must stay bounded');
+  if(!livePlayer)assert(await page.locator('[data-short-player] > [id^=n7xtube-prepared-short-]').count()<=4,'Shorts warm pool must stay bounded');
   await page.waitForFunction(()=>document.querySelector('[data-short-player]').children.length===4);
   const nextPrepared=await page.locator('[data-short-player]').evaluate(el=>Array.from(el.children).map(n=>n.id));
   assert(nextPrepared.filter(id=>prepared.includes(id)).length===3,'Navigation must retain three prepared players');

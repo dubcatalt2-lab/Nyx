@@ -37,8 +37,8 @@ try{
   await page.goto(base+'/apps/nyxtube/');
   for(const [theme,appearance] of [['default','dark'],['halloween','dark'],['halloween','light'],['emerald','light'],['custom','dark']]){
     await page.evaluate(({theme,appearance})=>{localStorage.setItem('nyx.theme',theme);localStorage.setItem('nyx.appearance',appearance);localStorage.setItem('nyx.customThemeColor','#4a89ff');dispatchEvent(new StorageEvent('storage',{key:'nyx.theme',newValue:theme}));},{theme,appearance});
-    assert.equal(await page.locator('html').getAttribute('data-nyx-theme'),theme);
-    assert.equal(await page.locator('html').getAttribute('data-nyx-appearance'),appearance);
+    assert.equal(await page.locator('html').getAttribute('data-n7x-theme'),theme);
+    assert.equal(await page.locator('html').getAttribute('data-n7x-appearance'),appearance);
     const colors=await page.evaluate(()=>{const style=e=>getComputedStyle(e),probe=document.createElement('div');probe.style.color='var(--app-text)';probe.style.background='var(--app-bg)';document.body.append(probe);const result={body:style(document.body).backgroundColor,bg:style(probe).backgroundColor,heading:style(document.querySelector('.catalog-head h1')).color,text:style(probe).color,star:style(document.querySelector('.starfield')).backgroundImage};probe.remove();return result;});
     assert.equal(colors.body,colors.bg);assert.equal(colors.heading,colors.text);
     if(theme==='halloween')assert.ok(!colors.star.includes('rgb(18, 18, 22)'), 'background uses palette');

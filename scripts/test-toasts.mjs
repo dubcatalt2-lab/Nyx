@@ -7,9 +7,9 @@ try {
  const page=await browser.newPage({viewport:{width:1280,height:800}});
  await page.addInitScript(()=>{localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.browserShellMode','true');localStorage.setItem('nyx.homeDesign','redesigned');});
  await page.goto('http://localhost:8080/');
- await page.locator('#nyxStudyHubStartup').waitFor({state:'hidden'});
+ await page.locator('#n7xStudyHubStartup').waitFor({state:'hidden'});
  await page.evaluate(code=>{window.testToast=new Function('$',code+';return toast')(id=>document.getElementById(id));},source.slice(start,end));
- await page.waitForFunction(()=>!document.body.classList.contains('nyx-loading-active'));
+ await page.waitForFunction(()=>!document.body.classList.contains('n7x-loading-active'));
  await page.clock.install();
  await page.evaluate(()=>testToast('Notification permission denied'));
  assert.equal(await page.locator('#toast svg').count(),1);

@@ -76,7 +76,7 @@ import { createMetingBackend } from "./lib/nyxify-meting.mjs";
 const __dirname = resolve(process.env.NYX_PROJECT_ROOT || process.cwd());
 const staticRoot = resolve(process.env.NYX_STATIC_ROOT || __dirname);
 const require = createRequire(join(__dirname, "package.json"));
-const { uvPath } = require("@titaniumnetwork-dev/ultraviolet");
+
 const { baremuxPath } = require("@mercuryworkshop/bare-mux/node");
 const { scramjetPath } = require("@mercuryworkshop/scramjet/path");
 const { scramjetPath: scramjetV1Path } = require("@mercuryworkshop/scramjet-v1/path");
@@ -755,8 +755,8 @@ async function nyxIpBanGuard(req, res, next) {
 }
 
 app.use(nyxIpBanGuard);
-const uvHandlerPath = join(uvPath, "uv.handler.js");
-const uvBundlePath = join(uvPath, "uv.bundle.js");
+
+
 const baremuxIndexPath = join(baremuxPath, "index.mjs");
 const scramjetRuntimePath = join(scramjetPath, "scramjet.js");
 
@@ -768,13 +768,7 @@ app.use((req, res, next) => {
     "/script.js",
     "/startup.js",
     "/styles.css",
-    "/uv.sw.js",
-    "/stem-connect.sw.js",
-    "/uv.config.js",
-    "/uv/uv.bundle.js",
-    "/uv/uv.client.js",
     "/scramjet.sw.js",
-    "/uv/uv.handler.js",
     "/baremux/index.mjs",
     "/scramjet/scramjet.js",
     "/scramjet-v1/scramjet.all.js",
@@ -784,7 +778,7 @@ app.use((req, res, next) => {
     "/nyx-scramjet-runtime-guard.js"
   ]);
   const noStorePrefix = /^\/(?:assets\/(?:gms-games|reds-misc)\/|gms-games-|reds-misc-)/i.test(req.path);
-  const opaqueProxyAsset = /^\/(?:(?:scramjet|studyjet)(?:-v1)?\/|controller\/|epoxy\/|atlas\/|libcurl\/|textlib\/|baremux\/|uv\/|assets\/transports\/|apps\/tutsi\/)?@?r[0-9a-f]{24}!?\.(?:js|mjs|wasm)$/.test(req.path);
+  const opaqueProxyAsset = /^\/(?:(?:scramjet|studyjet)(?:-v1)?\/|controller\/|epoxy\/|atlas\/|libcurl\/|textlib\/|baremux\/|assets\/transports\/|apps\/tutsi\/)?@?r[0-9a-f]{24}!?\.(?:js|mjs|wasm)$/.test(req.path);
   if (noStorePaths.has(req.path) || noStorePrefix || opaqueProxyAsset) {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma", "no-cache");
@@ -1365,12 +1359,7 @@ app.get("/catalog-game-cover", async (req, res) => {
   }
 });
 
-function patchedUvHandler() {
-  const source = readFileSync(uvHandlerPath, "utf8");
-  const original = "t.respondWith(h?l(t.target,[t.data.message,t.data.transfer],t.that):l(t.target,[t.data.message,t.data.origin,t.data.transfer],t.that))";
-  const patched = `(()=>{let n=t.data.transfer||[];try{const o=new Set(n);const i=new Set;const a=e=>{if(!e||typeof e!="object"||i.has(e))return;i.add(e);let t="";try{t=Object.prototype.toString.call(e)}catch{}if(typeof MessagePort!="undefined"&&e instanceof MessagePort||t==="[object MessagePort]"){o.add(e);return}if(Array.isArray(e)){for(const t of e)a(t);return}for(const t of Object.values(e))a(t)};a(t.data.message);n=[...o]}catch{}return t.respondWith(h?l(t.target,[t.data.message,n],t.that):l(t.target,[t.data.message,t.data.origin,n],t.that))})()`;
-  return source.includes(original) ? source.replace(original, patched) : source;
-}
+
 
 function patchedBareMuxIndex() {
   return readFileSync(baremuxIndexPath, "utf8")
@@ -1384,30 +1373,7 @@ function patchedBareMuxIndex() {
     .replace(/within 1\.5s/g, "within 5s");
 }
 
-function patchedUvBundle() {
-  const source = readFileSync(uvBundlePath, "utf8");
-  const original = "rewriteImport(t,r,n=this.meta){return this.rewriteUrl(t,{...n,base:r})}";
-  const patched = "rewriteImport(t,r,n=this.meta){return this.rewriteUrl(r,{...n,base:t})}";
-  if (!source.includes(original)) throw new Error("Ultraviolet dynamic import signature changed");
-  const cookieDbOriginal = 'async function Xa(e){let t=await e("__op",1,';
-  const cookieDbPatched = 'async function Xa(e,t="__op"){let r=await e(t,1,';
-  const cookieDbReturnOriginal = 'return t.transaction(["cookies"],"readwrite").store.index("path"),t}';
-  const cookieDbReturnPatched = 'return r.transaction(["cookies"],"readwrite").store.index("path"),r}';
-  const cookieFactoryOriginal = 'db:()=>Xa(this.constructor.openDB),getCookies:ja';
-  const cookieFactoryPatched = 'db:()=>Xa(this.constructor.openDB,this.cookieDbName||"__op"),getCookies:ja';
-  const cookieNameOriginal = 'constructor(t={}){this.prefix=t.prefix||"/service/"';
-  const cookieNamePatched = 'constructor(t={}){this.cookieDbName=t.cookieDbName||"__op",this.prefix=t.prefix||"/service/"';
-  let result = source.replace(original, patched);
-  if (!result.includes(cookieDbOriginal) || !result.includes(cookieDbReturnOriginal) || !result.includes(cookieFactoryOriginal) || !result.includes(cookieNameOriginal)) {
-    throw new Error("Ultraviolet cookie storage signature changed");
-  }
-  result = result
-    .replace(cookieDbOriginal, cookieDbPatched)
-    .replace(cookieDbReturnOriginal, cookieDbReturnPatched)
-    .replace(cookieFactoryOriginal, cookieFactoryPatched)
-    .replace(cookieNameOriginal, cookieNamePatched);
-  return result;
-}
+
 
 function patchedScramjetControllerAsset(name) {
   let source = readFileSync(join(scramjetControllerPath, name), "utf8");
@@ -1446,8 +1412,13 @@ function patchedScramjetRuntime() {
 
   const historyPatched = 'apply(t){if(t.args.length<3||null==t.args[2])return t.call();let r=e.box.histories.get(t.this),s=(0,n.Qf)(t.args[2]);';
   if (!source.includes(historyOriginal)) throw new Error('Scramjet history signature changed');
+  // parentElement is a getter, not a callable method. Native-method lookup
+  // reads it on Node.prototype and throws before a real Text receiver is used.
+  const textParentOriginal = 'e.natives.call("Node.prototype.parentElement",t.this)';
+  if (source.split(textParentOriginal).length - 1 !== 5) throw new Error('Text accessor compatibility signature changed');
   return (source.includes(original) ? source.replace(original, patched) : source)
-    .replace(historyOriginal, historyPatched);
+    .replace(historyOriginal, historyPatched)
+    .replaceAll(textParentOriginal, 'e.descriptors.get("Node.prototype.parentElement",t.this)');
 }
 
 function scramjetRuntimeGuard() {
@@ -2472,6 +2443,8 @@ function nyxAiUtcDay(now = new Date()) {
 }
 
 async function nyxAiPremiumEntitlement(req) {
+  // Reuse only the identity verified for this request by shared-AI middleware.
+  if (req.nyxAiVerifiedEntitlement) return req.nyxAiVerifiedEntitlement;
   const match = String(req.get("authorization") || "").match(/^Bearer\s+(.+)$/i);
   if (!match || !firebaseAdminModeConfigured()) return { premium: false, owner: false, firebase: null, uid: "" };
   try {
@@ -2601,6 +2574,8 @@ async function nyxSharedAiActor(req,res) {
       monthlyModelLimits:premiumModelLimits(admin.aiMonthlyModelLimits),trusted:admin.aiAccess==='trusted',blocked:admin.aiAccess==='restricted',
       apiVerified:Boolean(req.nyxAiBilling?.apiVerified),apiDailyRequests:req.nyxAiBilling?.dailyRequests,apiMinuteRequests:req.nyxAiBilling?.minuteRequests,apiMaxOutput:req.nyxAiBilling?.maxOutput,
       device:req.nyxAiBilling?.device||(req.path==='/api/v1/ai'?`key-owner:${uid}`:await allowance.device(req,res,req.nyxAiApp==='nook'?{cookieName:'nook_device',maxAge:31536000}:{})),network:nyxClientIp(req)};
+    req.nyxAiVerifiedEntitlement={app:actor.app,modelRules:actor.modelRules,premium:actor.premium,
+      owner:nyxRoleForUser(uid,admin)==='owner',firebase,uid};
     return {firebase,allowance,actor};
 }
 function nyxAiErrorBody(error) {
@@ -3008,6 +2983,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       res.status(200);
       res.setHeader("content-type", "text/event-stream; charset=utf-8");
       res.setHeader("cache-control", "no-cache, no-transform");
+      res.setHeader("x-accel-buffering", "no");
       res.setHeader("connection", "keep-alive");
       res.flushHeaders?.();
       const reader = upstream.body?.getReader();
@@ -3709,24 +3685,17 @@ app.post(["/presence", "/api/presence"], express.text({ type: "text/plain", limi
 });
 
 app.get("/runtime-config.js", (_req, res) => {
-  const publicOrigin = linkGeneratorConfig().origin;
   res.setHeader("Cache-Control", "no-store");
   res.type("application/javascript").send(
-    `globalThis.__NYX_RUNTIME_CONFIG__=Object.freeze(${JSON.stringify({
+    `globalThis.english_RUNTIME_CONFIG=Object.freeze(Object.assign(${JSON.stringify({
       wispUrl: externalWispUrl,
       wispUrls: [...new Set(String(process.env.NYX_WISP_RELAYS || "").split(",").map(normalizePublicWispUrl).filter(Boolean))],
-      presenceUrl: publicOrigin ? `${publicOrigin}/api/presence` : "",
-      publicOrigin
-    })});`
+    })}, {presenceUrl:new URL("/api/presence",location.origin).href,publicOrigin:location.origin}));`
   );
 });
 
-app.get("/uv/uv.handler.js", (_req, res) => {
-  res.type("application/javascript").send(patchedUvHandler());
-});
-app.get("/uv/uv.bundle.js", (_req, res) => {
-  res.type("application/javascript").send(patchedUvBundle());
-});
+
+
 app.get("/baremux/index.mjs", (_req, res) => {
   res.type("application/javascript").send(patchedBareMuxIndex());
 });
@@ -14251,7 +14220,7 @@ app.use(publicAssetBoundary(staticRoot));
 app.use(express.static(staticRoot));
 app.use("/assets/vendor/katex/", express.static(katexPath));
 app.use('/assets/vendor/novnc/',express.static(dirname(dirname(require.resolve('@novnc/novnc')))));
-app.use("/uv/", express.static(uvPath));
+
 app.use("/scramjet/", express.static(scramjetPath));
 app.use("/scramjet-v1/", express.static(scramjetV1Path));
 app.use("/controller/", express.static(scramjetControllerPath));
@@ -14259,7 +14228,7 @@ app.use("/baremux/", express.static(baremuxPath));
 app.use("/epoxy/", express.static(epoxyPath));
 app.use("/libcurl/", express.static(libcurlPath));
 
-app.use(["/~/sj/", "/~/study/", "/~/study-v1/"], (_req, res) => {
+app.use(["/4otig/", "/~/sj/", "/~/study/", "/~/study-v1/"], (_req, res) => {
   res.status(502).type("html").send(`<!doctype html>
 <meta charset="utf-8">
 <style>

@@ -39,7 +39,7 @@ export async function createDirectSession({verify=verifyOwner,authConfig,port=0,
   html=html.replace('<html lang="en">','<html lang="en" data-direct-desktop>')
    .replace('id="setup"','id="setup" style="grid-template-columns:1fr"')
    .replace('<section class="panel"><h2>Add this computer','<section class="panel" hidden><h2>Add this computer')
-   .replaceAll('Back to Nyx','Account').replaceAll('Return to Nyx','Sign in');
+   .replaceAll("Back to N7X",'Account').replaceAll("Return to N7X",'Sign in');
   res.type('html').send(html);
  });
  app.use('/apps/remote',express.static(join(root,'apps/remote'),{index:false}));

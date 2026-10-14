@@ -1,4 +1,4 @@
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-user-profile-dialog{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-user-profile-dialog{
   width:min(1180px,calc(100vw - 32px))!important;
   height:min(860px,calc(100dvh - 32px))!important;
   border:1px solid #343640!important;
@@ -6,14 +6,14 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-user-profile-dialog{
   box-shadow:0 28px 82px rgba(0,0,0,.58)!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-profile-main{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-profile-main{
   display:flex!important;
   height:100%!important;
   min-height:0!important;
   flex-direction:column!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-profile-scroll{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-profile-scroll{
   display:flex!important;
   height:100%!important;
   min-height:0!important;
@@ -21,7 +21,7 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-profile-scroll{
   overflow:hidden!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-profile-header{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-profile-header{
   display:flex!important;
   align-items:baseline!important;
   gap:12px!important;
@@ -32,20 +32,20 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-profile-header{
   background:linear-gradient(90deg,#17191f 0%,#121318 72%)!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-profile-header h2{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-profile-header h2{
   margin:0!important;
   color:#f5f6fa!important;
   font-size:20px!important;
   letter-spacing:-.02em!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-profile-header p{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-profile-header p{
   margin:0!important;
   color:#969aa6!important;
   font-size:12px!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-profile-layout{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-profile-layout{
   flex:1 1 auto!important;
   width:100%!important;
   height:auto!important;
@@ -54,7 +54,7 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-profile-layout{
   background:#101116!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-user-profile-form{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-user-profile-form{
   height:auto!important;
   padding:0 22px 104px!important;
   background:#15161c!important;
@@ -62,7 +62,7 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-user-profile-form{
   scrollbar-color:#3b3e49 transparent!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-rail-header{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-rail-header{
   min-height:54px!important;
   height:54px!important;
   margin:0 -22px!important;
@@ -71,12 +71,12 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-rail-header{
   background:#15161c!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-rail-header>[data-nyx-profile-switch-toggle]{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-rail-header>[data-n7x-profile-switch-toggle]{
   color:#f3f4f7!important;
   font-size:14px!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-editor-tabs{
+html[data-n7x-theme] body .n7x-profile-editor-tabs{
   position:sticky;
   z-index:11;
   top:54px;
@@ -90,7 +90,7 @@ html[data-nyx-theme] body .nyx-profile-editor-tabs{
   backdrop-filter:blur(14px);
 }
 
-html[data-nyx-theme] body .nyx-profile-editor-tabs button{
+html[data-n7x-theme] body .n7x-profile-editor-tabs button{
   min-height:31px;
   padding:0 7px;
   overflow:hidden;
@@ -106,21 +106,21 @@ html[data-nyx-theme] body .nyx-profile-editor-tabs button{
   transition:background-color .18s ease,border-color .18s ease,color .18s ease,transform .18s ease;
 }
 
-html[data-nyx-theme] body .nyx-profile-editor-tabs button:is(:hover,:focus-visible){
+html[data-n7x-theme] body .n7x-profile-editor-tabs button:is(:hover,:focus-visible){
   border-color:#424651;
   background:#202229;
   color:#e5e7ec!important;
   outline:none;
 }
 
-html[data-nyx-theme] body .nyx-profile-editor-tabs button.active{
+html[data-n7x-theme] body .n7x-profile-editor-tabs button.active{
   border-color:color-mix(in srgb,var(--theme-accent,#5865f2) 58%,#50545e);
   background:color-mix(in srgb,var(--theme-accent,#5865f2) 18%,#24262d);
   color:#f5f6f8!important;
   box-shadow:inset 0 1px color-mix(in srgb,var(--theme-accent,#5865f2) 38%,rgba(255,255,255,.18));
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-editor-section{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-editor-section{
   gap:16px!important;
   margin:0!important;
   padding:21px 0!important;
@@ -128,9 +128,9 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-editor-section{
   background:transparent!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-editor-section[hidden]{display:none!important}
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-editor-section[hidden]{display:none!important}
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-editor-section h4{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-editor-section h4{
   color:#f0f1f5!important;
   font-size:13px!important;
   font-weight:750!important;
@@ -138,26 +138,26 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-editor-section h4{
   text-transform:none!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-panel-heading p{
+html[data-n7x-theme] body .n7x-profile-panel-heading p{
   margin:4px 0 0!important;
   color:#9095a2!important;
   font-size:11px!important;
   line-height:1.4!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-field-grid{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-field-grid{
   grid-template-columns:repeat(2,minmax(0,1fr))!important;
   gap:12px!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-field{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-field{
   gap:6px!important;
   color:#bcc0ca!important;
   font-size:11px!important;
   font-weight:650!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-field :is(input:not([type="color"]),select,textarea){
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-field :is(input:not([type="color"]),select,textarea){
   min-height:40px!important;
   border-color:#383b45!important;
   border-radius:8px!important;
@@ -166,30 +166,30 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-field :is(input:not([
   transition:border-color .18s ease,box-shadow .18s ease,background-color .18s ease!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-field :is(input:not([type="color"]),select,textarea):is(:hover,:focus){
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-field :is(input:not([type="color"]),select,textarea):is(:hover,:focus){
   border-color:color-mix(in srgb,var(--theme-accent,#5865f2) 58%,#555965)!important;
   background:#24262e!important;
   box-shadow:0 0 0 3px color-mix(in srgb,var(--theme-accent,#5865f2) 16%,transparent)!important;
   outline:none!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-field textarea{min-height:108px!important}
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-account-email-field{grid-column:1/-1!important}
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-field textarea{min-height:108px!important}
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-account-email-field{grid-column:1/-1!important}
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-nameplate-preview,
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-display-section .nyx-display-name-style-launcher{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-nameplate-preview,
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-display-section .n7x-display-name-style-launcher{
   border-color:#393d47!important;
   border-radius:11px!important;
   background:linear-gradient(135deg,#22242c,#1c1e25)!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-image-list{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-list{
   grid-template-columns:1fr!important;
   gap:12px!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-image-control,
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-image-control:nth-child(2){
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-control,
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-control:nth-child(2){
   display:grid!important;
   min-height:0!important;
   grid-template-columns:minmax(0,1fr) auto!important;
@@ -201,17 +201,17 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-image-control:nth-chi
   background:linear-gradient(135deg,#22242c,#1b1d24)!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-image-control>div:first-child,
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-image-control>.nyx-profile-file-name{display:block!important}
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-control>div:first-child,
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-control>.n7x-profile-file-name{display:block!important}
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-image-actions{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-actions{
   display:flex!important;
   align-items:center!important;
   justify-content:flex-end!important;
   gap:7px!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-image-actions .nyx-profile-file-button{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-actions .n7x-profile-file-button{
   display:flex!important;
   min-height:34px!important;
   align-items:center!important;
@@ -223,13 +223,13 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-image-actions .nyx-pr
   font-size:11px!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-rail-avatar{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-rail-avatar{
   width:27px!important;
   height:27px!important;
   border-width:2px!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-image-actions .nyx-profile-clear-button{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-actions .n7x-profile-clear-button{
   min-height:32px!important;
   padding:0 7px!important;
   border-radius:6px!important;
@@ -237,19 +237,19 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-image-actions .nyx-pr
   font-size:10px!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-visual-color-grid{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-visual-color-grid{
   grid-template-columns:repeat(3,minmax(0,1fr))!important;
   gap:9px!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-color-field{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-color-field{
   display:grid!important;
   grid-template-rows:auto 54px auto!important;
   gap:5px!important;
   min-width:0!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-color-field>input[type="color"]{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-color-field>input[type="color"]{
   width:100%!important;
   height:54px!important;
   padding:4px!important;
@@ -259,13 +259,13 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-color-field>input[typ
   cursor:pointer;
 }
 
-html[data-nyx-theme] body .nyx-profile-palette{
+html[data-n7x-theme] body .n7x-profile-palette{
   display:grid;
   grid-template-columns:repeat(3,minmax(0,1fr));
   gap:8px;
 }
 
-html[data-nyx-theme] body .nyx-profile-palette button{
+html[data-n7x-theme] body .n7x-profile-palette button{
   display:grid;
   grid-template-columns:20px 1fr;
   align-items:center;
@@ -282,35 +282,35 @@ html[data-nyx-theme] body .nyx-profile-palette button{
   transition:border-color .18s ease,background-color .18s ease,transform .18s ease;
 }
 
-html[data-nyx-theme] body .nyx-profile-palette button i{
+html[data-n7x-theme] body .n7x-profile-palette button i{
   width:20px;
   height:20px;
   border-radius:7px;
-  background:linear-gradient(135deg,var(--nyx-palette-primary),var(--nyx-palette-secondary) 55%,var(--nyx-palette-banner));
+  background:linear-gradient(135deg,var(--n7x-palette-primary),var(--n7x-palette-secondary) 55%,var(--n7x-palette-banner));
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.22);
 }
 
-html[data-nyx-theme] body .nyx-profile-palette button:is(:hover,:focus-visible),html[data-nyx-theme] body .nyx-profile-palette button.active{
-  border-color:color-mix(in srgb,var(--nyx-palette-primary) 64%,#8f94a1);
+html[data-n7x-theme] body .n7x-profile-palette button:is(:hover,:focus-visible),html[data-n7x-theme] body .n7x-profile-palette button.active{
+  border-color:color-mix(in srgb,var(--n7x-palette-primary) 64%,#8f94a1);
   background:#272a33;
   color:#fff!important;
   outline:none;
   transform:translateY(-1px);
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-effect-stack{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-effect-stack{
   display:grid!important;
   gap:12px!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-effect-stack>.nyx-profile-field{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-effect-stack>.n7x-profile-field{
   padding:13px!important;
   border:1px solid #393d47!important;
   border-radius:10px!important;
   background:#202229!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-decoration-field{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-decoration-field{
   display:grid!important;
   min-height:0!important;
   grid-template-columns:76px minmax(0,1fr)!important;
@@ -322,17 +322,17 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-decoration-field{
   background:linear-gradient(135deg,#22242c,#1c1e25)!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-decoration-preview{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-decoration-preview{
   grid-row:1/4;
   width:64px!important;
   height:64px!important;
   margin:0!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-decoration-avatar{width:58px!important;height:58px!important}
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-decoration-field small{display:block!important}
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-decoration-avatar{width:58px!important;height:58px!important}
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-decoration-field small{display:block!important}
 
-html[data-nyx-theme] body .nyx-profile-earned-badges{
+html[data-n7x-theme] body .n7x-profile-earned-badges{
   display:flex;
   align-items:center;
   gap:11px;
@@ -342,7 +342,7 @@ html[data-nyx-theme] body .nyx-profile-earned-badges{
   background:#1d1f26;
 }
 
-html[data-nyx-theme] body .nyx-profile-earned-badges>span{
+html[data-n7x-theme] body .n7x-profile-earned-badges>span{
   display:grid;
   width:32px;
   height:32px;
@@ -352,12 +352,12 @@ html[data-nyx-theme] body .nyx-profile-earned-badges>span{
   color:color-mix(in srgb,var(--theme-accent,#5865f2) 68%,#fff);
 }
 
-html[data-nyx-theme] body .nyx-profile-earned-badges strong,
-html[data-nyx-theme] body .nyx-profile-earned-badges small{display:block!important}
-html[data-nyx-theme] body .nyx-profile-earned-badges strong{color:#e9ebef!important;font-size:11px!important}
-html[data-nyx-theme] body .nyx-profile-earned-badges small{margin-top:3px!important;color:#9297a4!important;font-size:10px!important;line-height:1.35!important}
+html[data-n7x-theme] body .n7x-profile-earned-badges strong,
+html[data-n7x-theme] body .n7x-profile-earned-badges small{display:block!important}
+html[data-n7x-theme] body .n7x-profile-earned-badges strong{color:#e9ebef!important;font-size:11px!important}
+html[data-n7x-theme] body .n7x-profile-earned-badges small{margin-top:3px!important;color:#9297a4!important;font-size:10px!important;line-height:1.35!important}
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-preview-pane{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-preview-pane{
   position:relative!important;
   display:grid!important;
   height:100%!important;
@@ -371,7 +371,7 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-preview-pane{
     linear-gradient(145deg,#101116,#151720)!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-preview-pane::before{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-preview-pane::before{
   content:"Live preview";
   position:absolute;
   top:19px;
@@ -382,14 +382,14 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-preview-pane::before{
   text-transform:uppercase;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-preview-pane .nyx-user-profile-view{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-preview-pane .n7x-user-profile-view{
   position:relative!important;
   top:auto!important;
   width:min(480px,100%)!important;
   margin:auto!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-preview-pane .nyx-user-profile-card{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-preview-pane .n7x-user-profile-card{
   width:100%!important;
   max-width:480px!important;
   height:auto!important;
@@ -400,7 +400,7 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-preview-pane .nyx-use
 
 
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-preview-pane .nyx-editor-menu-preview{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-preview-pane .n7x-editor-menu-preview{
   position:relative!important;
   inset:auto!important;
   z-index:0!important;
@@ -411,26 +411,26 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-discord-preview-pane .nyx-edi
   transform:none!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-banner{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-banner{
   height:106px!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-profile{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-profile{
   min-height:0!important;
   padding:56px 4px 14px!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-avatar{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-avatar{
   top:-40px!important;
   width:80px!important;
   height:80px!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-avatar>.nyx-avatar-decoration{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-avatar>.n7x-avatar-decoration{
   inset:-11px!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-avatar[data-nyx-direct-edit]::after{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-avatar[data-n7x-direct-edit]::after{
   position:absolute;
   z-index:9;
   right:-4px;
@@ -450,22 +450,22 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-acco
   transition:opacity .16s ease,background-color .16s ease;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-status{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-status{
   top:-7px!important;
   left:90px!important;
   max-width:calc(100% - 94px)!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-group{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-group{
   margin-top:8px!important;
   padding:6px!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-group button{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-group button{
   min-height:40px!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-profile-media-edit-avatar{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-profile-media-edit-avatar{
   top:auto!important;
   right:-4px!important;
   bottom:7px!important;
@@ -475,22 +475,22 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-prof
   transform:none!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-profile-media-edit-banner{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-profile-media-edit-banner{
   opacity:0!important;
   pointer-events:none!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview-actions{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview-actions{
   pointer-events:none!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-avatar:is(:hover,:focus-within) .nyx-profile-media-edit-avatar,html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-account-menu-banner:is(:hover,:focus-within) .nyx-profile-media-edit-banner,html[data-nyx-theme] body .nyx-profile-drawer .nyx-editor-menu-preview .nyx-profile-media-edit:is(:hover,:focus-visible){
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-avatar:is(:hover,:focus-within) .n7x-profile-media-edit-avatar,html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-banner:is(:hover,:focus-within) .n7x-profile-media-edit-banner,html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-profile-media-edit:is(:hover,:focus-visible){
   opacity:1!important;
   pointer-events:auto!important;
   transform:none!important;
 }
 
-html[data-nyx-theme] body .nyx-profile-drawer .nyx-user-profile-form footer{
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-user-profile-form footer{
   position:sticky!important;
   bottom:0!important;
   z-index:10!important;
@@ -502,7 +502,7 @@ html[data-nyx-theme] body .nyx-profile-drawer .nyx-user-profile-form footer{
 }
 
 @media(prefers-reduced-motion:reduce){
-  html[data-nyx-theme] body .nyx-profile-editor-tabs button,
-  html[data-nyx-theme] body .nyx-profile-palette button,
-  html[data-nyx-theme] body .nyx-profile-drawer .nyx-profile-field :is(input,select,textarea){transition:none!important}
+  html[data-n7x-theme] body .n7x-profile-editor-tabs button,
+  html[data-n7x-theme] body .n7x-profile-palette button,
+  html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-field :is(input,select,textarea){transition:none!important}
 }

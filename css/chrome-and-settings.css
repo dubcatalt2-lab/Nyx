@@ -83,11 +83,11 @@ body.browser-shell button,
 body.browser-shell input,
 body.browser-shell select,
 body.browser-shell textarea{
-  font-family:var(--nyx-font,Inter),Arial,sans-serif!important;
+  font-family:var(--n7x-font,Inter),Arial,sans-serif!important;
   font-weight:400!important;
 }
-body.browser-shell *:not(.nyx-styled-display-name){
-  font-family:var(--nyx-font,Inter),Arial,sans-serif!important;
+body.browser-shell *:not(.n7x-styled-display-name){
+  font-family:var(--n7x-font,Inter),Arial,sans-serif!important;
   font-weight:400!important;
   text-shadow:none!important;
 }
@@ -119,19 +119,19 @@ body.browser-shell .lion-ai-input::placeholder{
   color:#6b7280!important;
   -webkit-text-fill-color:#6b7280!important;
 }
-body.browser-shell .nyx-prompt-input{
+body.browser-shell .n7x-prompt-input{
   background:#fff!important;
   background-color:#fff!important;
   color:#000!important;
   -webkit-text-fill-color:#000!important;
 }
-body.browser-shell .nyx-prompt-ok{
+body.browser-shell .n7x-prompt-ok{
   background:#fff!important;
   background-color:#fff!important;
   color:#000!important;
   -webkit-text-fill-color:#000!important;
 }
-body.browser-shell .nyx-prompt-cancel{
+body.browser-shell .n7x-prompt-cancel{
   background:#fff!important;
   background-color:#fff!important;
   color:#000!important;
@@ -279,7 +279,7 @@ body.browser-shell .settings-card .switch{
 .welcome-title,
 .welcome-title *,
 #setupScreen h1{
-  font-family:var(--nyx-font,Inter),Arial,sans-serif!important;
+  font-family:var(--n7x-font,Inter),Arial,sans-serif!important;
   font-weight:400!important;
   letter-spacing:0!important;
   text-shadow:none!important;
@@ -340,140 +340,7 @@ textarea,
 .quick-tile,
 .settings-panel,
 .settings-card{
-  font-family:var(--nyx-font,Inter),Arial,sans-serif!important;
-}
-
-body.browser-shell .browser-mode-weather,
-body.browser-shell #weatherRestore{
-  font-size:0!important;
-  color:#edf2ff!important;
-  display:inline-grid!important;
-  place-items:center!important;
-  overflow:visible!important;
-}
-body.browser-shell .browser-mode-weather::before,
-body.browser-shell #weatherRestore::before{
-  content:""!important;
-  width:17px!important;
-  height:9px!important;
-  border-radius:999px!important;
-  background:currentColor!important;
-  box-shadow:
-    -5px 1px 0 -1px currentColor,
-    5px 1px 0 -1px currentColor!important;
-  display:block!important;
-  position:relative!important;
-  transform:translateY(2px)!important;
-}
-body.browser-shell .browser-mode-weather::after,
-body.browser-shell #weatherRestore::after{
-  content:""!important;
-  width:10px!important;
-  height:10px!important;
-  border-radius:50%!important;
-  background:currentColor!important;
-  box-shadow:7px 2px 0 -1px currentColor!important;
-  display:block!important;
-  position:absolute!important;
-  transform:translate(-3px,-3px)!important;
-}
-
-body.browser-shell #weatherRestore{
-  display:none!important;
-}
-body.browser-shell .browser-mode-weather{
-  font-size:0!important;
-  color:#edf2ff!important;
-  background:
-    linear-gradient(90deg,
-      color-mix(in srgb,var(--theme-border) 22%,#08070d) 0%,
-      rgba(8,7,13,.94) 48%,
-      color-mix(in srgb,var(--theme-border) 14%,#08070d) 100%)!important;
-  backdrop-filter:blur(14px) saturate(1.12)!important;
-  -webkit-backdrop-filter:blur(14px) saturate(1.12)!important;
-  position:relative!important;
-  display:grid!important;
-  place-items:center!important;
-  padding:0!important;
-  line-height:0!important;
-  overflow:hidden!important;
-}
-body.browser-shell .browser-mode-weather::before,
-body.browser-shell .browser-mode-weather::after,
-body.browser-shell #weatherRestore::before,
-body.browser-shell #weatherRestore::after{
-  content:none!important;
-  display:none!important;
-}
-body.browser-shell .weather-cloud-icon{
-  position:relative!important;
-  width:22px!important;
-  height:22px!important;
-  display:block!important;
-  background:url("../assets/icons/cloud-weather.png") center/contain no-repeat!important;
-  filter:none!important;
-  pointer-events:none!important;
-}
-.weather-restore,
-.browser-mode-weather{
-  font-size:0!important;
-}
-.weather-restore .weather-cloud-icon,
-.browser-mode-weather .weather-cloud-icon{
-  width:22px!important;
-  height:22px!important;
-  display:block!important;
-  background:url("../assets/icons/cloud-weather.png") center/contain no-repeat!important;
-  background-size:contain!important;
-  background-position:center!important;
-  background-repeat:no-repeat!important;
-  filter:none!important;
-  pointer-events:none!important;
-  margin:auto!important;
-  transform:none!important;
-}
-body.browser-shell .weather-cloud-icon::before{
-  content:""!important;
-  position:absolute!important;
-  left:2px!important;
-  right:2px!important;
-  bottom:4px!important;
-  height:8px!important;
-  border-radius:999px!important;
-  background:#fff!important;
-  box-shadow:none!important;
-  display:block!important;
-}
-body.browser-shell .weather-cloud-icon::after{
-  content:""!important;
-  position:absolute!important;
-  left:5px!important;
-  top:5px!important;
-  width:10px!important;
-  height:10px!important;
-  border-radius:50%!important;
-  background:#fff!important;
-  box-shadow:7px 3px 0 -2px #fff!important;
-  display:block!important;
-}
-body.browser-shell .browser-mode-weather{
-  overflow:visible!important;
-}
-body.browser-shell .browser-mode-weather > .weather-cloud-icon,
-body.browser-shell #weatherRestore > .weather-cloud-icon{
-  flex:0 0 22px!important;
-  min-width:22px!important;
-  min-height:22px!important;
-  opacity:1!important;
-  visibility:visible!important;
-  z-index:2!important;
-}
-.weather-restore::before,
-.weather-restore::after,
-.browser-mode-weather::before,
-.browser-mode-weather::after{
-  content:none!important;
-  display:none!important;
+  font-family:var(--n7x-font,Inter),Arial,sans-serif!important;
 }
 
 body.browser-shell .window.settings-window{
@@ -683,65 +550,28 @@ body.browser-shell .cloak-launch-screen .cloak-submit-actions .primary{
   border-color:#d1d5db!important;
 }
 select,
-.settings-select,
-.weather-options{
+.settings-select{
   color-scheme:dark!important;
 }
 select option,
 select optgroup,
-.settings-select option,
-.weather-options option{
+.settings-select option{
   background:#101827!important;
   color:#f8fafc!important;
   -webkit-text-fill-color:#f8fafc!important;
 }
-select option:checked,
-.settings-select option:checked,
-.weather-options option:checked{
+select option,
+.settings-select option{
   background:#334155!important;
   color:#fff!important;
   -webkit-text-fill-color:#fff!important;
 }
-.weather-panel .weather-icon-btn{
-  width:36px!important;
-  min-width:36px!important;
-  max-width:36px!important;
-  height:36px!important;
-  min-height:36px!important;
-  max-height:36px!important;
-  aspect-ratio:1!important;
-  padding:0!important;
-  display:grid!important;
-  place-items:center!important;
-  flex:0 0 36px!important;
-  font-size:0!important;
-  line-height:0!important;
-  text-indent:-999px!important;
-}
-.weather-panel .weather-icon-btn::before,
-.weather-panel .weather-icon-btn::after{
-  text-indent:0!important;
-}
-.weather-panel .weather-icon-btn[data-weather-refresh]::before{
-  display:none!important;
-}
-.weather-panel .weather-icon-btn[data-weather-refresh]::after{
-  display:none!important;
-}
-.weather-panel .weather-icon-btn[data-weather-refresh]{
-  text-indent:0!important;
-  font-size:24px!important;
-  line-height:1!important;
-  font-weight:800!important;
-  font-family:Arial,Helvetica,sans-serif!important;
-  transform:none!important;
-}
-html body .nyx-prompt-shade .nyx-prompt{
+html body .n7x-prompt-shade .n7x-prompt{
   background:#fff!important;
   background-color:#fff!important;
   color:#000!important;
 }
-html body .nyx-prompt-shade .nyx-prompt :is(input,textarea,select,.nyx-prompt-input){
+html body .n7x-prompt-shade .n7x-prompt :is(input,textarea,select,.n7x-prompt-input){
   background:#fff!important;
   background-color:#fff!important;
   color:#000!important;
@@ -750,7 +580,7 @@ html body .nyx-prompt-shade .nyx-prompt :is(input,textarea,select,.nyx-prompt-in
   box-shadow:none!important;
   text-shadow:none!important;
 }
-html body .nyx-prompt-shade .nyx-prompt :is(button,.nyx-prompt-ok,.nyx-prompt-cancel){
+html body .n7x-prompt-shade .n7x-prompt :is(button,.n7x-prompt-ok,.n7x-prompt-cancel){
   background:#fff!important;
   background-color:#fff!important;
   color:#000!important;
@@ -759,7 +589,7 @@ html body .nyx-prompt-shade .nyx-prompt :is(button,.nyx-prompt-ok,.nyx-prompt-ca
   box-shadow:0 2px 6px rgba(0,0,0,.08)!important;
   text-shadow:none!important;
 }
-html body .nyx-prompt-shade .nyx-prompt .nyx-prompt-ok{
+html body .n7x-prompt-shade .n7x-prompt .n7x-prompt-ok{
   border-color:#000!important;
   font-weight:800!important;
 }
@@ -784,18 +614,6 @@ body.browser-shell .window.maximized{
 }
 body.browser-shell .browser-mode-menu{
   top:72px!important;
-}
-body.browser-shell .weather-panel{
-  top:84px!important;
-}
-body.browser-shell .weather-restore{
-  top:78px!important;
-}
-body.browser-shell .browser-mode-weather > .weather-cloud-icon{
-  text-indent:0!important;
-  color:#fff!important;
-  -webkit-text-fill-color:#fff!important;
-  z-index:3!important;
 }
 
 .home-shortcut-menu-btn{
@@ -835,13 +653,6 @@ body.browser-shell .browser-mode-weather > .weather-cloud-icon{
   width:3.5px!important;
   height:3.5px!important;
   box-shadow:0 -6px 0 #f8fafc,0 6px 0 #f8fafc!important;
-}
-body.browser-shell .browser-mode-weather > .weather-cloud-icon{
-  position:absolute!important;
-  left:50%!important;
-  top:50%!important;
-  margin:0!important;
-  transform:translate(-50%,-50%)!important;
 }
 
 body.browser-shell .tool-btn[data-back]::before{
@@ -937,38 +748,4 @@ body.browser-shell .browser-shell-settings-close:hover{
 }
 body.browser-shell .browser-shell-settings-close:hover::before{
   transform:translate(-50%,-50%) rotate(45deg)!important;
-}
-
-body.browser-shell .browser-mode-weather,
-body.browser-shell #weatherRestore{
-  font-size:0!important;
-  line-height:0!important;
-  color:#fff!important;
-  -webkit-text-fill-color:#fff!important;
-  text-indent:0!important;
-  overflow:hidden!important;
-}
-body.browser-shell .browser-mode-weather::before,
-body.browser-shell .browser-mode-weather::after,
-body.browser-shell #weatherRestore::before,
-body.browser-shell #weatherRestore::after,
-body.browser-shell .weather-cloud-icon::before,
-body.browser-shell .weather-cloud-icon::after{
-  content:none!important;
-  display:none!important;
-}
-body.browser-shell .browser-mode-weather > .weather-cloud-icon,
-body.browser-shell #weatherRestore > .weather-cloud-icon{
-  position:relative!important;
-  width:22px!important;
-  height:22px!important;
-  display:block!important;
-  margin:auto!important;
-  background:url("../assets/icons/cloud-weather.png") center/contain no-repeat!important;
-  filter:brightness(0) invert(1)!important;
-  opacity:1!important;
-  visibility:visible!important;
-  z-index:4!important;
-  text-indent:0!important;
-  transform:none!important;
 }

@@ -269,8 +269,8 @@
       '--ai-theme-hover-border':'#8aaee2'
     };
     Object.entries(values).forEach(([name,value])=>root.style.setProperty(name,value));
-    root.dataset.nyxTheme=clean;
-    document.body.dataset.nyxTheme=clean;
+    root.dataset.n7xTheme=clean;
+    document.body.dataset.n7xTheme=clean;
     document.body.className=document.body.className.replace(/\btheme-[\w-]+\b/g,'').trim();
     document.body.classList.add(`theme-${clean}`);
     applyLogoTheme(clean);

@@ -42,28 +42,28 @@ html body.browser-shell.theme-midnight #browserModeMenu,
     top:96px!important;
   }
 html body.browser-shell.theme-midnight{
-  --nyx-final-shortcut-icon:#60a5fa!important;
-  --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(65%) sepia(60%) saturate(946%) hue-rotate(184deg) brightness(101%) contrast(96%)!important;
+  --n7x-final-shortcut-icon:#60a5fa!important;
+  --n7x-shortcut-image-filter:brightness(0) saturate(100%) invert(65%) sepia(60%) saturate(946%) hue-rotate(184deg) brightness(101%) contrast(96%)!important;
 }
 
 html body.browser-shell{
-  --nyx-final-shortcut-icon:#a78bfa!important;
-  --nyx-shortcut-image-filter:brightness(0) saturate(100%) invert(65%) sepia(45%) saturate(2185%) hue-rotate(218deg) brightness(102%) contrast(96%)!important;
+  --n7x-final-shortcut-icon:#a78bfa!important;
+  --n7x-shortcut-image-filter:brightness(0) saturate(100%) invert(65%) sepia(45%) saturate(2185%) hue-rotate(218deg) brightness(102%) contrast(96%)!important;
 }
 html body.browser-shell.theme-midnight{
-  --nyx-final-shortcut-icon:#60a5fa!important;
+  --n7x-final-shortcut-icon:#60a5fa!important;
 }
 html body.browser-shell.theme-ruby{
-  --nyx-final-shortcut-icon:#fb7185!important;
+  --n7x-final-shortcut-icon:#fb7185!important;
 }
 html body.browser-shell.theme-emerald{
-  --nyx-final-shortcut-icon:#34d399!important;
+  --n7x-final-shortcut-icon:#34d399!important;
 }
 html body.browser-shell.theme-sakura{
-  --nyx-final-shortcut-icon:#f472b6!important;
+  --n7x-final-shortcut-icon:#f472b6!important;
 }
 html body.browser-shell.theme-fresh{
-  --nyx-final-shortcut-icon:#0f8fa3!important;
+  --n7x-final-shortcut-icon:#0f8fa3!important;
 }
 
 html body.browser-shell.theme-midnight .window.browser-window.maximized,
@@ -97,38 +97,38 @@ html body.browser-shell #browserModeMenu,
   62%{opacity:1;translate:0 -2px;filter:blur(0)}
   100%{opacity:1;translate:none;filter:blur(0)}
 }
-html body.nyx-startup-reveal.browser-shell iframe.view.tab-opening{
+html body.n7x-startup-reveal.browser-shell iframe.view.tab-opening{
   animation:none!important;
 }
 
-html:not([data-nyx-beam-wallpaper]) body:not(.three-d-backgrounds):not(.custom-bg-active):not(.browser-content-active) .nyx-wave-bg{
+html:not([data-n7x-beam-wallpaper]) body:not(.three-d-backgrounds):not(.custom-bg-active):not(.browser-content-active) .n7x-wave-bg{
   display:block!important;
   opacity:1!important;
   transition:filter .45s ease!important;
 }
-html body.theme-midnight .nyx-wave-bg{filter:none!important}
+html body.theme-midnight .n7x-wave-bg{filter:none!important}
 
-html body{--nyx-nav-arrow:#60a5fa;--nyx-nav-arrow-hover:#bfdbfe}
-html body.theme-midnight{--nyx-nav-arrow:#60a5fa;--nyx-nav-arrow-hover:#bfdbfe}
-html body.theme-ruby{--nyx-nav-arrow:#fb7185;--nyx-nav-arrow-hover:#fecdd3}
-html body.theme-emerald{--nyx-nav-arrow:#34d399;--nyx-nav-arrow-hover:#a7f3d0}
-html body.theme-sakura{--nyx-nav-arrow:#f472b6;--nyx-nav-arrow-hover:#fbcfe8}
-html body.theme-fresh{--nyx-nav-arrow:#0f8fa3;--nyx-nav-arrow-hover:#075f70}
-html body.theme-ruby .nyx-wave-bg{filter:hue-rotate(138deg) saturate(1.24) brightness(.88) contrast(1.06)!important}
-html body.theme-emerald .nyx-wave-bg{filter:hue-rotate(278deg) saturate(1.08) brightness(.86) contrast(1.04)!important}
-html body.theme-sakura .nyx-wave-bg{filter:hue-rotate(85deg) saturate(1.08) brightness(1.02) contrast(.98)!important}
-html body.theme-fresh .nyx-wave-bg{filter:hue-rotate(318deg) saturate(.72) brightness(1.22) contrast(.90)!important}
-html body.three-d-backgrounds .nyx-wave-bg,
-html body.browser-content-active .nyx-wave-bg,
-html body.custom-bg-active .nyx-wave-bg{display:none!important}
+html body{--n7x-nav-arrow:#60a5fa;--n7x-nav-arrow-hover:#bfdbfe}
+html body.theme-midnight{--n7x-nav-arrow:#60a5fa;--n7x-nav-arrow-hover:#bfdbfe}
+html body.theme-ruby{--n7x-nav-arrow:#fb7185;--n7x-nav-arrow-hover:#fecdd3}
+html body.theme-emerald{--n7x-nav-arrow:#34d399;--n7x-nav-arrow-hover:#a7f3d0}
+html body.theme-sakura{--n7x-nav-arrow:#f472b6;--n7x-nav-arrow-hover:#fbcfe8}
+html body.theme-fresh{--n7x-nav-arrow:#0f8fa3;--n7x-nav-arrow-hover:#075f70}
+html body.theme-ruby .n7x-wave-bg{filter:hue-rotate(138deg) saturate(1.24) brightness(.88) contrast(1.06)!important}
+html body.theme-emerald .n7x-wave-bg{filter:hue-rotate(278deg) saturate(1.08) brightness(.86) contrast(1.04)!important}
+html body.theme-sakura .n7x-wave-bg{filter:hue-rotate(85deg) saturate(1.08) brightness(1.02) contrast(.98)!important}
+html body.theme-fresh .n7x-wave-bg{filter:hue-rotate(318deg) saturate(.72) brightness(1.22) contrast(.90)!important}
+html body.three-d-backgrounds .n7x-wave-bg,
+html body.browser-content-active .n7x-wave-bg,
+html body.custom-bg-active .n7x-wave-bg{display:none!important}
 
 html body.browser-shell .settings-window .settings-card{
   min-height:0!important;
   padding:16px!important;
-  border:1px solid color-mix(in srgb,var(--nyx-chrome-bright,var(--theme-border,#8b5cf6)) 25%,transparent)!important;
+  border:1px solid color-mix(in srgb,var(--n7x-chrome-bright,var(--theme-border,#8b5cf6)) 25%,transparent)!important;
   border-radius:14px!important;
   background-color:rgba(3,8,20,.54)!important;
-  background-image:linear-gradient(145deg,color-mix(in srgb,var(--nyx-chrome-accent,var(--theme-border,#8b5cf6)) 12%,transparent),transparent 62%)!important;
+  background-image:linear-gradient(145deg,color-mix(in srgb,var(--n7x-chrome-accent,var(--theme-border,#8b5cf6)) 12%,transparent),transparent 62%)!important;
   box-shadow:0 8px 24px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.05)!important;
   backdrop-filter:blur(36px) saturate(1.1)!important;
   -webkit-backdrop-filter:blur(36px) saturate(1.1)!important;
@@ -136,9 +136,9 @@ html body.browser-shell .settings-window .settings-card{
 }
 html body.browser-shell .settings-window .settings-card:hover{
   transform:none!important;
-  border-color:color-mix(in srgb,var(--nyx-chrome-bright,var(--theme-border,#8b5cf6)) 88%,transparent)!important;
+  border-color:color-mix(in srgb,var(--n7x-chrome-bright,var(--theme-border,#8b5cf6)) 88%,transparent)!important;
   background-color:rgba(3,8,20,.52)!important;
-  box-shadow:0 0 0 1px color-mix(in srgb,var(--nyx-chrome-bright,var(--theme-border,#8b5cf6)) 14%,transparent),0 0 22px color-mix(in srgb,var(--nyx-chrome-accent,var(--theme-border,#8b5cf6)) 22%,transparent),0 10px 28px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.08)!important;
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--n7x-chrome-bright,var(--theme-border,#8b5cf6)) 14%,transparent),0 0 22px color-mix(in srgb,var(--n7x-chrome-accent,var(--theme-border,#8b5cf6)) 22%,transparent),0 10px 28px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.08)!important;
 }
 html body.browser-shell .settings-window .settings-card > h2{
   margin:0 0 9px!important;
@@ -157,7 +157,7 @@ html body.browser-shell .settings-window .settings-card :is(p,label,.settings-ro
 }
 html body.browser-shell .settings-window .settings-card :is(input:not([type="range"]),select,textarea,.settings-input,.settings-select,.panic-key-display){
   min-height:40px!important;
-  border:1px solid color-mix(in srgb,var(--nyx-chrome-bright,var(--theme-border,#8b5cf6)) 25%,transparent)!important;
+  border:1px solid color-mix(in srgb,var(--n7x-chrome-bright,var(--theme-border,#8b5cf6)) 25%,transparent)!important;
   border-radius:10px!important;
   background:rgba(0,0,0,.35)!important;
   box-shadow:none!important;
@@ -167,9 +167,9 @@ html body.browser-shell .settings-window .settings-card :is(input:not([type="ran
 html body.browser-shell .settings-window .settings-card :is(button,.settings-action){
   min-height:37px!important;
   width:auto;
-  border:1px solid color-mix(in srgb,var(--nyx-chrome-bright,var(--theme-border,#8b5cf6)) 25%,transparent)!important;
+  border:1px solid color-mix(in srgb,var(--n7x-chrome-bright,var(--theme-border,#8b5cf6)) 25%,transparent)!important;
   border-radius:999px!important;
-  background:color-mix(in srgb,var(--nyx-chrome-accent,var(--theme-border,#8b5cf6)) 18%,transparent)!important;
+  background:color-mix(in srgb,var(--n7x-chrome-accent,var(--theme-border,#8b5cf6)) 18%,transparent)!important;
   padding:0 14px!important;
   box-shadow:none!important;
   font-size:13px!important;
@@ -177,7 +177,7 @@ html body.browser-shell .settings-window .settings-card :is(button,.settings-act
 }
 html body.browser-shell .settings-window .settings-card :is(button,.settings-action):hover{
   transform:translateY(-1px) scale(1.025)!important;
-  background:color-mix(in srgb,var(--nyx-chrome-accent,var(--theme-border,#8b5cf6)) 28%,transparent)!important;
+  background:color-mix(in srgb,var(--n7x-chrome-accent,var(--theme-border,#8b5cf6)) 28%,transparent)!important;
 }
 html body.browser-shell .settings-window .settings-card .settings-row{
   min-height:30px!important;
@@ -196,11 +196,11 @@ html body.browser-shell .settings-window .settings-card .settings-actions{
 
 
 html body .browser-tools.browser-tools button.tool-btn[data-reload]::before{
-  transform:rotate(var(--nyx-reload-turn,0deg)) scale(.96)!important;
+  transform:rotate(var(--n7x-reload-turn,0deg)) scale(.96)!important;
   transform-origin:center!important;
   transition:none!important;
   will-change:transform!important;
 }
 html body .browser-tools.browser-tools button.tool-btn[data-reload]:hover::before{
-  transform:rotate(var(--nyx-reload-turn,0deg)) scale(1.055)!important;
+  transform:rotate(var(--n7x-reload-turn,0deg)) scale(1.055)!important;
 }

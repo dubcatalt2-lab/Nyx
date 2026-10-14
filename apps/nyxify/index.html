@@ -2,46 +2,51 @@
 <html lang="en">
 <head>
 <script src="/js/app-presentation.js?v=20260922-style-ready-v1"></script>
+<script src="/js/app-colors.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#000000">
-  <title>Nyxify/built in music</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>N7X1FY/built in music</title>
   <link rel="stylesheet" href="/apps/nyxify/icons.css?v=20260825-nyx-v2">
   <link rel="stylesheet" href="/apps/nyxify/app.css?v=20260924-audio-search-v1">
 <link rel="stylesheet" href="/apps/obsidian.css?v=20260926-2">
 </head>
 <body>
-  <canvas id="stars"></canvas>
-
   <header>
-    <div class="nyxify-brand" aria-label="Nyxify/built in music">
-      <img src="/assets/icons/shortcut-nyxify.svg?v=3" alt="">
-      <span><strong>Nyxify/built in music</strong><small>Music in N7X</small></span>
+    <div class="n7xify-brand" aria-label="N7X1FY/built in music">
+      <img src="/assets/icons/nyx-cat-moon-small.svg?v=3" alt="">
+      <span><strong>N7X1FY</strong><small>Music</small></span>
     </div>
     <form class="searchbox" id="searchForm">
       <i class="material-symbols--search-rounded"></i>
       <input type="text" id="searchInput" placeholder="Search songs, artists, or albums" autocomplete="off" aria-label="search songs">
       <kbd class="search-kbd">/</kbd>
     </form>
-    <span class="nyxify-mode">Music</span>
+    <button type="button" class="library-link" id="libraryLink">Your library <span aria-hidden="true">↗</span></button>
   </header>
 
   <div class="shell" id="shell">
-    <aside class="sidebar">
-      <button type="button" class="filter active" data-filter="home">Home</button>
-      <button type="button" class="filter" data-filter="tracks">Tracks</button>
-      <button type="button" class="filter" data-filter="artists">Artists</button>
-      <button type="button" class="filter" data-filter="albums">Albums</button>
+    <aside class="sidebar" aria-label="Music navigation">
+      <button type="button" class="nav-action" id="sidebarSearch"><i class="material-symbols--search-rounded" aria-hidden="true"></i>Search music</button>
+      <button type="button" class="filter active" data-filter="home"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m16 8-2.5 5.5L8 16l2.5-5.5Z"/></svg>Browse</button>
+      <button type="button" class="filter" data-filter="liked"><i class="ic-heart" aria-hidden="true"></i>Liked songs</button>
+      <button type="button" class="filter" data-filter="queue"><i class="ic-queue" aria-hidden="true"></i>Queue</button>
+      <button type="button" class="filter" data-filter="history"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Recently played</button>
+      <button type="button" class="nav-action" id="navNewPlaylist"><span aria-hidden="true">＋</span>New playlist</button>
       <div class="sidebar-library">
         <div class="sidebar-library-head"><span>Your playlists</span><button type="button" id="sidebarNewPlaylist" aria-label="Create playlist">+</button></div>
         <div class="sidebar-playlists" id="sidebarPlaylistList"></div>
       </div>
     </aside>
 
-    <main>
+    <main id="musicMain">
+      <div class="browse-heading"><h1 id="viewTitle">Browse</h1><span>YOUR DAILY ROTATION</span></div>
+      <nav class="browse-tabs" aria-label="Browse categories">
+        <button type="button" class="filter active" data-filter="home">For you</button>
+        <button type="button" class="filter" data-filter="tracks">Tracks</button>
+        <button type="button" class="filter" data-filter="artists">Artists</button>
+        <button type="button" class="filter" data-filter="albums">Albums</button>
+      </nav>
       <div class="empty" id="emptyState">
         <div class="empty-icon"><i class="mingcute--music-line"></i></div>
         <div class="empty-title" id="emptyTitle">Find something to play</div>
@@ -53,9 +58,9 @@
       <div id="cardGrid" class="cards" style="display:none"></div>
     </main>
 
-    <aside class="rail">
+    <aside class="rail" id="musicLibrary" aria-label="Your library">
       <section class="module now-playing-module" id="nowPlayingModule" hidden>
-        <div class="mod-head"><span>Now playing</span><small id="nowPlayingContext">Nyxify</small></div>
+        <div class="mod-head"><span>Now playing</span><small id="nowPlayingContext">N7X1FY</small></div>
         <div class="now-playing-body">
           <div class="now-playing-media" id="nowPlayingMedia">
             <img class="now-playing-art" id="nowPlayingArt" alt="Current track cover">

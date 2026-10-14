@@ -56,7 +56,7 @@ let mode = 'home';
 let homeData = { tracks: [], artists: [], albums: [] };
 let homeLoading = true;
 let homeError = '';
-let playbackContext = 'Nyxify';
+let playbackContext = "N7X1FY";
 let detail = null;
 let reqid = 0;
 let dragging = false;
@@ -98,7 +98,7 @@ if (!['off', 'one', 'all'].includes(repeatmode)) repeatmode = 'off';
 let playershown = false;
 let queueopen = false;
 
-const coverFallback = '/assets/icons/shortcut-nyxify.svg?v=3';
+const coverFallback = '/apps/nyxify/cover-placeholder.svg?v=20261013';
 
 document.addEventListener('error', event => {
   const image = event.target;
@@ -148,12 +148,12 @@ async function nyxifyjson(path, options = {}) {
       try { payload = JSON.parse(text); } catch (_) {}
     }
     if (!response.ok) {
-      throw Object.assign(new Error(payload?.error || `Nyxify is temporarily unavailable (${response.status}).`), {
+      throw Object.assign(new Error(payload?.error || `N7X1FY is temporarily unavailable (${response.status}).`), {
         status: response.status, retryAfter: Math.min(5, Math.max(1, Number(response.headers.get('retry-after')) || 1))
       });
     }
     if (!payload || typeof payload !== 'object') {
-      throw new Error("Nyxify received a web page instead of music data. Reload N7X and try again.");
+      throw new Error("N7X1FY received a web page instead of music data. Reload N7X and try again.");
     }
     return payload;
   } finally { clearTimeout(deadline); }
@@ -493,7 +493,7 @@ function setplayingid(id) {
 function setfilter(next) {
   mode = next;
   document.querySelectorAll('.filter').forEach(b =>
-    b.classList.toggle('active', b.dataset.filter === next));
+    { b.classList.toggle('active', b.dataset.filter === next); b.setAttribute('aria-pressed', String(b.dataset.filter === next)); });
 }
 
 function hideviews() {
@@ -549,9 +549,10 @@ function buildrow(t, list, options = {}) {
       ? `<button type="button" class="playlist-track-action playlist-track-add${alreadyAdded ? ' added' : ''}" aria-label="${alreadyAdded ? 'Already in playlist' : `Add ${esc(t.title)} to playlist`}" ${alreadyAdded ? 'disabled' : ''}>${alreadyAdded ? '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m8.5 12.5 2.2 2.2 4.8-5.2"></path></svg>' : '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8M8 12h8"></path></svg>'}</button>`
       : '';
   const artistHtml = `<span class="alink">${esc(t.artist)}</span>`;
-  const sub = t.album ? `${artistHtml} · ${esc(t.album)}` : artistHtml;
+  const sub = artistHtml;
 
   row.innerHTML = `
+    <span class="t-number" aria-hidden="true">${list.indexOf(t) + 1}</span>
     <img src="${esc(t.cover)}" alt="" loading="lazy">
     <div class="t-meta">
       <div class="t-top">
@@ -560,6 +561,7 @@ function buildrow(t, list, options = {}) {
       </div>
       <div class="t-sub">${sub}</div>
     </div>
+    <span class="t-album">${esc(t.album || '')}</span>
     <span class="t-duration">${fmt(t.duration)}</span>
     ${playlistAction}
     <button type="button" class="like-btn${liked ? ' liked' : ''}" aria-pressed="${liked}" aria-label="${liked ? 'unlike' : 'like'}">
@@ -683,20 +685,25 @@ function showhomechart() {
   crumbEl.style.display = 'none';
   detailView.innerHTML = '';
 
+  const albums = document.createElement('div');
+  albums.className = 'cards home-cards album-shelf';
+  homeData.albums.slice(0, 12).forEach(item => albums.appendChild(buildcard(item, 'album')));
+  if (homeData.albums.length) detailView.appendChild(homesection('Featured albums', '', albums));
+
   const tracks = document.createElement('div');
   tracks.className = 'home-track-list';
-  renderrowsinto(tracks, homeData.tracks.slice(0, 12));
-  detailView.appendChild(homesection('Popular tracks this week', 'What people are playing right now.', tracks, 'home-tracks'));
+  renderrowsinto(tracks, homeData.tracks.slice(0, 30));
+  const columns = document.createElement('div');
+  columns.className = 'track-columns';
+  columns.setAttribute('aria-hidden', 'true');
+  columns.innerHTML = '<span>#</span><span>Title</span><span>Album</span><span>Time</span><span></span>';
+  tracks.prepend(columns);
+  detailView.appendChild(homesection('Top tracks', `${Math.min(30, homeData.tracks.length)} tracks`, tracks, 'home-tracks'));
 
   const artists = document.createElement('div');
-  artists.className = 'cards home-cards';
+  artists.className = 'cards home-cards album-shelf';
   homeData.artists.slice(0, 8).forEach(item => artists.appendChild(buildcard(item, 'artist')));
-  detailView.appendChild(homesection('Popular artists', 'Artists trending across the current chart.', artists));
-
-  const albums = document.createElement('div');
-  albums.className = 'cards home-cards';
-  homeData.albums.slice(0, 8).forEach(item => albums.appendChild(buildcard(item, 'album')));
-  detailView.appendChild(homesection('Popular albums', 'Albums listeners are coming back to this week.', albums));
+  if (homeData.artists.length) detailView.appendChild(homesection('Artists in rotation', '', artists));
   detailView.style.display = '';
 }
 
@@ -766,6 +773,7 @@ async function opendetail(type, id, name, autoplay) {
 }
 
 function renderdetail() {
+  document.getElementById('viewTitle').textContent = detail.name;
   const d = detail.data;
   const count = detail.type === 'artist' && d.total ? d.total : d.tracks.length;
   hideviews();
@@ -812,10 +820,15 @@ function renderdetail() {
 }
 
 function rendermain() {
+  document.getElementById('viewTitle').textContent = activePlaylistId ? 'Playlist' : detail?.name || (query && !['liked','history','queue'].includes(mode) ? 'Search results' : ({home:'Browse',tracks:'Tracks',artists:'Artists',albums:'Albums',liked:'Liked songs',history:'Recently played',queue:'Queue'}[mode] || 'Browse'));
   rendersidebarplaylists();
   if (activePlaylistId) return renderplaylistview();
   if (playlistAddTargetId) return renderplaylistaddview();
   if (detail) return detail.data ? renderdetail() : showloading(detail.name);
+  if (['liked','history','queue'].includes(mode)) {
+    const list = mode === 'liked' ? getlikes() : mode === 'history' ? gethistory() : queue.slice(Math.max(0,qindex));
+    return list.length ? showrows(list) : showempty(mode === 'queue' ? 'Your queue is empty' : mode === 'liked' ? 'No liked songs yet' : 'Nothing played yet', 'Find a song in Browse or search your music.');
+  }
   if (query) {
     if (!results.length) return showempty('No results', `Nothing matched "${query}".`);
     if (mode === 'home') return showeverythinghome();
@@ -1206,6 +1219,7 @@ function openplaylistdialog(track = null) {
 function openplaylist(id) {
   const playlist = playlists.find(item => item.id === id);
   if (!playlist) return;
+  document.getElementById('viewTitle').textContent = 'Playlist';
   activePlaylistId = id;
   playlistAddTargetId = '';
   detail = null;
@@ -1242,7 +1256,7 @@ function renderplaylistview() {
   const title = document.createElement('h2');
   title.textContent = playlist.name;
   const summary = document.createElement('p');
-  summary.textContent = `${playlist.tracks.length} ${playlist.tracks.length === 1 ? 'song' : 'songs'} · Nyxify/built in music`;
+  summary.textContent = `${playlist.tracks.length} ${playlist.tracks.length === 1 ? 'song' : 'songs'} · N7X1FY/built in music`;
   const actions = document.createElement('div');
   actions.className = 'playlist-hero-actions';
   const play = document.createElement('button');
@@ -1517,10 +1531,14 @@ function refreshlikes() {
     if (!btn) return;
     paintheart(btn, isliked(row.dataset.id));
   });
+  if (mode === 'liked' && !activePlaylistId && !detail) rendermain();
 }
 
 document.getElementById('newPlaylistBtn').addEventListener('click', () => openplaylistdialog());
 document.getElementById('sidebarNewPlaylist').addEventListener('click', () => openplaylistdialog());
+document.getElementById('navNewPlaylist').addEventListener('click', () => openplaylistdialog());
+document.getElementById('sidebarSearch').addEventListener('click', () => { searchInput.focus(); searchInput.scrollIntoView({block:'center'}); });
+document.getElementById('libraryLink').addEventListener('click', () => document.getElementById('musicLibrary').scrollIntoView({behavior:'smooth',block:'start'}));
 document.getElementById('playlistDialogClose').addEventListener('click', () => playlistDialog.close());
 document.getElementById('playlistCreateForm').addEventListener('submit', event => {
   event.preventDefault();
@@ -1604,14 +1622,14 @@ function inferplaycontext(list) {
   if (detail?.name) return `${detail.type === 'artist' ? 'Artist' : 'Album'} · ${detail.name}`;
   if (query) return `Search · ${query}`;
   if (list === homeData.tracks || (Array.isArray(list) && list.length && list.every(item => homeData.tracks.some(track => track.id === item.id)))) return 'Popular this week';
-  return 'Nyxify';
+  return "N7X1FY";
 }
 
 function rendernowplaying() {
   nowPlayingModule.hidden = !curtrack;
   if (!curtrack) return;
   setcover(nowPlayingArt, curtrack.cover, `${curtrack.title} cover`);
-  nowPlayingContext.textContent = playbackContext || 'Nyxify';
+  nowPlayingContext.textContent = playbackContext || "N7X1FY";
   nowPlayingTitle.textContent = curtrack.title;
   nowPlayingArtist.textContent = curtrack.artist || 'Unknown artist';
   nowPlayingArtist.disabled = !curtrack.artistId;
@@ -1683,12 +1701,12 @@ function ensureoctaveapi() {
       try { previous?.(); } catch (_) {}
       finish(window.YT?.Player ? window.YT : nyxtubedirectapi);
     };
-    let script = document.querySelector('script[data-nyx-octave-player]');
+    let script = document.querySelector('script[data-n7x-octave-player]');
     if (!script) {
       script = document.createElement('script');
       script.src = 'https://www.youtube.com/iframe_api';
       script.async = true;
-      script.dataset.nyxOctavePlayer = '1';
+      script.dataset.n7xOctavePlayer = '1';
       script.addEventListener('error', () => finish(nyxtubedirectapi), { once: true });
       document.head.appendChild(script);
     }
@@ -2123,6 +2141,7 @@ document.getElementById('qClear').addEventListener('click', () => {
 });
 
 function renderqueue() {
+  if (mode === 'queue' && !activePlaylistId && !detail) rendermain();
   const qList = document.getElementById('qList');
   const up = queue.slice(qindex + 1);
   qList.innerHTML = '';

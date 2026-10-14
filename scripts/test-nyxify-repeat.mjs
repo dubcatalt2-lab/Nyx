@@ -62,7 +62,7 @@ try {
       await page.addInitScript(()=>{localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.browserShellMode','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');});
       await page.goto(origin+'/');
       await page.getByRole('button',{name:'Got it',exact:true}).click();
-      await page.locator('[data-nyx-dock-item="music"]').click();
+      await page.locator('[data-n7x-dock-item="music"]').click();
       await page.waitForFunction(()=>[...document.querySelectorAll('iframe')].some(f=>f.src.includes('/apps/nyxify/')));
       page=page.frames().find(f=>f.url().includes('/apps/nyxify/'));
     }else await page.goto(origin + '/apps/nyxify/');

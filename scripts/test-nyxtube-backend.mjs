@@ -33,7 +33,9 @@ try {
   assert.throws(()=>publicMediaUrl('https://user:pass@r1.googlevideo.com/media'));
   assert.throws(()=>mediaChoices({...info,availability:'private'}));
   assert.throws(()=>mediaChoices({...info,is_live:true}));
-  for (const duration of [0, -1, NaN, Infinity, undefined]) assert.throws(()=>mediaChoices({...info,duration}));
+  for (const duration of [0, -1, NaN, Infinity, undefined, null, '', 'unknown', true, []]) assert.throws(()=>mediaChoices({...info,duration}));
+  for (const duration of ['4','120.5']) assert.equal(mediaChoices({...info,duration}).length,1,'Numeric durations accepted by the catalog must work in playback');
+  for (const live_status of ['is_live','is_upcoming','post_live']) assert.throws(()=>mediaChoices({...info,live_status}),/Live and upcoming/);
   for (const duration of [3600, 3601, 7200, 86400]) assert.equal(mediaChoices({...info,duration}).length,1);
   // Long metadata exercises the full preparation path using the small real media fixture.
   info.duration=7200;

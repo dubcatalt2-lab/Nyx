@@ -1,4 +1,4 @@
-.nyx-discord-link {
+.n7x-discord-link {
   position: fixed;
   z-index: 118;
   right: max(18px, env(safe-area-inset-right));
@@ -8,10 +8,10 @@
   gap: 8px;
   min-height: 40px;
   padding: 0 14px;
-  border: 1px solid color-mix(in srgb, var(--nyx-home-wordmark, #dedee8) 24%, transparent);
+  border: 1px solid color-mix(in srgb, var(--n7x-home-wordmark, #dedee8) 24%, transparent);
   border-radius: 12px;
-  background: color-mix(in srgb, var(--nyx-control-surface, #101117) 82%, transparent);
-  color: var(--nyx-home-wordmark, #e9e9ef);
+  background: color-mix(in srgb, var(--n7x-control-surface, #101117) 82%, transparent);
+  color: var(--n7x-home-wordmark, #e9e9ef);
   font: 550 12px/1 Outfit, Inter, sans-serif;
   letter-spacing: .01em;
   text-decoration: none;
@@ -21,7 +21,7 @@
   transition: transform 150ms ease, border-color 150ms ease, background-color 150ms ease;
 }
 
-.nyx-discord-link svg {
+.n7x-discord-link svg {
   width: 19px;
   height: 19px;
   overflow: visible;
@@ -32,19 +32,19 @@
   stroke-linejoin: round;
 }
 
-.nyx-discord-link:hover,
-.nyx-discord-link:focus-visible {
+.n7x-discord-link:hover,
+.n7x-discord-link:focus-visible {
   transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--nyx-home-wordmark, #dedee8) 62%, transparent);
-  background: color-mix(in srgb, var(--nyx-chrome-accent, #9b8cf5) 12%, var(--nyx-control-surface, #101117));
-  color: var(--nyx-chrome-bright, #fff);
+  border-color: color-mix(in srgb, var(--n7x-home-wordmark, #dedee8) 62%, transparent);
+  background: color-mix(in srgb, var(--n7x-chrome-accent, #9b8cf5) 12%, var(--n7x-control-surface, #101117));
+  color: var(--n7x-chrome-bright, #fff);
 }
 
-.nyx-discord-link:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--nyx-home-wordmark, #dedee8) 64%, transparent);
+.n7x-discord-link:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--n7x-home-wordmark, #dedee8) 64%, transparent);
   outline-offset: 3px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .nyx-discord-link { transition: none; }
+  .n7x-discord-link { transition: none; }
 }

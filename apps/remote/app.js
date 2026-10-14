@@ -61,7 +61,7 @@ $('refresh').onclick=run(list);$('disconnect').onclick=$('cancelReconnect').oncl
 $('lockMouse').onclick=run(()=>desktopControls?.lock());
 $('secureAttention').onclick=()=>rfb?.sendCtrlAltDel();
 $('pair').onsubmit=run(async()=>{await api('/pair/approve',{code:$('code').value});$('code').value='';notice('Computer paired. It should appear online shortly.');await list();});
-$('download').onclick=run(async()=>{const blob=await(await api('/host.zip')).blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Nyx-Remote.zip';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+$('download').onclick=run(async()=>{const blob=await(await api('/host.zip')).blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download="N7X-Remote.zip";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 async function initialize(){try{
  const response=await fetch('/api/founder-profile/auth-config',{cache:'no-store',signal:AbortSignal.timeout(15000)});if(!response.ok)throw Error('Account service is temporarily unavailable.');const config=await response.json();if(!config.enabled)throw Error('Account sign-in is unavailable.');
  const [appModule,module]=await Promise.all([import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')]);

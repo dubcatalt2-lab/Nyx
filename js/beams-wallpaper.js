@@ -350,11 +350,11 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
     return instance;
   }
   function syncVisibility(){
-    if(document.documentElement.dataset.nyxBeamWallpaper==='obsidian' || document.documentElement.dataset.nyxBeamWallpaper?.startsWith('photo-')){instance?.stop();if(canvas)canvas.hidden=true;return;}
+    if(document.documentElement.dataset.n7xBeamWallpaper==='obsidian' || document.documentElement.dataset.n7xBeamWallpaper?.startsWith('photo-')){instance?.stop();if(canvas)canvas.hidden=true;return;}
     if(!canvas) return;
     const body=document.body;
-    const externalContent=body?.classList.contains('browser-content-active') && !body.classList.contains('nyx-built-in-content-active');
-    const lineWaves=document.documentElement?.dataset.nyxBeamWallpaper==='lineWaves';
+    const externalContent=body?.classList.contains('browser-content-active') && !body.classList.contains('n7x-built-in-content-active');
+    const lineWaves=document.documentElement?.dataset.n7xBeamWallpaper==='lineWaves';
     const hidden=!body || lineWaves || body.classList.contains('custom-bg-active') || body.classList.contains('three-d-backgrounds') || externalContent;
     canvas.hidden=hidden;
     if(hidden){instance?.stop(); return}
@@ -369,7 +369,7 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
   function apply(name='frost',nextOptions={}){
     selected=presets[name] ? name : 'frost';
     options={...defaults,...options,lightColor:presets[selected].lightColor,...nextOptions};
-    canvas=document.getElementById('nyxBeamsBg') || canvas;
+    canvas=document.getElementById('n7xBeamsBg') || canvas;
     if(canvas){canvas.dataset.preset=selected;canvas.dataset.lightColor=options.lightColor;}
     if(instance && name!=='obsidian' && name!=='lineWaves' && !name.startsWith('photo-')){
       try{instance.update(options)}catch(error){failRenderer(error)}
@@ -401,7 +401,7 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
     }
   }
   function init(){
-    canvas=document.getElementById('nyxBeamsBg');
+    canvas=document.getElementById('n7xBeamsBg');
     if(!canvas) return;
     apply(localStorage.getItem('nyx.beamWallpaper') || 'frost');
     new MutationObserver(syncVisibility).observe(document.body,{attributes:true,attributeFilter:['class']});

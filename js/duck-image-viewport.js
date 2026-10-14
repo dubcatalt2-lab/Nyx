@@ -2,7 +2,7 @@ globalThis.NyxDuckImageViewport = function(t, browserShellSourceUrl){
       if(!t?.frame) return;
       let doc;
       try{doc=t.frame.contentDocument}catch{return}
-      if(!doc?.documentElement || doc.documentElement.dataset.nyxDuckImageViewport==='true') return;
+      if(!doc?.documentElement || doc.documentElement.dataset.n7xDuckImageViewport==='true') return;
       const currentSource=()=>{
         try{
           const href=String(t.frame.contentWindow?.location?.href || '');
@@ -14,7 +14,7 @@ globalThis.NyxDuckImageViewport = function(t, browserShellSourceUrl){
       let initial;
       try{initial=new URL(currentSource(),location.href)}catch{return}
       if(initial.hostname.replace(/^www\./i,'').toLowerCase()!=='duckduckgo.com') return;
-      doc.documentElement.dataset.nyxDuckImageViewport='true';
+      doc.documentElement.dataset.n7xDuckImageViewport='true';
       const decodeBrokenImageUrl=value=>{
         const raw=String(value || '').trim();
         const match=raw.match(/https?%3a%2f%2f/i);
@@ -102,30 +102,30 @@ globalThis.NyxDuckImageViewport = function(t, browserShellSourceUrl){
             wrapper.style.setProperty('min-height','0','important');
             wrapper.style.setProperty('max-height',`${wrapperHeight}px`,'important');
             wrapper.style.setProperty('overflow','visible','important');
-            wrapper.dataset.nyxDuckImageFilterWrapperFixed='true';
+            wrapper.dataset.n7xDuckImageFilterWrapperFixed='true';
           }
-          nav.dataset.nyxDuckImageFilterFixed='true';
-          doc.documentElement.dataset.nyxDuckImageFilterFixed='true';
+          nav.dataset.n7xDuckImageFilterFixed='true';
+          doc.documentElement.dataset.n7xDuckImageFilterFixed='true';
         });
       };
       const restoreDuckDuckGoSearchLayout=()=>{
 
 
-        doc.querySelectorAll('[data-nyx-duck-mainline-hidden="true"]').forEach(mainline=>{
+        doc.querySelectorAll('[data-n7x-duck-mainline-hidden="true"]').forEach(mainline=>{
           ['display','min-height','height','margin','padding'].forEach(property=>mainline.style.removeProperty(property));
-          delete mainline.dataset.nyxDuckMainlineHidden;
+          delete mainline.dataset.n7xDuckMainlineHidden;
         });
-        doc.querySelectorAll('[data-nyx-duck-image-gap-fixed="true"]').forEach(container=>{
+        doc.querySelectorAll('[data-n7x-duck-image-gap-fixed="true"]').forEach(container=>{
           container.style.removeProperty('margin-top');
-          delete container.dataset.nyxDuckImageGapFixed;
+          delete container.dataset.n7xDuckImageGapFixed;
         });
-        doc.querySelectorAll('[data-nyx-duck-image-filter-fixed="true"]').forEach(nav=>{
+        doc.querySelectorAll('[data-n7x-duck-image-filter-fixed="true"]').forEach(nav=>{
           ['height','min-height','max-height','overflow'].forEach(property=>nav.style.removeProperty(property));
-          delete nav.dataset.nyxDuckImageFilterFixed;
+          delete nav.dataset.n7xDuckImageFilterFixed;
         });
-        doc.querySelectorAll('[data-nyx-duck-image-filter-wrapper-fixed="true"]').forEach(wrapper=>{
+        doc.querySelectorAll('[data-n7x-duck-image-filter-wrapper-fixed="true"]').forEach(wrapper=>{
           ['height','min-height','max-height','overflow'].forEach(property=>wrapper.style.removeProperty(property));
-          delete wrapper.dataset.nyxDuckImageFilterWrapperFixed;
+          delete wrapper.dataset.n7xDuckImageFilterWrapperFixed;
         });
       };
       const collapseEmptyImageGap=()=>{
@@ -155,7 +155,7 @@ globalThis.NyxDuckImageViewport = function(t, browserShellSourceUrl){
           mainline.style.setProperty('height','0','important');
           mainline.style.setProperty('margin','0','important');
           mainline.style.setProperty('padding','0','important');
-          mainline.dataset.nyxDuckMainlineHidden='true';
+          mainline.dataset.n7xDuckMainlineHidden='true';
         });
         let filterBottom=0;
         doc.querySelectorAll('div,nav,section').forEach(element=>{
@@ -179,15 +179,15 @@ globalThis.NyxDuckImageViewport = function(t, browserShellSourceUrl){
           if(!parentBox || parentTop<targetTop+180) break;
           container=parent;
         }
-        if(container.dataset.nyxDuckImageGapFixed==='true') return;
+        if(container.dataset.n7xDuckImageGapFixed==='true') return;
         const containerBox=container.getBoundingClientRect?.();
         if(!containerBox) return;
         const gap=Math.round(containerBox.top+scrollTop-targetTop);
         if(gap<220) return;
         const currentMargin=Number.parseFloat(view.getComputedStyle(container).marginTop) || 0;
         container.style.setProperty('margin-top',`${currentMargin-gap}px`,'important');
-        container.dataset.nyxDuckImageGapFixed='true';
-        doc.documentElement.dataset.nyxDuckImageGapFixed='true';
+        container.dataset.n7xDuckImageGapFixed='true';
+        doc.documentElement.dataset.n7xDuckImageGapFixed='true';
       };
       let queued=false;
       const queueRepair=()=>{

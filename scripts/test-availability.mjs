@@ -12,7 +12,7 @@ try{
   });
   await page.addScriptTag({path:'js/availability.js'});
   await page.evaluate(()=>NyxAvailability.start(()=>({url:'wss://relay.test/wisp/',custom:window.custom})));
-  const warning=page.locator('#nyxAvailabilityWarning');
+  const warning=page.locator('#n7xAvailabilityWarning');
   const message=warning.locator('span');
   await page.evaluate(()=>NyxAvailability.recordHealth(false));
   assert.equal(await warning.count(),0);

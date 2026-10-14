@@ -61,12 +61,12 @@ try {
       return route.fulfill({ json: {} });
     });
     await page.goto(origin + '/apps/nyxify/');
-    const firstRow = page.locator('.row', { hasText: tracks[0].title }).first();
+    const firstRow = page.locator('.row[data-id="1"]').first();
     await firstRow.focus();
     await page.waitForResponse(r => r.url().includes('/playback/1') && r.url().includes('prefetch=1'));
     assert.equal(firstTrackLookups, 1);
     assert.equal(audioRequests.length, 0, 'Intent preload only resolves metadata, without downloading or playing music');
-    await page.locator('.row', { hasText: tracks[0].title }).first().dblclick();
+    await page.locator('.row[data-id="1"]').first().dblclick();
     await page.waitForFunction(() => document.querySelector('audio').currentTime > .2);
     assert.match(await page.locator('audio').getAttribute('src'), /\/audio\/1$/);
     assert.equal(firstTrackLookups, 1, 'Clicking reuses the prepared match');
@@ -78,10 +78,12 @@ try {
     await page.locator('#seekBar').evaluate(el => { el.value = '72'; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); });
     await page.waitForFunction(() => document.querySelector('audio').currentTime > 89);
     const barImage = await sharp(await page.locator('#seekBar').screenshot()).raw().toBuffer({ resolveWithObject: true });
+    const brightness = [];
     for (const fraction of [.25, .85]) {
       const offset = (Math.floor(barImage.info.height / 2) * barImage.info.width + Math.floor(barImage.info.width * fraction)) * barImage.info.channels;
-      assert.ok(barImage.data[offset + 2] > barImage.data[offset] + 20, 'Played and buffered track pixels stay visibly blue under the shared theme');
+      brightness.push((barImage.data[offset] + barImage.data[offset + 1] + barImage.data[offset + 2]) / 3);
     }
+    assert.ok(brightness[0] > 150 && brightness[1] > 80 && brightness[0] > brightness[1] + 20, 'Played and buffered progress remain visible and distinct in the neutral shared palette');
 
     await page.locator('#nextBtn').click();
     await page.waitForFunction(() => document.querySelector('audio').src.endsWith('/audio/2') && document.querySelector('audio').currentTime > .2);
@@ -92,12 +94,12 @@ try {
       await page.evaluate(() => sessionStorage.clear());
       await page.reload();
     }
-    async function selectFirst() { await page.locator('.row', { hasText: tracks[0].title }).first().dblclick(); }
+    async function selectFirst() { await page.locator('.row[data-id="1"]').first().dblclick(); }
     async function playing() { await page.waitForFunction(() => document.querySelector('audio').src.endsWith('/audio/1') && document.querySelector('audio').currentTime > .2); }
     busyLookup = 1;
     await restart(); await selectFirst(); await playing();
     assert.equal(busyLookup, 0);
-    assert.match(await page.locator('#playerPlaybackStatus').textContent(), /full song/);
+    assert.match((await page.locator('#playerPlaybackStatus').textContent()).normalize('NFKC'), /full song/);
     failAudio = 1;
     await restart(); const beforeRetry = lookups;
     await selectFirst(); await playing();
@@ -118,15 +120,15 @@ try {
       };
     });
     await selectFirst();
-    await page.waitForFunction(() => document.querySelector('#playerPlaybackStatus').textContent.includes('press play'));
+    await page.waitForFunction(() => document.querySelector('#playerPlaybackStatus').textContent.normalize('NFKC').includes('press play'));
     await page.locator('#playBtn').click(); await playing();
     delayLookup = true;
     await page.evaluate(() => sessionStorage.clear());
     await page.reload();
-    await page.locator('.row', { hasText: tracks[0].title }).first().dblclick();
+    await page.locator('.row[data-id="1"]').first().dblclick();
     await page.locator('#nextBtn').click();
     await page.waitForFunction(() => document.querySelector('audio').src.endsWith('/audio/2') && document.querySelector('audio').currentTime > .3);
-    assert.match(await page.locator('#pTitle').textContent(), /fixture 2/);
+    assert.match((await page.locator('#pTitle').textContent()).normalize('NFKC'), /fixture 2/);
     delayLookup = false;
     await restart();
     await page.evaluate(() => { Storage.prototype.setItem = () => { throw new DOMException('Storage full', 'QuotaExceededError'); }; });
@@ -155,9 +157,9 @@ try {
         ? new Promise((resolve, reject) => options.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), { once: true }))
         : original(url, options);
     });
-    await hung.locator('.row', { hasText: tracks[0].title }).first().dblclick();
+    await hung.locator('.row[data-id="1"]').first().dblclick();
     await hung.clock.fastForward(26_000);
-    await hung.waitForFunction(() => document.querySelector('#playerPlaybackStatus').textContent.includes('took too long'));
+    await hung.waitForFunction(() => document.querySelector('#playerPlaybackStatus').textContent.normalize('NFKC').includes('took too long'));
     assert.equal(await hung.locator('audio').getAttribute('src'), null);
     await hung.close();
 
@@ -172,7 +174,7 @@ try {
       return route.fulfill({ json: {} });
     });
     await offline.goto(origin + '/apps/nyxify/');
-    await offline.locator('.row', { hasText: tracks[0].title }).first().dblclick();
+    await offline.locator('.row[data-id="1"]').first().dblclick();
     await offline.waitForFunction(() => document.querySelector('audio').currentTime > .2);
     await offline.context().setOffline(true);
     await offline.evaluate(() => {
@@ -180,9 +182,9 @@ try {
       Object.defineProperty(a, 'error', { configurable: true, get: () => ({ code: 2 }) });
       a.dispatchEvent(new Event('error'));
     });
-    await offline.waitForFunction(() => document.querySelector('#playerPlaybackStatus').textContent.includes('offline'));
+    await offline.waitForFunction(() => document.querySelector('#playerPlaybackStatus').textContent.normalize('NFKC').includes('offline'));
     await offline.context().setOffline(false);
-    await offline.waitForFunction(() => document.querySelector('#playerPlaybackStatus').textContent.includes('full song'));
+    await offline.waitForFunction(() => document.querySelector('#playerPlaybackStatus').textContent.normalize('NFKC').includes('full song'));
     await offline.evaluate(() => { delete document.querySelector('audio').error; });
     await offline.waitForFunction(() => document.querySelector('audio').currentTime > .2);
     assert.ok(offlineLookups >= 2);
@@ -191,7 +193,7 @@ try {
       document.querySelector('audio').dispatchEvent(new Event('timeupdate'));
     });
     await offline.clock.fastForward(55_000);
-    await offline.waitForFunction(() => document.querySelector('#playerPlaybackStatus').textContent.includes('stopped responding'));
+    await offline.waitForFunction(() => document.querySelector('#playerPlaybackStatus').textContent.normalize('NFKC').includes('stopped responding'));
     assert.equal(await offline.locator('audio').getAttribute('src'), null);
     await offline.close();
 
@@ -214,8 +216,8 @@ try {
     });
     failed.on('request', r => { if(r.url().includes('/api/nyxify/stream/')) previewRequests.push(r.url()); });
     await failed.goto(origin + '/apps/nyxify/');
-    await failed.locator('.row', { hasText: tracks[0].title }).first().dblclick();
-    await failed.waitForFunction(() => document.querySelector('#musicPlaybackStatus').textContent.includes('Full-song playback is unavailable'));
+    await failed.locator('.row[data-id="1"]').first().dblclick();
+    await failed.waitForFunction(() => document.querySelector('#musicPlaybackStatus').textContent.normalize('NFKC').includes('Full-song playback is unavailable'));
     const statusBounds = await failed.locator('#playerPlaybackStatus').boundingBox();
     const playerBounds = await failed.locator('.player-inner').boundingBox();
     assert.ok(statusBounds.width > playerBounds.width * .8, 'Playback status uses the player width');
@@ -223,8 +225,8 @@ try {
     assert.equal(await failed.locator('audio').getAttribute('src'), null);
     truncated = true;
     await failed.reload();
-    await failed.locator('.row', { hasText: tracks[0].title }).first().dblclick();
-    await failed.waitForFunction(() => document.querySelector('#musicPlaybackStatus').textContent.includes('incomplete recording'));
+    await failed.locator('.row[data-id="1"]').first().dblclick();
+    await failed.waitForFunction(() => document.querySelector('#musicPlaybackStatus').textContent.normalize('NFKC').includes('incomplete recording'));
     assert.equal(await failed.locator('audio').getAttribute('src'), null);
     assert.deepEqual(previewRequests, [], 'Failed and shortened recordings must not request previews');
     assert.equal(await failed.locator('audio').evaluate(a => a.paused), true);

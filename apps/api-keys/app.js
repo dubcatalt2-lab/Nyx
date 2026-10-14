@@ -9,15 +9,15 @@ document.querySelectorAll('[data-tab]').forEach(button=>button.onclick=()=>{loca
 const embedded=window.parent!==window;
 const setting=(key,fallback)=>{try{return localStorage.getItem(key)||fallback;}catch{return fallback;}};
 function syncAppearance(){
-  if(embedded){try{document.documentElement.style.setProperty('--nyx-font',getComputedStyle(parent.document.body).fontFamily);}catch{}return;}
+  if(embedded){try{document.documentElement.style.setProperty('--n7x-font',getComputedStyle(parent.document.body).fontFamily);}catch{}return;}
   const fonts={outfit:'Outfit',raleway:'Raleway',nunito:'Nunito',inter:'Inter',poppins:'Poppins',quicksand:'Quicksand',lexend:'Lexend',montserrat:'Montserrat',atkinson:'Atkinson Hyperlegible'};
-  const family=fonts[setting('nyx.font','outfit')]||'Outfit';document.documentElement.style.setProperty('--nyx-font',`"${family}",Arial,sans-serif`);
-  let fontLink=document.getElementById('nyx-api-font');if(!fontLink){fontLink=document.createElement('link');fontLink.id='nyx-api-font';fontLink.rel='stylesheet';document.head.append(fontLink);}const fontUrl=`https://fonts.googleapis.com/css2?family=${encodeURIComponent(family).replaceAll('%20','+')}:wght@400;500;600;700&display=swap`;if(fontLink.href!==fontUrl)fontLink.href=fontUrl;
-  const preset=setting('nyx.beamWallpaper','frost');document.documentElement.dataset.nyxBeamWallpaper=preset;
+  const family=fonts[setting('nyx.font','outfit')]||'Outfit';document.documentElement.style.setProperty('--n7x-font',`"${family}",Arial,sans-serif`);
+  let fontLink=document.getElementById('n7x-api-font');if(!fontLink){fontLink=document.createElement('link');fontLink.id='n7x-api-font';fontLink.rel='stylesheet';document.head.append(fontLink);}const fontUrl=`https://fonts.googleapis.com/css2?family=${encodeURIComponent(family).replaceAll('%20','+')}:wght@400;500;600;700&display=swap`;if(fontLink.href!==fontUrl)fontLink.href=fontUrl;
+  const preset=setting('nyx.beamWallpaper','frost');document.documentElement.dataset.n7xBeamWallpaper=preset;
   const color=setting('nyx.customThemeColor','');const options=setting('nyx.theme','default')==='custom'&&/^#[a-f0-9]{6}$/i.test(color)?{lightColor:color}:{};
   window.NyxBeamsWallpaper?.apply(preset,options);window.NyxLineWavesWallpaper?.apply(preset,{colorVariant:setting('nyx.lineWaves.colorVariant','frost')});
 }
-if(!embedded){document.documentElement.classList.add('nyx-api-standalone');for(const id of ['nyxBeamsBg','nyxLineWavesBg']){const canvas=document.createElement('canvas');canvas.id=id;canvas.setAttribute('aria-hidden','true');document.body.prepend(canvas);}void(async()=>{for(const src of ['/assets/vendor/three.r134.min.js','/js/beams-wallpaper.js','/js/line-waves-wallpaper.js'])await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=src;script.onload=resolve;script.onerror=reject;document.head.append(script);});syncAppearance();})().catch(()=>{});}
+if(!embedded){document.documentElement.classList.add('n7x-api-standalone');for(const id of ['n7xBeamsBg','n7xLineWavesBg']){const canvas=document.createElement('canvas');canvas.id=id;canvas.setAttribute('aria-hidden','true');document.body.prepend(canvas);}void(async()=>{for(const src of ['/assets/vendor/three.r134.min.js','/js/beams-wallpaper.js','/js/line-waves-wallpaper.js'])await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=src;script.onload=resolve;script.onerror=reject;document.head.append(script);});syncAppearance();})().catch(()=>{});}
 syncAppearance();addEventListener('storage',syncAppearance);addEventListener('message',event=>{if(event.source===parent&&event.origin===location.origin&&event.data?.type==='nyx:theme-sync')syncAppearance();});
 const note=m=>{$('#notice').textContent=m;};
   async function parentToken(){

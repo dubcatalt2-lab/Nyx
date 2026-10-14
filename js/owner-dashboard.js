@@ -22,11 +22,11 @@
   const roleLabel = value => ownerRoleLabels[value] || "Member";
   const userRoleLabel = user => user?.customRole?.label || roleLabel(user?.role);
   const userRoleColor = user => /^#[0-9a-f]{6}$/i.test(String(user?.customRole?.color || "")) ? user.customRole.color : "";
-  const roleIcon = role => `<img class="nyx-owner-role-icon" src="/assets/icons/roles/${esc(ownerRoleIcons[role] || role)}.png" alt="" aria-hidden="true">`;
+  const roleIcon = role => `<img class="n7x-owner-role-icon" src="/assets/icons/roles/${esc(ownerRoleIcons[role] || role)}.png" alt="" aria-hidden="true">`;
   const roleOptions = (currentRole, allowedRoles = []) => {
     const allowed = new Set(allowedRoles);
     const roles = ownerAssignableRoles.filter(role => allowed.has(role) || role === currentRole);
-    return `<div class="nyx-owner-role-options" role="radiogroup" aria-label="Account role">${roles.map(role => `<button class="role-${esc(role)}${currentRole === role ? " active" : ""}" type="button" role="radio" aria-checked="${currentRole === role}" data-owner-role-option="${esc(role)}" ${allowed.has(role) ? "" : "disabled"}>${roleIcon(role)}<span>${esc(roleLabel(role))}</span></button>`).join("")}${currentRole === "owner" && !roles.includes("owner") ? `<button class="role-owner active" type="button" role="radio" aria-checked="true" disabled>${roleIcon("owner")}<span>Owner</span></button>` : ""}</div>`;
+    return `<div class="n7x-owner-role-options" role="radiogroup" aria-label="Account role">${roles.map(role => `<button class="role-${esc(role)}${currentRole === role ? " active" : ""}" type="button" role="radio" aria-checked="${currentRole === role}" data-owner-role-option="${esc(role)}" ${allowed.has(role) ? "" : "disabled"}>${roleIcon(role)}<span>${esc(roleLabel(role))}</span></button>`).join("")}${currentRole === "owner" && !roles.includes("owner") ? `<button class="role-owner active" type="button" role="radio" aria-checked="true" disabled>${roleIcon("owner")}<span>Owner</span></button>` : ""}</div>`;
   };
   const syncRoleOptions = (root, selectedRole) => root?.querySelectorAll?.("[data-owner-role-option]").forEach(button => {
     const active = button.dataset.ownerRoleOption === selectedRole;
@@ -232,11 +232,11 @@
     const number = value => numbers.format(Number(value || 0));
     const time = at => times.format(at);
     const stamp = at => stamps.format(at);
-    host.innerHTML = `<header class="nyx-traffic-heading"><div><span class="nyx-traffic-eyebrow">LIVE ACTIVITY</span><h2>Traffic</h2><p>Requests per minute &middot; all sites on this VPS</p></div><div class="nyx-traffic-ranges" aria-label="Traffic time range">${[[60,'1 hour'],[360,'6 hours'],[1440,'24 hours']].map(([value,label])=>`<button type="button" data-traffic-range="${value}" aria-pressed="${value===60}">${label}</button>`).join('')}</div></header>
-      <div class="nyx-traffic-stats" data-traffic-stats></div>
-      <div class="nyx-traffic-chart" data-traffic-chart></div>
-      <div class="nyx-traffic-inspector" hidden><input type="range" min="0" max="59" value="59" data-traffic-minute aria-label="Inspect traffic minute"><output data-traffic-detail></output></div>
-      <footer class="nyx-traffic-footer"><span data-traffic-status role="status">Loading traffic...</span><span>Times in ${esc(Intl.DateTimeFormat().resolvedOptions().timeZone)}. CDN-only hits and WebSocket stream traffic are excluded. Gaps mean no measurement.</span></footer>`;
+    host.innerHTML = `<header class="n7x-traffic-heading"><div><span class="n7x-traffic-eyebrow">LIVE ACTIVITY</span><h2>Traffic</h2><p>Requests per minute &middot; all sites on this VPS</p></div><div class="n7x-traffic-ranges" aria-label="Traffic time range">${[[60,'1 hour'],[360,'6 hours'],[1440,'24 hours']].map(([value,label])=>`<button type="button" data-traffic-range="${value}" aria-pressed="${value===60}">${label}</button>`).join('')}</div></header>
+      <div class="n7x-traffic-stats" data-traffic-stats></div>
+      <div class="n7x-traffic-chart" data-traffic-chart></div>
+      <div class="n7x-traffic-inspector" hidden><input type="range" min="0" max="59" value="59" data-traffic-minute aria-label="Inspect traffic minute"><output data-traffic-detail></output></div>
+      <footer class="n7x-traffic-footer"><span data-traffic-status role="status">Loading traffic...</span><span>Times in ${esc(Intl.DateTimeFormat().resolvedOptions().timeZone)}. CDN-only hits and WebSocket stream traffic are excluded. Gaps mean no measurement.</span></footer>`;
     const status = host.querySelector('[data-traffic-status]');
     const chart = host.querySelector('[data-traffic-chart]');
     const slider = host.querySelector('[data-traffic-minute]');
@@ -303,13 +303,13 @@
         line += path + ' '; area += `${path} L${run.at(-1)[0]} 230 L${run[0][0]} 230 Z `; run = [];
       };
       points.forEach((point,index) => { if (point.requests === null) commit(); else run.push([x(index), y(point.requests)]); }); commit();
-      const grid = [0,.5,1].map(fraction => `<line x1="46" x2="${plotWidth-18}" y1="${230-fraction*190}" y2="${230-fraction*190}" class="nyx-traffic-grid"/><text x="36" y="${234-fraction*190}" text-anchor="end">${number(Math.round(ceiling*fraction))}</text>`).join('');
+      const grid = [0,.5,1].map(fraction => `<line x1="46" x2="${plotWidth-18}" y1="${230-fraction*190}" y2="${230-fraction*190}" class="n7x-traffic-grid"/><text x="36" y="${234-fraction*190}" text-anchor="end">${number(Math.round(ceiling*fraction))}</text>`).join('');
       const labels = [0,Math.floor((points.length-1)/2),points.length-1].map(index=>`<text x="${x(index)}" y="260" text-anchor="${index===0?'start':index===points.length-1?'end':'middle'}">${esc(time(points[index].at))}</text>`).join('');
-      chart.innerHTML = `<svg viewBox="0 0 ${plotWidth} 275" preserveAspectRatio="none" role="img" aria-label="Requests per minute. Peak ${esc(number(peak?.requests))}${peak?' at '+esc(stamp(peak.at)):''}. Use the slider below to inspect a minute.">${grid}<path d="${area}" class="nyx-traffic-area"/><path d="${line}" class="nyx-traffic-line"/>${labels}<line data-traffic-cursor y1="30" y2="230" class="nyx-traffic-cursor"/><circle data-traffic-dot r="4" class="nyx-traffic-dot"/></svg>`;
+      chart.innerHTML = `<svg viewBox="0 0 ${plotWidth} 275" preserveAspectRatio="none" role="img" aria-label="Requests per minute. Peak ${esc(number(peak?.requests))}${peak?' at '+esc(stamp(peak.at)):''}. Use the slider below to inspect a minute.">${grid}<path d="${area}" class="n7x-traffic-area"/><path d="${line}" class="n7x-traffic-line"/>${labels}<line data-traffic-cursor y1="30" y2="230" class="n7x-traffic-cursor"/><circle data-traffic-dot r="4" class="n7x-traffic-dot"/></svg>`;
       cursor = chart.querySelector('[data-traffic-cursor]');
       dot = chart.querySelector('[data-traffic-dot]');
       inspectedIndex = -1;
-      host.querySelector('.nyx-traffic-inspector').hidden = false;
+      host.querySelector('.n7x-traffic-inspector').hidden = false;
       slider.max = points.length - 1;
       let index = selectedAt === null ? -1 : points.findIndex(point=>point.at===selectedAt);
       if (index < 0) index = peak ? points.findIndex(point=>point.at===peak.at) : points.length-1;
@@ -389,38 +389,38 @@
       globalApps: []
     };
     const overlay = document.createElement("section");
-    overlay.className = "nyx-owner-dashboard-overlay owner-organized";
+    overlay.className = "n7x-owner-dashboard-overlay owner-organized";
     overlay.setAttribute("role", "dialog");
     overlay.setAttribute("aria-modal", "true");
-    overlay.setAttribute("aria-labelledby", "nyxOwnerDashboardTitle");
+    overlay.setAttribute("aria-labelledby", "n7xOwnerDashboardTitle");
     overlay.innerHTML = `
-      <main class="nyx-owner-dashboard">
-        <header class="nyx-owner-header">
-          <div><span class="nyx-owner-eyebrow">${dashboardIcon("shield")}N7X ADMINISTRATION</span><h1 id="nyxOwnerDashboardTitle">Owner Dashboard</h1><p data-owner-access-copy>Loading your role permissions…</p></div>
-          <div class="nyx-owner-header-actions">
+      <main class="n7x-owner-dashboard">
+        <header class="n7x-owner-header">
+          <div><span class="n7x-owner-eyebrow">${dashboardIcon("shield")}N7X ADMINISTRATION</span><h1 id="n7xOwnerDashboardTitle">Owner Dashboard</h1><p data-owner-access-copy>Loading your role permissions…</p></div>
+          <div class="n7x-owner-header-actions">
             <button type="button" data-owner-refresh>${dashboardIcon("refresh")}<span>Refresh</span></button>
-            <button class="nyx-owner-close" type="button" data-owner-close aria-label="Close owner dashboard">${dashboardIcon("close")}</button>
+            <button class="n7x-owner-close" type="button" data-owner-close aria-label="Close owner dashboard">${dashboardIcon("close")}</button>
           </div>
         </header>
-        <nav class="nyx-owner-nav" aria-label="Dashboard sections">${[['overview','Overview'],['users','Users'],['services','Services'],['activity','Activity']].map(([id,label])=>`<button type="button" data-owner-section="${id}" aria-pressed="${id==='overview'}" aria-controls="nyx-owner-section-${id}">${label}</button>`).join('')}</nav>
-        <section class="nyx-owner-section" data-owner-panel="overview" id="nyx-owner-section-overview" aria-label="Overview">
-          <div class="nyx-owner-section-heading"><h2>At a glance</h2><p>Choose a metric to view matching accounts.</p></div>
-          <section class="nyx-owner-metrics" data-owner-metrics aria-label="Account metrics"></section>
-          <section class="nyx-owner-traffic" data-owner-traffic hidden aria-label="Server traffic"></section>
+        <nav class="n7x-owner-nav" aria-label="Dashboard sections">${[['overview','Overview'],['users','Users'],['services','Services'],['activity','Activity']].map(([id,label])=>`<button type="button" data-owner-section="${id}" aria-pressed="${id==='overview'}" aria-controls="n7x-owner-section-${id}">${label}</button>`).join('')}</nav>
+        <section class="n7x-owner-section" data-owner-panel="overview" id="n7x-owner-section-overview" aria-label="Overview">
+          <div class="n7x-owner-section-heading"><h2>At a glance</h2><p>Choose a metric to view matching accounts.</p></div>
+          <section class="n7x-owner-metrics" data-owner-metrics aria-label="Account metrics"></section>
+          <section class="n7x-owner-traffic" data-owner-traffic hidden aria-label="Server traffic"></section>
         </section>
-        <section class="nyx-owner-section" data-owner-panel="services" id="nyx-owner-section-services" aria-label="Services" hidden>
-          <div class="nyx-owner-section-heading"><h2>Services</h2><p>Balances, playback health, and game reports.</p></div>
-          <div class="nyx-owner-service-grid">
-            <section class="nyx-owner-tube-status" data-owner-ai-status hidden aria-live="polite"></section>
-            <section class="nyx-owner-tube-status" data-owner-tube-status hidden aria-live="polite"></section>
-            <section class="nyx-owner-tube-status" data-owner-game-reports hidden></section>
+        <section class="n7x-owner-section" data-owner-panel="services" id="n7x-owner-section-services" aria-label="Services" hidden>
+          <div class="n7x-owner-section-heading"><h2>Services</h2><p>Balances, playback health, and game reports.</p></div>
+          <div class="n7x-owner-service-grid">
+            <section class="n7x-owner-tube-status" data-owner-ai-status hidden aria-live="polite"></section>
+            <section class="n7x-owner-tube-status" data-owner-tube-status hidden aria-live="polite"></section>
+            <section class="n7x-owner-tube-status" data-owner-game-reports hidden></section>
           </div>
         </section>
-        <section class="nyx-owner-workspace nyx-owner-section" data-owner-panel="users" id="nyx-owner-section-users" aria-label="Users" hidden>
-          <div class="nyx-owner-users-panel">
-            <header class="nyx-owner-panel-head">
+        <section class="n7x-owner-workspace n7x-owner-section" data-owner-panel="users" id="n7x-owner-section-users" aria-label="Users" hidden>
+          <div class="n7x-owner-users-panel">
+            <header class="n7x-owner-panel-head">
               <div><h2>${dashboardIcon("users")}Users</h2><span data-owner-user-count>Loading accounts…</span></div>
-              <div class="nyx-owner-quick-actions">
+              <div class="n7x-owner-quick-actions">
                 <button type="button" data-owner-online-only>${dashboardIcon("online")}Online users</button>
                 <button type="button" data-owner-export>${dashboardIcon("download")}Export page</button>
                 <button type="button" data-owner-global-apps hidden>${dashboardIcon("apps")}Manage apps</button><button type="button" data-owner-studyready hidden>${dashboardIcon("apps")}StudyReady</button>
@@ -428,26 +428,26 @@
                 <button type="button" data-owner-ip-bans hidden>${dashboardIcon("shield")}IP bans</button>
               </div>
             </header>
-            <form class="nyx-owner-filters" data-owner-filters>
-              <label class="nyx-owner-search">${dashboardIcon("search")}<input type="search" name="search" placeholder="Search name, username, email, or UID" autocomplete="off"></label>
+            <form class="n7x-owner-filters" data-owner-filters>
+              <label class="n7x-owner-search">${dashboardIcon("search")}<input type="search" name="search" placeholder="Search name, username, email, or UID" autocomplete="off"></label>
               <select name="role" aria-label="Filter by role"><option value="all">All roles</option><option value="guest">Guest</option><option value="owner">Owner</option><option value="co_owner">Co-owner</option><option value="admin">Admin</option><option value="manager">Manager</option><option value="developer">Developer</option><option value="moderator">Moderator</option><option value="support">Support</option><option value="tester">Tester</option><option value="contributor">Contributor</option><option value="member">Member</option></select>
               <select name="subscription" aria-label="Filter by subscription"><option value="all">All subscriptions</option><option value="none">No account</option><option value="free">Free</option><option value="premium">Premium</option><option value="trialing">Trial</option><option value="past_due">Past due</option><option value="canceled">Canceled</option></select>
               <select name="status" aria-label="Filter by account status"><option value="all">All accounts</option><option value="enabled">Enabled</option><option value="disabled">Disabled</option><option value="online">Online now</option><option value="offline">Offline</option></select>
             </form>
-            <div class="nyx-owner-table-wrap" data-owner-table aria-live="polite"></div>
-            <footer class="nyx-owner-pagination" data-owner-pagination></footer>
+            <div class="n7x-owner-table-wrap" data-owner-table aria-live="polite"></div>
+            <footer class="n7x-owner-pagination" data-owner-pagination></footer>
           </div>
         </section>
-        <section class="nyx-owner-section" data-owner-panel="activity" id="nyx-owner-section-activity" aria-label="Activity" hidden>
-          <aside class="nyx-owner-activity-panel">
+        <section class="n7x-owner-section" data-owner-panel="activity" id="n7x-owner-section-activity" aria-label="Activity" hidden>
+          <aside class="n7x-owner-activity-panel">
             <header><div><h2>${dashboardIcon("activity")}Activity logs</h2><span>Security and account events</span></div></header>
-            <div class="nyx-owner-activity-list" data-owner-activity></div>
+            <div class="n7x-owner-activity-list" data-owner-activity></div>
           </aside>
         </section>
       </main>
-      <aside class="nyx-owner-user-drawer" data-owner-user-drawer hidden></aside>
-      <section class="nyx-owner-confirm" data-owner-confirm hidden></section>
-      <div class="nyx-owner-toasts" data-owner-toasts aria-live="polite"></div>`;
+      <aside class="n7x-owner-user-drawer" data-owner-user-drawer hidden></aside>
+      <section class="n7x-owner-confirm" data-owner-confirm hidden></section>
+      <div class="n7x-owner-toasts" data-owner-toasts aria-live="polite"></div>`;
     document.body.appendChild(overlay);
     requestAnimationFrame(() => overlay.classList.add("show"));
 
@@ -470,7 +470,7 @@
     function notify(message, type = "success") {
       externalToast?.(message);
       const item = document.createElement("div");
-      item.className = `nyx-owner-toast nyx-owner-toast-${type}`;
+      item.className = `n7x-owner-toast n7x-owner-toast-${type}`;
       item.textContent = message;
       overlay.querySelector("[data-owner-toasts]").appendChild(item);
       requestAnimationFrame(() => item.classList.add("show"));
@@ -505,22 +505,22 @@
       if(!data.enabled||!overlay.isConnected)return;
       const button=document.createElement('button');button.type='button';button.textContent='Remote desktop';
       button.addEventListener('click',async()=>{button.disabled=true;try{await api('/api/private-remote/session',{method:'POST'});window.location.assign('/apps/remote/');}catch{button.textContent='Remote access unavailable';}finally{button.disabled=false;}});
-      overlay.querySelector('.nyx-owner-header-actions').prepend(button);
+      overlay.querySelector('.n7x-owner-header-actions').prepend(button);
     }).catch(()=>{});
     api('/api/nyxcloud/access').then(data=>{
       if(!data.allowed||!overlay.isConnected)return;
       const button=document.createElement('button');button.type='button';
-      button.textContent='NyxCloud';button.dataset.nyxcloudAccess='owner';
-      button.title=data.online?'Open your VM':'Open NyxCloud (VM currently offline)';
-      button.addEventListener('click',async()=>{button.disabled=true;try{await api('/api/nyxcloud/session',{method:'POST'});window.location.assign('/apps/nyxcloud/');}catch{button.textContent='NyxCloud unavailable';}finally{button.disabled=false;}});
-      overlay.querySelector('.nyx-owner-header-actions').append(button);
+      button.textContent="N7XCL0UD";button.dataset.nyxcloudAccess='owner';
+      button.title=data.online?'Open your VM':"Open N7XCL0UD (VM currently offline)";
+      button.addEventListener('click',async()=>{button.disabled=true;try{await api('/api/nyxcloud/session',{method:'POST'});window.location.assign('/apps/nyxcloud/');}catch{button.textContent="N7XCL0UD unavailable";}finally{button.disabled=false;}});
+      overlay.querySelector('.n7x-owner-header-actions').append(button);
     }).catch(()=>{});
     const aiStatusHost=overlay.querySelector('[data-owner-ai-status]');
     function compactStatus(host,key,label) {
       const details=document.createElement('details'),summary=document.createElement('summary'),body=document.createElement('div');
       const title=host.querySelector('strong');
       if(title)summary.append(title);else summary.textContent=label;
-      body.className='nyx-owner-status-body';
+      body.className='n7x-owner-status-body';
       while(host.firstChild)body.append(host.firstChild);
       details.append(summary,body);
       try{details.open=localStorage.getItem('nyx.owner.status.'+key)!=='collapsed';}catch{details.open=true;}
@@ -568,8 +568,8 @@
       const labels = {working:"Working",login_required:"Login needs refreshing",trouble:"Service trouble",setup_required:"Setup required",unchecked:"Not checked yet"};
       const label = data.enabled ? labels[data.state] || "Service trouble" : "Not enabled";
       const instructions = !data.enabled ? "Native playback is waiting for server setup. YouTube playback remains available." : data.state === "login_required" ? "Export fresh cookies from the dedicated YouTube account, replace the private server login file, then check again." : data.state === "trouble" ? "A recent request failed. This does not necessarily mean the login expired." : data.state === "setup_required" ? "Check the private login file and required video tools on the server." : "Status comes from real stream checks and video preparations. A single unavailable video does not mark the login expired.";
-      tubeHost.innerHTML = `<div><strong>NyxTube <span data-owner-tube-state="${esc(data.state)}">${esc(label)}</span></strong><p>${esc(instructions)}</p><small>Last success: ${esc(dateLabel(data.lastSuccess))} &middot; Last check: ${esc(dateLabel(data.lastChecked))}</small><small>Cache: ${(Number(data.cacheBytes || 0)/1073741824).toFixed(2)} / ${(Number(data.cacheLimitBytes || 0)/1073741824).toFixed(0)} GB &middot; Preparing: ${Number(data.activeJobs || 0)} / ${Number(data.maxJobs || 1)} &middot; Up to 720p</small></div><button type="button" data-owner-tube-check ${!data.enabled || tubeBusy ? "disabled" : ""}>${tubeBusy ? "Checking..." : "Check now"}</button>`;
-      compactStatus(tubeHost,'tube','NyxTube');
+      tubeHost.innerHTML = `<div><strong>N7X7UB3 <span data-owner-tube-state="${esc(data.state)}">${esc(label)}</span></strong><p>${esc(instructions)}</p><small>Last success: ${esc(dateLabel(data.lastSuccess))} &middot; Last check: ${esc(dateLabel(data.lastChecked))}</small><small>Cache: ${(Number(data.cacheBytes || 0)/1073741824).toFixed(2)} / ${(Number(data.cacheLimitBytes || 0)/1073741824).toFixed(0)} GB &middot; Preparing: ${Number(data.activeJobs || 0)} / ${Number(data.maxJobs || 1)} &middot; Up to 720p</small></div><button type="button" data-owner-tube-check ${!data.enabled || tubeBusy ? "disabled" : ""}>${tubeBusy ? "Checking..." : "Check now"}</button>`;
+      compactStatus(tubeHost,'tube',"N7X7UB3");
     }
     async function loadTubeStatus(check = false) {
       if (!overlay.isConnected || !state.access?.founder || tubeBusy) return;
@@ -581,7 +581,7 @@
         tubeBusy=false; renderTubeStatus(data);
       } catch(error) {
         if(check)notify(error.message || "The video check failed.","error");
-        else {tubeHost.innerHTML='<p>NyxTube status could not be loaded. Refresh the dashboard to retry.</p>';compactStatus(tubeHost,'tube','NyxTube');}
+        else {tubeHost.innerHTML="<p>N7X7UB3 status could not be loaded. Refresh the dashboard to retry.</p>";compactStatus(tubeHost,'tube',"N7X7UB3");}
       } finally {tubeBusy=false;const button=tubeHost.querySelector("[data-owner-tube-check]");if(button){button.disabled=!tubeLastStatus?.enabled;button.textContent="Check now";}}
     }
     const tubeTimer = setInterval(()=>{if(!document.hidden)void loadTubeStatus();},60000);
@@ -610,9 +610,9 @@
     }
 
     function renderLoading() {
-      metricsHost.innerHTML = Array.from({ length: 6 }, () => '<article class="nyx-owner-metric loading"><i></i><div><span></span><strong></strong></div></article>').join("");
-      tableHost.innerHTML = '<div class="nyx-owner-table-loading"><i></i><i></i><i></i><i></i><i></i></div>';
-      activityHost.innerHTML = '<div class="nyx-owner-activity-loading"><i></i><i></i><i></i><i></i></div>';
+      metricsHost.innerHTML = Array.from({ length: 6 }, () => '<article class="n7x-owner-metric loading"><i></i><div><span></span><strong></strong></div></article>').join("");
+      tableHost.innerHTML = '<div class="n7x-owner-table-loading"><i></i><i></i><i></i><i></i><i></i></div>';
+      activityHost.innerHTML = '<div class="n7x-owner-activity-loading"><i></i><i></i><i></i><i></i></div>';
     }
 
     function renderMetrics(metrics = {}) {
@@ -626,7 +626,7 @@
       ];
       metricsHost.innerHTML = definitions.map(([icon, label, value, segment]) => {
         const active = state.segment === segment;
-        return `<button class="nyx-owner-metric${active ? " active" : ""}" type="button" data-owner-segment="${segment}" aria-pressed="${active}" aria-label="Show ${esc(label)}">${dashboardIcon(icon)}<div><span>${esc(label)}</span><strong>${esc(value)}</strong></div></button>`;
+        return `<button class="n7x-owner-metric${active ? " active" : ""}" type="button" data-owner-segment="${segment}" aria-pressed="${active}" aria-label="Show ${esc(label)}">${dashboardIcon(icon)}<div><span>${esc(label)}</span><strong>${esc(value)}</strong></div></button>`;
       }).join("");
     }
 
@@ -642,22 +642,22 @@
       const guests = Number(pagination.guests || 0);
       overlay.querySelector("[data-owner-user-count]").textContent = `${Number(pagination.total || 0).toLocaleString()} matching · ${accounts.toLocaleString()} accounts · ${guests.toLocaleString()} guest${guests === 1 ? "" : "s"} online${pagination.truncated ? " (scan capped)" : ""}`;
       if (!users.length) {
-        tableHost.innerHTML = '<div class="nyx-owner-empty"><strong>No users found</strong><span>Try changing the search or filters.</span></div>';
+        tableHost.innerHTML = '<div class="n7x-owner-empty"><strong>No users found</strong><span>Try changing the search or filters.</span></div>';
       } else {
-        tableHost.innerHTML = `<table class="nyx-owner-table">
+        tableHost.innerHTML = `<table class="n7x-owner-table">
           <thead><tr><th>${sortButton("displayName", "User")}</th><th>${sortButton("role", "Role")}</th><th>${sortButton("subscriptionStatus", "Subscription")}</th><th>${sortButton("lastSignInAt", "Last sign-in")}</th><th>${sortButton("lastActiveAt", "Last active")}</th><th>Email verified</th><th>${sortButton("status", "Status")}</th><th><span class="sr-only">Actions</span></th></tr></thead>
           <tbody>${users.map(user => {
             const guest = Boolean(user.guest);
             const canReviewSearches = !guest && user.canReviewSearchHistory === true;
             return `<tr data-owner-user-row="${esc(user.uid)}"${guest ? ' data-owner-guest-row="true"' : ""}>
-            <td><div class="nyx-owner-user-entry"><button class="nyx-owner-user-cell" type="button" data-owner-view-user="${esc(user.uid)}"><span class="nyx-owner-avatar">${ownerProfileImageMarkup(user.photoUrl, "", (user.displayName || "?").slice(0, 1).toUpperCase())}<i class="${user.online ? "online" : ""}"></i></span><span><span class="nyx-owner-user-name-row"><strong>${esc(user.displayName)}</strong><span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></span><small>@${esc(user.username)} · ${esc(user.email || (guest ? "No account" : "No email"))}</small><span class="nyx-owner-mobile-access"><span class="nyx-owner-badge role-${esc(user.role)}${user.customRole ? " custom-role" : ""}"${userRoleColor(user) ? ` style="--owner-custom-role:${esc(userRoleColor(user))}"` : ""}>${roleIcon(user.role)}<span class="nyx-minecraft-text">${esc(userRoleLabel(user))}</span></span><span class="nyx-owner-badge subscription-${esc(user.subscriptionStatus)}">${esc(subscriptionLabel(user.subscriptionStatus))}</span></span></span></button>${canReviewSearches ? `<button class="nyx-owner-search-shield" type="button" data-owner-search-history="${esc(user.uid)}" aria-label="Review search history for ${esc(user.displayName)}" title="Review search history">${dashboardIcon("shield")}</button>` : ""}</div></td>
-            <td><span class="nyx-owner-badge role-${esc(user.role)}${user.customRole ? " custom-role" : ""}"${userRoleColor(user) ? ` style="--owner-custom-role:${esc(userRoleColor(user))}"` : ""}>${roleIcon(user.role)}<span class="nyx-minecraft-text">${esc(userRoleLabel(user))}</span></span></td>
-            <td><span class="nyx-owner-badge subscription-${esc(user.subscriptionStatus)}">${esc(subscriptionLabel(user.subscriptionStatus))}</span></td>
+            <td><div class="n7x-owner-user-entry"><button class="n7x-owner-user-cell" type="button" data-owner-view-user="${esc(user.uid)}"><span class="n7x-owner-avatar">${ownerProfileImageMarkup(user.photoUrl, "", (user.displayName || "?").slice(0, 1).toUpperCase())}<i class="${user.online ? "online" : ""}"></i></span><span><span class="n7x-owner-user-name-row"><strong>${esc(user.displayName)}</strong><span class="n7x-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></span><small>@${esc(user.username)} · ${esc(user.email || (guest ? "No account" : "No email"))}</small><span class="n7x-owner-mobile-access"><span class="n7x-owner-badge role-${esc(user.role)}${user.customRole ? " custom-role" : ""}"${userRoleColor(user) ? ` style="--owner-custom-role:${esc(userRoleColor(user))}"` : ""}>${roleIcon(user.role)}<span class="n7x-minecraft-text">${esc(userRoleLabel(user))}</span></span><span class="n7x-owner-badge subscription-${esc(user.subscriptionStatus)}">${esc(subscriptionLabel(user.subscriptionStatus))}</span></span></span></button>${canReviewSearches ? `<button class="n7x-owner-search-shield" type="button" data-owner-search-history="${esc(user.uid)}" aria-label="Review search history for ${esc(user.displayName)}" title="Review search history">${dashboardIcon("shield")}</button>` : ""}</div></td>
+            <td><span class="n7x-owner-badge role-${esc(user.role)}${user.customRole ? " custom-role" : ""}"${userRoleColor(user) ? ` style="--owner-custom-role:${esc(userRoleColor(user))}"` : ""}>${roleIcon(user.role)}<span class="n7x-minecraft-text">${esc(userRoleLabel(user))}</span></span></td>
+            <td><span class="n7x-owner-badge subscription-${esc(user.subscriptionStatus)}">${esc(subscriptionLabel(user.subscriptionStatus))}</span></td>
             <td><span title="${esc(guest ? "No account" : dateLabel(user.lastSignInAt))}">${esc(guest ? "Not signed in" : relativeLabel(user.lastSignInAt))}</span></td>
             <td><span title="${esc(dateLabel(user.lastActiveAt))}">${esc(relativeLabel(user.lastActiveAt))}</span></td>
-            <td><span class="nyx-owner-verified ${user.deliverableEmail && user.emailVerified ? "verified" : ""}">${guest ? "Guest" : (user.deliverableEmail ? (user.emailVerified ? "Verified" : "Unverified") : "N/A")}</span></td>
-            <td><span class="nyx-owner-account-state ${guest ? "guest" : (user.disabled ? "disabled" : "enabled")}"><i></i>${guest ? "Guest" : (user.disabled ? "Disabled" : "Enabled")}</span></td>
-            <td><button class="nyx-owner-row-action" type="button" data-owner-view-user="${esc(user.uid)}" aria-label="View ${esc(user.displayName)}">${dashboardIcon("chevron")}</button></td>
+            <td><span class="n7x-owner-verified ${user.deliverableEmail && user.emailVerified ? "verified" : ""}">${guest ? "Guest" : (user.deliverableEmail ? (user.emailVerified ? "Verified" : "Unverified") : "N/A")}</span></td>
+            <td><span class="n7x-owner-account-state ${guest ? "guest" : (user.disabled ? "disabled" : "enabled")}"><i></i>${guest ? "Guest" : (user.disabled ? "Disabled" : "Enabled")}</span></td>
+            <td><button class="n7x-owner-row-action" type="button" data-owner-view-user="${esc(user.uid)}" aria-label="View ${esc(user.displayName)}">${dashboardIcon("chevron")}</button></td>
           </tr>`;
           }).join("")}</tbody></table>`;
       }
@@ -668,11 +668,11 @@
 
     function renderActivity(activity = []) {
       if (state.access && !state.access.permissions?.includes("audit:view")) {
-        activityHost.innerHTML = '<div class="nyx-owner-empty compact"><strong>Activity is protected</strong><span>Your assigned role can manage its permitted account tasks without viewing the full audit log.</span></div>';
+        activityHost.innerHTML = '<div class="n7x-owner-empty compact"><strong>Activity is protected</strong><span>Your assigned role can manage its permitted account tasks without viewing the full audit log.</span></div>';
         return;
       }
       if (!activity.length) {
-        activityHost.innerHTML = '<div class="nyx-owner-empty compact"><strong>No activity yet</strong><span>Owner and account events will appear here.</span></div>';
+        activityHost.innerHTML = '<div class="n7x-owner-empty compact"><strong>No activity yet</strong><span>Owner and account events will appear here.</span></div>';
         return;
       }
       const groups = activity.reduce((result, event) => {
@@ -682,13 +682,13 @@
         else result.push({ label, events: [event] });
         return result;
       }, []);
-      activityHost.innerHTML = groups.map(group => `<section class="nyx-owner-activity-group"><header><strong>${esc(group.label)}</strong><span>${group.events.length} event${group.events.length === 1 ? "" : "s"}</span></header>${group.events.map(event => `<article class="nyx-owner-activity-item" data-owner-activity-type="${esc(activityIconName(event.action))}"><i class="nyx-owner-activity-dot">${dashboardIcon(activityIconName(event.action))}</i><div><strong>${esc(actionLabel(event.action))}</strong><p>${esc(event.targetEmail || event.actorEmail || event.targetUid || "System event")}</p><span title="${esc(dateLabel(event.createdAt))}">${esc(relativeLabel(event.createdAt))}${event.actorEmail && event.actorEmail !== event.targetEmail ? ` · by ${esc(event.actorEmail)}` : ""}</span></div></article>`).join("")}</section>`).join("");
+      activityHost.innerHTML = groups.map(group => `<section class="n7x-owner-activity-group"><header><strong>${esc(group.label)}</strong><span>${group.events.length} event${group.events.length === 1 ? "" : "s"}</span></header>${group.events.map(event => `<article class="n7x-owner-activity-item" data-owner-activity-type="${esc(activityIconName(event.action))}"><i class="n7x-owner-activity-dot">${dashboardIcon(activityIconName(event.action))}</i><div><strong>${esc(actionLabel(event.action))}</strong><p>${esc(event.targetEmail || event.actorEmail || event.targetUid || "System event")}</p><span title="${esc(dateLabel(event.createdAt))}">${esc(relativeLabel(event.createdAt))}${event.actorEmail && event.actorEmail !== event.targetEmail ? ` · by ${esc(event.actorEmail)}` : ""}</span></div></article>`).join("")}</section>`).join("");
     }
 
     function renderError(error) {
       showSection('users');
       traffic.enable(false);
-      tableHost.innerHTML = `<div class="nyx-owner-error"><strong>Dashboard could not load</strong><span>${esc(error.message || "Try again.")}</span><button type="button" data-owner-refresh>Try again</button></div>`;
+      tableHost.innerHTML = `<div class="n7x-owner-error"><strong>Dashboard could not load</strong><span>${esc(error.message || "Try again.")}</span><button type="button" data-owner-refresh>Try again</button></div>`;
       metricsHost.innerHTML = "";
       activityHost.innerHTML = "";
     }
@@ -697,16 +697,16 @@
       const bans = state.ipBans || [];
       const clientNote = state.ipBanClientIp ? ` Your current IP is ${state.ipBanClientIp}; N7X will not let you block it from this session.` : "";
       drawer.innerHTML = `<header><div><span>${dashboardIcon("shield")}</span><h2>Network access</h2><p>IP bans apply to N7X server and function requests.</p></div><button type="button" data-owner-drawer-close aria-label="Close IP bans">${dashboardIcon("close")}</button></header>
-        <div class="nyx-owner-drawer-scroll nyx-owner-ip-ban-drawer">
-          <section class="nyx-owner-detail-section"><h3>Block an IP address</h3><p class="nyx-owner-action-note">Use a full IPv4 or IPv6 address. This does not configure Cloudflare's edge firewall.${esc(clientNote)}</p><form class="nyx-owner-ip-ban-form" data-owner-ip-ban-form><label>IP address<input name="ip" inputmode="text" autocomplete="off" maxlength="45" required placeholder="203.0.113.10 or 2001:db8::10"></label><label>Reason <input name="reason" maxlength="160" autocomplete="off" placeholder="Optional internal note"></label><div class="nyx-owner-detail-actions"><button type="submit">${dashboardIcon("shield")}Block IP</button></div></form></section>
-          <section class="nyx-owner-detail-section"><h3>Blocked IP addresses</h3>${bans.length ? `<div class="nyx-owner-ip-ban-list">${bans.map(ban => `<article><div><strong>${esc(ban.ip)}</strong><span>${esc(ban.reason || "No reason recorded")}</span><small>Blocked ${esc(relativeLabel(ban.createdAt))}${ban.createdBy ? ` by ${esc(ban.createdBy)}` : ""}</small></div><button class="danger" type="button" data-owner-unban="${esc(ban.id)}">${dashboardIcon("refresh")}Unblock</button></article>`).join("")}</div>` : '<p class="nyx-owner-action-note">No IP addresses are blocked.</p>'}</section>
+        <div class="n7x-owner-drawer-scroll n7x-owner-ip-ban-drawer">
+          <section class="n7x-owner-detail-section"><h3>Block an IP address</h3><p class="n7x-owner-action-note">Use a full IPv4 or IPv6 address. This does not configure Cloudflare's edge firewall.${esc(clientNote)}</p><form class="n7x-owner-ip-ban-form" data-owner-ip-ban-form><label>IP address<input name="ip" inputmode="text" autocomplete="off" maxlength="45" required placeholder="203.0.113.10 or 2001:db8::10"></label><label>Reason <input name="reason" maxlength="160" autocomplete="off" placeholder="Optional internal note"></label><div class="n7x-owner-detail-actions"><button type="submit">${dashboardIcon("shield")}Block IP</button></div></form></section>
+          <section class="n7x-owner-detail-section"><h3>Blocked IP addresses</h3>${bans.length ? `<div class="n7x-owner-ip-ban-list">${bans.map(ban => `<article><div><strong>${esc(ban.ip)}</strong><span>${esc(ban.reason || "No reason recorded")}</span><small>Blocked ${esc(relativeLabel(ban.createdAt))}${ban.createdBy ? ` by ${esc(ban.createdBy)}` : ""}</small></div><button class="danger" type="button" data-owner-unban="${esc(ban.id)}">${dashboardIcon("refresh")}Unblock</button></article>`).join("")}</div>` : '<p class="n7x-owner-action-note">No IP addresses are blocked.</p>'}</section>
         </div>`;
     }
 
     async function openIpBans() {
       drawer.hidden = false;
       drawer.classList.remove("show");
-      drawer.innerHTML = '<div class="nyx-owner-drawer-loading"><i></i><i></i><i></i></div>';
+      drawer.innerHTML = '<div class="n7x-owner-drawer-loading"><i></i><i></i><i></i></div>';
       requestAnimationFrame(() => drawer.classList.add("show"));
       state.selectedUser = null;
       state.selectedCapabilities = null;
@@ -717,7 +717,7 @@
         state.access = data.access || state.access;
         renderIpBans();
       } catch (error) {
-        drawer.innerHTML = `<div class="nyx-owner-error"><strong>IP bans could not load</strong><span>${esc(error.message)}</span><button type="button" data-owner-drawer-close>Close</button></div>`;
+        drawer.innerHTML = `<div class="n7x-owner-error"><strong>IP bans could not load</strong><span>${esc(error.message)}</span><button type="button" data-owner-drawer-close>Close</button></div>`;
       }
     }
 
@@ -793,7 +793,7 @@
     }
 
     function detailValue(label, value, className = "") {
-      return `<div class="nyx-owner-detail-value ${className}"><span>${esc(label)}</span><strong>${esc(value || "Not available")}</strong></div>`;
+      return `<div class="n7x-owner-detail-value ${className}"><span>${esc(label)}</span><strong>${esc(value || "Not available")}</strong></div>`;
     }
 
     function profileColor(value, fallback) {
@@ -821,12 +821,12 @@
       const customIntensity = Math.max(20, Math.min(100, Number(profile.customEffectIntensity) || 70));
       const avatar = ownerProfileImageMarkup(profile.avatarUrl, profile.displayName || user.displayName, (profile.displayName || user.displayName || "?").slice(0, 1).toUpperCase());
       const banner = ownerProfileImageMarkup(profile.bannerUrl, "");
-      return `<article class="nyx-owner-public-profile nyx-owner-effect-${esc(effect)}" style="--profile-primary:${primary};--profile-secondary:${secondary};--profile-banner:${bannerColor};--profile-name-primary:${namePrimary};--profile-name-secondary:${nameSecondary};--profile-custom-primary:${customPrimary};--profile-custom-secondary:${customSecondary};--profile-effect-speed:${customSpeed}s;--profile-effect-opacity:${customIntensity / 100}">
-        <i class="nyx-owner-public-effect" aria-hidden="true"></i>
-        <div class="nyx-owner-public-banner">${banner}</div>
-        <div class="nyx-owner-public-avatar nyx-owner-decoration-${esc(decoration)}">${avatar}<em aria-hidden="true"></em><i class="${user.online ? "online" : ""}"></i></div>
-        <div class="nyx-owner-public-body">
-          <strong class="nyx-owner-name-font-${esc(nameFont)} nyx-owner-name-effect-${esc(nameEffect)}">${esc(profile.displayName || user.displayName)}</strong>
+      return `<article class="n7x-owner-public-profile n7x-owner-effect-${esc(effect)}" style="--profile-primary:${primary};--profile-secondary:${secondary};--profile-banner:${bannerColor};--profile-name-primary:${namePrimary};--profile-name-secondary:${nameSecondary};--profile-custom-primary:${customPrimary};--profile-custom-secondary:${customSecondary};--profile-effect-speed:${customSpeed}s;--profile-effect-opacity:${customIntensity / 100}">
+        <i class="n7x-owner-public-effect" aria-hidden="true"></i>
+        <div class="n7x-owner-public-banner">${banner}</div>
+        <div class="n7x-owner-public-avatar n7x-owner-decoration-${esc(decoration)}">${avatar}<em aria-hidden="true"></em><i class="${user.online ? "online" : ""}"></i></div>
+        <div class="n7x-owner-public-body">
+          <strong class="n7x-owner-name-font-${esc(nameFont)} n7x-owner-name-effect-${esc(nameEffect)}">${esc(profile.displayName || user.displayName)}</strong>
           <span>${esc(profile.handle || `@${user.username}`)}</span>
           ${profile.customStatus ? `<p class="status">${esc(profile.customStatus)}</p>` : ""}
           <div><b>About me</b><p>${esc(profile.bio || "No bio yet.")}</p></div>
@@ -841,27 +841,27 @@
       const remoteBanner = /^https?:\/\//i.test(String(profile.bannerUrl || "")) ? profile.bannerUrl : "";
       const avatarPreview = ownerProfileImageMarkup(profile.avatarUrl, "Current avatar", (profile.displayName || user.displayName || "?").slice(0, 1).toUpperCase());
       const bannerPreview = ownerProfileImageMarkup(profile.bannerUrl, "Current banner");
-      const avatarInputId = `nyx-owner-avatar-${esc(user.uid)}`;
-      const bannerInputId = `nyx-owner-banner-${esc(user.uid)}`;
-      return `<form class="nyx-owner-profile-editor" data-owner-profile-form>
-        <div class="nyx-owner-media-editors">
-          <article class="nyx-owner-media-editor">
-            <div class="nyx-owner-media-preview avatar" data-owner-media-preview="avatar">${avatarPreview}</div>
+      const avatarInputId = `n7x-owner-avatar-${esc(user.uid)}`;
+      const bannerInputId = `n7x-owner-banner-${esc(user.uid)}`;
+      return `<form class="n7x-owner-profile-editor" data-owner-profile-form>
+        <div class="n7x-owner-media-editors">
+          <article class="n7x-owner-media-editor">
+            <div class="n7x-owner-media-preview avatar" data-owner-media-preview="avatar">${avatarPreview}</div>
             <div><strong>Profile avatar</strong><span data-owner-media-name="avatar">PNG, JPG, WebP, or animated GIF · 8 MB max</span></div>
-            <label class="nyx-owner-media-button" for="${avatarInputId}">Choose avatar</label>
-            <input class="nyx-owner-media-input" id="${avatarInputId}" name="avatarFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+            <label class="n7x-owner-media-button" for="${avatarInputId}">Choose avatar</label>
+            <input class="n7x-owner-media-input" id="${avatarInputId}" name="avatarFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
           </article>
-          <article class="nyx-owner-media-editor banner">
-            <div class="nyx-owner-media-preview banner" data-owner-media-preview="banner" style="--owner-banner-preview:${profileColor(profile.bannerColor, "#8ea1ff")}">${bannerPreview}</div>
+          <article class="n7x-owner-media-editor banner">
+            <div class="n7x-owner-media-preview banner" data-owner-media-preview="banner" style="--owner-banner-preview:${profileColor(profile.bannerColor, "#8ea1ff")}">${bannerPreview}</div>
             <div><strong>Profile banner</strong><span data-owner-media-name="banner">PNG, JPG, WebP, or animated GIF · 8 MB max</span></div>
-            <label class="nyx-owner-media-button" for="${bannerInputId}">Choose banner</label>
-            <input class="nyx-owner-media-input" id="${bannerInputId}" name="bannerFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+            <label class="n7x-owner-media-button" for="${bannerInputId}">Choose banner</label>
+            <input class="n7x-owner-media-input" id="${bannerInputId}" name="bannerFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
           </article>
         </div>
-        <p class="nyx-owner-media-error" data-owner-media-error role="alert"></p>
-        <div class="nyx-owner-profile-fields">
+        <p class="n7x-owner-media-error" data-owner-media-error role="alert"></p>
+        <div class="n7x-owner-profile-fields">
           <label>Display name<input name="displayName" maxlength="48" required value="${esc(profile.displayName || user.displayName)}"></label>
-          <label>Username<span class="nyx-owner-prefixed-input"><i>@</i><input name="handle" maxlength="32" required value="${esc(String(profile.handle || user.username).replace(/^@/, ""))}"></span></label>
+          <label>Username<span class="n7x-owner-prefixed-input"><i>@</i><input name="handle" maxlength="32" required value="${esc(String(profile.handle || user.username).replace(/^@/, ""))}"></span></label>
           <label class="wide">About me<textarea name="bio" maxlength="280" rows="4">${esc(profile.bio || "")}</textarea></label>
           <label class="wide">Custom status<input name="customStatus" maxlength="80" value="${esc(profile.customStatus || "")}"></label>
           <label>Status<select name="status"><option value="online"${selected(profile.status, "online")}>Online</option><option value="idle"${selected(profile.status, "idle")}>Idle</option><option value="dnd"${selected(profile.status, "dnd")}>Do not disturb</option><option value="offline"${selected(profile.status, "offline")}>Offline</option></select></label>
@@ -875,20 +875,20 @@
           <label class="wide">Avatar URL (optional)<input name="avatarUrl" type="url" placeholder="Leave blank to keep the current image" value="${esc(remoteAvatar)}"></label>
           <label class="wide">Banner URL (optional)<input name="bannerUrl" type="url" placeholder="Leave blank to keep the current image" value="${esc(remoteBanner)}"></label>
         </div>
-        <div class="nyx-owner-media-removal">
+        <div class="n7x-owner-media-removal">
           <label><input name="removeAvatar" type="checkbox"> Remove current avatar</label>
           <label><input name="removeBanner" type="checkbox"> Remove current banner</label>
         </div>
         <p>File uploads preserve animated GIFs. A selected file takes priority over its URL field, and blank fields keep the current media unchanged.</p>
-        <div class="nyx-owner-detail-actions"><button type="submit">Save profile</button></div>
+        <div class="n7x-owner-detail-actions"><button type="submit">Save profile</button></div>
       </form>`;
     }
 
     function aiModelEditor(user) {
-      return `<section class="nyx-owner-detail-section"><h3>AI models and limits</h3><p>Allow grants this model to this account. Block removes access. Default follows the account plan. Blank limits add no extra message cap; shared token, spending and rate limits still apply.</p><div class="nyx-owner-ai-rules">${(user.aiAssignableModels||[]).map(model=>{
+      return `<section class="n7x-owner-detail-section"><h3>AI models and limits</h3><p>Allow grants this model to this account. Block removes access. Default follows the account plan. Blank limits add no extra message cap; shared token, spending and rate limits still apply.</p><div class="n7x-owner-ai-rules">${(user.aiAssignableModels||[]).map(model=>{
         const rule=(user.aiModelRules||[]).find(r=>r.model===model)||{access:'default',messages:null,periodDays:4};
-        return `<details data-ai-model="${esc(model)}"><summary>${esc(model)} <small>${esc(rule.access)}${rule.messages!==null?' / '+rule.messages+' messages':''}</small></summary><div class="nyx-owner-ai-rule-fields"><label>Access<select data-ai-rule-access>${['default','allow','deny'].map(v=>`<option value="${v}"${selected(rule.access,v)}>${v==='deny'?'Block':v==='allow'?'Allow':'Default'}</option>`).join('')}</select></label><label>Messages per period<input data-ai-rule-messages type="number" min="0" max="100000" step="1" placeholder="No extra cap" value="${rule.messages??''}"></label><label>Reset every (days)<input data-ai-rule-days type="number" min="1" max="30" step="1" value="${rule.periodDays}"></label></div></details>`;
-      }).join('')}</div><div class="nyx-owner-detail-actions"><button type="button" data-owner-save-ai-models>Save AI access</button><button type="button" data-owner-ai-activity>View usage and chat history</button></div><div data-owner-ai-activity-result aria-live="polite"></div></section>`;
+        return `<details data-ai-model="${esc(model)}"><summary>${esc(model)} <small>${esc(rule.access)}${rule.messages!==null?' / '+rule.messages+' messages':''}</small></summary><div class="n7x-owner-ai-rule-fields"><label>Access<select data-ai-rule-access>${['default','allow','deny'].map(v=>`<option value="${v}"${selected(rule.access,v)}>${v==='deny'?'Block':v==='allow'?'Allow':'Default'}</option>`).join('')}</select></label><label>Messages per period<input data-ai-rule-messages type="number" min="0" max="100000" step="1" placeholder="No extra cap" value="${rule.messages??''}"></label><label>Reset every (days)<input data-ai-rule-days type="number" min="1" max="30" step="1" value="${rule.periodDays}"></label></div></details>`;
+      }).join('')}</div><div class="n7x-owner-detail-actions"><button type="button" data-owner-save-ai-models>Save AI access</button><button type="button" data-owner-ai-activity>View usage and chat history</button></div><div data-owner-ai-activity-result aria-live="polite"></div></section>`;
     }
     async function loadAiActivity(button) {
       const uid=state.selectedUser?.uid,host=drawer.querySelector('[data-owner-ai-activity-result]');if(!uid||!host)return;
@@ -896,7 +896,7 @@
       try {
         const data=await api(`/api/owner-dashboard/users/${encodeURIComponent(uid)}/ai`);
         if(state.selectedUser?.uid!==uid||!host.isConnected)return;
-        host.innerHTML=`<h3>Usage</h3><p>Shared allowance today: ${Number(data.today?.requests)||0} requests, ${Number(data.today?.tokens)||0} tokens charged or reserved.</p><p>Completed provider calls recorded since this feature was enabled. Missing token reports are listed separately.</p>${Object.entries(data.models||{}).map(([model,v])=>`<p><strong>${esc(model)}</strong><br>${Number(v.requests)||0} calls &middot; ${Number(v.input)||0} input tokens &middot; ${Number(v.output)||0} output tokens${v.unknownUsage?' &middot; '+Number(v.unknownUsage)+' calls without token reports':''}</p>`).join('')||'<p>No recorded usage yet.</p>'}${data.pool?`<p>Shared pool: ${Number(data.pool.used)||0} tokens used &middot; resets ${esc(dateLabel(data.pool.resetAt))}</p>`:''}${(data.limits||[]).map(r=>`<p>${esc(r.model)}: ${r.used} / ${r.messages??'no extra cap'} messages &middot; ${r.resetAt?'resets '+esc(dateLabel(r.resetAt)):'period starts on first use'}</p>`).join('')}<h3>Recent chat history</h3><p>Up to 50 recent text exchanges. Older device-only chats, temporary chats, images and attachments are not available here. Long messages may be shortened.</p>${(data.entries||[]).map(entry=>`<details class="nyx-owner-ai-exchange"><summary>${esc(dateLabel(entry.at))} &middot; ${esc(entry.model)}</summary><h4>User</h4><pre>${esc(entry.prompt)}</pre><h4>Assistant</h4><pre>${esc(entry.answer||'(No text reply)')}</pre>${entry.truncated?'<p>Long text shortened.</p>':''}</details>`).join('')||'<p>No saved exchanges yet.</p>'}`;
+        host.innerHTML=`<h3>Usage</h3><p>Shared allowance today: ${Number(data.today?.requests)||0} requests, ${Number(data.today?.tokens)||0} tokens charged or reserved.</p><p>Completed provider calls recorded since this feature was enabled. Missing token reports are listed separately.</p>${Object.entries(data.models||{}).map(([model,v])=>`<p><strong>${esc(model)}</strong><br>${Number(v.requests)||0} calls &middot; ${Number(v.input)||0} input tokens &middot; ${Number(v.output)||0} output tokens${v.unknownUsage?' &middot; '+Number(v.unknownUsage)+' calls without token reports':''}</p>`).join('')||'<p>No recorded usage yet.</p>'}${data.pool?`<p>Shared pool: ${Number(data.pool.used)||0} tokens used &middot; resets ${esc(dateLabel(data.pool.resetAt))}</p>`:''}${(data.limits||[]).map(r=>`<p>${esc(r.model)}: ${r.used} / ${r.messages??'no extra cap'} messages &middot; ${r.resetAt?'resets '+esc(dateLabel(r.resetAt)):'period starts on first use'}</p>`).join('')}<h3>Recent chat history</h3><p>Up to 50 recent text exchanges. Older device-only chats, temporary chats, images and attachments are not available here. Long messages may be shortened.</p>${(data.entries||[]).map(entry=>`<details class="n7x-owner-ai-exchange"><summary>${esc(dateLabel(entry.at))} &middot; ${esc(entry.model)}</summary><h4>User</h4><pre>${esc(entry.prompt)}</pre><h4>Assistant</h4><pre>${esc(entry.answer||'(No text reply)')}</pre>${entry.truncated?'<p>Long text shortened.</p>':''}</details>`).join('')||'<p>No saved exchanges yet.</p>'}`;
       }catch(error){host.textContent=error.message;}finally{if(button.isConnected)button.disabled=false;}
     }
 
@@ -912,15 +912,15 @@
           ? `${detailValue("Last seen IP", guest.lastSeenIp || "Not recorded yet", "ip-address")}${guest.lastSeenIp ? detailValue("IP last seen", dateLabel(guest.lastSeenIpAt)) : ""}`
           : "";
         const avatar = ownerProfileImageMarkup("", "", (guest.displayName || "G").slice(0, 1).toUpperCase());
-        drawer.innerHTML = `<header><div class="nyx-owner-detail-avatar">${avatar}<i class="online"></i></div><div><span>${roleIcon("guest")}Guest session</span><h2>${esc(guest.displayName)}</h2><p class="nyx-owner-drawer-identity">@${esc(guest.username)} <span class="nyx-owner-presence-state online"><i></i>Online</span></p></div><button type="button" data-owner-drawer-close aria-label="Close guest details">${dashboardIcon("close")}</button></header>
-          <div class="nyx-owner-drawer-scroll">
-            <section class="nyx-owner-detail-grid">${detailValue("Identity", guest.displayName)}${detailValue("Guest ID", `@${guest.username}`)}${detailValue("Account", "No account created")}${detailValue("Presence", "Online now")}${detailValue("First seen", dateLabel(guest.createdAt))}${detailValue("Last active", dateLabel(guest.lastActiveAt))}${networkDetails}</section>
-            <section class="nyx-owner-detail-section"><h3>Guest visitor</h3><p class="nyx-owner-action-note">N7X uses the username saved by this browser's startup wizard. If the visitor skipped it, N7X assigns a stable random guest name instead.${canViewNetwork ? " The last-seen IP is available only to staff who can manage network bans; shared or changing IPs may represent more than one person." : ""} Account, role, subscription, profile, and account-management controls become available only after the visitor signs in or creates an account.</p></section>
+        drawer.innerHTML = `<header><div class="n7x-owner-detail-avatar">${avatar}<i class="online"></i></div><div><span>${roleIcon("guest")}Guest session</span><h2>${esc(guest.displayName)}</h2><p class="n7x-owner-drawer-identity">@${esc(guest.username)} <span class="n7x-owner-presence-state online"><i></i>Online</span></p></div><button type="button" data-owner-drawer-close aria-label="Close guest details">${dashboardIcon("close")}</button></header>
+          <div class="n7x-owner-drawer-scroll">
+            <section class="n7x-owner-detail-grid">${detailValue("Identity", guest.displayName)}${detailValue("Guest ID", `@${guest.username}`)}${detailValue("Account", "No account created")}${detailValue("Presence", "Online now")}${detailValue("First seen", dateLabel(guest.createdAt))}${detailValue("Last active", dateLabel(guest.lastActiveAt))}${networkDetails}</section>
+            <section class="n7x-owner-detail-section"><h3>Guest visitor</h3><p class="n7x-owner-action-note">N7X uses the username saved by this browser's startup wizard. If the visitor skipped it, N7X assigns a stable random guest name instead.${canViewNetwork ? " The last-seen IP is available only to staff who can manage network bans; shared or changing IPs may represent more than one person." : ""} Account, role, subscription, profile, and account-management controls become available only after the visitor signs in or creates an account.</p></section>
           </div>`;
         requestAnimationFrame(() => drawer.classList.add("show"));
         return;
       }
-      drawer.innerHTML = '<div class="nyx-owner-drawer-loading"><i></i><i></i><i></i></div>';
+      drawer.innerHTML = '<div class="n7x-owner-drawer-loading"><i></i><i></i><i></i></div>';
       requestAnimationFrame(() => drawer.classList.add("show"));
       try {
         const { user, access, capabilities = {} } = await api(`/api/owner-dashboard/users/${encodeURIComponent(uid)}`);
@@ -933,10 +933,10 @@
         const customRoleOptions = access?.founder ? state.customRoles.map(role => `<option value="custom:${esc(role.id)}"${user.customRole?.id === role.id ? " selected" : ""}>${esc(role.label)} · ${esc(roleLabel(role.baseRole))} placement</option>`).join("") : "";
         const currentRoleValue = user.customRole ? `custom:${user.customRole.id}` : user.role;
         const currentRoleOption = !user.customRole && !assignableRoles.includes(user.role) ? `<option value="${esc(user.role)}" selected disabled>${esc(roleLabel(user.role))}</option>` : "";
-        const accessSection = capabilities.canSetRole || capabilities.canSetSubscription ? `<section class="nyx-owner-detail-section"><h3>Access</h3>
-          ${capabilities.canSetRole ? `<label>Current role<select data-owner-detail-role>${roleSelectOptions}${customRoleOptions}${currentRoleOption}</select></label>${roleOptions(user.role, assignableRoles)}` : `<p class="nyx-owner-action-note">Role: ${esc(userRoleLabel(user))}</p>`}
-          ${capabilities.canSetSubscription ? `<label>Subscription<select data-owner-detail-subscription><option value="free">Free</option><option value="premium">Premium</option><option value="trialing">Trial</option><option value="past_due">Past due</option><option value="canceled">Canceled</option></select></label><p class="nyx-owner-premium-note">Premium and Trial accounts receive Premium benefits automatically when they sign in. They do not need a Premium access code.</p><label>Monthly revenue <input data-owner-detail-revenue type="number" min="0" step="0.01" value="${((user.monthlyRevenueCents || 0) / 100).toFixed(2)}"></label>` : `<p class="nyx-owner-action-note">Subscription: ${esc(subscriptionLabel(user.subscriptionStatus))}</p>`}
-          <div class="nyx-owner-detail-actions"><button type="button" data-owner-save-access>${dashboardIcon("save")}Save access</button></div></section>` : "";
+        const accessSection = capabilities.canSetRole || capabilities.canSetSubscription ? `<section class="n7x-owner-detail-section"><h3>Access</h3>
+          ${capabilities.canSetRole ? `<label>Current role<select data-owner-detail-role>${roleSelectOptions}${customRoleOptions}${currentRoleOption}</select></label>${roleOptions(user.role, assignableRoles)}` : `<p class="n7x-owner-action-note">Role: ${esc(userRoleLabel(user))}</p>`}
+          ${capabilities.canSetSubscription ? `<label>Subscription<select data-owner-detail-subscription><option value="free">Free</option><option value="premium">Premium</option><option value="trialing">Trial</option><option value="past_due">Past due</option><option value="canceled">Canceled</option></select></label><p class="n7x-owner-premium-note">Premium and Trial accounts receive Premium benefits automatically when they sign in. They do not need a Premium access code.</p><label>Monthly revenue <input data-owner-detail-revenue type="number" min="0" step="0.01" value="${((user.monthlyRevenueCents || 0) / 100).toFixed(2)}"></label>` : `<p class="n7x-owner-action-note">Subscription: ${esc(subscriptionLabel(user.subscriptionStatus))}</p>`}
+          <div class="n7x-owner-detail-actions"><button type="button" data-owner-save-access>${dashboardIcon("save")}Save access</button></div></section>` : "";
         const accountActions = [
           capabilities.canSetPassword ? `<button type="button" data-owner-user-action="set_password">${dashboardIcon("key")}Set custom password</button>` : "",
           capabilities.canResetPassword ? `<button type="button" data-owner-user-action="create_password_reset_link">${dashboardIcon("key")}Create reset link</button>` : "",
@@ -948,13 +948,13 @@
           capabilities.canDisableAccount && capabilities.canManageNetworkBans && !user.disabled && user.lastSeenIp ? `<button class="danger" type="button" data-owner-user-action="disable_with_ip_ban">${dashboardIcon("ban")}Disable + block IP</button>` : "",
           capabilities.canDeleteAccount ? `<button class="danger" type="button" data-owner-user-action="delete">${dashboardIcon("trash")}Delete account</button>` : ""
         ].filter(Boolean).join("");
-        const ipBanNote = capabilities.canManageNetworkBans ? (user.lastSeenIp ? `<p class="nyx-owner-action-note">Last seen IP: ${esc(user.lastSeenIp)} · ${esc(dateLabel(user.lastSeenIpAt))}. IP addresses can be shared or change over time.</p>` : "<p class=\"nyx-owner-action-note\">No IP has been recorded for this account yet. N7X records one after its next authenticated activity.</p>") : "";
-        const accountActionsSection = accountActions ? `<section class="nyx-owner-detail-section"><h3>Account actions</h3>${!user.deliverableEmail && capabilities.canResetPassword ? '<p class="nyx-owner-action-note">This username-only account has no inbox. Create a secure reset link and give it directly to the account owner.</p>' : ""}${ipBanNote}<div class="nyx-owner-action-grid">${accountActions}</div></section>` : "";
-        const recentActivitySection = capabilities.canViewAudit ? `<section class="nyx-owner-detail-section"><h3>Recent user activity</h3><div class="nyx-owner-user-activity">${(user.recentActivity || []).length ? user.recentActivity.map(event => `<p><strong>${esc(actionLabel(event.action))}</strong><span>${esc(relativeLabel(event.createdAt))}</span></p>`).join("") : "<span>No recorded account actions.</span>"}</div></section>` : "";
-        drawer.innerHTML = `<header><div class="nyx-owner-detail-avatar">${avatar}<i class="${user.online ? "online" : ""}"></i></div><div><span>${roleIcon(user.role)}<span class="nyx-minecraft-text">${esc(userRoleLabel(user))}</span> account</span><h2>${esc(user.displayName)}</h2><p class="nyx-owner-drawer-identity">@${esc(user.username)} <span class="nyx-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></p></div><button type="button" data-owner-drawer-close aria-label="Close user details">${dashboardIcon("close")}</button></header>
-          <div class="nyx-owner-drawer-scroll">
-            <section class="nyx-owner-detail-grid">${detailValue("Email", user.deliverableEmail ? user.email : "No email added")}${detailValue("Firebase UID", user.uid, "uid")}${detailValue("Presence", user.online ? "Online now" : "Offline")}${detailValue("Last sign-in", dateLabel(user.lastSignInAt))}${detailValue("Last active", dateLabel(user.lastActiveAt))}${capabilities.canManageNetworkBans ? detailValue("Last seen IP", user.lastSeenIp || "Not recorded yet", "ip-address") : ""}${capabilities.canManageNetworkBans && user.lastSeenIp ? detailValue("IP last seen", dateLabel(user.lastSeenIpAt)) : ""}${detailValue("Email verified", user.deliverableEmail ? (user.emailVerified ? "Verified" : "Not verified") : "Not applicable · username-only")}</section>
-            <section class="nyx-owner-detail-section nyx-owner-profile-management"><h3>Public profile</h3>${ownerProfilePreview(user)}${capabilities.canEditProfile ? `<details><summary>Edit this profile</summary>${ownerProfileEditor(user)}</details>` : ""}</section>
+        const ipBanNote = capabilities.canManageNetworkBans ? (user.lastSeenIp ? `<p class="n7x-owner-action-note">Last seen IP: ${esc(user.lastSeenIp)} · ${esc(dateLabel(user.lastSeenIpAt))}. IP addresses can be shared or change over time.</p>` : "<p class=\"n7x-owner-action-note\">No IP has been recorded for this account yet. N7X records one after its next authenticated activity.</p>") : "";
+        const accountActionsSection = accountActions ? `<section class="n7x-owner-detail-section"><h3>Account actions</h3>${!user.deliverableEmail && capabilities.canResetPassword ? '<p class="n7x-owner-action-note">This username-only account has no inbox. Create a secure reset link and give it directly to the account owner.</p>' : ""}${ipBanNote}<div class="n7x-owner-action-grid">${accountActions}</div></section>` : "";
+        const recentActivitySection = capabilities.canViewAudit ? `<section class="n7x-owner-detail-section"><h3>Recent user activity</h3><div class="n7x-owner-user-activity">${(user.recentActivity || []).length ? user.recentActivity.map(event => `<p><strong>${esc(actionLabel(event.action))}</strong><span>${esc(relativeLabel(event.createdAt))}</span></p>`).join("") : "<span>No recorded account actions.</span>"}</div></section>` : "";
+        drawer.innerHTML = `<header><div class="n7x-owner-detail-avatar">${avatar}<i class="${user.online ? "online" : ""}"></i></div><div><span>${roleIcon(user.role)}<span class="n7x-minecraft-text">${esc(userRoleLabel(user))}</span> account</span><h2>${esc(user.displayName)}</h2><p class="n7x-owner-drawer-identity">@${esc(user.username)} <span class="n7x-owner-presence-state ${user.online ? "online" : "offline"}"><i></i>${user.online ? "Online" : "Offline"}</span></p></div><button type="button" data-owner-drawer-close aria-label="Close user details">${dashboardIcon("close")}</button></header>
+          <div class="n7x-owner-drawer-scroll">
+            <section class="n7x-owner-detail-grid">${detailValue("Email", user.deliverableEmail ? user.email : "No email added")}${detailValue("Firebase UID", user.uid, "uid")}${detailValue("Presence", user.online ? "Online now" : "Offline")}${detailValue("Last sign-in", dateLabel(user.lastSignInAt))}${detailValue("Last active", dateLabel(user.lastActiveAt))}${capabilities.canManageNetworkBans ? detailValue("Last seen IP", user.lastSeenIp || "Not recorded yet", "ip-address") : ""}${capabilities.canManageNetworkBans && user.lastSeenIp ? detailValue("IP last seen", dateLabel(user.lastSeenIpAt)) : ""}${detailValue("Email verified", user.deliverableEmail ? (user.emailVerified ? "Verified" : "Not verified") : "Not applicable · username-only")}</section>
+            <section class="n7x-owner-detail-section n7x-owner-profile-management"><h3>Public profile</h3>${ownerProfilePreview(user)}${capabilities.canEditProfile ? `<details><summary>Edit this profile</summary>${ownerProfileEditor(user)}</details>` : ""}</section>
             ${accessSection}
             ${capabilities.canSetAiLimit ? aiModelEditor(user) : ""}
             ${accountActionsSection}
@@ -973,18 +973,18 @@
         syncRoleOptions(drawer, currentRoleValue);
         void hydrateOwnerProfileMedia(drawer);
       } catch (error) {
-        drawer.innerHTML = `<div class="nyx-owner-error"><strong>User details could not load</strong><span>${esc(error.message)}</span><button type="button" data-owner-drawer-close>Close</button></div>`;
+        drawer.innerHTML = `<div class="n7x-owner-error"><strong>User details could not load</strong><span>${esc(error.message)}</span><button type="button" data-owner-drawer-close>Close</button></div>`;
       }
     }
 
     let studyReadyData={domains:[],targetIps:[]};
     function renderStudyReady(){
-      drawer.innerHTML=`<header class="nyx-owner-global-app-header"><div><span>${dashboardIcon("apps")}</span><div><h2>StudyReady domains</h2><p>Manage the learning site on your domains.</p></div></div><button type="button" data-owner-drawer-close aria-label="Close StudyReady">${dashboardIcon("close")}</button></header><div class="nyx-owner-drawer-scroll nyx-owner-global-app-drawer"><section class="nyx-owner-detail-section"><p><a href="/studyready" target="_blank" rel="noopener">Preview StudyReady</a> &middot; <a href="/textbook.pdf" target="_blank" rel="noopener">Textbook PDF</a></p><p>N7X stays available at <a href="/nyx" target="_blank" rel="noopener">/nyx</a>. These domains show the same learning pages to every visitor.</p><h3>Add or update a domain</h3><form class="nyx-owner-global-app-form" data-owner-studyready-form><label>Domain<input name="hostname" required maxlength="253" placeholder="learn.example.com"></label><label>Page title<input name="title" required maxlength="80" value="StudyReady"></label><button type="submit">Save domain</button></form><p class="nyx-owner-action-note">Point the domain's A record to ${esc(studyReadyData.targetIps.join(' or ')||'your VPS address')}. New domains need working DNS before HTTPS can be issued. Existing sites at the same hostname will use StudyReady as their homepage.</p></section><section class="nyx-owner-detail-section"><h3>Configured domains</h3>${studyReadyData.domains.map(row=>`<article class="nyx-owner-detail-section"><strong>${esc(row.hostname)}</strong><p>${esc(row.title)}</p><div class="nyx-owner-detail-actions"><a href="https://${esc(row.hostname)}/" target="_blank" rel="noopener">Open site</a><button type="button" data-studyready-edit="${esc(row.hostname)}">Edit title</button><button type="button" data-studyready-check="${esc(row.hostname)}">Check DNS</button><button class="danger" type="button" data-studyready-remove="${esc(row.hostname)}">Remove</button></div></article>`).join('')||'<p>No domains configured.</p>'}<p data-studyready-status role="status"></p></section><section class="nyx-owner-detail-section"><h3>Category reviews</h3><p>Publishing lessons does not automatically change a filter category. Lightspeed review tools require administrator access.</p><a href="https://help.lightspeedsystems.com/s/article/kb-4019650636-lightspeed-filter---policies---verifying-access-and-troubleshooting" target="_blank" rel="noopener">Access Checker instructions</a></section></div>`;
+      drawer.innerHTML=`<header class="n7x-owner-global-app-header"><div><span>${dashboardIcon("apps")}</span><div><h2>StudyReady domains</h2><p>Manage the learning site on your domains.</p></div></div><button type="button" data-owner-drawer-close aria-label="Close StudyReady">${dashboardIcon("close")}</button></header><div class="n7x-owner-drawer-scroll n7x-owner-global-app-drawer"><section class="n7x-owner-detail-section"><p><a href="/studyready" target="_blank" rel="noopener">Preview StudyReady</a> &middot; <a href="/textbook.pdf" target="_blank" rel="noopener">Textbook PDF</a></p><p>N7X stays available at <a href="/nyx" target="_blank" rel="noopener">/nyx</a>. These domains show the same learning pages to every visitor.</p><h3>Add or update a domain</h3><form class="n7x-owner-global-app-form" data-owner-studyready-form><label>Domain<input name="hostname" required maxlength="253" placeholder="learn.example.com"></label><label>Page title<input name="title" required maxlength="80" value="StudyReady"></label><button type="submit">Save domain</button></form><p class="n7x-owner-action-note">Point the domain's A record to ${esc(studyReadyData.targetIps.join(' or ')||'your VPS address')}. New domains need working DNS before HTTPS can be issued. Existing sites at the same hostname will use StudyReady as their homepage.</p></section><section class="n7x-owner-detail-section"><h3>Configured domains</h3>${studyReadyData.domains.map(row=>`<article class="n7x-owner-detail-section"><strong>${esc(row.hostname)}</strong><p>${esc(row.title)}</p><div class="n7x-owner-detail-actions"><a href="https://${esc(row.hostname)}/" target="_blank" rel="noopener">Open site</a><button type="button" data-studyready-edit="${esc(row.hostname)}">Edit title</button><button type="button" data-studyready-check="${esc(row.hostname)}">Check DNS</button><button class="danger" type="button" data-studyready-remove="${esc(row.hostname)}">Remove</button></div></article>`).join('')||'<p>No domains configured.</p>'}<p data-studyready-status role="status"></p></section><section class="n7x-owner-detail-section"><h3>Category reviews</h3><p>Publishing lessons does not automatically change a filter category. Lightspeed review tools require administrator access.</p><a href="https://help.lightspeedsystems.com/s/article/kb-4019650636-lightspeed-filter---policies---verifying-access-and-troubleshooting" target="_blank" rel="noopener">Access Checker instructions</a></section></div>`;
     }
     async function openStudyReady(){
       drawer.hidden=false;drawer.classList.add('show');state.selectedUser=null;state.selectedCapabilities=null;
-      drawer.innerHTML='<div class="nyx-owner-drawer-loading">Loading StudyReady...</div>';
-      try{studyReadyData=await api('/api/owner-dashboard/studyready');renderStudyReady();}catch(error){drawer.innerHTML=`<div class="nyx-owner-error"><strong>StudyReady could not load</strong><span>${esc(error.message)}</span><button type="button" data-owner-drawer-close>Close</button></div>`;}
+      drawer.innerHTML='<div class="n7x-owner-drawer-loading">Loading StudyReady...</div>';
+      try{studyReadyData=await api('/api/owner-dashboard/studyready');renderStudyReady();}catch(error){drawer.innerHTML=`<div class="n7x-owner-error"><strong>StudyReady could not load</strong><span>${esc(error.message)}</span><button type="button" data-owner-drawer-close>Close</button></div>`;}
     }
     async function studyReadyAction(button,action,hostname){
       if(action==='remove'&&!confirm(`Remove StudyReady from ${hostname}? Its homepage will return to the site's existing routing.`))return;
@@ -1001,17 +1001,17 @@
     }
 
     function renderGlobalApps() {
-      drawer.innerHTML = `<header class="nyx-owner-global-app-header"><div><span>${dashboardIcon("apps")}</span><div><h2>Apps for everyone</h2><p>Add or remove apps from every user's Apps page.</p></div></div><button type="button" data-owner-drawer-close aria-label="Close global apps">${dashboardIcon("close")}</button></header>
-        <div class="nyx-owner-drawer-scroll nyx-owner-global-app-drawer">
-          <section class="nyx-owner-detail-section"><h3>Add an app</h3><form class="nyx-owner-global-app-form" data-owner-global-app-form><label>Name<input name="name" minlength="2" maxlength="48" autocomplete="off" required placeholder="Example app"></label><label>URL or N7X path<input name="url" maxlength="2048" autocomplete="off" spellcheck="false" required placeholder="https://example.com/ or /apps/example/"></label><div class="nyx-owner-detail-actions"><button type="submit">${dashboardIcon("apps")}<span>Add for everyone</span></button></div></form></section>
-          <section class="nyx-owner-detail-section"><div class="nyx-owner-global-app-heading"><div><h3>Published apps</h3><p class="nyx-owner-action-note">Changes appear in open N7X sessions within one minute.</p></div><span>${state.globalApps.length}</span></div>${state.globalApps.length ? `<div class="nyx-owner-global-app-list">${state.globalApps.map(app => `<article><span class="nyx-owner-global-app-icon">${dashboardIcon("apps")}</span><div><strong>${esc(app.name)}</strong><small>${esc(app.url)}</small></div><button class="danger" type="button" data-owner-global-app-delete="${esc(app.id)}" aria-label="Remove ${esc(app.name)}">${dashboardIcon("trash")}Remove</button></article>`).join("")}</div>` : '<p class="nyx-owner-action-note">No apps are currently published.</p>'}</section>
+      drawer.innerHTML = `<header class="n7x-owner-global-app-header"><div><span>${dashboardIcon("apps")}</span><div><h2>Apps for everyone</h2><p>Add or remove apps from every user's Apps page.</p></div></div><button type="button" data-owner-drawer-close aria-label="Close global apps">${dashboardIcon("close")}</button></header>
+        <div class="n7x-owner-drawer-scroll n7x-owner-global-app-drawer">
+          <section class="n7x-owner-detail-section"><h3>Add an app</h3><form class="n7x-owner-global-app-form" data-owner-global-app-form><label>Name<input name="name" minlength="2" maxlength="48" autocomplete="off" required placeholder="Example app"></label><label>URL or N7X path<input name="url" maxlength="2048" autocomplete="off" spellcheck="false" required placeholder="https://example.com/ or /apps/example/"></label><div class="n7x-owner-detail-actions"><button type="submit">${dashboardIcon("apps")}<span>Add for everyone</span></button></div></form></section>
+          <section class="n7x-owner-detail-section"><div class="n7x-owner-global-app-heading"><div><h3>Published apps</h3><p class="n7x-owner-action-note">Changes appear in open N7X sessions within one minute.</p></div><span>${state.globalApps.length}</span></div>${state.globalApps.length ? `<div class="n7x-owner-global-app-list">${state.globalApps.map(app => `<article><span class="n7x-owner-global-app-icon">${dashboardIcon("apps")}</span><div><strong>${esc(app.name)}</strong><small>${esc(app.url)}</small></div><button class="danger" type="button" data-owner-global-app-delete="${esc(app.id)}" aria-label="Remove ${esc(app.name)}">${dashboardIcon("trash")}Remove</button></article>`).join("")}</div>` : '<p class="n7x-owner-action-note">No apps are currently published.</p>'}</section>
         </div>`;
     }
 
     async function openGlobalApps() {
       drawer.hidden = false;
       drawer.classList.remove("show");
-      drawer.innerHTML = '<div class="nyx-owner-drawer-loading"><i></i><i></i><i></i></div>';
+      drawer.innerHTML = '<div class="n7x-owner-drawer-loading"><i></i><i></i><i></i></div>';
       requestAnimationFrame(() => drawer.classList.add("show"));
       state.selectedUser = null;
       state.selectedCapabilities = null;
@@ -1021,7 +1021,7 @@
         state.access = data.access || state.access;
         renderGlobalApps();
       } catch (error) {
-        drawer.innerHTML = `<div class="nyx-owner-error"><strong>Apps could not load</strong><span>${esc(error.message)}</span><button type="button" data-owner-drawer-close>Close</button></div>`;
+        drawer.innerHTML = `<div class="n7x-owner-error"><strong>Apps could not load</strong><span>${esc(error.message)}</span><button type="button" data-owner-drawer-close>Close</button></div>`;
       }
     }
 
@@ -1048,28 +1048,28 @@
 
     function customRolePermissionOptions(selectedPermissions = []) {
       const selected = new Set(selectedPermissions);
-      return `<details class="nyx-owner-custom-role-permission-editor"><summary>${selected.size} permission${selected.size === 1 ? "" : "s"} selected</summary><fieldset class="nyx-owner-custom-role-permissions"><legend>Permissions</legend>${state.customRolePermissions.map(permission => `<label><input type="checkbox" name="permissions" value="${esc(permission.id)}"${selected.has(permission.id) ? " checked" : ""}><span>${esc(permission.label)}</span><small>${esc(permission.id)}</small></label>`).join("")}</fieldset></details>`;
+      return `<details class="n7x-owner-custom-role-permission-editor"><summary>${selected.size} permission${selected.size === 1 ? "" : "s"} selected</summary><fieldset class="n7x-owner-custom-role-permissions"><legend>Permissions</legend>${state.customRolePermissions.map(permission => `<label><input type="checkbox" name="permissions" value="${esc(permission.id)}"${selected.has(permission.id) ? " checked" : ""}><span>${esc(permission.label)}</span><small>${esc(permission.id)}</small></label>`).join("")}</fieldset></details>`;
     }
 
     function customRoleColorInput(color = "#8ea1ff") {
       const value = /^#[0-9a-f]{6}$/i.test(String(color || "")) ? String(color).toLowerCase() : "#8ea1ff";
-      return `<label class="nyx-owner-custom-role-field nyx-owner-custom-role-color-field">Color / code<span class="nyx-owner-custom-role-color-control"><input class="nyx-owner-custom-role-color-picker" data-owner-custom-role-color-picker type="color" value="${esc(value)}" aria-label="Choose role color"><input name="color" type="text" value="${esc(value)}" maxlength="7" pattern="(?:#[0-9A-Fa-f]{6}|&amp;[0-9A-Fa-f])" title="Use a six-digit hex color or a Minecraft code from &amp;0 through &amp;f" placeholder="&amp;d or #ff55ff" required></span><small>Pick a color or enter #RRGGBB / &amp;0–&amp;f.</small></label>`;
+      return `<label class="n7x-owner-custom-role-field n7x-owner-custom-role-color-field">Color / code<span class="n7x-owner-custom-role-color-control"><input class="n7x-owner-custom-role-color-picker" data-owner-custom-role-color-picker type="color" value="${esc(value)}" aria-label="Choose role color"><input name="color" type="text" value="${esc(value)}" maxlength="7" pattern="(?:#[0-9A-Fa-f]{6}|&amp;[0-9A-Fa-f])" title="Use a six-digit hex color or a Minecraft code from &amp;0 through &amp;f" placeholder="&amp;d or #ff55ff" required></span><small>Pick a color or enter #RRGGBB / &amp;0–&amp;f.</small></label>`;
     }
 
     function renderCustomRoles() {
       const editingId = state.customRoleEditorId;
-      const editor = role => `<form class="nyx-owner-custom-role-editor" data-owner-custom-role-update="${esc(role.id)}"><label class="nyx-owner-custom-role-field">Name<input name="label" maxlength="64" minlength="2" required value="${esc(role.label)}"></label>${customRoleColorInput(role.color)}<label class="nyx-owner-custom-role-field">Placement<select name="baseRole">${customRolePlacementOptions(role.baseRole)}</select></label>${customRolePermissionOptions(role.permissions)}<div class="nyx-owner-custom-role-editor-actions"><button class="nyx-owner-custom-role-save" type="submit">${dashboardIcon("save")}<span>Save changes</span></button><button class="nyx-owner-custom-role-cancel" type="button" data-owner-custom-role-cancel>Cancel</button></div></form>`;
-      const createEditor = `<form class="nyx-owner-custom-role-form nyx-owner-custom-role-editor" data-owner-custom-role-create><label class="nyx-owner-custom-role-field">Name<input name="label" maxlength="64" minlength="2" required placeholder="Night Watch"></label><label class="nyx-owner-custom-role-field">Role ID<input name="id" maxlength="32" pattern="[a-z0-9][a-z0-9-]{1,31}" placeholder="night-watch"></label>${customRoleColorInput()}<label class="nyx-owner-custom-role-field">Placement<select name="baseRole">${customRolePlacementOptions("member")}</select></label>${customRolePermissionOptions([])}<div class="nyx-owner-custom-role-editor-actions"><button class="nyx-owner-custom-role-save" type="submit">${dashboardIcon("save")}<span>Create role</span></button><button class="nyx-owner-custom-role-cancel" type="button" data-owner-custom-role-cancel>Cancel</button></div></form>`;
-      drawer.innerHTML = `<header class="nyx-owner-custom-role-header"><div><span>${dashboardIcon("users")}</span><div><h2>Custom roles</h2><p>Colors, hierarchy, permissions, and assignments.</p></div></div><button type="button" data-owner-drawer-close aria-label="Close custom roles">${dashboardIcon("close")}</button></header>
-        <div class="nyx-owner-drawer-scroll nyx-owner-custom-role-drawer">
-          <section class="nyx-owner-detail-section nyx-owner-custom-role-section"><div class="nyx-owner-custom-role-toolbar"><div><h3>Configured roles</h3><p class="nyx-owner-action-note">Placement controls hierarchy; selected permissions control access.</p></div><button type="button" data-owner-custom-role-new>${dashboardIcon("users")}New role</button></div>${editingId === "new" ? createEditor : ""}${state.customRoles.length ? `<div class="nyx-owner-custom-role-list">${state.customRoles.map(role => `<article class="nyx-owner-custom-role-item${editingId === role.id ? " editing" : ""}"><div class="nyx-owner-custom-role-row"><span class="nyx-owner-custom-role-dot" style="--owner-custom-role:${esc(role.color)}"></span><span class="nyx-owner-custom-role-copy"><strong class="nyx-minecraft-text">${esc(role.label)}</strong><small>${esc(role.id)}</small></span><span class="nyx-owner-custom-role-placement">${esc(roleLabel(role.baseRole))}</span><span class="nyx-owner-custom-role-permission-count">${Number(role.permissions?.length || 0)} perms</span><button type="button" data-owner-custom-role-edit="${esc(role.id)}">Edit</button><button class="danger" type="button" data-owner-custom-role-delete="${esc(role.id)}" aria-label="Delete ${esc(role.label)}">${dashboardIcon("trash")}</button></div>${editingId === role.id ? editor(role) : ""}</article>`).join("")}</div>` : '<p class="nyx-owner-action-note">No custom roles have been created yet.</p>'}</section>
+      const editor = role => `<form class="n7x-owner-custom-role-editor" data-owner-custom-role-update="${esc(role.id)}"><label class="n7x-owner-custom-role-field">Name<input name="label" maxlength="64" minlength="2" required value="${esc(role.label)}"></label>${customRoleColorInput(role.color)}<label class="n7x-owner-custom-role-field">Placement<select name="baseRole">${customRolePlacementOptions(role.baseRole)}</select></label>${customRolePermissionOptions(role.permissions)}<div class="n7x-owner-custom-role-editor-actions"><button class="n7x-owner-custom-role-save" type="submit">${dashboardIcon("save")}<span>Save changes</span></button><button class="n7x-owner-custom-role-cancel" type="button" data-owner-custom-role-cancel>Cancel</button></div></form>`;
+      const createEditor = `<form class="n7x-owner-custom-role-form n7x-owner-custom-role-editor" data-owner-custom-role-create><label class="n7x-owner-custom-role-field">Name<input name="label" maxlength="64" minlength="2" required placeholder="Night Watch"></label><label class="n7x-owner-custom-role-field">Role ID<input name="id" maxlength="32" pattern="[a-z0-9][a-z0-9-]{1,31}" placeholder="night-watch"></label>${customRoleColorInput()}<label class="n7x-owner-custom-role-field">Placement<select name="baseRole">${customRolePlacementOptions("member")}</select></label>${customRolePermissionOptions([])}<div class="n7x-owner-custom-role-editor-actions"><button class="n7x-owner-custom-role-save" type="submit">${dashboardIcon("save")}<span>Create role</span></button><button class="n7x-owner-custom-role-cancel" type="button" data-owner-custom-role-cancel>Cancel</button></div></form>`;
+      drawer.innerHTML = `<header class="n7x-owner-custom-role-header"><div><span>${dashboardIcon("users")}</span><div><h2>Custom roles</h2><p>Colors, hierarchy, permissions, and assignments.</p></div></div><button type="button" data-owner-drawer-close aria-label="Close custom roles">${dashboardIcon("close")}</button></header>
+        <div class="n7x-owner-drawer-scroll n7x-owner-custom-role-drawer">
+          <section class="n7x-owner-detail-section n7x-owner-custom-role-section"><div class="n7x-owner-custom-role-toolbar"><div><h3>Configured roles</h3><p class="n7x-owner-action-note">Placement controls hierarchy; selected permissions control access.</p></div><button type="button" data-owner-custom-role-new>${dashboardIcon("users")}New role</button></div>${editingId === "new" ? createEditor : ""}${state.customRoles.length ? `<div class="n7x-owner-custom-role-list">${state.customRoles.map(role => `<article class="n7x-owner-custom-role-item${editingId === role.id ? " editing" : ""}"><div class="n7x-owner-custom-role-row"><span class="n7x-owner-custom-role-dot" style="--owner-custom-role:${esc(role.color)}"></span><span class="n7x-owner-custom-role-copy"><strong class="n7x-minecraft-text">${esc(role.label)}</strong><small>${esc(role.id)}</small></span><span class="n7x-owner-custom-role-placement">${esc(roleLabel(role.baseRole))}</span><span class="n7x-owner-custom-role-permission-count">${Number(role.permissions?.length || 0)} perms</span><button type="button" data-owner-custom-role-edit="${esc(role.id)}">Edit</button><button class="danger" type="button" data-owner-custom-role-delete="${esc(role.id)}" aria-label="Delete ${esc(role.label)}">${dashboardIcon("trash")}</button></div>${editingId === role.id ? editor(role) : ""}</article>`).join("")}</div>` : '<p class="n7x-owner-action-note">No custom roles have been created yet.</p>'}</section>
         </div>`;
     }
 
     async function openCustomRoles() {
       drawer.hidden = false;
       drawer.classList.remove("show");
-      drawer.innerHTML = '<div class="nyx-owner-drawer-loading"><i></i><i></i><i></i></div>';
+      drawer.innerHTML = '<div class="n7x-owner-drawer-loading"><i></i><i></i><i></i></div>';
       requestAnimationFrame(() => drawer.classList.add("show"));
       state.selectedUser = null;
       state.selectedCapabilities = null;
@@ -1081,7 +1081,7 @@
         state.access = data.access || state.access;
         renderCustomRoles();
       } catch (error) {
-        drawer.innerHTML = `<div class="nyx-owner-error"><strong>Custom roles could not load</strong><span>${esc(error.message)}</span><button type="button" data-owner-drawer-close>Close</button></div>`;
+        drawer.innerHTML = `<div class="n7x-owner-error"><strong>Custom roles could not load</strong><span>${esc(error.message)}</span><button type="button" data-owner-drawer-close>Close</button></div>`;
       }
     }
 
@@ -1107,11 +1107,11 @@
       drawer.classList.remove("show");
       state.selectedUser = user;
       const avatar = ownerProfileImageMarkup(user.photoUrl, "", (user.displayName || "?").slice(0, 1).toUpperCase());
-      drawer.innerHTML = `<header><div class="nyx-owner-detail-avatar">${avatar}<i class="${user.online ? "online" : ""}"></i></div><div><span>${dashboardIcon("shield")}Search review</span><h2>${esc(user.displayName)}</h2><p class="nyx-owner-drawer-identity">@${esc(user.username)}</p></div><button type="button" data-owner-drawer-close aria-label="Close search history">${dashboardIcon("close")}</button></header>
-        <div class="nyx-owner-drawer-scroll"><section class="nyx-owner-detail-section nyx-owner-flagged-searches"><div class="nyx-owner-search-history-heading"><h3>Search history</h3><button type="button" data-owner-clear-search-history="${esc(user.uid)}" hidden>${dashboardIcon("trash")}Clear history</button></div><p class="nyx-owner-action-note">Searches made through N7X while this account is signed in are retained for 30 days. Policy-classified searches are highlighted, but a match is a moderation signal rather than proof.</p><div class="nyx-owner-flagged-search-list"><div class="nyx-owner-drawer-loading"><i></i><i></i><i></i></div></div></section></div>`;
+      drawer.innerHTML = `<header><div class="n7x-owner-detail-avatar">${avatar}<i class="${user.online ? "online" : ""}"></i></div><div><span>${dashboardIcon("shield")}Search review</span><h2>${esc(user.displayName)}</h2><p class="n7x-owner-drawer-identity">@${esc(user.username)}</p></div><button type="button" data-owner-drawer-close aria-label="Close search history">${dashboardIcon("close")}</button></header>
+        <div class="n7x-owner-drawer-scroll"><section class="n7x-owner-detail-section n7x-owner-flagged-searches"><div class="n7x-owner-search-history-heading"><h3>Search history</h3><button type="button" data-owner-clear-search-history="${esc(user.uid)}" hidden>${dashboardIcon("trash")}Clear history</button></div><p class="n7x-owner-action-note">Searches made through N7X while this account is signed in are retained for 30 days. Policy-classified searches are highlighted, but a match is a moderation signal rather than proof.</p><div class="n7x-owner-flagged-search-list"><div class="n7x-owner-drawer-loading"><i></i><i></i><i></i></div></div></section></div>`;
       requestAnimationFrame(() => drawer.classList.add("show"));
       void hydrateOwnerProfileMedia(drawer);
-      const list = drawer.querySelector(".nyx-owner-flagged-search-list");
+      const list = drawer.querySelector(".n7x-owner-flagged-search-list");
       try {
         const result = await api(`/api/chat/moderation/search-history?uid=${encodeURIComponent(user.uid)}`);
         if (!list?.isConnected || state.selectedUser?.uid !== user.uid) return;
@@ -1120,10 +1120,10 @@
         if (clearButton) clearButton.hidden = !(result.canClear && searches.length);
         list.innerHTML = searches.length
           ? searches.map(search => `<article class="${search.flagged ? "policy" : ""}"><header><strong>${esc(search.category || "Standard search")}</strong><time datetime="${esc(search.createdAt)}" title="${esc(dateLabel(search.createdAt))}">${esc(relativeLabel(search.createdAt))}</time></header><p>${esc(search.query)}</p></article>`).join("")
-          : "<div class=\"nyx-owner-empty compact\"><strong>No retained searches</strong><span>This account has no N7X searches from the last 30 days.</span></div>";
+          : "<div class=\"n7x-owner-empty compact\"><strong>No retained searches</strong><span>This account has no N7X searches from the last 30 days.</span></div>";
       } catch (error) {
         if (!list?.isConnected) return;
-        list.innerHTML = `<div class="nyx-owner-error"><strong>Search history could not load</strong><span>${esc(error.message)}</span></div>`;
+        list.innerHTML = `<div class="n7x-owner-error"><strong>Search history could not load</strong><span>${esc(error.message)}</span></div>`;
       }
     }
 
@@ -1298,7 +1298,7 @@
       const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
       const link = document.createElement("a");
       link.href = url;
-      link.download = `nyx-users-page-${state.page}.csv`;
+      link.download = `n7x-users-page-${state.page}.csv`;
       link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       notify("User page exported.");
@@ -1436,7 +1436,7 @@
     }
 
     function onChange(event) {
-      if (event.target.matches(".nyx-owner-media-input")) {
+      if (event.target.matches(".n7x-owner-media-input")) {
         const input = event.target;
         const form = input.closest("[data-owner-profile-form]");
         const kind = input.name === "avatarFile" ? "avatar" : "banner";
@@ -1563,7 +1563,7 @@
       const originalLabel = submit.textContent;
       void (async () => {
         try {
-          const mediaInputs = [...form.querySelectorAll(".nyx-owner-media-input")];
+          const mediaInputs = [...form.querySelectorAll(".n7x-owner-media-input")];
           const pending = mediaInputs.map(input => input._nyxOwnerPreparation).filter(Boolean);
           if (pending.length) {
             submit.textContent = "Preparing media…";
@@ -1625,7 +1625,7 @@
 
     function updateCustomRoleColorPreview(event) {
       const input = event.target.closest('[name="color"], [data-owner-custom-role-color-picker]');
-      const control = input?.closest(".nyx-owner-custom-role-color-control");
+      const control = input?.closest(".n7x-owner-custom-role-color-control");
       if (control) {
         const codes = { "0": "#000000", "1": "#0000aa", "2": "#00aa00", "3": "#00aaaa", "4": "#aa0000", "5": "#aa00aa", "6": "#ffaa00", "7": "#aaaaaa", "8": "#555555", "9": "#5555ff", a: "#55ff55", b: "#55ffff", c: "#ff5555", d: "#ff55ff", e: "#ffff55", f: "#ffffff" };
         const color = control.querySelector('[name="color"]');

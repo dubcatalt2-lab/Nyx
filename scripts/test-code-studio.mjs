@@ -197,7 +197,7 @@ try {
     localStorage.setItem("nyx.popupProtection", "true");
   });
   await shellPage.goto(baseUrl, { waitUntil: "domcontentloaded" });
-  await shellPage.locator("#nyxStudyHubStartup").waitFor({ state: "hidden" });
+  await shellPage.locator("#n7xStudyHubStartup").waitFor({ state: "hidden" });
   await shellPage.evaluate(() => {
     const box = document.createElement("div");
     box.id = "browserSearchSuggestions";
@@ -238,8 +238,8 @@ try {
     const selectors = [
       "[data-browser-shell-url]",
       ".browser-window.browser-home-page [data-browser-blank-input]",
-      ".nyx-minimal-utility-links a",
-      "[data-nyx-visual-dock] button"
+      ".n7x-minimal-utility-links a",
+      "[data-n7x-visual-dock] button"
     ];
     const results = {};
     for (const theme of themes) {
@@ -263,14 +263,14 @@ try {
       assert(!selection.missing && selection.background === "rgba(145, 172, 210, 0.34)" && selection.color === "rgb(248, 250, 252)" && selection.fill === "rgb(248, 250, 252)", `${theme} recolored Ctrl+A selection for ${selection.selector} (${JSON.stringify(selection)})`);
     }
   }
-  const discordLink = shellPage.locator(".nyx-discord-link");
+  const discordLink = shellPage.locator(".n7x-discord-link");
   await discordLink.waitFor();
   assert((await discordLink.getAttribute("href")) === "https://discord.gg/cAdjYAJs3u", "Homepage Discord link has the wrong invite");
   assert((await discordLink.getAttribute("target")) === "_blank", "Homepage Discord link does not open separately");
   const discordVisibility = await discordLink.evaluate(link => ({ display: getComputedStyle(link).display, body: document.body.className }));
   assert(discordVisibility.display !== "none", `Homepage Discord link is not visible on the home page (${discordVisibility.display}; ${discordVisibility.body})`);
   assert((await discordLink.locator("svg").evaluate(icon => getComputedStyle(icon).fill)) === "none", "Homepage Discord symbol is not hollow");
-  const dockBox = await shellPage.locator(".nyx-visual-dock").boundingBox();
+  const dockBox = await shellPage.locator(".n7x-visual-dock").boundingBox();
   const discordBox = await discordLink.boundingBox();
   assert(!dockBox || !discordBox || discordBox.x + discordBox.width <= dockBox.x, "Homepage Discord link is covered by the right navigation rail");
   await shellPage.context().route("https://discord.gg/**", route => route.fulfill({ contentType: "text/html", body: "<!doctype html><title>Discord invite test</title>" }));
@@ -290,9 +290,9 @@ try {
     localStorage.setItem("nyx.theme", "custom");
   });
   await customHomePage.goto(baseUrl, { waitUntil: "domcontentloaded" });
-  await customHomePage.locator("#nyxStudyHubStartup").waitFor({ state: "hidden" });
-  await customHomePage.locator('#nyxBeamsBg[data-light-color="#76dfb5"]').waitFor();
-  assert((await customHomePage.locator("#nyxBeamsBg").getAttribute("data-light-color")) !== "#a98cff", "Custom theme remained locked to the Violet Beams color");
+  await customHomePage.locator("#n7xStudyHubStartup").waitFor({ state: "hidden" });
+  await customHomePage.locator('#n7xBeamsBg[data-light-color="#76dfb5"]').waitFor();
+  assert((await customHomePage.locator("#n7xBeamsBg").getAttribute("data-light-color")) !== "#a98cff", "Custom theme remained locked to the Violet Beams color");
   const homeSelection = await customHomePage.locator(".browser-window.browser-home-page [data-browser-blank-input]").evaluate(input => {
     const style = getComputedStyle(input, "::selection");
     input.focus();
@@ -306,12 +306,12 @@ try {
     await shellPage.waitForTimeout(4000);
     await shellPage.screenshot({ path: process.env.NYX_TEST_SCREENSHOT, fullPage: false });
   }
-  const codeSandbox = shellPage.locator('[data-nyx-visual-dock] [data-nyx-dock-item="code-sandbox"]');
+  const codeSandbox = shellPage.locator('[data-n7x-visual-dock] [data-n7x-dock-item="code-sandbox"]');
   await codeSandbox.waitFor();
   assert(await codeSandbox.innerText() === "Code Sandbox", "Code Sandbox did not replace the Browse rail item");
   assert((await codeSandbox.locator("svg path").first().getAttribute("d"))?.startsWith("m9 7-5 5"), "Code Sandbox rail item is still using the generic Apps icon");
-  assert(await shellPage.locator('[data-nyx-visual-dock] [data-nyx-dock-item="browse"]').count() === 0, "The retired Browse rail item is still present");
-  await shellPage.locator('[data-nyx-visual-dock] [data-nyx-dock-item="apps"]').click();
+  assert(await shellPage.locator('[data-n7x-visual-dock] [data-n7x-dock-item="browse"]').count() === 0, "The retired Browse rail item is still present");
+  await shellPage.locator('[data-n7x-visual-dock] [data-n7x-dock-item="apps"]').click();
   await shellPage.waitForFunction(() => {
     const frame = document.querySelector("iframe.view.active");
     try { return Boolean(frame?.contentDocument?.querySelector('[data-global-app-id="code-studio"]')); } catch { return false; }

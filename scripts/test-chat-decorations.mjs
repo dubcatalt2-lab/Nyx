@@ -24,7 +24,7 @@ try{
   return r.fulfill({json:{events:[],channels:[],participants:[],signals:[]}});
  });
  await page.goto((process.env.NYX_TEST_BASE_URL||'http://127.0.0.1:8199')+'/apps/chat/');
- const art=page.locator('.message .nyx-avatar-decoration');await art.waitFor({state:'visible'});
+ const art=page.locator('.message .n7x-avatar-decoration');await art.waitFor({state:'visible'});
  assert.match(await art.evaluate(e=>getComputedStyle(e).backgroundImage),/arcane-circle-still.png/);
  await art.locator('..').hover();
  assert.match(await art.evaluate(e=>getComputedStyle(e).backgroundImage),/arcane-circle.png/);
@@ -35,9 +35,9 @@ try{
  assert.equal(await page.evaluate(()=>getComputedStyle(document.body).getPropertyValue('--chat-accent').trim()),await page.evaluate(()=>getComputedStyle(document.body).getPropertyValue('--app-text').trim()));
  assert.notEqual(await page.locator('.send-button').evaluate(e=>getComputedStyle(e).backgroundColor),'rgba(0, 0, 0, 0)');
  await page.screenshot({path:'.codex-artifacts/chat-mocha.png'});
- await page.locator('.member-button').first().click();await page.locator('.member-dialog[open] .nyx-user-profile-effect').waitFor({state:'visible'});
+ await page.locator('.member-button').first().click();await page.locator('.member-dialog[open] .n7x-user-profile-effect').waitFor({state:'visible'});
  await page.mouse.move(0,0);
- const effect=page.locator('.member-dialog[open] .nyx-user-profile-effect');
+ const effect=page.locator('.member-dialog[open] .n7x-user-profile-effect');
  assert.match(await effect.evaluate(e=>getComputedStyle(e).backgroundImage),/fx-void-shards-still.png/);
  await effect.locator('..').hover();
  assert.match(await effect.evaluate(e=>getComputedStyle(e).backgroundImage),/fx-void-shards(?:-loop)?.png/);

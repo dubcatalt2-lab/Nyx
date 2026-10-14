@@ -12,7 +12,7 @@ try{
  });
  await page.addScriptTag({path:'js/availability.js'});
  await page.evaluate(()=>NyxAvailability.start(()=>({url:window.url,custom:window.custom})));
- const warning=page.locator('#nyxAvailabilityWarning');
+ const warning=page.locator('#n7xAvailabilityWarning');
  const advance=ms=>page.clock.runFor(ms);
  const hidden=async()=>assert(await warning.count()===0 || await warning.isHidden());
  await advance(7001);await hidden();

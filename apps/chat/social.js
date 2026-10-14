@@ -104,8 +104,8 @@ window.createNyxChatSocial = function createNyxChatSocial({request, me, members,
     content.replaceChildren(); content.className = '';
 
     if (/^fx-[a-z0-9-]+$/.test(member.profileEffect || '')) {
-      content.className = 'nyx-user-profile-effect-' + member.profileEffect;
-      const artwork = node('i', 'nyx-user-profile-effect'); artwork.setAttribute('aria-hidden', 'true'); content.append(artwork);
+      content.className = 'n7x-user-profile-effect-' + member.profileEffect;
+      const artwork = node('i', 'n7x-user-profile-effect'); artwork.setAttribute('aria-hidden', 'true'); content.append(artwork);
     }
     const banner = node('div', 'member-card-banner');
     if (/^#[0-9a-f]{6}$/i.test(member.bannerColor || '')) banner.style.backgroundColor = member.bannerColor;

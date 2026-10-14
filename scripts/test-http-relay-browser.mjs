@@ -11,6 +11,9 @@ const temporary=await mkdtemp(resolve(tmpdir(),'nyx-relay-browser-'));
 const staticRoot=resolve(temporary,'public');await symlink(resolve(process.env.NYX_TEST_BUILT==='1'?'dist':'.'),staticRoot,process.platform==='win32'?'junction':'dir');
 const child=fork('server.js',[],{silent:true,env:{...process.env,PORT:'0',WISP_URL:process.env.NYX_TEST_WISP_URL||'',NYX_STATIC_ROOT:staticRoot,NYX_PROJECT_ROOT:process.cwd(),FIREBASE_PROJECT_ID:'',FIREBASE_CLIENT_EMAIL:'',FIREBASE_PRIVATE_KEY:'',FIREBASE_WEB_API_KEY:'',NYX_GAME_REPORT_FILE:resolve(temporary,'reports.json')}});
 let browser;
+const backendMessages=[];
+child.stderr.on('data',chunk=>backendMessages.push(chunk.toString()));
+child.once('exit',code=>{if(code) console.error('Backend exit '+code+'\n'+backendMessages.join(''));});
 try{
  const port=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Backend startup timeout')),20000);child.once('exit',code=>{clearTimeout(timer);reject(new Error('Backend exited '+code));});child.on('message',m=>{if(m.type==='nyx:listening'){clearTimeout(timer);resolve(m.port);}});});
  const base=`http://127.0.0.1:${port}`;browser=await chromium.launch({channel:'msedge'});
@@ -23,6 +26,15 @@ try{
   const input=page.locator(brand==='nyx'?'[data-browser-blank-input]:visible':'#query').first();
   await input.fill('https://example.com/');const start=Date.now();await input.press('Enter');
   try{await page.frameLocator(brand==='nyx'?'.browser-body iframe.view.active':brand==='drop'?'#stage iframe:not([hidden])':'#browser-stage iframe:not([hidden])').getByText(/This domain is for use in/i).first().waitFor({timeout:45000});}catch(error){console.log('BROWSER FAILURE',brand,{batches,issues},await page.evaluate(()=>[...document.querySelectorAll('iframe')].map(f=>{try{return {path:new URL(f.src).pathname,text:f.contentDocument?.body?.innerText?.slice(0,700)}}catch{return {path:f.getAttribute('src')}}})));throw error;}
+  const target=page.frames().find(frame=>frame!==page.mainFrame()&&frame.url().includes('example.com'));
+  assert(target,'The destination frame must exist');
+  const textResult=await target.evaluate(()=>{
+    const holder=document.createElement('div'),text=document.createTextNode('hello');holder.append(text);
+    const before=text.wholeText;
+    text.appendData(' world');text.insertData(0,'A ');text.replaceData(0,2,'The ');
+    return {before,after:text.wholeText};
+  });
+  assert.deepEqual(textResult,{before:'hello',after:'The hello world'},'Text getters and mutations must preserve native receiver semantics');
   if(!nativeRelay)assert(batches>0);else assert.equal(batches,0);assert.equal(legacy,0);
   if(process.env.NYX_TEST_BUILT==='1'){assert(!runtimeUrls.some(url=>/scramjet|libcurl|epoxy|\/~sj\/|\/~\/sj\//i.test(url)),runtimeUrls.join('\n'));assert.equal(await page.evaluate(()=>typeof window.$scramjet),'undefined');assert.notEqual(await page.evaluate(()=>typeof window.$studyjet),'undefined');assert(runtimeUrls.some(url=>new URL(url).pathname.startsWith(transport==='epoxy'||brand==='drop'?'/atlas/':'/textlib/')),'Selected saved transport must load its renamed implementation');}
   console.log(`${brand}: real ${brand==='drop'?'epoxy':transport} navigation over ${nativeRelay?'native WebSocket':'batched HTTP'}, ${batches} batches, ${Date.now()-start}ms${nativeRelay?'':'; native WebSockets unavailable'}`);

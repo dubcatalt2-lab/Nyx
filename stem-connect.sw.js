@@ -1,2 +1,0 @@
-
-importScripts('/uv.sw.js');

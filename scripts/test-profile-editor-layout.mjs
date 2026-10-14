@@ -86,38 +86,38 @@ try{
 
   await page.goto(origin,{waitUntil:'domcontentloaded'});
   await page.getByRole('button',{name:'Got it',exact:true}).click();
-  await page.waitForFunction(()=>!document.querySelector('#nyxStudyHubStartup'));
-  await page.locator('#nyxAccountButton.nyx-account-button-rich').waitFor();
-  await page.waitForFunction(()=>!document.body.classList.contains('nyx-loading-active'));
-  await page.locator('#nyxAccountButton').click();
-  await page.locator('[data-nyx-account-menu-action="edit"]').click();
-  const editor=page.locator('.nyx-profile-organized'), form=editor.locator('form'), card=editor.locator('.nyx-public-profile-popup');
+  await page.waitForFunction(()=>!document.querySelector('#n7xStudyHubStartup'));
+  await page.locator('#n7xAccountButton.n7x-account-button-rich').waitFor();
+  await page.waitForFunction(()=>!document.body.classList.contains('n7x-loading-active'));
+  await page.locator('#n7xAccountButton').click();
+  await page.locator('[data-n7x-account-menu-action="edit"]').click();
+  const editor=page.locator('.n7x-profile-organized'), form=editor.locator('form'), card=editor.locator('.n7x-public-profile-popup');
   await editor.waitFor();
   await page.waitForTimeout(400);
   await page.screenshot({path:'.codex-artifacts/chat-social/editor-desktop.png'});
-  const bounds=await editor.locator('.nyx-user-profile-dialog').boundingBox();
+  const bounds=await editor.locator('.n7x-user-profile-dialog').boundingBox();
   assert(bounds.x>50&&bounds.width<=1022&&bounds.height<=762);
   assert((await card.boundingBox()).height<550);
-  assert.equal(await editor.locator('.nyx-profile-section-nav button svg').count(),6);
+  assert.equal(await editor.locator('.n7x-profile-section-nav button svg').count(),6);
   await form.locator('[name="displayName"]').fill('River Updated');
-  await page.waitForFunction(()=>document.querySelector('.nyx-public-profile-popup h2')?.textContent==='River Updated');
+  await page.waitForFunction(()=>document.querySelector('.n7x-public-profile-popup h2')?.textContent==='River Updated');
   await form.locator('[type="submit"]').click();
   await page.waitForTimeout(500);
   assert.equal(profile.displayName,'River Updated');
   assert.equal(profile.avatarDecoration,'candlelight');
   assert.equal(profile.profileEffect,'blooming-roses');
-  if(!await editor.isVisible()){await page.locator('#nyxAccountButton').click();await page.locator('[data-nyx-account-menu-action="edit"]').click();}
+  if(!await editor.isVisible()){await page.locator('#n7xAccountButton').click();await page.locator('[data-n7x-account-menu-action="edit"]').click();}
   await page.setViewportSize({width:390,height:700});
   await page.waitForTimeout(200);
-  assert(await form.isVisible());assert(!await editor.locator('.nyx-discord-preview-pane').isVisible());
-  await editor.locator('.nyx-profile-preview-toggle').click();
+  assert(await form.isVisible());assert(!await editor.locator('.n7x-discord-preview-pane').isVisible());
+  await editor.locator('.n7x-profile-preview-toggle').click();
   assert(await card.isVisible());assert(!await form.isVisible());
   const mobile=await card.boundingBox();assert(mobile.x>=0&&mobile.x+mobile.width<=390);
   await page.screenshot({path:'.codex-artifacts/chat-social/editor-mobile.png'});
-  await editor.locator('.nyx-profile-preview-toggle').click();
+  await editor.locator('.n7x-profile-preview-toggle').click();
   await editor.getByRole('button',{name:'Images',exact:true}).click();
-  await editor.locator('[data-nyx-pick-image="banner"]').waitFor({state:'visible'});
-  const chooser=page.waitForEvent('filechooser');await editor.locator('[data-nyx-pick-image="banner"]').click();await chooser;
+  await editor.locator('[data-n7x-pick-image="banner"]').waitFor({state:'visible'});
+  const chooser=page.waitForEvent('filechooser');await editor.locator('[data-n7x-pick-image="banner"]').click();await chooser;
   assert.deepEqual(pageErrors,[]);
   console.log('PASS centered editor, compact live card, SVG navigation, profile save/decorations, mobile Edit/Preview and preserved image picker');
 }finally{await browser?.close();}

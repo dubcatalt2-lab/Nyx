@@ -34,12 +34,12 @@ try{
   if(path.startsWith('/api/activity/'))return json({ok:true});
   return r.continue();
  });
- await page.goto(base);await page.waitForFunction(()=>!document.body.classList.contains('nyx-loading-active')&&!document.body.classList.contains('nyx-startup-prep'));await page.locator('#nyxAccountButton[title="Account menu"]').click();await page.locator('[data-nyx-account-menu-action="edit"]').click();
+ await page.goto(base);await page.waitForFunction(()=>!document.body.classList.contains('n7x-loading-active')&&!document.body.classList.contains('n7x-startup-prep'));await page.locator('#n7xAccountButton[title="Account menu"]').click();await page.locator('[data-n7x-account-menu-action="edit"]').click();
  const picker=page.locator('select[name=avatarDecoration]');await picker.waitFor();assert.equal(await picker.locator('option').count(),27);
  for(const item of catalog){
   await picker.selectOption(item.id);
-  const overlay=page.locator('.nyx-user-profile-view .nyx-user-profile-avatar>.nyx-avatar-decoration');
-  await page.waitForFunction(id=>{const e=document.querySelector('.nyx-user-profile-view .nyx-user-profile-avatar>.nyx-avatar-decoration');return e&&getComputedStyle(e).backgroundImage.includes(id+'.png');},item.id);
+  const overlay=page.locator('.n7x-user-profile-view .n7x-user-profile-avatar>.n7x-avatar-decoration');
+  await page.waitForFunction(id=>{const e=document.querySelector('.n7x-user-profile-view .n7x-user-profile-avatar>.n7x-avatar-decoration');return e&&getComputedStyle(e).backgroundImage.includes(id+'.png');},item.id);
   assert.equal(await overlay.evaluate(e=>getComputedStyle(e).display),'block');
   assert.equal(await overlay.evaluate(e=>getComputedStyle(e).pointerEvents),'none');
  }
@@ -47,29 +47,29 @@ try{
  for(const item of effects){
   assert.equal(await effectPicker.locator(`option[value="${item.id}"]`).textContent(),item.label);
   await effectPicker.selectOption(item.id);
-  await page.waitForFunction(path=>{const e=document.querySelector('.nyx-user-profile-view .nyx-user-profile-effect');return e&&getComputedStyle(e).backgroundImage.includes(path)&&getComputedStyle(e).pointerEvents==='none';},item.loopPath||item.path);
+  await page.waitForFunction(path=>{const e=document.querySelector('.n7x-user-profile-view .n7x-user-profile-effect');return e&&getComputedStyle(e).backgroundImage.includes(path)&&getComputedStyle(e).pointerEvents==='none';},item.loopPath||item.path);
  }
  await effectPicker.selectOption('fx-cosmic-vortex');
  await picker.selectOption('vortex-crown');await page.waitForTimeout(400);
  await page.screenshot({path:'.codex-artifacts/profile-effects-desktop.png'});
  await picker.selectOption('neon-vortex');await page.screenshot({path:'.codex-artifacts/decorations-desktop.png'});
- await page.emulateMedia({reducedMotion:'reduce'});assert.match(await page.locator('.nyx-user-profile-view .nyx-user-profile-avatar>.nyx-avatar-decoration').evaluate(e=>getComputedStyle(e).backgroundImage),/neon-vortex-still.png/);
- assert.match(await page.locator('.nyx-user-profile-view .nyx-user-profile-effect').evaluate(e=>getComputedStyle(e).backgroundImage),/fx-cosmic-vortex-still.png/);
+ await page.emulateMedia({reducedMotion:'reduce'});assert.match(await page.locator('.n7x-user-profile-view .n7x-user-profile-avatar>.n7x-avatar-decoration').evaluate(e=>getComputedStyle(e).backgroundImage),/neon-vortex-still.png/);
+ assert.match(await page.locator('.n7x-user-profile-view .n7x-user-profile-effect').evaluate(e=>getComputedStyle(e).backgroundImage),/fx-cosmic-vortex-still.png/);
  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
- assert(await page.evaluate(()=>{const form=document.querySelector('.nyx-user-profile-form').getBoundingClientRect(),preview=document.querySelector('.nyx-discord-preview-pane').getBoundingClientRect();return preview.top>=form.bottom-1;}),'Mobile preview must not overlap editor fields');
+ assert(await page.evaluate(()=>{const form=document.querySelector('.n7x-user-profile-form').getBoundingClientRect(),preview=document.querySelector('.n7x-discord-preview-pane').getBoundingClientRect();return preview.top>=form.bottom-1;}),'Mobile preview must not overlap editor fields');
  await page.screenshot({path:'.codex-artifacts/decorations-mobile.png'});
  await page.getByRole('button',{name:'Save Changes',exact:true}).click();await page.waitForTimeout(500);assert.equal(saved?.avatarDecoration||saved?.profile?.avatarDecoration,'neon-vortex');
- await page.reload();await page.waitForFunction(()=>!document.body.classList.contains('nyx-loading-active')&&!document.body.classList.contains('nyx-startup-prep'));await page.setViewportSize({width:1440,height:960});await page.locator('#nyxAccountButton[title="Account menu"]').click();await page.locator('[data-nyx-account-menu-action="edit"]').click();assert.equal(await picker.inputValue(),'neon-vortex');
+ await page.reload();await page.waitForFunction(()=>!document.body.classList.contains('n7x-loading-active')&&!document.body.classList.contains('n7x-startup-prep'));await page.setViewportSize({width:1440,height:960});await page.locator('#n7xAccountButton[title="Account menu"]').click();await page.locator('[data-n7x-account-menu-action="edit"]').click();assert.equal(await picker.inputValue(),'neon-vortex');
  assert.equal(await effectPicker.inputValue(),'fx-cosmic-vortex');
  await effectPicker.selectOption('fx-hyper-aura');dropEffectOnSave=true;
  await page.getByRole('button',{name:'Save Changes',exact:true}).click();
- await page.waitForFunction(()=>document.querySelector('.nyx-founder-editor-error')?.textContent.includes('decoration selection was not stored'));
+ await page.waitForFunction(()=>document.querySelector('.n7x-founder-editor-error')?.textContent.includes('decoration selection was not stored'));
  assert(await effectPicker.isVisible());dropEffectOnSave=false;dropEffectOnReload=true;
  await page.getByRole('button',{name:'Save Changes',exact:true}).click();
- await page.waitForFunction(()=>document.querySelector('.nyx-founder-editor-error')?.textContent.includes('decoration selection could not be verified'));
+ await page.waitForFunction(()=>document.querySelector('.n7x-founder-editor-error')?.textContent.includes('decoration selection could not be verified'));
  assert(await effectPicker.isVisible());dropEffectOnReload=false;
- await page.getByRole('button',{name:'Save Changes',exact:true}).click();await page.locator('.nyx-profile-drawer').waitFor({state:'detached'});
- await page.locator('#nyxAccountButton[title="Account menu"]').click();await page.locator('[data-nyx-account-menu-action="edit"]').click();assert.equal(await effectPicker.inputValue(),'fx-hyper-aura');
+ await page.getByRole('button',{name:'Save Changes',exact:true}).click();await page.locator('.n7x-profile-drawer').waitFor({state:'detached'});
+ await page.locator('#n7xAccountButton[title="Account menu"]').click();await page.locator('[data-n7x-account-menu-action="edit"]').click();assert.equal(await effectPicker.inputValue(),'fx-hyper-aura');
  await page.getByRole('navigation',{name:'Profile sections'}).getByRole('button',{name:'Decorations',exact:true}).click();await page.waitForTimeout(400);await page.screenshot({path:'.codex-artifacts/profile-editor-decorations.png'});
  assert.deepEqual(errors,[]);
  console.log('PASS 25 avatar decorations and 54 profile effects: animation/stills, server allowlists, labels, previews, save/reload, reduced motion and mobile layout');

@@ -98,14 +98,14 @@ export function compatibilityPlugin(getPolicy = () => ({})) {
             if (
               nodes.some(
                 (n) =>
-                  n?.attribs?.["data-nyx-runtime-guard"] === "minimal-guard",
+                  n?.attribs?.["data-n7x-runtime-guard"] === "minimal-guard",
               )
             )
               return;
             const script = {
               type: "script",
               name: "script",
-              attribs: { "data-nyx-runtime-guard": "minimal-guard" },
+              attribs: { "data-n7x-runtime-guard": "minimal-guard" },
               children: [],
               parent: target,
               prev: null,

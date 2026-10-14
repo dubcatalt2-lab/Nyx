@@ -1,5 +1,5 @@
 body.theme-fresh{
-  --nyx-purple-edge:rgba(255,255,255,.84)!important;
+  --n7x-purple-edge:rgba(255,255,255,.84)!important;
   color:#0f8fa3;
 }
 body.browser-shell.theme-fresh .browser-window.maximized.browser-blank{
@@ -8,9 +8,6 @@ body.browser-shell.theme-fresh .browser-window.maximized.browser-blank{
 body.theme-fresh select option{
   color:#133034!important;
   background:#ffffff!important;
-}
-body.browser-shell.theme-fresh .weather-cloud-icon{
-  filter:none!important;
 }
 
 body.theme-fresh{
@@ -68,19 +65,6 @@ body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn{
   border-color:rgba(47,128,237,.58)!important;
   color:#1d64c8!important;
   -webkit-text-fill-color:#1d64c8!important;
-}
-
-body.browser-shell.theme-fresh .weather-cloud-icon,
-body.browser-shell.theme-fresh .browser-mode-weather > .weather-cloud-icon,
-body.browser-shell.theme-fresh #weatherRestore > .weather-cloud-icon{
-  display:block!important;
-  opacity:1!important;
-  visibility:visible!important;
-  background:url("../assets/icons/cloud-weather.png") center/contain no-repeat!important;
-  filter:brightness(0) invert(1)!important;
-}
-body.browser-shell.theme-fresh .browser-mode-weather{
-  overflow:hidden!important;
 }
 body.browser-shell.theme-fresh .home-shortcut,
 body.browser-shell.theme-fresh .home-shortcut-add{
@@ -162,13 +146,6 @@ body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn{
   background:transparent!important;
   background-image:none!important;
 }
-body.browser-shell.theme-fresh .browser-mode-weather > .weather-cloud-icon,
-body.browser-shell.theme-fresh #weatherRestore > .weather-cloud-icon{
-  background:#0b7186!important;
-  -webkit-mask:url("../assets/icons/cloud-weather.png") center/contain no-repeat!important;
-  mask:url("../assets/icons/cloud-weather.png") center/contain no-repeat!important;
-  filter:none!important;
-}
 
 body.browser-shell.theme-fresh .browser-mode-menu{
   overflow:hidden!important;
@@ -208,28 +185,6 @@ body.browser-shell.theme-fresh .home-shortcut-menu button{
 }
 body.browser-shell.theme-fresh .home-shortcut-menu button:hover{
   background:rgba(255,255,255,.46)!important;
-}
-
-body.browser-shell.theme-fresh .browser-mode-weather{
-  position:relative!important;
-  display:grid!important;
-  place-items:center!important;
-  overflow:hidden!important;
-}
-body.browser-shell.theme-fresh .browser-mode-weather > .weather-cloud-icon,
-body.browser-shell.theme-fresh #weatherRestore > .weather-cloud-icon{
-  position:absolute!important;
-  left:50%!important;
-  top:50%!important;
-  width:23px!important;
-  height:23px!important;
-  margin:0!important;
-  transform:translate(-50%,-50%)!important;
-  background:#0b7186!important;
-  -webkit-mask:url("../assets/icons/cloud-weather.png") center/contain no-repeat!important;
-  mask:url("../assets/icons/cloud-weather.png") center/contain no-repeat!important;
-  filter:none!important;
-  z-index:5!important;
 }
 body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn{
   color:#0b7186!important;
@@ -334,13 +289,6 @@ body.theme-fresh{
   --theme-strong:var(--fresh-electric)!important;
   --accent:var(--fresh-electric)!important;
 }
-body.browser-shell.theme-fresh .browser-mode-weather > .weather-cloud-icon,
-  body.browser-shell.theme-fresh #weatherRestore > .weather-cloud-icon{
-  background:var(--fresh-electric)!important;
-  color:var(--fresh-electric)!important;
-  -webkit-text-fill-color:var(--fresh-electric)!important;
-  box-shadow:0 0 10px rgba(0,245,212,.38)!important;
-}
 body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn{
   color:var(--fresh-electric)!important;
   -webkit-text-fill-color:var(--fresh-electric)!important;
@@ -393,58 +341,6 @@ body.browser-shell.theme-fresh .home-shortcut .home-shortcut-menu-btn::before{
   border:0!important;
   box-shadow:0 -6.5px 0 var(--fresh-electric),0 6.5px 0 var(--fresh-electric),0 0 10px rgba(0,245,212,.36)!important;
   transform:translate(-50%,-50%)!important;
-}
-
-body.browser-shell .browser-mode-weather,
-body.browser-shell #weatherRestore{
-  position:relative!important;
-  display:grid!important;
-  place-items:center!important;
-  color:#f8fafc!important;
-  -webkit-text-fill-color:#f8fafc!important;
-  overflow:visible!important;
-}
-body.browser-shell.theme-ruby .browser-mode-weather,
-body.browser-shell.theme-ruby #weatherRestore,
-body.browser-shell.theme-emerald .browser-mode-weather,
-body.browser-shell.theme-emerald #weatherRestore,
-body.browser-shell.theme-sakura .browser-mode-weather,
-body.browser-shell.theme-sakura #weatherRestore{
-  color:var(--theme-border,#f8fafc)!important;
-  -webkit-text-fill-color:var(--theme-border,#f8fafc)!important;
-}
-body.browser-shell.theme-fresh .browser-mode-weather,
-body.browser-shell.theme-fresh #weatherRestore{
-  color:var(--fresh-electric,#00f5d4)!important;
-  -webkit-text-fill-color:var(--fresh-electric,#00f5d4)!important;
-}
-body.browser-shell .weather-cloud-icon,
-body.browser-shell .browser-mode-weather > .weather-cloud-icon,
-body.browser-shell #weatherRestore > .weather-cloud-icon{
-  position:absolute!important;
-  left:50%!important;
-  top:50%!important;
-  display:block!important;
-  width:22px!important;
-  height:22px!important;
-  min-width:22px!important;
-  min-height:22px!important;
-  margin:0!important;
-  opacity:1!important;
-  visibility:visible!important;
-  pointer-events:none!important;
-  background:currentColor!important;
-  background-image:none!important;
-  -webkit-mask:url("../assets/icons/cloud-weather.png") center/contain no-repeat!important;
-  mask:url("../assets/icons/cloud-weather.png") center/contain no-repeat!important;
-  filter:none!important;
-  transform:translate(-50%,-50%)!important;
-  z-index:5!important;
-}
-body.browser-shell .weather-cloud-icon::before,
-body.browser-shell .weather-cloud-icon::after{
-  content:none!important;
-  display:none!important;
 }
 
 body.browser-shell.theme-fresh .browser-mode-menu button,
@@ -538,76 +434,24 @@ html body.browser-shell.theme-fresh .shortcut-real-dots::before{
   font:900 24px/1 Arial,Helvetica,sans-serif!important;
   text-shadow:0 0 10px rgba(0,245,212,.45),0 0 22px rgba(0,245,212,.24)!important;
 }
-
-html body.browser-shell .browser-mode-weather,
-html body.browser-shell #weatherRestore{
-  position:relative!important;
-  display:grid!important;
-  place-items:center!important;
-  overflow:hidden!important;
-  color:var(--theme-border,#f8fafc)!important;
-  -webkit-text-fill-color:var(--theme-border,#f8fafc)!important;
-}
-html body.browser-shell.theme-fresh .browser-mode-weather,
-html body.browser-shell.theme-fresh #weatherRestore{
-  color:var(--fresh-electric,#00f5d4)!important;
-  -webkit-text-fill-color:var(--fresh-electric,#00f5d4)!important;
-}
-html body.browser-shell .browser-mode-weather::before,
-html body.browser-shell .browser-mode-weather::after,
-html body.browser-shell #weatherRestore::before,
-html body.browser-shell #weatherRestore::after{
-  content:none!important;
-  display:none!important;
-}
-html body.browser-shell .browser-mode-weather > .weather-cloud-icon,
-html body.browser-shell #weatherRestore > .weather-cloud-icon{
-  position:absolute!important;
-  inset:50% auto auto 50%!important;
-  display:block!important;
-  width:23px!important;
-  height:23px!important;
-  min-width:23px!important;
-  min-height:23px!important;
-  opacity:1!important;
-  visibility:visible!important;
-  background:currentColor!important;
-  background-color:currentColor!important;
-  background-image:none!important;
-  -webkit-mask:url("../assets/icons/cloud-weather.png") center/contain no-repeat!important;
-  mask:url("../assets/icons/cloud-weather.png") center/contain no-repeat!important;
-  transform:translate(-50%,-50%)!important;
-  z-index:4!important;
-  pointer-events:none!important;
-}
 html body.browser-shell{
-  --nyx-shortcut-border:rgba(190,148,255,.72);
+  --n7x-shortcut-border:rgba(190,148,255,.72);
 }
 html body.browser-shell.theme-sakura{
-  --nyx-shortcut-border:rgba(249,168,212,.82);
+  --n7x-shortcut-border:rgba(249,168,212,.82);
 }
 html body.browser-shell.theme-emerald{
-  --nyx-shortcut-border:rgba(52,211,153,.82);
+  --n7x-shortcut-border:rgba(52,211,153,.82);
 }
 html body.browser-shell.theme-ruby{
-  --nyx-shortcut-border:rgba(248,113,113,.82);
+  --n7x-shortcut-border:rgba(248,113,113,.82);
 }
 html body.browser-shell.theme-fresh{
-  --nyx-shortcut-border:rgba(0,191,174,.74);
-}
-html body.browser-shell .browser-mode-weather,
-html body.browser-shell #weatherRestore{
-  color:var(--nyx-shell-icon)!important;
-  -webkit-text-fill-color:var(--nyx-shell-icon)!important;
-}
-html body.browser-shell .browser-mode-weather > .weather-cloud-icon,
-html body.browser-shell #weatherRestore > .weather-cloud-icon{
-  background:var(--nyx-shell-icon)!important;
-  background-color:var(--nyx-shell-icon)!important;
+  --n7x-shortcut-border:rgba(0,191,174,.74);
 }
 
 html body.browser-shell.theme-fresh{
-  --nyx-shortcut-border:rgba(0,245,212,.74);
+  --n7x-shortcut-border:rgba(0,245,212,.74);
 }
 html body.browser-shell.theme-fresh .browser-shell-settings-close::before{
   color:var(--fresh-electric,#00f5d4)!important;

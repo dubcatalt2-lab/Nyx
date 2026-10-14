@@ -36,7 +36,7 @@ void main(){vec2 coords=gl_FragCoord.xy/uResolution.xy;coords=coords*2.0-1.0;coo
 
   function compile(gl,type,source){const shader=gl.createShader(type);gl.shaderSource(shader,source);gl.compileShader(shader);if(!gl.getShaderParameter(shader,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(shader)||'Shader compile failed');return shader;}
   function themeColors(){
-    const theme=document.documentElement.dataset.nyxTheme||'default';
+    const theme=document.documentElement.dataset.n7xTheme||'default';
     if(theme==='ruby')return [[1,.58,.66],[1,.78,.82],[.92,.28,.40]];
     if(theme==='emerald'||theme==='fresh')return [[.58,1,.78],[.74,1,.86],[.21,.76,.51]];
     if(theme==='sakura')return [[1,.68,.84],[1,.85,.93],[.91,.39,.66]];
@@ -58,10 +58,10 @@ void main(){vec2 coords=gl_FragCoord.xy/uResolution.xy;coords=coords*2.0-1.0;coo
     const tick=time=>{frame=0;if(!running)return;draw(time);frame=requestAnimationFrame(tick);};
     return {draw,setPointer,resetPointer,update(nextOptions){activeOptions={...defaults,...nextOptions};},start(){if(running)return;running=true;frame=requestAnimationFrame(tick);},stop(){running=false;if(frame)cancelAnimationFrame(frame);frame=0;},dispose(loseContext=true){this.stop();gl.deleteBuffer(buffer);gl.deleteProgram(program);if(loseContext)gl.getExtension('WEBGL_lose_context')?.loseContext();}};
   }
-  function shouldShow(){const external=document.body?.classList.contains('browser-content-active')&&!document.body?.classList.contains('nyx-built-in-content-active');return document.documentElement.dataset.nyxBeamWallpaper==='lineWaves'&&!document.body?.classList.contains('custom-bg-active')&&!document.body?.classList.contains('three-d-backgrounds')&&!external;}
+  function shouldShow(){const external=document.body?.classList.contains('browser-content-active')&&!document.body?.classList.contains('n7x-built-in-content-active');return document.documentElement.dataset.n7xBeamWallpaper==='lineWaves'&&!document.body?.classList.contains('custom-bg-active')&&!document.body?.classList.contains('three-d-backgrounds')&&!external;}
   function shouldAnimate(){return shouldShow()&&!document.hidden&&!reducedMotion.matches&&!document.body?.classList.contains('lag-reducer');}
   function syncVisibility(){
-    canvas=document.getElementById('nyxLineWavesBg')||canvas;if(!canvas)return;
+    canvas=document.getElementById('n7xLineWavesBg')||canvas;if(!canvas)return;
     const show=shouldShow();canvas.hidden=!show;if(!show){renderer?.stop();return;}
     try{renderer||=(makeRenderer(canvas));renderer.draw(performance.now());if(shouldAnimate())renderer.start();else renderer.stop();canvas.dataset.renderer='react-bits-line-waves';}catch(error){canvas.hidden=true;console.warn("N7X Line Waves renderer unavailable",error);}
   }
@@ -71,8 +71,8 @@ void main(){vec2 coords=gl_FragCoord.xy/uResolution.xy;coords=coords*2.0-1.0;coo
     try{const preview=makeRenderer(target,true,{...options,colorVariant});preview.draw(860);preview.dispose(false);}catch(error){console.warn("N7X Line Waves preview unavailable",error);const context=target.getContext('2d');if(context){context.fillStyle='#080c13';context.fillRect(0,0,target.width,target.height);}}
   }
   function init(){
-    canvas=document.getElementById('nyxLineWavesBg');if(!canvas)return;
-    new MutationObserver(syncVisibility).observe(document.documentElement,{attributes:true,attributeFilter:['data-nyx-beam-wallpaper','data-nyx-theme']});
+    canvas=document.getElementById('n7xLineWavesBg');if(!canvas)return;
+    new MutationObserver(syncVisibility).observe(document.documentElement,{attributes:true,attributeFilter:['data-n7x-beam-wallpaper','data-n7x-theme']});
     new MutationObserver(syncVisibility).observe(document.body,{attributes:true,attributeFilter:['class']});
     addEventListener('resize',()=>{if(shouldShow()){renderer?.draw(performance.now());}},{passive:true});
 

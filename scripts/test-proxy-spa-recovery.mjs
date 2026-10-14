@@ -31,7 +31,7 @@ assert.equal(decode(other),other,'Only decode local proxy paths');
 const productionDecode=vm.runInNewContext(rewriteRuntimeNames(sourceDecoder)+';browserShellSourceUrl;',{
   URL,window:{},location:{origin:'https://nyx.test',href:'https://nyx.test/'}
 });
-assert.equal(productionDecode('https://nyx.test/~/study/session/frame/'+encodeURIComponent(channel)),channel,'Production paths must decode before navigation rejection checks');
+assert.equal(productionDecode('https://nyx.test/4otig/session/frame/'+encodeURIComponent(channel)),channel,'Production paths must decode before navigation rejection checks');
 
 function fixture(){
   const url='https://discord.com/app', tasks=[], calls=[], listeners=new Map();

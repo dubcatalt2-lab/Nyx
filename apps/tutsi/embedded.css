@@ -31,7 +31,7 @@ html[data-tutsi-app] body {
   font-family: "Indie Flower", cursive !important;
   background-image: none !important;
 }
-html[data-tutsi-app] body *:not(.nyx-styled-display-name):not(.nyx-styled-display-name *),
+html[data-tutsi-app] body *:not(.n7x-styled-display-name):not(.n7x-styled-display-name *),
 html[data-tutsi-app] button,
 html[data-tutsi-app] input,
 html[data-tutsi-app] select,
@@ -359,21 +359,21 @@ html[data-tutsi-app="music"] header {
   padding: 16px 30px;
   min-height: 92px;
 }
-html[data-tutsi-app="music"] .nyxify-brand strong {
+html[data-tutsi-app="music"] .n7xify-brand strong {
   font-size: 22px;
   line-height: 1.8;
   letter-spacing: 0;
 }
-html[data-tutsi-app="music"] .nyxify-brand small {
+html[data-tutsi-app="music"] .n7xify-brand small {
   font-size: 9px;
   letter-spacing: 0;
 }
-html[data-tutsi-app="music"] .nyxify-brand img {
+html[data-tutsi-app="music"] .n7xify-brand img {
   width: 40px;
   height: 40px;
   object-fit: contain;
 }
-html[data-tutsi-app="music"] .nyxify-mode {
+html[data-tutsi-app="music"] .n7xify-mode {
   display: none;
 }
 html[data-tutsi-app="music"] .searchbox {
@@ -598,14 +598,14 @@ html[data-tutsi-app] :is(button, a, .game-card, .video-card, .card):hover {
 }
 
 html[data-tutsi-app="chat"] body:has(.chat-app) {
-  --nyx-app-base: var(--bg);
-  --nyx-app-shell: var(--surface);
-  --nyx-app-panel: var(--surface);
-  --nyx-app-panel-strong: var(--surface-hover);
-  --nyx-app-field: var(--field);
-  --nyx-app-line: var(--border);
-  --nyx-app-text: var(--text);
-  --nyx-app-muted: var(--muted);
+  --n7x-app-base: var(--bg);
+  --n7x-app-shell: var(--surface);
+  --n7x-app-panel: var(--surface);
+  --n7x-app-panel-strong: var(--surface-hover);
+  --n7x-app-field: var(--field);
+  --n7x-app-line: var(--border);
+  --n7x-app-text: var(--text);
+  --n7x-app-muted: var(--muted);
   --chat-bg: var(--bg);
   --chat-panel: var(--surface);
   --chat-panel-2: var(--surface);
@@ -642,15 +642,15 @@ html[data-tutsi-app="chat"] .chat-app .message-text a {
 }
 
 html[data-tutsi-app] body {
-  --nyx-app-canvas: var(--bg);
-  --nyx-app-base: var(--bg);
-  --nyx-app-shell: var(--surface);
-  --nyx-app-panel: var(--surface);
-  --nyx-app-field: var(--field);
-  --nyx-app-panel-strong: var(--surface-hover);
-  --nyx-app-text: var(--text);
-  --nyx-app-muted: var(--muted);
-  --nyx-app-line: var(--border);
+  --n7x-app-canvas: var(--bg);
+  --n7x-app-base: var(--bg);
+  --n7x-app-shell: var(--surface);
+  --n7x-app-panel: var(--surface);
+  --n7x-app-field: var(--field);
+  --n7x-app-panel-strong: var(--surface-hover);
+  --n7x-app-text: var(--text);
+  --n7x-app-muted: var(--muted);
+  --n7x-app-line: var(--border);
   --sidebar: var(--surface);
   --card: var(--surface);
   --card-soft: var(--field);

@@ -36,12 +36,12 @@ export async function scrambleProxyCode(source,{module=false}={}){
   const prefix=/#[\p{ID_Start}$_]/u.test(source)?'_':'\u03bb';
   const names=new Map();
   const result=await minify(source,{
-    module,compress:false,
+    module,compress:{passes:4,unsafe:false,keep_fargs:true},
     // Public properties, exports, function/class names, eval bindings and WASM
     // interfaces are contracts, not safe targets for arbitrary replacement.
     keep_fnames:true,keep_classnames:true,
     mangle:{toplevel:module,eval:false,properties:false,nth_identifier:{get(n){if(!names.has(n))names.set(n,prefix+randomBytes(6).toString('hex'));return names.get(n);}}},
-    format:{comments:/@license|@preserve|^!/,ascii_only:false,beautify:true,indent_level:2}
+    format:{comments:/@license|@preserve|^!/,ascii_only:false,beautify:false,indent_level:2}
   });
   if(!result.code)throw Error('Proxy transformation produced empty code');
   return {code:result.code+'\n',renamed:names.size};

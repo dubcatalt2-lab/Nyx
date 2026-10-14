@@ -65,7 +65,7 @@ const GAME_LIBRARIES = Object.freeze([
   { id: 'lumin', label: 'LuminSDK', shortLabel: 'Lumin', description: 'Games delivered through LuminSDK' },
   { id: 'gn', label: 'GN Math', shortLabel: 'GN', description: 'The GN Math collection' },
   { id: 'gms', label: 'GMS', shortLabel: 'GMS', description: 'The GMS collection' },
-  { id: 'local', label: dropGames ? 'Archive' : 'Nyx Archive', shortLabel: dropGames ? 'Archive' : 'Nyx', description: dropGames ? 'The Drop game archive' : 'Games stored with Nyx' },
+  { id: 'local', label: dropGames ? 'Archive' : "N7X Archive", shortLabel: dropGames ? 'Archive' : "N7X", description: dropGames ? 'The Drop game archive' : "Games stored with N7X" },
   { id: 'catclass', label: 'CatClass', shortLabel: 'CatClass', description: 'Community game sources' },
   { id: 'duckmath', label: 'DuckMath', shortLabel: 'DuckMath', description: 'Extra fallback sources' },
   { id: 'misc', label: 'Miscellaneous', shortLabel: 'Misc', description: 'Games without cover art' }
@@ -88,9 +88,9 @@ let arcadeFeatured;
 let arcadeRandom;
 let arcadeFeaturedSignature = '';
 if (nyxArcade) {
-  document.body.classList.add('nyx-arcade');
+  document.body.classList.add('n7x-arcade');
   const header = document.querySelector('.cove-header');
-  header.querySelector('.eyebrow').textContent = 'NYX';
+  header.querySelector('.eyebrow').textContent = "N7X";
   header.querySelector('h1').textContent = 'ARCADE';
   const masthead = document.createElement('div');
   masthead.className = 'arcade-masthead';
@@ -1057,7 +1057,7 @@ function gameSources(game = state.activeGame) {
 
 function gameProviderLabel(source, index) {
   const labels = {
-    local: dropGames ? 'Archive' : 'Nyx Archive',
+    local: dropGames ? 'Archive' : "N7X Archive",
     gn: 'GN Math',
     gms: 'GMS',
     lumin: 'LuminSDK',
@@ -1383,6 +1383,6 @@ loadLibrary().catch(error => {
   elements.progress.classList.add('done');
   elements.count.textContent = 'Could not load the game library';
   elements.empty.querySelector('h2').textContent = 'Library unavailable';
-  elements.empty.querySelector('p').textContent = dropGames ? 'Reload Drop and try again.' : 'Reload Nyx and try again.';
+  elements.empty.querySelector('p').textContent = dropGames ? 'Reload Drop and try again.' : "Reload N7X and try again.";
   elements.empty.hidden = false;
 });

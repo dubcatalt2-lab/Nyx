@@ -19,4 +19,4 @@ async function update(dir){
 }
 await update(root);
 await writeFile(path.join(root,'hosting.json'),JSON.stringify({base:target,configured:true}));
-console.log('Ready for '+target+'. Upload this entire folder. Open Nyx.svg on jsDelivr or Nyx.html on a normal HTTPS host.');
+console.log('Ready for '+target+". Upload this entire folder. Open N7X.svg on jsDelivr or N7X.html on a normal HTTPS host.");

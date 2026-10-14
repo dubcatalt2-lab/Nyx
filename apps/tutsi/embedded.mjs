@@ -19,13 +19,13 @@ function aiLabels(scope) {
 export function decorateEmbedded(doc, app) {
   doc.documentElement.dataset.tutsiApp = app;
   // Rebrand application chrome only, never conversations, profile fields or media titles.
-  const brandSelectors = 'header,.brand,.brand-copy,.ai-brand-copy,.ai-sidebar-brand,.ai-disclaimer,.chat-brand,.catalog-head,.hero,.utility-intro,.nyx-user-profile-tabs,.nyx-profile-rail-title,.nyx-user-profile-section-title,.nyx-founder-about strong,.nyx-user-profile-meta-label,.nyx-profile-directory-empty,.nyx-founder-editor-error,.nyx-profile-member-since,.nyx-user-profile-section strong,#profile-status';
+  const brandSelectors = 'header,.brand,.brand-copy,.ai-brand-copy,.ai-sidebar-brand,.ai-disclaimer,.chat-brand,.catalog-head,.hero,.utility-intro,.nyx-user-profile-tabs,.nyx-profile-rail-title,.nyx-user-profile-section-title,.n7x-founder-about strong,.nyx-user-profile-meta-label,.n7x-profile-directory-empty,.n7x-founder-editor-error,.nyx-profile-member-since,.nyx-user-profile-section strong,#profile-status';
   const rebrand = () => {
     for (const root of doc.querySelectorAll(brandSelectors)) {
       const walker = doc.createTreeWalker(root, 4);
       while (walker.nextNode()) {
         const node = walker.currentNode;
-        if (node.parentElement.closest('input,textarea,script,style,[contenteditable],.ai-message,.chat-message,.nyx-founder-bio,.nyx-user-profile-heading')) continue;
+        if (node.parentElement.closest('input,textarea,script,style,[contenteditable],.ai-message,.chat-message,.n7x-founder-bio,.n7x-user-profile-heading')) continue;
         const value = node.nodeValue.replace(/\bNyxTube\b/gi,'YouTube').replace(/\bNyxify\b/gi,'Music').replace(/\bNyx\b/gi,'Tutsi');
         if (value !== node.nodeValue) node.nodeValue = value;
       }
@@ -149,13 +149,13 @@ export function decorateEmbedded(doc, app) {
     text(doc, ".catalog-head p", "Videos and Shorts");
   }
   if (app === "music") {
-    text(doc, ".nyxify-brand strong", "Music");
-    text(doc, ".nyxify-brand small", "Tutsi Math");
-    const brand = doc.querySelector(".nyxify-brand");
+    text(doc, ".n7xify-brand strong", "Music");
+    text(doc, ".n7xify-brand small", "Tutsi Math");
+    const brand = doc.querySelector(".n7xify-brand");
     brand?.setAttribute("aria-label", "Tutsi Math Music");
     text(doc, "#emptyTitle", "Search music");
     text(doc, "#emptySub", "Songs, artists, and albums");
-    if (doc.querySelector("#nowPlayingContext")?.textContent === "Nyxify")
+    if (doc.querySelector("#nowPlayingContext")?.textContent === "N7X1FY")
       text(doc, "#nowPlayingContext", "Music");
   }
   if (app === "games") {

@@ -17,13 +17,13 @@ try{
  });
  await page.route('**/*',r=>new URL(r.request().url()).origin==='http://localhost:8310'?r.continue():r.abort());
  await page.goto('http://localhost:8310');
- await page.waitForSelector('[data-nyx-dock-item="settings"]');
+ await page.waitForSelector('[data-n7x-dock-item="settings"]');
  // External services are blocked in this local UI test; release the loading input lock.
- await page.evaluate(()=>{document.body.classList.remove('nyx-loading-active');document.querySelectorAll('[inert]').forEach(e=>e.removeAttribute('inert'));document.querySelector('#nyxStudyHubStartup')?.remove()});
+ await page.evaluate(()=>{document.body.classList.remove('n7x-loading-active');document.querySelectorAll('[inert]').forEach(e=>e.removeAttribute('inert'));document.querySelector('#n7xStudyHubStartup')?.remove()});
  assert(await page.evaluate(()=>document.body.classList.contains('browser-shell')));
  assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.browserShellMode')),null);
  assert.equal(await page.locator('.desktop-shortcuts,.desktop-search,.desktop-app,.dock').count(),0);
- await page.locator('[data-nyx-dock-item="settings"]').click();
+ await page.locator('[data-n7x-dock-item="settings"]').click();
  await page.locator('.browser-shell-settings-overlay').waitFor();
  assert.equal(await page.locator('[data-browser-shell-toggle],[data-switch="nyx.browserShellMode"]').count(),0);
  assert(!(await page.locator('.browser-shell-settings-overlay').innerText()).includes('Windows'));
@@ -38,8 +38,8 @@ try{
  await page.setViewportSize({width:1280,height:900});
  await page.keyboard.press('Escape');
  await page.locator('.browser-shell-settings-overlay').waitFor({state:'hidden'});
- await page.locator('[data-nyx-dock-item="partners"]').click();
- await page.waitForFunction(()=>[...document.querySelectorAll('iframe')].some(f=>{try{return f.contentDocument?.querySelectorAll('[data-nyx-partner-invite]').length===11}catch{return false}}));
+ await page.locator('[data-n7x-dock-item="partners"]').click();
+ await page.waitForFunction(()=>[...document.querySelectorAll('iframe')].some(f=>{try{return f.contentDocument?.querySelectorAll('[data-n7x-partner-invite]').length===11}catch{return false}}));
  assert(await page.evaluate(()=>document.body.classList.contains('browser-shell')));
  assert.deepEqual(errors,[]);
  console.log('PASS: saved Windows mode migrates; desktop controls absent; Settings/Credits/Proxy, Partners navigation, responsive layout and no page errors.');

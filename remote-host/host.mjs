@@ -6,7 +6,7 @@ import {fileURLToPath} from 'node:url';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {createInterface} from 'node:readline';
 
-if(process.platform!=='win32'||typeof WebSocket==='undefined')throw Error('Nyx Remote needs Windows and Node.js 22 or 24.');
+if(process.platform!=='win32'||typeof WebSocket==='undefined')throw Error("N7X Remote needs Windows and Node.js 22 or 24.");
 const root=dirname(fileURLToPath(import.meta.url));
 const directory=join(process.env.LOCALAPPDATA,'NyxRemote'),configPath=join(directory,'device.dpapi');
 const origin=process.env.NYX_REMOTE_ORIGIN||'https://nyxlearning.org';
@@ -31,9 +31,9 @@ if(!config){
   await new Promise(resolve=>setTimeout(resolve,3000));const result=await request('/pair/poll',{poll:pair.poll});
   if(result.deviceId){config={origin,id:result.deviceId,credential};await save(config);break;}
  }
- if(!config)throw Error('Pairing expired. Run Start-Nyx-Remote.cmd again.');
+ if(!config)throw Error("Pairing expired. Run Start-N7X-Remote.cmd again.");
 }
-console.log('Nyx Remote is running. Use its tray menu to disconnect or exit.');
+console.log("N7X Remote is running. Use its tray menu to disconnect or exit.");
 const worker=spawn('powershell.exe',['-NoProfile','-STA','-ExecutionPolicy','Bypass','-File',join(root,'desktop.ps1')],{windowsHide:true,stdio:['pipe','pipe','pipe']});
 let socket=null,stopping=false,retry=null,workerReady=false;
 function command(value){if(!worker.stdin.destroyed)worker.stdin.write(JSON.stringify(value)+'\n');}
@@ -46,7 +46,7 @@ lines.on('line',line=>{
  if(line.startsWith('FRAME:')){if(socket.bufferedAmount<256000)socket.send(Buffer.from(line.slice(6),'base64'));}
  if(line.startsWith('STATUS:'))socket.send(JSON.stringify({type:'status',message:line.slice(7)}));
 });
-worker.stderr.on('data',()=>console.error('Desktop helper reported an error. Restart Nyx Remote.'));
+worker.stderr.on('data',()=>console.error("Desktop helper reported an error. Restart N7X Remote."));
 worker.on('error',stop);worker.on('exit',()=>{stopping=true;clearTimeout(retry);socket?.close();process.exit(0);});
 function connect(){
  if(stopping||!workerReady)return;

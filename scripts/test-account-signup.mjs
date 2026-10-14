@@ -71,9 +71,9 @@ try{
     }
     globalThis.__nyxMockSignOuts=0;
     const removeStartup=()=>{
-      document.querySelector('#nyxStudyHubStartup')?.remove();
-      document.documentElement.classList.remove('nyx-studyhub-starting');
-      document.body?.classList.remove('nyx-startup-prep','nyx-loading-active');
+      document.querySelector('#n7xStudyHubStartup')?.remove();
+      document.documentElement.classList.remove('n7x-studyhub-starting');
+      document.body?.classList.remove('n7x-startup-prep','n7x-loading-active');
     };
     document.addEventListener('DOMContentLoaded',()=>{
       removeStartup();
@@ -118,23 +118,23 @@ try{
   });
 
   await page.goto(origin+'/nyx',{waitUntil:'domcontentloaded'});
-  await page.waitForSelector('#nyxAccountButton.nyx-account-button-rich');
-  await page.waitForFunction(()=>!document.querySelector('.nyx-preflight,.nyx-tos-gate'));
+  await page.waitForSelector('#n7xAccountButton.n7x-account-button-rich');
+  await page.waitForFunction(()=>!document.querySelector('.n7x-preflight,.n7x-tos-gate'));
   for(const [width,email] of [[1280,'optional@example.com'],[390,'']]) {
     // Open at desktop size, then verify the same form at the target viewport.
     await page.setViewportSize({width:1280,height:850});
-    await page.locator('#nyxAccountButton').click();
-    await page.locator('[data-nyx-account-menu-action="switch"]').click();
-    await page.locator('[data-nyx-account-tab="register"]').click();
+    await page.locator('#n7xAccountButton').click();
+    await page.locator('[data-n7x-account-menu-action="switch"]').click();
+    await page.locator('[data-n7x-account-tab="register"]').click();
     await page.setViewportSize({width,height:850});
     assert.ok(cloudReads>0,'Unverified accounts must load cloud preferences');
-    assert.match(await page.locator('.nyx-account-footer').innerText(),/Email is optional/);
-    assert.equal(await page.locator('.nyx-account-overlay [name="email"]').getAttribute('required'),null);
-    await page.locator('.nyx-account-overlay [name="username"]').fill('signup-test');
-    await page.locator('.nyx-account-overlay [name="email"]').fill(email);
-    await page.locator('.nyx-account-overlay [name="password"]').fill('fixture-password-123');
-    await page.locator('.nyx-account-submit').click();
-    await page.waitForSelector('.nyx-account-overlay',{state:'detached'});
+    assert.match(await page.locator('.n7x-account-footer').innerText(),/Email is optional/);
+    assert.equal(await page.locator('.n7x-account-overlay [name="email"]').getAttribute('required'),null);
+    await page.locator('.n7x-account-overlay [name="username"]').fill('signup-test');
+    await page.locator('.n7x-account-overlay [name="email"]').fill(email);
+    await page.locator('.n7x-account-overlay [name="password"]').fill('fixture-password-123');
+    await page.locator('.n7x-account-submit').click();
+    await page.waitForSelector('.n7x-account-overlay',{state:'detached'});
     assert.equal(await page.locator('.nyx-email-verification-overlay').count(),0);
   }
   assert.equal(registrations,2);

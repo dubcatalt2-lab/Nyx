@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
 import express from 'express';
 import {chromium} from 'playwright';
 import {proxyAssetNames} from './build-proxy-assets.mjs';
 
+const builtAliases=JSON.parse(await readFile('dist/proxy-assets.json','utf8')).aliases;
 const app=express(),root=process.env.NYX_TEST_BUILT==='1'?'dist':'.';
 app.use((req,res,next)=>{res.set('Service-Worker-Allowed','/');next();});
+app.get('/healthz',(_req,res)=>res.json({ok:true}));
 app.use(express.static(root));app.use(express.static('dist'));
 const server=app.listen(0,'127.0.0.1');await new Promise(resolve=>server.once('listening',resolve));
 const base='http://127.0.0.1:'+server.address().port;
@@ -27,6 +30,7 @@ const browser=await chromium.launch({channel:'msedge',headless:true});
 try{for(const brand of (process.env.NYX_TEST_BRANDS||'nyx,tutsi,drop').split(',')){
  const context=await browser.newContext();
  await context.addInitScript(()=>{
+  if(location.protocol!=='http:' && location.protocol!=='https:')return;
   localStorage.setItem('tutsi.customize.seen','1');localStorage.setItem('tutsi.settings.v1',JSON.stringify({closePrevention:false,httpBridge:true}));
   localStorage.setItem('drop.setupComplete','1');localStorage.setItem('drop.settings',JSON.stringify({connection:'bridge',restore:false}));
   localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.releaseNotes.2026-09-26-nyx-1.3.6.7.seen','2026-09-26-nyx-1.3.6.7');localStorage.setItem('nyx.browserMode','scramjet');
@@ -36,9 +40,9 @@ try{for(const brand of (process.env.NYX_TEST_BRANDS||'nyx,tutsi,drop').split(','
  await context.route('**/api/tutsi-relay/receive',r=>r.fulfill({contentType:'application/octet-stream',body:Buffer.from([9,0,0,0,3,0,0,0,0,10,0,0,0])}));
  const paths=['/assets/transports/epoxy-scramjet.mjs','/assets/transports/libcurl-scramjet.mjs'];
  const loadedTransports=new Set();
- await context.route(url=>paths.some(p=>url.pathname===p||url.pathname===proxyAssetNames[p]),r=>{
+ await context.route(url=>paths.some(p=>url.pathname===p||url.pathname===proxyAssetNames[p]||url.pathname===builtAliases[p]),r=>{
   const pathname=new URL(r.request().url()).pathname;
-  loadedTransports.add(paths.find(p=>pathname===p||pathname===proxyAssetNames[p]));
+  loadedTransports.add(paths.find(p=>pathname===p||pathname===proxyAssetNames[p]||pathname===builtAliases[p]));
   return r.fulfill({contentType:'text/javascript',body:transport});
  });
  const page=await context.newPage(),errors=[];
@@ -52,6 +56,7 @@ try{for(const brand of (process.env.NYX_TEST_BRANDS||'nyx,tutsi,drop').split(','
  const frame=page.frameLocator(selector);
  try{
   await frame.locator('#b').waitFor({timeout:25000});
+  const dismiss=page.getByRole('button',{name:'Got it',exact:true});if(await dismiss.isVisible())await dismiss.click();
   assert.deepEqual([...loadedTransports],['/assets/transports/libcurl-scramjet.mjs'],brand+' must browse with libcurl by default');
   const instance=await frame.locator('body').getAttribute('data-instance');assert(instance);
   await frame.locator('#draft').fill('Keep this draft');

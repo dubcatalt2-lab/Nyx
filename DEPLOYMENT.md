@@ -230,7 +230,7 @@ Verify:
 - Owner Dashboard and a harmless administrative read;
 - Link Checker single check and authorized full scan controls;
 - Pirate Cove and a large Unity game;
-- Scramjet/Ultraviolet through embedded Wisp;
+- Scramjet through embedded Wisp;
 - smartwatch layout if that device matters; and
 - automatic HTTPS issuance and renewal in Caddy's service log.
 

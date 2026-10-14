@@ -30,7 +30,7 @@ SURGE (or another normal HTTPS host):
 JSDELIVR:
   node configure-host.js /gh/YOUR-USER/YOUR-REPO@main/static/
   Upload all this folder's files into static/ in that public GitHub repository.
-  Open https://cdn.jsdelivr.net/gh/YOUR-USER/YOUR-REPO@main/static/Nyx.svg
+  Open https://cdn.jsdelivr.net/gh/YOUR-USER/YOUR-REPO@main/static/N7X.svg
   Keep the whole repository below jsDelivr's default 150 MB package limit.
   Do not include the previous full ZIP or full game assets in that repository.
 

@@ -258,15 +258,15 @@ function styleApp(frame, gamesFrame = null) {
   } catch {}
 }
 function decorateApp(doc) {
-  for (const selector of [".movie-brand img", ".nyxify-brand img"]) {
+  for (const selector of [".movie-brand img", ".n7xify-brand img"]) {
     const image = doc.querySelector(selector);
     if (image) image.src = "/apps/tutsi/icon.png?v=2";
   }
   const movie = doc.querySelector(".movie-brand span");
   if (movie) movie.textContent = "Tutsi Movies";
-  const music = doc.querySelector(".nyxify-brand strong");
+  const music = doc.querySelector(".n7xify-brand strong");
   if (music) music.textContent = "Tutsi Music";
-  const subtitle = doc.querySelector(".nyxify-brand small");
+  const subtitle = doc.querySelector(".n7xify-brand small");
   if (subtitle) subtitle.textContent = "Music";
   const arcade = doc.querySelector(".cove-header .eyebrow");
   if (arcade) arcade.textContent = "Tutsi arcade";
@@ -1128,7 +1128,7 @@ addEventListener("message", async (event) => {
 const appIcons = {
   'link-checker':'checker','link-generator':'link','jsdelivr-publisher':'publisher',
   'api-keys':'key','code-studio':'code','youtube.com':'youtube',games:'games',
-  'nyx-chat':'chat',nyxify:'music','duck.ai':'sparkle','nyx-ai':'ai',
+  'nyx-chat':'chat',n7xify:'music','duck.ai':'sparkle','nyx-ai':'ai',
   'nyx-movies':'movies','fmhy.net':'movies','tiktok.com':'music','animex.one':'media',
   'cloud-gaming':'cloud'
 };
@@ -1149,7 +1149,7 @@ const fallbackApps = [
     "JSDelivr Publisher",
     appPaths.publisher,
   ],
-  ["nyx-api-keys", "api-keys", "API Keys", appPaths.api],
+  ["n7x-api-keys", "api-keys", "API Keys", appPaths.api],
   ["duck-ai", "duck.ai", "Duck A1", "https://duck.ai/"],
   [
     "more-movie-sites",
@@ -1175,10 +1175,10 @@ function renderApps(apps) {
     const name =
       {
         "nyx-ai": "A1",
-        nyxify: "Music",
+        n7xify: "Music",
         "nyx-chat": "Chat",
         "pirate-cove": "Games",
-        "nyx-api-keys": "API Keys",
+        "n7x-api-keys": "API Keys",
       }[app.id] || app.name.replace(/NyxTube/gi,"YouTube").replace(/Nyx/gi,"Tutsi");
     for (const host of [$("all-apps")]) {
       const button = document.createElement("button");

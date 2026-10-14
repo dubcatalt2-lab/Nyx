@@ -108,7 +108,7 @@ try {
     await page.waitForFunction(()=>document.querySelector('#browser-stage iframe:not([hidden])')?.contentDocument?.body?.innerText.includes('Example Domain'),{},{timeout:60000});
     await page.waitForTimeout(1000);assert(receives>before,'Bridge resumes after enabled reload');
     await page.goto(base+'/nyx');await page.waitForFunction(()=>typeof nyxLaunchGameFrame==='function');
-    await page.waitForFunction(()=>!document.querySelector('#nyxStudyHubStartup')&&!document.body.classList.contains('nyx-loading-active'));
+    await page.waitForFunction(()=>!document.querySelector('#n7xStudyHubStartup')&&!document.body.classList.contains('n7x-loading-active'));
     await page.locator('[data-browser-shell-search]').evaluate(form=>{form.querySelector('[data-browser-shell-url]').value='https://example.com/';form.requestSubmit();});
     await page.frameLocator('iframe.view.active').getByRole('heading',{name:'Example Domain'}).waitFor({timeout:60000});
     await page.locator('[data-browser-shell-settings]').first().evaluate(el=>el.click());

@@ -13,9 +13,9 @@ const server=createServer(async(req,res)=>{
  try{
   if(!['GET','HEAD'].includes(req.method)){res.writeHead(405);return res.end();}
   const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
-  if(pathname==='/'){res.writeHead(302,{Location:base+'Nyx.html'});return res.end();}
+  if(pathname==='/'){res.writeHead(302,{Location:base+'N7X.html'});return res.end();}
   if(!pathname.startsWith(base)){res.writeHead(404);return res.end('Not found');}
-  const file=resolve(root,pathname.slice(base.length)||'Nyx.html');
+  const file=resolve(root,pathname.slice(base.length)||'N7X.html');
   if(!file.startsWith(root+sep)){res.writeHead(403);return res.end('Not allowed');}
   const info=await stat(file);if(!info.isFile()){res.writeHead(404);return res.end('Not found');}
   res.writeHead(200,{'Content-Type':types[extname(file)]||'application/octet-stream','Content-Length':info.size,'Cache-Control':'no-store','Cross-Origin-Opener-Policy':'same-origin','Cross-Origin-Embedder-Policy':'require-corp','Service-Worker-Allowed':base});
@@ -25,6 +25,6 @@ const server=createServer(async(req,res)=>{
 });
 server.on('error',error=>{console.error(error.code==='EADDRINUSE'?'Port '+port+' is already in use. Close the other local server or run: node serve-mini.mjs --port=8766':error.message);process.exitCode=1;});
 server.listen(port,'127.0.0.1',()=>{
- const url='http://localhost:'+server.address().port+base+'Nyx.html';
- console.log('Open Nyx Mini: '+url+'\nKeep this window open. Press Ctrl+C to stop.');
+ const url='http://localhost:'+server.address().port+base+'N7X.html';
+ console.log("Open N7X Mini: "+url+'\nKeep this window open. Press Ctrl+C to stop.');
 });

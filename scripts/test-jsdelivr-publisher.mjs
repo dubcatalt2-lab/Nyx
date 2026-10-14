@@ -224,7 +224,7 @@ try {
   assert.equal(presetTree.tree.filter(entry => entry.type === 'tree' && entry.path === 'nyx-static').length, 1);
   assert.equal(presetTree.tree.filter(entry => entry.type === 'blob').length, 2);
   for (const entry of presetTree.tree.filter(entry => entry.type === 'blob')) {
-    assert.match(entry.content, /nyx-static\/Nyx.svg/);
+    assert.match(entry.content, /nyx-static\/N7X.svg/);
     assert.doesNotMatch(entry.content, /<iframe|nyxlearning.org/);
   }
   assert.ok(presetRequests.some(request => request.path.endsWith('/git/blobs')));

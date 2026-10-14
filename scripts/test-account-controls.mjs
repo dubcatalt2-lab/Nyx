@@ -68,9 +68,9 @@ try{
     }
     globalThis.__nyxMockSignOuts=0;
     const removeStartup=()=>{
-      document.querySelector('#nyxStudyHubStartup')?.remove();
-      document.documentElement.classList.remove('nyx-studyhub-starting');
-      document.body?.classList.remove('nyx-startup-prep','nyx-loading-active');
+      document.querySelector('#n7xStudyHubStartup')?.remove();
+      document.documentElement.classList.remove('n7x-studyhub-starting');
+      document.body?.classList.remove('n7x-startup-prep','n7x-loading-active');
     };
     document.addEventListener('DOMContentLoaded',()=>{
       removeStartup();
@@ -113,7 +113,7 @@ try{
 
   await page.goto(origin+'/nyx',{waitUntil:'domcontentloaded'});
   assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.homeDesign')),'redesigned','Original home preference was not migrated');
-  await page.waitForSelector('#nyxBeamsBg[data-preset]');
+  await page.waitForSelector('#n7xBeamsBg[data-preset]');
   const setupScreen=page.locator('#setupScreen');
   assert.equal(await setupScreen.getAttribute('aria-hidden'),'true','Completed setup did not mark its screen hidden');
   assert.deepEqual(await setupScreen.evaluate(screen=>({
@@ -154,34 +154,34 @@ try{
     screen.inert=true;
   });
   await page.emulateMedia({reducedMotion:'no-preference'});
-  const frameLoader=page.locator('.nyx-frame-loader svg').first();
+  const frameLoader=page.locator('.n7x-frame-loader svg').first();
   await frameLoader.waitFor({state:'attached'});
   assert.equal(await frameLoader.getAttribute('viewBox'),'0 0 210 110','External page loader was not laid out horizontally');
   assert.match(await frameLoader.locator('.nyx-loader-rocket').evaluate(node=>node.parentElement?.getAttribute('transform')||''),/rotate\(90\b/,'Loading rocket was not oriented horizontally');
   assert.equal(await frameLoader.locator('.nyx-loader-flame').count(),3,'Loading rocket did not keep all three flame trails');
   assert.equal(await frameLoader.locator('.nyx-loader-moon').count(),0,'Retired loading moon was still present');
   assert.equal(await frameLoader.locator('.nyx-loader-star').count(),5,'Loading rocket did not include its star stream');
-  assert.equal(await page.locator('.nyx-home-dot-field').count(),0,'Retired constellation field was still present');
-  assert.equal(await page.locator('#nyxBeamsBg').getAttribute('data-preset'),'frost','Desktop home did not render the default Beams wallpaper');
+  assert.equal(await page.locator('.n7x-home-dot-field').count(),0,'Retired constellation field was still present');
+  assert.equal(await page.locator('#n7xBeamsBg').getAttribute('data-preset'),'frost','Desktop home did not render the default Beams wallpaper');
   await page.setViewportSize({width:2560,height:800});
-  await page.waitForFunction(()=>document.getElementById('nyxBeamsBg')?.getBoundingClientRect().width===innerWidth);
+  await page.waitForFunction(()=>document.getElementById('n7xBeamsBg')?.getBoundingClientRect().width===innerWidth);
   await page.evaluate(()=>{
     localStorage.setItem('nyx.performanceTier','medium');
     localStorage.setItem('nyx.performanceTierSource','explicit');
   });
   await page.reload({waitUntil:'domcontentloaded'});
-  await page.waitForSelector('#nyxBeamsBg[data-preset="frost"]');
+  await page.waitForSelector('#n7xBeamsBg[data-preset="frost"]');
   await page.setViewportSize({width:600,height:800});
-  await page.waitForFunction(()=>document.getElementById('nyxBeamsBg')?.getBoundingClientRect().width===innerWidth);
+  await page.waitForFunction(()=>document.getElementById('n7xBeamsBg')?.getBoundingClientRect().width===innerWidth);
   await page.evaluate(()=>{
     localStorage.setItem('nyx.performanceTier','high');
     localStorage.setItem('nyx.performanceTierSource','explicit');
   });
   await page.setViewportSize({width:1280,height:800});
   await page.reload({waitUntil:'domcontentloaded'});
-  await page.waitForSelector('#nyxBeamsBg[data-preset="frost"]');
+  await page.waitForSelector('#n7xBeamsBg[data-preset="frost"]');
 
-  await page.locator('[data-nyx-dock-item="apps"]').click();
+  await page.locator('[data-n7x-dock-item="apps"]').click();
   const appsFrame=page.frameLocator('.browser-window iframe.active');
   const coloredIcons=appsFrame.locator('[data-global-app-id="crunchyroll"] .quick-icon,[data-global-app-id="newgrounds"] .quick-icon,[data-global-app-id="kick"] .quick-icon,[data-global-app-id="itch"] .quick-icon');
   await coloredIcons.first().waitFor({state:'attached'});
@@ -205,9 +205,9 @@ try{
     assert.ok(icon.naturalWidth>0 && icon.naturalHeight>0,`App icon failed to load: ${icon.src}`);
     assert.ok(icon.colored>20,`App icon remained monochrome or invisible: ${icon.src}`);
   }
-  await page.locator('[data-nyx-dock-item="home"]').click();
-  await page.waitForSelector('.nyx-minimal-home');
-  await page.waitForSelector('#nyxAccountButton.nyx-account-button-rich',{timeout:15_000});
+  await page.locator('[data-n7x-dock-item="home"]').click();
+  await page.waitForSelector('.n7x-minimal-home');
+  await page.waitForSelector('#n7xAccountButton.n7x-account-button-rich',{timeout:15_000});
   await page.waitForTimeout(500);
 
   const externalPathUrl='https://example.com/pokemon';
@@ -237,8 +237,8 @@ try{
     frame.contentDocument.documentElement.appendChild(link);
     link.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:24,clientY:24}));
   });
-  await page.locator('.nyx-browser-link-menu').waitFor();
-  await page.locator('[data-nyx-copy-clean-link]').click();
+  await page.locator('.n7x-browser-link-menu').waitFor();
+  await page.locator('[data-n7x-copy-clean-link]').click();
   assert.equal(await page.evaluate(()=>globalThis.__nyxCopiedLink),'https://cineby.at/','Right-click Copy link exposed a Scramjet URL');
   await page.evaluate(()=>{
     const frame=[...document.querySelectorAll('.browser-window iframe.view')].find(node=>String(node.getAttribute('src') || '').includes('/~/sj/'));
@@ -256,53 +256,53 @@ try{
   await page.waitForTimeout(100);
   assert.equal(await page.locator('.browser-window .urlbar').inputValue(),externalPathUrl,'Proxy path replaced the real legacy address');
   assert.equal(await page.locator('[data-browser-shell-url]').inputValue(),externalPathUrl,'Proxy path replaced the real shell address');
-  await page.locator('[data-nyx-dock-item="home"]').click();
-  await page.waitForSelector('.nyx-minimal-home');
+  await page.locator('[data-n7x-dock-item="home"]').click();
+  await page.waitForSelector('.n7x-minimal-home');
 
   const containedBrowserFrame=page.locator('.browser-window iframe.view').first();
   await containedBrowserFrame.evaluate(frame=>{
-    frame.dataset.nyxBrowserContained='true';
+    frame.dataset.n7xBrowserContained='true';
   });
-  await page.locator('#nyxAccountButton').click();
-  await page.locator('[data-nyx-account-menu-action="owner-dashboard"]').click();
-  await page.waitForSelector('.nyx-owner-dashboard-overlay');
+  await page.locator('#n7xAccountButton').click();
+  await page.locator('[data-n7x-account-menu-action="owner-dashboard"]').click();
+  await page.waitForSelector('.n7x-owner-dashboard-overlay');
   await page.waitForTimeout(350);
-  assert.equal(await page.locator('.nyx-owner-dashboard-overlay').count(),1,'Owner Dashboard was removed after opening');
+  assert.equal(await page.locator('.n7x-owner-dashboard-overlay').count(),1,'Owner Dashboard was removed after opening');
   await page.locator('[data-owner-close]').click();
-  await page.waitForSelector('.nyx-owner-dashboard-overlay',{state:'detached'});
+  await page.waitForSelector('.n7x-owner-dashboard-overlay',{state:'detached'});
   await containedBrowserFrame.evaluate(frame=>{
-    delete frame.dataset.nyxBrowserContained;
+    delete frame.dataset.n7xBrowserContained;
   });
 
-  await page.locator('#nyxAccountButton').click();
-  await page.locator('[data-nyx-account-menu-action="edit"]').click();
-  await page.waitForSelector('.nyx-user-profile-overlay.show');
+  await page.locator('#n7xAccountButton').click();
+  await page.locator('[data-n7x-account-menu-action="edit"]').click();
+  await page.waitForSelector('.n7x-user-profile-overlay.show');
   await page.waitForTimeout(200);
-  assert.equal(await page.locator('.nyx-user-profile-overlay.show').count(),1,'Profile editor was removed after opening');
-  assert.equal(await page.locator('#nyxUserProfileTitle').textContent(),'Profiles');
-  await page.locator('[data-close-nyx-profile]').click();
-  await page.waitForSelector('.nyx-user-profile-overlay',{state:'detached'});
+  assert.equal(await page.locator('.n7x-user-profile-overlay.show').count(),1,'Profile editor was removed after opening');
+  assert.equal(await page.locator('#n7xUserProfileTitle').textContent(),'Profiles');
+  await page.locator('[data-close-n7x-profile]').click();
+  await page.waitForSelector('.n7x-user-profile-overlay',{state:'detached'});
 
-  await page.locator('#nyxAccountButton').click();
-  await page.locator('[data-nyx-account-menu-action="switch"]').click();
-  await page.waitForSelector('.nyx-account-overlay');
+  await page.locator('#n7xAccountButton').click();
+  await page.locator('[data-n7x-account-menu-action="switch"]').click();
+  await page.waitForSelector('.n7x-account-overlay');
   await page.waitForTimeout(200);
-  assert.equal(await page.locator('.nyx-account-overlay').count(),1,'Account switcher was removed after opening');
-  assert.equal(await page.locator('#nyxAccountTitle').textContent(),'Switch accounts');
+  assert.equal(await page.locator('.n7x-account-overlay').count(),1,'Account switcher was removed after opening');
+  assert.equal(await page.locator('#n7xAccountTitle').textContent(),'Switch accounts');
   assert.equal(await page.evaluate(()=>globalThis.__nyxMockSignOuts),0,'Switch Accounts signed the active account out before replacement login');
-  await page.locator('[data-close-nyx-account]').click();
+  await page.locator('[data-close-n7x-account]').click();
 
-  await page.locator('[data-nyx-dock-item="settings"]').click();
+  await page.locator('[data-n7x-dock-item="settings"]').click();
   await page.waitForSelector('.browser-shell-settings-overlay');
   assert.equal(await page.locator('[data-home-design-value],.nyx-home-design-setting,.nyx-tab-design-setting').count(),0,'Retired layout controls remain in Settings');
-  assert.equal(await page.locator('.nyx-minimal-top-actions,.nyx-home-tabs-toggle,.nyx-latency-bubble').count(),0,'Retired toolbar is still created');
+  assert.equal(await page.locator('.n7x-minimal-top-actions,.n7x-home-tabs-toggle,.n7x-latency-bubble').count(),0,'Retired toolbar is still created');
   await page.waitForTimeout(200);
   assert.equal(await page.locator('.browser-shell-settings-overlay').count(),1,'Homepage Settings was removed after opening');
-  await page.locator('[data-nyx-dock-item="links"]').click();
+  await page.locator('[data-n7x-dock-item="links"]').click();
   await page.waitForSelector('.browser-shell-settings-overlay',{state:'detached'});
-  await page.waitForFunction(()=>document.querySelector('.nyx-browser-tab-row.active strong')?.textContent?.trim()==='Link Generator');
+  await page.waitForFunction(()=>document.querySelector('.n7x-browser-tab-row.active strong')?.textContent?.trim()==='Link Generator');
   assert.equal(await page.locator('.browser-shell-settings-overlay').count(),0,'Settings remained stacked over a newly opened app tab');
-  await page.locator('[data-nyx-dock-item="home"]').click();
+  await page.locator('[data-n7x-dock-item="home"]').click();
   await page.locator('[data-browser-shell-settings]').evaluate(button=>button.click());
   await page.waitForSelector('.browser-shell-settings-overlay');
   await page.waitForTimeout(200);
@@ -321,23 +321,23 @@ try{
       return createObjectUrl(blob);
     };
   });
-  await page.locator('[data-nyx-data-export]').click();
-  await page.waitForFunction(()=>document.querySelector('[data-nyx-data-transfer-status]')?.textContent?.startsWith('Exported '));
+  await page.locator('[data-n7x-data-export]').click();
+  await page.waitForFunction(()=>document.querySelector('[data-n7x-data-transfer-status]')?.textContent?.startsWith('Exported '));
   const backup=await page.evaluate(async()=>JSON.parse(await globalThis.__nyxTestExportBlob.text()));
   assert.equal(backup.format,'nyx-portable-backup','Data export used the wrong backup format');
   assert.equal(backup.storage['portable-game-save'],'level=7','Data export omitted supported game storage');
   assert.match(backup.storage['nyx.aiMessages'],/portable conversation/,'Data export omitted AI conversation history');
   assert.equal(backup.storage['nyx.aiPersonalKey.device'],undefined,'Data export included a personal API key');
   page.once('dialog',dialog=>dialog.accept());
-  await page.locator('[data-nyx-data-import-file]').setInputFiles({
+  await page.locator('[data-n7x-data-import-file]').setInputFiles({
     name:'nyx-data-test.json',
     mimeType:'application/json',
     buffer:Buffer.from(JSON.stringify({format:'nyx-portable-backup',version:1,sourceOrigin:'https://old-nyx.example',storage:{'portable-game-save':'level=12','nyx.font':'outfit','nyx.aiPersonalKey.device':'must-stay-blocked'}}))
   });
-  await page.waitForFunction(()=>document.querySelector('[data-nyx-data-transfer-status]')?.textContent?.startsWith('Imported 2 data entries'));
+  await page.waitForFunction(()=>document.querySelector('[data-n7x-data-transfer-status]')?.textContent?.startsWith('Imported 2 data entries'));
   assert.equal(await page.evaluate(()=>localStorage.getItem('portable-game-save')),'level=12','Data import did not restore supported game storage');
   assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.aiPersonalKey.device')),'do-not-export','Data import replaced a personal API key');
-  assert.equal(await page.locator('[data-nyx-data-reload]').isVisible(),true,'Data import did not offer to reload Nyx');
+  assert.equal(await page.locator('[data-n7x-data-reload]').isVisible(),true,'Data import did not offer to reload Nyx');
   await page.setViewportSize({width:390,height:844});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),true,'Portable Data Transfer settings overflowed a mobile viewport');
   await page.setViewportSize({width:1280,height:800});
@@ -358,38 +358,38 @@ try{
   assert.match(await page.locator('[data-browser-wisp-status]').textContent(),/^Default relay: wss?:\/\//,'Default Wisp relay status was not restored');
   await page.locator('.brand-mini [data-browser-shell-new-tab]').evaluate(button=>button.click());
   await page.waitForSelector('.browser-shell-settings-overlay',{state:'detached'});
-  assert.equal(await page.locator('.nyx-browser-tab-row.active strong').textContent(),'New Tab','New tab created from Settings did not become the active blank tab');
+  assert.equal(await page.locator('.n7x-browser-tab-row.active strong').textContent(),'New Tab','New tab created from Settings did not become the active blank tab');
   assert.equal(await page.locator('[data-browser-shell-url]').inputValue(),'','New tab created from Settings inherited its internal URL');
-  assert.equal(await page.locator('.browser-window.browser-home-page .nyx-minimal-home:visible').count(),1,'New tab created from Settings did not show the Nyx homepage');
-  await page.locator('[data-nyx-dock-item="home"]').click();
+  assert.equal(await page.locator('.browser-window.browser-home-page .n7x-minimal-home:visible').count(),1,'New tab created from Settings did not show the Nyx homepage');
+  await page.locator('[data-n7x-dock-item="home"]').click();
   const tabLifecycleHomeSearch=page.locator('.browser-window.browser-home-page [data-browser-blank-input]');
   await tabLifecycleHomeSearch.fill('stale tab search');
   await page.locator('.brand-mini [data-browser-shell-new-tab]').evaluate(button=>button.click());
   assert.equal(await page.locator('.browser-window.browser-home-page [data-browser-blank-input]').inputValue(),'','A new blank tab inherited the previous tab search text');
-  await page.locator('.nyx-browser-tab-row.active [data-browser-shell-close-tab]').evaluate(button=>button.click());
+  await page.locator('.n7x-browser-tab-row.active [data-browser-shell-close-tab]').evaluate(button=>button.click());
   assert.equal(await page.locator('.browser-window.browser-home-page [data-browser-blank-input]').inputValue(),'','Closing a blank tab restored stale homepage search text');
   assert.equal(await page.locator('[data-browser-shell-url]').inputValue(),'','Closing a blank tab restored stale address text');
-  if(await page.evaluate(()=>document.documentElement.dataset.nyxSidebarWidth!=='expanded')){
-    await page.locator('[data-nyx-dock-expand]').click();
+  if(await page.evaluate(()=>document.documentElement.dataset.n7xSidebarWidth!=='expanded')){
+    await page.locator('[data-n7x-dock-expand]').click();
   }
-  assert.equal(await page.evaluate(()=>document.documentElement.dataset.nyxSidebarWidth),'expanded','Visual tab rail did not expand for close-button regression');
-  const dockDate=page.locator('[data-nyx-dock-date]');
-  await page.waitForFunction(()=>Boolean(document.querySelector('[data-nyx-visual-dock]')),{timeout:1_500});
+  assert.equal(await page.evaluate(()=>document.documentElement.dataset.n7xSidebarWidth),'expanded','Visual tab rail did not expand for close-button regression');
+  const dockDate=page.locator('[data-n7x-dock-date]');
+  await page.waitForFunction(()=>Boolean(document.querySelector('[data-n7x-visual-dock]')),{timeout:1_500});
   assert.match(await dockDate.textContent(),/\b20\d{2}\b/,'Expanded rail date did not include the year');
   assert.equal(await dockDate.evaluate(date=>date.scrollWidth<=date.clientWidth),true,'Expanded rail date was clipped');
-  if(!await page.evaluate(()=>document.body.classList.contains('nyx-tab-sidebar-open'))){
+  if(!await page.evaluate(()=>document.body.classList.contains('n7x-tab-sidebar-open'))){
     await page.locator('[data-browser-shell-tabs-toggle]').first().evaluate(button=>button.click());
   }
-  assert.equal(await page.evaluate(()=>document.body.classList.contains('nyx-tab-sidebar-open')),true,'Tab sidebar did not open for close-button regression');
+  assert.equal(await page.evaluate(()=>document.body.classList.contains('n7x-tab-sidebar-open')),true,'Tab sidebar did not open for close-button regression');
   for(let closeCycle=0;closeCycle<5;closeCycle+=1){
-    await page.locator('#nyxBrowserTabSidebar [data-browser-shell-new-tab]').evaluate(button=>button.click());
-    const activeClose=page.locator('#nyxBrowserTabSidebar .nyx-browser-tab-row.active [data-browser-shell-close-tab]');
+    await page.locator('#n7xBrowserTabSidebar [data-browser-shell-new-tab]').evaluate(button=>button.click());
+    const activeClose=page.locator('#n7xBrowserTabSidebar .n7x-browser-tab-row.active [data-browser-shell-close-tab]');
     await activeClose.waitFor();
     assert.equal(await activeClose.evaluate(button=>button.tagName),'BUTTON','Tab close control was not a native button');
     await activeClose.evaluate(button=>button.click());
-    await page.waitForFunction(()=>Boolean(document.querySelector('[data-nyx-visual-dock]')),{timeout:1_500});
+    await page.waitForFunction(()=>Boolean(document.querySelector('[data-n7x-visual-dock]')),{timeout:1_500});
     const railState=await page.evaluate(()=>{
-      const dock=document.querySelector('[data-nyx-visual-dock]');
+      const dock=document.querySelector('[data-n7x-visual-dock]');
       if(!dock) return {
         connected:false,
         bodyClass:document.body.className,
@@ -403,11 +403,11 @@ try{
     });
     assert.equal(railState.connected,true,`Visual tab rail detached after close cycle ${closeCycle+1}: ${JSON.stringify(railState)}`);
     assert.ok(railState.width>200&&railState.height>200&&railState.display!=='none'&&railState.visibility!=='hidden',`Visual tab rail disappeared after close cycle ${closeCycle+1}`);
-    assert.equal(await page.evaluate(()=>document.documentElement.dataset.nyxSidebarWidth),'expanded',`Closing a tab collapsed the visual rail on cycle ${closeCycle+1}`);
-    assert.equal(await page.evaluate(()=>document.body.classList.contains('nyx-tab-sidebar-open')),true,`Closing a tab dismissed the tab sidebar on cycle ${closeCycle+1}`);
+    assert.equal(await page.evaluate(()=>document.documentElement.dataset.n7xSidebarWidth),'expanded',`Closing a tab collapsed the visual rail on cycle ${closeCycle+1}`);
+    assert.equal(await page.evaluate(()=>document.body.classList.contains('n7x-tab-sidebar-open')),true,`Closing a tab dismissed the tab sidebar on cycle ${closeCycle+1}`);
   }
 
-  await page.locator('[data-nyx-dock-item="chat"]').click();
+  await page.locator('[data-n7x-dock-item="chat"]').click();
   const chatFrame=page.frames().find(frame=>new URL(frame.url()).pathname==='/apps/chat/');
   if(!chatFrame)await page.waitForTimeout(500);
   const activeChatFrame=page.frames().find(frame=>new URL(frame.url()).pathname==='/apps/chat/');
@@ -443,7 +443,7 @@ try{
   await activeChatFrame.locator('.member-button').filter({hasText:'Chat Member'}).click();
   await activeChatFrame.locator('[data-member-dialog][open] .member-card-title').waitFor();
   assert.match(await activeChatFrame.locator('[data-member-dialog]').textContent(),/Chat Member/);
-  assert.equal(await page.locator('.nyx-profile-directory-overlay.show').count(),0,'Chat should open its compact card without the profile directory');
+  assert.equal(await page.locator('.n7x-profile-directory-overlay.show').count(),0,'Chat should open its compact card without the profile directory');
 
 
   await page.evaluate(()=>{
@@ -451,13 +451,13 @@ try{
   Object.keys(localStorage).filter(key=>key.startsWith('nyx.releaseNotes.2026-08-31-new-nyx.')).forEach(key=>localStorage.removeItem(key));
   });
   await page.reload({waitUntil:'domcontentloaded'});
-  await page.waitForSelector('.nyx-release-notes-overlay.show',{timeout:10_000});
-  assert.equal(await page.locator('.nyx-release-notes footer span').count(),0,'Release notes still showed the one-time explanatory text');
+  await page.waitForSelector('.n7x-release-notes-overlay.show',{timeout:10_000});
+  assert.equal(await page.locator('.n7x-release-notes footer span').count(),0,'Release notes still showed the one-time explanatory text');
   assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.releaseNotes.2026-08-31-new-nyx.seen')),'2026-08-31-new-nyx','Release notes were not acknowledged when shown');
-  await page.locator('.nyx-release-notes [data-nyx-release-notes-close]').last().click();
+  await page.locator('.n7x-release-notes [data-n7x-release-notes-close]').last().click();
   await page.reload({waitUntil:'domcontentloaded'});
   await page.waitForTimeout(1400);
-  assert.equal(await page.locator('.nyx-release-notes-overlay').count(),0,'Release notes appeared again after acknowledgement');
+  assert.equal(await page.locator('.n7x-release-notes-overlay').count(),0,'Release notes appeared again after acknowledgement');
 
   assert.deepEqual(pageErrors,[],`Browser errors: ${pageErrors.join(' | ')}`);
   console.log('Homepage constellation, browser URL privacy, colored app icons, account controls, and embedded Chat profile regression passed.');

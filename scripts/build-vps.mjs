@@ -1,11 +1,12 @@
+import {patchClientSockets} from './patch-client-sockets.mjs';
+import {buildInterfaceText} from './build-interface-text.mjs';
 import {buildGameStorage} from './build-game-storage.mjs';
 import {buildPublicModules} from './build-public-modules.mjs';
 import {buildFrontendAssets} from './build-frontend-assets.mjs';
 import {buildPublisherPackage} from './build-publisher-package.mjs';
-import {formatPublishedHtml} from './format-published-html.mjs';
 import { spawn, spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
 import { cp, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
@@ -31,11 +32,9 @@ const rootFiles = new Set([
   "tutsi-runtime.sw.js",
   "sitemap.xml",
   "script.js",
-  "startup.js",  "student-resources.html",
+  "startup.js",
+  "student-resources.html",
   "styles.css",
-  "uv.config.js",
-  "uv.sw.js",
-  "stem-connect.sw.js",
   "scramjet.sw.js",
   "scramjet-v1.sw.js"
 ]);
@@ -97,7 +96,7 @@ async function copyRepositoryStaticFiles() {
 }
 
 async function copyProxyRuntimes() {
-  const { uvPath } = require("@titaniumnetwork-dev/ultraviolet");
+
   const { baremuxPath } = require("@mercuryworkshop/bare-mux/node");
   const { scramjetPath } = require("@mercuryworkshop/scramjet/path");
   const { scramjetPath: scramjetV1Path } = require("@mercuryworkshop/scramjet-v1/path");
@@ -105,7 +104,6 @@ async function copyProxyRuntimes() {
   const epoxy = join(dirname(require.resolve("@mercuryworkshop/epoxy-transport")), "..", "dist");
   const libcurl = dirname(require.resolve("@mercuryworkshop/libcurl-transport"));
   for (const [source, destination] of [
-    [uvPath, "uv"],
     [baremuxPath, "baremux"],
     [scramjetPath, "scramjet"],
     [scramjetV1Path, "scramjet-v1"],
@@ -114,6 +112,12 @@ async function copyProxyRuntimes() {
     [libcurl, "libcurl"]
   ]) {
     await cp(source, join(output, destination), { recursive: true, force: true });
+    if(destination === 'libcurl') {
+      for(const name of ['index.mjs','index.js']) {
+        const file=join(output,destination,name);
+        if(existsSync(file))await writeFile(file,patchClientSockets(await readFile(file,'utf8')));
+      }
+    }
   }
 }
 
@@ -172,8 +176,6 @@ async function writePatchedRuntimes(wispUrl) {
     const port = await waitForLocalServer(child);
     const routes = new Map([
       ["/runtime-config.js", "runtime-config.js"],
-      ["/uv/uv.handler.js", "uv/uv.handler.js"],
-      ["/uv/uv.bundle.js", "uv/uv.bundle.js"],
       ["/baremux/index.mjs", "baremux/index.mjs"],
       ["/scramjet/scramjet.js", "scramjet/scramjet.js"],
       ["/controller/controller.api.js", "controller/controller.api.js"],
@@ -193,19 +195,7 @@ async function writePatchedRuntimes(wispUrl) {
   }
 }
 
-async function configureUv(wispUrl) {
-  const path = join(output, "uv.config.js");
-  const source = await readFile(path, "utf8");
-  const bareValue = wispUrl
-    ? JSON.stringify(wispUrl)
-    : '`${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/resources/live/`';
-  const configured = source.replace(
-    /bare:\s*[\s\S]*?,\s*encodeUrl:/,
-    `bare: ${bareValue},\n  encodeUrl:`
-  );
-  if (configured === source) throw new Error("Could not set the VPS Wisp URL in uv.config.js");
-  await writeFile(path, configured);
-}
+
 
 async function removeUnavailableUgsEntries() {
   const catalogPath = join(output, "assets", "ugs", "games.json");
@@ -246,16 +236,18 @@ async function copyRemoteViewer() {
   for(const name of ['core','vendor','docs','AUTHORS'])await cp(join(source,name),join(destination,name),{recursive:true});
 }
 
+const buildNameSeed = randomBytes(16).toString("hex");
 function runtimeMangleOptions(topLevel) {
   return {
     toplevel: topLevel,
-    safari10: true
+    safari10: true,
+    nth_identifier: { get(n) { return "_" + createHash("sha256").update(buildNameSeed + ":" + n).digest("hex").slice(0,12); } }
   };
 }
 
 function runtimeCompressOptions() {
   return {
-    passes: 2,
+    passes: 4,
     drop_debugger: true,
     keep_fargs: true,
     unsafe: false
@@ -265,7 +257,7 @@ function runtimeCompressOptions() {
 function runtimeFormatOptions() {
   return {
     ascii_only: true,
-    beautify: true,
+    beautify: false,
     indent_level: 2,
     comments: /@license|@preserve|copyright|^!/i,
     semicolons: true
@@ -382,15 +374,14 @@ async function minifyFirstPartyMarkupAndStyles() {
     if (relative.endsWith(".css")) {
       // CleanCSS treats a UTF-8 BOM before @import as part of a selector and
       // silently discards both the import and the first rule after it.
-      const result = new CleanCSS({ inline: ["none"], level: 2, rebase: false, format: 'beautify' }).minify(source.replace(/^\uFEFF/, ""));
+      const result = new CleanCSS({ inline: ["none"], level: 2, rebase: false }).minify(source.replace(/^\uFEFF/, ""));
       if (result.errors.length) throw new Error(`Could not minify ${relative}: ${result.errors.join("; ")}`);
       transformed = result.styles;
     } else {
-      transformed = formatPublishedHtml(await minifyHtml(source, {
+      transformed = await minifyHtml(source, {
         collapseWhitespace: true,
         conservativeCollapse: true,
-        maxLineLength: 120,
-        minifyCSS: { level: 2, format: 'beautify' },
+        minifyCSS: { level: 2 },
         minifyJS: {
           compress: runtimeCompressOptions(),
           // Inline handlers can reference globals across script tags. Rename
@@ -405,7 +396,7 @@ async function minifyFirstPartyMarkupAndStyles() {
         removeScriptTypeAttributes: true,
         removeStyleLinkTypeAttributes: true,
         useShortDoctype: true
-      }));
+      });
     }
     await writeFile(path, `${transformed}\n`);
     outputBytes += Buffer.byteLength(transformed) + 1;
@@ -460,8 +451,8 @@ async function main() {
   await copyRemoteViewer();
   await copyProxyRuntimes();
   await writePatchedRuntimes(wispUrl);
-  await configureUv(wispUrl);
   await removeUnavailableUgsEntries();
+  await buildInterfaceText(output);
   await minifyFirstPartyBrowserRuntimes();
   await versionStylesheets();
   await minifyFirstPartyMarkupAndStyles();

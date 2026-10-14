@@ -203,7 +203,7 @@ try {
   assert(await page.locator("[data-short-title]").textContent() === "A second video", "Initial Short did not render");
   await page.locator("[data-short-next]").click();
   await page.getByText("Next test Short").waitFor();
-  if(!livePlayer)assert(await page.locator('[data-short-player] [id^=nyxtube-prepared-short-]').count()<=4,'Shorts warm pool must stay bounded');
+  if(!livePlayer)assert(await page.locator('[data-short-player] [id^=n7xtube-prepared-short-]').count()<=4,'Shorts warm pool must stay bounded');
   console.log("NyxTube test: Shorts navigation passed");
   assert(await page.locator("[data-short-title]").textContent() === "Next test Short", "Next Short navigation failed");
 
@@ -263,11 +263,11 @@ try {
     });
     await discoveryPage.route("**/api/apps", route => route.fulfill({ contentType: "application/json", body: JSON.stringify({ apps: [{ id: "youtube", icon: "youtube.com", name: "NyxTube", url: "/apps/nyxtube/" }] }) }));
     await discoveryPage.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
-    const redesignedNyxTubeDestination = discoveryPage.locator('[data-nyx-dock-item="video"][data-app-url="/apps/nyxtube/"]');
+    const redesignedNyxTubeDestination = discoveryPage.locator('[data-n7x-dock-item="video"][data-app-url="/apps/nyxtube/"]');
     await redesignedNyxTubeDestination.waitFor({ state: "attached" });
     await discoveryPage.evaluate(() => {
       document.body.classList.add("browser-content-active");
-      document.querySelectorAll("#nyxStudyHubStartup,#setupLaunchScreen,#setupScreen,.nyx-tos-gate").forEach(element => { element.style.pointerEvents = "none"; });
+      document.querySelectorAll("#n7xStudyHubStartup,#setupLaunchScreen,#setupScreen,.n7x-tos-gate").forEach(element => { element.style.pointerEvents = "none"; });
     });
     const addressBounds = await discoveryPage.locator('form.browser-mode-address > input.browser-mode-url').boundingBox();
     assert(addressBounds?.width > 100, `Browser address field did not have usable geometry: ${JSON.stringify(addressBounds)}`);

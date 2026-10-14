@@ -15,7 +15,7 @@ for(const suffix of ['', '?v=1', '#entry']) {
 }
 assert.equal(rewriteFrontendReferences('fetch("games.json");import("./games.js?v=1")','/assets/games/index.html',gameAliases),'fetch("games.json");import("./@test!.js?v=1")');
 
-assert.equal(rewriteProxyReferences('importScripts("/uv/uv.sw.js","/uv.sw.js")','/uv.sw.js'),`importScripts("${names['/uv/uv.sw.js']}","${names['/uv.sw.js']}")`);
+assert.equal(rewriteProxyReferences('importScripts("/controller/controller.sw.js","/scramjet.sw.js")','/scramjet.sw.js'),`importScripts("${names['/controller/controller.sw.js']}","${names['/scramjet.sw.js']}")`);
 assert.equal(rewriteProxyReferences('import x from "./header-utils.mjs"','/assets/transports/libcurl-baremux.mjs'),`import x from "./${names['/assets/transports/header-utils.mjs'].split('/').at(-1)}"`);
 const original='globalThis.publicAPI=function namedAPI(value){let localValue=value+1;return {result:localValue,name:namedAPI.name}};';
 const a=await scrambleProxyCode(original),b=await scrambleProxyCode(original);

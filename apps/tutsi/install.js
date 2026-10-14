@@ -51,7 +51,7 @@
       button.disabled = installed;
       button.setAttribute("aria-disabled", String(installed));
       const label = installed ? "Tutsi is Installed" : "Install Tutsi";
-      if (button.textContent !== label) button.textContent = label;
+      if (button.textContent.normalize('NFKC') !== label) button.textContent = label;
     });
     document.querySelectorAll("[data-install-tutsi-status]").forEach((status) => {
       const text = installed
@@ -59,7 +59,7 @@
         : message || (installPrompt
           ? "Ready to install on this device."
           : "Installs Tutsi as an app with its own window and desktop icon.");
-      if (status.textContent !== text) status.textContent = text;
+      if (status.textContent.normalize('NFKC') !== text) status.textContent = text;
     });
     document.querySelectorAll("[data-download-tutsi-singlefile]").forEach((button) => {
       if (button.dataset.tutsiSingleFileBound === "true") return;
@@ -145,7 +145,13 @@
     requestInstall();
   }, true);
 
-  const observer = new MutationObserver(() => updateControls());
+  const installUi = '[data-install-tutsi],[data-install-tutsi-status],[data-download-tutsi-singlefile]';
+  const observer = new MutationObserver(records => {
+    if (records.some(record => [...record.addedNodes].some(node =>
+      node.nodeType === Node.ELEMENT_NODE &&
+      (node.matches(installUi) || node.querySelector(installUi))
+    ))) updateControls();
+  });
   function start() {
     updateControls();
     observer.observe(document.body, { childList: true, subtree: true });

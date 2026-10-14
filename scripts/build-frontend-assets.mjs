@@ -4,7 +4,6 @@ import {readFile,writeFile} from 'node:fs/promises';
 import {join,posix} from 'node:path';
 import {createHash} from 'node:crypto';
 import {minify} from 'terser';
-import {formatPublishedHtml,formatPublishedJs} from './format-published-html.mjs';
 const alias=path=>posix.join(posix.dirname(path),'@r'+createHash('sha256').update('frontend-education-v1:'+path).digest('hex').slice(0,24)+'!'+posix.extname(path));
 function rewriteRelativeScriptUrls(source,path,aliases){
   const edits=[];
@@ -62,20 +61,42 @@ export async function buildFrontendAssets(output,files,lessonHtml) {
     await writeFile(join(output,path),source);
     if(aliases['/'+path])await writeFile(join(output,aliases['/'+path].slice(1)),source);
   }
-  for(const path of ['index.html','apps/tutsi/index.html','apps/drop/index.html']) {
+  const pages=[...new Set(files)].filter(p=>p.endsWith('.html')&&!p.startsWith('assets/ugs/')&&!p.startsWith('assets/vendor/'));
+  const publishedPages={};
+  for(const path of pages) {
     const original=await readFile(join(output,path),'utf8');
     const loader=posix.join(posix.dirname('/'+path),'@r'+createHash('sha256').update('entry:'+path).digest('hex').slice(0,24)+'!.js');
     // Decode as UTF-8, preserve the original document URL, script order and handlers.
     const payload=Buffer.from(original).toString('base64').match(/.{1,112}/g)||[];
-    const boot=`(async()=>{await (${migrateStorage.toString()})(JSON.parse(atob(${JSON.stringify(Buffer.from(JSON.stringify(storageNames)).toString("base64"))})));const html=new TextDecoder().decode(Uint8Array.from(atob(${JSON.stringify(payload)}.join('')),c=>c.charCodeAt(0)));document.open();document.write(html);document.close()})().catch(()=>{const p=document.createElement('p');p.setAttribute('role','alert');p.textContent='Saved browser data could not be updated. Close other site tabs and reload.';document.body.prepend(p)});`;
+    const migrate=['index.html','apps/tutsi/index.html','apps/drop/index.html'].includes(path)
+      ? `await (${migrateStorage.toString()})(JSON.parse(atob(${JSON.stringify(Buffer.from(JSON.stringify(storageNames)).toString('base64'))})));` : '';
+    const boot=`(async()=>{${migrate}if(document.readyState==='loading')await new Promise(resolve=>document.addEventListener('DOMContentLoaded',resolve,{once:true}));const html=new TextDecoder().decode(Uint8Array.from(atob(${JSON.stringify(payload)}.join('')),c=>c.charCodeAt(0)));document.open();document.write(html);document.close()})().catch(()=>{const p=document.createElement('p');p.setAttribute('role','alert');p.textContent='Saved browser data could not be updated. Close other site tabs and reload.';document.body.prepend(p)});`;
     // Compression can fold the chunk array back into one huge literal. Keep
     // chunks intact while retaining local-name mangling and readable layout.
-    await writeFile(join(output,loader.slice(1)),formatPublishedJs((await minify(boot,{mangle:{toplevel:true},compress:false,format:{beautify:true,indent_level:2}})).code));
-    const shell=path==='index.html'
+    await writeFile(join(output,loader.slice(1)),(await minify(boot,{mangle:{toplevel:true},compress:false,format:{beautify:false}})).code);
+    const shell=!['apps/tutsi/index.html','apps/drop/index.html'].includes(path)
       ? `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>N7X</title><link rel="icon" href="/assets/icons/nyx-cat-moon-small.svg?v=3"></head><body><script src="${loader}"></script></body></html>`
       : lessonHtml.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,'').replaceAll('/learning/','/apps/tutsi/studyready/').replace('</body>',`<script src="${loader}"></script></body>`);
-    await writeFile(join(output,path),formatPublishedHtml(shell));
+    await writeFile(join(output,path),shell);
+    publishedPages[path]={loader,sha256:createHash('sha256').update(original).digest('hex'),bytes:Buffer.byteLength(original)};
   }
+  await writeFile(join(output,'published-pages.json'),JSON.stringify({version:1,pages:publishedPages}));
   await writeFile(join(output,'frontend-assets.json'),JSON.stringify({version:1,aliases}));
-  console.log(`Frontend build: ${candidates.length} stable script aliases; N7X entry without a lesson cover.`);
+  console.log(`Frontend build: ${candidates.length} stable script aliases; ${pages.length} encoded first-party documents.`);
+}
+
+export async function unpackPublishedDocument(output,entry) {
+  const source=await readFile(join(output,entry.loader.slice(1)),'utf8');
+  let document;
+  function visit(node) {
+    if(!node || typeof node!=='object')return;
+    if(node.type==='ArrayExpression' && node.elements.length && node.elements.every(item=>item?.type==='Literal'&&typeof item.value==='string')) {
+      const bytes=Buffer.from(node.elements.map(item=>item.value).join(''),'base64');
+      if(bytes.length===entry.bytes && createHash('sha256').update(bytes).digest('hex')===entry.sha256)document=bytes.toString('utf8');
+    }
+    for(const value of Object.values(node))if(Array.isArray(value))value.forEach(visit);else if(value&&typeof value==='object')visit(value);
+  }
+  visit(parse(source,{ecmaVersion:'latest'}));
+  if(document===undefined)throw Error('Published document payload does not match its manifest.');
+  return document;
 }

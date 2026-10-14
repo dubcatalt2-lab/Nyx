@@ -118,8 +118,8 @@ try {
   const palettes = [];
   for (const [theme, appearance] of [['default','dark'], ['halloween','dark'], ['emerald','light']]) {
     palettes.push(await page.evaluate(({theme,appearance}) => {
-      document.documentElement.dataset.nyxTheme=theme;
-      document.documentElement.dataset.nyxAppearance=appearance;
+      document.documentElement.dataset.n7xTheme=theme;
+      document.documentElement.dataset.n7xAppearance=appearance;
       const card=getComputedStyle(document.querySelector('[data-wizard-card]'));
       return [card.backgroundColor,card.color].join('|');
     }, {theme,appearance}));

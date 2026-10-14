@@ -47,7 +47,7 @@ try {
     await page.evaluate(()=>{window.dashboard=NyxOwnerDashboard.open({getToken:async()=>'fixture'});});
     await page.clock.runFor(200);
     await page.locator('[data-traffic-state="ready"]').waitFor({timeout:10000}).catch(async error=>{
-      console.error({width,errors,trafficCalls,body:(await page.locator('.nyx-owner-dashboard').innerText()).slice(0,1800)});
+      console.error({width,errors,trafficCalls,body:(await page.locator('.n7x-owner-dashboard').innerText()).slice(0,1800)});
       await page.screenshot({path:'.codex-artifacts/owner-traffic-failure.png'});throw error;
     });
     assert.ok(await page.locator('[data-owner-panel="users"]').isHidden());
@@ -58,7 +58,7 @@ try {
     assert.equal(await page.locator('[data-owner-segment="online"] strong').innerText(),'80','Homepage heartbeat also updates the open dashboard counter');
     assert.match(await page.locator('[data-traffic-detail]').innerText(),/12:17 PM/,'Peak time uses the viewer timezone');
     const chartBox=await page.locator('[data-traffic-chart]').boundingBox();assert.ok(chartBox.width>250);
-    const fit=await page.locator('.nyx-owner-dashboard').evaluate(node=>({scroll:node.scrollWidth,width:node.clientWidth}));assert.ok(fit.scroll<=fit.width+1,'Dashboard fits the viewport');
+    const fit=await page.locator('.n7x-owner-dashboard').evaluate(node=>({scroll:node.scrollWidth,width:node.clientWidth}));assert.ok(fit.scroll<=fit.width+1,'Dashboard fits the viewport');
     await page.screenshot({path:`.codex-artifacts/owner-overview-${width}.png`,fullPage:true});
     await page.locator('[data-owner-traffic]').screenshot({path:`.codex-artifacts/owner-traffic-${width}.png`});
     const slider=page.locator('[data-traffic-minute]');await slider.focus();await page.keyboard.press('ArrowRight');

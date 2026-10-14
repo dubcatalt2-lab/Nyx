@@ -70,7 +70,7 @@ $('end-session').onclick=async()=>{
 
 $('disconnect').onclick=()=>{
   document.querySelector('.session-menu').open=false;wanted=false;stop();status('Disconnected');$('connect').disabled=false;
-  const panel=document.createElement('div');panel.className='vm-loading';panel.innerHTML='<section class="boot-card"><p class="boot-eyebrow">NYXCLOUD</p><h1>Desktop disconnected</h1><p class="boot-message">Your desktop follows its normal inactivity limits.</p><button class="boot-retry">Open desktop</button></section>';
+  const panel=document.createElement('div');panel.className='vm-loading';panel.innerHTML='<section class="boot-card"><p class="boot-eyebrow">N7XCL0UD</p><h1>Desktop disconnected</h1><p class="boot-message">Your desktop follows its normal inactivity limits.</p><button class="boot-retry">Open desktop</button></section>';
   panel.querySelector('button').onclick=connect;$('screen').append(panel);
 };
 $('fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await $('screen').requestFullscreen();}catch{status('Fullscreen is unavailable in this browser.');}};

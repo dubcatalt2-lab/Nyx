@@ -18,7 +18,7 @@ export async function launchMovieProxy(frame, url, signal, {recover=false}={}) {
     return;
   }
   const {loadProxyScript}=await import('/js/proxy-startup.mjs');
-  if(!globalThis.__NYX_RUNTIME_CONFIG__)await loadProxyScript('/runtime-config.js',()=>!!globalThis.__NYX_RUNTIME_CONFIG__);
+  if(!globalThis.english_RUNTIME_CONFIG)await loadProxyScript('/runtime-config.js',()=>!!globalThis.english_RUNTIME_CONFIG);
   const {browse,closeBrowser}=await import('/apps/tutsi/proxy.mjs');
   abort(signal);
   if (!frame.isConnected) return;
@@ -58,24 +58,24 @@ export function styleMovieVideo(video, frames) {
     const doc = frames[index].contentDocument;
     if (!doc?.head) throw Error('Player document unavailable.');
     const surface = frames[index + 1] || video;
-    const attribute = 'data-nyx-player-surface';
+    const attribute = 'data-n7x-player-surface';
     const previous = surface.getAttribute(attribute);
     surface.setAttribute(attribute, '');
     const ancestors = [];
     for (let node = surface.parentElement; node; node = node.parentElement) {
-      ancestors.push([node, node.getAttribute('data-nyx-player-ancestor')]);
-      node.setAttribute('data-nyx-player-ancestor', '');
+      ancestors.push([node, node.getAttribute('data-n7x-player-ancestor')]);
+      node.setAttribute('data-n7x-player-ancestor', '');
     }
     const style = doc.createElement('style');
     style.textContent = `html,body{background:#000!important;overflow:hidden!important}body *{visibility:hidden!important}
-      [data-nyx-player-ancestor]{transform:none!important;filter:none!important;perspective:none!important;contain:none!important;opacity:1!important}
-      [data-nyx-player-surface]{visibility:visible!important;position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;border:0!important;object-fit:contain!important;z-index:2147483647!important;opacity:1!important;background:#000!important;pointer-events:none!important}
+      [data-n7x-player-ancestor]{transform:none!important;filter:none!important;perspective:none!important;contain:none!important;opacity:1!important}
+      [data-n7x-player-surface]{visibility:visible!important;position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;border:0!important;object-fit:contain!important;z-index:2147483647!important;opacity:1!important;background:#000!important;pointer-events:none!important}
       video::-webkit-media-controls{display:none!important}`;
     doc.head.append(style);
     cleanups.push(() => {
       style.remove();
       previous === null ? surface.removeAttribute(attribute) : surface.setAttribute(attribute, previous);
-      for (const [node, value] of ancestors) value === null ? node.removeAttribute('data-nyx-player-ancestor') : node.setAttribute('data-nyx-player-ancestor', value);
+      for (const [node, value] of ancestors) value === null ? node.removeAttribute('data-n7x-player-ancestor') : node.setAttribute('data-n7x-player-ancestor', value);
     });
   }
   const controls = video.controls;

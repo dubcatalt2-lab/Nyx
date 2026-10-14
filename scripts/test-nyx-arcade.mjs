@@ -74,13 +74,13 @@ try {
   // These shells share catalog code, but must retain their own presentation.
   await page.goto(base + '/apps/drop/games.html');
   await page.locator('.game-card').first().waitFor();
-  assert.equal(await page.locator('body').evaluate(element => element.classList.contains('nyx-arcade')), false);
+  assert.equal(await page.locator('body').evaluate(element => element.classList.contains('n7x-arcade')), false);
   assert.equal(await page.locator('.arcade-featured').count(), 0);
   await page.route('**/arcade-test/tutsi', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><html data-app-shell="tutsi"><iframe data-app-shell="tutsi" src="/assets/games/"></iframe></html>' }));
   await page.goto(base + '/arcade-test/tutsi');
   const tutsi = page.frameLocator('iframe');
   await tutsi.locator('.game-card').first().waitFor();
-  assert.equal(await tutsi.locator('body').evaluate(element => element.classList.contains('nyx-arcade')), false);
+  assert.equal(await tutsi.locator('body').evaluate(element => element.classList.contains('n7x-arcade')), false);
   assert.equal(await tutsi.locator('.arcade-featured').count(), 0);
   assert.equal(await tutsi.locator('h1').textContent(), 'GAMES');
   assert.deepEqual(errors, []);

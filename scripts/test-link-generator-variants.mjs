@@ -72,7 +72,7 @@ try {
   assert.equal(download.suggestedFilename(), 'nyx-jsdelivr-links.txt');
   assert.match(await readFile(await download.path(), 'utf8'), /https:\/\/raw\.esm\.sh\/gh\//);
   await page.goto('http://nyx.test/apps/jsdelivr-publisher/?preset=nyx&source=jsdelivr&count=10&cdn=gcore.jsdelivr.net');
-  await page.waitForFunction(() => typeof presetSvg !== 'undefined' && presetSvg.includes('nyx-static/Nyx.svg'));
+  await page.waitForFunction(() => typeof presetSvg !== 'undefined' && presetSvg.includes('nyx-static/N7X.svg'));
   assert.equal(sourceRequests, 1);
   assert.equal(await page.locator('#count').inputValue(), '10');
   assert.equal(await page.locator('#fileDisplay').textContent(), 'Nyx static app included');

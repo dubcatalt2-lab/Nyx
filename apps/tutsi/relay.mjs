@@ -6,13 +6,13 @@ import {httpRelayUrl} from "./http-relay.mjs";
     return url.href;
   }catch{return '';}
 }
-export function relayCandidates(settings, config = globalThis.__NYX_RUNTIME_CONFIG__ || {}, page = location) {
+export function relayCandidates(settings, config = globalThis.english_RUNTIME_CONFIG || {}, page = location) {
   const own=`${page.protocol==='https:'?'wss:':'ws:'}//${page.host}/resources/live/`;
   const primary=normalizeRelay(settings.relay,page.protocol)||normalizeRelay(config.wispUrl,page.protocol)||own;
   if(settings.autoRelay===false)return [primary];
   return [...new Set([primary,own,...(Array.isArray(config.wispUrls)?config.wispUrls:[]),'wss://copium-wisp-9529463.onrender.com/wisp/'].map(url=>normalizeRelay(url,page.protocol)).filter(Boolean))].slice(0,6);
 }
-export function transportCandidates(settings,config=globalThis.__NYX_RUNTIME_CONFIG__||{},page=location){
+export function transportCandidates(settings,config=globalThis.english_RUNTIME_CONFIG||{},page=location){
   const bridge=httpRelayUrl(page),relays=relayCandidates(settings,config,page);
   if(settings.httpBridge===false){
     const directSettings=settings.relay===bridge?{...settings,relay:''}:settings;

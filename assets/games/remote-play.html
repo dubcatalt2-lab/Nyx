@@ -25,7 +25,7 @@
     <div class="panel">
       <div class="spinner" id="spinner"></div>
       <h1 id="heading">Opening game</h1>
-      <p id="detail">Preparing the original game source through Nyx.</p>
+      <p id="detail">Preparing the original game source through N7X.</p>
       <button id="retry" type="button" hidden>Retry</button>
     </div>
   </div>
@@ -92,7 +92,7 @@
       if(!target){fail('The catalog supplied an invalid game address.');return}
       spinner.hidden=false;
       heading.textContent='Opening game';
-      detail.textContent='Preparing the original game source through Nyx.';
+      detail.textContent="Preparing the original game source through N7X.";
       retry.hidden=true;
       state.hidden=false;
       frame.removeAttribute('src');
@@ -113,7 +113,7 @@
         }
         const destination=launch?.url || (owner ? await owner.nyxProxyGameUrl(target) : target);
         if(attempt!==launchAttempt) return;
-        if(!destination){fail('Nyx could not prepare this game source.');return}
+        if(!destination){fail("N7X could not prepare this game source.");return}
         launchTimer=setTimeout(()=>fail('The original game host did not respond.'),30000);
         frame.src=destination;
       }catch(error){

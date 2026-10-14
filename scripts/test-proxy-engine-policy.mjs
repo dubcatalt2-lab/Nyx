@@ -19,7 +19,7 @@ const api=vm.runInNewContext(functions.join('\n')+';({normalizeBrowserModeName,i
  loadSelectedSearchFallback:()=>{calls.push('failure');return true;}
 });
 for(const mode of ['scramjet-v1','sjv1','scram-v1'])assert.equal(api.normalizeBrowserModeName(mode),'scramjet');
-for(const mode of ['ultraviolet','uv','ultra','"ultraviolet"','stemconnect','stem-connect'])assert.equal(api.normalizeBrowserModeName(mode),'ultraviolet');
+for(const mode of ['ultraviolet','uv','ultra','"ultraviolet"','stemconnect','stem-connect'])assert.equal(api.normalizeBrowserModeName(mode),'scramjet');
 for(const mode of ['auto','iframe','scramjet'])assert.equal(api.normalizeBrowserModeName(mode),mode);
 assert.equal(await api.installScramjetV1(),false);
 for(configured of ['auto','scramjet','ultraviolet','scramjet-v1']){
@@ -27,9 +27,9 @@ for(configured of ['auto','scramjet','ultraviolet','scramjet-v1']){
  calls.length=0;api.fallbackProxyEngine({},'https://example.com/','ultraviolet');assert.deepEqual(calls,['scramjet']);
 }
 for(const text of [source,readFileSync('index.html','utf8')]){
- assert.match(text,/<option value="ultraviolet"[^>]*>U1TR4V10L\$T<\/option>/);
+ assert.doesNotMatch(text,/<option value="ultraviolet"[^>]*>U1TR4V10L\$T<\/option>/);
  assert.doesNotMatch(text,/<option value="scramjet-v1"/);
  assert.doesNotMatch(text,/<option value="iframe"/);
 }
 assert.doesNotMatch(source,/option\.value='scramjet-v1'/);
-console.log('Engine policy: STEM Connect selection restored, StudyJet remains default, retired v1 stays disabled, bounded fallback and selectors passed.');
+console.log('Engine policy: Retired selections migrate to current engine, StudyJet remains default, retired v1 stays disabled, bounded fallback and selectors passed.');

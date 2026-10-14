@@ -54,10 +54,10 @@ try {
     const host=page.locator('[data-owner-ai-status]');
     await page.waitForFunction(()=>document.querySelector('[data-owner-ai-status]')?.dataset.aiState==='low');
     assert.match(await host.innerText(),/below \$0\.50/);
-    const metric=await page.locator('.nyx-owner-metric').first().boundingBox();
+    const metric=await page.locator('.n7x-owner-metric').first().boundingBox();
     assert.ok(metric.height<160,'Status cards must not stretch the statistics row');
     await page.locator('[data-owner-section="users"]').click();
-    const workspace=page.locator('.nyx-owner-workspace');await workspace.scrollIntoViewIfNeeded();
+    const workspace=page.locator('.n7x-owner-workspace');await workspace.scrollIntoViewIfNeeded();
     const area=await workspace.boundingBox();assert.ok(area.height>=300,'User controls retain usable space');
     await page.locator('[data-owner-section="services"]').click();
     await host.scrollIntoViewIfNeeded();
@@ -70,13 +70,13 @@ try {
       const card=page.locator(selector);const expanded=(await card.boundingBox()).height;
       await card.locator('summary').click();await page.waitForFunction(selector=>!document.querySelector(selector+' details').open,selector);
       assert.ok((await card.boundingBox()).height<expanded,'Collapsed card is smaller');
-      assert.ok(await card.locator('.nyx-owner-status-body').isHidden());
+      assert.ok(await card.locator('.n7x-owner-status-body').isHidden());
       await page.evaluate(()=>window.dashboard.refresh());
       await page.waitForTimeout(100);
       assert.equal(await card.locator('details').getAttribute('open'),null,'Refresh preserves collapse preference');
     }
     await page.screenshot({path:`.codex-artifacts/owner-status-collapsed-${width}.png`});
-    await host.locator('summary').focus();await page.keyboard.press('Enter');assert.ok(await host.locator('.nyx-owner-status-body').isVisible());
+    await host.locator('summary').focus();await page.keyboard.press('Enter');assert.ok(await host.locator('.n7x-owner-status-body').isVisible());
     await page.screenshot({path:`.codex-artifacts/owner-layout-${width}.png`});
     assert.doesNotMatch(await host.innerText(),/below \$0\.50/,'Refill clears the warning');
     await page.locator('[data-owner-section="users"]').click();
@@ -90,11 +90,11 @@ try {
     await page.waitForFunction(()=>document.querySelector('[data-ai-rule-messages]')?.value==='25');
     assert.deepEqual(modelRules,[{model:'openai/gpt-5.6-luna',access:'allow',messages:25,periodDays:4}]);
     await page.locator('[data-owner-ai-activity]').click();
-    await page.locator('.nyx-owner-ai-exchange').waitFor();
+    await page.locator('.n7x-owner-ai-exchange').waitFor();
     assert.match(await page.locator('[data-owner-ai-activity-result]').innerText(),/123 input tokens/);
-    assert.equal(await page.locator('.nyx-owner-ai-exchange img').count(),0,'History is escaped, never executed');
-    await page.locator('.nyx-owner-ai-exchange summary').click();
-    assert.match(await page.locator('.nyx-owner-ai-exchange').innerText(),/Fixture reply/);
+    assert.equal(await page.locator('.n7x-owner-ai-exchange img').count(),0,'History is escaped, never executed');
+    await page.locator('.n7x-owner-ai-exchange summary').click();
+    assert.match(await page.locator('.n7x-owner-ai-exchange').innerText(),/Fixture reply/);
     await page.locator('[data-owner-drawer-close]').click();
     dashboardRole='admin';const before=statusRequests;
     await page.evaluate(()=>window.dashboard.refresh());

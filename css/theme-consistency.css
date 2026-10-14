@@ -7,7 +7,7 @@
 
 
 html body:is(.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
-  #setupLaunchScreen.show .nyx-title-shimmer{
+  #setupLaunchScreen.show .n7x-title-shimmer{
   animation-name:nyxTitleShimmer!important;
   animation-duration:1.35s!important;
   animation-timing-function:linear!important;
@@ -15,14 +15,14 @@ html body:is(.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fre
   animation-fill-mode:forwards!important;
 }
 html body:is(.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
-  #setupLaunchScreen.show .nyx-title-shimmer.shimmer-one{
+  #setupLaunchScreen.show .n7x-title-shimmer.shimmer-one{
   animation-delay:.35s!important;
 }
 html body:is(.theme-midnight,.theme-ruby,.theme-emerald,.theme-sakura,.theme-fresh)
-  #setupLaunchScreen.show .nyx-title-shimmer.shimmer-two{
+  #setupLaunchScreen.show .n7x-title-shimmer.shimmer-two{
   animation-delay:2.05s!important;
 }
 
 @media(prefers-reduced-motion:reduce){
-  html body #setupLaunchScreen.show .nyx-title-shimmer{animation:none!important}
+  html body #setupLaunchScreen.show .n7x-title-shimmer{animation:none!important}
 }

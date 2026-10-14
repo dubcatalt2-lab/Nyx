@@ -1,6 +1,6 @@
 html body{
-  --nyx-hover-surface:color-mix(in srgb,var(--nyx-home-wordmark,var(--theme-strong,#a9bddf)) 11%,transparent);
-  --nyx-hover-border:color-mix(in srgb,var(--nyx-home-wordmark,var(--theme-strong,#a9bddf)) 34%,transparent);
+  --n7x-hover-surface:color-mix(in srgb,var(--n7x-home-wordmark,var(--theme-strong,#a9bddf)) 11%,transparent);
+  --n7x-hover-border:color-mix(in srgb,var(--n7x-home-wordmark,var(--theme-strong,#a9bddf)) 34%,transparent);
 }
 
 
@@ -14,22 +14,22 @@ html body{
 
 
 
-html body:is(body,#nyx-hover-specificity) .menu-btn:hover::before{
+html body:is(body,#n7x-hover-specificity) .menu-btn:hover::before{
   transform:translate(-50%,-50%)!important;
 }
-html body:is(body,#nyx-hover-specificity) .tool-btn[data-reload]:hover::before{
+html body:is(body,#n7x-hover-specificity) .tool-btn[data-reload]:hover::before{
   transform:translate(-50%,-50%)!important;
 }
-html body:is(body,#nyx-hover-specificity) .menu-btn:hover{
+html body:is(body,#n7x-hover-specificity) .menu-btn:hover{
   transform:translateY(-50%)!important;
 }
-html body:is(body,#nyx-hover-specificity) .home-shortcut-add:hover b{
+html body:is(body,#n7x-hover-specificity) .home-shortcut-add:hover b{
   transform:rotate(0deg)!important;
 }
-html body:is(body,#nyx-hover-specificity) .window-controls [data-close]:hover::before{
+html body:is(body,#n7x-hover-specificity) .window-controls [data-close]:hover::before{
   transform:translate(-50%,-50%) rotate(45deg)!important;
 }
-html body:is(body,#nyx-hover-specificity) .window-controls [data-close]:hover::after{
+html body:is(body,#n7x-hover-specificity) .window-controls [data-close]:hover::after{
   transform:translate(-50%,-50%) rotate(-45deg)!important;
 }
 
@@ -42,10 +42,10 @@ html body:is(body,#nyx-hover-specificity) .window-controls [data-close]:hover::a
 
 
 
-html body.browser-shell:is(body,#nyx-hover-specificity) .browser-mode-menu button:hover{
+html body.browser-shell:is(body,#n7x-hover-specificity) .browser-mode-menu button:hover{
   transform:none!important;
-  border-color:var(--nyx-hover-border)!important;
-  background:var(--nyx-hover-surface)!important;
+  border-color:var(--n7x-hover-border)!important;
+  background:var(--n7x-hover-surface)!important;
   background-image:none!important;
   box-shadow:none!important;
   filter:none!important;
@@ -55,7 +55,7 @@ html body.browser-shell:is(body,#nyx-hover-specificity) .browser-mode-menu butto
 
 
 
-html body:is(body,#nyx-hover-specificity) .settings-window .settings-card,html body:is(body,#nyx-hover-specificity) .settings-window .settings-card:hover{
+html body:is(body,#n7x-hover-specificity) .settings-window .settings-card,html body:is(body,#n7x-hover-specificity) .settings-window .settings-card:hover{
   transform:none!important;
   animation:none!important;
   filter:none!important;

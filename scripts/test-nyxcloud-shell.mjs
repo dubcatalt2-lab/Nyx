@@ -26,21 +26,21 @@ try{
  });
  await page.goto(base,{waitUntil:'domcontentloaded'});
  await page.getByRole('button',{name:'Got it',exact:true}).click();
- assert.equal(await page.locator('#nyxStudyHubStartup').count(),0);
+ assert.equal(await page.locator('#n7xStudyHubStartup').count(),0);
  await page.keyboard.press('F12');
- assert.equal(await page.locator('#nyxPrivacyCover').evaluate(el=>el.open),true);
- const coverBounds=await page.locator('#nyxPrivacyCover').boundingBox();
+ assert.equal(await page.locator('#n7xPrivacyCover').evaluate(el=>el.open),true);
+ const coverBounds=await page.locator('#n7xPrivacyCover').boundingBox();
  assert.equal(coverBounds.width,1440);assert.equal(coverBounds.height,960);
  await page.keyboard.press('Escape');
- assert.equal(await page.locator('#nyxPrivacyCover').evaluate(el=>el.open),false);
- await page.locator('[data-nyx-dock-item="apps"]').click();
+ assert.equal(await page.locator('#n7xPrivacyCover').evaluate(el=>el.open),false);
+ await page.locator('[data-n7x-dock-item="apps"]').click();
  let tile;
- for(let i=0;i<60&&!tile;i++){for(const frame of page.frames()){const candidate=frame.locator('[data-global-app-id="nyx-vms"]');if(await candidate.count()&&await candidate.first().isVisible()){tile=candidate.first();break;}}if(!tile)await page.waitForTimeout(100);}
+ for(let i=0;i<60&&!tile;i++){for(const frame of page.frames()){const candidate=frame.locator('[data-global-app-id="n7x-vms"]');if(await candidate.count()&&await candidate.first().isVisible()){tile=candidate.first();break;}}if(!tile)await page.waitForTimeout(100);}
  assert(tile,'VMs app tile must appear');
- const shortcut=page.locator('[data-nyx-dock-item="vms"]');
+ const shortcut=page.locator('[data-n7x-dock-item="vms"]');
  await shortcut.waitFor({state:'visible'});
- assert.equal(await shortcut.evaluate(el=>el.previousElementSibling.dataset.nyxDockItem),'chat');
- assert.equal(await shortcut.evaluate(el=>el.nextElementSibling.dataset.nyxDockItem),'apps');
+ assert.equal(await shortcut.evaluate(el=>el.previousElementSibling.dataset.n7xDockItem),'chat');
+ assert.equal(await shortcut.evaluate(el=>el.nextElementSibling.dataset.n7xDockItem),'apps');
  await shortcut.click();
  let desktop;
  for(let i=0;i<80&&!desktop;i++){desktop=page.frames().find(f=>f.url().includes('/apps/nyxcloud/?embedded=1'));if(!desktop)await page.waitForTimeout(100);}
@@ -48,9 +48,9 @@ try{
  await desktop.getByRole('heading',{name:'Booting your desktop'}).waitFor();
  await desktop.getByRole('heading',{name:'Booting your desktop'}).evaluate(el=>{el.tabIndex=-1;el.focus();});
  await page.keyboard.press('F12');
- assert.equal(await page.locator('#nyxPrivacyCover').evaluate(el=>el.open),true,'Cover works from same-origin apps');
+ assert.equal(await page.locator('#n7xPrivacyCover').evaluate(el=>el.open),true,'Cover works from same-origin apps');
  await page.keyboard.press('Escape');
- assert.equal(await page.locator('#nyxPrivacyCover').evaluate(el=>el.open),false);
+ assert.equal(await page.locator('#n7xPrivacyCover').evaluate(el=>el.open),false);
  assert.match(await desktop.locator('.boot-message').textContent(),/Preparing your workspace/);
  await mkdir('.codex-artifacts',{recursive:true});
  await page.screenshot({path:'.codex-artifacts/nyxcloud-boot.png'});

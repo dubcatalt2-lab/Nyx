@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import vm from 'node:vm';import {parse} from 'acorn';
+const source=await readFile('server.js','utf8'),ast=parse(source,{ecmaVersion:'latest',sourceType:'module'});
+const fn=name=>{const n=ast.body.find(n=>n.type==='FunctionDeclaration'&&n.id.name===name);return source.slice(n.start,n.end);};
+let verify=0,reads=0;const firebase={auth:{verifyIdToken:async()=>{verify++;return {uid:'member'};}},firestore:{collection:()=>({doc:()=>({get:async()=>{reads++;return {data:()=>({subscriptionStatus:'premium'})};}})})}};
+const context=vm.createContext({firebaseAdminModeConfigured:()=>true,linkGeneratorFirebase:async()=>firebase,normalizeSubscriptionStatus:x=>x,hasPremiumSubscription:x=>x==='premium',nyxRoleForUser:()=> 'member'});
+vm.runInContext(fn('nyxAiPremiumEntitlement'),context);
+const shared={get:()=> 'Bearer fixture',nyxAiVerifiedEntitlement:{uid:'member',premium:true,owner:false,firebase,modelRules:[]}};
+assert.equal(await context.nyxAiPremiumEntitlement(shared),shared.nyxAiVerifiedEntitlement);assert.equal(verify,0);assert.equal(reads,0);
+const fresh={get:()=> 'Bearer fixture'};assert.equal((await context.nyxAiPremiumEntitlement(fresh)).premium,true);assert.equal(verify,1);assert.equal(reads,1);
+assert.equal((await context.nyxAiPremiumEntitlement({get:()=> ''})).uid,'');
+assert(source.includes('res.setHeader("x-accel-buffering", "no")'));
+console.log('PASS: shared requests skip duplicate verification/account read; fresh requests still authenticate; stream buffering disabled');

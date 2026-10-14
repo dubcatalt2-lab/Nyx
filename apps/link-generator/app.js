@@ -47,7 +47,7 @@
     refs.generationMethod.closest('label').hidden=bunny||surge;
     cdnSelect.closest('label').hidden=bunny||surge;
     $('[data-provider-hint]').textContent=surge ? 'Publish one new surge.sh site on the configured Surge account. The label gets a random suffix; existing sites are not replaced.' : bunny
-      ? "Create separate b-cdn.net hostnames pointing to Nyx. Bunny bandwidth charges and account limits apply; these still share the N7X backend."
+      ? "Create separate b-cdn.net hostnames pointing to N7X. Bunny bandwidth charges and account limits apply; these still share the N7X backend."
       : "Publish the static N7X app and choose a delivery hostname.";
     refs.confirm.checked=false;
     updateGenerationMethod();

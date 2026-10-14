@@ -47,7 +47,6 @@
     "@mercuryworkshop/scramjet-controller": "0.0.14",
     "@mercuryworkshop/scramjet-v1": "npm:@mercuryworkshop/scramjet@1.1.0",
     "@novnc/novnc": "1.7.0",
-    "@titaniumnetwork-dev/ultraviolet": "^3.2.10",
     "eruda": "3.4.3",
     "express": "5.2.1",
     "firebase-admin": "13.10.0",
@@ -72,6 +71,8 @@
     "html-minifier-terser": "^7.2.0",
     "js-beautify": "2.0.3",
     "parse5": "7.3.0",
+    "postcss": "^8.5.30",
+    "postcss-selector-parser": "^7.1.6",
     "socket.io-client": "^4.8.3",
     "terser": "^5.49.2"
   }

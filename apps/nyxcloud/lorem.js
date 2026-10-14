@@ -20,19 +20,21 @@ export function loremDesktop({api,screen,status,connected,reconnect}){
     <div class="boot-scene" aria-hidden="true">
       <div class="boot-halo"></div>
       <div class="boot-desktop">
-        <div class="boot-window-bar"><span></span><span></span><span></span><b>NYXCLOUD</b></div>
+        <div class="boot-window-bar"><span></span><span></span><span></span><b>N7XCL0UD</b></div>
         <div class="boot-window-body"><div class="boot-orbit"><svg viewBox="0 0 24 24"><path d="m5 17 4-10 6 10 4-10"/></svg></div><div class="boot-scan"></div></div>
         <div class="boot-window-dock"><i></i><i></i><i></i><i></i></div>
       </div>
       <div class="boot-stand"></div>
     </div>
-    <p class="boot-eyebrow">YOUR PRIVATE WORKSPACE</p>
+    <div class="boot-copy">
+    <p class="boot-eyebrow">N7X / DESKTOP</p>
     <h1>Booting your desktop</h1>
     <div class="boot-status"><span class="boot-status-dot" aria-hidden="true"></span><p class="boot-message" aria-live="polite"></p></div>
     <div class="boot-steps" aria-hidden="true"><span class="boot-step active"><i>1</i>Prepare</span><span class="boot-step"><i>2</i>Boot</span><span class="boot-step"><i>3</i>Display</span></div>
     <p class="boot-session-note">Save your files before the session timer ends.</p>
     <button class="boot-cancel boot-retry" hidden>Leave queue</button>
     <button class="boot-retry boot-reconnect" hidden>Reconnect</button>
+    </div>
   </section>`;
   const message=loading.querySelector('.boot-message'),indicator=loading.querySelector('.boot-orbit'),retryButton=loading.querySelector('.boot-reconnect'),cancelButton=loading.querySelector('.boot-cancel');
   cancelButton.onclick=async()=>{
@@ -48,7 +50,7 @@ export function loremDesktop({api,screen,status,connected,reconnect}){
     if(disposed)return;
     opened=true;openedUrl=vm.url;expiresAt=Number(deadline)||null;displayReady=false;cancelButton.hidden=true;loading.querySelector('h1').textContent='Opening your desktop';
     const u=new URL(vm.url);if(u.origin!=='https://loremgroup.org'||u.username||u.password||u.search||u.hash||!/^\/vm\/[A-Za-z0-9_-]+\/$/.test(u.pathname))throw Error('Unsupported desktop URL.');
-    const frame=document.createElement('iframe');frame.title='NyxCloud desktop';frame.src=u.href;frame.referrerPolicy='no-referrer';
+    const frame=document.createElement('iframe');frame.title="N7XCL0UD desktop";frame.src=u.href;frame.referrerPolicy='no-referrer';
     frame.allow='clipboard-read; clipboard-write; autoplay; fullscreen; display-capture; microphone; gamepad';
     frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-forms allow-downloads allow-pointer-lock');frame.allowFullscreen=true;
     frame.addEventListener('load',()=>{if(disposed)return;clearTimeout(displayTimer);loading.remove();displayReady=true;countdown();connected();},{once:true});

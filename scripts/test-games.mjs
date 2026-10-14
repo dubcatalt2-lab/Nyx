@@ -48,15 +48,15 @@ try {
   await page.goto(`${baseUrl}/assets/games/`, { waitUntil: 'domcontentloaded' });
   await page.getByRole('button', { name: /All games/ }).waitFor();
   await page.locator('[data-library="lumin"]').waitFor();
-  const libraries = await page.locator('[data-library]').allTextContents();
+  const libraries = (await page.locator('[data-library]').allTextContents()).map(text=>text.normalize('NFKC'));
   assert(libraries.some(label => label.includes('LuminSDK')), `LuminSDK library is missing (${libraries.join(', ')})`);
   assert(libraries.some(label => label.includes('GN Math')), `GN Math library is missing (${libraries.join(', ')})`);
   assert(libraries.some(label => label.includes('GMS')), `GMS library is missing (${libraries.join(', ')})`);
-  assert(libraries.some(label => label.includes('Nyx Archive')), `Nyx Archive library is missing (${libraries.join(', ')})`);
+  assert(libraries.some(label => label.includes('N7X Archive')), `N7X Archive library is missing (${libraries.join(', ')})`);
   assert(libraries.some(label => label.includes('Miscellaneous')), `Miscellaneous coverless library is missing (${libraries.join(', ')})`);
 
   await page.locator('[data-library="gn"]').click();
-  const gnCards = await page.locator('.game-card').allTextContents();
+  const gnCards = (await page.locator('.game-card').allTextContents()).map(text=>text.normalize('NFKC'));
   assert(gnCards.length === 2 && gnCards.some(card => card.includes('Shared Game')) && gnCards.some(card => card.includes('GN Only')), `GN filter returned the wrong games (${gnCards.join(', ')})`);
   assert(await page.locator('[data-library="gn"]').getAttribute('aria-pressed') === 'true', 'GN library did not expose its active state');
   const neutralLibrary = await page.locator('[data-library="gn"]').evaluate(button => {
@@ -183,7 +183,7 @@ try {
   await progressive.getByRole('button', { name: 'Play Ready First' }).waitFor({ timeout: 3_000 });
   assert(Date.now() - progressiveStarted < 3_000, 'A stalled optional provider delayed the built-in game library');
   assert(await progressive.locator('#catalogProgress').evaluate(element => element.classList.contains('done')), 'The full-page loading indicator remained after built-in games were ready');
-  assert((await progressive.locator('#gameCount').textContent()).includes('library loading'), 'Progressive loading status did not report the remaining provider');
+  assert((await progressive.locator('#gameCount').textContent()).normalize('NFKC').includes('library loading'), 'Progressive loading status did not report the remaining provider');
   await progressive.close();
 
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });

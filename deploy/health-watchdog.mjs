@@ -46,4 +46,4 @@ async function main(){
   await execute('/usr/bin/systemctl',['try-restart','--no-block','nyx.service'],{timeout:5000,maxBuffer:16384});
  }
 }
-if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)main().catch(error=>{console.error('Nyx health checker failed:',error.code||error.name);process.exitCode=1;});
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)main().catch(error=>{console.error("N7X health checker failed:",error.code||error.name);process.exitCode=1;});

@@ -54,7 +54,7 @@
   const nyxProfileEffectValue=(value,fallback='none')=>{const candidate=String(value||'').toLowerCase();const migrated=NYX_LEGACY_PROFILE_EFFECTS[candidate]||candidate;return NYX_PROFILE_EFFECTS.some(([id])=>id===migrated)?migrated:fallback};
   const nyxAvatarDecorationValue=(value,fallback='none')=>{const candidate=String(value||'').toLowerCase();const migrated=NYX_LEGACY_AVATAR_DECORATIONS[candidate]||candidate;return NYX_AVATAR_DECORATIONS.some(([id])=>id===migrated)?migrated:fallback};
   const nyxProfileOptions=(options,selected)=>options.map(([value,label])=>`<option value="${value}" ${selected===value?'selected':''}>${label}</option>`).join('');
-  let nyxFounderProfile={...nyxFounderProfileDefaults};
+  let n7xFounderProfile={...nyxFounderProfileDefaults};
   let nyxFounderProfileLoadPromise=null;
   let nyxFounderAuthConfig={enabled:false,ownerConfigured:false};
   let nyxFounderFirebaseAuth=null;
@@ -171,8 +171,8 @@
   }
   function nyxSetCompactGifMotion(host,active){
     const image=host?.querySelector(':scope > img');
-    const source=String(host?.dataset.nyxAnimatedSource||'');
-    const poster=String(host?.dataset.nyxAnimatedPoster||'');
+    const source=String(host?.dataset.n7xAnimatedSource||'');
+    const poster=String(host?.dataset.n7xAnimatedPoster||'');
     if(!image||!source)return;
     const target=active&&document.visibilityState==='visible'?source:(poster||source);
     if(image.getAttribute('src')!==target)image.setAttribute('src',target);
@@ -180,24 +180,24 @@
   function nyxApplyCompactProfileImage(host,image,identity,renderSource,animated,maxSize=180){
     if(!host||!image)return;
     if(!animated){
-      delete host.dataset.nyxAnimatedIdentity;
-      delete host.dataset.nyxAnimatedSource;
-      delete host.dataset.nyxAnimatedPoster;
+      delete host.dataset.n7xAnimatedIdentity;
+      delete host.dataset.n7xAnimatedSource;
+      delete host.dataset.n7xAnimatedPoster;
       if(image.getAttribute('src')!==renderSource)image.setAttribute('src',renderSource);
       return;
     }
-    const sourceChanged=host.dataset.nyxAnimatedIdentity!==identity||host.dataset.nyxAnimatedSource!==renderSource;
-    host.dataset.nyxAnimatedIdentity=identity;
-    host.dataset.nyxAnimatedSource=renderSource;
+    const sourceChanged=host.dataset.n7xAnimatedIdentity!==identity||host.dataset.n7xAnimatedSource!==renderSource;
+    host.dataset.n7xAnimatedIdentity=identity;
+    host.dataset.n7xAnimatedSource=renderSource;
     const cachedPoster=nyxGifPosterResolved.get(identity)||'';
     if(sourceChanged){
-      if(cachedPoster)host.dataset.nyxAnimatedPoster=cachedPoster;
-      else delete host.dataset.nyxAnimatedPoster;
+      if(cachedPoster)host.dataset.n7xAnimatedPoster=cachedPoster;
+      else delete host.dataset.n7xAnimatedPoster;
       const initial=cachedPoster||renderSource;
       if(image.getAttribute('src')!==initial)image.setAttribute('src',initial);
     }
-    if(!host.dataset.nyxGifMotionBound){
-      host.dataset.nyxGifMotionBound='true';
+    if(!host.dataset.n7xGifMotionBound){
+      host.dataset.n7xGifMotionBound='true';
       const focusTarget=host.closest('button')||host;
       host.addEventListener('pointerenter',()=>nyxSetCompactGifMotion(host,true));
       host.addEventListener('pointerleave',()=>nyxSetCompactGifMotion(host,focusTarget.matches(':focus')));
@@ -205,8 +205,8 @@
       focusTarget.addEventListener('blur',()=>nyxSetCompactGifMotion(host,false));
     }
     void nyxCaptureGifPoster(image,identity,maxSize).then(poster=>{
-      if(!poster||host.dataset.nyxAnimatedIdentity!==identity)return;
-      host.dataset.nyxAnimatedPoster=poster;
+      if(!poster||host.dataset.n7xAnimatedIdentity!==identity)return;
+      host.dataset.n7xAnimatedPoster=poster;
       const focusTarget=host.closest('button')||host;
       nyxSetCompactGifMotion(host,host.matches(':hover')||focusTarget.matches(':focus'));
     });
@@ -215,11 +215,11 @@
     if(!host||!image)return;
     const mediaPath=nyxProfileMediaPath(source);
     if(!mediaPath){
-      delete host.dataset.nyxProfileMediaSource;
+      delete host.dataset.n7xProfileMediaSource;
       nyxApplyCompactProfileImage(host,image,String(source||''),String(source||''),nyxAnimatedProfileImage(source),maxSize);
       return;
     }
-    host.dataset.nyxProfileMediaSource=mediaPath;
+    host.dataset.n7xProfileMediaSource=mediaPath;
     const resolved=nyxProfileMediaResolved.get(mediaPath);
     if(resolved){
       nyxApplyCompactProfileImage(host,image,mediaPath,resolved.url,resolved.mime==='image/gif',maxSize);
@@ -227,39 +227,39 @@
     }
     if(image.getAttribute('src')!==NYX_PROFILE_IMAGE_PLACEHOLDER)image.setAttribute('src',NYX_PROFILE_IMAGE_PLACEHOLDER);
     void nyxResolveProfileMedia(mediaPath).then(media=>{
-      if(!media||host.dataset.nyxProfileMediaSource!==mediaPath)return;
+      if(!media||host.dataset.n7xProfileMediaSource!==mediaPath)return;
       nyxApplyCompactProfileImage(host,image,mediaPath,media.url,media.mime==='image/gif',maxSize);
     }).catch(error=>{
-      if(host.dataset.nyxProfileMediaSource!==mediaPath)return;
+      if(host.dataset.n7xProfileMediaSource!==mediaPath)return;
       console.warn("N7X profile media could not load:",error);
       if(image.getAttribute('src')!==mediaPath)image.setAttribute('src',mediaPath);
     });
   }
   function nyxManageUserProfileGifs(root,profile){
     if(!root||!profile)return;
-    const avatarHost=root.querySelector?.('.nyx-user-profile-avatar,.nyx-account-menu-avatar');
+    const avatarHost=root.querySelector?.('.n7x-user-profile-avatar,.n7x-account-menu-avatar');
     const avatarImage=avatarHost?.querySelector(':scope > img');
     if(avatarHost&&avatarImage)nyxManageCompactGif(avatarHost,avatarImage,profile.avatarUrl,640);
-    const bannerHost=root.querySelector?.('.nyx-user-profile-banner,.nyx-account-menu-banner');
+    const bannerHost=root.querySelector?.('.n7x-user-profile-banner,.n7x-account-menu-banner');
     const bannerImage=bannerHost?.querySelector(':scope > img');
     if(bannerHost&&bannerImage)nyxManageCompactGif(bannerHost,bannerImage,profile.bannerUrl,720);
-    root.querySelectorAll?.('.nyx-profile-rail-avatar,.nyx-profile-decoration-avatar,.nyx-profile-nameplate-preview>span,.nyx-profile-switch-avatar').forEach(host=>{
+    root.querySelectorAll?.('.n7x-profile-rail-avatar,.n7x-profile-decoration-avatar,.n7x-profile-nameplate-preview>span,.n7x-profile-switch-avatar').forEach(host=>{
       const image=host.querySelector(':scope > img');
       if(image)nyxManageCompactGif(host,image,profile.avatarUrl,240);
     });
   }
-  function nyxManageFounderProfileGifs(root,profile=normalizeNyxFounderProfile(nyxFounderProfile)){
-    root?.querySelectorAll?.('[data-nyx-founder-profile]').forEach(card=>{
-      const avatarHost=card.querySelector('.nyx-founder-image-wrap');
+  function nyxManageFounderProfileGifs(root,profile=normalizeNyxFounderProfile(n7xFounderProfile)){
+    root?.querySelectorAll?.('[data-n7x-founder-profile]').forEach(card=>{
+      const avatarHost=card.querySelector('.n7x-founder-image-wrap');
       const avatarImage=avatarHost?.querySelector(':scope > img');
       if(avatarHost&&avatarImage)nyxManageCompactGif(avatarHost,avatarImage,profile.avatarUrl,640);
-      const bannerHost=card.querySelector('.nyx-founder-banner');
+      const bannerHost=card.querySelector('.n7x-founder-banner');
       const bannerImage=bannerHost?.querySelector(':scope > img');
       if(bannerHost&&bannerImage)nyxManageCompactGif(bannerHost,bannerImage,profile.bannerUrl,720);
     });
   }
   function nyxAccountUsername(value){return String(value||'').trim().toLowerCase().replace(/[^a-z0-9_.-]/g,'').slice(0,32)}
-  function nyxAccountEmail(username){return `${nyxAccountUsername(username)}@account.nyx.local`}
+  function n7xAccountEmail(username){return `${nyxAccountUsername(username)}@account.nyx.local`}
   function nyxHasPremiumSubscription(value=nyxUserSubscriptionStatus){return ['premium','trialing'].includes(String(value||'').trim().toLowerCase())}
   function nyxHasAccountPermission(permission){return nyxUserPermissions.includes(String(permission||''))}
   function syncNyxAccountEntitlements(account={}){
@@ -269,40 +269,40 @@
     if(typeof account.dashboard==='boolean')nyxOwnerDashboardAccess=account.dashboard&&nyxFounderIsOwner;
     if(Array.isArray(account.permissions))nyxUserPermissions=account.permissions.map(String);
     if(account.subscriptionStatus)nyxUserSubscriptionStatus=String(account.subscriptionStatus||'free').toLowerCase();
-    document.body.dataset.nyxSubscription=nyxUserSubscriptionStatus;
+    document.body.dataset.n7xSubscription=nyxUserSubscriptionStatus;
     if(startNyxGlobalApps.started)queueMicrotask(renderNyxGlobalApps);
     queueMicrotask(syncNyxVisualDockState);
-    document.body.classList.toggle('nyx-premium-account',nyxHasPremiumSubscription());
+    document.body.classList.toggle('n7x-premium-account',nyxHasPremiumSubscription());
     if(previousStatus!==nyxUserSubscriptionStatus){
       dispatchEvent(new CustomEvent('nyx:subscription-change',{detail:{subscriptionStatus:nyxUserSubscriptionStatus,premiumAccess:nyxHasPremiumSubscription()}}));
     }
   }
   function nyxUserImage(value,fallback=''){const raw=String(value||'').trim();if(!raw)return fallback;if(/^data:image\/(?:png|jpeg|webp|gif);base64,[a-z0-9+/=\s]+$/i.test(raw)&&raw.length<=NYX_PROFILE_MEDIA_DATA_LIMIT)return raw.replace(/\s/g,'');return nyxFounderUrl(raw,fallback)}
   function nyxDisplayNameStyleClass(profile={}){
-    return `nyx-styled-display-name nyx-name-font-${profile.displayNameFont||'gg-sans'} nyx-name-effect-${profile.displayNameEffect||'solid'}`;
+    return `n7x-styled-display-name n7x-name-font-${profile.displayNameFont||'gg-sans'} n7x-name-effect-${profile.displayNameEffect||'solid'}`;
   }
   function nyxDisplayNameStyleVars(profile={}){
-    return `--nyx-name-color-primary:${profile.displayNameColorPrimary||'#ffffff'};--nyx-name-color-secondary:${profile.displayNameColorSecondary||'#8ea1ff'}`;
+    return `--n7x-name-color-primary:${profile.displayNameColorPrimary||'#ffffff'};--n7x-name-color-secondary:${profile.displayNameColorSecondary||'#8ea1ff'}`;
   }
   const NYX_MINECRAFT_NAME_COLORS=Object.freeze({'0':'#000000','1':'#0000aa','2':'#00aa00','3':'#00aaaa','4':'#aa0000','5':'#aa00aa','6':'#ffaa00','7':'#aaaaaa','8':'#555555','9':'#5555ff',a:'#55ff55',b:'#55ffff',c:'#ff5555',d:'#ff55ff',e:'#ffff55',f:'#ffffff'});
   const NYX_MINECRAFT_MAGIC_GLYPHS='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?#$%&*+-=';
-  function nyxApplyMinecraftNameStyle(node,style,index){node.classList.add('nyx-minecraft-segment');node.style.setProperty('--nyx-minecraft-index',String(index));if(style.color){node.style.setProperty('color',style.color,'important');node.style.setProperty('--nyx-minecraft-color',style.color)}if(style.bold)node.style.setProperty('font-weight','900','important');if(style.italic)node.style.setProperty('font-style','italic','important');const decorations=[];if(style.underline)decorations.push('underline');if(style.strike)decorations.push('line-through');if(decorations.length)node.style.setProperty('text-decoration',decorations.join(' '),'important');if(style.magic){node.classList.add('nyx-minecraft-magic');node.dataset.nyxMinecraftMagicPlain=node.textContent;node.setAttribute('aria-label',node.textContent)}}
-  function nyxFormatMinecraftDisplayName(element){if(!(element instanceof Element))return;const source=element.textContent||'';if(element.dataset.nyxMinecraftPlain===source)return;const pattern=/&([0-9a-fklmnor])/gi;if(!pattern.test(source)){delete element.dataset.nyxMinecraftPlain;element.classList.remove('nyx-minecraft-formatted-name');return}pattern.lastIndex=0;const fragment=document.createDocumentFragment();let cursor=0,match,style={},segmentIndex=0;const append=text=>{if(!text)return;const span=document.createElement('span');span.textContent=text;nyxApplyMinecraftNameStyle(span,style,segmentIndex++);fragment.append(span)};while((match=pattern.exec(source))){append(source.slice(cursor,match.index));cursor=pattern.lastIndex;const code=match[1].toLowerCase();if(NYX_MINECRAFT_NAME_COLORS[code])style={color:NYX_MINECRAFT_NAME_COLORS[code]};else if(code==='l')style.bold=true;else if(code==='o')style.italic=true;else if(code==='n')style.underline=true;else if(code==='m')style.strike=true;else if(code==='k')style.magic=true;else if(code==='r')style={}}append(source.slice(cursor));element.replaceChildren(fragment);element.dataset.nyxMinecraftPlain=element.textContent||'';element.classList.add('nyx-minecraft-formatted-name')}
-  function nyxScrambleMinecraftMagic(){const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;document.querySelectorAll('.nyx-minecraft-magic').forEach(node=>{const plain=String(node.dataset.nyxMinecraftMagicPlain||'');if(!plain)return;node.textContent=Array.from(plain,char=>/\s/u.test(char)?char:reduced?'■':NYX_MINECRAFT_MAGIC_GLYPHS[Math.floor(Math.random()*NYX_MINECRAFT_MAGIC_GLYPHS.length)]).join('')})}
+  function nyxApplyMinecraftNameStyle(node,style,index){node.classList.add('n7x-minecraft-segment');node.style.setProperty('--n7x-minecraft-index',String(index));if(style.color){node.style.setProperty('color',style.color,'important');node.style.setProperty('--n7x-minecraft-color',style.color)}if(style.bold)node.style.setProperty('font-weight','900','important');if(style.italic)node.style.setProperty('font-style','italic','important');const decorations=[];if(style.underline)decorations.push('underline');if(style.strike)decorations.push('line-through');if(decorations.length)node.style.setProperty('text-decoration',decorations.join(' '),'important');if(style.magic){node.classList.add('n7x-minecraft-magic');node.dataset.n7xMinecraftMagicPlain=node.textContent;node.setAttribute('aria-label',node.textContent)}}
+  function nyxFormatMinecraftDisplayName(element){if(!(element instanceof Element))return;const source=element.textContent||'';if(element.dataset.n7xMinecraftPlain===source)return;const pattern=/&([0-9a-fklmnor])/gi;if(!pattern.test(source)){delete element.dataset.n7xMinecraftPlain;element.classList.remove('n7x-minecraft-formatted-name');return}pattern.lastIndex=0;const fragment=document.createDocumentFragment();let cursor=0,match,style={},segmentIndex=0;const append=text=>{if(!text)return;const span=document.createElement('span');span.textContent=text;nyxApplyMinecraftNameStyle(span,style,segmentIndex++);fragment.append(span)};while((match=pattern.exec(source))){append(source.slice(cursor,match.index));cursor=pattern.lastIndex;const code=match[1].toLowerCase();if(NYX_MINECRAFT_NAME_COLORS[code])style={color:NYX_MINECRAFT_NAME_COLORS[code]};else if(code==='l')style.bold=true;else if(code==='o')style.italic=true;else if(code==='n')style.underline=true;else if(code==='m')style.strike=true;else if(code==='k')style.magic=true;else if(code==='r')style={}}append(source.slice(cursor));element.replaceChildren(fragment);element.dataset.n7xMinecraftPlain=element.textContent||'';element.classList.add('n7x-minecraft-formatted-name')}
+  function nyxScrambleMinecraftMagic(){const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;document.querySelectorAll('.n7x-minecraft-magic').forEach(node=>{const plain=String(node.dataset.n7xMinecraftMagicPlain||'');if(!plain)return;node.textContent=Array.from(plain,char=>/\s/u.test(char)?char:reduced?'■':NYX_MINECRAFT_MAGIC_GLYPHS[Math.floor(Math.random()*NYX_MINECRAFT_MAGIC_GLYPHS.length)]).join('')})}
   setInterval(()=>{if(!document.hidden)nyxScrambleMinecraftMagic()},110);
-  function nyxFormatMinecraftNames(root=document){if(root instanceof Element&&root.matches('.nyx-styled-display-name,.nyx-minecraft-text'))nyxFormatMinecraftDisplayName(root);root.querySelectorAll?.('.nyx-styled-display-name,.nyx-minecraft-text').forEach(nyxFormatMinecraftDisplayName)}
+  function nyxFormatMinecraftNames(root=document){if(root instanceof Element&&root.matches('.n7x-styled-display-name,.n7x-minecraft-text'))nyxFormatMinecraftDisplayName(root);root.querySelectorAll?.('.n7x-styled-display-name,.n7x-minecraft-text').forEach(nyxFormatMinecraftDisplayName)}
   const nyxMinecraftNameObserver=new MutationObserver(records=>{records.forEach(record=>{const root=record.target instanceof Element?record.target:record.target.parentElement;if(root)nyxFormatMinecraftNames(root)})});
   nyxMinecraftNameObserver.observe(document.documentElement,{subtree:true,childList:true,characterData:true});
   queueMicrotask(()=>nyxFormatMinecraftNames());
   function nyxProfileEffectClass(profile={}){
-    return `nyx-user-profile-effect-${profile.profileEffect||'none'} nyx-user-profile-custom-${profile.customEffectPattern||'starfield'}`;
+    return `n7x-user-profile-effect-${profile.profileEffect||'none'} n7x-user-profile-custom-${profile.customEffectPattern||'starfield'}`;
   }
   function nyxProfileEffectArtwork(profile={}){
     if(String(profile.profileEffect||'')!=='blooming-roses')return '';
-    return `<span class="nyx-rose-bloom-stage" aria-hidden="true">${Array.from({length:8},(_item,index)=>`<span class="nyx-rose-bloom nyx-rose-bloom-${index+1}"></span>`).join('')}</span>`;
+    return `<span class="n7x-rose-bloom-stage" aria-hidden="true">${Array.from({length:8},(_item,index)=>`<span class="n7x-rose-bloom n7x-rose-bloom-${index+1}"></span>`).join('')}</span>`;
   }
   function nyxProfileEffectVars(profile={}){
-    return `--nyx-custom-effect-primary:${profile.customEffectColorPrimary||'#ffffff'};--nyx-custom-effect-secondary:${profile.customEffectColorSecondary||profile.accentSecondary||'#8ea1ff'};--nyx-custom-effect-duration:${Math.max(2,Math.min(18,Number(profile.customEffectSpeed)||7))}s;--nyx-custom-effect-opacity:${Math.max(.2,Math.min(1,(Number(profile.customEffectIntensity)||70)/100))}`;
+    return `--n7x-custom-effect-primary:${profile.customEffectColorPrimary||'#ffffff'};--n7x-custom-effect-secondary:${profile.customEffectColorSecondary||profile.accentSecondary||'#8ea1ff'};--n7x-custom-effect-duration:${Math.max(2,Math.min(18,Number(profile.customEffectSpeed)||7))}s;--n7x-custom-effect-opacity:${Math.max(.2,Math.min(1,(Number(profile.customEffectIntensity)||70)/100))}`;
   }
   function normalizeNyxUserProfile(value={},user=nyxFounderSignedInUser){
     const source=value&&typeof value==='object'?value:{};
@@ -529,7 +529,7 @@
     nyxUserActivityTimer=setInterval(()=>{if(document.visibilityState==='visible')void sendNyxUserActivity('/api/activity/heartbeat',user)},5*60*1000);
   }
   document.addEventListener('visibilitychange',()=>{
-    document.querySelectorAll('[data-nyx-animated-source]').forEach(host=>{
+    document.querySelectorAll('[data-n7x-animated-source]').forEach(host=>{
       const focusTarget=host.closest('button')||host;
       nyxSetCompactGifMotion(host,document.visibilityState==='visible'&&(host.matches(':hover')||focusTarget.matches(':focus')));
     });
@@ -564,8 +564,8 @@
   function closeNyxAccountMenu(){
     nyxAccountMenuCleanup?.();
     nyxAccountMenuCleanup=null;
-    document.querySelector('.nyx-account-menu')?.remove();
-    const button=document.getElementById('nyxAccountButton');
+    document.querySelector('.n7x-account-menu')?.remove();
+    const button=document.getElementById('n7xAccountButton');
     button?.setAttribute('aria-expanded','false');
   }
   function positionNyxAccountMenu(menu,button){
@@ -577,7 +577,7 @@
     const viewportTop=viewport?.offsetTop||0;
     let viewportWidth=viewport?.width||innerWidth;
     let viewportHeight=viewport?.height||innerHeight;
-    const rail=button.closest('.nyx-visual-dock');
+    const rail=button.closest('.n7x-visual-dock');
     if(rail){
       const bounds=rail.getBoundingClientRect();
       if(bounds.height>bounds.width){
@@ -604,7 +604,7 @@
     menu.style.top=`${Math.round(top)}px`;
     menu.style.transformOrigin=opensAbove?'bottom left':'top left';
   }
-  function openNyxAccountMenu(button=document.getElementById('nyxAccountButton')){
+  function openNyxAccountMenu(button=document.getElementById('n7xAccountButton')){
     closeNyxAccountMenu();
     if(!nyxFounderSignedInUser) return openNyxAccountAccess();
     const profile=normalizeNyxUserProfile(nyxUserProfile);
@@ -612,21 +612,21 @@
     const avatar=profile.avatarUrl?`<img src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="">`:`<span>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</span>`;
     const banner=profile.bannerUrl?`<img src="${esc(nyxProfileStillSource(profile.bannerUrl))}" alt="" aria-hidden="true">`:'';
     const menu=document.createElement('aside');
-    menu.className=`nyx-account-menu nyx-account-menu-compact ${nyxProfileEffectClass(profile)}`;
+    menu.className=`n7x-account-menu n7x-account-menu-compact ${nyxProfileEffectClass(profile)}`;
     menu.setAttribute('role','menu');
     menu.setAttribute('aria-label','Account options');
-    menu.style.setProperty('--nyx-account-primary',profile.accentPrimary);
-    menu.style.setProperty('--nyx-account-secondary',profile.accentSecondary);
-    menu.style.setProperty('--nyx-account-banner',profile.bannerColor);
-    menu.style.setProperty('--nyx-user-accent-primary',profile.accentPrimary);
-    menu.style.setProperty('--nyx-user-accent-secondary',profile.accentSecondary);
-    menu.style.setProperty('--nyx-user-banner-color',profile.bannerColor);
+    menu.style.setProperty('--n7x-account-primary',profile.accentPrimary);
+    menu.style.setProperty('--n7x-account-secondary',profile.accentSecondary);
+    menu.style.setProperty('--n7x-account-banner',profile.bannerColor);
+    menu.style.setProperty('--n7x-user-accent-primary',profile.accentPrimary);
+    menu.style.setProperty('--n7x-user-accent-secondary',profile.accentSecondary);
+    menu.style.setProperty('--n7x-user-banner-color',profile.bannerColor);
     menu.style.cssText+=nyxProfileEffectVars(profile);
-    const ownerControls=nyxOwnerDashboardAccess?`<div class="nyx-account-menu-group nyx-account-menu-owner"><button type="button" role="menuitem" data-nyx-account-menu-action="owner-dashboard">${nyxAccountMenuIcon('dashboard')}<span>Owner Dashboard</span>${nyxAccountMenuIcon('chevron')}</button></div>`:'';
-    menu.innerHTML=`<i class="nyx-user-profile-effect nyx-account-menu-profile-effect" aria-hidden="true">${nyxProfileEffectArtwork(profile)}</i><div class="nyx-account-menu-banner">${banner}</div><div class="nyx-account-menu-profile"><div class="nyx-account-menu-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i></div><span class="nyx-account-menu-status"><span>${esc(profile.customStatus||statusLabel)}</span></span><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p class="nyx-account-menu-handle">${esc(profile.handle)}</p><p class="nyx-account-menu-bio">${esc(profile.bio||'')}</p></div>${ownerControls}<div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="edit">${nyxAccountMenuIcon('edit')}<span>Edit Profile</span></button><button type="button" role="menuitem" data-nyx-account-menu-action="profiles">${nyxAccountMenuIcon('people')}<span>Browse Profiles</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="status"><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-hidden="true"></i><span>${esc(statusLabel)}</span>${nyxAccountMenuIcon('chevron')}</button></div><div class="nyx-account-menu-group"><button type="button" role="menuitem" data-nyx-account-menu-action="switch">${nyxAccountMenuIcon('switch')}<span>Switch Accounts</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" role="menuitem" data-nyx-account-menu-action="copy-id">${nyxAccountMenuIcon('id')}<span>Copy User ID</span></button></div>`;
+    const ownerControls=nyxOwnerDashboardAccess?`<div class="n7x-account-menu-group n7x-account-menu-owner"><button type="button" role="menuitem" data-n7x-account-menu-action="owner-dashboard">${nyxAccountMenuIcon('dashboard')}<span>Owner Dashboard</span>${nyxAccountMenuIcon('chevron')}</button></div>`:'';
+    menu.innerHTML=`<i class="n7x-user-profile-effect n7x-account-menu-profile-effect" aria-hidden="true">${nyxProfileEffectArtwork(profile)}</i><div class="n7x-account-menu-banner">${banner}</div><div class="n7x-account-menu-profile"><div class="n7x-account-menu-avatar n7x-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}<i class="n7x-avatar-decoration" aria-hidden="true"><span></span></i><i class="n7x-user-status n7x-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i></div><span class="n7x-account-menu-status"><span>${esc(profile.customStatus||statusLabel)}</span></span><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p class="n7x-account-menu-handle">${esc(profile.handle)}</p><p class="n7x-account-menu-bio">${esc(profile.bio||'')}</p></div>${ownerControls}<div class="n7x-account-menu-group"><button type="button" role="menuitem" data-n7x-account-menu-action="edit">${nyxAccountMenuIcon('edit')}<span>Edit Profile</span></button><button type="button" role="menuitem" data-n7x-account-menu-action="profiles">${nyxAccountMenuIcon('people')}<span>Browse Profiles</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" role="menuitem" data-n7x-account-menu-action="status"><i class="n7x-user-status n7x-user-status-${esc(profile.status)}" aria-hidden="true"></i><span>${esc(statusLabel)}</span>${nyxAccountMenuIcon('chevron')}</button></div><div class="n7x-account-menu-group"><button type="button" role="menuitem" data-n7x-account-menu-action="switch">${nyxAccountMenuIcon('switch')}<span>Switch Accounts</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" role="menuitem" data-n7x-account-menu-action="copy-id">${nyxAccountMenuIcon('id')}<span>Copy User ID</span></button></div>`;
     document.body.appendChild(menu);
-    syncNyxAccountButtonAvatar(menu.querySelector('.nyx-account-menu-avatar'),profile);
-    const bannerHost=menu.querySelector('.nyx-account-menu-banner');
+    syncNyxAccountButtonAvatar(menu.querySelector('.n7x-account-menu-avatar'),profile);
+    const bannerHost=menu.querySelector('.n7x-account-menu-banner');
     const bannerImage=bannerHost?.querySelector(':scope > img');
     if(bannerHost&&bannerImage)nyxManageCompactGif(bannerHost,bannerImage,profile.bannerUrl,420);
     button?.setAttribute('aria-expanded','true');
@@ -635,7 +635,7 @@
     window.addEventListener('resize',reposition);
     window.visualViewport?.addEventListener('resize',reposition);
     window.visualViewport?.addEventListener('scroll',reposition);
-    const menuRail=button?.closest('.nyx-visual-dock');
+    const menuRail=button?.closest('.n7x-visual-dock');
     const railResize=menuRail&&typeof ResizeObserver==='function'?new ResizeObserver(reposition):null;
     if(railResize)railResize.observe(menuRail);
     nyxAccountMenuCleanup=()=>{
@@ -647,8 +647,8 @@
     requestAnimationFrame(()=>menu.classList.add('show'));
     return menu;
   }
-  function toggleNyxAccountMenu(button=document.getElementById('nyxAccountButton')){
-    if(document.querySelector('.nyx-account-menu')) return closeNyxAccountMenu();
+  function toggleN7xAccountMenu(button=document.getElementById('n7xAccountButton')){
+    if(document.querySelector('.n7x-account-menu')) return closeNyxAccountMenu();
     return openNyxAccountMenu(button);
   }
   async function copyNyxFirebaseUserId(){
@@ -688,18 +688,18 @@
     closeNyxAccountMenu();
     if(!nyxFounderSignedInUser){await openNyxAccountAccess();if(!nyxFounderSignedInUser)return}
     requestedProfileUid=/^[A-Za-z0-9_-]{8,128}$/.test(String(requestedProfileUid||''))?String(requestedProfileUid):'';
-    document.querySelector('.nyx-profile-directory-overlay')?.remove();
+    document.querySelector('.n7x-profile-directory-overlay')?.remove();
     const overlay=document.createElement('div');
-    overlay.className='nyx-profile-directory-overlay'+(requestedProfileUid?' profile-card-only':'');
-    overlay.innerHTML=`<section class="nyx-profile-directory" role="dialog" aria-modal="true" aria-labelledby="nyxProfileDirectoryTitle">
-      <header class="nyx-profile-directory-header"><div><span>N7X COMMUNITY</span><h2 id="nyxProfileDirectoryTitle">${requestedProfileUid?'Profile':'Browse Profiles'}</h2><p>Discover the people using Nyx.</p></div><button type="button" data-close-profile-directory aria-label="Close profile browser">${nyxAccountMenuIcon('close')}</button></header>
-      <div class="nyx-profile-directory-layout">
-        <aside class="nyx-profile-directory-sidebar">
-          <label class="nyx-profile-directory-search">${nyxAccountMenuIcon('people')}<input type="search" data-profile-directory-search placeholder="S3ARC4 name, username, or role" autocomplete="off"></label>
+    overlay.className='n7x-profile-directory-overlay'+(requestedProfileUid?' profile-card-only':'');
+    overlay.innerHTML=`<section class="n7x-profile-directory" role="dialog" aria-modal="true" aria-labelledby="n7xProfileDirectoryTitle">
+      <header class="n7x-profile-directory-header"><div><span>N7X COMMUNITY</span><h2 id="n7xProfileDirectoryTitle">${requestedProfileUid?'Profile':'Browse Profiles'}</h2><p>Discover the people using N7X.</p></div><button type="button" data-close-profile-directory aria-label="Close profile browser">${nyxAccountMenuIcon('close')}</button></header>
+      <div class="n7x-profile-directory-layout">
+        <aside class="n7x-profile-directory-sidebar">
+          <label class="n7x-profile-directory-search">${nyxAccountMenuIcon('people')}<input type="search" data-profile-directory-search placeholder="S3ARC4 name, username, or role" autocomplete="off"></label>
           <p data-profile-directory-summary>Loading profiles…</p>
-          <div class="nyx-profile-directory-results" data-profile-directory-results aria-live="polite"></div>
+          <div class="n7x-profile-directory-results" data-profile-directory-results aria-live="polite"></div>
         </aside>
-        <main class="nyx-profile-directory-view" data-profile-directory-view><div class="nyx-profile-directory-empty"><span>${nyxAccountMenuIcon('people')}</span><h3>Select a profile</h3><p>Choose someone to view their public N7X profile.</p></div></main>
+        <main class="n7x-profile-directory-view" data-profile-directory-view><div class="n7x-profile-directory-empty"><span>${nyxAccountMenuIcon('people')}</span><h3>Select a profile</h3><p>Choose someone to view their public N7X profile.</p></div></main>
       </div>
     </section>`;
     document.body.appendChild(overlay);
@@ -728,34 +728,34 @@
       selectedUid=entry.uid;
       resultsHost.querySelectorAll('[data-directory-profile]').forEach(button=>button.classList.toggle('active',button.dataset.directoryProfile===selectedUid));
       const profile=normalizeNyxUserProfile(entry.profile);
-      view.innerHTML=`<div class="nyx-profile-directory-view-head"><span class="nyx-minecraft-text">${entry.self?'Your public profile':esc(entry.customRole?.label||entry.roleLabel||roleLabel(entry.role))}</span><strong>${esc(profile.displayName)}</strong></div><div class="nyx-profile-directory-card-host">${nyxUserProfileCardMarkup(profile,{role:entry.role,customRole:entry.customRole,createdAt:entry.createdAt,popup:Boolean(requestedProfileUid),online:entry.online})}</div>`;
+      view.innerHTML=`<div class="n7x-profile-directory-view-head"><span class="n7x-minecraft-text">${entry.self?'Your public profile':esc(entry.customRole?.label||entry.roleLabel||roleLabel(entry.role))}</span><strong>${esc(profile.displayName)}</strong></div><div class="n7x-profile-directory-card-host">${nyxUserProfileCardMarkup(profile,{role:entry.role,customRole:entry.customRole,createdAt:entry.createdAt,popup:Boolean(requestedProfileUid),online:entry.online})}</div>`;
       nyxManageUserProfileGifs(view,profile);
       if(requestedProfileUid&&!entry.self){
         const controls=view.querySelector('[data-profile-contact-controls]');
         const action=(label,value)=>`<button type="button" data-profile-social="${value}" aria-label="${label}" title="${label}"${!relationshipReady||contactBusy?' disabled':''}>${nyxAccountMenuIcon({request:'addPerson',accept:'check',decline:'close',cancel:'close',remove:'removePerson',block:'block',unblock:'check',ignore:'eyeOff',unignore:'eye'}[value])}</button>`;
         let friendship=relationship?.friend==='incoming'?action('Accept','accept')+action('Decline','decline'):relationship?.friend==='outgoing'?action('Cancel request','cancel'):relationship?.friend==='accepted'?action('Remove friend','remove'):action('Add friend','request');
         if(relationship?.blocked||relationship?.canMessage===false)friendship='';
-        controls.innerHTML=`<button type="button" class="nyx-profile-message" data-profile-message${contactBusy||relationship?.canMessage===false?' disabled':''}>${nyxAccountMenuIcon('chat')}<span>Message</span></button><div class="nyx-profile-contact-actions">${friendship}${action(relationship?.blocked?'Unblock':'Block',relationship?.blocked?'unblock':'block')}${action(relationship?.ignored?'Unignore':'Ignore',relationship?.ignored?'unignore':'ignore')}</div><p role="status">${esc(relationshipError||(relationship?.blocked?'Direct messages and friend requests are blocked.':relationship?.ignored?'Their messages and notifications are hidden for you.':relationship?.canMessage===false?'Direct messages are unavailable.':''))}</p>${!relationshipReady&&relationshipError?'<button type="button" data-profile-directory-retry>Retry</button>':''}`;
+        controls.innerHTML=`<button type="button" class="n7x-profile-message" data-profile-message${contactBusy||relationship?.canMessage===false?' disabled':''}>${nyxAccountMenuIcon('chat')}<span>Message</span></button><div class="n7x-profile-contact-actions">${friendship}${action(relationship?.blocked?'Unblock':'Block',relationship?.blocked?'unblock':'block')}${action(relationship?.ignored?'Unignore':'Ignore',relationship?.ignored?'unignore':'ignore')}</div><p role="status">${esc(relationshipError||(relationship?.blocked?'Direct messages and friend requests are blocked.':relationship?.ignored?'Their messages and notifications are hidden for you.':relationship?.canMessage===false?'Direct messages are unavailable.':''))}</p>${!relationshipReady&&relationshipError?'<button type="button" data-profile-directory-retry>Retry</button>':''}`;
       }
 
     };
     const renderResults=()=>{
       summary.textContent=`${entries.length} profile${entries.length===1?'':'s'}`;
       if(!entries.length){
-        resultsHost.innerHTML='<div class="nyx-profile-directory-no-results"><strong>No profiles found</strong><span>Try a different name or role.</span></div>';
-        view.innerHTML='<div class="nyx-profile-directory-empty"><span aria-hidden="true">?</span><h3>No matching profiles</h3><p>Change your search to discover more people.</p></div>';
+        resultsHost.innerHTML='<div class="n7x-profile-directory-no-results"><strong>No profiles found</strong><span>Try a different name or role.</span></div>';
+        view.innerHTML='<div class="n7x-profile-directory-empty"><span aria-hidden="true">?</span><h3>No matching profiles</h3><p>Change your search to discover more people.</p></div>';
         selectedUid='';
         return;
       }
       resultsHost.innerHTML=entries.map(entry=>{
         const profile=normalizeNyxUserProfile(entry.profile);
         const avatar=profile.avatarUrl?`<img src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="">`:`<span>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</span>`;
-        return `<button type="button" data-directory-profile="${esc(entry.uid)}"><i class="nyx-profile-directory-avatar">${avatar}<em class="${entry.online?'online':''}" aria-label="${entry.online?'Online':'Offline'}"></em></i><span><strong>${esc(profile.displayName)}${entry.self?' <small>You</small>':''}</strong><small>${esc(profile.handle)}</small></span><b class="nyx-minecraft-text">${esc(entry.customRole?.label||entry.roleLabel||roleLabel(entry.role))}</b></button>`;
+        return `<button type="button" data-directory-profile="${esc(entry.uid)}"><i class="n7x-profile-directory-avatar">${avatar}<em class="${entry.online?'online':''}" aria-label="${entry.online?'Online':'Offline'}"></em></i><span><strong>${esc(profile.displayName)}${entry.self?' <small>You</small>':''}</strong><small>${esc(profile.handle)}</small></span><b class="n7x-minecraft-text">${esc(entry.customRole?.label||entry.roleLabel||roleLabel(entry.role))}</b></button>`;
       }).join('');
       resultsHost.querySelectorAll('[data-directory-profile]').forEach(button=>{
         const entry=entries.find(item=>item.uid===button.dataset.directoryProfile);
         const profile=normalizeNyxUserProfile(entry?.profile);
-        const avatarHost=button.querySelector('.nyx-profile-directory-avatar');
+        const avatarHost=button.querySelector('.n7x-profile-directory-avatar');
         const avatarImage=avatarHost?.querySelector(':scope > img');
         if(avatarHost&&avatarImage)nyxManageCompactGif(avatarHost,avatarImage,profile.avatarUrl,180);
       });
@@ -764,7 +764,7 @@
     const load=async()=>{
       controller?.abort();
       controller=new AbortController();
-      resultsHost.innerHTML='<div class="nyx-profile-directory-loading"><i></i><i></i><i></i><i></i></div>';
+      resultsHost.innerHTML='<div class="n7x-profile-directory-loading"><i></i><i></i><i></i><i></i></div>';
       summary.textContent='Loading profiles…';
       try{
         const token=await nyxGetFirebaseToken(true);
@@ -785,7 +785,7 @@
         if(error.name==='AbortError')return;
         entries=[];
         summary.textContent='Profiles unavailable';
-        resultsHost.innerHTML=`<div class="nyx-profile-directory-no-results"><strong>Could not load profiles</strong><span>${esc(error.message||'Try again.')}</span><button type="button" data-profile-directory-retry>Try again</button></div>`;
+        resultsHost.innerHTML=`<div class="n7x-profile-directory-no-results"><strong>Could not load profiles</strong><span>${esc(error.message||'Try again.')}</span><button type="button" data-profile-directory-retry>Try again</button></div>`;
         if(requestedProfileUid)view.innerHTML=resultsHost.innerHTML;
       }
     };
@@ -832,8 +832,8 @@
       nyxManageCompactGif(host,image,source,180);
       return;
     }
-    delete host.dataset.nyxAnimatedSource;
-    delete host.dataset.nyxAnimatedPoster;
+    delete host.dataset.n7xAnimatedSource;
+    delete host.dataset.n7xAnimatedPoster;
     image?.remove();
     if(!fallback){
       fallback=document.createElement('span');
@@ -842,34 +842,34 @@
     fallback.textContent=profile.displayName.slice(0,1).toUpperCase()||'N';
   }
   function ensureNyxAccountButton(){
-    const existing=document.getElementById('nyxAccountButton');
+    const existing=document.getElementById('n7xAccountButton');
     const signedIn=Boolean(nyxFounderSignedInUser);
-    const host=document.body.classList.contains('browser-shell')?document.querySelector('.nyx-visual-dock [data-nyx-profile-slot]')||document.querySelector('.top-os [data-nyx-profile-slot]')||document.querySelector('.browser-home:not(.hidden) [data-nyx-profile-slot]')||document.querySelector('.browser-home [data-nyx-profile-slot]'):document.querySelector('.status-icons');
+    const host=document.body.classList.contains('browser-shell')?document.querySelector('.n7x-visual-dock [data-n7x-profile-slot]')||document.querySelector('.top-os [data-n7x-profile-slot]')||document.querySelector('.browser-home:not(.hidden) [data-n7x-profile-slot]')||document.querySelector('.browser-home [data-n7x-profile-slot]'):document.querySelector('.status-icons');
     if(!host){return}
     if(existing&&existing.parentElement!==host){closeNyxAccountMenu();existing.remove()}
-    const button=document.getElementById('nyxAccountButton')||document.createElement('button');
-    button.id='nyxAccountButton';button.type='button';button.className='nyx-account-button';button.classList.toggle('nyx-account-button-default',!signedIn);button.classList.toggle('nyx-account-button-rich',signedIn);delete button.dataset.openNyxProfile;button.dataset.toggleNyxAccountMenu='';button.title=signedIn?'Account menu':'Sign in or create a profile';button.setAttribute('aria-label',button.title);button.setAttribute('aria-haspopup','menu');button.setAttribute('aria-expanded',String(Boolean(document.querySelector('.nyx-account-menu'))));
+    const button=document.getElementById('n7xAccountButton')||document.createElement('button');
+    button.id='n7xAccountButton';button.type='button';button.className='n7x-account-button';button.classList.toggle('n7x-account-button-default',!signedIn);button.classList.toggle('n7x-account-button-rich',signedIn);delete button.dataset.openN7xProfile;button.dataset.toggleN7xAccountMenu='';button.title=signedIn?'Account menu':'Sign in or create a profile';button.setAttribute('aria-label',button.title);button.setAttribute('aria-haspopup','menu');button.setAttribute('aria-expanded',String(Boolean(document.querySelector('.n7x-account-menu'))));
     const profile=normalizeNyxUserProfile(nyxUserProfile);
     const statusLabel={online:'Online',idle:'Idle',dnd:'Do not disturb',offline:'Invisible'}[profile.status]||'Online';
     if(signedIn){
-      let avatarHost=button.querySelector(':scope > .nyx-account-button-avatar');
-      let copy=button.querySelector(':scope > .nyx-account-button-copy');
+      let avatarHost=button.querySelector(':scope > .n7x-account-button-avatar');
+      let copy=button.querySelector(':scope > .n7x-account-button-copy');
       if(!avatarHost||!copy){
         button.replaceChildren();
         avatarHost=document.createElement('span');
-        avatarHost.className='nyx-account-button-avatar';
+        avatarHost.className='n7x-account-button-avatar';
         const status=document.createElement('i');
-        status.className='nyx-user-status';
+        status.className='n7x-user-status';
         status.setAttribute('aria-hidden','true');
         avatarHost.appendChild(status);
         copy=document.createElement('span');
-        copy.className='nyx-account-button-copy';
+        copy.className='n7x-account-button-copy';
         copy.append(document.createElement('strong'),document.createElement('small'));
         button.append(avatarHost,copy);
       }
       syncNyxAccountButtonAvatar(avatarHost,profile);
-      const status=avatarHost.querySelector(':scope > .nyx-user-status');
-      if(status) status.className=`nyx-user-status nyx-user-status-${profile.status}`;
+      const status=avatarHost.querySelector(':scope > .n7x-user-status');
+      if(status) status.className=`n7x-user-status n7x-user-status-${profile.status}`;
       const name=copy.querySelector(':scope > strong');
       const customStatus=copy.querySelector(':scope > small');
       if(name){
@@ -896,17 +896,17 @@
       const roleName=String(nyxUserAccountRole||'member').replaceAll('_',' ').replace(/\b\w/g,letter=>letter.toUpperCase());
       status.textContent=nyxFounderIsOwner?"Signed in as the N7X founder.":nyxOwnerDashboardAccess?`Signed in as ${roleName}.`:`Signed in. Firebase account ID: ${accountId}`;
     });
-    document.querySelectorAll('[data-nyx-cloud-save-status]').forEach(status=>{
+    document.querySelectorAll('[data-n7x-cloud-save-status]').forEach(status=>{
       if(!configured){status.textContent="Cloud saves become available when N7X accounts are configured.";return}
       if(!signedIn){status.textContent="Sign in to sync supported game progress and N7X preferences.";return}
       status.textContent='Cloud saves are enabled for this account.';
     });
-    document.querySelectorAll('[data-open-nyx-account]').forEach(button=>{button.hidden=!configured||Boolean(signedIn);});
-    document.querySelectorAll('[data-nyx-account-sign-out]').forEach(button=>{button.hidden=!signedIn;});
-    document.querySelectorAll('[data-open-nyx-profile]').forEach(button=>{if(button.id!=='nyxAccountButton') button.hidden=!signedIn;});
-    document.querySelectorAll('[data-nyx-owner-presence]').forEach(presence=>{
+    document.querySelectorAll('[data-open-n7x-account]').forEach(button=>{button.hidden=!configured||Boolean(signedIn);});
+    document.querySelectorAll('[data-n7x-account-sign-out]').forEach(button=>{button.hidden=!signedIn;});
+    document.querySelectorAll('[data-open-n7x-profile]').forEach(button=>{if(button.id!=='n7xAccountButton') button.hidden=!signedIn;});
+    document.querySelectorAll('[data-n7x-owner-presence]').forEach(presence=>{
       const ownerAction=Boolean(nyxFounderIsOwner&&nyxOwnerDashboardAccess);
-      presence.classList.toggle('nyx-owner-presence-action',ownerAction);
+      presence.classList.toggle('n7x-owner-presence-action',ownerAction);
       presence.setAttribute('role',ownerAction?'button':'status');
       presence.tabIndex=ownerAction?0:-1;
       presence.setAttribute('aria-label',ownerAction?'Open Owner Dashboard':'Current users online');
@@ -959,31 +959,31 @@
     if(!nyxFounderFirebaseAuth) return toast("N7X accounts are not configured yet.");
     const switching=Boolean(options.switching&&nyxFounderSignedInUser);
     const previousUid=String(nyxFounderSignedInUser?.uid||'');
-    document.querySelector('.nyx-account-overlay')?.remove();
+    document.querySelector('.n7x-account-overlay')?.remove();
     const overlay=document.createElement('div');
-    overlay.className='nyx-account-overlay';
-    overlay.innerHTML='<section class="nyx-account-dialog" role="dialog" aria-modal="true" aria-labelledby="nyxAccountTitle"><button class="nyx-founder-editor-close" data-close-nyx-account type="button" aria-label="Close">×</button><div class="nyx-account-mark" aria-hidden="true"><span>☾</span></div><p id="nyxAccountTitle" class="nyx-account-title">Log in or register to continue</p><div class="nyx-account-tabs" role="tablist" aria-label="Account action"><button class="nyx-account-tab active" data-nyx-account-tab="signin" type="button" role="tab" aria-selected="true">Log in</button><button class="nyx-account-tab" data-nyx-account-tab="register" type="button" role="tab" aria-selected="false">Register</button></div><form><label data-nyx-account-identifier-label><span>Username or email</span><input name="username" autocomplete="username" minlength="3" maxlength="254" placeholder="username or email" required></label><label data-nyx-account-email hidden><span>Recovery email <small>Optional</small></span><input name="email" type="email" autocomplete="email" maxlength="254" placeholder="you@example.com"></label><label>Password<input name="password" type="password" autocomplete="current-password" minlength="8" placeholder="your password" required></label><section class="nyx-account-status-notice" data-nyx-account-status hidden aria-live="assertive"><strong></strong><p></p></section><p class="nyx-founder-editor-error" aria-live="polite"></p><button class="nyx-account-submit" type="submit">Log in</button><button class="nyx-account-forgot" data-nyx-forgot-password type="button">Forgot password?</button></form><p class="nyx-account-footer">Log in with your username or recovery email.</p></section>';
+    overlay.className='n7x-account-overlay';
+    overlay.innerHTML='<section class="n7x-account-dialog" role="dialog" aria-modal="true" aria-labelledby="n7xAccountTitle"><button class="n7x-founder-editor-close" data-close-n7x-account type="button" aria-label="Close">×</button><div class="n7x-account-mark" aria-hidden="true"><span>☾</span></div><p id="n7xAccountTitle" class="n7x-account-title">Log in or register to continue</p><div class="n7x-account-tabs" role="tablist" aria-label="Account action"><button class="n7x-account-tab active" data-n7x-account-tab="signin" type="button" role="tab" aria-selected="true">Log in</button><button class="n7x-account-tab" data-n7x-account-tab="register" type="button" role="tab" aria-selected="false">Register</button></div><form><label data-n7x-account-identifier-label><span>Username or email</span><input name="username" autocomplete="username" minlength="3" maxlength="254" placeholder="username or email" required></label><label data-n7x-account-email hidden><span>Recovery email <small>Optional</small></span><input name="email" type="email" autocomplete="email" maxlength="254" placeholder="you@example.com"></label><label>Password<input name="password" type="password" autocomplete="current-password" minlength="8" placeholder="your password" required></label><section class="n7x-account-status-notice" data-n7x-account-status hidden aria-live="assertive"><strong></strong><p></p></section><p class="n7x-founder-editor-error" aria-live="polite"></p><button class="n7x-account-submit" type="submit">Log in</button><button class="n7x-account-forgot" data-n7x-forgot-password type="button">Forgot password?</button></form><p class="n7x-account-footer">Log in with your username or recovery email.</p></section>';
     document.body.appendChild(overlay);
     let mode=options.mode==='register'?'register':'signin';
     const form=overlay.querySelector('form');
     const submit=form.querySelector('[type="submit"]');
     const password=form.querySelector('[name="password"]');
     const identifier=form.querySelector('[name="username"]');
-    const identifierLabel=overlay.querySelector('[data-nyx-account-identifier-label]');
-    const emailField=overlay.querySelector('[data-nyx-account-email]');
+    const identifierLabel=overlay.querySelector('[data-n7x-account-identifier-label]');
+    const emailField=overlay.querySelector('[data-n7x-account-email]');
     const emailInput=form.querySelector('[name="email"]');
-    const forgotButton=form.querySelector('[data-nyx-forgot-password]');
-    const footer=overlay.querySelector('.nyx-account-footer');
-    const error=form.querySelector('.nyx-founder-editor-error');
-    const accountStatusNotice=form.querySelector('[data-nyx-account-status]');
-    if(switching)overlay.querySelector('#nyxAccountTitle').textContent='Switch accounts';
-    else if(mode==='register')overlay.querySelector('#nyxAccountTitle').textContent="Create your N7X account";
+    const forgotButton=form.querySelector('[data-n7x-forgot-password]');
+    const footer=overlay.querySelector('.n7x-account-footer');
+    const error=form.querySelector('.n7x-founder-editor-error');
+    const accountStatusNotice=form.querySelector('[data-n7x-account-status]');
+    if(switching)overlay.querySelector('#n7xAccountTitle').textContent='Switch accounts';
+    else if(mode==='register')overlay.querySelector('#n7xAccountTitle').textContent="Create your N7X account";
     if(mode==='register'&&options.username)identifier.value=nyxAccountUsername(options.username);
-    const clearAccountStatusNotice=()=>{accountStatusNotice.hidden=true;accountStatusNotice.className='nyx-account-status-notice';accountStatusNotice.querySelector('strong').textContent='';accountStatusNotice.querySelector('p').textContent=''};
-    const showAccountStatusNotice=status=>{const accountStatus=status&&typeof status==='object'?status:{};accountStatusNotice.className=`nyx-account-status-notice nyx-account-status-${String(accountStatus.status||'disabled').replace(/[^a-z-]/g,'')}`;accountStatusNotice.querySelector('strong').textContent=String(accountStatus.title||'This account is unavailable');accountStatusNotice.querySelector('p').textContent=String(accountStatus.message||"Contact N7X staff for help.");accountStatusNotice.hidden=false};
+    const clearAccountStatusNotice=()=>{accountStatusNotice.hidden=true;accountStatusNotice.className='n7x-account-status-notice';accountStatusNotice.querySelector('strong').textContent='';accountStatusNotice.querySelector('p').textContent=''};
+    const showAccountStatusNotice=status=>{const accountStatus=status&&typeof status==='object'?status:{};accountStatusNotice.className=`n7x-account-status-notice n7x-account-status-${String(accountStatus.status||'disabled').replace(/[^a-z-]/g,'')}`;accountStatusNotice.querySelector('strong').textContent=String(accountStatus.title||'This account is unavailable');accountStatusNotice.querySelector('p').textContent=String(accountStatus.message||"Contact N7X staff for help.");accountStatusNotice.hidden=false};
     const update=()=>{
       const registering=mode==='register';
-      overlay.querySelectorAll('[data-nyx-account-tab]').forEach(tab=>{const active=tab.dataset.nyxAccountTab===mode;tab.classList.toggle('active',active);tab.setAttribute('aria-selected',String(active))});
+      overlay.querySelectorAll('[data-n7x-account-tab]').forEach(tab=>{const active=tab.dataset.n7xAccountTab===mode;tab.classList.toggle('active',active);tab.setAttribute('aria-selected',String(active))});
       submit.textContent=registering?'Create account':'Log in';
       password.autocomplete=registering?'new-password':'current-password';
       password.minLength=registering?8:6;
@@ -1000,7 +1000,7 @@
     };
     update();
     const close=()=>overlay.remove();
-    overlay.addEventListener('click',event=>{if(event.target.closest('[data-close-nyx-account]')){close();return}const tab=event.target.closest('[data-nyx-account-tab]');if(tab){mode=tab.dataset.nyxAccountTab;update()}});
+    overlay.addEventListener('click',event=>{if(event.target.closest('[data-close-n7x-account]')){close();return}const tab=event.target.closest('[data-n7x-account-tab]');if(tab){mode=tab.dataset.n7xAccountTab;update()}});
     overlay.addEventListener('keydown',event=>{if(event.key==='Escape')close()});
     forgotButton.addEventListener('click',async()=>{
       const rawIdentifier=String(identifier.value||'').trim();
@@ -1077,32 +1077,32 @@
         switch:'<path d="m16 3 4 4-4 4"/><path d="M20 7H9a4 4 0 0 0-4 4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h11a4 4 0 0 0 4-4"/>',
         chevron:'<path d="m9 18 6-6-6-6"/>'
       };
-      return `<svg class="nyx-profile-symbol nyx-profile-symbol-${name}" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths[name]||''}</svg>`;
+      return `<svg class="n7x-profile-symbol n7x-profile-symbol-${name}" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths[name]||''}</svg>`;
     };
     const roleLabel=role=>({owner:'Owner',co_owner:'Co-owner',admin:'Admin',manager:'Manager',developer:'Developer',moderator:'Moderator',support:'Support',tester:'Tester',contributor:'Contributor',member:'Member'}[role]||'Member');
     const roleIconKey=role=>({co_owner:'owner',manager:'admin',support:'moderator',tester:'developer',contributor:'developer'}[role]||role);
-    const roleChip=role=>`<span class="nyx-user-role nyx-user-role-${role}"><img src="/assets/icons/roles/${roleIconKey(role)}.png" alt="" aria-hidden="true">${roleLabel(role)}</span>`;
+    const roleChip=role=>`<span class="n7x-user-role n7x-user-role-${role}"><img src="/assets/icons/roles/${roleIconKey(role)}.png" alt="" aria-hidden="true">${roleLabel(role)}</span>`;
     const availableRoles=['owner','co_owner','admin','manager','developer','moderator','support','tester','contributor','member'];
     const publicRole=availableRoles.includes(String(options.role||''))?String(options.role):'';
     const customRole=options.customRole&&typeof options.customRole==='object'?options.customRole:null;
-    const customRoleChip=customRole?`<span class="nyx-user-role nyx-user-role-${esc(publicRole||'member')}"${/^#[0-9a-f]{6}$/i.test(String(customRole.color||''))?` style="--nyx-user-role-color:${esc(customRole.color)};border-color:${esc(customRole.color)};color:${esc(customRole.color)}"`:''}><img src="/assets/icons/roles/${roleIconKey(publicRole||'member')}.png" alt="" aria-hidden="true"><span class="nyx-minecraft-text">${esc(customRole.label||roleLabel(publicRole))}</span></span>`:'';
+    const customRoleChip=customRole?`<span class="n7x-user-role n7x-user-role-${esc(publicRole||'member')}"${/^#[0-9a-f]{6}$/i.test(String(customRole.color||''))?` style="--n7x-user-role-color:${esc(customRole.color)};border-color:${esc(customRole.color)};color:${esc(customRole.color)}"`:''}><img src="/assets/icons/roles/${roleIconKey(publicRole||'member')}.png" alt="" aria-hidden="true"><span class="n7x-minecraft-text">${esc(customRole.label||roleLabel(publicRole))}</span></span>`:'';
     const roles=publicRole
       ?(customRoleChip||roleChip(publicRole))
       :(nyxFounderIsOwner
-        ?`${roleChip('owner')}${roleChip('developer')}<span class="nyx-user-role nyx-user-role-founder">${symbol('founder')}Founder</span>`
+        ?`${roleChip('owner')}${roleChip('developer')}<span class="n7x-user-role n7x-user-role-founder">${symbol('founder')}Founder</span>`
         :roleChip(availableRoles.includes(nyxUserAccountRole)?nyxUserAccountRole:'member'));
-    const ownerActions=editable?`<div class="nyx-user-profile-actions" aria-label="Your account controls"><button type="button" data-nyx-profile-action="status"><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-hidden="true"></i><span>${esc(statusLabel)}</span><b aria-hidden="true">${symbol('chevron')}</b></button><button type="button" data-nyx-profile-action="custom-status">${symbol('edit')}<span>Edit custom status</span><b aria-hidden="true">${symbol('chevron')}</b></button><button type="button" data-nyx-profile-action="switch-account">${symbol('switch')}<span>Switch accounts</span><b aria-hidden="true">${symbol('chevron')}</b></button></div>`:'';
-    const mediaEdit=(type,label)=>editable?`<button class="nyx-profile-media-edit nyx-profile-media-edit-${type}" type="button" data-nyx-direct-edit="${type}" aria-label="${label}" title="${label}">${symbol('edit')}</button>`:'';
+    const ownerActions=editable?`<div class="n7x-user-profile-actions" aria-label="Your account controls"><button type="button" data-n7x-profile-action="status"><i class="n7x-user-status n7x-user-status-${esc(profile.status)}" aria-hidden="true"></i><span>${esc(statusLabel)}</span><b aria-hidden="true">${symbol('chevron')}</b></button><button type="button" data-n7x-profile-action="custom-status">${symbol('edit')}<span>Edit custom status</span><b aria-hidden="true">${symbol('chevron')}</b></button><button type="button" data-n7x-profile-action="switch-account">${symbol('switch')}<span>Switch accounts</span><b aria-hidden="true">${symbol('chevron')}</b></button></div>`:'';
+    const mediaEdit=(type,label)=>editable?`<button class="n7x-profile-media-edit n7x-profile-media-edit-${type}" type="button" data-n7x-direct-edit="${type}" aria-label="${label}" title="${label}">${symbol('edit')}</button>`:'';
     const avatar=profile.avatarUrl?`<img src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="${esc(profile.displayName)} profile picture">`:`<span>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</span>`;
     const background=profile.bannerUrl?`<img src="${esc(nyxProfileStillSource(profile.bannerUrl))}" alt="" aria-hidden="true">`:'';
     if(options.popup){
-      return `<section class="nyx-user-profile-card nyx-public-profile-popup ${nyxProfileEffectClass(profile)}" style="--nyx-user-accent-primary:${profile.accentPrimary};--nyx-user-accent-secondary:${profile.accentSecondary};--nyx-user-banner-color:${profile.bannerColor};${nyxProfileEffectVars(profile)}"><i class="nyx-user-profile-effect" aria-hidden="true">${nyxProfileEffectArtwork(profile)}</i><div class="nyx-user-profile-banner">${background}${mediaEdit('banner','Edit profile banner')}</div><div class="nyx-user-profile-chrome"><div class="nyx-user-profile-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}${mediaEdit('avatar','Edit profile picture')}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${(options.online??profile.status==='online')?'online':'offline'}" aria-label="${(options.online??profile.status==='online')?'Online':'Offline'}"></i></div></div><div class="nyx-user-profile-body"><div class="nyx-popup-name"><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2>${publicRole&&publicRole!=='member'?roles:''}</div><p class="nyx-popup-handle">${esc(profile.handle)}</p>${profile.customStatus?`<p class="nyx-popup-status">${esc(profile.customStatus)}</p>`:''}${profile.bio||editable?`<p class="nyx-popup-bio nyx-user-profile-bio">${esc(profile.bio||(editable?'Add a bio':''))}</p>`:''}${options.createdAt?`<p class="nyx-popup-joined">Joined ${esc(joined)}</p>`:''}<div data-profile-contact-controls></div></div></section>`;
+      return `<section class="n7x-user-profile-card n7x-public-profile-popup ${nyxProfileEffectClass(profile)}" style="--n7x-user-accent-primary:${profile.accentPrimary};--n7x-user-accent-secondary:${profile.accentSecondary};--n7x-user-banner-color:${profile.bannerColor};${nyxProfileEffectVars(profile)}"><i class="n7x-user-profile-effect" aria-hidden="true">${nyxProfileEffectArtwork(profile)}</i><div class="n7x-user-profile-banner">${background}${mediaEdit('banner','Edit profile banner')}</div><div class="n7x-user-profile-chrome"><div class="n7x-user-profile-avatar n7x-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}${mediaEdit('avatar','Edit profile picture')}<i class="n7x-avatar-decoration" aria-hidden="true"><span></span></i><i class="n7x-user-status n7x-user-status-${(options.online??profile.status==='online')?'online':'offline'}" aria-label="${(options.online??profile.status==='online')?'Online':'Offline'}"></i></div></div><div class="n7x-user-profile-body"><div class="n7x-popup-name"><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2>${publicRole&&publicRole!=='member'?roles:''}</div><p class="n7x-popup-handle">${esc(profile.handle)}</p>${profile.customStatus?`<p class="n7x-popup-status">${esc(profile.customStatus)}</p>`:''}${profile.bio||editable?`<p class="n7x-popup-bio n7x-user-profile-bio">${esc(profile.bio||(editable?'Add a bio':''))}</p>`:''}${options.createdAt?`<p class="n7x-popup-joined">Joined ${esc(joined)}</p>`:''}<div data-profile-contact-controls></div></div></section>`;
     }
     if(options.compactPreview){
-      const previewActions=`<div class="nyx-account-menu-group nyx-editor-menu-preview-actions" aria-hidden="true"><button type="button" tabindex="-1">${nyxAccountMenuIcon('edit')}<span>Edit Profile</span></button><hr><button type="button" tabindex="-1"><i class="nyx-user-status nyx-user-status-${esc(profile.status)}"></i><span>${esc(statusLabel)}</span>${nyxAccountMenuIcon('chevron')}</button></div><div class="nyx-account-menu-group nyx-editor-menu-preview-actions" aria-hidden="true"><button type="button" tabindex="-1">${nyxAccountMenuIcon('switch')}<span>Switch Accounts</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" tabindex="-1">${nyxAccountMenuIcon('id')}<span>Copy User ID</span></button></div>`;
-      return `<section class="nyx-editor-menu-preview nyx-account-menu show ${nyxProfileEffectClass(profile)}" style="--nyx-account-primary:${profile.accentPrimary};--nyx-account-secondary:${profile.accentSecondary};--nyx-account-banner:${profile.bannerColor};--nyx-user-accent-primary:${profile.accentPrimary};--nyx-user-accent-secondary:${profile.accentSecondary};--nyx-user-banner-color:${profile.bannerColor};${nyxProfileEffectVars(profile)}"><i class="nyx-user-profile-effect nyx-account-menu-profile-effect" aria-hidden="true">${nyxProfileEffectArtwork(profile)}</i><div class="nyx-account-menu-banner">${background}${mediaEdit('banner','Edit profile banner')}</div><div class="nyx-account-menu-profile"><div class="nyx-account-menu-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}" data-nyx-direct-edit="avatar">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i></div><span class="nyx-account-menu-status"><span>${esc(profile.customStatus||statusLabel)}</span></span><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p class="nyx-account-menu-handle">${esc(profile.handle)}</p><p class="nyx-account-menu-bio">${esc(profile.bio||'No bio yet.')}</p></div>${previewActions}</section>`;
+      const previewActions=`<div class="n7x-account-menu-group n7x-editor-menu-preview-actions" aria-hidden="true"><button type="button" tabindex="-1">${nyxAccountMenuIcon('edit')}<span>Edit Profile</span></button><hr><button type="button" tabindex="-1"><i class="n7x-user-status n7x-user-status-${esc(profile.status)}"></i><span>${esc(statusLabel)}</span>${nyxAccountMenuIcon('chevron')}</button></div><div class="n7x-account-menu-group n7x-editor-menu-preview-actions" aria-hidden="true"><button type="button" tabindex="-1">${nyxAccountMenuIcon('switch')}<span>Switch Accounts</span>${nyxAccountMenuIcon('chevron')}</button><hr><button type="button" tabindex="-1">${nyxAccountMenuIcon('id')}<span>Copy User ID</span></button></div>`;
+      return `<section class="n7x-editor-menu-preview n7x-account-menu show ${nyxProfileEffectClass(profile)}" style="--n7x-account-primary:${profile.accentPrimary};--n7x-account-secondary:${profile.accentSecondary};--n7x-account-banner:${profile.bannerColor};--n7x-user-accent-primary:${profile.accentPrimary};--n7x-user-accent-secondary:${profile.accentSecondary};--n7x-user-banner-color:${profile.bannerColor};${nyxProfileEffectVars(profile)}"><i class="n7x-user-profile-effect n7x-account-menu-profile-effect" aria-hidden="true">${nyxProfileEffectArtwork(profile)}</i><div class="n7x-account-menu-banner">${background}${mediaEdit('banner','Edit profile banner')}</div><div class="n7x-account-menu-profile"><div class="n7x-account-menu-avatar n7x-avatar-decoration-${esc(profile.avatarDecoration)}" data-n7x-direct-edit="avatar">${avatar}<i class="n7x-avatar-decoration" aria-hidden="true"><span></span></i><i class="n7x-user-status n7x-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i></div><span class="n7x-account-menu-status"><span>${esc(profile.customStatus||statusLabel)}</span></span><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p class="n7x-account-menu-handle">${esc(profile.handle)}</p><p class="n7x-account-menu-bio">${esc(profile.bio||'No bio yet.')}</p></div>${previewActions}</section>`;
     }
-    return `<section class="nyx-user-profile-card ${nyxProfileEffectClass(profile)}" style="--nyx-user-accent-primary:${profile.accentPrimary};--nyx-user-accent-secondary:${profile.accentSecondary};--nyx-user-banner-color:${profile.bannerColor};${nyxProfileEffectVars(profile)}"><i class="nyx-user-profile-effect" aria-hidden="true">${nyxProfileEffectArtwork(profile)}</i><div class="nyx-user-profile-banner">${background}${mediaEdit('banner','Edit profile banner')}</div><div class="nyx-user-profile-chrome"><div class="nyx-user-profile-avatar nyx-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><i class="nyx-user-status nyx-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i>${mediaEdit('avatar','Edit profile picture')}</div></div><div class="nyx-user-profile-body"><div class="nyx-user-profile-heading"><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p>${esc(profile.handle)}</p></div><p class="nyx-user-profile-custom-status">${symbol('status')} ${esc(profile.customStatus||`${statusLabel} on N7X`)}</p><section class="nyx-user-profile-about"><h3>About me</h3><p class="nyx-user-profile-bio">${esc(profile.bio||'No bio yet.')}</p></section><section class="nyx-user-profile-roles"><h3>Roles</h3><div class="nyx-user-role-list">${roles}</div></section><section class="nyx-user-profile-details"><h3>N7X member since</h3><p>${esc(joined)}</p></section>${ownerActions}</div></section>`;
+    return `<section class="n7x-user-profile-card ${nyxProfileEffectClass(profile)}" style="--n7x-user-accent-primary:${profile.accentPrimary};--n7x-user-accent-secondary:${profile.accentSecondary};--n7x-user-banner-color:${profile.bannerColor};${nyxProfileEffectVars(profile)}"><i class="n7x-user-profile-effect" aria-hidden="true">${nyxProfileEffectArtwork(profile)}</i><div class="n7x-user-profile-banner">${background}${mediaEdit('banner','Edit profile banner')}</div><div class="n7x-user-profile-chrome"><div class="n7x-user-profile-avatar n7x-avatar-decoration-${esc(profile.avatarDecoration)}">${avatar}<i class="n7x-avatar-decoration" aria-hidden="true"><span></span></i><i class="n7x-user-status n7x-user-status-${esc(profile.status)}" aria-label="${esc(statusLabel)}"></i>${mediaEdit('avatar','Edit profile picture')}</div></div><div class="n7x-user-profile-body"><div class="n7x-user-profile-heading"><h2 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h2><p>${esc(profile.handle)}</p></div><p class="n7x-user-profile-custom-status">${symbol('status')} ${esc(profile.customStatus||`${statusLabel} on N7X`)}</p><section class="n7x-user-profile-about"><h3>About me</h3><p class="n7x-user-profile-bio">${esc(profile.bio||'No bio yet.')}</p></section><section class="n7x-user-profile-roles"><h3>Roles</h3><div class="n7x-user-role-list">${roles}</div></section><section class="n7x-user-profile-details"><h3>N7X member since</h3><p>${esc(joined)}</p></section>${ownerActions}</div></section>`;
   }
   async function nyxProfileImageFromFile(file,maxWidth,maxHeight){
     if(!file||!/^image\/(?:png|jpe?g|webp|gif)$/i.test(String(file.type||'')))throw new Error('Choose a PNG, JPG, WebP, or GIF image.');
@@ -1199,72 +1199,72 @@
     closeNyxAccountMenu();
     if(!nyxFounderSignedInUser){await openNyxAccountAccess();if(!nyxFounderSignedInUser)return}
     if(!nyxUserProfile)await loadNyxUserProfile();
-    document.querySelector('.nyx-user-profile-overlay')?.remove();
+    document.querySelector('.n7x-user-profile-overlay')?.remove();
     const profile=normalizeNyxUserProfile(nyxUserProfile);
     const accountUsername=nyxAccountUsername(String(nyxFounderSignedInUser?.email||'').split('@')[0]);
     const overlay=document.createElement('div');
-    overlay.className='nyx-user-profile-overlay nyx-profile-drawer';
+    overlay.className='n7x-user-profile-overlay n7x-profile-drawer';
     overlay.innerHTML=`
-      <section class="nyx-user-profile-dialog" role="dialog" aria-modal="true" aria-labelledby="nyxUserProfileTitle">
-        <main class="nyx-discord-profile-main">
-          <button class="nyx-founder-editor-close nyx-discord-settings-close" data-close-nyx-profile type="button" aria-label="Close">
+      <section class="n7x-user-profile-dialog" role="dialog" aria-modal="true" aria-labelledby="n7xUserProfileTitle">
+        <main class="n7x-discord-profile-main">
+          <button class="n7x-founder-editor-close n7x-discord-settings-close" data-close-n7x-profile type="button" aria-label="Close">
             ${nyxAccountMenuIcon('close')}
           </button>
-          <div class="nyx-discord-profile-scroll">
-            <header class="nyx-discord-profile-header">
-              <h2 id="nyxUserProfileTitle">Edit profile</h2>
-              <p>Your profile, across Nyx.</p>
+          <div class="n7x-discord-profile-scroll">
+            <header class="n7x-discord-profile-header">
+              <h2 id="n7xUserProfileTitle">Edit profile</h2>
+              <p>Your profile, across N7X.</p>
             </header>
-            <div class="nyx-discord-profile-layout">
-              <form class="nyx-user-profile-form">
-                <section class="nyx-profile-editor-section">
+            <div class="n7x-discord-profile-layout">
+              <form class="n7x-user-profile-form">
+                <section class="n7x-profile-editor-section">
                   <h4>Profile information</h4>
-                  <div class="nyx-profile-field-grid">
-                    <label class="nyx-profile-field">Display name<input name="displayName" maxlength="48" required value="${esc(profile.displayName)}"></label>
-                    <label class="nyx-profile-field">Profile username<input name="handle" maxlength="33" pattern="@?[A-Za-z0-9_.-]{3,32}" autocomplete="username" required value="${esc(profile.handle)}"><small>Unique across N7X · 3–32 letters, numbers, dots, dashes, or underscores.</small></label>
-                    <label class="nyx-profile-field nyx-profile-field-wide">About me<textarea name="bio" maxlength="280" rows="4" placeholder="You can use text and emoji.">${esc(profile.bio)}</textarea><small><span data-nyx-bio-count>${profile.bio.length}</span>/280</small></label>
-                    <label class="nyx-profile-field">Status<select name="status"><option value="online" ${profile.status==='online'?'selected':''}>Online</option><option value="idle" ${profile.status==='idle'?'selected':''}>Idle</option><option value="dnd" ${profile.status==='dnd'?'selected':''}>Do not disturb</option><option value="offline" ${profile.status==='offline'?'selected':''}>Invisible</option></select></label>
-                    <label class="nyx-profile-field">Custom status<input name="customStatus" maxlength="80" value="${esc(profile.customStatus)}" placeholder="What are you up to?"></label>
+                  <div class="n7x-profile-field-grid">
+                    <label class="n7x-profile-field">Display name<input name="displayName" maxlength="48" required value="${esc(profile.displayName)}"></label>
+                    <label class="n7x-profile-field">Profile username<input name="handle" maxlength="33" pattern="@?[A-Za-z0-9_.-]{3,32}" autocomplete="username" required value="${esc(profile.handle)}"><small>Unique across N7X · 3–32 letters, numbers, dots, dashes, or underscores.</small></label>
+                    <label class="n7x-profile-field n7x-profile-field-wide">About me<textarea name="bio" maxlength="280" rows="4" placeholder="You can use text and emoji.">${esc(profile.bio)}</textarea><small><span data-n7x-bio-count>${profile.bio.length}</span>/280</small></label>
+                    <label class="n7x-profile-field">Status<select name="status"><option value="online" ${profile.status==='online'?'selected':''}>Online</option><option value="idle" ${profile.status==='idle'?'selected':''}>Idle</option><option value="dnd" ${profile.status==='dnd'?'selected':''}>Do not disturb</option><option value="offline" ${profile.status==='offline'?'selected':''}>Invisible</option></select></label>
+                    <label class="n7x-profile-field">Custom status<input name="customStatus" maxlength="80" value="${esc(profile.customStatus)}" placeholder="What are you up to?"></label>
                   </div>
                 </section>
-                <section class="nyx-profile-editor-section">
+                <section class="n7x-profile-editor-section">
                   <h4>Avatar &amp; banner</h4>
-                  <div class="nyx-profile-image-list">
-                    <div class="nyx-profile-image-control">
+                  <div class="n7x-profile-image-list">
+                    <div class="n7x-profile-image-control">
                       <div><strong>Avatar</strong><small>PNG, JPG, WebP, or animated GIF.</small></div>
                       <input name="avatarUrl" type="hidden" value="${esc(profile.avatarUrl)}">
-                      <input class="nyx-profile-file-input" name="avatarFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
-                      <span class="nyx-profile-file-name" data-nyx-file-name="avatar">${profile.avatarUrl?'Image selected':'No image selected'}</span>
-                      <div class="nyx-profile-image-actions"><button class="nyx-profile-file-button" type="button" data-nyx-pick-image="avatar"><span class="nyx-profile-rail-avatar">${profile.avatarUrl?`<img src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="">`:`<b>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</b>`}</span><span>Change Avatar</span></button><button class="nyx-profile-clear-button" type="button" data-nyx-clear-image="avatar">Remove Avatar</button></div>
+                      <input class="n7x-profile-file-input" name="avatarFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+                      <span class="n7x-profile-file-name" data-n7x-file-name="avatar">${profile.avatarUrl?'Image selected':'No image selected'}</span>
+                      <div class="n7x-profile-image-actions"><button class="n7x-profile-file-button" type="button" data-n7x-pick-image="avatar"><span class="n7x-profile-rail-avatar">${profile.avatarUrl?`<img src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="">`:`<b>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</b>`}</span><span>Change Avatar</span></button><button class="n7x-profile-clear-button" type="button" data-n7x-clear-image="avatar">Remove Avatar</button></div>
                     </div>
-                    <div class="nyx-profile-image-control">
+                    <div class="n7x-profile-image-control">
                       <div><strong>Profile banner</strong><small>Recommended size: 680 × 240.</small></div>
                       <input name="bannerUrl" type="hidden" value="${esc(profile.bannerUrl)}">
-                      <input class="nyx-profile-file-input" name="bannerFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
-                      <span class="nyx-profile-file-name" data-nyx-file-name="banner">${profile.bannerUrl?'Image selected':'No image selected'}</span>
-                      <div class="nyx-profile-image-actions"><button class="nyx-profile-file-button" type="button" data-nyx-pick-image="banner">Change Banner</button><button class="nyx-profile-clear-button" type="button" data-nyx-clear-image="banner">Remove Banner</button></div>
+                      <input class="n7x-profile-file-input" name="bannerFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+                      <span class="n7x-profile-file-name" data-n7x-file-name="banner">${profile.bannerUrl?'Image selected':'No image selected'}</span>
+                      <div class="n7x-profile-image-actions"><button class="n7x-profile-file-button" type="button" data-n7x-pick-image="banner">Change Banner</button><button class="n7x-profile-clear-button" type="button" data-n7x-clear-image="banner">Remove Banner</button></div>
                     </div>
                   </div>
                 </section>
-                <section class="nyx-profile-editor-section">
+                <section class="n7x-profile-editor-section">
                   <h4>Profile theme</h4>
-                  <div class="nyx-profile-color-grid">
-                    <label class="nyx-profile-field nyx-profile-color-field">Primary<input name="accentPrimary" type="color" value="${esc(profile.accentPrimary)}"><small>Profile card color</small></label>
-                    <label class="nyx-profile-field nyx-profile-color-field">Accent<input name="accentSecondary" type="color" value="${esc(profile.accentSecondary)}"><small>Secondary surface color</small></label>
-                    <label class="nyx-profile-field nyx-profile-color-field">Banner color<input name="bannerColor" type="color" value="${esc(profile.bannerColor)}"><small>Used without a banner image</small></label>
-                     <label class="nyx-profile-field">Profile decoration<select name="profileEffect">${nyxProfileOptions(NYX_PROFILE_EFFECTS,profile.profileEffect)}</select><small>Animated artwork across your profile card.</small></label>
+                  <div class="n7x-profile-color-grid">
+                    <label class="n7x-profile-field n7x-profile-color-field">Primary<input name="accentPrimary" type="color" value="${esc(profile.accentPrimary)}"><small>Profile card color</small></label>
+                    <label class="n7x-profile-field n7x-profile-color-field">Accent<input name="accentSecondary" type="color" value="${esc(profile.accentSecondary)}"><small>Secondary surface color</small></label>
+                    <label class="n7x-profile-field n7x-profile-color-field">Banner color<input name="bannerColor" type="color" value="${esc(profile.bannerColor)}"><small>Used without a banner image</small></label>
+                     <label class="n7x-profile-field">Profile decoration<select name="profileEffect">${nyxProfileOptions(NYX_PROFILE_EFFECTS,profile.profileEffect)}</select><small>Animated artwork across your profile card.</small></label>
                   </div>
                 </section>
-                <p class="nyx-founder-editor-error" aria-live="polite"></p>
+                <p class="n7x-founder-editor-error" aria-live="polite"></p>
                 <footer>
                   <strong>Changes saved</strong>
-                  <button class="nyx-profile-reset-button" type="reset">Reset</button>
+                  <button class="n7x-profile-reset-button" type="reset">Reset</button>
                   <button class="settings-action on" type="submit">Save Changes</button>
                 </footer>
               </form>
-              <aside class="nyx-discord-preview-pane">
+              <aside class="n7x-discord-preview-pane">
                 <h3>Preview</h3>
-                <div class="nyx-user-profile-view">${nyxUserProfileCardMarkup(profile,{editable:true,popup:true,role:nyxFounderIsOwner?'owner':nyxUserAccountRole})}</div>
+                <div class="n7x-user-profile-view">${nyxUserProfileCardMarkup(profile,{editable:true,popup:true,role:nyxFounderIsOwner?'owner':nyxUserAccountRole})}</div>
               </aside>
             </div>
           </div>
@@ -1280,8 +1280,8 @@
       setTimeout(()=>overlay.remove(),240);
     };
     overlay.addEventListener('click',async event=>{
-      if(event.target===overlay||event.target.closest('[data-close-nyx-profile]')){close();return}
-      const action=event.target.closest('[data-nyx-profile-action]')?.dataset.nyxProfileAction;
+      if(event.target===overlay||event.target.closest('[data-close-n7x-profile]')){close();return}
+      const action=event.target.closest('[data-n7x-profile-action]')?.dataset.n7xProfileAction;
       if(!action)return;
       if(action==='status'){const field=overlay.querySelector('[name="status"]');field?.scrollIntoView({block:'center',behavior:'smooth'});field?.focus();try{field?.showPicker?.()}catch{}return}
       if(action==='custom-status'){const field=overlay.querySelector('[name="customStatus"]');field?.scrollIntoView({block:'center',behavior:'smooth'});field?.focus();field?.select();return}
@@ -1289,37 +1289,37 @@
     });
     const form=overlay.querySelector('form');
     const pendingMediaPreparations=new Map();
-    form.insertAdjacentHTML('afterbegin',`<header class="nyx-profile-rail-header">
-      <button type="button" data-nyx-profile-switch-toggle aria-haspopup="menu" aria-expanded="false">
+    form.insertAdjacentHTML('afterbegin',`<header class="n7x-profile-rail-header">
+      <button type="button" data-n7x-profile-switch-toggle aria-haspopup="menu" aria-expanded="false">
         <span>Main Profile</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg>
       </button>
-      <section class="nyx-profile-switch-menu" data-nyx-profile-switch-menu role="menu" aria-label="Profile options" hidden>
-        <div class="nyx-profile-switch-current">
-          <span class="nyx-profile-switch-avatar">${profile.avatarUrl?`<img src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="">`:`<b>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</b>`}</span>
+      <section class="n7x-profile-switch-menu" data-n7x-profile-switch-menu role="menu" aria-label="Profile options" hidden>
+        <div class="n7x-profile-switch-current">
+          <span class="n7x-profile-switch-avatar">${profile.avatarUrl?`<img src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="">`:`<b>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</b>`}</span>
           <span><strong>${esc(profile.displayName)}</strong><small>${esc(profile.handle)}</small></span>
           <i aria-hidden="true"></i>
         </div>
-        <button type="button" role="menuitem" data-nyx-switch-profile>
+        <button type="button" role="menuitem" data-n7x-switch-profile>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m16 3 4 4-4 4"/><path d="M20 7H9a4 4 0 0 0-4 4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h11a4 4 0 0 0 4-4"/></svg>
           <span><strong>Switch Profile</strong><small>Sign in to another N7X profile</small></span>
         </button>
-        <div class="nyx-profile-switch-confirm" data-nyx-profile-switch-confirm hidden>
+        <div class="n7x-profile-switch-confirm" data-n7x-profile-switch-confirm hidden>
           <strong>Discard unsaved changes?</strong>
           <p>Your current profile edits have not been saved.</p>
-          <div><button type="button" data-nyx-switch-stay>Keep editing</button><button type="button" data-nyx-switch-discard>Discard &amp; switch</button></div>
+          <div><button type="button" data-n7x-switch-stay>Keep editing</button><button type="button" data-n7x-switch-discard>Discard &amp; switch</button></div>
         </div>
       </section>
     </header>`);
-    const profileSwitchToggle=form.querySelector('[data-nyx-profile-switch-toggle]');
-    const profileSwitchMenu=form.querySelector('[data-nyx-profile-switch-menu]');
-    const profileSwitchConfirm=form.querySelector('[data-nyx-profile-switch-confirm]');
+    const profileSwitchToggle=form.querySelector('[data-n7x-profile-switch-toggle]');
+    const profileSwitchMenu=form.querySelector('[data-n7x-profile-switch-menu]');
+    const profileSwitchConfirm=form.querySelector('[data-n7x-profile-switch-confirm]');
     const setProfileSwitchMenu=open=>{
       profileSwitchMenu.hidden=!open;
       profileSwitchToggle.setAttribute('aria-expanded',String(open));
       profileSwitchToggle.classList.toggle('active',open);
       if(!open){
         profileSwitchConfirm.hidden=true;
-        form.querySelector('[data-nyx-switch-profile]').hidden=false;
+        form.querySelector('[data-n7x-switch-profile]').hidden=false;
       }
     };
     const performProfileSwitch=async()=>{
@@ -1335,9 +1335,9 @@
     });
     profileSwitchMenu.addEventListener('click',event=>{
       event.stopPropagation();
-      if(event.target.closest('[data-nyx-switch-profile]')){
+      if(event.target.closest('[data-n7x-switch-profile]')){
         if(form.classList.contains('is-dirty')){
-          form.querySelector('[data-nyx-switch-profile]').hidden=true;
+          form.querySelector('[data-n7x-switch-profile]').hidden=true;
           profileSwitchConfirm.hidden=false;
           setTimeout(()=>profileSwitchConfirm.querySelector('button')?.focus(),0);
         }else{
@@ -1345,16 +1345,16 @@
         }
         return;
       }
-      if(event.target.closest('[data-nyx-switch-stay]')){
+      if(event.target.closest('[data-n7x-switch-stay]')){
         profileSwitchConfirm.hidden=true;
-        form.querySelector('[data-nyx-switch-profile]').hidden=false;
+        form.querySelector('[data-n7x-switch-profile]').hidden=false;
         profileSwitchToggle.focus();
         return;
       }
-      if(event.target.closest('[data-nyx-switch-discard]')) void performProfileSwitch();
+      if(event.target.closest('[data-n7x-switch-discard]')) void performProfileSwitch();
     });
     overlay.addEventListener('click',event=>{
-      if(!profileSwitchMenu.hidden&&!event.target.closest('.nyx-profile-rail-header'))setProfileSwitchMenu(false);
+      if(!profileSwitchMenu.hidden&&!event.target.closest('.n7x-profile-rail-header'))setProfileSwitchMenu(false);
     });
     profileSwitchMenu.addEventListener('keydown',event=>{
       if(event.key==='Escape'){
@@ -1364,7 +1364,7 @@
         profileSwitchToggle.focus();
       }
     });
-    const railSections=Array.from(form.querySelectorAll('.nyx-profile-editor-section'));
+    const railSections=Array.from(form.querySelectorAll('.n7x-profile-editor-section'));
     if(railSections[0]) railSections[0].querySelector('h4').textContent='Nameplate';
     if(railSections[1]) railSections[1].querySelector('h4').textContent='Avatar & Decoration';
     if(railSections[2]) railSections[2].querySelector('h4').textContent='Profile Effect & Frame';
@@ -1373,128 +1373,128 @@
     const bioField=form.querySelector('[name="bio"]')?.closest('label');
     const statusField=form.querySelector('[name="status"]')?.closest('label');
     const customStatusField=form.querySelector('[name="customStatus"]')?.closest('label');
-    displayNameField?.classList.add('nyx-profile-display-name-field');
-    handleField?.classList.add('nyx-profile-nameplate-field');
-    bioField?.classList.add('nyx-profile-about-field');
-    railSections[0]?.querySelector('.nyx-profile-field-grid')?.insertAdjacentHTML('afterbegin',`<div class="nyx-profile-nameplate-preview"><span>${profile.avatarUrl?`<img src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="">`:`<b>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</b>`}</span><i>${esc(profile.handle)}</i><strong aria-hidden="true">+</strong></div>`);
+    displayNameField?.classList.add('n7x-profile-display-name-field');
+    handleField?.classList.add('n7x-profile-nameplate-field');
+    bioField?.classList.add('n7x-profile-about-field');
+    railSections[0]?.querySelector('.n7x-profile-field-grid')?.insertAdjacentHTML('afterbegin',`<div class="n7x-profile-nameplate-preview"><span>${profile.avatarUrl?`<img src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="">`:`<b>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</b>`}</span><i>${esc(profile.handle)}</i><strong aria-hidden="true">+</strong></div>`);
     const displaySection=document.createElement('section');
-    displaySection.className='nyx-profile-editor-section nyx-profile-display-section';
-    const fontOptions=NYX_DISPLAY_NAME_FONTS.map(([value,label])=>`<label class="nyx-name-style-choice"><input type="radio" name="displayNameFont" value="${value}" ${profile.displayNameFont===value?'checked':''}><span class="nyx-name-font-${value}">${esc(label)}</span></label>`).join('');
-    const effectOptions=NYX_DISPLAY_NAME_EFFECTS.map(([value,label])=>`<label class="nyx-name-style-choice nyx-name-effect-choice"><input type="radio" name="displayNameEffect" value="${value}" ${profile.displayNameEffect===value?'checked':''}><span>${esc(label)}</span></label>`).join('');
+    displaySection.className='n7x-profile-editor-section n7x-profile-display-section';
+    const fontOptions=NYX_DISPLAY_NAME_FONTS.map(([value,label])=>`<label class="n7x-name-style-choice"><input type="radio" name="displayNameFont" value="${value}" ${profile.displayNameFont===value?'checked':''}><span class="n7x-name-font-${value}">${esc(label)}</span></label>`).join('');
+    const effectOptions=NYX_DISPLAY_NAME_EFFECTS.map(([value,label])=>`<label class="n7x-name-style-choice n7x-name-effect-choice"><input type="radio" name="displayNameEffect" value="${value}" ${profile.displayNameEffect===value?'checked':''}><span>${esc(label)}</span></label>`).join('');
     displaySection.innerHTML=`<h4>Display Name Style</h4>
-      <button class="nyx-display-name-style-launcher" type="button" data-nyx-display-style-toggle aria-expanded="false">
-        <span class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}" data-nyx-name-style-preview>${esc(profile.displayName)}</span><strong aria-hidden="true">+</strong>
+      <button class="n7x-display-name-style-launcher" type="button" data-n7x-display-style-toggle aria-expanded="false">
+        <span class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}" data-n7x-name-style-preview>${esc(profile.displayName)}</span><strong aria-hidden="true">+</strong>
       </button>
-      <div class="nyx-display-name-editor" data-nyx-display-name-editor hidden>
-        <div class="nyx-display-name-editor-head"><div><strong>Change Display Name Style</strong><small>Font, effect, and colors</small></div><div class="nyx-name-preview-modes" aria-label="Preview background"><button type="button" data-nyx-name-preview-theme="dark" class="active">Dark</button><button type="button" data-nyx-name-preview-theme="light">Light</button></div></div>
-        <div class="nyx-name-style-live-sample"><span class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}" data-nyx-name-style-preview>${esc(profile.displayName)}</span></div>
-        <div class="nyx-display-name-input-slot"></div>
-        <fieldset class="nyx-name-style-group"><legend>Font</legend><div class="nyx-name-font-grid">${fontOptions}</div></fieldset>
-        <fieldset class="nyx-name-style-group"><legend>Effect</legend><div class="nyx-name-effect-grid">${effectOptions}</div></fieldset>
-        <div class="nyx-name-color-grid">
+      <div class="n7x-display-name-editor" data-n7x-display-name-editor hidden>
+        <div class="n7x-display-name-editor-head"><div><strong>Change Display Name Style</strong><small>Font, effect, and colors</small></div><div class="n7x-name-preview-modes" aria-label="Preview background"><button type="button" data-n7x-name-preview-theme="dark" class="active">Dark</button><button type="button" data-n7x-name-preview-theme="light">Light</button></div></div>
+        <div class="n7x-name-style-live-sample"><span class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}" data-n7x-name-style-preview>${esc(profile.displayName)}</span></div>
+        <div class="n7x-display-name-input-slot"></div>
+        <fieldset class="n7x-name-style-group"><legend>Font</legend><div class="n7x-name-font-grid">${fontOptions}</div></fieldset>
+        <fieldset class="n7x-name-style-group"><legend>Effect</legend><div class="n7x-name-effect-grid">${effectOptions}</div></fieldset>
+        <div class="n7x-name-color-grid">
           <label>Primary color<input name="displayNameColorPrimary" type="color" value="${profile.displayNameColorPrimary}"></label>
-          <label data-nyx-name-secondary-color>Secondary color<input name="displayNameColorSecondary" type="color" value="${profile.displayNameColorSecondary}"></label>
+          <label data-n7x-name-secondary-color>Secondary color<input name="displayNameColorSecondary" type="color" value="${profile.displayNameColorSecondary}"></label>
         </div>
-        <button class="nyx-name-surprise-button" type="button" data-nyx-name-surprise>Surprise Me</button>
+        <button class="n7x-name-surprise-button" type="button" data-n7x-name-surprise>Surprise Me</button>
       </div>`;
-    if(displayNameField) displaySection.querySelector('.nyx-display-name-input-slot').appendChild(displayNameField);
+    if(displayNameField) displaySection.querySelector('.n7x-display-name-input-slot').appendChild(displayNameField);
     const detailsSection=document.createElement('section');
-    detailsSection.className='nyx-profile-editor-section nyx-profile-details-section';
-    detailsSection.innerHTML='<h4>Profile Details</h4><div class="nyx-profile-field-grid"></div>';
+    detailsSection.className='n7x-profile-editor-section n7x-profile-details-section';
+    detailsSection.innerHTML='<h4>Profile Details</h4><div class="n7x-profile-field-grid"></div>';
     const accountEmailField=document.createElement('label');
-    accountEmailField.className='nyx-profile-field nyx-profile-field-wide nyx-profile-account-email-field';
-    accountEmailField.innerHTML=`Account email <span class="nyx-profile-optional">Optional</span><input name="accountEmail" type="email" maxlength="254" autocomplete="email" value="${esc(nyxUserAccountEmail)}" placeholder="you@example.com"><small>Add an email whenever you want. It can be used to log in and receive password-reset messages.</small>`;
+    accountEmailField.className='n7x-profile-field n7x-profile-field-wide n7x-profile-account-email-field';
+    accountEmailField.innerHTML=`Account email <span class="n7x-profile-optional">Optional</span><input name="accountEmail" type="email" maxlength="254" autocomplete="email" value="${esc(nyxUserAccountEmail)}" placeholder="you@example.com"><small>Add an email whenever you want. It can be used to log in and receive password-reset messages.</small>`;
     [accountEmailField,statusField,customStatusField,bioField].filter(Boolean).forEach(field=>detailsSection.querySelector('div').appendChild(field));
     railSections[2]?.after(displaySection,detailsSection);
-    form.querySelector('[name="bannerColor"]')?.closest('label')?.classList.add('nyx-profile-banner-color-field');
-    form.querySelector('[name="accentPrimary"]')?.closest('label')?.classList.add('nyx-profile-primary-color-field');
-    form.querySelector('[name="accentSecondary"]')?.closest('label')?.classList.add('nyx-profile-secondary-color-field');
+    form.querySelector('[name="bannerColor"]')?.closest('label')?.classList.add('n7x-profile-banner-color-field');
+    form.querySelector('[name="accentPrimary"]')?.closest('label')?.classList.add('n7x-profile-primary-color-field');
+    form.querySelector('[name="accentSecondary"]')?.closest('label')?.classList.add('n7x-profile-secondary-color-field');
     const minecraftDisplayNameField=form.querySelector('[name="displayName"]')?.closest('label');
-    if(minecraftDisplayNameField&&!minecraftDisplayNameField.querySelector('[data-nyx-minecraft-help]'))minecraftDisplayNameField.insertAdjacentHTML('beforeend','<small data-nyx-minecraft-help>Use Minecraft codes like &amp;b cyan, &amp;l bold, or &amp;r reset.</small>');
+    if(minecraftDisplayNameField&&!minecraftDisplayNameField.querySelector('[data-n7x-minecraft-help]'))minecraftDisplayNameField.insertAdjacentHTML('beforeend','<small data-n7x-minecraft-help>Use Minecraft codes like &amp;b cyan, &amp;l bold, or &amp;r reset.</small>');
     const profileEffectSelect=form.querySelector('[name="profileEffect"]');
     if(profileEffectSelect)profileEffectSelect.value=profile.profileEffect;
     const decorationField=document.createElement('label');
-    decorationField.className='nyx-profile-field';
-    decorationField.innerHTML=`<span class="nyx-profile-decoration-preview nyx-avatar-decoration-${esc(profile.avatarDecoration)}" data-nyx-decoration-preview style="--nyx-user-accent-primary:${profile.accentPrimary};--nyx-user-accent-secondary:${profile.accentSecondary}"><span class="nyx-profile-decoration-avatar">${profile.avatarUrl?`<img src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="">`:`<span>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</span>`}</span><i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i></span><span class="nyx-profile-decoration-label">Avatar decoration</span><select name="avatarDecoration">${nyxProfileOptions(NYX_AVATAR_DECORATIONS,profile.avatarDecoration)}</select><small>Choose an animated frame for your avatar.</small>`;
-    decorationField.classList.add('nyx-profile-decoration-field');
-    form.querySelector('.nyx-profile-image-list')?.appendChild(decorationField);
+    decorationField.className='n7x-profile-field';
+    decorationField.innerHTML=`<span class="n7x-profile-decoration-preview n7x-avatar-decoration-${esc(profile.avatarDecoration)}" data-n7x-decoration-preview style="--n7x-user-accent-primary:${profile.accentPrimary};--n7x-user-accent-secondary:${profile.accentSecondary}"><span class="n7x-profile-decoration-avatar">${profile.avatarUrl?`<img src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="">`:`<span>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</span>`}</span><i class="n7x-avatar-decoration" aria-hidden="true"><span></span></i></span><span class="n7x-profile-decoration-label">Avatar decoration</span><select name="avatarDecoration">${nyxProfileOptions(NYX_AVATAR_DECORATIONS,profile.avatarDecoration)}</select><small>Choose an animated frame for your avatar.</small>`;
+    decorationField.classList.add('n7x-profile-decoration-field');
+    form.querySelector('.n7x-profile-image-list')?.appendChild(decorationField);
     decorationField.querySelector('select').value=profile.avatarDecoration;
-    overlay.classList.add('nyx-profile-organized');
+    overlay.classList.add('n7x-profile-organized');
     railSections[0].querySelector('h4').textContent='Identity';
     railSections[1].querySelector('h4').textContent='Avatar & banner';
     railSections[2].querySelector('h4').textContent='Profile colors';
-    railSections[0].querySelector('.nyx-profile-field-grid').prepend(displayNameField);
+    railSections[0].querySelector('.n7x-profile-field-grid').prepend(displayNameField);
     const artworkSection=document.createElement('section');
-    artworkSection.className='nyx-profile-editor-section nyx-profile-artwork-section';
-    artworkSection.innerHTML='<h4>Decorations</h4><div class="nyx-profile-artwork-grid"></div>';
+    artworkSection.className='n7x-profile-editor-section n7x-profile-artwork-section';
+    artworkSection.innerHTML='<h4>Decorations</h4><div class="n7x-profile-artwork-grid"></div>';
     artworkSection.querySelector('div').append(decorationField,profileEffectSelect.closest('label'));
     railSections[1].after(artworkSection);
     railSections[0].after(detailsSection,displaySection);
     const editorNav=document.createElement('nav');
-    editorNav.className='nyx-profile-section-nav';
+    editorNav.className='n7x-profile-section-nav';
     editorNav.setAttribute('aria-label','Profile sections');
     for(const [section,label] of [[railSections[0],'Identity'],[detailsSection,'About you'],[displaySection,'Name style'],[railSections[1],'Images'],[artworkSection,'Decorations'],[railSections[2],'Colors']]){
       const button=document.createElement('button');button.type='button';button.innerHTML=nyxAccountMenuIcon({Identity:'id','About you':'people','Name style':'type',Images:'image',Decorations:'sparkle',Colors:'palette'}[label])+`<span>${label}</span>`;
       button.addEventListener('click',()=>{section.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});section.querySelector('input:not([type=hidden]),select,textarea,button')?.focus({preventScroll:true});});
       editorNav.appendChild(button);
     }
-    form.querySelector('.nyx-profile-rail-header').after(editorNav);
-    overlay.querySelector('.nyx-discord-preview-pane>h3').textContent='Live preview';
-    const editorBody=document.createElement('div');editorBody.className='nyx-profile-fields-scroll';
+    form.querySelector('.n7x-profile-rail-header').after(editorNav);
+    overlay.querySelector('.n7x-discord-preview-pane>h3').textContent='Live preview';
+    const editorBody=document.createElement('div');editorBody.className='n7x-profile-fields-scroll';
     const footer=form.querySelector('footer');
     [...form.children].filter(child=>child!==footer).forEach(child=>editorBody.append(child));
     form.prepend(editorBody);
-    const previewToggle=document.createElement('button');previewToggle.type='button';previewToggle.className='nyx-profile-preview-toggle';previewToggle.innerHTML=nyxAccountMenuIcon('eye')+'<span>Preview</span>';previewToggle.setAttribute('aria-pressed','false');
+    const previewToggle=document.createElement('button');previewToggle.type='button';previewToggle.className='n7x-profile-preview-toggle';previewToggle.innerHTML=nyxAccountMenuIcon('eye')+'<span>Preview</span>';previewToggle.setAttribute('aria-pressed','false');
     previewToggle.addEventListener('click',()=>{const shown=overlay.classList.toggle('show-preview');previewToggle.setAttribute('aria-pressed',String(shown));previewToggle.innerHTML=nyxAccountMenuIcon(shown?'edit':'eye')+`<span>${shown?'Edit':'Preview'}</span>`;});
-    overlay.querySelector('.nyx-discord-profile-header').append(previewToggle);
+    overlay.querySelector('.n7x-discord-profile-header').append(previewToggle);
     const decorateButton=(button,icon)=>{if(!button)return;button.insertAdjacentHTML('afterbegin',nyxAccountMenuIcon(icon));};
     decorateButton(footer.querySelector('[type="submit"]'),'check');decorateButton(footer.querySelector('[type="reset"]'),'undo');
-    form.querySelectorAll('[data-nyx-pick-image]').forEach(button=>decorateButton(button,'upload'));
-    form.querySelectorAll('[data-nyx-clear-image]').forEach(button=>decorateButton(button,'close'));
+    form.querySelectorAll('[data-n7x-pick-image]').forEach(button=>decorateButton(button,'upload'));
+    form.querySelectorAll('[data-n7x-clear-image]').forEach(button=>decorateButton(button,'close'));
 
     const customEffectBuilder=document.createElement('div');
-    customEffectBuilder.className='nyx-profile-custom-effect-builder';
+    customEffectBuilder.className='n7x-profile-custom-effect-builder';
     customEffectBuilder.hidden=true;
-    form.querySelector('.nyx-profile-color-grid')?.appendChild(customEffectBuilder);
+    form.querySelector('.n7x-profile-color-grid')?.appendChild(customEffectBuilder);
     const profileKeys=['displayName','handle','status','customStatus','bio','profileEffect','customEffectPattern','customEffectColorPrimary','customEffectColorSecondary','customEffectSpeed','customEffectIntensity','avatarDecoration','accentPrimary','accentSecondary','bannerColor','displayNameFont','displayNameEffect','displayNameColorPrimary','displayNameColorSecondary','avatarUrl','bannerUrl'];
     const directPopover=document.createElement('section');
-    directPopover.className='nyx-profile-direct-popover';
+    directPopover.className='n7x-profile-direct-popover';
     directPopover.hidden=true;
     overlay.appendChild(directPopover);
     const directTargets=()=>{
-      const view=overlay.querySelector('.nyx-user-profile-view');
-      view?.querySelectorAll('.nyx-profile-media-edit-avatar').forEach((button,index)=>{if(index>0)button.remove()});
-      [['avatar','[data-nyx-direct-edit="avatar"]','Change picture or decoration'],['banner','[data-nyx-direct-edit="banner"]','Change profile banner'],['bio','.nyx-user-profile-bio','Edit About me']].forEach(([type,selector,label])=>{
+      const view=overlay.querySelector('.n7x-user-profile-view');
+      view?.querySelectorAll('.n7x-profile-media-edit-avatar').forEach((button,index)=>{if(index>0)button.remove()});
+      [['avatar','[data-n7x-direct-edit="avatar"]','Change picture or decoration'],['banner','[data-n7x-direct-edit="banner"]','Change profile banner'],['bio','.n7x-user-profile-bio','Edit About me']].forEach(([type,selector,label])=>{
         const target=view?.querySelector(selector);
         if(!target)return;
-        if(!target.dataset.nyxDirectEdit) target.dataset.nyxDirectEdit=type;
+        if(!target.dataset.n7xDirectEdit) target.dataset.n7xDirectEdit=type;
         if(target.tagName!=='BUTTON'){target.tabIndex=0;target.setAttribute('role','button')}
         target.setAttribute('aria-label',label);
         target.title=label;
       });
     };
     const syncDisplayNameStylePreview=nextProfile=>{
-      displaySection.querySelectorAll('[data-nyx-name-style-preview]').forEach(sample=>{
+      displaySection.querySelectorAll('[data-n7x-name-style-preview]').forEach(sample=>{
         sample.className=nyxDisplayNameStyleClass(nextProfile);
         sample.style.cssText=nyxDisplayNameStyleVars(nextProfile);
         sample.textContent=nextProfile.displayName;
       });
-      displaySection.querySelector('[data-nyx-display-name-editor]')?.setAttribute('data-name-effect',nextProfile.displayNameEffect);
+      displaySection.querySelector('[data-n7x-display-name-editor]')?.setAttribute('data-name-effect',nextProfile.displayNameEffect);
     };
     const syncAvatarDecorationPreview=nextProfile=>{
-      const decorationPreview=decorationField.querySelector('[data-nyx-decoration-preview]');
-      const avatarPreview=decorationPreview?.querySelector('.nyx-profile-decoration-avatar');
+      const decorationPreview=decorationField.querySelector('[data-n7x-decoration-preview]');
+      const avatarPreview=decorationPreview?.querySelector('.n7x-profile-decoration-avatar');
       if(!decorationPreview||!avatarPreview)return;
-      [...decorationPreview.classList].filter(name=>name.startsWith('nyx-avatar-decoration-')).forEach(name=>decorationPreview.classList.remove(name));
-      decorationPreview.classList.add(`nyx-avatar-decoration-${nextProfile.avatarDecoration}`);
-      decorationPreview.style.setProperty('--nyx-user-accent-primary',nextProfile.accentPrimary);
-      decorationPreview.style.setProperty('--nyx-user-accent-secondary',nextProfile.accentSecondary);
+      [...decorationPreview.classList].filter(name=>name.startsWith('n7x-avatar-decoration-')).forEach(name=>decorationPreview.classList.remove(name));
+      decorationPreview.classList.add(`n7x-avatar-decoration-${nextProfile.avatarDecoration}`);
+      decorationPreview.style.setProperty('--n7x-user-accent-primary',nextProfile.accentPrimary);
+      decorationPreview.style.setProperty('--n7x-user-accent-secondary',nextProfile.accentSecondary);
       syncNyxAccountButtonAvatar(avatarPreview,nextProfile);
     };
     const syncCustomEffectBuilder=()=>{
       const custom=form.querySelector('[name="profileEffect"]')?.value==='custom';
-      const controls=customEffectBuilder.querySelector('[data-nyx-custom-effect-controls]');
-      const launcher=customEffectBuilder.querySelector('[data-nyx-custom-effect-create]');
+      const controls=customEffectBuilder.querySelector('[data-n7x-custom-effect-controls]');
+      const launcher=customEffectBuilder.querySelector('[data-n7x-custom-effect-create]');
       if(controls)controls.hidden=!custom;
       if(launcher){
         launcher.textContent=custom?'Custom effect active':'Create custom effect';
@@ -1502,8 +1502,8 @@
       }
       const speed=customEffectBuilder.querySelector('[name="customEffectSpeed"]')?.value||'7';
       const intensity=customEffectBuilder.querySelector('[name="customEffectIntensity"]')?.value||'70';
-      const speedOutput=customEffectBuilder.querySelector('[data-nyx-custom-speed]');
-      const intensityOutput=customEffectBuilder.querySelector('[data-nyx-custom-intensity]');
+      const speedOutput=customEffectBuilder.querySelector('[data-n7x-custom-speed]');
+      const intensityOutput=customEffectBuilder.querySelector('[data-n7x-custom-intensity]');
       if(speedOutput)speedOutput.textContent=`${speed}s`;
       if(intensityOutput)intensityOutput.textContent=`${intensity}%`;
     };
@@ -1511,13 +1511,13 @@
     const renderPreview=()=>{
       const values=new FormData(form);
       const nextProfile=normalizeNyxUserProfile({...profile,...Object.fromEntries(profileKeys.map(key=>[key,values.get(key)]))});
-      const view=overlay.querySelector('.nyx-user-profile-view');
+      const view=overlay.querySelector('.n7x-user-profile-view');
       view.innerHTML=nyxUserProfileCardMarkup(nextProfile,{editable:true,popup:true,role:nyxFounderIsOwner?'owner':nyxUserAccountRole});
       nyxManageUserProfileGifs(view,nextProfile);
       syncDisplayNameStylePreview(nextProfile);
       syncAvatarDecorationPreview(nextProfile);
       syncCustomEffectBuilder();
-      const bioCount=form.querySelector('[data-nyx-bio-count]');
+      const bioCount=form.querySelector('[data-n7x-bio-count]');
       if(bioCount)bioCount.textContent=String(values.get('bio')||'').length;
       form.classList.add('is-dirty');
       directTargets();
@@ -1526,8 +1526,8 @@
       clearTimeout(previewTimer);
       previewTimer=setTimeout(renderPreview,70);
     };
-    const styleLauncher=displaySection.querySelector('[data-nyx-display-style-toggle]');
-    const styleEditor=displaySection.querySelector('[data-nyx-display-name-editor]');
+    const styleLauncher=displaySection.querySelector('[data-n7x-display-style-toggle]');
+    const styleEditor=displaySection.querySelector('[data-n7x-display-name-editor]');
     styleLauncher?.addEventListener('click',()=>{
       const opening=styleEditor.hidden;
       styleEditor.hidden=!opening;
@@ -1535,11 +1535,11 @@
       styleLauncher.querySelector('strong').textContent=opening?'-':'+';
       if(opening)setTimeout(()=>styleEditor.querySelector('input,button')?.focus(),0);
     });
-    displaySection.querySelectorAll('[data-nyx-name-preview-theme]').forEach(button=>button.addEventListener('click',()=>{
-      displaySection.querySelectorAll('[data-nyx-name-preview-theme]').forEach(item=>item.classList.toggle('active',item===button));
-      displaySection.querySelector('.nyx-name-style-live-sample')?.classList.toggle('light',button.dataset.nyxNamePreviewTheme==='light');
+    displaySection.querySelectorAll('[data-n7x-name-preview-theme]').forEach(button=>button.addEventListener('click',()=>{
+      displaySection.querySelectorAll('[data-n7x-name-preview-theme]').forEach(item=>item.classList.toggle('active',item===button));
+      displaySection.querySelector('.n7x-name-style-live-sample')?.classList.toggle('light',button.dataset.n7xNamePreviewTheme==='light');
     }));
-    displaySection.querySelector('[data-nyx-name-surprise]')?.addEventListener('click',()=>{
+    displaySection.querySelector('[data-n7x-name-surprise]')?.addEventListener('click',()=>{
       const font=NYX_DISPLAY_NAME_FONTS[Math.floor(Math.random()*NYX_DISPLAY_NAME_FONTS.length)][0];
       const effect=NYX_DISPLAY_NAME_EFFECTS[Math.floor(Math.random()*NYX_DISPLAY_NAME_EFFECTS.length)][0];
       const randomColor=()=>`#${Math.floor(Math.random()*0xffffff).toString(16).padStart(6,'0')}`;
@@ -1555,7 +1555,7 @@
     syncAvatarDecorationPreview(profile);
     syncCustomEffectBuilder();
     nyxManageUserProfileGifs(overlay,profile);
-    customEffectBuilder.querySelector('[data-nyx-custom-effect-create]')?.addEventListener('click',()=>{
+    customEffectBuilder.querySelector('[data-n7x-custom-effect-create]')?.addEventListener('click',()=>{
       const effect=form.querySelector('[name="profileEffect"]');
       if(effect)effect.value='custom';
       preview();
@@ -1578,15 +1578,15 @@
     const directEditorOptions=(selected,options)=>options.map(([value,label])=>`<option value="${value}" ${selected===value?'selected':''}>${label}</option>`).join('');
     const openDirectEditor=(type,target)=>{
       const values=new FormData(form);
-      directPopover.style.setProperty('--nyx-direct-primary',String(values.get('accentPrimary')||'#5865f2'));
-      directPopover.style.setProperty('--nyx-direct-secondary',String(values.get('accentSecondary')||'#8ea1ff'));
+      directPopover.style.setProperty('--n7x-direct-primary',String(values.get('accentPrimary')||'#5865f2'));
+      directPopover.style.setProperty('--n7x-direct-secondary',String(values.get('accentSecondary')||'#8ea1ff'));
       if(type==='avatar'){
         const decoration=String(values.get('avatarDecoration')||'none');
-        directPopover.innerHTML=`<header><div><strong>Avatar</strong><small>Picture and animated decoration</small></div><button type="button" data-nyx-direct-close aria-label="Close">&#215;</button></header><div class="nyx-profile-direct-actions"><button type="button" data-nyx-direct-action="pick-avatar">Change picture</button><button type="button" data-nyx-direct-action="remove-avatar">Remove picture</button></div><label>Avatar decoration<select data-nyx-direct-value="avatarDecoration">${directEditorOptions(decoration,NYX_AVATAR_DECORATIONS)}</select></label><p>Changes preview instantly. Use Save changes when you are finished.</p>`;
+        directPopover.innerHTML=`<header><div><strong>Avatar</strong><small>Picture and animated decoration</small></div><button type="button" data-n7x-direct-close aria-label="Close">&#215;</button></header><div class="n7x-profile-direct-actions"><button type="button" data-n7x-direct-action="pick-avatar">Change picture</button><button type="button" data-n7x-direct-action="remove-avatar">Remove picture</button></div><label>Avatar decoration<select data-n7x-direct-value="avatarDecoration">${directEditorOptions(decoration,NYX_AVATAR_DECORATIONS)}</select></label><p>Changes preview instantly. Use Save changes when you are finished.</p>`;
       }else if(type==='banner'){
-        directPopover.innerHTML=`<header><div><strong>Profile banner</strong><small>Image and fallback color</small></div><button type="button" data-nyx-direct-close aria-label="Close">&#215;</button></header><div class="nyx-profile-direct-actions"><button type="button" data-nyx-direct-action="pick-banner">Change banner</button><button type="button" data-nyx-direct-action="remove-banner">Remove banner</button></div><label>Fallback color<input type="color" data-nyx-direct-value="bannerColor" value="${esc(values.get('bannerColor')||'#8ea1ff')}"></label><p>The fallback color appears when no banner image is selected.</p>`;
+        directPopover.innerHTML=`<header><div><strong>Profile banner</strong><small>Image and fallback color</small></div><button type="button" data-n7x-direct-close aria-label="Close">&#215;</button></header><div class="n7x-profile-direct-actions"><button type="button" data-n7x-direct-action="pick-banner">Change banner</button><button type="button" data-n7x-direct-action="remove-banner">Remove banner</button></div><label>Fallback color<input type="color" data-n7x-direct-value="bannerColor" value="${esc(values.get('bannerColor')||'#8ea1ff')}"></label><p>The fallback color appears when no banner image is selected.</p>`;
       }else{
-        directPopover.innerHTML=`<header><div><strong>About me</strong><small>Profile description</small></div><button type="button" data-nyx-direct-close aria-label="Close">&#215;</button></header><label>Description<textarea data-nyx-direct-value="bio" maxlength="280" rows="5" placeholder="Tell people a little about yourself.">${esc(values.get('bio')||'')}</textarea></label><p>Changes preview instantly. Use Save changes when you are finished.</p>`;
+        directPopover.innerHTML=`<header><div><strong>About me</strong><small>Profile description</small></div><button type="button" data-n7x-direct-close aria-label="Close">&#215;</button></header><label>Description<textarea data-n7x-direct-value="bio" maxlength="280" rows="5" placeholder="Tell people a little about yourself.">${esc(values.get('bio')||'')}</textarea></label><p>Changes preview instantly. Use Save changes when you are finished.</p>`;
       }
       directPopover.hidden=false;
       positionDirectPopover(target);
@@ -1594,43 +1594,43 @@
     };
     directTargets();
     overlay.addEventListener('click',event=>{
-      const directTarget=event.target.closest('[data-nyx-direct-edit]');
-      if(directTarget){openDirectEditor(directTarget.dataset.nyxDirectEdit,directTarget);return}
-      if(event.target.closest('[data-nyx-direct-close]')){closeDirectPopover();return}
-      const action=event.target.closest('[data-nyx-direct-action]')?.dataset.nyxDirectAction;
+      const directTarget=event.target.closest('[data-n7x-direct-edit]');
+      if(directTarget){openDirectEditor(directTarget.dataset.n7xDirectEdit,directTarget);return}
+      if(event.target.closest('[data-n7x-direct-close]')){closeDirectPopover();return}
+      const action=event.target.closest('[data-n7x-direct-action]')?.dataset.n7xDirectAction;
       if(action){
         const [verb,type]=action.split('-');
-        if(verb==='pick')form.querySelector(`[data-nyx-pick-image="${type}"]`)?.click();
-        if(verb==='remove')form.querySelector(`[data-nyx-clear-image="${type}"]`)?.click();
+        if(verb==='pick')form.querySelector(`[data-n7x-pick-image="${type}"]`)?.click();
+        if(verb==='remove')form.querySelector(`[data-n7x-clear-image="${type}"]`)?.click();
         return;
       }
-      if(!directPopover.hidden&&!event.target.closest('.nyx-profile-direct-popover'))closeDirectPopover();
+      if(!directPopover.hidden&&!event.target.closest('.n7x-profile-direct-popover'))closeDirectPopover();
     });
     overlay.addEventListener('input',event=>{
-      const key=event.target.dataset.nyxDirectValue;
+      const key=event.target.dataset.n7xDirectValue;
       if(!key)return;
       const source=form.querySelector(`[name="${key}"]`);
       if(source){source.value=event.target.value;preview()}
     });
     overlay.addEventListener('change',event=>{
-      const key=event.target.dataset.nyxDirectValue;
+      const key=event.target.dataset.n7xDirectValue;
       if(!key)return;
       const source=form.querySelector(`[name="${key}"]`);
       if(source){source.value=event.target.value;preview()}
     });
     overlay.addEventListener('keydown',event=>{
-      const directTarget=event.target.closest('[data-nyx-direct-edit]');
-      if(directTarget&&(event.key==='Enter'||event.key===' ')){event.preventDefault();openDirectEditor(directTarget.dataset.nyxDirectEdit,directTarget)}
+      const directTarget=event.target.closest('[data-n7x-direct-edit]');
+      if(directTarget&&(event.key==='Enter'||event.key===' ')){event.preventDefault();openDirectEditor(directTarget.dataset.n7xDirectEdit,directTarget)}
       if(event.key==='Escape'){event.preventDefault();event.stopPropagation();if(!directPopover.hidden)closeDirectPopover()}
     });
     form.addEventListener('input',preview);form.addEventListener('change',preview);
-    form.addEventListener('reset',()=>{pendingMediaPreparations.clear();clearTimeout(previewTimer);requestAnimationFrame(()=>{form.classList.remove('is-dirty');form.querySelector('footer>strong').textContent='Changes saved';const avatarLabel=form.querySelector('[data-nyx-file-name="avatar"]');const bannerLabel=form.querySelector('[data-nyx-file-name="banner"]');if(avatarLabel)avatarLabel.textContent=profile.avatarUrl?'Image selected':'No image selected';if(bannerLabel)bannerLabel.textContent=profile.bannerUrl?'Image selected':'No image selected';const values=new FormData(form);const nextProfile=normalizeNyxUserProfile({...profile,...Object.fromEntries(profileKeys.map(key=>[key,values.get(key)]))});const view=overlay.querySelector('.nyx-user-profile-view');view.innerHTML=nyxUserProfileCardMarkup(nextProfile,{editable:true,popup:true,role:nyxFounderIsOwner?'owner':nyxUserAccountRole});nyxManageUserProfileGifs(view,nextProfile);syncDisplayNameStylePreview(nextProfile);syncAvatarDecorationPreview(nextProfile);syncCustomEffectBuilder();const bioCount=form.querySelector('[data-nyx-bio-count]');if(bioCount)bioCount.textContent=String(values.get('bio')||'').length;directTargets()})});
-    form.querySelectorAll('[data-nyx-pick-image]').forEach(button=>button.addEventListener('click',()=>form.querySelector(`[name="${button.dataset.nyxPickImage}File"]`)?.click()));
-    form.querySelectorAll('[data-nyx-clear-image]').forEach(button=>button.addEventListener('click',()=>{const type=button.dataset.nyxClearImage;pendingMediaPreparations.delete(type);form.querySelector(`[name="${type}Url"]`).value='';form.querySelector(`[name="${type}File"]`).value='';form.querySelector(`[data-nyx-file-name="${type}"]`).textContent='No image selected';preview()}));
-    form.querySelectorAll('.nyx-profile-file-input').forEach(input=>input.addEventListener('change',()=>{const type=input.name==='avatarFile'?'avatar':'banner';const label=form.querySelector(`[data-nyx-file-name="${type}"]`);const error=form.querySelector('.nyx-founder-editor-error');const file=input.files?.[0];if(!file)return;label.textContent='Preparing image…';error.textContent='';const preparation=nyxProfileImageFromFile(file,type==='avatar'?512:1200,type==='avatar'?512:480);pendingMediaPreparations.set(type,preparation);void preparation.then(dataUrl=>{if(pendingMediaPreparations.get(type)!==preparation)return;form.querySelector(`[name="${type}Url"]`).value=dataUrl;label.textContent=file.name;preview()}).catch(imageError=>{if(pendingMediaPreparations.get(type)!==preparation)return;input.value='';label.textContent='No image selected';error.textContent=imageError.message||'That image could not be used.'}).finally(()=>{if(pendingMediaPreparations.get(type)===preparation)pendingMediaPreparations.delete(type)})}));
+    form.addEventListener('reset',()=>{pendingMediaPreparations.clear();clearTimeout(previewTimer);requestAnimationFrame(()=>{form.classList.remove('is-dirty');form.querySelector('footer>strong').textContent='Changes saved';const avatarLabel=form.querySelector('[data-n7x-file-name="avatar"]');const bannerLabel=form.querySelector('[data-n7x-file-name="banner"]');if(avatarLabel)avatarLabel.textContent=profile.avatarUrl?'Image selected':'No image selected';if(bannerLabel)bannerLabel.textContent=profile.bannerUrl?'Image selected':'No image selected';const values=new FormData(form);const nextProfile=normalizeNyxUserProfile({...profile,...Object.fromEntries(profileKeys.map(key=>[key,values.get(key)]))});const view=overlay.querySelector('.n7x-user-profile-view');view.innerHTML=nyxUserProfileCardMarkup(nextProfile,{editable:true,popup:true,role:nyxFounderIsOwner?'owner':nyxUserAccountRole});nyxManageUserProfileGifs(view,nextProfile);syncDisplayNameStylePreview(nextProfile);syncAvatarDecorationPreview(nextProfile);syncCustomEffectBuilder();const bioCount=form.querySelector('[data-n7x-bio-count]');if(bioCount)bioCount.textContent=String(values.get('bio')||'').length;directTargets()})});
+    form.querySelectorAll('[data-n7x-pick-image]').forEach(button=>button.addEventListener('click',()=>form.querySelector(`[name="${button.dataset.n7xPickImage}File"]`)?.click()));
+    form.querySelectorAll('[data-n7x-clear-image]').forEach(button=>button.addEventListener('click',()=>{const type=button.dataset.n7xClearImage;pendingMediaPreparations.delete(type);form.querySelector(`[name="${type}Url"]`).value='';form.querySelector(`[name="${type}File"]`).value='';form.querySelector(`[data-n7x-file-name="${type}"]`).textContent='No image selected';preview()}));
+    form.querySelectorAll('.n7x-profile-file-input').forEach(input=>input.addEventListener('change',()=>{const type=input.name==='avatarFile'?'avatar':'banner';const label=form.querySelector(`[data-n7x-file-name="${type}"]`);const error=form.querySelector('.n7x-founder-editor-error');const file=input.files?.[0];if(!file)return;label.textContent='Preparing image…';error.textContent='';const preparation=nyxProfileImageFromFile(file,type==='avatar'?512:1200,type==='avatar'?512:480);pendingMediaPreparations.set(type,preparation);void preparation.then(dataUrl=>{if(pendingMediaPreparations.get(type)!==preparation)return;form.querySelector(`[name="${type}Url"]`).value=dataUrl;label.textContent=file.name;preview()}).catch(imageError=>{if(pendingMediaPreparations.get(type)!==preparation)return;input.value='';label.textContent='No image selected';error.textContent=imageError.message||'That image could not be used.'}).finally(()=>{if(pendingMediaPreparations.get(type)===preparation)pendingMediaPreparations.delete(type)})}));
     form.addEventListener('submit',async event=>{
       event.preventDefault();
-      const error=form.querySelector('.nyx-founder-editor-error');
+      const error=form.querySelector('.n7x-founder-editor-error');
       const button=form.querySelector('[type="submit"]');
       const originalLabel=button.innerHTML;
       button.disabled=true;
@@ -1732,19 +1732,19 @@
     return {displayName:nyxFounderText(source.displayName,nyxFounderProfileDefaults.displayName,48),handle:nyxFounderText(source.handle,nyxFounderProfileDefaults.handle,40),role:nyxFounderText(source.role,nyxFounderProfileDefaults.role,64),bio:nyxFounderText(source.bio,nyxFounderProfileDefaults.bio,500),avatarUrl:nyxFounderUrl(source.avatarUrl,nyxFounderProfileDefaults.avatarUrl),bannerUrl:nyxFounderUrl(source.bannerUrl),accent:accentPrimary,accentPrimary,accentSecondary,bannerColor,displayNameFont,displayNameEffect,displayNameColorPrimary,displayNameColorSecondary,profileEffect:nyxProfileEffectValue(source.profileEffect),customEffectPattern,customEffectColorPrimary,customEffectColorSecondary,customEffectSpeed,customEffectIntensity,avatarDecoration:nyxAvatarDecorationValue(source.avatarDecoration),status:['online','idle','dnd','offline'].includes(String(source.status||'').toLowerCase())?String(source.status).toLowerCase():nyxFounderProfileDefaults.status,roles:roles.map(role=>nyxFounderText(role,'',32)).filter(Boolean).slice(0,8),badges:badges.map(badge=>nyxFounderText(badge,'',32)).filter(Boolean).slice(0,8),linkLabel:nyxFounderText(source.linkLabel,'',40),linkUrl:nyxFounderUrl(source.linkUrl)};
   }
   function nyxFounderProfileCardMarkup(){
-    const profile=normalizeNyxFounderProfile(nyxFounderProfile);
+    const profile=normalizeNyxFounderProfile(n7xFounderProfile);
     const roles=profile.roles.map(role=>{
       const roleKey=String(role||'').toLowerCase();
       const icon=['owner','admin','developer','moderator','member'].includes(roleKey)?`<img src="/assets/icons/roles/${roleKey}.png" alt="" aria-hidden="true">`:'';
-      return `<span class="nyx-founder-role-chip${roleKey==='owner'?' nyx-founder-role-owner':''}">${icon}${esc(role)}</span>`;
+      return `<span class="n7x-founder-role-chip${roleKey==='owner'?' n7x-founder-role-owner':''}">${icon}${esc(role)}</span>`;
     }).join('');
-    const badges=profile.badges.map(badge=>`<span class="nyx-founder-badge">${esc(badge)}</span>`).join('');
-    const link=profile.linkUrl?`<a class="nyx-founder-link" href="${esc(profile.linkUrl)}" target="_blank" rel="noreferrer noopener">${esc(profile.linkLabel||'Open profile')}<span aria-hidden="true">↗</span></a>`:'';
+    const badges=profile.badges.map(badge=>`<span class="n7x-founder-badge">${esc(badge)}</span>`).join('');
+    const link=profile.linkUrl?`<a class="n7x-founder-link" href="${esc(profile.linkUrl)}" target="_blank" rel="noreferrer noopener">${esc(profile.linkLabel||'Open profile')}<span aria-hidden="true">↗</span></a>`:'';
     const banner=profile.bannerUrl?`<img src="${esc(nyxProfileStillSource(profile.bannerUrl))}" alt="" aria-hidden="true">`:'';
-    return `<article class="nyx-founder-profile nyx-founder-profile-standard nyx-founder-effect-${esc(profile.profileEffect)} ${nyxProfileEffectClass(profile)}" data-nyx-founder-profile style="--nyx-founder-accent:${profile.accentPrimary};--nyx-founder-accent-primary:${profile.accentPrimary};--nyx-founder-accent-secondary:${profile.accentSecondary};--nyx-founder-banner-color:${profile.bannerColor};--nyx-user-accent-primary:${profile.accentPrimary};--nyx-user-accent-secondary:${profile.accentSecondary};${nyxProfileEffectVars(profile)}"><i class="nyx-founder-profile-effect nyx-user-profile-effect" aria-hidden="true">${nyxProfileEffectArtwork(profile)}</i><div class="nyx-founder-banner" aria-hidden="true">${banner}</div><div class="nyx-founder-profile-content"><div class="nyx-founder-image-wrap nyx-avatar-decoration-${esc(profile.avatarDecoration)}"><img class="nyx-founder-image" src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="${esc(profile.displayName)} profile picture"><i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><span class="nyx-founder-status nyx-founder-status-${esc(profile.status)}" title="${esc(profile.status)}" aria-label="${esc(profile.status)}"></span></div><div class="nyx-founder-copy"><div class="nyx-founder-name-row"><h3 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h3>${profile.roles.some(role=>role.toLowerCase()==='owner')?"<span class=\"nyx-founder-owner-crown\" title=\"N7X owner\" aria-label=\"N7X owner\">♛</span>":''}</div><p class="nyx-founder-handle">${esc(profile.handle)}</p><p class="nyx-founder-role">${esc(profile.role)}</p>${roles?`<div class="nyx-founder-role-list" aria-label="Profile roles">${roles}</div>`:''}${badges?`<div class="nyx-founder-badges" aria-label="Profile badges">${badges}</div>`:''}<div class="nyx-founder-about"><strong>About me</strong><p class="nyx-founder-bio">${esc(profile.bio)}</p></div>${link}</div></div></article>`;
+    return `<article class="n7x-founder-profile n7x-founder-profile-standard n7x-founder-effect-${esc(profile.profileEffect)} ${nyxProfileEffectClass(profile)}" data-n7x-founder-profile style="--n7x-founder-accent:${profile.accentPrimary};--n7x-founder-accent-primary:${profile.accentPrimary};--n7x-founder-accent-secondary:${profile.accentSecondary};--n7x-founder-banner-color:${profile.bannerColor};--n7x-user-accent-primary:${profile.accentPrimary};--n7x-user-accent-secondary:${profile.accentSecondary};${nyxProfileEffectVars(profile)}"><i class="n7x-founder-profile-effect n7x-user-profile-effect" aria-hidden="true">${nyxProfileEffectArtwork(profile)}</i><div class="n7x-founder-banner" aria-hidden="true">${banner}</div><div class="n7x-founder-profile-content"><div class="n7x-founder-image-wrap n7x-avatar-decoration-${esc(profile.avatarDecoration)}"><img class="n7x-founder-image" src="${esc(nyxProfileStillSource(profile.avatarUrl))}" alt="${esc(profile.displayName)} profile picture"><i class="n7x-avatar-decoration" aria-hidden="true"><span></span></i><span class="n7x-founder-status n7x-founder-status-${esc(profile.status)}" title="${esc(profile.status)}" aria-label="${esc(profile.status)}"></span></div><div class="n7x-founder-copy"><div class="n7x-founder-name-row"><h3 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h3>${profile.roles.some(role=>role.toLowerCase()==='owner')?"<span class=\"n7x-founder-owner-crown\" title=\"N7X owner\" aria-label=\"N7X owner\">♛</span>":''}</div><p class="n7x-founder-handle">${esc(profile.handle)}</p><p class="n7x-founder-role">${esc(profile.role)}</p>${roles?`<div class="n7x-founder-role-list" aria-label="Profile roles">${roles}</div>`:''}${badges?`<div class="n7x-founder-badges" aria-label="Profile badges">${badges}</div>`:''}<div class="n7x-founder-about"><strong>About me</strong><p class="n7x-founder-bio">${esc(profile.bio)}</p></div>${link}</div></div></article>`;
   }
   function refreshFounderProfileViews(){
-    const update=root=>{try{root.querySelectorAll?.('[data-nyx-founder-profile]').forEach(card=>{card.outerHTML=nyxFounderProfileCardMarkup()});root.querySelectorAll?.('[data-nyx-credits-founder]').forEach(card=>{card.outerHTML=nyxCreditsFounderCardMarkup()});nyxManageFounderProfileGifs(root)}catch{}};
+    const update=root=>{try{root.querySelectorAll?.('[data-n7x-founder-profile]').forEach(card=>{card.outerHTML=nyxFounderProfileCardMarkup()});root.querySelectorAll?.('[data-n7x-credits-founder]').forEach(card=>{card.outerHTML=nyxCreditsFounderCardMarkup()});nyxManageFounderProfileGifs(root)}catch{}};
     update(document);
     document.querySelectorAll('iframe').forEach(frame=>update(frame.contentDocument));
   }
@@ -1753,20 +1753,20 @@
     nyxFounderProfileLoadPromise=fetch('/api/founder-profile',{cache:'no-store'}).then(async response=>{
       if(!response.ok) throw new Error('Founder Profile is unavailable.');
       const data=await response.json();
-      nyxFounderProfile=normalizeNyxFounderProfile(data?.profile);
+      n7xFounderProfile=normalizeNyxFounderProfile(data?.profile);
       refreshFounderProfileViews();
       return data;
-    }).catch(error=>{console.warn("N7X Founder Profile could not load:",error);return {profile:nyxFounderProfile,persistent:false,editingEnabled:false}}).finally(()=>{nyxFounderProfileLoadPromise=null});
+    }).catch(error=>{console.warn("N7X Founder Profile could not load:",error);return {profile:n7xFounderProfile,persistent:false,editingEnabled:false}}).finally(()=>{nyxFounderProfileLoadPromise=null});
     return nyxFounderProfileLoadPromise;
   }
   async function openFounderProfileEditor(){
     if(!nyxFounderIsOwner){toast("Sign in with the founder N7X account first.");return}
     await loadFounderProfile();
-    document.querySelector('.nyx-founder-editor-overlay')?.remove();
-    const profile=normalizeNyxFounderProfile(nyxFounderProfile);
+    document.querySelector('.n7x-founder-editor-overlay')?.remove();
+    const profile=normalizeNyxFounderProfile(n7xFounderProfile);
     const overlay=document.createElement('div');
-    overlay.className='nyx-founder-editor-overlay';
-    overlay.innerHTML=`<section class="nyx-founder-editor" role="dialog" aria-modal="true" aria-labelledby="nyxFounderEditorTitle"><header><div><p class="utility-kicker">About N7X</p><h2 id="nyxFounderEditorTitle">Customize Founder Profile</h2><p>Publishing as your signed-in founder account.</p></div><button type="button" class="nyx-founder-editor-close" data-close-founder-editor aria-label="Close">×</button></header><form class="nyx-founder-editor-form"><div class="nyx-founder-editor-grid"><label>Display name<input name="displayName" maxlength="48" required value="${esc(profile.displayName)}"></label><label>Handle<input name="handle" maxlength="40" required value="${esc(profile.handle)}"></label><label>Profile subtitle<input name="role" maxlength="64" required value="${esc(profile.role)}"></label><label>Status<select name="status"><option value="online" ${profile.status==='online'?'selected':''}>Online</option><option value="idle" ${profile.status==='idle'?'selected':''}>Idle</option><option value="dnd" ${profile.status==='dnd'?'selected':''}>Do not disturb</option><option value="offline" ${profile.status==='offline'?'selected':''}>Offline</option></select></label><label class="nyx-founder-editor-wide">Bio<textarea name="bio" maxlength="500" rows="4" required>${esc(profile.bio)}</textarea></label><label>Avatar U3L<input name="avatarUrl" type="url" value="${esc(profile.avatarUrl)}"></label><label>Banner U3L <small>Optional</small><input name="bannerUrl" type="url" value="${esc(profile.bannerUrl)}"></label><label>Accent color<input name="accent" type="color" value="${esc(profile.accent)}"></label><label>Roles <small>Comma-separated; access remains tied to your Firebase account ID.</small><input name="roles" maxlength="280" value="${esc(profile.roles.join(', '))}"></label><label>Badges <small>Comma-separated</small><input name="badges" maxlength="280" value="${esc(profile.badges.join(', '))}"></label><label>Profile link label <small>Optional</small><input name="linkLabel" maxlength="40" value="${esc(profile.linkLabel)}"></label><label>Profile link U3L <small>Optional</small><input name="linkUrl" type="url" value="${esc(profile.linkUrl)}"></label></div><footer><p class="nyx-founder-editor-error" aria-live="polite"></p><div><button type="button" class="settings-action" data-close-founder-editor>Cancel</button><button type="submit" class="settings-action on">Publish profile</button></div></footer></form></section>`;
+    overlay.className='n7x-founder-editor-overlay';
+    overlay.innerHTML=`<section class="n7x-founder-editor" role="dialog" aria-modal="true" aria-labelledby="n7xFounderEditorTitle"><header><div><p class="utility-kicker">About N7X</p><h2 id="n7xFounderEditorTitle">Customize Founder Profile</h2><p>Publishing as your signed-in founder account.</p></div><button type="button" class="n7x-founder-editor-close" data-close-founder-editor aria-label="Close">×</button></header><form class="n7x-founder-editor-form"><div class="n7x-founder-editor-grid"><label>Display name<input name="displayName" maxlength="48" required value="${esc(profile.displayName)}"></label><label>Handle<input name="handle" maxlength="40" required value="${esc(profile.handle)}"></label><label>Profile subtitle<input name="role" maxlength="64" required value="${esc(profile.role)}"></label><label>Status<select name="status"><option value="online" ${profile.status==='online'?'selected':''}>Online</option><option value="idle" ${profile.status==='idle'?'selected':''}>Idle</option><option value="dnd" ${profile.status==='dnd'?'selected':''}>Do not disturb</option><option value="offline" ${profile.status==='offline'?'selected':''}>Offline</option></select></label><label class="n7x-founder-editor-wide">Bio<textarea name="bio" maxlength="500" rows="4" required>${esc(profile.bio)}</textarea></label><label>Avatar U3L<input name="avatarUrl" type="url" value="${esc(profile.avatarUrl)}"></label><label>Banner U3L <small>Optional</small><input name="bannerUrl" type="url" value="${esc(profile.bannerUrl)}"></label><label>Accent color<input name="accent" type="color" value="${esc(profile.accent)}"></label><label>Roles <small>Comma-separated; access remains tied to your Firebase account ID.</small><input name="roles" maxlength="280" value="${esc(profile.roles.join(', '))}"></label><label>Badges <small>Comma-separated</small><input name="badges" maxlength="280" value="${esc(profile.badges.join(', '))}"></label><label>Profile link label <small>Optional</small><input name="linkLabel" maxlength="40" value="${esc(profile.linkLabel)}"></label><label>Profile link U3L <small>Optional</small><input name="linkUrl" type="url" value="${esc(profile.linkUrl)}"></label></div><footer><p class="n7x-founder-editor-error" aria-live="polite"></p><div><button type="button" class="settings-action" data-close-founder-editor>Cancel</button><button type="submit" class="settings-action on">Publish profile</button></div></footer></form></section>`;
     document.body.appendChild(overlay);
     const close=()=>overlay.remove();
     overlay.addEventListener('click',event=>{if(event.target===overlay||event.target.closest('[data-close-founder-editor]')) close()});
@@ -1776,7 +1776,7 @@
       event.preventDefault();
       const values=new FormData(form);
       const button=form.querySelector('[type="submit"]');
-      const error=form.querySelector('.nyx-founder-editor-error');
+      const error=form.querySelector('.n7x-founder-editor-error');
       const next={displayName:values.get('displayName'),handle:values.get('handle'),role:values.get('role'),bio:values.get('bio'),avatarUrl:values.get('avatarUrl'),bannerUrl:values.get('bannerUrl'),accent:values.get('accent'),status:values.get('status'),roles:String(values.get('roles')||'').split(','),badges:String(values.get('badges')||'').split(','),linkLabel:values.get('linkLabel'),linkUrl:values.get('linkUrl')};
       button.disabled=true;
       error.textContent='';
@@ -1786,7 +1786,7 @@
         const response=await fetch('/api/founder-profile',{method:'PUT',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},body:JSON.stringify({profile:next})});
         const data=await response.json().catch(()=>({}));
         if(!response.ok) throw new Error(data.error||'Profile could not be published.');
-        nyxFounderProfile=normalizeNyxFounderProfile(data.profile);
+        n7xFounderProfile=normalizeNyxFounderProfile(data.profile);
         refreshFounderProfileViews();
         close();
         toast('Founder profile published');
@@ -1796,7 +1796,7 @@
   }
   const NYX_TERMS_VERSION='2026-07-30';
   function nyxTermsSectionsMarkup(){
-    return `<section><h2>1. Eligibility</h2><p>You must comply with all applicable laws when using Nyx. If you are under the age required by your jurisdiction to enter into a binding agreement, you may only use N7X with the permission of a parent or legal guardian.</p></section>
+    return `<section><h2>1. Eligibility</h2><p>You must comply with all applicable laws when using N7X. If you are under the age required by your jurisdiction to enter into a binding agreement, you may only use N7X with the permission of a parent or legal guardian.</p></section>
       <section><h2>2. Description of the Service</h2><p>N7X is a platform that may provide features including, but not limited to:</p><ul><li>S3ARC4 and discovery tools</li><li>A1-powered transcription and summarization</li><li>Productivity and educational tools</li><li>Entertainment applications</li><li>Links to third-party websites and services</li><li>Experimental features released for testing</li></ul><p>Features may change, be added, modified, or removed at any time without notice.</p></section>
       <section><h2>3. Acceptable Use</h2><p>You agree not to:</p><ul><li>Violate any applicable law or regulation.</li><li>Attempt to gain unauthorized access to N7X, its servers, or other users' systems.</li><li>Upload or distribute malware, viruses, or malicious code.</li><li>Interfere with or disrupt the operation of the Service.</li><li>Circumvent security measures, authentication systems, or rate limits.</li><li>Use automated systems that excessively burden our infrastructure.</li><li>Impersonate another person or entity.</li><li>Infringe upon the intellectual property or other legal rights of others.</li><li>Use N7X in a manner that harms other users or the availability of the Service.</li></ul><p>We reserve the right to suspend, restrict, or terminate access for users who violate these Terms.</p></section>
       <section><h2>4. User Content</h2><p>Some features may allow you to submit text, media, links, or other content ("User Content").</p><p>You retain ownership of your User Content.</p><p>By submitting User Content, you grant N7X a non-exclusive, worldwide, royalty-free license to host, process, reproduce, and display that content solely for the purpose of operating, maintaining, and improving the Service.</p><p>You represent that you have the necessary rights and permissions to submit any User Content you provide.</p></section>
@@ -1810,27 +1810,27 @@
       <section><h2>12. Limitation of Liability</h2><p>To the fullest extent permitted by applicable law, N7X and its owners, developers, contributors, affiliates, and service providers shall not be liable for any indirect, incidental, special, exemplary, consequential, or punitive damages arising from or relating to the use of the Service.</p></section>
       <section><h2>13. Indemnification</h2><p>You agree to defend, indemnify, and hold harmless N7X, its developers, affiliates, contributors, and service providers from any claims, damages, losses, liabilities, and expenses arising from:</p><ul><li>Your use of the Service.</li><li>Your violation of these Terms.</li><li>Your submitted content.</li><li>Your violation of any applicable law or the rights of another person.</li></ul></section>
       <section><h2>14. Termination</h2><p>We may suspend, restrict, or terminate your access to N7X at any time, with or without notice, if we reasonably believe you have violated these Terms, abused the Service, or created a security or legal risk.</p><p>We may also discontinue the Service, in whole or in part, at any time.</p></section>
-      <section><h2>15. Changes to These Terms</h2><p>We reserve the right to update or modify these Terms at any time.</p><p>The updated version becomes effective when posted on Nyx.</p><p>Your continued use of the Service after changes are posted constitutes your acceptance of the revised Terms.</p></section>
+      <section><h2>15. Changes to These Terms</h2><p>We reserve the right to update or modify these Terms at any time.</p><p>The updated version becomes effective when posted on N7X.</p><p>Your continued use of the Service after changes are posted constitutes your acceptance of the revised Terms.</p></section>
       <section><h2>16. Copyright &amp; DMCA Notice</h2><p>N7X respects the intellectual property rights of others and responds to valid notices of alleged copyright infringement in accordance with the Digital Millennium Copyright Act ("DMCA") and other applicable laws.</p><p>A copyright owner or authorized agent submitting a takedown notice must provide:</p><ul><li>A physical or electronic signature of the copyright owner or authorized agent.</li><li>Identification of the copyrighted work claimed to have been infringed.</li><li>Identification and location of the allegedly infringing material, including the relevant N7X page or U3L.</li><li>Contact information sufficient for N7X to reach the complaining party.</li><li>A good-faith statement that the disputed use is not authorized by the copyright owner, its agent, or the law.</li><li>A statement, made under penalty of perjury, that the notice is accurate and that the complaining party is authorized to act for the copyright owner.</li></ul><p>After receiving a valid notice through N7X's published copyright contact, N7X may remove or disable access to the material and notify the affected user. An affected user may submit a valid counter-notice identifying the removed material, consenting to the appropriate court jurisdiction, and stating under penalty of perjury that the material was removed because of mistake or misidentification.</p><p>N7X may restore material when permitted by law and may suspend or terminate repeat infringers. Knowingly making a material misrepresentation in a notice or counter-notice may result in legal liability.</p></section>`;
   }
-  function nyxTermsPageMarkup(className='nyx-utility-tab nyx-terms-tab'){
+  function nyxTermsPageMarkup(className='n7x-utility-tab nyx-terms-tab'){
     return `<article class="${esc(className)}"><p class="utility-kicker">N7X</p><h1>Terms of Service</h1><p class="utility-updated"><strong>Effective Date:</strong> July 30, 2026</p><p class="utility-intro">Welcome to <strong>N7X</strong> ("N7X," "we," "our," or "us"). By accessing or using our website, applications, or services (collectively, the "Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use the Service.</p>${nyxTermsSectionsMarkup()}</article>`;
   }
-  function nyxCreditsPageMarkup(className='nyx-utility-tab nyx-credits-tab'){
+  function nyxCreditsPageMarkup(className='n7x-utility-tab n7x-credits-tab'){
     return `<article class="${esc(className)}">
-      <h1 class="nyx-credits-title">thanks!</h1>
-      <ul class="nyx-credits-thanks" aria-label="Credits">
+      <h1 class="n7x-credits-title">thanks!</h1>
+      <ul class="n7x-credits-thanks" aria-label="Credits">
         <li>made by <strong>vdrtes</strong></li>
-        <li>thanks to <a href="https://midtsy.xyz/" target="_blank" rel="noopener noreferrer" data-nyx-credit-link aria-label="midnight (opens a new window)"><strong>midnight</strong></a> for linkchecker api<a class="nyx-credits-site" href="https://nocturne.lol/" target="_blank" rel="noopener noreferrer" data-nyx-credit-link>nocturne.lol</a></li>
+        <li>thanks to <a href="https://midtsy.xyz/" target="_blank" rel="noopener noreferrer" data-n7x-credit-link aria-label="midnight (opens a new window)"><strong>midnight</strong></a> for linkchecker api<a class="n7x-credits-site" href="https://nocturne.lol/" target="_blank" rel="noopener noreferrer" data-n7x-credit-link>nocturne.lol</a></li>
         <li>thanks to <strong>GN-math</strong> for games
-          <ul class="nyx-credits-libraries" aria-label="Game libraries"><li>GN-math</li><li>Ultimate Game Stash</li><li>GMS</li><li>Lumin</li><li>CatClass</li><li>DuckMath</li></ul>
+          <ul class="n7x-credits-libraries" aria-label="Game libraries"><li>GN-math</li><li>Ultimate Game Stash</li><li>GMS</li><li>Lumin</li><li>CatClass</li><li>DuckMath</li></ul>
         </li>
-        <li><img class="nyx-credits-p2p-icon" src="/assets/credits/p2p-games.png" alt="P2P Games" width="69" height="69">thanks to <strong>P2P Games</strong> for Creating Link generator</li>
+        <li><img class="n7x-credits-p2p-icon" src="/assets/credits/p2p-games.png" alt="P2P Games" width="69" height="69">thanks to <strong>P2P Games</strong> for Creating Link generator</li>
       </ul>
     </article>`;
   }
   function nyxCreditsLinkClick(event){
-    const link=event.target?.closest?.('.nyx-credits-tab a[data-nyx-credit-link]');
+    const link=event.target?.closest?.('.n7x-credits-tab a[data-n7x-credit-link]');
     if(!event.isTrusted || !link || !['https://midtsy.xyz/','https://nocturne.lol/'].includes(link.href)) return false;
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -1842,37 +1842,37 @@
   }
   const nyxCreditsLinkScript='document.addEventListener("click",'+nyxCreditsLinkClick.toString()+',true);';
   function nyxCreditsFounderCardMarkup(){
-    const profile=normalizeNyxFounderProfile(nyxFounderProfile);
-    const roles=profile.roles.map(role=>`<span class="nyx-credits-founder-role">${esc(role)}</span>`).join('');
-    const badges=profile.badges.map(badge=>`<span class="nyx-credits-founder-badge">${esc(badge)}</span>`).join('');
+    const profile=normalizeNyxFounderProfile(n7xFounderProfile);
+    const roles=profile.roles.map(role=>`<span class="n7x-credits-founder-role">${esc(role)}</span>`).join('');
+    const badges=profile.badges.map(badge=>`<span class="n7x-credits-founder-badge">${esc(badge)}</span>`).join('');
     const avatar=profile.avatarUrl?`<img src="${esc(profile.avatarUrl)}" alt="${esc(profile.displayName)} profile picture">`:`<span>${esc(profile.displayName.slice(0,1).toUpperCase()||'N')}</span>`;
     const banner=profile.bannerUrl?`<img src="${esc(profile.bannerUrl)}" alt="" aria-hidden="true">`:'';
-    const link=profile.linkUrl?`<a class="nyx-credits-founder-link" href="${esc(profile.linkUrl)}" target="_blank" rel="noreferrer noopener">${esc(profile.linkLabel||'Open profile')} <span aria-hidden="true">↗</span></a>`:'';
+    const link=profile.linkUrl?`<a class="n7x-credits-founder-link" href="${esc(profile.linkUrl)}" target="_blank" rel="noreferrer noopener">${esc(profile.linkLabel||'Open profile')} <span aria-hidden="true">↗</span></a>`:'';
     const statusLabel={online:'Online',idle:'Idle',dnd:'Do not disturb',offline:'Offline'}[profile.status]||'Online';
-    return `<article class="nyx-credits-founder-card nyx-credits-founder-effect-${esc(profile.profileEffect)} nyx-avatar-decoration-${esc(profile.avatarDecoration)}" data-nyx-credits-founder style="--nyx-founder-accent:${profile.accentPrimary};--nyx-founder-accent-secondary:${profile.accentSecondary};--nyx-founder-banner-color:${profile.bannerColor}"><div class="nyx-credits-founder-media"><div class="nyx-credits-founder-banner">${banner}</div><div class="nyx-credits-founder-avatar">${avatar}<i class="nyx-avatar-decoration" aria-hidden="true"><span></span></i><span class="nyx-credits-founder-status nyx-founder-status-${esc(profile.status)}" title="${esc(statusLabel)}"></span></div><span class="nyx-credits-founder-presence nyx-founder-status-${esc(profile.status)}"><i aria-hidden="true"></i>${esc(statusLabel)}</span></div><div class="nyx-credits-founder-copy"><p class="nyx-credits-founder-role">${esc(profile.role)}</p><h3 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h3><p class="nyx-credits-founder-handle">${esc(profile.handle)}</p><p class="nyx-credits-founder-bio">${esc(profile.bio||'No bio yet.')}</p>${roles?`<div class="nyx-credits-founder-roles" aria-label="Founder roles">${roles}</div>`:''}${badges?`<div class="nyx-credits-founder-badges" aria-label="Founder badges">${badges}</div>`:''}${link}</div></article>`;
+    return `<article class="n7x-credits-founder-card n7x-credits-founder-effect-${esc(profile.profileEffect)} n7x-avatar-decoration-${esc(profile.avatarDecoration)}" data-n7x-credits-founder style="--n7x-founder-accent:${profile.accentPrimary};--n7x-founder-accent-secondary:${profile.accentSecondary};--n7x-founder-banner-color:${profile.bannerColor}"><div class="n7x-credits-founder-media"><div class="n7x-credits-founder-banner">${banner}</div><div class="n7x-credits-founder-avatar">${avatar}<i class="n7x-avatar-decoration" aria-hidden="true"><span></span></i><span class="n7x-credits-founder-status n7x-founder-status-${esc(profile.status)}" title="${esc(statusLabel)}"></span></div><span class="n7x-credits-founder-presence n7x-founder-status-${esc(profile.status)}"><i aria-hidden="true"></i>${esc(statusLabel)}</span></div><div class="n7x-credits-founder-copy"><p class="n7x-credits-founder-role">${esc(profile.role)}</p><h3 class="${nyxDisplayNameStyleClass(profile)}" style="${nyxDisplayNameStyleVars(profile)}">${esc(profile.displayName)}</h3><p class="n7x-credits-founder-handle">${esc(profile.handle)}</p><p class="n7x-credits-founder-bio">${esc(profile.bio||'No bio yet.')}</p>${roles?`<div class="n7x-credits-founder-roles" aria-label="Founder roles">${roles}</div>`:''}${badges?`<div class="n7x-credits-founder-badges" aria-label="Founder badges">${badges}</div>`:''}${link}</div></article>`;
   }
-  const nyxPublicProfileInlinePolish='.nyx-founder-profile-standard{max-width:480px!important;border-color:color-mix(in srgb,#555963 72%,var(--nyx-founder-accent-primary,#8fb8ff))!important;border-radius:14px!important;background:linear-gradient(180deg,#1c1e24,color-mix(in srgb,#191b20 96%,var(--nyx-founder-accent-primary,#8fb8ff)))!important;box-shadow:0 14px 32px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.035)!important}.nyx-founder-profile-standard .nyx-founder-banner{width:100%!important;height:132px!important}.nyx-founder-profile-standard .nyx-founder-profile-content{padding:0 11px 11px!important}.nyx-founder-profile-standard .nyx-founder-image-wrap{width:78px!important;height:78px!important;margin-top:-40px!important;border:4px solid #1c1e24!important;background:#1c1e24!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--nyx-founder-accent-primary,#8fb8ff) 72%,#d5d9e1),0 7px 15px rgba(0,0,0,.34)!important}.nyx-founder-profile-standard .nyx-founder-copy{margin-top:8px!important;padding:12px!important;border-color:rgba(255,255,255,.08)!important;border-radius:10px!important;background:linear-gradient(180deg,color-mix(in srgb,#272a32 97%,var(--nyx-founder-accent-primary,#8fb8ff)),#22242b)!important}.nyx-founder-profile-standard .nyx-founder-copy h3{font-size:20px!important;line-height:1.15!important}.nyx-founder-profile-standard .nyx-founder-handle{margin:2px 0 8px!important;font-size:12px!important}.nyx-founder-profile-standard .nyx-founder-role{margin:8px 0!important;color:#aeb2bd!important;font-size:10px!important;letter-spacing:.075em!important}.nyx-founder-role-list{gap:6px!important;margin:0 0 10px!important}.nyx-founder-role-chip,.nyx-founder-profile-standard .nyx-founder-badge{min-height:23px!important;padding:2px 7px!important;border:1px solid #484b55!important;border-radius:6px!important;background:#2b2e36!important;font-size:10.5px!important;transition:border-color .18s ease,background-color .18s ease,transform .18s ease!important}.nyx-founder-role-owner{border-color:color-mix(in srgb,var(--nyx-founder-accent-primary,#8fb8ff) 68%,#c5c9d2)!important;background:color-mix(in srgb,#2b2e36 81%,var(--nyx-founder-accent-primary,#8fb8ff))!important}.nyx-founder-role-chip:hover{border-color:color-mix(in srgb,var(--nyx-founder-accent-primary,#8fb8ff) 60%,#70747e)!important;background:color-mix(in srgb,#2b2e36 87%,var(--nyx-founder-accent-primary,#8fb8ff))!important;transform:translateY(-1px)!important}.nyx-founder-about{margin-top:2px!important;padding-top:10px!important;border-top-color:rgba(255,255,255,.075)!important}.nyx-founder-about>strong{margin-bottom:5px!important;color:#b8bdc8!important;font-size:10px!important;letter-spacing:.075em!important}.nyx-founder-profile-standard .nyx-founder-bio{font-size:12.5px!important;line-height:1.48!important}.nyx-founder-profile-standard .nyx-founder-link{margin-top:10px!important;font-size:12px!important}';
-  const nyxDiscordCreditsProfileStyle='.nyx-credits-hero{margin-bottom:34px!important}.nyx-credits-hero h1{font-size:clamp(36px,6vw,54px)!important;font-weight:600!important}.nyx-credits-section{margin-bottom:44px!important}.nyx-credits-section>h2{margin-bottom:18px!important;font-size:26px!important}.nyx-founder-profile-standard{max-width:510px!important;border-radius:12px!important;background:linear-gradient(155deg,color-mix(in srgb,var(--nyx-founder-accent-primary,#5865f2) 66%,#202126),color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 30%,#18191e))!important}.nyx-founder-profile-standard .nyx-founder-banner{height:150px!important;aspect-ratio:auto!important;background:var(--nyx-founder-banner-color,var(--nyx-founder-accent-secondary,#8ea1ff))!important}.nyx-founder-profile-standard .nyx-founder-banner img{width:100%!important;height:100%!important;object-fit:cover!important;object-position:center!important}.nyx-founder-profile-standard .nyx-founder-profile-content{padding:0 14px 14px!important}.nyx-founder-profile-standard .nyx-founder-image-wrap{width:84px!important;height:84px!important;margin-top:-43px!important;border-color:color-mix(in srgb,var(--nyx-founder-accent-primary,#5865f2) 62%,#18191e)!important}.nyx-founder-profile-standard .nyx-founder-copy{margin-top:9px!important;padding:13px!important;border:1px solid color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 38%,transparent)!important;border-radius:9px!important;background:color-mix(in srgb,var(--nyx-founder-accent-primary,#5865f2) 14%,rgba(12,13,17,.76))!important}.nyx-founder-profile-standard .nyx-founder-copy h3{font-size:21px!important}.nyx-founder-profile-standard .nyx-founder-role{margin-top:10px!important}.nyx-founder-profile-standard .nyx-founder-about{margin-top:4px!important}.nyx-founder-profile-standard .nyx-founder-bio{font-size:13px!important}'+nyxPublicProfileInlinePolish;
+  const nyxPublicProfileInlinePolish='.n7x-founder-profile-standard{max-width:480px!important;border-color:color-mix(in srgb,#555963 72%,var(--n7x-founder-accent-primary,#8fb8ff))!important;border-radius:14px!important;background:linear-gradient(180deg,#1c1e24,color-mix(in srgb,#191b20 96%,var(--n7x-founder-accent-primary,#8fb8ff)))!important;box-shadow:0 14px 32px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.035)!important}.n7x-founder-profile-standard .n7x-founder-banner{width:100%!important;height:132px!important}.n7x-founder-profile-standard .n7x-founder-profile-content{padding:0 11px 11px!important}.n7x-founder-profile-standard .n7x-founder-image-wrap{width:78px!important;height:78px!important;margin-top:-40px!important;border:4px solid #1c1e24!important;background:#1c1e24!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--n7x-founder-accent-primary,#8fb8ff) 72%,#d5d9e1),0 7px 15px rgba(0,0,0,.34)!important}.n7x-founder-profile-standard .n7x-founder-copy{margin-top:8px!important;padding:12px!important;border-color:rgba(255,255,255,.08)!important;border-radius:10px!important;background:linear-gradient(180deg,color-mix(in srgb,#272a32 97%,var(--n7x-founder-accent-primary,#8fb8ff)),#22242b)!important}.n7x-founder-profile-standard .n7x-founder-copy h3{font-size:20px!important;line-height:1.15!important}.n7x-founder-profile-standard .n7x-founder-handle{margin:2px 0 8px!important;font-size:12px!important}.n7x-founder-profile-standard .n7x-founder-role{margin:8px 0!important;color:#aeb2bd!important;font-size:10px!important;letter-spacing:.075em!important}.n7x-founder-role-list{gap:6px!important;margin:0 0 10px!important}.n7x-founder-role-chip,.n7x-founder-profile-standard .n7x-founder-badge{min-height:23px!important;padding:2px 7px!important;border:1px solid #484b55!important;border-radius:6px!important;background:#2b2e36!important;font-size:10.5px!important;transition:border-color .18s ease,background-color .18s ease,transform .18s ease!important}.n7x-founder-role-owner{border-color:color-mix(in srgb,var(--n7x-founder-accent-primary,#8fb8ff) 68%,#c5c9d2)!important;background:color-mix(in srgb,#2b2e36 81%,var(--n7x-founder-accent-primary,#8fb8ff))!important}.n7x-founder-role-chip:hover{border-color:color-mix(in srgb,var(--n7x-founder-accent-primary,#8fb8ff) 60%,#70747e)!important;background:color-mix(in srgb,#2b2e36 87%,var(--n7x-founder-accent-primary,#8fb8ff))!important;transform:translateY(-1px)!important}.n7x-founder-about{margin-top:2px!important;padding-top:10px!important;border-top-color:rgba(255,255,255,.075)!important}.n7x-founder-about>strong{margin-bottom:5px!important;color:#b8bdc8!important;font-size:10px!important;letter-spacing:.075em!important}.n7x-founder-profile-standard .n7x-founder-bio{font-size:12.5px!important;line-height:1.48!important}.n7x-founder-profile-standard .n7x-founder-link{margin-top:10px!important;font-size:12px!important}';
+  const nyxDiscordCreditsProfileStyle='.nyx-credits-hero{margin-bottom:34px!important}.nyx-credits-hero h1{font-size:clamp(36px,6vw,54px)!important;font-weight:600!important}.nyx-credits-section{margin-bottom:44px!important}.nyx-credits-section>h2{margin-bottom:18px!important;font-size:26px!important}.n7x-founder-profile-standard{max-width:510px!important;border-radius:12px!important;background:linear-gradient(155deg,color-mix(in srgb,var(--n7x-founder-accent-primary,#5865f2) 66%,#202126),color-mix(in srgb,var(--n7x-founder-accent-secondary,#8ea1ff) 30%,#18191e))!important}.n7x-founder-profile-standard .n7x-founder-banner{height:150px!important;aspect-ratio:auto!important;background:var(--n7x-founder-banner-color,var(--n7x-founder-accent-secondary,#8ea1ff))!important}.n7x-founder-profile-standard .n7x-founder-banner img{width:100%!important;height:100%!important;object-fit:cover!important;object-position:center!important}.n7x-founder-profile-standard .n7x-founder-profile-content{padding:0 14px 14px!important}.n7x-founder-profile-standard .n7x-founder-image-wrap{width:84px!important;height:84px!important;margin-top:-43px!important;border-color:color-mix(in srgb,var(--n7x-founder-accent-primary,#5865f2) 62%,#18191e)!important}.n7x-founder-profile-standard .n7x-founder-copy{margin-top:9px!important;padding:13px!important;border:1px solid color-mix(in srgb,var(--n7x-founder-accent-secondary,#8ea1ff) 38%,transparent)!important;border-radius:9px!important;background:color-mix(in srgb,var(--n7x-founder-accent-primary,#5865f2) 14%,rgba(12,13,17,.76))!important}.n7x-founder-profile-standard .n7x-founder-copy h3{font-size:21px!important}.n7x-founder-profile-standard .n7x-founder-role{margin-top:10px!important}.n7x-founder-profile-standard .n7x-founder-about{margin-top:4px!important}.n7x-founder-profile-standard .n7x-founder-bio{font-size:13px!important}'+nyxPublicProfileInlinePolish;
   const nyxCreditsPresentationStyle=`/* Shared by the internal Credits tab and desktop About window. */
-html body .nyx-credits-tab{box-sizing:border-box;width:100%;max-width:960px;min-height:65vh;margin:0 auto;padding:clamp(48px,9vh,96px) 24px 64px!important;text-align:center;color:#e0ddea}
-html body .nyx-credits-tab .nyx-credits-title{margin:0 0 48px!important;padding:0;border:0;color:#a8a1b8!important;font-size:28px!important;font-weight:400!important;letter-spacing:0!important;line-height:1.4;text-shadow:none!important}
-html body .nyx-credits-tab .nyx-credits-thanks{display:grid;gap:40px;width:100%!important;max-width:none!important;margin:0!important;padding:0!important;list-style:none}
-html body .nyx-credits-thanks li{margin:0;padding:0;color:#e0ddea;font-size:clamp(18px,2.2vw,24px);line-height:1.7;overflow-wrap:anywhere}
-html body .nyx-credits-thanks strong{font-weight:700}
-html body .nyx-credits-thanks a{color:#a69bff;text-decoration:none;text-underline-offset:5px}
-html body .nyx-credits-thanks a:hover{text-decoration:underline}
-html body .nyx-credits-thanks a:focus-visible{outline:2px solid #b8afff;outline-offset:5px;border-radius:3px}
-html body .nyx-credits-thanks .nyx-credits-site{display:block;width:fit-content;margin:5px auto 0;font-size:16px}
-@media(max-width:480px){html body .nyx-credits-tab{padding:48px 20px!important}html body .nyx-credits-tab .nyx-credits-title{margin-bottom:36px!important}}
+html body .n7x-credits-tab{box-sizing:border-box;width:100%;max-width:960px;min-height:65vh;margin:0 auto;padding:clamp(48px,9vh,96px) 24px 64px!important;text-align:center;color:#e0ddea}
+html body .n7x-credits-tab .n7x-credits-title{margin:0 0 48px!important;padding:0;border:0;color:#a8a1b8!important;font-size:28px!important;font-weight:400!important;letter-spacing:0!important;line-height:1.4;text-shadow:none!important}
+html body .n7x-credits-tab .n7x-credits-thanks{display:grid;gap:40px;width:100%!important;max-width:none!important;margin:0!important;padding:0!important;list-style:none}
+html body .n7x-credits-thanks li{margin:0;padding:0;color:#e0ddea;font-size:clamp(18px,2.2vw,24px);line-height:1.7;overflow-wrap:anywhere}
+html body .n7x-credits-thanks strong{font-weight:700}
+html body .n7x-credits-thanks a{color:#a69bff;text-decoration:none;text-underline-offset:5px}
+html body .n7x-credits-thanks a:hover{text-decoration:underline}
+html body .n7x-credits-thanks a:focus-visible{outline:2px solid #b8afff;outline-offset:5px;border-radius:3px}
+html body .n7x-credits-thanks .n7x-credits-site{display:block;width:fit-content;margin:5px auto 0;font-size:16px}
+@media(max-width:480px){html body .n7x-credits-tab{padding:48px 20px!important}html body .n7x-credits-tab .n7x-credits-title{margin-bottom:36px!important}}
 
-html body .nyx-credits-thanks .nyx-credits-libraries{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 20px;width:100%;max-width:none!important;margin:12px auto 0!important;padding:0!important;list-style:none}
-html body .nyx-credits-thanks .nyx-credits-libraries li{font-size:15px;color:#b8b1c8;line-height:1.8}
-html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;height:60px;object-fit:contain;margin:0 auto 12px}
+html body .n7x-credits-thanks .n7x-credits-libraries{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 20px;width:100%;max-width:none!important;margin:12px auto 0!important;padding:0!important;list-style:none}
+html body .n7x-credits-thanks .n7x-credits-libraries li{font-size:15px;color:#b8b1c8;line-height:1.8}
+html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;height:60px;object-fit:contain;margin:0 auto 12px}
 `;
   const nyxCreditsProfileReferenceStyle=`
-    .nyx-credits-founder-card{display:block;max-width:470px;margin:0;border-color:rgba(255,255,255,.12);border-radius:16px;background:#111216;box-shadow:0 18px 40px rgba(0,0,0,.28)}.nyx-credits-founder-media{min-height:142px;overflow:visible;background:#f3eef5}.nyx-credits-founder-banner{overflow:hidden;border-radius:15px 15px 0 0;background:var(--nyx-founder-banner-color,#f3eef5)}.nyx-credits-founder-banner::after{display:none}.nyx-credits-founder-banner img{object-position:center;opacity:.92}.nyx-credits-founder-avatar{left:18px;bottom:-47px;width:92px;height:92px;border:6px solid #111216;box-shadow:0 0 0 2px rgba(255,255,255,.18),0 8px 18px rgba(0,0,0,.32)}.nyx-credits-founder-status{right:-2px;bottom:1px;border-color:#111216}.nyx-credits-founder-presence{position:absolute;z-index:2;left:118px;bottom:-39px;display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:0 13px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:#202126;color:#d9dde5;font-size:12px;font-weight:650;box-shadow:0 5px 14px rgba(0,0,0,.2)}.nyx-credits-founder-presence i{width:8px;height:8px;border-radius:50%;background:#77849a}.nyx-credits-founder-presence.nyx-founder-status-online i{background:#5bc68a}.nyx-credits-founder-presence.nyx-founder-status-idle i{background:#e4b65a}.nyx-credits-founder-presence.nyx-founder-status-dnd i{background:#df6875}.nyx-credits-founder-copy{padding:60px 20px 21px}.nyx-credits-founder-copy>p.nyx-credits-founder-role{margin:0 0 7px!important;color:#aeb5c1!important;font-size:10px!important;letter-spacing:.08em!important}.nyx-credits-founder-copy h3{font-size:26px!important;line-height:1.1!important}.nyx-credits-founder-handle{margin:4px 0 14px!important;color:#9ba2ae!important}.nyx-credits-founder-bio{color:#d6d9df!important;font-size:13px!important;line-height:1.55!important}.nyx-credits-founder-roles,.nyx-credits-founder-badges{margin-top:14px}.nyx-credits-founder-role,.nyx-credits-founder-badge{border-color:#444750;border-radius:6px;background:#24262d;color:#d9dde5}.nyx-credits-founder-roles .nyx-credits-founder-role:first-child{border-color:color-mix(in srgb,var(--nyx-founder-accent,var(--credits-accent)) 62%,#535763);background:color-mix(in srgb,#262830 82%,var(--nyx-founder-accent,var(--credits-accent)));color:#fff}@media(max-width:720px){.nyx-credits-founder-card{max-width:none}.nyx-credits-founder-media{min-height:132px}.nyx-credits-founder-copy{padding:58px 18px 19px}}
+    .n7x-credits-founder-card{display:block;max-width:470px;margin:0;border-color:rgba(255,255,255,.12);border-radius:16px;background:#111216;box-shadow:0 18px 40px rgba(0,0,0,.28)}.n7x-credits-founder-media{min-height:142px;overflow:visible;background:#f3eef5}.n7x-credits-founder-banner{overflow:hidden;border-radius:15px 15px 0 0;background:var(--n7x-founder-banner-color,#f3eef5)}.n7x-credits-founder-banner::after{display:none}.n7x-credits-founder-banner img{object-position:center;opacity:.92}.n7x-credits-founder-avatar{left:18px;bottom:-47px;width:92px;height:92px;border:6px solid #111216;box-shadow:0 0 0 2px rgba(255,255,255,.18),0 8px 18px rgba(0,0,0,.32)}.n7x-credits-founder-status{right:-2px;bottom:1px;border-color:#111216}.n7x-credits-founder-presence{position:absolute;z-index:2;left:118px;bottom:-39px;display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:0 13px;border:1px solid rgba(255,255,255,.12);border-radius:999px;background:#202126;color:#d9dde5;font-size:12px;font-weight:650;box-shadow:0 5px 14px rgba(0,0,0,.2)}.n7x-credits-founder-presence i{width:8px;height:8px;border-radius:50%;background:#77849a}.n7x-credits-founder-presence.nyx-founder-status-online i{background:#5bc68a}.n7x-credits-founder-presence.nyx-founder-status-idle i{background:#e4b65a}.n7x-credits-founder-presence.nyx-founder-status-dnd i{background:#df6875}.n7x-credits-founder-copy{padding:60px 20px 21px}.n7x-credits-founder-copy>p.n7x-credits-founder-role{margin:0 0 7px!important;color:#aeb5c1!important;font-size:10px!important;letter-spacing:.08em!important}.n7x-credits-founder-copy h3{font-size:26px!important;line-height:1.1!important}.n7x-credits-founder-handle{margin:4px 0 14px!important;color:#9ba2ae!important}.n7x-credits-founder-bio{color:#d6d9df!important;font-size:13px!important;line-height:1.55!important}.n7x-credits-founder-roles,.n7x-credits-founder-badges{margin-top:14px}.n7x-credits-founder-role,.n7x-credits-founder-badge{border-color:#444750;border-radius:6px;background:#24262d;color:#d9dde5}.n7x-credits-founder-roles .n7x-credits-founder-role:first-child{border-color:color-mix(in srgb,var(--n7x-founder-accent,var(--credits-accent)) 62%,#535763);background:color-mix(in srgb,#262830 82%,var(--n7x-founder-accent,var(--credits-accent)));color:#fff}@media(max-width:720px){.n7x-credits-founder-card{max-width:none}.n7x-credits-founder-media{min-height:132px}.n7x-credits-founder-copy{padding:58px 18px 19px}}
   `;
-  const nyxCreditsOwnerImageStyle=`.nyx-credits-owner-image{width:min(394px,100%);margin:0}.nyx-credits-owner-image img{display:block;width:100%;height:auto;border-radius:0}`;
+  const nyxCreditsOwnerImageStyle=`.n7x-credits-owner-image{width:min(394px,100%);margin:0}.n7x-credits-owner-image img{display:block;width:100%;height:auto;border-radius:0}`;
   const DEFAULT_BROWSER_MODE='scramjet';
   const DEFAULT_BROWSER_TRANSPORT='libcurlRaw';
   function normalizeBrowserTransportName(value=DEFAULT_BROWSER_TRANSPORT){
@@ -1907,8 +1907,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   function applyFontSetting(root=document){
     const [key,,family]=nyxFontChoice();
-    document.documentElement.style.setProperty('--nyx-font',family);
-    document.body.dataset.nyxFont=key;
+    document.documentElement.style.setProperty('--n7x-font',family);
+    document.body.dataset.n7xFont=key;
     root.querySelectorAll?.('[data-font-value]')?.forEach(select=>{
       select.innerHTML=nyxFontOptionsMarkup(key);
       select.value=key;
@@ -1936,13 +1936,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
 
 
 
-  const knownNyxOverlaySelector='.nyx-prompt-shade,.nyx-modal-shade,.nyx-download-safety-shade,.nyx-tos-gate,.nyx-release-notes-overlay,.setup-screen,.setup-panel,.lock-screen,.nyx-browser-tab-sidebar,.nyx-visual-dock,.browser-shell-settings-overlay,.nyx-dashboard-menu,.nyx-account-menu,.nyx-account-overlay,.nyx-user-profile-overlay,.nyx-profile-directory-overlay,.nyx-founder-editor-overlay,.nyx-owner-dashboard-overlay,.context-menu,[data-nyx-owned-overlay]';
+  const knownNyxOverlaySelector='.n7x-prompt-shade,.nyx-modal-shade,.n7x-download-safety-shade,.n7x-tos-gate,.n7x-release-notes-overlay,.setup-screen,.setup-panel,.lock-screen,.n7x-browser-tab-sidebar,.n7x-visual-dock,.browser-shell-settings-overlay,.nyx-dashboard-menu,.n7x-account-menu,.n7x-account-overlay,.n7x-user-profile-overlay,.n7x-profile-directory-overlay,.n7x-founder-editor-overlay,.n7x-owner-dashboard-overlay,.context-menu,[data-n7x-owned-overlay]';
   function isBrowserInjectedOverlay(node){
     if(!(node instanceof Element) || node===document.body || node===document.documentElement) return false;
-    if(node.matches('#desktop,.top-os,.window,.browser-window,.browser-body,.browser-home,#nyxPrivacyCover,#nyxWaveBg,#setupLaunchScreen,.nyx-prompt-shade,.nyx-modal-shade')) return false;
+    if(node.matches('#desktop,.top-os,.window,.browser-window,.browser-body,.browser-home,#n7xPrivacyCover,#n7xWaveBg,#setupLaunchScreen,.n7x-prompt-shade,.nyx-modal-shade')) return false;
     if(node.closest(knownNyxOverlaySelector)) return false;
     const frames=node.matches('iframe') ? [node] : [...node.querySelectorAll('iframe')];
-    if(frames.some(frame=>!frame.matches('#nyxPrivacyCover,#nyxWaveBg,.browser-body > iframe.view,iframe[title="nyx"]'))) return true;
+    if(frames.some(frame=>!frame.matches('#n7xPrivacyCover,#n7xWaveBg,.browser-body > iframe.view,iframe[title="nyx"]'))) return true;
     const resource=String(node.getAttribute('src') || node.getAttribute('href') || node.getAttribute('data-src') || '');
     if(resource && browserAdResourceSignature.test(resource)) return true;
     const text=String(node.innerText || node.textContent || '').replace(/\s+/g,' ').trim().slice(0,1200);
@@ -2000,7 +2000,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     };
     const inspect=records=>{
       if(!popupProtectionEnabled()) return;
-      if(!document.querySelector('iframe[data-nyx-browser-contained="true"]') && Date.now()>browserOverlayQuarantineUntil) return;
+      if(!document.querySelector('iframe[data-n7x-browser-contained="true"]') && Date.now()>browserOverlayQuarantineUntil) return;
       for(const record of records){
         if(record.type!=='childList') continue;
         record.addedNodes.forEach(root=>{
@@ -2021,23 +2021,23 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }catch{return false}
   }
   function shownyxPrompt(message,{loop=false,onOk=null}={}){
-    document.querySelectorAll('.nyx-prompt-shade').forEach(el=>el.remove());
+    document.querySelectorAll('.n7x-prompt-shade').forEach(el=>el.remove());
     const shade=document.createElement('div');
-    shade.className='nyx-prompt-shade';
-    shade.innerHTML=`<div class="nyx-prompt" role="dialog" aria-modal="true"><div class="nyx-prompt-title">${esc(location.hostname || 'nyx')} says</div><div class="nyx-prompt-message">${esc(message)}</div><input class="nyx-prompt-input" autocomplete="off" spellcheck="false"><div class="nyx-prompt-actions"><button class="nyx-prompt-ok" type="button">OK</button><button class="nyx-prompt-cancel" type="button">Cancel</button></div></div>`;
+    shade.className='n7x-prompt-shade';
+    shade.innerHTML=`<div class="n7x-prompt" role="dialog" aria-modal="true"><div class="n7x-prompt-title">${esc(location.hostname || 'nyx')} says</div><div class="n7x-prompt-message">${esc(message)}</div><input class="n7x-prompt-input" autocomplete="off" spellcheck="false"><div class="n7x-prompt-actions"><button class="n7x-prompt-ok" type="button">OK</button><button class="n7x-prompt-cancel" type="button">Cancel</button></div></div>`;
     document.body.appendChild(shade);
-    const ok=shade.querySelector('.nyx-prompt-ok');
-    const input=shade.querySelector('.nyx-prompt-input');
+    const ok=shade.querySelector('.n7x-prompt-ok');
+    const input=shade.querySelector('.n7x-prompt-input');
     input?.focus();
     ok.onclick=()=>{
       shade.remove();
       if(loop) setTimeout(()=>shownyxPrompt(message,{loop:true}),0);
       else if(typeof onOk==='function') onOk();
     };
-    shade.querySelector('.nyx-prompt-cancel')?.addEventListener('click',()=>shade.remove());
+    shade.querySelector('.n7x-prompt-cancel')?.addEventListener('click',()=>shade.remove());
     input?.addEventListener('keydown',e=>{
       if(e.key==='Enter') ok.click();
-      if(e.key==='Escape') shade.querySelector('.nyx-prompt-cancel')?.click();
+      if(e.key==='Escape') shade.querySelector('.n7x-prompt-cancel')?.click();
     });
     return shade;
   }
@@ -2056,36 +2056,36 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return browserShellSourceUrl(actual) || actual || browserShellSourceUrl(source) || source;
   }
   function nyxDownloadSafetyDialog(result,{filename,url}={}){
-    document.querySelectorAll('.nyx-download-safety-shade').forEach(element=>element.remove());
+    document.querySelectorAll('.n7x-download-safety-shade').forEach(element=>element.remove());
     return new Promise(resolve=>{
       const blocked=result?.verdict==='blocked';
       const shade=document.createElement('div');
-      shade.className='nyx-download-safety-shade';
+      shade.className='n7x-download-safety-shade';
       const threatList=Array.isArray(result?.threats) && result.threats.length
-        ? `<p class="nyx-download-safety-threats">Detected: ${esc(result.threats.join(', ').replaceAll('_',' ').toLowerCase())}</p>`
+        ? `<p class="n7x-download-safety-threats">Detected: ${esc(result.threats.join(', ').replaceAll('_',' ').toLowerCase())}</p>`
         : '';
       let host='Unknown source';
       try{host=new URL(String(url || ''),location.href).hostname || host}catch{}
-      shade.innerHTML=`<section class="nyx-download-safety-dialog ${blocked?'is-blocked':'is-caution'}" role="alertdialog" aria-modal="true" aria-labelledby="nyxDownloadSafetyTitle" aria-describedby="nyxDownloadSafetyMessage">
-        <span class="nyx-download-safety-icon" aria-hidden="true">${blocked?'!':'?'}</span>
-        <div class="nyx-download-safety-copy">
-          <p class="nyx-download-safety-kicker">Download protection</p>
-          <h2 id="nyxDownloadSafetyTitle">${blocked?'Download blocked':'Check this download'}</h2>
-          <p class="nyx-download-safety-file">${esc(filename || 'download')}</p>
-          <p class="nyx-download-safety-source">From ${esc(host)}</p>
-          <p id="nyxDownloadSafetyMessage">${esc(result?.message || "N7X could not verify this download.")}</p>
+      shade.innerHTML=`<section class="n7x-download-safety-dialog ${blocked?'is-blocked':'is-caution'}" role="alertdialog" aria-modal="true" aria-labelledby="n7xDownloadSafetyTitle" aria-describedby="n7xDownloadSafetyMessage">
+        <span class="n7x-download-safety-icon" aria-hidden="true">${blocked?'!':'?'}</span>
+        <div class="n7x-download-safety-copy">
+          <p class="n7x-download-safety-kicker">Download protection</p>
+          <h2 id="n7xDownloadSafetyTitle">${blocked?'Download blocked':'Check this download'}</h2>
+          <p class="n7x-download-safety-file">${esc(filename || 'download')}</p>
+          <p class="n7x-download-safety-source">From ${esc(host)}</p>
+          <p id="n7xDownloadSafetyMessage">${esc(result?.message || "N7X could not verify this download.")}</p>
           ${threatList}
-          <p class="nyx-download-safety-note">N7X checked the U3L reputation only. The file bytes were not uploaded or antivirus-scanned.</p>
+          <p class="n7x-download-safety-note">N7X checked the U3L reputation only. The file bytes were not uploaded or antivirus-scanned.</p>
         </div>
         <footer>
-          <button class="settings-action" data-nyx-download-cancel type="button">${blocked?'Close':'Cancel'}</button>
-          ${blocked?'':`<button class="settings-action on" data-nyx-download-continue type="button">Download anyway</button>`}
+          <button class="settings-action" data-n7x-download-cancel type="button">${blocked?'Close':'Cancel'}</button>
+          ${blocked?'':`<button class="settings-action on" data-n7x-download-continue type="button">Download anyway</button>`}
         </footer>
       </section>`;
       document.body.appendChild(shade);
       const finish=allowed=>{shade.remove();resolve(allowed)};
-      shade.querySelector('[data-nyx-download-cancel]')?.addEventListener('click',()=>finish(false));
-      shade.querySelector('[data-nyx-download-continue]')?.addEventListener('click',()=>finish(true));
+      shade.querySelector('[data-n7x-download-cancel]')?.addEventListener('click',()=>finish(false));
+      shade.querySelector('[data-n7x-download-continue]')?.addEventListener('click',()=>finish(true));
       shade.addEventListener('click',event=>{if(event.target===shade)finish(false)});
       shade.addEventListener('keydown',event=>{if(event.key==='Escape')finish(false)});
       shade.querySelector('button')?.focus();
@@ -2168,7 +2168,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     nyxErudaLoadPromise=new Promise((resolve,reject)=>{
       const loader=document.createElement('script');
       loader.src='/assets/vendor/eruda.min.js?v=3.4.3';
-      loader.dataset.nyxErudaLoader='true';
+      loader.dataset.n7xErudaLoader='true';
       loader.onload=()=>window.eruda ? resolve(window.eruda) : reject(new Error('Eruda did not initialize'));
       loader.onerror=()=>reject(new Error('Eruda could not be downloaded'));
       document.head.appendChild(loader);
@@ -2185,10 +2185,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   async function showNyxErudaPanel(win){
     const body=win?.querySelector('.browser-body');
     if(!body) return;
-    let host=body.querySelector(':scope > .nyx-eruda-host');
+    let host=body.querySelector(':scope > .n7x-eruda-host');
     if(!host){
       host=document.createElement('div');
-      host.className='nyx-eruda-host';
+      host.className='n7x-eruda-host';
       host.setAttribute('aria-label','Eruda developer tools');
       body.appendChild(host);
     }
@@ -2198,14 +2198,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       nyxErudaInitialized=false;
     }
     nyxErudaHost=host;
-    let status=host.querySelector('.nyx-eruda-loading');
-    let mount=host.querySelector('.nyx-eruda-root, #eruda');
+    let status=host.querySelector('.n7x-eruda-loading');
+    let mount=host.querySelector('.n7x-eruda-root, #eruda');
     if(!nyxErudaInitialized){
       host.replaceChildren();
       mount=document.createElement('div');
-      mount.className='nyx-eruda-root';
+      mount.className='n7x-eruda-root';
       status=document.createElement('p');
-      status.className='nyx-eruda-loading';
+      status.className='n7x-eruda-loading';
       status.setAttribute('role','status');
       status.textContent='Starting Eruda...';
       host.append(mount,status);
@@ -2280,7 +2280,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       icon.src=meta.icon;
       icon.alt='';
     });
-    qsa('.nyx-visual-home [data-browser-blank-input]').forEach(input=>{
+    qsa('.n7x-visual-home [data-browser-blank-input]').forEach(input=>{
       const text=`S3ARC4 ${meta.label} or type a U3L`;
       input.placeholder=text;
       input.setAttribute('aria-label',text);
@@ -2295,24 +2295,24 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function nyxSearchHistoryQuery(value){
     return String(value || '').normalize('NFKC').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,180);
   }
-  function nyxRecentSearches(){
+  function n7xRecentSearches(){
     const saved=store.get('nyx.recentSearches',[]);
     return Array.isArray(saved) ? saved.filter(value=>typeof value==='string').map(nyxSearchHistoryQuery).filter(Boolean).slice(0,12) : [];
   }
   function syncNyxRecentSearches(){
-    const recent=nyxRecentSearches().slice(0,3);
-    document.querySelectorAll('[data-nyx-recent-searches]').forEach(row=>{
+    const recent=n7xRecentSearches().slice(0,3);
+    document.querySelectorAll('[data-n7x-recent-searches]').forEach(row=>{
       row.hidden=!recent.length;
       const signature=JSON.stringify(recent);
       if(row.dataset.recentSignature===signature) return;
       row.dataset.recentSignature=signature;
-      row.innerHTML='<span>Jump back in</span>'+recent.map(query=>`<button type="button" data-nyx-recent-search="${esc(query)}" title="${esc(query)}">${esc(query)}</button>`).join('');
+      row.innerHTML='<span>Jump back in</span>'+recent.map(query=>`<button type="button" data-n7x-recent-search="${esc(query)}" title="${esc(query)}">${esc(query)}</button>`).join('');
     });
   }
   function rememberNyxRecentSearch(value){
     const query=nyxSearchHistoryQuery(value);
     if(!query) return;
-    const recent=nyxRecentSearches().filter(item=>item.toLowerCase()!==query.toLowerCase());
+    const recent=n7xRecentSearches().filter(item=>item.toLowerCase()!==query.toLowerCase());
     store.set('nyx.recentSearches',[query,...recent].slice(0,12));
     syncNyxRecentSearches();
   }
@@ -2376,9 +2376,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return String(value || '').trim()==='67';
   }
   function showSixtySevenJumpscare(){
-    document.querySelectorAll('.nyx-jumpscare').forEach(el=>el.remove());
+    document.querySelectorAll('.n7x-jumpscare').forEach(el=>el.remove());
     const overlay=document.createElement('div');
-    overlay.className='nyx-jumpscare';
+    overlay.className='n7x-jumpscare';
     overlay.innerHTML=`<img alt="" src="${sixtySevenJumpscareSrc}?t=${Date.now()}">`;
     document.body.appendChild(overlay);
     const close=()=>overlay.remove();
@@ -2466,7 +2466,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const value=currentNyxBeamWallpaper();
     const theme=normalizeNyxTheme(store.text('nyx.theme','default'));
     const customLightColor=theme==='custom' ? nyxCustomThemePalette().bright : '';
-    document.documentElement.dataset.nyxBeamWallpaper=value;
+    document.documentElement.dataset.n7xBeamWallpaper=value;
     window.NyxBeamsWallpaper?.apply(value,{
       beamWidth:3,
       beamHeight:30,
@@ -2499,8 +2499,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     store.set('nyx.threeDBackgrounds',false);
     document.body.classList.remove('three-d-backgrounds');
     applyNyxBeamWallpaper();
-    qsa('[data-nyx-beam-wallpaper]').forEach(card=>{
-      const selected=card.dataset.nyxBeamWallpaper===(wavesActive ? nyxThemeWavesColor(cleanTheme) : value);
+    qsa('[data-n7x-beam-wallpaper]').forEach(card=>{
+      const selected=card.dataset.n7xBeamWallpaper===(wavesActive ? nyxThemeWavesColor(cleanTheme) : value);
       card.classList.toggle('selected',selected);
       card.setAttribute('aria-pressed',String(selected));
     });
@@ -2512,41 +2512,41 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(nyxPhotoWallpapers[family]) return preset.family===family;
       if(preset.family || value==='lineWaves') return false;
       return !wavesActive || Object.hasOwn(window.NyxLineWavesWallpaper?.palettes || {},value);
-    }).map(([value,preset])=>`<button class="nyx-wallpaper-card${selected===value?' selected':''}" data-nyx-beam-wallpaper="${esc(value)}" type="button" aria-pressed="${selected===value}">${preset.family ? `<img src="assets/backgrounds/${preset.family}.jpg" class="nyx-photo-preview ${preset.variant}" alt="" loading="lazy">` : `<canvas width="240" height="135" data-nyx-beam-preview="${esc(value)}" aria-hidden="true"></canvas>`}<span><strong>${esc(preset.label)}</strong></span><i class="nyx-wallpaper-check" aria-hidden="true">&#10003;</i></button>`).join('');
+    }).map(([value,preset])=>`<button class="n7x-wallpaper-card${selected===value?' selected':''}" data-n7x-beam-wallpaper="${esc(value)}" type="button" aria-pressed="${selected===value}">${preset.family ? `<img src="assets/backgrounds/${preset.family}.jpg" class="n7x-photo-preview ${preset.variant}" alt="" loading="lazy">` : `<canvas width="240" height="135" data-n7x-beam-preview="${esc(value)}" aria-hidden="true"></canvas>`}<span><strong>${esc(preset.label)}</strong></span><i class="n7x-wallpaper-check" aria-hidden="true">&#10003;</i></button>`).join('');
   }
   function nyxWallpaperFamiliesMarkup(){
     const selected=currentNyxBeamWallpaper();
-    return `<div class="nyx-wallpaper-grid">${Object.entries({...nyxPhotoWallpapers,waves:'Waves',beams:'Beams'}).map(([family,label])=>{
+    return `<div class="n7x-wallpaper-grid">${Object.entries({...nyxPhotoWallpapers,waves:'Waves',beams:'Beams'}).map(([family,label])=>{
       const active=family==='waves' ? selected==='lineWaves' : family==='beams' ? !selected.startsWith('photo-') && selected!=='lineWaves' : selected.startsWith(`photo-${family}-`);
-      return `<button class="nyx-wallpaper-card${active?' selected':''}" data-nyx-wallpaper-family="${family}" type="button" aria-label="${label} styles">${nyxPhotoWallpapers[family] ? `<img src="assets/backgrounds/${family}.jpg" alt="" loading="lazy">` : `<canvas width="240" height="135" data-nyx-beam-preview="${family==='waves'?'lineWaves':'frost'}" aria-hidden="true"></canvas>`}<span><strong>${label}</strong></span><i class="nyx-wallpaper-check" aria-hidden="true">&#10003;</i></button>`;
+      return `<button class="n7x-wallpaper-card${active?' selected':''}" data-n7x-wallpaper-family="${family}" type="button" aria-label="${label} styles">${nyxPhotoWallpapers[family] ? `<img src="assets/backgrounds/${family}.jpg" alt="" loading="lazy">` : `<canvas width="240" height="135" data-n7x-beam-preview="${family==='waves'?'lineWaves':'frost'}" aria-hidden="true"></canvas>`}<span><strong>${label}</strong></span><i class="n7x-wallpaper-check" aria-hidden="true">&#10003;</i></button>`;
     }).join('')}</div>`;
   }
   function showNyxWallpaperFamily(root,family=''){
     root.dataset.wallpaperFamily=family;
-    const back='<button class="settings-action nyx-wallpaper-back" data-nyx-wallpaper-back type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6M8 12h12"/></svg>All backgrounds</button>';
-    root.innerHTML=!family ? nyxWallpaperFamiliesMarkup() : back+(family==='waves' ? nyxLineWavesSettingsMarkup() : `<h2>${esc(nyxPhotoWallpapers[family] || 'Beams')}</h2><div class="nyx-wallpaper-grid">${nyxBeamWallpaperCardsMarkup(family)}</div>`);
+    const back='<button class="settings-action n7x-wallpaper-back" data-n7x-wallpaper-back type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6M8 12h12"/></svg>All backgrounds</button>';
+    root.innerHTML=!family ? nyxWallpaperFamiliesMarkup() : back+(family==='waves' ? nyxLineWavesSettingsMarkup() : `<h2>${esc(nyxPhotoWallpapers[family] || 'Beams')}</h2><div class="n7x-wallpaper-grid">${nyxBeamWallpaperCardsMarkup(family)}</div>`);
     wireNyxBeamWallpaperSettings(root);
   }
   function nyxLineWavesSettingsMarkup(){
     const options=currentNyxLineWavesOptions();
-    return `<h2>Waves</h2><div class="nyx-wallpaper-grid">${nyxBeamWallpaperCardsMarkup('waves')}</div><label class="nyx-line-waves-control"><span>Motion speed <output data-nyx-line-waves-speed-output>${options.speed.toFixed(2)}</output></span><input type="range" min="0.04" max="0.55" step="0.01" value="${options.speed}" data-nyx-line-waves-speed aria-label="Waves motion speed"></label><label class="nyx-line-waves-control"><span>Line density <output data-nyx-line-waves-density-output>${options.innerLineCount}</output></span><input type="range" min="16" max="48" step="1" value="${options.innerLineCount}" data-nyx-line-waves-density aria-label="Waves line density"></label><div class="settings-row"><span>Cursor response</span><button class="settings-action ${options.enableMouseInteraction?'on':''}" data-nyx-line-waves-mouse type="button">${options.enableMouseInteraction?'On':'Off'}</button></div>`;
+    return `<h2>Waves</h2><div class="n7x-wallpaper-grid">${nyxBeamWallpaperCardsMarkup('waves')}</div><label class="n7x-line-waves-control"><span>Motion speed <output data-n7x-line-waves-speed-output>${options.speed.toFixed(2)}</output></span><input type="range" min="0.04" max="0.55" step="0.01" value="${options.speed}" data-n7x-line-waves-speed aria-label="Waves motion speed"></label><label class="n7x-line-waves-control"><span>Line density <output data-n7x-line-waves-density-output>${options.innerLineCount}</output></span><input type="range" min="16" max="48" step="1" value="${options.innerLineCount}" data-n7x-line-waves-density aria-label="Waves line density"></label><div class="settings-row"><span>Cursor response</span><button class="settings-action ${options.enableMouseInteraction?'on':''}" data-n7x-line-waves-mouse type="button">${options.enableMouseInteraction?'On':'Off'}</button></div>`;
   }
   function wireNyxBeamWallpaperSettings(root){
     if(!root) return;
     const family=root.dataset.wallpaperFamily || '';
     const wavesActive=family==='waves';
-    root.querySelectorAll('[data-nyx-wallpaper-family]').forEach(card=>card.addEventListener('click',()=>showNyxWallpaperFamily(root,card.dataset.nyxWallpaperFamily)));
-    root.querySelector('[data-nyx-wallpaper-back]')?.addEventListener('click',()=>showNyxWallpaperFamily(root));
+    root.querySelectorAll('[data-n7x-wallpaper-family]').forEach(card=>card.addEventListener('click',()=>showNyxWallpaperFamily(root,card.dataset.n7xWallpaperFamily)));
+    root.querySelector('[data-n7x-wallpaper-back]')?.addEventListener('click',()=>showNyxWallpaperFamily(root));
     const syncCards=()=>{
       const current=wavesActive ? currentNyxLineWavesOptions().colorVariant : currentNyxBeamWallpaper();
-      root.querySelectorAll('[data-nyx-beam-wallpaper]').forEach(card=>{
-        const selected=card.dataset.nyxBeamWallpaper===current;
+      root.querySelectorAll('[data-n7x-beam-wallpaper]').forEach(card=>{
+        const selected=card.dataset.n7xBeamWallpaper===current;
         card.classList.toggle('selected',selected);
         card.setAttribute('aria-pressed',String(selected));
       });
     };
-    root.querySelectorAll('[data-nyx-beam-wallpaper]').forEach(card=>card.addEventListener('click',()=>{
-      const value=card.dataset.nyxBeamWallpaper || 'frost';
+    root.querySelectorAll('[data-n7x-beam-wallpaper]').forEach(card=>card.addEventListener('click',()=>{
+      const value=card.dataset.n7xBeamWallpaper || 'frost';
       if(!nyxBeamWallpaperPresets()[value]) return;
       if(wavesActive) store.setText('nyx.lineWaves.colorVariant',value);
       store.setText('nyx.beamWallpaper',wavesActive ? 'lineWaves' : value);
@@ -2567,37 +2567,38 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       syncCards();
       toast(`${nyxBeamWallpaperPresets()[value].label || 'Beam'} wallpaper applied`);
     }));
-    const redrawWavesPreview=()=>requestAnimationFrame(()=>root.querySelectorAll('[data-nyx-line-waves-preview]').forEach(canvas=>window.NyxLineWavesWallpaper?.renderPreview(canvas)));
-    root.querySelector('[data-nyx-line-waves-speed]')?.addEventListener('input',event=>{
+    const redrawWavesPreview=()=>requestAnimationFrame(()=>root.querySelectorAll('[data-n7x-line-waves-preview]').forEach(canvas=>window.NyxLineWavesWallpaper?.renderPreview(canvas)));
+    root.querySelector('[data-n7x-line-waves-speed]')?.addEventListener('input',event=>{
       const value=Number(event.currentTarget.value).toFixed(2);
       store.setText('nyx.lineWaves.speed',value);
-      root.querySelector('[data-nyx-line-waves-speed-output]')?.replaceChildren(value);
+      root.querySelector('[data-n7x-line-waves-speed-output]')?.replaceChildren(value);
       applyNyxBeamWallpaper();
       redrawWavesPreview();
     });
-    root.querySelector('[data-nyx-line-waves-density]')?.addEventListener('input',event=>{
+    root.querySelector('[data-n7x-line-waves-density]')?.addEventListener('input',event=>{
       const value=String(Math.round(Number(event.currentTarget.value)));
       store.setText('nyx.lineWaves.density',value);
-      root.querySelector('[data-nyx-line-waves-density-output]')?.replaceChildren(value);
+      root.querySelector('[data-n7x-line-waves-density-output]')?.replaceChildren(value);
       applyNyxBeamWallpaper();
       redrawWavesPreview();
     });
-    root.querySelector('[data-nyx-line-waves-mouse]')?.addEventListener('click',event=>{
+    root.querySelector('[data-n7x-line-waves-mouse]')?.addEventListener('click',event=>{
       const next=!store.get('nyx.lineWaves.mouse',true);
       store.set('nyx.lineWaves.mouse',next);
       event.currentTarget.classList.toggle('on',next);
       event.currentTarget.textContent=next?'On':'Off';
       applyNyxBeamWallpaper();
     });
-    requestAnimationFrame(()=>root.querySelectorAll('[data-nyx-beam-preview]').forEach(canvas=>{
-      const value=canvas.dataset.nyxBeamPreview;
+    requestAnimationFrame(()=>root.querySelectorAll('[data-n7x-beam-preview]').forEach(canvas=>{
+      const value=canvas.dataset.n7xBeamPreview;
       (wavesActive ? window.NyxLineWavesWallpaper : (value==='lineWaves' ? window.NyxLineWavesWallpaper : window.NyxBeamsWallpaper))?.renderPreview(canvas,value);
     }));
     syncCards();
   }
 
   const favicons = {
-    nyx:'./assets/icons/nyx-cat-moon-small.svg?v=3',    classroom:`data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23fbbc04'/%3E%3Crect x='8' y='10' width='48' height='40' rx='3' fill='%2334a853'/%3E%3Ccircle cx='32' cy='25' r='6' fill='white'/%3E%3Cpath d='M18 42c4-9 20-9 24 0' fill='white'/%3E%3C/svg%3E`,
+    nyx:'./assets/icons/nyx-cat-moon-small.svg?v=3',
+    classroom:`data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%23fbbc04'/%3E%3Crect x='8' y='10' width='48' height='40' rx='3' fill='%2334a853'/%3E%3Ccircle cx='32' cy='25' r='6' fill='white'/%3E%3Cpath d='M18 42c4-9 20-9 24 0' fill='white'/%3E%3C/svg%3E`,
     drive:'./assets/icons/googledrive-logo.webp',
     google:'./assets/icons/google-logo.png',
     classlink:'./assets/icons/classlink-logo.png'
@@ -2771,11 +2772,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }catch{return ''}
   }
   function bindTabIconFallback(img){
-    if(!img || img.dataset.nyxIconFallbackBound==='true') return;
-    img.dataset.nyxIconFallbackBound='true';
+    if(!img || img.dataset.n7xIconFallbackBound==='true') return;
+    img.dataset.n7xIconFallbackBound='true';
     img.addEventListener('error',()=>{
-      if(img.dataset.nyxIconFallbackUsed==='true') return;
-      img.dataset.nyxIconFallbackUsed='true';
+      if(img.dataset.n7xIconFallbackUsed==='true') return;
+      img.dataset.n7xIconFallbackUsed='true';
       img.src=favicons.nyx;
     });
   }
@@ -2881,8 +2882,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   let zTop = 20, winCount = 0, activeBrowser = null, antiCloseEnabled = store.get('nyx.antiClose',true), panicCaptureArmed = false, antiClosePanicBypass = false;
   let antiCloseConfirmHandler = null, antiCloseGestureHandler = null, antiCloseRearmTimer = null, antiCloseHadGesture = false;
   let renderedChromeMode = '';
-  let uvInstallPromise = null;
-  let uvRegistration = null;
+
+
   let scramjetInstallPromise = null;
   let scramjetController = null;
   let browserProxyPrewarmScheduled = false;
@@ -3061,7 +3062,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     };
     try {
       const style=document.createElement("style");
-      style.id="nyx-browser-ad-block-style";
+      style.id="n7x-browser-ad-block-style";
       style.textContent=adSelector+"{display:none!important;visibility:hidden!important;pointer-events:none!important;width:0!important;height:0!important;min-width:0!important;min-height:0!important}";
       (document.head || document.documentElement).appendChild(style);
     } catch {}
@@ -3288,7 +3289,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         return /^(?:blob|data):/i.test(text) || /\.(?:apk|appx|bat|bin|cmd|com|crx|deb|dmg|exe|iso|jar|js|jse|msi|pkg|ps1|scr|sh|vbs|wsf|zip|7z|rar)(?:[?#]|$)/i.test(text);
       };
       const trustedGeneratedPopup = link => {
-        if (!link?.matches?.("a[data-nyx-generated-popup][href]")) return false;
+        if (!link?.matches?.("a[data-n7x-generated-popup][href]")) return false;
         if (!/^[/]apps[/]link-generator(?:[/]|$)/i.test(String(location.pathname || ""))) return false;
         try {
           const parsed = new URL(link.href || link.getAttribute("href"), location.href);
@@ -3512,7 +3513,6 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       items.slice(1).forEach(item=>item.remove());
     };
     keepOne('form.browser-mode-address [data-browser-shell-settings]');
-    keepOne('form.browser-mode-address .browser-mode-weather');
     keepOne('form.browser-mode-address [data-browser-shell-menu]');
     keepOne('#browserBookmarkPanel');
     keepOne('#browserModeMenu');
@@ -3524,8 +3524,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   function bindReloadPointerTurn(root=document){
     root.querySelectorAll?.('[data-browser-shell-reload],.tool-btn[data-reload]')?.forEach(button=>{
-      if(button.dataset.nyxPointerTurnBound==='true') return;
-      button.dataset.nyxPointerTurnBound='true';
+      if(button.dataset.n7xPointerTurnBound==='true') return;
+      button.dataset.n7xPointerTurnBound='true';
       let current=0;
       let target=0;
       let frame=0;
@@ -3534,7 +3534,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         frame=0;
         current+=(target-current)*.09;
         if(Math.abs(target-current)<.08) current=target;
-        button.style.setProperty('--nyx-reload-turn',`${current.toFixed(2)}deg`);
+        button.style.setProperty('--n7x-reload-turn',`${current.toFixed(2)}deg`);
         if(current!==target) frame=requestAnimationFrame(draw);
       };
       const aim=value=>{
@@ -3542,7 +3542,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         if(reducedMotion){
           current=0;
           target=0;
-          button.style.setProperty('--nyx-reload-turn','0deg');
+          button.style.setProperty('--n7x-reload-turn','0deg');
           return;
         }
         if(!frame) frame=requestAnimationFrame(draw);
@@ -3612,7 +3612,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   let nyxVisualDockObservedElement=null;
   function nyxVisualDockUsesSideLayout(){return true}
   function enforceNyxVisualDockViewport(){
-    const dock=document.querySelector('[data-nyx-visual-dock]');
+    const dock=document.querySelector('[data-n7x-visual-dock]');
     if(!dock) return;
     dock.hidden=false;dock.inert=false;dock.removeAttribute('aria-hidden');
 
@@ -3628,7 +3628,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   function restoreNyxVisualDock(){
     const shouldRestore=document.body.classList.contains('browser-shell');
-    const dock=document.querySelector('[data-nyx-visual-dock]');
+    const dock=document.querySelector('[data-n7x-visual-dock]');
     if(!shouldRestore) return;
     if(nyxSidebarHidden){enforceNyxVisualDockViewport();return;}
     if(!dock || !dock.isConnected){
@@ -3682,7 +3682,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function watchNyxVisualDock(){
     if(nyxVisualDockRecoveryObserver || !document.body) return;
     nyxVisualDockRecoveryObserver=new MutationObserver(()=>{
-      const dock=document.querySelector('[data-nyx-visual-dock]');
+      const dock=document.querySelector('[data-n7x-visual-dock]');
       if(!dock || (document.body.classList.contains('browser-shell') && dock.parentElement!==document.body)) scheduleNyxVisualDockRecovery();
     });
     nyxVisualDockRecoveryObserver.observe(document.body,{childList:true,attributes:true,attributeFilter:['class']});
@@ -3694,7 +3694,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     });
   }
   function syncNyxVisualDockState(){
-    const dock=document.querySelector('[data-nyx-visual-dock]');
+    const dock=document.querySelector('[data-n7x-visual-dock]');
     if(!dock) return;
     const active=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
     const url=String(active?.url || '').toLowerCase();
@@ -3711,26 +3711,26 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     else if(url.includes('/apps/link-generator/')) activeKey='links';
     else if(url.includes('/assets/games/')) activeKey='games';
     else if(url.includes('/apps') || url==='nyx://apps') activeKey='apps';
-    dock.querySelectorAll('[data-nyx-dock-item]').forEach(button=>{
-      if(button.dataset.nyxDockItem==='vms'){
+    dock.querySelectorAll('[data-n7x-dock-item]').forEach(button=>{
+      if(button.dataset.n7xDockItem==='vms'){
         const allowed=true;
         button.hidden=!allowed;button.style.display=allowed?'':'none';
       }
-      const selected=button.dataset.nyxDockItem===activeKey;
+      const selected=button.dataset.n7xDockItem===activeKey;
       button.classList.toggle('active',selected);
       button.setAttribute('aria-current',selected ? 'page' : 'false');
     });
   }
   function applyNyxSidebarLocation(){
-    document.documentElement.dataset.nyxSidebarSide='left';
-    document.body.dataset.nyxSidebarSide='left';
+    document.documentElement.dataset.n7xSidebarSide='left';
+    document.body.dataset.n7xSidebarSide='left';
   }
   function applyNyxSidebarExpansion(){
     const expanded=store.get('nyx.sidebarExpanded',true);
-    document.documentElement.dataset.nyxSidebarWidth=expanded?'expanded':'collapsed';
-    document.body.dataset.nyxSidebarWidth=expanded?'expanded':'collapsed';
-    document.body.style.removeProperty('--nyx-visual-dock-current-width');
-    const button=document.querySelector('[data-nyx-dock-expand]');
+    document.documentElement.dataset.n7xSidebarWidth=expanded?'expanded':'collapsed';
+    document.body.dataset.n7xSidebarWidth=expanded?'expanded':'collapsed';
+    document.body.style.removeProperty('--n7x-visual-dock-current-width');
+    const button=document.querySelector('[data-n7x-dock-expand]');
     if(button){
       button.setAttribute('aria-expanded',String(expanded));
       button.setAttribute('aria-label',expanded?'Collapse sidebar':'Expand sidebar');
@@ -3740,30 +3740,30 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   function applyNyxAppearance(){
     const appearance=store.text('nyx.appearance','dark')==='light'?'light':'dark';
-    document.documentElement.dataset.nyxAppearance=appearance;
-    document.querySelectorAll('button[data-nyx-appearance]').forEach(button=>{
+    document.documentElement.dataset.n7xAppearance=appearance;
+    document.querySelectorAll('button[data-n7x-appearance]').forEach(button=>{
       button.setAttribute('aria-pressed',String(appearance==='light'));
       button.setAttribute('aria-label',appearance==='light'?'Use dark appearance':'Use light appearance');
     });
     document.querySelectorAll('iframe.view').forEach(frame=>{
-      try{if(frame.contentDocument?.documentElement)frame.contentDocument.documentElement.dataset.nyxAppearance=appearance}catch{}
+      try{if(frame.contentDocument?.documentElement)frame.contentDocument.documentElement.dataset.n7xAppearance=appearance}catch{}
     });
   }
   document.addEventListener('click',event=>{
-    if(!event.target.closest?.('button[data-nyx-appearance]'))return;
+    if(!event.target.closest?.('button[data-n7x-appearance]'))return;
     store.setText('nyx.appearance',store.text('nyx.appearance','dark')==='light'?'dark':'light');
     applyNyxAppearance();
   });
   function syncNyxVisualDockClock(){
-    const dock=document.querySelector('[data-nyx-visual-dock]');
+    const dock=document.querySelector('[data-n7x-visual-dock]');
     if(!dock) return;
     const now=new Date();
-    const time=dock.querySelector('[data-nyx-dock-time]');
-    const date=dock.querySelector('[data-nyx-dock-date]');
+    const time=dock.querySelector('[data-n7x-dock-time]');
+    const date=dock.querySelector('[data-n7x-dock-date]');
     if(time) time.textContent=now.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
     if(date){
       const fullDate=now.toLocaleDateString([],{month:'long',day:'numeric',year:'numeric'});
-      const expanded=document.documentElement.dataset.nyxSidebarWidth==='expanded';
+      const expanded=document.documentElement.dataset.n7xSidebarWidth==='expanded';
       date.textContent=expanded?fullDate:`${now.getMonth()+1}/${now.getDate()}`;
       date.title=fullDate;
       date.setAttribute('aria-label',fullDate);
@@ -3771,7 +3771,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   function ensureNyxVisualDock(){
     const enabled=document.body.classList.contains('browser-shell');
-    let dock=document.querySelector('[data-nyx-visual-dock]');
+    let dock=document.querySelector('[data-n7x-visual-dock]');
     if(!enabled){
       dock?.remove();
       if(nyxVisualDockTimer){clearInterval(nyxVisualDockTimer);nyxVisualDockTimer=0}
@@ -3779,26 +3779,26 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
     if(!dock){
       dock=document.createElement('aside');
-      dock.className='nyx-visual-dock';
-      dock.dataset.nyxVisualDock='';
+      dock.className='n7x-visual-dock';
+      dock.dataset.n7xVisualDock='';
       dock.setAttribute('aria-label',"N7X navigation");
-      dock.innerHTML=`<div class="nyx-visual-dock-head"><a class="nyx-rail-brand" href="#" data-browser-shell-home-nav aria-label="N7X home"><img src="/assets/icons/nyx-cat-moon-small.svg?v=3" alt=""><span>N7X</span></a><button class="nyx-visual-dock-expand" data-nyx-dock-expand type="button" aria-expanded="true" aria-label="Collapse sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 3v18"/><path data-sidebar-arrow d="m15 8-4 4 4 4"/></svg></button></div>
+      dock.innerHTML=`<div class="n7x-visual-dock-head"><a class="n7x-rail-brand" href="#" data-browser-shell-home-nav aria-label="N7X home"><img src="/assets/icons/nyx-cat-moon-small.svg?v=3" alt=""><span>N7X</span></a><button class="n7x-visual-dock-expand" data-n7x-dock-expand type="button" aria-expanded="true" aria-label="Collapse sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 3v18"/><path data-sidebar-arrow d="m15 8-4 4 4 4"/></svg></button></div>
       <nav aria-label="N7X destinations">
-        <button type="button" data-nyx-dock-item="home" data-browser-shell-home-nav aria-label="Home">${nyxDashboardIcon('home')}<span>Home</span></button>
-        <button type="button" data-nyx-dock-item="games" data-app-url="/assets/games/" aria-label="Games">${nyxDashboardIcon('games')}<span>Games</span></button>
-        <button type="button" data-nyx-dock-item="music" data-app-url="/apps/nyxify/" aria-label="Music">${nyxDashboardIcon('music')}<span>Music</span></button>
-        <button type="button" data-nyx-dock-item="youtube" data-app-url="/apps/nyxtube/" aria-label="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="m10 8 5 3-5 3zM8 21h8"/></svg><span>YouTube</span></button>
-        <button type="button" data-nyx-dock-item="ai" data-app-url="nyx://ai" aria-label="AI"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 3 2.1 6.9L19 12l-6.9 2.1L10 21l-2.1-6.9L1 12l6.9-2.1L10 3Z"/><path d="M20 2v6m-3-3h6"/><rect x="2" y="19" width="3" height="3" rx="1"/></svg><span>A1</span></button>
-        <button type="button" data-nyx-dock-item="chat" data-app-url="/apps/chat/" aria-label="Chat">${nyxDashboardIcon('chat')}<span>Chat</span></button>
-        <button type="button" data-nyx-dock-item="vms" data-app-url="/apps/nyxcloud/" aria-label="VMs" title="VMs" hidden style="display:none"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="13" rx="2"/><path d="M8 21h8m-4-5v5"/></svg><span>VMs</span></button>
-        <button type="button" data-nyx-dock-item="apps" data-app-url="nyx://apps" aria-label="Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="7" height="7" rx="1"/><rect x="3" y="16" width="7" height="6" rx="1"/><rect x="12" y="14" width="7" height="8" rx="1"/><rect x="14" y="2" width="7" height="7" rx="1"/></svg><span>Apps</span></button>
+        <button type="button" data-n7x-dock-item="home" data-browser-shell-home-nav aria-label="Home">${nyxDashboardIcon('home')}<span>Home</span></button>
+        <button type="button" data-n7x-dock-item="games" data-app-url="/assets/games/" aria-label="Games">${nyxDashboardIcon('games')}<span>Games</span></button>
+        <button type="button" data-n7x-dock-item="music" data-app-url="/apps/nyxify/" aria-label="Music">${nyxDashboardIcon('music')}<span>Music</span></button>
+        <button type="button" data-n7x-dock-item="youtube" data-app-url="/apps/nyxtube/" aria-label="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="m10 8 5 3-5 3zM8 21h8"/></svg><span>YouTube</span></button>
+        <button type="button" data-n7x-dock-item="ai" data-app-url="nyx://ai" aria-label="AI"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 3 2.1 6.9L19 12l-6.9 2.1L10 21l-2.1-6.9L1 12l6.9-2.1L10 3Z"/><path d="M20 2v6m-3-3h6"/><rect x="2" y="19" width="3" height="3" rx="1"/></svg><span>A1</span></button>
+        <button type="button" data-n7x-dock-item="chat" data-app-url="/apps/chat/" aria-label="Chat">${nyxDashboardIcon('chat')}<span>Chat</span></button>
+        <button type="button" data-n7x-dock-item="vms" data-app-url="/apps/nyxcloud/" aria-label="VMs" title="VMs" hidden style="display:none"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="13" rx="2"/><path d="M8 21h8m-4-5v5"/></svg><span>VMs</span></button>
+        <button type="button" data-n7x-dock-item="apps" data-app-url="nyx://apps" aria-label="Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="7" height="7" rx="1"/><rect x="3" y="16" width="7" height="6" rx="1"/><rect x="12" y="14" width="7" height="8" rx="1"/><rect x="14" y="2" width="7" height="7" rx="1"/></svg><span>Apps</span></button>
       </nav>
-      <div class="nyx-rail-footer"><a class="nyx-rail-discord" data-nyx-trusted-external="discord" data-nyx-dock-item="discord" href="https://discord.com/invite/cAdjYAJs3u" target="_blank" rel="noopener noreferrer" aria-label="Join the N7X Discord server (opens in a new tab)" title="Join our Discord"><i class="nyx-rail-discord-icon" aria-hidden="true"></i><span>Discord</span></a><button type="button" data-nyx-dock-item="settings" data-open="settings" aria-label="Settings">${nyxDashboardIcon('settings')}<span>Settings</span></button><div class="nyx-visual-dock-profile" data-nyx-profile-slot></div></div>`;
+      <div class="n7x-rail-footer"><a class="n7x-rail-discord" data-n7x-trusted-external="discord" data-n7x-dock-item="discord" href="https://discord.com/invite/cAdjYAJs3u" target="_blank" rel="noopener noreferrer" aria-label="Join the N7X Discord server (opens in a new tab)" title="Join our Discord"><i class="n7x-rail-discord-icon" aria-hidden="true"></i><span>Discord</span></a><button type="button" data-n7x-dock-item="settings" data-open="settings" aria-label="Settings">${nyxDashboardIcon('settings')}<span>Settings</span></button><div class="n7x-visual-dock-profile" data-n7x-profile-slot></div></div>`;
       document.body.appendChild(dock);
       watchNyxVisualDock();
       if(navigator.getBattery){
         navigator.getBattery().then(battery=>{
-          const update=()=>{const value=dock?.querySelector('[data-nyx-dock-battery]');if(value)value.textContent=`${Math.round(battery.level*100)}%`};
+          const update=()=>{const value=dock?.querySelector('[data-n7x-dock-battery]');if(value)value.textContent=`${Math.round(battery.level*100)}%`};
           update();
           battery.addEventListener?.('levelchange',update);
         }).catch(()=>{});
@@ -3809,24 +3809,24 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     dock.inert=nyxSidebarHidden;
     if(nyxSidebarHidden)dock.setAttribute('aria-hidden','true');else dock.removeAttribute('aria-hidden');
     watchNyxVisualDockElement(dock);
-    const expandButton=dock.querySelector('[data-nyx-dock-expand]');
+    const expandButton=dock.querySelector('[data-n7x-dock-expand]');
     if(expandButton) expandButton.onclick=()=>{
-      if(dock.dataset.nyxSidebarToggleLocked==='true') return;
-      dock.dataset.nyxSidebarToggleLocked='true';
+      if(dock.dataset.n7xSidebarToggleLocked==='true') return;
+      dock.dataset.n7xSidebarToggleLocked='true';
       const expanded=store.get('nyx.sidebarExpanded',true)===true;
       try{localStorage.setItem('nyx.sidebarExpanded',JSON.stringify(!expanded))}catch{}
       applyNyxSidebarExpansion();
       clearTimeout(nyxSidebarToggleLockTimer);
       nyxSidebarToggleLockTimer=setTimeout(()=>{
-        if(dock.isConnected) delete dock.dataset.nyxSidebarToggleLocked;
+        if(dock.isConnected) delete dock.dataset.n7xSidebarToggleLocked;
       },220);
       clearTimeout(nyxSidebarPreferenceSaveTimer);
       nyxSidebarPreferenceSaveTimer=setTimeout(queueNyxCloudPreferencesSave,380);
     };
 
-    const headAddButton=dock.querySelector('[data-nyx-dock-new-tab]');
+    const headAddButton=dock.querySelector('[data-n7x-dock-new-tab]');
     if(headAddButton) headAddButton.onclick=()=>openBrowserShellTab('');
-    const youtubeButton=dock.querySelector('[data-nyx-dock-item="youtube"]');
+    const youtubeButton=dock.querySelector('[data-n7x-dock-item="youtube"]');
     if(youtubeButton){
       const openYouTube=event=>{
         event?.preventDefault?.();
@@ -3850,7 +3850,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function renderChromeFixed(){
     const top=document.querySelector('.top-os');
     if(top){
-      top.innerHTML="<div class=\"brand-mini\"><button class=\"browser-mode-app-button active\" data-browser-shell-home title=\"Current tab\"><span class=\"browser-home-icon\" aria-hidden=\"true\"></span><span class=\"browser-home-label\">Home</span></button><button class=\"browser-mode-tab\" data-browser-shell-new-tab title=\"New tab\"><span>New tab</span></button></div><span class=\"browser-top-clock\" data-browser-shell-clock>--:--:--</span><form class=\"browser-mode-address\" data-browser-shell-search><button class=\"browser-nav-control\" data-browser-shell-back type=\"button\" title=\"Back\" aria-label=\"Back\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m15 18-6-6 6-6\"></path></svg></button><button class=\"browser-nav-control\" data-browser-shell-forward type=\"button\" title=\"Forward\" aria-label=\"Forward\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"></path></svg></button><button class=\"browser-nav-control\" data-browser-shell-reload type=\"button\" title=\"Reload\" aria-label=\"Reload\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 11a8 8 0 1 0-2.35 5.65\"></path><path d=\"M20 4v7h-7\"></path></svg></button><button class=\"browser-nav-control\" data-browser-shell-home-nav type=\"button\" title=\"Home\" aria-label=\"Home\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m3 11 9-8 9 8\"></path><path d=\"M5 10v10h14V10\"></path><path d=\"M9 20v-6h6v6\"></path></svg></button><input class=\"browser-mode-url\" data-browser-shell-url placeholder=\"S3ARC4 or enter a U3L\" autocomplete=\"off\"><button class=\"browser-mode-bookmark browser-mode-settings\" data-browser-shell-settings data-open=\"settings\" type=\"button\" title=\"Settings\" aria-label=\"Settings\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3\"></circle><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\"></path></svg></button><button class=\"browser-mode-weather\" data-open=\"weather\" type=\"button\" title=\"Weather\" aria-label=\"Weather\"><span class=\"weather-cloud-icon\" aria-hidden=\"true\"></span></button><button data-browser-shell-menu type=\"button\" title=\"Menu\"><span class=\"fresh-real-icon\" aria-hidden=\"true\">⋮</span></button></form><div class=\"browser-bookmark-panel\" id=\"browserBookmarkPanel\" hidden></div><div class=\"browser-mode-menu\" id=\"browserModeMenu\"><button data-browser-shell-new-tab type=\"button\">New tab</button><button data-browser-bookmarks-toggle type=\"button\">Bookmarks</button><button data-open=\"apps\" type=\"button\">Apps</button><hr><button data-open=\"settings\" type=\"button\">Settings</button><button data-browser-hieroglyph-toggle type=\"button\">Hieroglyph Mode</button><button data-app-url=\"/assets/games/index.html\" type=\"button\">GAMES</button><button data-app-url=\"/apps/chat/\" type=\"button\">Chat</button><button data-app-url=\"https://discord.com/app\" type=\"button\">Discord</button><hr><button data-page-fullscreen type=\"button\">Fullscreen</button><button data-shell-about type=\"button\">Open About:Blank</button><button data-shell-about-tab type=\"button\">Open Tab in Abt:Blank</button></div>";
+      top.innerHTML="<div class=\"brand-mini\"><button class=\"browser-mode-app-button active\" data-browser-shell-home title=\"Current tab\"><span class=\"browser-home-icon\" aria-hidden=\"true\"></span><span class=\"browser-home-label\">Home</span></button><button class=\"browser-mode-tab\" data-browser-shell-new-tab title=\"New tab\"><span>New tab</span></button></div><span class=\"browser-top-clock\" data-browser-shell-clock>--:--:--</span><form class=\"browser-mode-address\" data-browser-shell-search><button class=\"browser-nav-control\" data-browser-shell-back type=\"button\" title=\"Back\" aria-label=\"Back\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m15 18-6-6 6-6\"></path></svg></button><button class=\"browser-nav-control\" data-browser-shell-forward type=\"button\" title=\"Forward\" aria-label=\"Forward\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"></path></svg></button><button class=\"browser-nav-control\" data-browser-shell-reload type=\"button\" title=\"Reload\" aria-label=\"Reload\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 11a8 8 0 1 0-2.35 5.65\"></path><path d=\"M20 4v7h-7\"></path></svg></button><button class=\"browser-nav-control\" data-browser-shell-home-nav type=\"button\" title=\"Home\" aria-label=\"Home\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m3 11 9-8 9 8\"></path><path d=\"M5 10v10h14V10\"></path><path d=\"M9 20v-6h6v6\"></path></svg></button><input class=\"browser-mode-url\" data-browser-shell-url placeholder=\"S3ARC4 or enter a U3L\" autocomplete=\"off\"><button class=\"browser-mode-bookmark browser-mode-settings\" data-browser-shell-settings data-open=\"settings\" type=\"button\" title=\"Settings\" aria-label=\"Settings\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3\"></circle><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\"></path></svg></button><button data-browser-shell-menu type=\"button\" title=\"Menu\"><span class=\"fresh-real-icon\" aria-hidden=\"true\">⋮</span></button></form><div class=\"browser-bookmark-panel\" id=\"browserBookmarkPanel\" hidden></div><div class=\"browser-mode-menu\" id=\"browserModeMenu\"><button data-browser-shell-new-tab type=\"button\">New tab</button><button data-browser-bookmarks-toggle type=\"button\">Bookmarks</button><button data-open=\"apps\" type=\"button\">Apps</button><hr><button data-open=\"settings\" type=\"button\">Settings</button><button data-browser-hieroglyph-toggle type=\"button\">Hieroglyph Mode</button><button data-app-url=\"/assets/games/index.html\" type=\"button\">GAMES</button><button data-app-url=\"/apps/chat/\" type=\"button\">Chat</button><button data-app-url=\"https://discord.com/app\" type=\"button\">Discord</button><hr><button data-page-fullscreen type=\"button\">Fullscreen</button><button data-shell-about type=\"button\">Open About:Blank</button><button data-shell-about-tab type=\"button\">Open Tab in Abt:Blank</button></div>";
       const homeNav=top.querySelector('[data-browser-shell-home-nav]');
       if(homeNav) homeNav.innerHTML=nyxDashboardIcon('home');
       const shellAddress=top.querySelector('form.browser-mode-address');
@@ -3859,7 +3859,6 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       {
       const legacyClock=top.querySelector(':scope > .browser-top-clock');
       legacyClock?.remove();
-      shellAddress?.querySelector('[data-open="weather"]')?.remove();
       const settingsButton=shellAddress?.querySelector('[data-browser-shell-settings]');
       const menuButton=shellAddress?.querySelector('[data-browser-shell-menu]');
       if(menuButton){
@@ -3894,7 +3893,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         shellAddress.replaceChildren(backButton,forwardButton,reloadButton,secureIndicator,urlField,bookmarkButton,menuButton);
       }
       renderNyxPresence();
-      syncHomeWeatherWidgets();
+      
       syncNyxLatencyBubble();
       ensureNyxVisualDock();
       }
@@ -3949,7 +3948,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(nyxStartupOpened && browserShellNeedsStartupHome()) setBrowserShellHomeActive();
     else renderBrowserShellTabs();
     renderedChromeMode='browser-shell';
-    document.documentElement.classList.remove('nyx-browser-shell-expected');
+    document.documentElement.classList.remove('n7x-browser-shell-expected');
     tick();
   }
 
@@ -3962,20 +3961,16 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const text=String(value || '');
       try{return decodeURIComponent(text)}catch{return text}
     };
-    const decodeUvPart=value=>{
+    const decodeRetiredAddress=value=>{
       const text=String(value || '');
-      try{
-        const config=window.__uv$config;
-        if(config && typeof config.decodeUrl==='function') return config.decodeUrl(text);
-      }catch{}
       const uriDecoded=decodeUriPart(text);
       const xorDecoded=[...uriDecoded].map((char,index)=>index % 2 ? String.fromCharCode(char.charCodeAt(0) ^ 2) : char).join('');
       return /^https?:\/\//i.test(xorDecoded) ? xorDecoded : uriDecoded;
     };
     try{
       const parsed=new URL(raw,location.href);
-      const uvPrefix=window.__uv$config?.prefix || '/service/';
-      const uvStart=parsed.origin + uvPrefix;
+      const retiredPrefix='/service/';
+      const retiredStart=parsed.origin + retiredPrefix;
       const scramjetStart=parsed.origin + '/scramjet/service/';
       const scramjetV1Prefix='/~/sj-v1/';
       const scramjetV2Match=parsed.pathname.match(/^\/~\/sj\/[^/]+\/[^/]+\/([^?#]*)/);
@@ -3985,11 +3980,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         if(parsed.hash) decoded.hash=parsed.hash;
         return decoded.href;
       }
-      if(parsed.origin===location.origin && parsed.href.startsWith(uvStart)){
-        let encoded=parsed.href.slice(uvStart.length);
+      if(parsed.origin===location.origin && parsed.href.startsWith(retiredStart)){
+        let encoded=parsed.href.slice(retiredStart.length);
         const privateSession=encoded.match(/^nyx_[a-z0-9_-]{12,80}\/(.+)$/i);
         if(privateSession) encoded=privateSession[1];
-        const decoded=decodeUvPart(encoded);
+        const decoded=decodeRetiredAddress(encoded);
         if(decoded && decoded!==raw && decodeDepth<3){
           return browserShellSourceUrl(decoded,decodeDepth+1) || decoded;
         }
@@ -4128,7 +4123,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   const browserSuggestionSeeds=[
     'youtube','tiktok','spotify','discord','roblox','github','google classroom','google docs',
-    'duck ai','geforce now','games','weather','anime','music','unblocked games','calculator',
+    'duck ai','geforce now','games','anime','music','unblocked games','calculator',
     'roblox codes','gmail','google translate','cool math games','chatgpt','amazon','reddit','netflix'
   ];
   const browserSuggestionCache=new Map();
@@ -4376,11 +4371,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const cleanUrl=browserShellClipboardText(url,currentBrowserShellUrl());
     if(!/^https?:\/\//i.test(cleanUrl)) return false;
     const menu=document.createElement('div');
-    menu.className='nyx-browser-link-menu';
-    menu.dataset.nyxOwnedOverlay='';
+    menu.className='n7x-browser-link-menu';
+    menu.dataset.n7xOwnedOverlay='';
     menu.setAttribute('role','menu');
     menu.setAttribute('aria-label','Link actions');
-    menu.innerHTML='<button type="button" role="menuitem" data-nyx-copy-clean-link>Copy link</button><button type="button" role="menuitem" data-nyx-open-clean-link>Open link in new tab</button>';
+    menu.innerHTML='<button type="button" role="menuitem" data-n7x-copy-clean-link>Copy link</button><button type="button" role="menuitem" data-n7x-open-clean-link>Open link in new tab</button>';
     document.body.appendChild(menu);
     const bounds=menu.getBoundingClientRect();
     menu.style.left=`${Math.max(8,Math.min(Number(x || 0),innerWidth-bounds.width-8))}px`;
@@ -4399,13 +4394,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       document.removeEventListener('keydown',closeFromKeyboard,true);
     };
     menu.addEventListener('click',async event=>{
-      if(event.target.closest('[data-nyx-copy-clean-link]')){
+      if(event.target.closest('[data-n7x-copy-clean-link]')){
         const copied=await writeClipboard(cleanUrl);
         closeBrowserLinkMenu();
         toast(copied?'Link copied':'Could not copy the link');
         return;
       }
-      if(event.target.closest('[data-nyx-open-clean-link]')){
+      if(event.target.closest('[data-n7x-open-clean-link]')){
         closeBrowserLinkMenu();
         openBrowserShellAppTab(cleanUrl);
       }
@@ -4623,19 +4618,19 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function renderBrowserShellHomeMode(win){
     if(!win) return;
     hideNyxErudaPanel();
-    win.classList.remove('nyx-frame-loading');
-    win.querySelector('.nyx-frame-loader')?.setAttribute('aria-hidden','true');
+    win.classList.remove('n7x-frame-loading');
+    win.querySelector('.n7x-frame-loader')?.setAttribute('aria-hidden','true');
     win.classList.remove('browser-blank-page');
     win.classList.add('browser-home-page');
     win.classList.add('browser-blank');
     const home=win.querySelector('.browser-home');
     home?.classList.remove('hidden','page-revealing','tab-opening','closing');
     if(home) home.style.filter='';
-    const presence=home?.querySelector('.nyx-home-presence');
-    if(presence&&!presence.querySelector('[data-nyx-profile-slot]')){
+    const presence=home?.querySelector('.n7x-home-presence');
+    if(presence&&!presence.querySelector('[data-n7x-profile-slot]')){
       const slot=document.createElement('div');
-      slot.className='nyx-profile-slot';
-      slot.dataset.nyxProfileSlot='';
+      slot.className='n7x-profile-slot';
+      slot.dataset.n7xProfileSlot='';
       presence.appendChild(slot);
     }
     win.querySelectorAll('.view').forEach(frame=>frame.classList.remove('active'));
@@ -4678,11 +4673,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   function clearBrowserShellTabDropState(row){
     row?.querySelectorAll?.('.tab-dragging,.tab-drop-before,.tab-drop-after').forEach(tab=>tab.classList.remove('tab-dragging','tab-drop-before','tab-drop-after'));
-    document.body.classList.remove('nyx-tab-reordering');
+    document.body.classList.remove('n7x-tab-reordering');
   }
   function installBrowserShellTabReordering(row){
-    if(!row || row.dataset.nyxTabReordering==='true') return;
-    row.dataset.nyxTabReordering='true';
+    if(!row || row.dataset.n7xTabReordering==='true') return;
+    row.dataset.n7xTabReordering='true';
     let draggedId='';
     row.addEventListener('dragstart',event=>{
       const tab=event.target.closest?.('[data-browser-shell-tab]');
@@ -4690,7 +4685,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       draggedId=tab.dataset.browserShellTab || '';
       if(!draggedId){event.preventDefault();return}
       tab.classList.add('tab-dragging');
-      document.body.classList.add('nyx-tab-reordering');
+      document.body.classList.add('n7x-tab-reordering');
       if(event.dataTransfer){
         event.dataTransfer.effectAllowed='move';
         event.dataTransfer.setData('application/x-nyx-tab',draggedId);
@@ -4733,13 +4728,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     });
   }
   function ensureBrowserShellTabSidebar(){
-    let sidebar=document.getElementById('nyxBrowserTabSidebar');
+    let sidebar=document.getElementById('n7xBrowserTabSidebar');
     if(sidebar) return sidebar;
     sidebar=document.createElement('aside');
-    sidebar.id='nyxBrowserTabSidebar';
-    sidebar.className='nyx-browser-tab-sidebar';
+    sidebar.id='n7xBrowserTabSidebar';
+    sidebar.className='n7x-browser-tab-sidebar';
     sidebar.setAttribute('aria-label','Browser tabs');
-    sidebar.innerHTML='<header><strong>Tabs</strong><div><button type="button" data-browser-bookmarks-toggle title="Bookmarks" aria-label="Bookmarks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h5l1.5 2H19v11H5z"></path></svg></button><button type="button" data-browser-shell-new-tab title="New tab" aria-label="New tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></header><div class="nyx-browser-tab-list" data-browser-shell-tab-list role="tablist" aria-label="Open tabs"></div>';
+    sidebar.innerHTML='<header><strong>Tabs</strong><div><button type="button" data-browser-bookmarks-toggle title="Bookmarks" aria-label="Bookmarks"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h5l1.5 2H19v11H5z"></path></svg></button><button type="button" data-browser-shell-new-tab title="New tab" aria-label="New tab"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></header><div class="n7x-browser-tab-list" data-browser-shell-tab-list role="tablist" aria-label="Open tabs"></div>';
     sidebar.querySelector('[data-browser-shell-new-tab]')?.addEventListener('click',event=>{
       event.preventDefault();
       event.stopPropagation();
@@ -4754,13 +4749,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   function setBrowserTabSidebarOpen(open,{restoreFocus=false}={}){
     const shouldOpen=Boolean(open);
-    document.body.classList.toggle('nyx-tab-sidebar-open',shouldOpen);
+    document.body.classList.toggle('n7x-tab-sidebar-open',shouldOpen);
     const toggles=[...document.querySelectorAll('[data-browser-shell-tabs-toggle]')];
     toggles.forEach(button=>button.setAttribute('aria-expanded',String(shouldOpen)));
     if(!shouldOpen && restoreFocus){
       const visibleToggle=toggles.find(button=>button.getClientRects().length && button.tabIndex>=0 && button.getAttribute('aria-hidden')!=='true');
       requestAnimationFrame(()=>{
-        if(!document.body.classList.contains('nyx-tab-sidebar-open')) visibleToggle?.focus({preventScroll:true});
+        if(!document.body.classList.contains('n7x-tab-sidebar-open')) visibleToggle?.focus({preventScroll:true});
       });
     }
     return shouldOpen;
@@ -4768,13 +4763,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function applyBrowserTabDesignSetting(){
     const design=normalizeBrowserTabDesign(store.text('nyx.tabDesign','bar'));
     if(store.text('nyx.tabDesign','bar')!==design) store.setText('nyx.tabDesign',design);
-    document.documentElement.dataset.nyxTabDesign=design;
-    document.body.dataset.nyxTabDesign=design;
-    document.body.classList.toggle('nyx-tab-design-list',design==='list');
+    document.documentElement.dataset.n7xTabDesign=design;
+    document.body.dataset.n7xTabDesign=design;
+    document.body.classList.toggle('n7x-tab-design-list',design==='list');
     qsa('[data-tab-design-value]').forEach(select=>{select.value=design});
     document.querySelectorAll('[data-browser-shell-tabs-toggle]').forEach(button=>{
       button.tabIndex=0;
-      button.setAttribute('aria-expanded',String(document.body.classList.contains('nyx-tab-sidebar-open')));
+      button.setAttribute('aria-expanded',String(document.body.classList.contains('n7x-tab-sidebar-open')));
     });
     renderBrowserShellTabs();
   }
@@ -4787,11 +4782,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(!nyxVisualDockUsesSideLayout()) return;
     const top=document.querySelector('.top-os');
     if(!top) return;
-    let strip=top.querySelector('[data-nyx-dock-tabs]');
+    let strip=top.querySelector('[data-n7x-dock-tabs]');
     if(!strip){
       strip=document.createElement('div');
-      strip.className='nyx-tab-strip';
-      strip.dataset.nyxDockTabs='';
+      strip.className='n7x-tab-strip';
+      strip.dataset.n7xDockTabs='';
       strip.setAttribute('role','tablist');
       strip.setAttribute('aria-label','Open tabs');
       top.prepend(strip);
@@ -4800,10 +4795,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(!top.querySelector('[data-browser-shell-tabs-toggle]')){
       const toggle=document.createElement('button');
       toggle.type='button';
-      toggle.className='nyx-tab-list-toggle';
+      toggle.className='n7x-tab-list-toggle';
       toggle.dataset.browserShellTabsToggle='';
       toggle.setAttribute('aria-label','Open tabs');
-      toggle.setAttribute('aria-controls','nyxBrowserTabSidebar');
+      toggle.setAttribute('aria-controls','n7xBrowserTabSidebar');
       toggle.setAttribute('aria-expanded','false');
       toggle.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M3 6h1M3 12h1M3 18h1"/></svg>';
       top.appendChild(toggle);
@@ -4812,14 +4807,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     browserShellTabs.forEach(tab=>{
       const button=document.createElement('div');
       const active=tab.id===browserShellActiveTab;
-      button.className='nyx-visual-dock-tab'+(active?' active':'');
+      button.className='n7x-visual-dock-tab'+(active?' active':'');
       button.dataset.browserShellTab=tab.id;
       button.setAttribute('role','tab');
       button.tabIndex=active ? 0 : -1;
       button.setAttribute('aria-selected',String(active));
       button.setAttribute('aria-label',browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url));
       const title=tab.title==='Home' && !tab.url ? 'Home' : browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url);
-      const close=browserShellTabs.length>1?`<button class="nyx-visual-dock-tab-close" data-browser-shell-close-tab="${esc(tab.id)}" type="button" aria-label="Close ${esc(title)}">&times;</button>`:'';
+      const close=browserShellTabs.length>1?`<button class="n7x-visual-dock-tab-close" data-browser-shell-close-tab="${esc(tab.id)}" type="button" aria-label="Close ${esc(title)}">&times;</button>`:'';
       button.innerHTML=`<img alt="" src="${esc(browserChromeIcon(tab.icon,tab.url))}"><strong>${esc(title)}</strong>${close}`;
       bindTabIconFallback(button.querySelector('img'));
       button.querySelector('[data-browser-shell-close-tab]')?.addEventListener('click',event=>{
@@ -4836,8 +4831,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     });
     const add=document.createElement('button');
     add.type='button';
-    add.className='nyx-visual-dock-tab-add';
-    add.dataset.nyxVisualNewTab='';
+    add.className='n7x-visual-dock-tab-add';
+    add.dataset.n7xVisualNewTab='';
     add.setAttribute('aria-label','New tab');
     add.innerHTML='<span aria-hidden="true">+</span><strong>New tab</strong>';
     add.addEventListener('click',()=>openBrowserShellTab(''));
@@ -4908,7 +4903,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       browserShellActiveTab=null;
       const contentStateChanged=document.body.classList.contains('browser-content-active');
       document.body.classList.remove('browser-content-active');
-      document.body.classList.remove('nyx-built-in-content-active');
+      document.body.classList.remove('n7x-built-in-content-active');
       window.NyxBeamsWallpaper?.syncVisibility?.();
       if(contentStateChanged) queueMicrotask(()=>syncThemeVantaBackgrounds());
       if(home){
@@ -4928,7 +4923,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
 
     const chromeVisible=browserShellTabs.length>1 || Boolean(active?.url) || active?.title!=='Home';
-    document.body.classList.toggle('nyx-browser-chrome-visible',chromeVisible);
+    document.body.classList.toggle('n7x-browser-chrome-visible',chromeVisible);
     syncNyxRecentSearches();
     const activeShowsContent=Boolean(active?.url);
     const navigationKey=active.id+'|'+(active.url||'');
@@ -4945,7 +4940,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const activeTarget=new URL(activeSource,location.href);
       activeIsBuiltIn=activeTarget.origin===location.origin || /^nyx:\/\//i.test(String(active?.url || ''));
     }catch{activeIsBuiltIn=/^nyx:\/\//i.test(String(active?.url || ''))}
-    document.body.classList.toggle('nyx-built-in-content-active',activeShowsContent && activeIsBuiltIn);
+    document.body.classList.toggle('n7x-built-in-content-active',activeShowsContent && activeIsBuiltIn);
     window.NyxBeamsWallpaper?.syncVisibility?.();
     if(contentStateChanged) queueMicrotask(()=>syncThemeVantaBackgrounds());
     if(home){
@@ -4960,14 +4955,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     browserShellTabs.forEach(tab=>{
       const item=document.createElement('div');
       const opening=browserShellOpeningTabs.has(tab.id);
-      item.className='nyx-browser-tab-row'+(tab.id===browserShellActiveTab?' active':'')+(opening?' tab-opening':'');
+      item.className='n7x-browser-tab-row'+(tab.id===browserShellActiveTab?' active':'')+(opening?' tab-opening':'');
       item.dataset.browserShellTab=tab.id;
       item.setAttribute('role','tab');
       item.setAttribute('tabindex',tab.id===browserShellActiveTab?'0':'-1');
       item.setAttribute('aria-selected',String(tab.id===browserShellActiveTab));
-      const close=browserShellTabs.length>1?`<button class="nyx-browser-tab-close" type="button" data-browser-shell-close-tab="${esc(tab.id)}" aria-label="Close ${esc(browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url))}">&times;</button>`:'';
-      item.innerHTML=`<img class="nyx-browser-tab-icon" alt="" src="${esc(browserChromeIcon(tab.icon,tab.url))}"><span><strong>${esc(browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url))}</strong><small>${esc(browserShellTabDomain(tab))}</small></span>${close}`;
-      bindTabIconFallback(item.querySelector('.nyx-browser-tab-icon'));
+      const close=browserShellTabs.length>1?`<button class="n7x-browser-tab-close" type="button" data-browser-shell-close-tab="${esc(tab.id)}" aria-label="Close ${esc(browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url))}">&times;</button>`:'';
+      item.innerHTML=`<img class="n7x-browser-tab-icon" alt="" src="${esc(browserChromeIcon(tab.icon,tab.url))}"><span><strong>${esc(browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url))}</strong><small>${esc(browserShellTabDomain(tab))}</small></span>${close}`;
+      bindTabIconFallback(item.querySelector('.n7x-browser-tab-icon'));
       item.addEventListener('click',event=>{
         if(event.target.closest?.('[data-browser-shell-close-tab]')) return;
         event.preventDefault();
@@ -4985,9 +4980,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       });
       if(tabListDesign){
         const slot=document.createElement('div');
-        slot.className='nyx-browser-tab-slot';
+        slot.className='n7x-browser-tab-slot';
         const add=document.createElement('button');
-        add.className='nyx-browser-tab-add';
+        add.className='n7x-browser-tab-add';
         add.type='button';
         add.dataset.browserShellNewTabAfter=tab.id;
         add.setAttribute('aria-label',`Open a new tab after ${browserChromeTitle(tab.title || browserShellLabel(tab.url),tab.url)}`);
@@ -5008,7 +5003,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         setTimeout(finishOpening,1250);
       }
     });
-    document.querySelectorAll('[data-browser-shell-tabs-toggle]').forEach(button=>button.setAttribute('aria-expanded',String(document.body.classList.contains('nyx-tab-sidebar-open'))));
+    document.querySelectorAll('[data-browser-shell-tabs-toggle]').forEach(button=>button.setAttribute('aria-expanded',String(document.body.classList.contains('n7x-tab-sidebar-open'))));
     const input=document.querySelector('[data-browser-shell-url]');
     if(input && document.activeElement!==input) input.value=browserShellDisplayValue(active.url);
     syncBrowserShellSecurityIndicator(active.url,active.securityState);
@@ -5020,7 +5015,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     syncNyxVisualDockState();
   }
   function openBrowserShellTab(url='',options={}){
-    closeWeatherForWindowOpen();
+    
 
 
 
@@ -5173,7 +5168,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function openBrowserShellAppTab(url){
     if(String(url||'').replace(/\/+$/,'')==='/apps/nyxcloud'){void openNyxVmsApp();return;}
     hideBrowserSuggestions();
-    closeWeatherForWindowOpen();
+    
     if(String(url || '').trim().toLowerCase()==='nyx://settings'){
       return openBrowserShellInternalTab('settings');
     }
@@ -5222,7 +5217,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(!browserShellTabs.some(tab=>tab.id===id)) return;
     hideBrowserSuggestions();
     setBrowserTabSidebarOpen(false);
-    closeWeatherForWindowOpen();
+    
     browserShellActiveTab=id;
     const shellTab=browserShellTabs.find(tab=>tab.id===id);
     if(shellTab?.url==='nyx://settings') renderBrowserShellSettingsTab();
@@ -5239,7 +5234,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function animateActiveBrowserShellTab(){
     if(suppressHomeEntranceOnStartup) return;
     requestAnimationFrame(()=>{
-      const tab=document.querySelector('body.browser-shell .nyx-browser-tab-row.active,body.browser-shell .brand-mini > .active:is(.browser-mode-app-button,.browser-mode-shell-tab)');
+      const tab=document.querySelector('body.browser-shell .n7x-browser-tab-row.active,body.browser-shell .brand-mini > .active:is(.browser-mode-app-button,.browser-mode-shell-tab)');
       if(!tab) return;
       tab.classList.remove('tab-activating');
       void tab.offsetWidth;
@@ -5248,8 +5243,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     });
   }
   function setBrowserShellHomeActive(){
-    document.body.classList.remove('nyx-home-search-active');
-    closeWeatherForWindowOpen();
+    document.body.classList.remove('n7x-home-search-active');
+    
     closeBrowserShellSettings();
     ensureBrowserShellHome();
     let homeTab=browserShellTabs.find(tab=>tab.title==='Home' && !tab.url);
@@ -5289,7 +5284,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const effect=esc(store.text('nyx.visualEffect','none'));
     const effectSpeed=esc(store.text('nyx.visualEffectSpeed','1.1'));
     const effectAmount=esc(store.text('nyx.visualEffectAmount','16'));
-    return `<section class="settings-app settings-single-pane browser-only-settings"><main class="settings-main"><h1>Browser Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset==='nyx'?'selected':''}>N7X</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original tab redirect U3L"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Auto Cloak</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>S3ARC4 Engine</h2><select class="settings-select" data-browser-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>DuckDuckGo</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Proxy Engine</h2><select class="settings-select" data-browser-mode-select><option value="auto" ${browserMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${browserMode==='scramjet'?'selected':''}>Scrapmmy</option><option value="ultraviolet" ${browserMode==='ultraviolet'?'selected':''}>U1TR4V10L$T</option></select></section><section class="settings-block"><h2>HTTP bridge</h2><p>Recommended for devices or networks that block WebSockets. Turn off to use direct WebSocket connections. Applies to the default relay; custom relays keep their saved choice. Reload website tabs after changing.</p><div class="settings-row"><span>Use HTTP bridge</span><button class="settings-action ${store.get('nyx.httpBridge',true)?'on':''}" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-browser-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Eppy over Relay</option><option value="wisp" ${transport==='wisp'?'selected':''}>Relay endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Libby over Relay</option></select><div class="settings-actions"><button class="settings-action" data-browser-settings-save type="button">Save Browser Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
+    return `<section class="settings-app settings-single-pane browser-only-settings"><main class="settings-main"><h1>Browser Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-tab-title value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-tab-favicon-file type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-tab-favicon value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-tab-cloak-apply type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset==='nyx'?'selected':''}>N7X</option><option value="google" ${currentPreset==='google'?'selected':''}>Google</option><option value="drive" ${currentPreset==='drive'?'selected':''}>Google Drive</option><option value="classlink" ${currentPreset==='classlink'?'selected':''}>ClassLink</option><option value="classroom" ${currentPreset==='classroom'?'selected':''}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text('nyx.cloakType','a')==='a'?'selected':''}>about:blank</option><option value="b" ${store.text('nyx.cloakType','a')==='b'?'selected':''}>Blob</option><option value="m" ${store.text('nyx.cloakType','a')==='m'?'selected':''}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text('nyx.cloakRedirectUrl','https://google.com/'))}" placeholder="Original tab redirect U3L"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Auto Cloak</span><button class="settings-action ${store.get('nyx.autoCloak',false)?'on':''}" data-switch="nyx.autoCloak" type="button">${store.get('nyx.autoCloak',false)?'On':'Off'}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get('nyx.cloakRedirectOriginal',false)?'on':''}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get('nyx.cloakRedirectOriginal',false)?'On':'Off'}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text('nyx.panicKey','not set'))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme==='default'?'selected':''}>Default</option><option value="ruby" ${theme==='ruby'?'selected':''}>Ruby</option><option value="emerald" ${theme==='emerald'?'selected':''}>Emerald</option><option value="sakura" ${theme==='sakura'?'selected':''}>Sakura</option><option value="fresh" ${theme==='fresh'?'selected':''}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect==='none'?'selected':''}>None</option><option value="rain" ${effect==='rain'?'selected':''}>Rain</option><option value="stars" ${effect==='stars'?'selected':''}>Stars</option><option value="hearts" ${effect==='hearts'?'selected':''}>Hearts</option><option value="pokeballs" ${effect==='pokeballs'?'selected':''}>Pokeballs</option><option value="flowers" ${effect==='flowers'?'selected':''}>Flowers</option><option value="emeralds" ${effect==='emeralds'?'selected':''}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>S3ARC4 Engine</h2><select class="settings-select" data-browser-engine><option value="duckduckgo" ${engine==='duckduckgo'?'selected':''}>DuckDuckGo</option><option value="google" ${engine==='google'?'selected':''}>Google</option><option value="bing" ${engine==='bing'?'selected':''}>Bing</option></select></section><section class="settings-block"><h2>Proxy Engine</h2><select class="settings-select" data-browser-mode-select><option value="auto" ${browserMode==='auto'?'selected':''}>Auto</option><option value="scramjet" ${browserMode==='scramjet'?'selected':''}>Scrapmmy</option></select></section><section class="settings-block"><h2>HTTP bridge</h2><p>Recommended for devices or networks that block WebSockets. Turn off to use direct WebSocket connections. Applies to the default relay; custom relays keep their saved choice. Reload website tabs after changing.</p><div class="settings-row"><span>Use HTTP bridge</span><button class="settings-action ${store.get('nyx.httpBridge',true)?'on':''}" data-switch="nyx.httpBridge" type="button">${store.get('nyx.httpBridge',true)?'On':'Off'}</button></div></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-browser-transport><option value="epoxy" ${transport==='epoxy'?'selected':''}>Eppy over Relay</option><option value="wisp" ${transport==='wisp'?'selected':''}>Relay endpoint</option><option value="libcurl" ${transport==='libcurl'?'selected':''}>Libby over Relay</option></select><div class="settings-actions"><button class="settings-action" data-browser-settings-save type="button">Save Browser Settings</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled()?'on':''}" data-popup-protection data-enabled="${popupProtectionEnabled()?'true':'false'}" type="button">Popup Protection ${popupProtectionEnabled()?'On':'Off'}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
   }
   function browserShellPresetTiles(){
     return `<button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${nyxTabFavicon}"><span>N7X tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
@@ -5310,7 +5305,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       scramjetController=null;
       scramjetTransport=null;
       scramjetTransportKey='';
-      uvInstallPromise=null;
+
     }
     store.setText('nyx.transport', nextTransport);
     applyUserSettings();
@@ -5329,15 +5324,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(browserModeSelect){
       const browserModeLabels={
         auto:'Auto',
-        scramjet:'Scramjet v2',
-        ultraviolet:'U1TR4V10L$T'
+        scramjet:'Scramjet v2'
       };
       [...browserModeSelect.options].forEach(option=>{
         if(browserModeLabels[option.value]) option.textContent=browserModeLabels[option.value];
       });
     }
 
-    app.classList.add('nyx-settings-dashboard');
+    app.classList.add('n7x-settings-dashboard');
     main.querySelector(':scope > h1')?.remove();
     const settingsIcons={
       account:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
@@ -5348,22 +5342,22 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     };
     const definitions=[
       ['general','General',settingsIcons.advanced,"Choose N7X defaults and everyday behavior.",['nyx','home design','search engine']],
-      ['appearance','Appearance',settingsIcons.customize,"Make N7X feel like yours.",['theme','homepage','sidebar','custom theme','effects','wallpapers','line waves','performance']],
+      ['appearance','Appearance',settingsIcons.customize,"Make N7X feel like yours.",['theme','homepage','sidebar','custom theme','effects','wallpapers','line waves','performance','oneko']],
       ['browser','Browser',settingsIcons.browsing,'Manage tabs, search, and browsing controls.',['tab cloak','preset cloak','cloaking','tab design']],
       ['privacy','Privacy',settingsIcons.privacy,'Keep your browsing surface private and protected.',['private tabs','popup protection']],
       ['proxy','Proxy',settingsIcons.browsing,"Choose how N7X reaches the web.",['proxy engine','http bridge','transport','wisp url']],
       ['accounts','Accounts',settingsIcons.account,'Manage your identity, cloud saves, and staff tools.',['account','cloud saves','owner dashboard','founder profile']],
       ['data','Data',settingsIcons.advanced,"Move, download, or reset local N7X data.",['data transfer','clear cache']],
       ['advanced','Advanced',settingsIcons.advanced,'Configure power-user browser controls.',['panic key','font']],
-      ['credits','Credits',settingsIcons.account,'Thanks to the people who help make Nyx.',[]]
+      ['credits','Credits',settingsIcons.account,"Thanks to the people who help make N7X.",[]]
     ];
     const categoryFor=title=>definitions.find(([, , , ,titles])=>titles.includes(title))?.[0] || 'advanced';
     const categories=new Map();
     definitions.forEach(([key,label])=>{
       const section=document.createElement('section');
-      section.className='nyx-settings-category';
+      section.className='n7x-settings-category';
       section.dataset.settingsCategory=key;
-      section.innerHTML=`<h2 class="nyx-settings-category-title">${label}</h2><div class="nyx-settings-group"></div>`;
+      section.innerHTML=`<h2 class="n7x-settings-category-title">${label}</h2><div class="n7x-settings-group"></div>`;
       categories.set(key,section);
     });
 
@@ -5373,8 +5367,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const description=Array.from(block.children).find(element=>element.tagName==='P');
       const copy=document.createElement('div');
       const controls=document.createElement('div');
-      copy.className='nyx-settings-copy';
-      controls.className='nyx-settings-control';
+      copy.className='n7x-settings-copy';
+      controls.className='n7x-settings-control';
       const nodes=Array.from(block.childNodes);
       if(heading) copy.appendChild(heading);
       if(description) copy.appendChild(description);
@@ -5412,14 +5406,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           copy.appendChild(themeDescription);
         }
         const grid=document.createElement('div');
-        grid.className='nyx-color-theme-grid';
-        grid.innerHTML=themes.map(([value,label,summary,swatches])=>`<button class="nyx-color-theme-card${current===value?' selected':''}" data-nyx-theme-card="${value}" type="button" aria-pressed="${current===value}"><span class="nyx-color-theme-swatches" aria-hidden="true">${swatches.map(color=>`<i style="--nyx-theme-swatch:${color}"></i>`).join('')}</span><strong>${label}</strong><small>${summary}</small><span class="nyx-color-theme-check" aria-hidden="true">✓</span></button>`).join('');
+        grid.className='n7x-color-theme-grid';
+        grid.innerHTML=themes.map(([value,label,summary,swatches])=>`<button class="n7x-color-theme-card${current===value?' selected':''}" data-n7x-theme-card="${value}" type="button" aria-pressed="${current===value}"><span class="n7x-color-theme-swatches" aria-hidden="true">${swatches.map(color=>`<i style="--n7x-theme-swatch:${color}"></i>`).join('')}</span><strong>${label}</strong><small>${summary}</small><span class="n7x-color-theme-check" aria-hidden="true">✓</span></button>`).join('');
         if(select){
-          select.classList.add('nyx-color-theme-select');
-          grid.querySelectorAll('[data-nyx-theme-card]').forEach(button=>button.addEventListener('click',()=>{
-            select.value=button.dataset.nyxThemeCard || 'default';
+          select.classList.add('n7x-color-theme-select');
+          grid.querySelectorAll('[data-n7x-theme-card]').forEach(button=>button.addEventListener('click',()=>{
+            select.value=button.dataset.n7xThemeCard || 'default';
             select.dispatchEvent(new Event('change',{bubbles:true}));
-            grid.querySelectorAll('[data-nyx-theme-card]').forEach(card=>{
+            grid.querySelectorAll('[data-n7x-theme-card]').forEach(card=>{
               const selected=card===button;
               card.classList.toggle('selected',selected);
               card.setAttribute('aria-pressed',String(selected));
@@ -5427,15 +5421,15 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           }));
           controls.replaceChildren(grid,select);
         }else controls.replaceChildren(grid);
-        block.classList.add('nyx-color-theme-block');
+        block.classList.add('n7x-color-theme-block');
       }
       if(categoryFor(title)==='browser'){
-        block.classList.add('nyx-browser-settings-card');
+        block.classList.add('n7x-browser-settings-card');
         const labels=[['[data-tab-title]','Tab title'],['[data-tab-favicon-file]','Tab icon'],['[data-cloak-type]',"Open N7X in"],['[data-cloak-redirect-url]','Redirect address']];
         labels.forEach(([selector,text])=>{
           const field=controls.querySelector(selector);
           if(!field)return;
-          const label=document.createElement('label');label.className='nyx-browser-setting-field';
+          const label=document.createElement('label');label.className='n7x-browser-setting-field';
           const caption=document.createElement('span');caption.textContent=text;
           field.replaceWith(label);label.append(caption,field);
         });
@@ -5443,42 +5437,42 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         if(title==='preset cloak')heading.textContent='Quick presets';
         if(title==='cloaking'){
           heading.textContent='Launch options';
-          const toggles=document.createElement('div');toggles.className='nyx-browser-setting-toggles';
+          const toggles=document.createElement('div');toggles.className='n7x-browser-setting-toggles';
           const rows=[...controls.querySelectorAll(':scope > .settings-row')];
           if(rows.length){rows[0].before(toggles);rows.forEach(row=>toggles.appendChild(row));}
         }
       }
       block.replaceChildren(copy,controls);
       block.dataset.settingsSearch=(block.textContent || '').toLowerCase();
-      categories.get(categoryFor(title)).querySelector('.nyx-settings-group').appendChild(block);
+      categories.get(categoryFor(title)).querySelector('.n7x-settings-group').appendChild(block);
     });
     source.remove();
 
     const performance=document.createElement('section');
     performance.className='settings-block';
     performance.dataset.settingsSearch='performance high medium low animations effects';
-    performance.innerHTML=`<div class="nyx-settings-copy"><h2>Performance</h2><p>Choose the visual quality level for Nyx. Low minimizes motion and effects; Medium keeps normal motion with fewer heavy effects; High enables the full experience.</p></div><div class="nyx-settings-control"><div class="settings-actions" data-nyx-performance-options><button class="settings-action" data-nyx-performance-tier="low" type="button">Low</button><button class="settings-action" data-nyx-performance-tier="medium" type="button">Medium</button><button class="settings-action" data-nyx-performance-tier="high" type="button">High</button></div></div>`;
+    performance.innerHTML=`<div class="n7x-settings-copy"><h2>Performance</h2><p>Choose the visual quality level for N7X. Low minimizes motion and effects; Medium keeps normal motion with fewer heavy effects; High enables the full experience.</p></div><div class="n7x-settings-control"><div class="settings-actions" data-n7x-performance-options><button class="settings-action" data-n7x-performance-tier="low" type="button">Low</button><button class="settings-action" data-n7x-performance-tier="medium" type="button">Medium</button><button class="settings-action" data-n7x-performance-tier="high" type="button">High</button></div></div>`;
     const activeTier=getNyxPerformanceTier();
-    performance.querySelectorAll('[data-nyx-performance-tier]').forEach(button=>button.classList.toggle('on',button.dataset.nyxPerformanceTier===activeTier));
-    categories.get('appearance').querySelector('.nyx-settings-group').appendChild(performance);
+    performance.querySelectorAll('[data-n7x-performance-tier]').forEach(button=>button.classList.toggle('on',button.dataset.n7xPerformanceTier===activeTier));
+    categories.get('appearance').querySelector('.n7x-settings-group').appendChild(performance);
 
     const about=document.createElement('section');
     about.className='settings-block';
     about.dataset.settingsSearch='about nyx version support reset cache';
-    about.innerHTML="<div class=\"nyx-settings-copy\"><h2>N7X</h2><p>N7X Learning browser workspace. Settings are stored on this device unless they belong to your signed-in account.</p></div><div class=\"nyx-settings-control\"><p class=\"nyx-settings-version\">Version 2</p><div class=\"settings-actions\"><button class=\"settings-action\" data-clear-nyx-cache type=\"button\">Reset local settings</button></div></div>";
-    categories.get('general').querySelector('.nyx-settings-group').appendChild(about);
+    about.innerHTML="<div class=\"n7x-settings-copy\"><h2>N7X</h2><p>N7X Learning browser workspace. Settings are stored on this device unless they belong to your signed-in account.</p></div><div class=\"n7x-settings-control\"><p class=\"n7x-settings-version\">Version 2</p><div class=\"settings-actions\"><button class=\"settings-action\" data-clear-n7x-cache type=\"button\">Reset local settings</button></div></div>";
+    categories.get('general').querySelector('.n7x-settings-group').appendChild(about);
 
     const credits=document.createElement('section');
     credits.className='settings-block';
     credits.innerHTML=nyxCreditsPageMarkup();
     credits.dataset.settingsSearch=('credits '+credits.textContent).toLowerCase();
-    categories.get('credits').querySelector('.nyx-settings-group').appendChild(credits);
+    categories.get('credits').querySelector('.n7x-settings-group').appendChild(credits);
 
     const side=document.createElement('aside');
-    side.className='nyx-settings-side';
-    side.innerHTML=`<label class="nyx-settings-filter"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input type="search" placeholder="Filter settings" aria-label="Filter settings"></label><nav class="nyx-settings-nav" aria-label="Settings categories">${definitions.map(([key,label,icon])=>`<button class="${key==='appearance'?'active':''}" data-settings-category-button="${key}" type="button"><span aria-hidden="true">${icon}</span>${label}</button>`).join('')}</nav>`;
+    side.className='n7x-settings-side';
+    side.innerHTML=`<label class="n7x-settings-filter"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input type="search" placeholder="Filter settings" aria-label="Filter settings"></label><nav class="n7x-settings-nav" aria-label="Settings categories">${definitions.map(([key,label,icon])=>`<button class="${key==='appearance'?'active':''}" data-settings-category-button="${key}" type="button"><span aria-hidden="true">${icon}</span>${label}</button>`).join('')}</nav>`;
     const header=document.createElement('header');
-    header.className='nyx-settings-header';
+    header.className='n7x-settings-header';
     header.innerHTML="<h1>Appearance</h1><p>Customize N7X’s look and visual experience.</p>";
     app.prepend(side);
     main.prepend(header);
@@ -5508,12 +5502,15 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         return;
       }
       title.textContent="S3ARC4 Results";
-      header.querySelector('p').textContent='Matching settings across Nyx.';
+      header.querySelector('p').textContent="Matching settings across N7X.";
       buttons.forEach(button=>button.classList.remove('active'));
       categories.forEach(section=>{
         let matches=0;
         section.querySelectorAll('.settings-block').forEach(block=>{
-          const visible=block.dataset.settingsSearch.includes(query);
+          // Extensions such as the install card are mounted after this index
+          // is created. Search their current copy without assuming an index.
+          const searchable=block.dataset.settingsSearch ?? block.textContent;
+          const visible=String(searchable || '').normalize('NFKC').toLowerCase().includes(query.normalize('NFKC'));
           block.hidden=!visible;
           if(visible) matches++;
         });
@@ -5557,12 +5554,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(transportBlock){
       const customWisp=storedCustomWispUrl();
       const wispBlock=document.createElement('section');
-      wispBlock.className='settings-block nyx-wisp-setting';
+      wispBlock.className='settings-block n7x-wisp-setting';
       wispBlock.innerHTML=`<h2>Wisp U3L</h2><p>Use a custom Wisp relay for N7X proxy transports. Only use a relay you trust because it carries your proxied traffic.</p><div class="settings-form-row"><input class="settings-input" data-browser-wisp-url type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(customWisp)}" placeholder="${esc(defaultWispUrl())}" aria-label="Custom Wisp U3L"></div><p class="settings-hint" data-browser-wisp-status>${customWisp ? `Custom relay: ${esc(customWisp)}` : `Default relay: ${esc(defaultWispUrl())}`}</p><div class="settings-actions"><button class="settings-action" data-browser-wisp-save type="button">Save Wisp U3L</button><button class="settings-action" data-browser-wisp-reset type="button">Use default</button></div>`;
       transportBlock.after(wispBlock);
       const transferBlock=document.createElement('section');
-      transferBlock.className='settings-block nyx-data-transfer-setting';
-      transferBlock.innerHTML="<h2>Data Transfer</h2><p>Move supported game saves, A1 conversations, utility history, shortcuts, and safe device preferences between N7X links. Authentication sessions, personal API keys, and custom relay credentials are never included.</p><p class=\"settings-hint\" data-nyx-data-transfer-status>Export on this link, then import the downloaded JSON backup on another N7X link.</p><input data-nyx-data-import-file type=\"file\" accept=\"application/json,.json\" hidden><div class=\"settings-actions\"><button class=\"settings-action\" data-nyx-data-export type=\"button\">Export data</button><button class=\"settings-action\" data-nyx-data-import type=\"button\">Import data</button><button class=\"settings-action\" data-nyx-data-reload type=\"button\" hidden>Reload N7X</button></div><p class=\"settings-hint\">Backups can contain private browsing, game, and conversation data. Keep the file private.</p>";
+      transferBlock.className='settings-block n7x-data-transfer-setting';
+      transferBlock.innerHTML="<h2>Data Transfer</h2><p>Move supported game saves, A1 conversations, utility history, shortcuts, and safe device preferences between N7X links. Authentication sessions, personal API keys, and custom relay credentials are never included.</p><p class=\"settings-hint\" data-n7x-data-transfer-status>Export on this link, then import the downloaded JSON backup on another N7X link.</p><input data-n7x-data-import-file type=\"file\" accept=\"application/json,.json\" hidden><div class=\"settings-actions\"><button class=\"settings-action\" data-n7x-data-export type=\"button\">Export data</button><button class=\"settings-action\" data-n7x-data-import type=\"button\">Import data</button><button class=\"settings-action\" data-n7x-data-reload type=\"button\" hidden>Reload N7X</button></div><p class=\"settings-hint\">Backups can contain private browsing, game, and conversation data. Keep the file private.</p>";
       wispBlock.after(transferBlock);
     }
     const effectBlock=overlay.querySelector('[data-effect-value]')?.closest('.settings-block');
@@ -5575,8 +5572,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       fontBlock.className='settings-block';
       fontBlock.innerHTML=`<h2>Font</h2><select class="settings-select" data-font-value>${nyxFontOptionsMarkup()}</select>`;
       effectBlock.before(fontBlock);
+      const catBlock=document.createElement('section');
+      catBlock.className='settings-block';
+      const catOn=store.get('n7x.pointerCat',true);
+      catBlock.innerHTML=`<h2>Oneko</h2><p>A little cat that follows your pointer.</p><div class="settings-row"><span>Oneko</span><button class="settings-action ${catOn?'on':''}" data-switch="n7x.pointerCat" aria-label="Oneko" type="button">${catOn?'On':'Off'}</button></div>`;
+      effectBlock.before(catBlock);
       const homepageBlock=document.createElement('section');
-      homepageBlock.className='settings-block nyx-homepage-appearance-setting';
+      homepageBlock.className='settings-block n7x-homepage-appearance-setting';
       homepageBlock.innerHTML="<h2>Homepage</h2><p>Keep new tabs focused on the N7X title and wallpaper.</p><div class=\"settings-row\"><span>New tab opens</span><strong>Home</strong></div>";
 
       const lagBlock=document.createElement('section');
@@ -5588,12 +5590,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const liteOn=store.get('nyx.performanceLite',false);
       liteBlock.innerHTML=`<h2>Lite Mode</h2><p>Lightens blur, shadows, and particles without fully disabling animations.</p><div class="settings-row"><span>Lite Mode</span><button class="settings-action ${liteOn?'on':''}" data-switch="nyx.performanceLite" data-performance-lite type="button">${liteOn?'On':'Off'}</button></div>`;
       const backgroundsBlock=document.createElement('section');
-      backgroundsBlock.className='settings-block nyx-wallpaper-block';
+      backgroundsBlock.className='settings-block n7x-wallpaper-block';
       backgroundsBlock.innerHTML='<h2>Wallpapers</h2><p>Choose a background, then explore its styles.</p>';
       const wallpaperPicker=document.createElement('div');
       showNyxWallpaperFamily(wallpaperPicker);
       const upload=document.createElement('div');
-      upload.className='nyx-wallpaper-upload';
+      upload.className='n7x-wallpaper-upload';
       upload.innerHTML='<input type="file" accept="image/*" data-custom-wallpaper-file hidden aria-label="Choose wallpaper image"><button class="settings-action" data-upload-wallpaper type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 16v5h16v-5"/></svg>Upload wallpaper</button><button class="settings-action" data-reset-wallpaper type="button">Use theme background</button>';
       upload.querySelector('[data-upload-wallpaper]').addEventListener('click',()=>upload.querySelector('input').click());
       upload.querySelector('[data-reset-wallpaper]').addEventListener('click',()=>{
@@ -5609,18 +5611,18 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       });
       backgroundsBlock.append(upload,wallpaperPicker);
       const legacyScene=document.createElement('div');
-      legacyScene.className='settings-row nyx-wallpaper-legacy';
+      legacyScene.className='settings-row n7x-wallpaper-legacy';
       const threeDOn=store.get('nyx.threeDBackgrounds',false);
       legacyScene.innerHTML=`<span>Legacy 3D scene</span><button class="settings-action ${threeDOn?'on':''}" data-switch="nyx.threeDBackgrounds" type="button" aria-checked="${threeDOn}">${threeDOn?'On':'Off'}</button>`;
       backgroundsBlock.append(legacyScene);
       const customThemeBlock=document.createElement('section');
-      customThemeBlock.className='settings-block nyx-custom-theme-maker';
+      customThemeBlock.className='settings-block n7x-custom-theme-maker';
       const customColor=nyxThemeHex(store.text('nyx.customThemeColor',nyxCustomThemeDefaults.base));
-      customThemeBlock.innerHTML=`<h2>Custom Theme</h2><p>Choose one color and N7X generates the canvas, panels, borders, and accents from it.</p><div class="nyx-custom-theme-controls"><label class="nyx-custom-theme-picker"><input type="color" value="${customColor}" data-custom-theme-color aria-label="Custom theme color"><span class="nyx-custom-theme-swatch" data-custom-theme-swatch style="--nyx-swatch:${customColor}"></span></label><input class="settings-input" value="${customColor}" data-custom-theme-hex aria-label="Custom theme color hex" maxlength="7" spellcheck="false"></div><div class="settings-actions"><button class="settings-action" data-apply-custom-theme type="button">Apply Custom Theme</button><button class="settings-action" data-reset-custom-theme type="button">Reset Color</button></div>`;
+      customThemeBlock.innerHTML=`<h2>Custom Theme</h2><p>Choose one color and N7X generates the canvas, panels, borders, and accents from it.</p><div class="n7x-custom-theme-controls"><label class="n7x-custom-theme-picker"><input type="color" value="${customColor}" data-custom-theme-color aria-label="Custom theme color"><span class="n7x-custom-theme-swatch" data-custom-theme-swatch style="--n7x-swatch:${customColor}"></span></label><input class="settings-input" value="${customColor}" data-custom-theme-hex aria-label="Custom theme color hex" maxlength="7" spellcheck="false"></div><div class="settings-actions"><button class="settings-action" data-apply-custom-theme type="button">Apply Custom Theme</button><button class="settings-action" data-reset-custom-theme type="button">Reset Color</button></div>`;
       const founderProfileBlock=document.createElement('section');
       founderProfileBlock.className='settings-block';
       founderProfileBlock.hidden=true;
-      founderProfileBlock.innerHTML='<h2>Founder Profile</h2><p>Customize the public profile shown on About Nyx.</p><div class="settings-actions"><button class="settings-action" data-open-founder-profile-editor type="button">Customize Founder Profile</button></div>';
+      founderProfileBlock.innerHTML="<h2>Founder Profile</h2><p>Customize the public profile shown on About N7X.</p><div class=\"settings-actions\"><button class=\"settings-action\" data-open-founder-profile-editor type=\"button\">Customize Founder Profile</button></div>";
       founderProfileBlock.dataset.founderProfileSettingsCard='';
       const ownerDashboardBlock=document.createElement('section');
       ownerDashboardBlock.className='settings-block';
@@ -5631,13 +5633,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       accountBlock.className='settings-block';
       accountBlock.hidden=true;
       accountBlock.dataset.founderAccountCard='';
-      accountBlock.innerHTML="<h2><button class=\"nyx-account-settings-link\" data-open-nyx-account-settings type=\"button\">Account</button></h2><p data-founder-account-status>Sign in to manage your N7X account.</p><div class=\"settings-actions\"><button class=\"settings-action\" data-open-nyx-account type=\"button\">Create or sign in</button><button class=\"settings-action\" data-open-nyx-profile type=\"button\" hidden>Edit account</button><button class=\"settings-action\" data-nyx-account-sign-out type=\"button\" hidden>Sign out</button></div>";
+      accountBlock.innerHTML="<h2><button class=\"n7x-account-settings-link\" data-open-n7x-account-settings type=\"button\">Account</button></h2><p data-founder-account-status>Sign in to manage your N7X account.</p><div class=\"settings-actions\"><button class=\"settings-action\" data-open-n7x-account type=\"button\">Create or sign in</button><button class=\"settings-action\" data-open-n7x-profile type=\"button\" hidden>Edit account</button><button class=\"settings-action\" data-n7x-account-sign-out type=\"button\" hidden>Sign out</button></div>";
       const cloudSaveBlock=document.createElement('section');
       cloudSaveBlock.className='settings-block';
-      cloudSaveBlock.innerHTML="<h2>Cloud Saves</h2><p data-nyx-cloud-save-status>Sign in to sync supported game progress and N7X preferences.</p>";
+      cloudSaveBlock.innerHTML="<h2>Cloud Saves</h2><p data-n7x-cloud-save-status>Sign in to sync supported game progress and N7X preferences.</p>";
       const resetBlock=document.createElement('section');
       resetBlock.className='settings-block';
-      resetBlock.innerHTML=`<h2>Clear Cache</h2><p>Removes cookies, cache files, saved settings, proxy storage, and service workers, then reloads nyx like a fresh install.</p><div class="settings-actions"><button class="settings-action danger-action" data-clear-nyx-cache type="button">Clear Cache and Reset</button></div>`;
+      resetBlock.innerHTML=`<h2>Clear Cache</h2><p>Removes cookies, cache files, saved settings, proxy storage, and service workers, then reloads nyx like a fresh install.</p><div class="settings-actions"><button class="settings-action danger-action" data-clear-n7x-cache type="button">Clear Cache and Reset</button></div>`;
       effectBlock.before(privacyBlock);
       effectBlock.before(homepageBlock);
 
@@ -5868,9 +5870,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const state=activeBrowser;
     const tab=ensureBrowserShellLinkedTab(shellTab) || state?.tabs?.find(t=>t.id===state.active);
     if(!tab) return false;
-    const discordFounderProfileStyle='.nyx-founder-profile-standard{display:block!important;max-width:620px!important;margin:0 auto!important;padding:0!important;overflow:hidden!important;border:1px solid color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 42%,transparent)!important;border-radius:16px!important;background:#111827!important;box-shadow:0 16px 42px rgba(0,0,0,.32)!important}.nyx-founder-profile-standard .nyx-founder-banner{height:140px!important;margin:0!important;background:var(--nyx-founder-accent,#8fb8ff)!important}.nyx-founder-profile-standard .nyx-founder-profile-content{display:block!important;padding:0 16px 18px!important}.nyx-founder-profile-standard .nyx-founder-image-wrap{width:88px!important;height:88px!important;margin:-45px 0 0!important;border:6px solid #111827!important;border-radius:50%!important;background:#111827!important}.nyx-founder-profile-standard .nyx-founder-image{border:0!important;border-radius:50%!important;background:#172338!important}.nyx-founder-profile-standard .nyx-founder-status{right:-2px!important;bottom:-2px!important;border:4px solid #111827!important}.nyx-founder-profile-standard .nyx-founder-copy{padding-top:13px!important}.nyx-founder-name-row{display:flex!important;align-items:center!important;gap:7px!important}.nyx-founder-profile-standard .nyx-founder-copy h3{margin:0!important;color:#f8fbff!important;font-size:24px!important;font-weight:700!important;letter-spacing:-.025em!important}.nyx-founder-owner-crown{color:#f0c85c!important;font-size:18px!important;line-height:1!important}.nyx-founder-profile-standard .nyx-founder-handle{margin:2px 0 10px!important;color:#b5c2d5!important;font-size:14px!important}.nyx-founder-profile-standard .nyx-founder-role{margin:0 0 11px!important;color:#9cadc4!important;font-size:11px!important;font-weight:600!important;letter-spacing:.09em!important}.nyx-founder-role-list{display:flex!important;flex-wrap:wrap!important;gap:7px!important;margin:0 0 12px!important}.nyx-founder-role-chip{display:inline-flex!important;align-items:center!important;gap:5px!important;padding:4px 8px!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:4px!important;background:rgba(255,255,255,.08)!important;color:#d9e3f1!important;font-size:11px!important;font-weight:650!important}.nyx-founder-role-owner{border-color:color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 78%,transparent)!important;background:color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 22%,transparent)!important;color:#fff!important}.nyx-founder-role-owner span{color:#f0c85c!important}.nyx-founder-profile-standard .nyx-founder-badges{margin:0 0 14px!important}.nyx-founder-profile-standard .nyx-founder-badge{border:0!important;border-radius:4px!important;background:rgba(255,255,255,.1)!important;color:#c9d7ea!important}.nyx-founder-about{padding-top:13px!important;border-top:1px solid rgba(255,255,255,.14)!important}.nyx-founder-about>strong{display:block!important;margin-bottom:7px!important;color:#f5f8ff!important;font-size:12px!important;font-weight:700!important;text-transform:uppercase!important}.nyx-founder-profile-standard .nyx-founder-bio{color:#d5dfec!important;font-size:14px!important;line-height:1.55!important}.nyx-founder-profile-standard .nyx-founder-link{margin-top:14px!important;color:#cbd9ff!important}@media(max-width:680px){.nyx-founder-profile-standard .nyx-founder-image-wrap{width:88px!important;margin:-45px 0 0!important}.nyx-founder-profile-standard .nyx-founder-copy{text-align:left!important}.nyx-founder-profile-standard .nyx-founder-badges{justify-content:flex-start!important}}';
+    const discordFounderProfileStyle='.n7x-founder-profile-standard{display:block!important;max-width:620px!important;margin:0 auto!important;padding:0!important;overflow:hidden!important;border:1px solid color-mix(in srgb,var(--n7x-founder-accent,#8fb8ff) 42%,transparent)!important;border-radius:16px!important;background:#111827!important;box-shadow:0 16px 42px rgba(0,0,0,.32)!important}.n7x-founder-profile-standard .n7x-founder-banner{height:140px!important;margin:0!important;background:var(--n7x-founder-accent,#8fb8ff)!important}.n7x-founder-profile-standard .n7x-founder-profile-content{display:block!important;padding:0 16px 18px!important}.n7x-founder-profile-standard .n7x-founder-image-wrap{width:88px!important;height:88px!important;margin:-45px 0 0!important;border:6px solid #111827!important;border-radius:50%!important;background:#111827!important}.n7x-founder-profile-standard .n7x-founder-image{border:0!important;border-radius:50%!important;background:#172338!important}.n7x-founder-profile-standard .n7x-founder-status{right:-2px!important;bottom:-2px!important;border:4px solid #111827!important}.n7x-founder-profile-standard .n7x-founder-copy{padding-top:13px!important}.n7x-founder-name-row{display:flex!important;align-items:center!important;gap:7px!important}.n7x-founder-profile-standard .n7x-founder-copy h3{margin:0!important;color:#f8fbff!important;font-size:24px!important;font-weight:700!important;letter-spacing:-.025em!important}.n7x-founder-owner-crown{color:#f0c85c!important;font-size:18px!important;line-height:1!important}.n7x-founder-profile-standard .n7x-founder-handle{margin:2px 0 10px!important;color:#b5c2d5!important;font-size:14px!important}.n7x-founder-profile-standard .n7x-founder-role{margin:0 0 11px!important;color:#9cadc4!important;font-size:11px!important;font-weight:600!important;letter-spacing:.09em!important}.n7x-founder-role-list{display:flex!important;flex-wrap:wrap!important;gap:7px!important;margin:0 0 12px!important}.n7x-founder-role-chip{display:inline-flex!important;align-items:center!important;gap:5px!important;padding:4px 8px!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:4px!important;background:rgba(255,255,255,.08)!important;color:#d9e3f1!important;font-size:11px!important;font-weight:650!important}.n7x-founder-role-owner{border-color:color-mix(in srgb,var(--n7x-founder-accent,#8fb8ff) 78%,transparent)!important;background:color-mix(in srgb,var(--n7x-founder-accent,#8fb8ff) 22%,transparent)!important;color:#fff!important}.n7x-founder-role-owner span{color:#f0c85c!important}.n7x-founder-profile-standard .n7x-founder-badges{margin:0 0 14px!important}.n7x-founder-profile-standard .n7x-founder-badge{border:0!important;border-radius:4px!important;background:rgba(255,255,255,.1)!important;color:#c9d7ea!important}.n7x-founder-about{padding-top:13px!important;border-top:1px solid rgba(255,255,255,.14)!important}.n7x-founder-about>strong{display:block!important;margin-bottom:7px!important;color:#f5f8ff!important;font-size:12px!important;font-weight:700!important;text-transform:uppercase!important}.n7x-founder-profile-standard .n7x-founder-bio{color:#d5dfec!important;font-size:14px!important;line-height:1.55!important}.n7x-founder-profile-standard .n7x-founder-link{margin-top:14px!important;color:#cbd9ff!important}@media(max-width:680px){.n7x-founder-profile-standard .n7x-founder-image-wrap{width:88px!important;margin:-45px 0 0!important}.n7x-founder-profile-standard .n7x-founder-copy{text-align:left!important}.n7x-founder-profile-standard .n7x-founder-badges{justify-content:flex-start!important}}';
     const pages={
-      apps:{title:'Apps',body:`<style>html,body,.apps-shell-page{background:transparent!important;background-image:none!important}</style><div class="browser-home browser-shell-page apps-shell-page"><h1 class="home-heading">Apps</h1><p class="home-sub">Everything in Nyx.</p><div class="quick-grid apps-launch-grid" data-nyx-global-app-grid>${quickTiles()}</div></div>`},
+      apps:{title:'Apps',body:`<style>html,body,.apps-shell-page{background:transparent!important;background-image:none!important}</style><div class="browser-home browser-shell-page apps-shell-page"><h1 class="home-heading">Apps</h1><p class="home-sub">Everything in N7X.</p><div class="quick-grid apps-launch-grid" data-n7x-global-app-grid>${quickTiles()}</div></div>`},
       links:{title:'Bookmarks',body:`<div class="browser-home browser-shell-page"><h1 class="home-heading">Bookmarks</h1><p class="home-sub">Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>DuckDuckGo</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></div>`}
     };
     const page=pages[name] || pages.apps;
@@ -5903,7 +5905,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const popupScript='document.addEventListener("click",e=>{const popup=e.target.closest("[data-popup-protection]");if(!popup)return;e.preventDefault();const next=popup.dataset.enabled!=="true";popup.dataset.enabled=String(next);popup.classList.toggle("on",next);popup.textContent="Popup Protection "+(next?"On":"Off");parent.postMessage({type:"nyx:popup-protection",enabled:next},"*")});';
     const panicFrameScript='let NYX_PANIC_CAPTURE=false;function nyxPanicCombo(e){const key=String(e.key||"").trim();if(!key||["Control","Shift","Alt","Meta"].includes(key))return "";const parts=[];if(e.ctrlKey)parts.push("Ctrl");if(e.altKey)parts.push("Alt");if(e.shiftKey)parts.push("Shift");if(e.metaKey)parts.push("Meta");parts.push(key.length===1?key.toUpperCase():key.replace(/^Arrow/,""));return parts.join("+")}document.addEventListener("click",e=>{if(e.target.closest("[data-panic-capture]"))NYX_PANIC_CAPTURE=true;if(e.target.closest("[data-panic-clear]"))NYX_PANIC_CAPTURE=false},true);document.addEventListener("keydown",e=>{if(!NYX_PANIC_CAPTURE)return;const combo=nyxPanicCombo(e);if(!combo)return;e.preventDefault();e.stopPropagation();NYX_PANIC_CAPTURE=false;document.querySelectorAll("[data-panic-key-display]").forEach(el=>el.textContent=combo);parent.postMessage({type:"nyx:panic-key-set",combo},"*")},true);';
     const finalInternalPaintScript='document.querySelectorAll("[data-effect-speed-label]").forEach(el=>{el.textContent=Number(NYX_EFFECT_SPEED).toFixed(1)+"x"});';
-    return '<!doctype html><html data-nyx-theme="'+esc(normalizeNyxTheme(store.text('nyx.theme','default')))+'" style="--nyx-custom-base:'+esc(nyxCustomThemePalette().base)+'" data-nyx-appearance="'+esc(store.text('nyx.appearance','dark'))+'"><head><meta charset="utf-8"><base target="_self"><link rel="stylesheet" href="/css/avatar-decorations.css"><link rel="stylesheet" href="/css/profile-effects.css"><style>'+(page.style||'')+'</style><link rel="stylesheet" href="/apps/obsidian.css?v=20261001-halloween-v3"><link rel="stylesheet" href="/apps/internal-pages.css?v=20260926-icons-v2"></head><body>'+page.body+'<script>const NYX_EFFECT='+JSON.stringify(store.text('nyx.visualEffect','none'))+';const NYX_EFFECT_SPEED='+JSON.stringify(store.text('nyx.visualEffectSpeed','1.1'))+';const NYX_EFFECT_AMOUNT='+JSON.stringify(store.text('nyx.visualEffectAmount','16'))+';const NYX_THEME='+JSON.stringify(normalizeNyxTheme(store.text('nyx.theme','default')))+';'+finalInternalPaintScript+script+popupScript+panicFrameScript+(page.script||'')+'<\/script></body></html>';
+    return '<!doctype html><html data-n7x-theme="'+esc(normalizeNyxTheme(store.text('nyx.theme','default')))+'" style="--n7x-custom-base:'+esc(nyxCustomThemePalette().base)+'" data-n7x-appearance="'+esc(store.text('nyx.appearance','dark'))+'"><head><meta charset="utf-8"><base target="_self"><link rel="stylesheet" href="/css/avatar-decorations.css"><link rel="stylesheet" href="/css/profile-effects.css"><style>'+(page.style||'')+'</style><link rel="stylesheet" href="/apps/obsidian.css?v=20261001-halloween-v3"><link rel="stylesheet" href="/apps/internal-pages.css?v=20260926-icons-v2"><script defer src="/js/interface-text.js"><\/script></head><body>'+page.body+'<script>const NYX_EFFECT='+JSON.stringify(store.text('nyx.visualEffect','none'))+';const NYX_EFFECT_SPEED='+JSON.stringify(store.text('nyx.visualEffectSpeed','1.1'))+';const NYX_EFFECT_AMOUNT='+JSON.stringify(store.text('nyx.visualEffectAmount','16'))+';const NYX_THEME='+JSON.stringify(normalizeNyxTheme(store.text('nyx.theme','default')))+';'+finalInternalPaintScript+script+popupScript+panicFrameScript+(page.script||'')+'<\/script></body></html>';
   }
   function showBrowserShellInternalPage(name){
     hideBrowserSuggestions();
@@ -5943,61 +5945,61 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const presetTiles=`<button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${favicons.nyx}"><span>N7X tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
     const utilityPageStyle=`
       html,body{min-height:100%!important;background:#0a1220!important;color:#eaf2ff!important}
-      .nyx-utility-tab{width:min(860px,calc(100vw - 44px));min-height:100vh;margin:0 auto;padding:clamp(34px,6vw,72px) clamp(22px,5vw,58px) 90px!important;background:transparent!important;color:#eaf2ff!important}
-      .nyx-utility-tab .utility-kicker{margin:0 0 8px!important;color:#8fb8ff!important;font-size:12px!important;font-weight:500!important;letter-spacing:.16em!important;text-transform:uppercase!important;text-shadow:none!important}
-      .nyx-utility-tab h1{margin:0 0 10px!important;color:#f4f8ff!important;font-size:clamp(34px,6vw,58px)!important;font-weight:420!important;letter-spacing:-.045em!important;text-shadow:none!important}
-      .nyx-utility-tab .utility-updated{margin:0 0 34px!important;color:#8498b7!important;font-size:12px!important;font-weight:400!important;text-shadow:none!important}
-      .nyx-utility-tab section{padding:20px 0;border-top:1px solid rgba(111,158,232,.22)}
-      .nyx-utility-tab section h2{margin:0 0 7px!important;color:#edf4ff!important;font-size:16px!important;font-weight:520!important;text-shadow:none!important}
-      .nyx-utility-tab section p,.nyx-utility-tab .about-lead{max-width:68ch;margin:0!important;color:#a9b9d0!important;font-size:14px!important;font-weight:400!important;line-height:1.68!important;text-shadow:none!important}
-      .nyx-utility-tab .utility-intro{max-width:68ch;margin:0 0 32px!important;color:#b7c5d9!important;font-size:14px!important;line-height:1.68!important}.nyx-utility-tab section p+p{margin-top:10px!important}.nyx-utility-tab ul{max-width:68ch;margin:10px 0 14px;padding-left:22px;color:#a9b9d0;font-size:14px;line-height:1.62}.nyx-utility-tab li+li{margin-top:4px}.nyx-utility-tab strong{color:#edf4ff!important;font-weight:600!important}
+      .n7x-utility-tab{width:min(860px,calc(100vw - 44px));min-height:100vh;margin:0 auto;padding:clamp(34px,6vw,72px) clamp(22px,5vw,58px) 90px!important;background:transparent!important;color:#eaf2ff!important}
+      .n7x-utility-tab .utility-kicker{margin:0 0 8px!important;color:#8fb8ff!important;font-size:12px!important;font-weight:500!important;letter-spacing:.16em!important;text-transform:uppercase!important;text-shadow:none!important}
+      .n7x-utility-tab h1{margin:0 0 10px!important;color:#f4f8ff!important;font-size:clamp(34px,6vw,58px)!important;font-weight:420!important;letter-spacing:-.045em!important;text-shadow:none!important}
+      .n7x-utility-tab .utility-updated{margin:0 0 34px!important;color:#8498b7!important;font-size:12px!important;font-weight:400!important;text-shadow:none!important}
+      .n7x-utility-tab section{padding:20px 0;border-top:1px solid rgba(111,158,232,.22)}
+      .n7x-utility-tab section h2{margin:0 0 7px!important;color:#edf4ff!important;font-size:16px!important;font-weight:520!important;text-shadow:none!important}
+      .n7x-utility-tab section p,.n7x-utility-tab .about-lead{max-width:68ch;margin:0!important;color:#a9b9d0!important;font-size:14px!important;font-weight:400!important;line-height:1.68!important;text-shadow:none!important}
+      .n7x-utility-tab .utility-intro{max-width:68ch;margin:0 0 32px!important;color:#b7c5d9!important;font-size:14px!important;line-height:1.68!important}.n7x-utility-tab section p+p{margin-top:10px!important}.n7x-utility-tab ul{max-width:68ch;margin:10px 0 14px;padding-left:22px;color:#a9b9d0;font-size:14px;line-height:1.62}.n7x-utility-tab li+li{margin-top:4px}.n7x-utility-tab strong{color:#edf4ff!important;font-weight:600!important}
       .nyx-about-tab{display:flex;min-height:calc(100vh - 1px);flex-direction:column;justify-content:center}.nyx-about-tab .about-mark{width:48px;height:48px;display:grid;place-items:center;margin-bottom:24px;border:1px solid rgba(111,158,232,.42);border-radius:15px;background:rgba(17,26,41,.72);color:#8fb8ff;font-size:23px}
-      .nyx-about-details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:30px 0 0}.nyx-about-details div{padding:14px;border:1px solid rgba(111,158,232,.22);border-radius:13px;background:rgba(17,26,41,.54)}.nyx-about-details dt{color:#8498b7;font-size:10px;letter-spacing:.09em;text-transform:uppercase}.nyx-about-details dd{margin:5px 0 0;color:#edf4ff;font-size:13px}
+      .n7x-about-details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:30px 0 0}.n7x-about-details div{padding:14px;border:1px solid rgba(111,158,232,.22);border-radius:13px;background:rgba(17,26,41,.54)}.n7x-about-details dt{color:#8498b7;font-size:10px;letter-spacing:.09em;text-transform:uppercase}.n7x-about-details dd{margin:5px 0 0;color:#edf4ff;font-size:13px}
       body{--credits-accent:#8fb8ff;--credits-line:rgba(143,184,255,.24);--credits-card:rgba(15,25,42,.72)}body.theme-midnight{--credits-accent:#789edc}body.theme-ruby{--credits-accent:#db7f91;--credits-line:rgba(219,127,145,.26)}body.theme-emerald{--credits-accent:#65b99b;--credits-line:rgba(101,185,155,.25)}body.theme-sakura{--credits-accent:#d798b8;--credits-line:rgba(215,152,184,.26)}body.theme-fresh{--credits-accent:#86a77e;--credits-line:rgba(134,167,126,.26);--credits-card:rgba(19,28,21,.78)}
-      .nyx-credits-tab{width:min(1040px,calc(100vw - 34px));padding:clamp(46px,7vw,92px) clamp(20px,5vw,62px) 70px!important}.nyx-credits-hero{text-align:center;margin:0 auto 68px}.nyx-credits-tab .nyx-credits-hero h1{margin:0 0 14px!important;font-size:clamp(48px,8vw,86px)!important;font-weight:400!important;letter-spacing:-.055em!important}.nyx-credits-hero>p:last-child{max-width:620px;margin:0 auto!important;color:#9cadc4!important;font-size:15px!important;line-height:1.6!important}
-      .nyx-credits-tab .nyx-credits-section{padding:0!important;margin:0 0 76px!important;border:0!important}.nyx-credits-tab .nyx-credits-section>h2{width:max-content;margin:0 auto 34px!important;padding-bottom:7px!important;border-bottom:2px solid var(--credits-accent)!important;color:#eef4ff!important;font-size:clamp(31px,5vw,48px)!important;font-weight:400!important;letter-spacing:-.035em!important;text-align:center!important}
-      .nyx-founder-profile{display:grid;grid-template-columns:minmax(240px,360px) minmax(0,1fr);align-items:center;gap:clamp(28px,6vw,72px);padding:clamp(18px,3vw,30px);border:1px solid var(--credits-line);border-radius:24px;background:linear-gradient(135deg,color-mix(in srgb,var(--credits-accent) 10%,transparent),transparent 42%),var(--credits-card);box-shadow:0 24px 70px rgba(0,0,0,.24)}
-      .nyx-founder-image-wrap{aspect-ratio:1;display:grid;place-items:center;overflow:hidden;border:1px solid var(--credits-line);border-radius:20px;background:#050a12}.nyx-founder-image{display:block;width:100%;height:100%;padding:0;object-fit:cover;object-position:center;box-sizing:border-box}.nyx-founder-copy .nyx-founder-role{margin:0 0 6px!important;color:var(--credits-accent)!important;font-size:11px!important;font-weight:500!important;letter-spacing:.16em!important;text-transform:uppercase!important}.nyx-founder-copy h3{margin:0 0 16px!important;color:#f5f8ff!important;font-size:clamp(31px,5vw,50px)!important;font-weight:400!important;letter-spacing:-.04em!important}.nyx-founder-copy>p{margin:0!important;color:#aebdd1!important;font-size:15px!important;font-weight:400!important;line-height:1.72!important;overflow-wrap:anywhere}.nyx-founder-copy .nyx-founder-note{margin-top:16px!important;color:#d7e1ef!important}
+      .n7x-credits-tab{width:min(1040px,calc(100vw - 34px));padding:clamp(46px,7vw,92px) clamp(20px,5vw,62px) 70px!important}.nyx-credits-hero{text-align:center;margin:0 auto 68px}.n7x-credits-tab .nyx-credits-hero h1{margin:0 0 14px!important;font-size:clamp(48px,8vw,86px)!important;font-weight:400!important;letter-spacing:-.055em!important}.nyx-credits-hero>p:last-child{max-width:620px;margin:0 auto!important;color:#9cadc4!important;font-size:15px!important;line-height:1.6!important}
+      .n7x-credits-tab .nyx-credits-section{padding:0!important;margin:0 0 76px!important;border:0!important}.n7x-credits-tab .nyx-credits-section>h2{width:max-content;margin:0 auto 34px!important;padding-bottom:7px!important;border-bottom:2px solid var(--credits-accent)!important;color:#eef4ff!important;font-size:clamp(31px,5vw,48px)!important;font-weight:400!important;letter-spacing:-.035em!important;text-align:center!important}
+      .n7x-founder-profile{display:grid;grid-template-columns:minmax(240px,360px) minmax(0,1fr);align-items:center;gap:clamp(28px,6vw,72px);padding:clamp(18px,3vw,30px);border:1px solid var(--credits-line);border-radius:24px;background:linear-gradient(135deg,color-mix(in srgb,var(--credits-accent) 10%,transparent),transparent 42%),var(--credits-card);box-shadow:0 24px 70px rgba(0,0,0,.24)}
+      .n7x-founder-image-wrap{aspect-ratio:1;display:grid;place-items:center;overflow:hidden;border:1px solid var(--credits-line);border-radius:20px;background:#050a12}.n7x-founder-image{display:block;width:100%;height:100%;padding:0;object-fit:cover;object-position:center;box-sizing:border-box}.n7x-founder-copy .n7x-founder-role{margin:0 0 6px!important;color:var(--credits-accent)!important;font-size:11px!important;font-weight:500!important;letter-spacing:.16em!important;text-transform:uppercase!important}.n7x-founder-copy h3{margin:0 0 16px!important;color:#f5f8ff!important;font-size:clamp(31px,5vw,50px)!important;font-weight:400!important;letter-spacing:-.04em!important}.n7x-founder-copy>p{margin:0!important;color:#aebdd1!important;font-size:15px!important;font-weight:400!important;line-height:1.72!important;overflow-wrap:anywhere}.n7x-founder-copy .nyx-founder-note{margin-top:16px!important;color:#d7e1ef!important}
       .nyx-credit-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.nyx-credit-grid article{min-height:176px;padding:22px;border:1px solid var(--credits-line);border-radius:19px;background:var(--credits-card)}.nyx-credit-grid article>span{display:grid;place-items:center;width:38px;height:38px;margin-bottom:24px;border:1px solid var(--credits-line);border-radius:12px;color:var(--credits-accent);font-size:20px}.nyx-credit-grid h3{margin:0 0 8px!important;color:#eef4ff!important;font-size:16px!important;font-weight:500!important}.nyx-credit-grid p{margin:0!important;color:#94a6bf!important;font-size:13px!important;line-height:1.55!important}
       .nyx-credits-footer{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px;padding:24px 0 0;border-top:1px solid var(--credits-line);color:#8498b7}.nyx-credits-footer img{width:38px;height:38px;border-radius:10px;object-fit:contain}.nyx-credits-footer div{display:grid;gap:2px}.nyx-credits-footer strong{font-size:14px!important;font-weight:500!important}.nyx-credits-footer span,.nyx-credits-footer small{font-size:11px!important}
-      .nyx-terminal-tab{width:min(980px,calc(100vw - 34px));height:calc(100vh - 34px);min-height:420px;margin:17px auto;padding:0!important;display:grid;grid-template-rows:auto 1fr auto;border:1px solid rgba(111,158,232,.30);border-radius:17px;overflow:hidden;background:#080f1a!important}.nyx-terminal-toolbar{min-height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 17px;border-bottom:1px solid rgba(111,158,232,.22);color:#8498b7;font-size:11px;letter-spacing:.04em}.nyx-terminal-toolbar span:first-child{display:flex;align-items:center;gap:8px;color:#eaf2ff}.nyx-terminal-toolbar i{width:7px;height:7px;border-radius:50%;background:#79aaff}
-      .nyx-terminal-output{overflow:auto;padding:20px;color:#b9c8dc;font:400 12px/1.75 "Cascadia Code",Consolas,monospace}.nyx-terminal-line.command{margin-top:9px;color:#8fb8ff}.nyx-terminal-line.error{color:#ff8292}.nyx-terminal-form{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:12px 14px;border-top:1px solid rgba(111,158,232,.22);background:rgba(17,26,41,.70)}.nyx-terminal-form label{color:#8fb8ff;font:400 12px/1 "Cascadia Code",Consolas,monospace}.nyx-terminal-form input{width:100%;height:38px;padding:0 11px;border:1px solid rgba(111,158,232,.32);border-radius:9px;background:#080f1a;color:#eaf2ff;outline:0;font:400 12px/1 "Cascadia Code",Consolas,monospace}.nyx-terminal-form input:focus{border-color:#8fb8ff}.nyx-terminal-form button{height:38px;padding:0 16px;border:1px solid rgba(111,158,232,.38);border-radius:9px;background:rgba(111,158,232,.12);color:#eaf2ff;font:400 12px Outfit,Arial,sans-serif}.nyx-terminal-form button:hover{transform:none!important;background:rgba(111,158,232,.18)!important;border-color:#8fb8ff!important;box-shadow:none!important}
-      @media(max-width:680px){.nyx-about-details{grid-template-columns:1fr}.nyx-founder-profile{grid-template-columns:1fr}.nyx-founder-image-wrap{width:min(310px,100%);margin:auto}.nyx-founder-copy{text-align:center}.nyx-credit-grid{grid-template-columns:1fr}.nyx-credits-footer{grid-template-columns:auto 1fr}.nyx-credits-footer small{grid-column:1/-1}.nyx-terminal-tab{width:calc(100vw - 16px);height:calc(100vh - 16px);margin:8px auto}.nyx-terminal-form{grid-template-columns:auto 1fr}.nyx-terminal-form button{grid-column:2}}
+      .nyx-terminal-tab{width:min(980px,calc(100vw - 34px));height:calc(100vh - 34px);min-height:420px;margin:17px auto;padding:0!important;display:grid;grid-template-rows:auto 1fr auto;border:1px solid rgba(111,158,232,.30);border-radius:17px;overflow:hidden;background:#080f1a!important}.n7x-terminal-toolbar{min-height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 17px;border-bottom:1px solid rgba(111,158,232,.22);color:#8498b7;font-size:11px;letter-spacing:.04em}.n7x-terminal-toolbar span:first-child{display:flex;align-items:center;gap:8px;color:#eaf2ff}.n7x-terminal-toolbar i{width:7px;height:7px;border-radius:50%;background:#79aaff}
+      .n7x-terminal-output{overflow:auto;padding:20px;color:#b9c8dc;font:400 12px/1.75 "Cascadia Code",Consolas,monospace}.n7x-terminal-line.command{margin-top:9px;color:#8fb8ff}.n7x-terminal-line.error{color:#ff8292}.n7x-terminal-form{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:12px 14px;border-top:1px solid rgba(111,158,232,.22);background:rgba(17,26,41,.70)}.n7x-terminal-form label{color:#8fb8ff;font:400 12px/1 "Cascadia Code",Consolas,monospace}.n7x-terminal-form input{width:100%;height:38px;padding:0 11px;border:1px solid rgba(111,158,232,.32);border-radius:9px;background:#080f1a;color:#eaf2ff;outline:0;font:400 12px/1 "Cascadia Code",Consolas,monospace}.n7x-terminal-form input:focus{border-color:#8fb8ff}.n7x-terminal-form button{height:38px;padding:0 16px;border:1px solid rgba(111,158,232,.38);border-radius:9px;background:rgba(111,158,232,.12);color:#eaf2ff;font:400 12px Outfit,Arial,sans-serif}.n7x-terminal-form button:hover{transform:none!important;background:rgba(111,158,232,.18)!important;border-color:#8fb8ff!important;box-shadow:none!important}
+      @media(max-width:680px){.n7x-about-details{grid-template-columns:1fr}.n7x-founder-profile{grid-template-columns:1fr}.n7x-founder-image-wrap{width:min(310px,100%);margin:auto}.n7x-founder-copy{text-align:center}.nyx-credit-grid{grid-template-columns:1fr}.nyx-credits-footer{grid-template-columns:auto 1fr}.nyx-credits-footer small{grid-column:1/-1}.nyx-terminal-tab{width:calc(100vw - 16px);height:calc(100vh - 16px);margin:8px auto}.n7x-terminal-form{grid-template-columns:auto 1fr}.n7x-terminal-form button{grid-column:2}}
     `;
-    const discordFounderProfileStyle='.nyx-founder-profile-standard{display:block!important;max-width:620px!important;margin:0 auto!important;padding:0!important;overflow:hidden!important;border:1px solid color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 42%,transparent)!important;border-radius:16px!important;background:#111827!important;box-shadow:0 16px 42px rgba(0,0,0,.32)!important}.nyx-founder-profile-standard .nyx-founder-banner{height:140px!important;margin:0!important;background:var(--nyx-founder-accent,#8fb8ff)!important}.nyx-founder-profile-standard .nyx-founder-profile-content{display:block!important;padding:0 16px 18px!important}.nyx-founder-profile-standard .nyx-founder-image-wrap{width:88px!important;height:88px!important;margin:-45px 0 0!important;border:6px solid #111827!important;border-radius:50%!important;background:#111827!important}.nyx-founder-profile-standard .nyx-founder-image{display:block!important;width:88px!important;height:88px!important;border:0!important;border-radius:50%!important;background:#172338!important}.nyx-founder-profile-standard .nyx-founder-copy{padding-top:13px!important}.nyx-founder-name-row{display:flex!important;align-items:center!important;gap:7px!important}.nyx-founder-profile-standard .nyx-founder-copy h3{margin:0!important;color:#f8fbff!important;font-size:24px!important;font-weight:700!important}.nyx-founder-profile-standard .nyx-founder-handle{margin:2px 0 10px!important;color:#b5c2d5!important;font-size:14px!important}.nyx-founder-role-list{display:flex!important;flex-wrap:wrap!important;gap:7px!important;margin:0 0 12px!important}.nyx-founder-role-chip,.nyx-founder-badge{display:inline-flex!important;align-items:center!important;gap:5px!important;padding:4px 8px!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:4px!important;background:rgba(255,255,255,.08)!important;color:#d9e3f1!important;font-size:11px!important}.nyx-founder-role-owner{border-color:color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 78%,transparent)!important;background:color-mix(in srgb,var(--nyx-founder-accent,#8fb8ff) 22%,transparent)!important;color:#fff!important}.nyx-founder-about{padding-top:13px!important;border-top:1px solid rgba(255,255,255,.14)!important}.nyx-founder-about>strong{display:block!important;margin-bottom:7px!important;color:#f5f8ff!important;font-size:12px!important;text-transform:uppercase!important}.nyx-founder-profile-standard .nyx-founder-bio{color:#d5dfec!important;font-size:14px!important;line-height:1.55!important}';
+    const discordFounderProfileStyle='.n7x-founder-profile-standard{display:block!important;max-width:620px!important;margin:0 auto!important;padding:0!important;overflow:hidden!important;border:1px solid color-mix(in srgb,var(--n7x-founder-accent,#8fb8ff) 42%,transparent)!important;border-radius:16px!important;background:#111827!important;box-shadow:0 16px 42px rgba(0,0,0,.32)!important}.n7x-founder-profile-standard .n7x-founder-banner{height:140px!important;margin:0!important;background:var(--n7x-founder-accent,#8fb8ff)!important}.n7x-founder-profile-standard .n7x-founder-profile-content{display:block!important;padding:0 16px 18px!important}.n7x-founder-profile-standard .n7x-founder-image-wrap{width:88px!important;height:88px!important;margin:-45px 0 0!important;border:6px solid #111827!important;border-radius:50%!important;background:#111827!important}.n7x-founder-profile-standard .n7x-founder-image{display:block!important;width:88px!important;height:88px!important;border:0!important;border-radius:50%!important;background:#172338!important}.n7x-founder-profile-standard .n7x-founder-copy{padding-top:13px!important}.n7x-founder-name-row{display:flex!important;align-items:center!important;gap:7px!important}.n7x-founder-profile-standard .n7x-founder-copy h3{margin:0!important;color:#f8fbff!important;font-size:24px!important;font-weight:700!important}.n7x-founder-profile-standard .n7x-founder-handle{margin:2px 0 10px!important;color:#b5c2d5!important;font-size:14px!important}.n7x-founder-role-list{display:flex!important;flex-wrap:wrap!important;gap:7px!important;margin:0 0 12px!important}.n7x-founder-role-chip,.n7x-founder-badge{display:inline-flex!important;align-items:center!important;gap:5px!important;padding:4px 8px!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:4px!important;background:rgba(255,255,255,.08)!important;color:#d9e3f1!important;font-size:11px!important}.n7x-founder-role-owner{border-color:color-mix(in srgb,var(--n7x-founder-accent,#8fb8ff) 78%,transparent)!important;background:color-mix(in srgb,var(--n7x-founder-accent,#8fb8ff) 22%,transparent)!important;color:#fff!important}.n7x-founder-about{padding-top:13px!important;border-top:1px solid rgba(255,255,255,.14)!important}.n7x-founder-about>strong{display:block!important;margin-bottom:7px!important;color:#f5f8ff!important;font-size:12px!important;text-transform:uppercase!important}.n7x-founder-profile-standard .n7x-founder-bio{color:#d5dfec!important;font-size:14px!important;line-height:1.55!important}';
     const founderAccentEffectStyle=`
-      .nyx-founder-profile-standard{position:relative!important;isolation:isolate!important;border-color:color-mix(in srgb,var(--nyx-founder-accent-primary,#8fb8ff) 66%,#4e5058)!important;background:linear-gradient(180deg,color-mix(in srgb,var(--nyx-founder-accent-primary,#8fb8ff) 78%,#1e1f22) 0%,color-mix(in srgb,var(--nyx-founder-accent-primary,#8fb8ff) 62%,#1e1f22) 54%,color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 68%,#1e1f22) 100%)!important;box-shadow:0 16px 42px rgba(0,0,0,.32),inset 0 3px 0 var(--nyx-founder-accent-primary,#8fb8ff),inset 0 -3px 0 var(--nyx-founder-accent-secondary,#8ea1ff)!important}
-      .nyx-founder-profile-standard>*:not(.nyx-founder-profile-effect){position:relative;z-index:1}.nyx-founder-profile-effect{display:none;position:absolute!important;z-index:2!important;inset:0;overflow:hidden;pointer-events:none}
-      .nyx-founder-profile-standard .nyx-founder-banner{height:auto!important;aspect-ratio:17/6!important;background:var(--nyx-founder-banner-color,var(--nyx-founder-accent-secondary,#8ea1ff))!important}.nyx-founder-profile-standard .nyx-founder-banner img{object-fit:contain!important}
-      .nyx-founder-profile-standard .nyx-founder-profile-content{background:linear-gradient(180deg,color-mix(in srgb,#2b2d31 72%,var(--nyx-founder-accent-primary,#8fb8ff)) 0%,color-mix(in srgb,#2b2d31 80%,var(--nyx-founder-accent-primary,#8fb8ff)) 58%,color-mix(in srgb,#2b2d31 82%,var(--nyx-founder-accent-secondary,#8ea1ff)) 100%)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)!important}
-      .nyx-founder-profile-standard .nyx-founder-image-wrap{position:relative!important;overflow:visible!important;border-color:var(--nyx-founder-accent-primary,#8fb8ff)!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 50%,transparent),0 8px 20px rgba(0,0,0,.3)!important}.nyx-founder-profile-standard .nyx-founder-status{z-index:5!important;border-color:color-mix(in srgb,var(--nyx-founder-accent-primary,#8fb8ff) 22%,#111827)!important}
-      .nyx-founder-profile-standard .nyx-avatar-decoration{display:none;position:absolute!important;z-index:3!important;inset:-16px;pointer-events:none;color:var(--nyx-founder-accent-primary,#8fb8ff);filter:drop-shadow(0 0 7px color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 68%,transparent))}.nyx-founder-profile-standard .nyx-avatar-decoration::before,.nyx-founder-profile-standard .nyx-avatar-decoration::after,.nyx-founder-profile-standard .nyx-avatar-decoration>span{content:"";position:absolute;display:block;box-sizing:border-box}
-      .nyx-founder-profile-standard .nyx-avatar-decoration-starfall>.nyx-avatar-decoration{display:block;background:radial-gradient(circle at 15% 24%,#fff 0 2px,transparent 2.7px),radial-gradient(circle at 84% 18%,var(--nyx-founder-accent-secondary,#8ea1ff) 0 2.5px,transparent 3.2px),radial-gradient(circle at 90% 72%,#fff 0 1.8px,transparent 2.5px),radial-gradient(circle at 17% 81%,var(--nyx-founder-accent-primary,#8fb8ff) 0 2.3px,transparent 3px);animation:nyx-founder-decoration-twinkle 2.8s ease-in-out infinite}.nyx-founder-profile-standard .nyx-avatar-decoration-starfall>.nyx-avatar-decoration::before,.nyx-founder-profile-standard .nyx-avatar-decoration-starfall>.nyx-avatar-decoration::after{width:17px;height:17px;background:linear-gradient(135deg,#fff,var(--nyx-founder-accent-secondary,#8ea1ff));clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}.nyx-founder-profile-standard .nyx-avatar-decoration-starfall>.nyx-avatar-decoration::before{right:-1px;top:13px}.nyx-founder-profile-standard .nyx-avatar-decoration-starfall>.nyx-avatar-decoration::after{left:3px;bottom:9px;width:12px;height:12px}
-      .nyx-founder-profile-standard .nyx-avatar-decoration-orbit>.nyx-avatar-decoration{display:block;border:2px solid color-mix(in srgb,var(--nyx-founder-accent-primary,#8fb8ff) 72%,transparent);border-left-color:var(--nyx-founder-accent-secondary,#8ea1ff);border-right-color:var(--nyx-founder-accent-secondary,#8ea1ff);border-radius:50%;animation:nyx-founder-decoration-orbit 7s linear infinite}.nyx-founder-profile-standard .nyx-avatar-decoration-orbit>.nyx-avatar-decoration::before,.nyx-founder-profile-standard .nyx-avatar-decoration-orbit>.nyx-avatar-decoration::after{border-radius:50%;background:#fff;box-shadow:0 0 0 3px var(--nyx-founder-accent-primary,#8fb8ff),0 0 12px 5px color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 72%,transparent)}.nyx-founder-profile-standard .nyx-avatar-decoration-orbit>.nyx-avatar-decoration::before{width:8px;height:8px;top:8px;right:11px}.nyx-founder-profile-standard .nyx-avatar-decoration-orbit>.nyx-avatar-decoration::after{width:6px;height:6px;left:8px;bottom:15px}
-      .nyx-founder-profile-standard .nyx-avatar-decoration-laurel>.nyx-avatar-decoration,.nyx-founder-profile-standard .nyx-avatar-decoration-neon-wings>.nyx-avatar-decoration{display:block}.nyx-founder-profile-standard .nyx-avatar-decoration-laurel>.nyx-avatar-decoration::before,.nyx-founder-profile-standard .nyx-avatar-decoration-laurel>.nyx-avatar-decoration::after{top:13px;width:35px;height:88px;border:7px dotted color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 86%,#fff);border-top-color:transparent;border-bottom-color:transparent;border-radius:50%}.nyx-founder-profile-standard .nyx-avatar-decoration-laurel>.nyx-avatar-decoration::before{left:-5px;border-right:0;transform:rotate(-11deg)}.nyx-founder-profile-standard .nyx-avatar-decoration-laurel>.nyx-avatar-decoration::after{right:-5px;border-left:0;transform:rotate(11deg)}.nyx-founder-profile-standard .nyx-avatar-decoration-laurel>.nyx-avatar-decoration>span{left:50%;bottom:1px;width:16px;height:16px;background:linear-gradient(135deg,var(--nyx-founder-accent-primary,#8fb8ff),var(--nyx-founder-accent-secondary,#8ea1ff));clip-path:polygon(50% 0,61% 36%,100% 50%,61% 64%,50% 100%,39% 64%,0 50%,39% 36%);transform:translateX(-50%)}
-      .nyx-founder-profile-standard .nyx-avatar-decoration-neon-wings>.nyx-avatar-decoration::before,.nyx-founder-profile-standard .nyx-avatar-decoration-neon-wings>.nyx-avatar-decoration::after{top:23px;width:39px;height:72px;background:linear-gradient(160deg,#fff 0 5%,var(--nyx-founder-accent-secondary,#8ea1ff) 28%,var(--nyx-founder-accent-primary,#8fb8ff) 74%,transparent 75%);clip-path:polygon(100% 2%,65% 18%,33% 10%,50% 38%,0 31%,42% 60%,8% 71%,64% 80%,53% 100%,100% 72%)}.nyx-founder-profile-standard .nyx-avatar-decoration-neon-wings>.nyx-avatar-decoration::before{left:-24px}.nyx-founder-profile-standard .nyx-avatar-decoration-neon-wings>.nyx-avatar-decoration::after{right:-24px;transform:scaleX(-1)}
-      .nyx-founder-profile-standard .nyx-founder-handle{color:#c4c7ce!important}.nyx-founder-profile-standard .nyx-founder-role,.nyx-founder-profile-standard .nyx-founder-link,.nyx-founder-profile-standard .nyx-founder-about>strong{color:#f2f3f5!important}
-      .nyx-founder-profile-standard .nyx-founder-role-chip,.nyx-founder-profile-standard .nyx-founder-badge{border-color:color-mix(in srgb,var(--nyx-founder-accent-primary,#8fb8ff) 48%,transparent)!important;background:linear-gradient(120deg,color-mix(in srgb,var(--nyx-founder-accent-primary,#8fb8ff) 24%,#24252b),color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 20%,#24252b))!important;color:#fff!important}.nyx-founder-role-owner{border-color:color-mix(in srgb,var(--nyx-founder-accent-primary,#8fb8ff) 78%,transparent)!important;background:color-mix(in srgb,var(--nyx-founder-accent-primary,#8fb8ff) 30%,#24252b)!important}
-      .nyx-founder-profile-standard .nyx-founder-about{border-color:rgba(255,255,255,.18)!important}.nyx-founder-profile-standard .nyx-founder-bio{color:#e5e7eb!important}
-      .nyx-styled-display-name{display:inline-block!important;color:var(--nyx-name-color-primary,#fff)!important;-webkit-text-fill-color:var(--nyx-name-color-primary,#fff)!important;line-height:1.14}.nyx-name-font-gg-sans{font-family:"Outfit","Segoe UI",Arial,sans-serif!important}.nyx-name-font-headline{font-family:"Arial Black","Franklin Gothic Heavy","Segoe UI",sans-serif!important;font-size:1.08em!important;font-weight:900!important;letter-spacing:-.035em}.nyx-name-font-rounded{font-family:"Arial Rounded MT Bold","Trebuchet MS","Segoe UI",sans-serif!important;font-size:1.06em!important;font-weight:900!important;letter-spacing:-.025em}.nyx-name-font-wide{font-family:"Arial Black","Trebuchet MS","Segoe UI",sans-serif!important;font-size:1.04em!important;font-weight:900!important;letter-spacing:.075em;text-transform:uppercase}.nyx-name-font-slab{font-family:Rockwell,"Roboto Slab","Palatino Linotype",Georgia,serif!important;font-size:1.06em!important;font-weight:900!important;letter-spacing:-.02em}.nyx-name-font-condensed{font-family:"Bahnschrift Condensed","Arial Narrow","Roboto Condensed",sans-serif!important;font-size:1.1em!important;font-stretch:condensed;font-weight:800!important;letter-spacing:.015em}.nyx-name-font-mono-block{font-family:"Cascadia Mono","Segoe UI Mono","Courier New",monospace!important;font-size:1.02em!important;font-weight:900!important;letter-spacing:-.055em}.nyx-name-font-tempo{font-family:Impact,"Arial Black",sans-serif!important;font-weight:500!important;letter-spacing:.02em}.nyx-name-font-sakura{font-family:"Segoe Script","Brush Script MT",cursive!important;font-weight:700!important}.nyx-name-font-jellybean{font-family:"Comic Sans MS","Trebuchet MS",cursive!important;font-weight:700!important}.nyx-name-font-modern{font-family:"Arial Narrow","Helvetica Neue",Arial,sans-serif!important;font-weight:800!important;letter-spacing:.07em;text-transform:uppercase}.nyx-name-font-medieval{font-family:"Palatino Linotype","Book Antiqua",Georgia,serif!important;font-weight:700!important;letter-spacing:.025em}.nyx-name-font-eight-bit{font-family:"Cascadia Mono","Courier New",monospace!important;font-weight:800!important;letter-spacing:-.06em;text-transform:uppercase}.nyx-name-font-vampyre{font-family:Copperplate,"Times New Roman",serif!important;font-weight:800!important;font-variant:small-caps;letter-spacing:.07em}.nyx-name-effect-solid{color:var(--nyx-name-color-primary,#fff)!important;-webkit-text-fill-color:var(--nyx-name-color-primary,#fff)!important}.nyx-name-effect-gradient,.nyx-name-effect-neon,.nyx-name-effect-pop{background:linear-gradient(105deg,var(--nyx-name-color-primary,#fff),var(--nyx-name-color-secondary,#8ea1ff),var(--nyx-name-color-primary,#fff));background-size:220% 100%;background-clip:text;-webkit-background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent!important}.nyx-name-effect-gradient{animation:nyx-founder-name-gradient 5s ease-in-out infinite}.nyx-name-effect-neon{text-shadow:0 0 5px color-mix(in srgb,var(--nyx-name-color-primary,#fff) 88%,transparent),0 0 12px color-mix(in srgb,var(--nyx-name-color-secondary,#8ea1ff) 78%,transparent);animation:nyx-founder-name-neon 2.4s ease-in-out infinite}.nyx-name-effect-toon{color:var(--nyx-name-color-primary,#fff)!important;-webkit-text-fill-color:var(--nyx-name-color-primary,#fff)!important;-webkit-text-stroke:1px color-mix(in srgb,var(--nyx-name-color-secondary,#8ea1ff) 76%,#17181b);text-shadow:2px 2px 0 var(--nyx-name-color-secondary,#8ea1ff),3px 3px 0 rgba(0,0,0,.42)}.nyx-name-effect-pop{filter:drop-shadow(0 2px 0 color-mix(in srgb,var(--nyx-name-color-secondary,#8ea1ff) 72%,#111));animation:nyx-founder-name-gradient 4.6s linear infinite,nyx-founder-name-pop 2.8s ease-in-out infinite;transform-origin:center bottom}
-      .nyx-founder-effect-glow{box-shadow:0 0 34px color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 64%,transparent),0 16px 42px rgba(0,0,0,.32)!important}
-      .nyx-founder-effect-sparkle .nyx-founder-profile-effect{display:block;background-image:radial-gradient(circle at 12% 18%,#fff 0 1.7px,transparent 2.5px),radial-gradient(circle at 42% 43%,#fff 0 1.1px,transparent 2.1px),radial-gradient(circle at 78% 22%,#fff 0 1.8px,transparent 2.7px),radial-gradient(circle at 88% 72%,#fff 0 1.2px,transparent 2.2px),radial-gradient(circle at 24% 84%,#fff 0 1.3px,transparent 2.3px);background-size:150px 150px,193px 193px,221px 221px,169px 169px,247px 247px;filter:drop-shadow(0 0 5px rgba(255,255,255,.8));animation:nyx-founder-sparkle 6s linear infinite}
-      .nyx-founder-effect-aurora .nyx-founder-profile-effect{display:block;opacity:.65;background:linear-gradient(118deg,transparent 15%,color-mix(in srgb,var(--nyx-founder-accent-primary,#8fb8ff) 64%,transparent) 35%,transparent 49%,color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 68%,transparent) 67%,transparent 85%);background-size:220% 100%;mix-blend-mode:screen;animation:nyx-founder-aurora 8s ease-in-out infinite}
-      .nyx-founder-effect-holographic .nyx-founder-profile-effect{display:block;opacity:.6;background:linear-gradient(112deg,transparent 12%,rgba(255,111,211,.38) 29%,rgba(100,219,255,.42) 43%,rgba(242,255,150,.36) 56%,rgba(172,130,255,.43) 69%,transparent 86%);background-size:250% 100%;mix-blend-mode:screen;animation:nyx-founder-holographic 5.6s linear infinite}
-      .nyx-founder-effect-fireflies .nyx-founder-profile-effect{display:block;background-image:radial-gradient(circle at 12% 77%,#fff8af 0 2px,transparent 4px),radial-gradient(circle at 31% 31%,#fff7a1 0 1.5px,transparent 3.5px),radial-gradient(circle at 53% 67%,#fff8b8 0 2px,transparent 4px),radial-gradient(circle at 76% 42%,#fff6a2 0 1.6px,transparent 3.5px),radial-gradient(circle at 91% 80%,#fff8b4 0 2px,transparent 4px);background-size:230px 250px;filter:drop-shadow(0 0 7px rgba(255,238,133,.9));animation:nyx-founder-fireflies 7s ease-in-out infinite}
-      .nyx-founder-effect-cosmic-dust .nyx-founder-profile-effect{display:block;opacity:.88;background-image:radial-gradient(ellipse at 24% 38%,color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 34%,transparent) 0,transparent 42%),radial-gradient(circle at 8% 22%,#fff 0 1.5px,transparent 2.7px),radial-gradient(circle at 72% 12%,#c7e5ff 0 1.8px,transparent 3px),radial-gradient(circle at 42% 68%,#f0c4ff 0 2px,transparent 3.4px),radial-gradient(circle at 88% 81%,#fff 0 1.2px,transparent 2.6px),radial-gradient(circle at 30% 87%,#aee8ff 0 1px,transparent 2.3px);background-size:100% 100%,127px 149px,181px 167px,211px 193px,157px 223px,239px 179px;mix-blend-mode:screen;filter:drop-shadow(0 0 5px rgba(197,226,255,.8));animation:nyx-founder-cosmic-dust 14s linear infinite}
-      .nyx-founder-effect-electric-storm .nyx-founder-profile-effect{display:block;opacity:.1;background-image:linear-gradient(118deg,transparent 0 41%,rgba(255,255,255,.95) 42% 42.8%,color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 88%,#fff) 43% 44%,transparent 45% 100%),linear-gradient(63deg,transparent 0 58%,rgba(255,255,255,.88) 59% 59.6%,color-mix(in srgb,var(--nyx-founder-accent-primary,#5865f2) 84%,#fff) 60% 61%,transparent 62% 100%);background-size:170% 190%,210% 170%;background-position:120% -40%,-80% 130%;mix-blend-mode:screen;filter:drop-shadow(0 0 8px rgba(174,213,255,.95));animation:nyx-founder-electric-storm 4.2s steps(1,end) infinite}
-      .nyx-founder-effect-meteor-shower .nyx-founder-profile-effect{display:block;opacity:.92;background:radial-gradient(circle,rgba(255,255,255,.95) 0 1.2px,transparent 2px) 18% -12%/109px 127px,radial-gradient(circle,color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 74%,#fff) 0 1px,transparent 2px) 72% -28%/157px 173px,radial-gradient(circle,rgba(214,231,255,.78) 0 .9px,transparent 1.8px) 38% 4%/197px 149px;filter:drop-shadow(0 0 3px color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 45%,transparent));animation:nyx-founder-meteor-shower 9s linear infinite}
-      .nyx-founder-effect-cyber-grid .nyx-founder-profile-effect{display:block;opacity:.52;background-image:linear-gradient(color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 76%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--nyx-founder-accent-primary,#5865f2) 72%,transparent) 1px,transparent 1px),linear-gradient(180deg,transparent 30%,color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 18%,transparent) 100%);background-size:34px 34px,34px 34px,100% 100%;-webkit-mask-image:linear-gradient(to bottom,transparent 2%,#000 31%,#000 100%);mask-image:linear-gradient(to bottom,transparent 2%,#000 31%,#000 100%);filter:drop-shadow(0 0 4px color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 70%,transparent));animation:nyx-founder-cyber-grid 4.5s linear infinite}
-      .nyx-founder-effect-plasma .nyx-founder-profile-effect{display:block;inset:-28%!important;opacity:.4;background:conic-gradient(from 0deg at 50% 50%,transparent 0 8%,var(--nyx-founder-accent-secondary,#8ea1ff) 20%,transparent 34%,var(--nyx-founder-accent-primary,#5865f2) 50%,transparent 66%,#df7cff 79%,transparent 94%);mix-blend-mode:screen;filter:blur(28px) saturate(1.45);animation:nyx-founder-plasma 9s linear infinite}
-      .nyx-founder-effect-snowfall .nyx-founder-profile-effect{display:block;opacity:.84;background-image:radial-gradient(circle,#fff 0 2px,transparent 2.8px),radial-gradient(circle,#dceeff 0 1.3px,transparent 2.2px),radial-gradient(circle,#fff 0 2.6px,transparent 3.4px);background-size:83px 109px,137px 157px,191px 227px;background-position:12px -130px,63px -180px,116px -260px;filter:drop-shadow(0 0 3px rgba(222,241,255,.9));animation:nyx-founder-snowfall 8.5s linear infinite}
-      .nyx-founder-effect-embers .nyx-founder-profile-effect{display:block;opacity:.9;background-image:radial-gradient(circle,#fff2ad 0 1.4px,#ff8a3d 1.7px 2.8px,transparent 4px),radial-gradient(circle,#ffd166 0 1px,#ff5c35 1.4px 2.5px,transparent 3.8px),radial-gradient(circle,#fff0ac 0 1.2px,#ff6a2b 1.6px 2.8px,transparent 4px);background-size:109px 173px,157px 211px,223px 263px;background-position:7px 100%,73px 118%,151px 110%;mix-blend-mode:screen;filter:drop-shadow(0 0 5px rgba(255,107,43,.88));animation:nyx-founder-embers 7s linear infinite}
-      .nyx-founder-effect-bubbles .nyx-founder-profile-effect{display:block;opacity:.72;background-image:radial-gradient(circle,transparent 0 5px,rgba(255,255,255,.58) 6px 7px,transparent 8px),radial-gradient(circle,transparent 0 9px,color-mix(in srgb,var(--nyx-founder-accent-secondary,#8ea1ff) 72%,#fff) 10px 11px,transparent 12px),radial-gradient(circle,transparent 0 13px,rgba(213,243,255,.5) 14px 15px,transparent 16px);background-size:93px 131px,157px 191px,229px 271px;background-position:9px 120%,62px 135%,133px 150%;mix-blend-mode:screen;filter:drop-shadow(0 0 4px rgba(207,239,255,.55));animation:nyx-founder-bubbles 10s linear infinite}
-      @keyframes nyx-founder-name-gradient{0%,100%{background-position:0 50%}50%{background-position:100% 50%}}@keyframes nyx-founder-name-neon{0%,100%{filter:brightness(.9)}50%{filter:brightness(1.28)}}@keyframes nyx-founder-name-pop{0%,82%,100%{transform:translateY(0) scale(1)}88%{transform:translateY(-2px) scale(1.035)}93%{transform:translateY(0) scale(.985)}}@keyframes nyx-founder-sparkle{to{background-position:150px -150px,-193px -193px,221px -221px,-169px 169px,247px -247px}}@keyframes nyx-founder-aurora{50%{background-position:100% 0}}@keyframes nyx-founder-holographic{to{background-position:250% 0}}@keyframes nyx-founder-fireflies{50%{background-position:35px -54px;transform:translateY(-10px)}}@keyframes nyx-founder-cosmic-dust{to{background-position:0 0,127px -149px,-181px -167px,211px -193px,-157px 223px,239px -179px}}@keyframes nyx-founder-electric-storm{0%,16%,18%,55%,57%,100%{opacity:.08}17%,56%{opacity:.88}17.4%,56.4%{opacity:.28}17.8%,56.8%{opacity:.72}40%{background-position:-50% 90%,140% -20%}}@keyframes nyx-founder-meteor-shower{to{background-position:18% 260px,72% 320px,38% 300px}}@keyframes nyx-founder-cyber-grid{to{background-position:0 68px,68px 0,0 0}}@keyframes nyx-founder-plasma{to{transform:rotate(360deg) scale(1.06)}}@keyframes nyx-founder-snowfall{to{background-position:12px 650px,63px 620px,116px 590px}}@keyframes nyx-founder-embers{to{background-position:18px -280px,56px -370px,174px -450px}}@keyframes nyx-founder-bubbles{to{background-position:31px -290px,39px -390px,178px -510px}}@keyframes nyx-founder-decoration-orbit{to{transform:rotate(360deg)}}@keyframes nyx-founder-decoration-twinkle{0%,100%{opacity:.55;filter:brightness(.85)}50%{opacity:1;filter:brightness(1.35)}}@media(prefers-reduced-motion:reduce){.nyx-founder-profile-effect,.nyx-avatar-decoration,.nyx-styled-display-name{animation:none!important}}
+      .n7x-founder-profile-standard{position:relative!important;isolation:isolate!important;border-color:color-mix(in srgb,var(--n7x-founder-accent-primary,#8fb8ff) 66%,#4e5058)!important;background:linear-gradient(180deg,color-mix(in srgb,var(--n7x-founder-accent-primary,#8fb8ff) 78%,#1e1f22) 0%,color-mix(in srgb,var(--n7x-founder-accent-primary,#8fb8ff) 62%,#1e1f22) 54%,color-mix(in srgb,var(--n7x-founder-accent-secondary,#8ea1ff) 68%,#1e1f22) 100%)!important;box-shadow:0 16px 42px rgba(0,0,0,.32),inset 0 3px 0 var(--n7x-founder-accent-primary,#8fb8ff),inset 0 -3px 0 var(--n7x-founder-accent-secondary,#8ea1ff)!important}
+      .n7x-founder-profile-standard>*:not(.n7x-founder-profile-effect){position:relative;z-index:1}.n7x-founder-profile-effect{display:none;position:absolute!important;z-index:2!important;inset:0;overflow:hidden;pointer-events:none}
+      .n7x-founder-profile-standard .n7x-founder-banner{height:auto!important;aspect-ratio:17/6!important;background:var(--n7x-founder-banner-color,var(--n7x-founder-accent-secondary,#8ea1ff))!important}.n7x-founder-profile-standard .n7x-founder-banner img{object-fit:contain!important}
+      .n7x-founder-profile-standard .n7x-founder-profile-content{background:linear-gradient(180deg,color-mix(in srgb,#2b2d31 72%,var(--n7x-founder-accent-primary,#8fb8ff)) 0%,color-mix(in srgb,#2b2d31 80%,var(--n7x-founder-accent-primary,#8fb8ff)) 58%,color-mix(in srgb,#2b2d31 82%,var(--n7x-founder-accent-secondary,#8ea1ff)) 100%)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)!important}
+      .n7x-founder-profile-standard .n7x-founder-image-wrap{position:relative!important;overflow:visible!important;border-color:var(--n7x-founder-accent-primary,#8fb8ff)!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--n7x-founder-accent-secondary,#8ea1ff) 50%,transparent),0 8px 20px rgba(0,0,0,.3)!important}.n7x-founder-profile-standard .n7x-founder-status{z-index:5!important;border-color:color-mix(in srgb,var(--n7x-founder-accent-primary,#8fb8ff) 22%,#111827)!important}
+      .n7x-founder-profile-standard .n7x-avatar-decoration{display:none;position:absolute!important;z-index:3!important;inset:-16px;pointer-events:none;color:var(--n7x-founder-accent-primary,#8fb8ff);filter:drop-shadow(0 0 7px color-mix(in srgb,var(--n7x-founder-accent-secondary,#8ea1ff) 68%,transparent))}.n7x-founder-profile-standard .n7x-avatar-decoration::before,.n7x-founder-profile-standard .n7x-avatar-decoration::after,.n7x-founder-profile-standard .n7x-avatar-decoration>span{content:"";position:absolute;display:block;box-sizing:border-box}
+      .n7x-founder-profile-standard .nyx-avatar-decoration-starfall>.n7x-avatar-decoration{display:block;background:radial-gradient(circle at 15% 24%,#fff 0 2px,transparent 2.7px),radial-gradient(circle at 84% 18%,var(--n7x-founder-accent-secondary,#8ea1ff) 0 2.5px,transparent 3.2px),radial-gradient(circle at 90% 72%,#fff 0 1.8px,transparent 2.5px),radial-gradient(circle at 17% 81%,var(--n7x-founder-accent-primary,#8fb8ff) 0 2.3px,transparent 3px);animation:nyx-founder-decoration-twinkle 2.8s ease-in-out infinite}.n7x-founder-profile-standard .nyx-avatar-decoration-starfall>.n7x-avatar-decoration::before,.n7x-founder-profile-standard .nyx-avatar-decoration-starfall>.n7x-avatar-decoration::after{width:17px;height:17px;background:linear-gradient(135deg,#fff,var(--n7x-founder-accent-secondary,#8ea1ff));clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}.n7x-founder-profile-standard .nyx-avatar-decoration-starfall>.n7x-avatar-decoration::before{right:-1px;top:13px}.n7x-founder-profile-standard .nyx-avatar-decoration-starfall>.n7x-avatar-decoration::after{left:3px;bottom:9px;width:12px;height:12px}
+      .n7x-founder-profile-standard .nyx-avatar-decoration-orbit>.n7x-avatar-decoration{display:block;border:2px solid color-mix(in srgb,var(--n7x-founder-accent-primary,#8fb8ff) 72%,transparent);border-left-color:var(--n7x-founder-accent-secondary,#8ea1ff);border-right-color:var(--n7x-founder-accent-secondary,#8ea1ff);border-radius:50%;animation:nyx-founder-decoration-orbit 7s linear infinite}.n7x-founder-profile-standard .nyx-avatar-decoration-orbit>.n7x-avatar-decoration::before,.n7x-founder-profile-standard .nyx-avatar-decoration-orbit>.n7x-avatar-decoration::after{border-radius:50%;background:#fff;box-shadow:0 0 0 3px var(--n7x-founder-accent-primary,#8fb8ff),0 0 12px 5px color-mix(in srgb,var(--n7x-founder-accent-secondary,#8ea1ff) 72%,transparent)}.n7x-founder-profile-standard .nyx-avatar-decoration-orbit>.n7x-avatar-decoration::before{width:8px;height:8px;top:8px;right:11px}.n7x-founder-profile-standard .nyx-avatar-decoration-orbit>.n7x-avatar-decoration::after{width:6px;height:6px;left:8px;bottom:15px}
+      .n7x-founder-profile-standard .n7x-avatar-decoration-laurel>.n7x-avatar-decoration,.n7x-founder-profile-standard .n7x-avatar-decoration-neon-wings>.n7x-avatar-decoration{display:block}.n7x-founder-profile-standard .n7x-avatar-decoration-laurel>.n7x-avatar-decoration::before,.n7x-founder-profile-standard .n7x-avatar-decoration-laurel>.n7x-avatar-decoration::after{top:13px;width:35px;height:88px;border:7px dotted color-mix(in srgb,var(--n7x-founder-accent-secondary,#8ea1ff) 86%,#fff);border-top-color:transparent;border-bottom-color:transparent;border-radius:50%}.n7x-founder-profile-standard .n7x-avatar-decoration-laurel>.n7x-avatar-decoration::before{left:-5px;border-right:0;transform:rotate(-11deg)}.n7x-founder-profile-standard .n7x-avatar-decoration-laurel>.n7x-avatar-decoration::after{right:-5px;border-left:0;transform:rotate(11deg)}.n7x-founder-profile-standard .n7x-avatar-decoration-laurel>.n7x-avatar-decoration>span{left:50%;bottom:1px;width:16px;height:16px;background:linear-gradient(135deg,var(--n7x-founder-accent-primary,#8fb8ff),var(--n7x-founder-accent-secondary,#8ea1ff));clip-path:polygon(50% 0,61% 36%,100% 50%,61% 64%,50% 100%,39% 64%,0 50%,39% 36%);transform:translateX(-50%)}
+      .n7x-founder-profile-standard .n7x-avatar-decoration-neon-wings>.n7x-avatar-decoration::before,.n7x-founder-profile-standard .n7x-avatar-decoration-neon-wings>.n7x-avatar-decoration::after{top:23px;width:39px;height:72px;background:linear-gradient(160deg,#fff 0 5%,var(--n7x-founder-accent-secondary,#8ea1ff) 28%,var(--n7x-founder-accent-primary,#8fb8ff) 74%,transparent 75%);clip-path:polygon(100% 2%,65% 18%,33% 10%,50% 38%,0 31%,42% 60%,8% 71%,64% 80%,53% 100%,100% 72%)}.n7x-founder-profile-standard .n7x-avatar-decoration-neon-wings>.n7x-avatar-decoration::before{left:-24px}.n7x-founder-profile-standard .n7x-avatar-decoration-neon-wings>.n7x-avatar-decoration::after{right:-24px;transform:scaleX(-1)}
+      .n7x-founder-profile-standard .n7x-founder-handle{color:#c4c7ce!important}.n7x-founder-profile-standard .n7x-founder-role,.n7x-founder-profile-standard .n7x-founder-link,.n7x-founder-profile-standard .n7x-founder-about>strong{color:#f2f3f5!important}
+      .n7x-founder-profile-standard .n7x-founder-role-chip,.n7x-founder-profile-standard .n7x-founder-badge{border-color:color-mix(in srgb,var(--n7x-founder-accent-primary,#8fb8ff) 48%,transparent)!important;background:linear-gradient(120deg,color-mix(in srgb,var(--n7x-founder-accent-primary,#8fb8ff) 24%,#24252b),color-mix(in srgb,var(--n7x-founder-accent-secondary,#8ea1ff) 20%,#24252b))!important;color:#fff!important}.n7x-founder-role-owner{border-color:color-mix(in srgb,var(--n7x-founder-accent-primary,#8fb8ff) 78%,transparent)!important;background:color-mix(in srgb,var(--n7x-founder-accent-primary,#8fb8ff) 30%,#24252b)!important}
+      .n7x-founder-profile-standard .n7x-founder-about{border-color:rgba(255,255,255,.18)!important}.n7x-founder-profile-standard .n7x-founder-bio{color:#e5e7eb!important}
+      .n7x-styled-display-name{display:inline-block!important;color:var(--n7x-name-color-primary,#fff)!important;-webkit-text-fill-color:var(--n7x-name-color-primary,#fff)!important;line-height:1.14}.n7x-name-font-gg-sans{font-family:"Outfit","Segoe UI",Arial,sans-serif!important}.n7x-name-font-headline{font-family:"Arial Black","Franklin Gothic Heavy","Segoe UI",sans-serif!important;font-size:1.08em!important;font-weight:900!important;letter-spacing:-.035em}.n7x-name-font-rounded{font-family:"Arial Rounded MT Bold","Trebuchet MS","Segoe UI",sans-serif!important;font-size:1.06em!important;font-weight:900!important;letter-spacing:-.025em}.n7x-name-font-wide{font-family:"Arial Black","Trebuchet MS","Segoe UI",sans-serif!important;font-size:1.04em!important;font-weight:900!important;letter-spacing:.075em;text-transform:uppercase}.n7x-name-font-slab{font-family:Rockwell,"Roboto Slab","Palatino Linotype",Georgia,serif!important;font-size:1.06em!important;font-weight:900!important;letter-spacing:-.02em}.n7x-name-font-condensed{font-family:"Bahnschrift Condensed","Arial Narrow","Roboto Condensed",sans-serif!important;font-size:1.1em!important;font-stretch:condensed;font-weight:800!important;letter-spacing:.015em}.n7x-name-font-mono-block{font-family:"Cascadia Mono","Segoe UI Mono","Courier New",monospace!important;font-size:1.02em!important;font-weight:900!important;letter-spacing:-.055em}.n7x-name-font-tempo{font-family:Impact,"Arial Black",sans-serif!important;font-weight:500!important;letter-spacing:.02em}.n7x-name-font-sakura{font-family:"Segoe Script","Brush Script MT",cursive!important;font-weight:700!important}.n7x-name-font-jellybean{font-family:"Comic Sans MS","Trebuchet MS",cursive!important;font-weight:700!important}.n7x-name-font-modern{font-family:"Arial Narrow","Helvetica Neue",Arial,sans-serif!important;font-weight:800!important;letter-spacing:.07em;text-transform:uppercase}.n7x-name-font-medieval{font-family:"Palatino Linotype","Book Antiqua",Georgia,serif!important;font-weight:700!important;letter-spacing:.025em}.n7x-name-font-eight-bit{font-family:"Cascadia Mono","Courier New",monospace!important;font-weight:800!important;letter-spacing:-.06em;text-transform:uppercase}.n7x-name-font-vampyre{font-family:Copperplate,"Times New Roman",serif!important;font-weight:800!important;font-variant:small-caps;letter-spacing:.07em}.n7x-name-effect-solid{color:var(--n7x-name-color-primary,#fff)!important;-webkit-text-fill-color:var(--n7x-name-color-primary,#fff)!important}.n7x-name-effect-gradient,.n7x-name-effect-neon,.n7x-name-effect-pop{background:linear-gradient(105deg,var(--n7x-name-color-primary,#fff),var(--n7x-name-color-secondary,#8ea1ff),var(--n7x-name-color-primary,#fff));background-size:220% 100%;background-clip:text;-webkit-background-clip:text;color:transparent!important;-webkit-text-fill-color:transparent!important}.n7x-name-effect-gradient{animation:nyx-founder-name-gradient 5s ease-in-out infinite}.n7x-name-effect-neon{text-shadow:0 0 5px color-mix(in srgb,var(--n7x-name-color-primary,#fff) 88%,transparent),0 0 12px color-mix(in srgb,var(--n7x-name-color-secondary,#8ea1ff) 78%,transparent);animation:nyx-founder-name-neon 2.4s ease-in-out infinite}.n7x-name-effect-toon{color:var(--n7x-name-color-primary,#fff)!important;-webkit-text-fill-color:var(--n7x-name-color-primary,#fff)!important;-webkit-text-stroke:1px color-mix(in srgb,var(--n7x-name-color-secondary,#8ea1ff) 76%,#17181b);text-shadow:2px 2px 0 var(--n7x-name-color-secondary,#8ea1ff),3px 3px 0 rgba(0,0,0,.42)}.n7x-name-effect-pop{filter:drop-shadow(0 2px 0 color-mix(in srgb,var(--n7x-name-color-secondary,#8ea1ff) 72%,#111));animation:nyx-founder-name-gradient 4.6s linear infinite,nyx-founder-name-pop 2.8s ease-in-out infinite;transform-origin:center bottom}
+      .nyx-founder-effect-glow{box-shadow:0 0 34px color-mix(in srgb,var(--n7x-founder-accent-secondary,#8ea1ff) 64%,transparent),0 16px 42px rgba(0,0,0,.32)!important}
+      .nyx-founder-effect-sparkle .n7x-founder-profile-effect{display:block;background-image:radial-gradient(circle at 12% 18%,#fff 0 1.7px,transparent 2.5px),radial-gradient(circle at 42% 43%,#fff 0 1.1px,transparent 2.1px),radial-gradient(circle at 78% 22%,#fff 0 1.8px,transparent 2.7px),radial-gradient(circle at 88% 72%,#fff 0 1.2px,transparent 2.2px),radial-gradient(circle at 24% 84%,#fff 0 1.3px,transparent 2.3px);background-size:150px 150px,193px 193px,221px 221px,169px 169px,247px 247px;filter:drop-shadow(0 0 5px rgba(255,255,255,.8));animation:nyx-founder-sparkle 6s linear infinite}
+      .nyx-founder-effect-aurora .n7x-founder-profile-effect{display:block;opacity:.65;background:linear-gradient(118deg,transparent 15%,color-mix(in srgb,var(--n7x-founder-accent-primary,#8fb8ff) 64%,transparent) 35%,transparent 49%,color-mix(in srgb,var(--n7x-founder-accent-secondary,#8ea1ff) 68%,transparent) 67%,transparent 85%);background-size:220% 100%;mix-blend-mode:screen;animation:nyx-founder-aurora 8s ease-in-out infinite}
+      .nyx-founder-effect-holographic .n7x-founder-profile-effect{display:block;opacity:.6;background:linear-gradient(112deg,transparent 12%,rgba(255,111,211,.38) 29%,rgba(100,219,255,.42) 43%,rgba(242,255,150,.36) 56%,rgba(172,130,255,.43) 69%,transparent 86%);background-size:250% 100%;mix-blend-mode:screen;animation:nyx-founder-holographic 5.6s linear infinite}
+      .nyx-founder-effect-fireflies .n7x-founder-profile-effect{display:block;background-image:radial-gradient(circle at 12% 77%,#fff8af 0 2px,transparent 4px),radial-gradient(circle at 31% 31%,#fff7a1 0 1.5px,transparent 3.5px),radial-gradient(circle at 53% 67%,#fff8b8 0 2px,transparent 4px),radial-gradient(circle at 76% 42%,#fff6a2 0 1.6px,transparent 3.5px),radial-gradient(circle at 91% 80%,#fff8b4 0 2px,transparent 4px);background-size:230px 250px;filter:drop-shadow(0 0 7px rgba(255,238,133,.9));animation:nyx-founder-fireflies 7s ease-in-out infinite}
+      .nyx-founder-effect-cosmic-dust .n7x-founder-profile-effect{display:block;opacity:.88;background-image:radial-gradient(ellipse at 24% 38%,color-mix(in srgb,var(--n7x-founder-accent-secondary,#8ea1ff) 34%,transparent) 0,transparent 42%),radial-gradient(circle at 8% 22%,#fff 0 1.5px,transparent 2.7px),radial-gradient(circle at 72% 12%,#c7e5ff 0 1.8px,transparent 3px),radial-gradient(circle at 42% 68%,#f0c4ff 0 2px,transparent 3.4px),radial-gradient(circle at 88% 81%,#fff 0 1.2px,transparent 2.6px),radial-gradient(circle at 30% 87%,#aee8ff 0 1px,transparent 2.3px);background-size:100% 100%,127px 149px,181px 167px,211px 193px,157px 223px,239px 179px;mix-blend-mode:screen;filter:drop-shadow(0 0 5px rgba(197,226,255,.8));animation:nyx-founder-cosmic-dust 14s linear infinite}
+      .nyx-founder-effect-electric-storm .n7x-founder-profile-effect{display:block;opacity:.1;background-image:linear-gradient(118deg,transparent 0 41%,rgba(255,255,255,.95) 42% 42.8%,color-mix(in srgb,var(--n7x-founder-accent-secondary,#8ea1ff) 88%,#fff) 43% 44%,transparent 45% 100%),linear-gradient(63deg,transparent 0 58%,rgba(255,255,255,.88) 59% 59.6%,color-mix(in srgb,var(--n7x-founder-accent-primary,#5865f2) 84%,#fff) 60% 61%,transparent 62% 100%);background-size:170% 190%,210% 170%;background-position:120% -40%,-80% 130%;mix-blend-mode:screen;filter:drop-shadow(0 0 8px rgba(174,213,255,.95));animation:nyx-founder-electric-storm 4.2s steps(1,end) infinite}
+      .nyx-founder-effect-meteor-shower .n7x-founder-profile-effect{display:block;opacity:.92;background:radial-gradient(circle,rgba(255,255,255,.95) 0 1.2px,transparent 2px) 18% -12%/109px 127px,radial-gradient(circle,color-mix(in srgb,var(--n7x-founder-accent-secondary,#8ea1ff) 74%,#fff) 0 1px,transparent 2px) 72% -28%/157px 173px,radial-gradient(circle,rgba(214,231,255,.78) 0 .9px,transparent 1.8px) 38% 4%/197px 149px;filter:drop-shadow(0 0 3px color-mix(in srgb,var(--n7x-founder-accent-secondary,#8ea1ff) 45%,transparent));animation:nyx-founder-meteor-shower 9s linear infinite}
+      .nyx-founder-effect-cyber-grid .n7x-founder-profile-effect{display:block;opacity:.52;background-image:linear-gradient(color-mix(in srgb,var(--n7x-founder-accent-secondary,#8ea1ff) 76%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--n7x-founder-accent-primary,#5865f2) 72%,transparent) 1px,transparent 1px),linear-gradient(180deg,transparent 30%,color-mix(in srgb,var(--n7x-founder-accent-secondary,#8ea1ff) 18%,transparent) 100%);background-size:34px 34px,34px 34px,100% 100%;-webkit-mask-image:linear-gradient(to bottom,transparent 2%,#000 31%,#000 100%);mask-image:linear-gradient(to bottom,transparent 2%,#000 31%,#000 100%);filter:drop-shadow(0 0 4px color-mix(in srgb,var(--n7x-founder-accent-secondary,#8ea1ff) 70%,transparent));animation:nyx-founder-cyber-grid 4.5s linear infinite}
+      .nyx-founder-effect-plasma .n7x-founder-profile-effect{display:block;inset:-28%!important;opacity:.4;background:conic-gradient(from 0deg at 50% 50%,transparent 0 8%,var(--n7x-founder-accent-secondary,#8ea1ff) 20%,transparent 34%,var(--n7x-founder-accent-primary,#5865f2) 50%,transparent 66%,#df7cff 79%,transparent 94%);mix-blend-mode:screen;filter:blur(28px) saturate(1.45);animation:nyx-founder-plasma 9s linear infinite}
+      .nyx-founder-effect-snowfall .n7x-founder-profile-effect{display:block;opacity:.84;background-image:radial-gradient(circle,#fff 0 2px,transparent 2.8px),radial-gradient(circle,#dceeff 0 1.3px,transparent 2.2px),radial-gradient(circle,#fff 0 2.6px,transparent 3.4px);background-size:83px 109px,137px 157px,191px 227px;background-position:12px -130px,63px -180px,116px -260px;filter:drop-shadow(0 0 3px rgba(222,241,255,.9));animation:nyx-founder-snowfall 8.5s linear infinite}
+      .nyx-founder-effect-embers .n7x-founder-profile-effect{display:block;opacity:.9;background-image:radial-gradient(circle,#fff2ad 0 1.4px,#ff8a3d 1.7px 2.8px,transparent 4px),radial-gradient(circle,#ffd166 0 1px,#ff5c35 1.4px 2.5px,transparent 3.8px),radial-gradient(circle,#fff0ac 0 1.2px,#ff6a2b 1.6px 2.8px,transparent 4px);background-size:109px 173px,157px 211px,223px 263px;background-position:7px 100%,73px 118%,151px 110%;mix-blend-mode:screen;filter:drop-shadow(0 0 5px rgba(255,107,43,.88));animation:nyx-founder-embers 7s linear infinite}
+      .nyx-founder-effect-bubbles .n7x-founder-profile-effect{display:block;opacity:.72;background-image:radial-gradient(circle,transparent 0 5px,rgba(255,255,255,.58) 6px 7px,transparent 8px),radial-gradient(circle,transparent 0 9px,color-mix(in srgb,var(--n7x-founder-accent-secondary,#8ea1ff) 72%,#fff) 10px 11px,transparent 12px),radial-gradient(circle,transparent 0 13px,rgba(213,243,255,.5) 14px 15px,transparent 16px);background-size:93px 131px,157px 191px,229px 271px;background-position:9px 120%,62px 135%,133px 150%;mix-blend-mode:screen;filter:drop-shadow(0 0 4px rgba(207,239,255,.55));animation:nyx-founder-bubbles 10s linear infinite}
+      @keyframes nyx-founder-name-gradient{0%,100%{background-position:0 50%}50%{background-position:100% 50%}}@keyframes nyx-founder-name-neon{0%,100%{filter:brightness(.9)}50%{filter:brightness(1.28)}}@keyframes nyx-founder-name-pop{0%,82%,100%{transform:translateY(0) scale(1)}88%{transform:translateY(-2px) scale(1.035)}93%{transform:translateY(0) scale(.985)}}@keyframes nyx-founder-sparkle{to{background-position:150px -150px,-193px -193px,221px -221px,-169px 169px,247px -247px}}@keyframes nyx-founder-aurora{50%{background-position:100% 0}}@keyframes nyx-founder-holographic{to{background-position:250% 0}}@keyframes nyx-founder-fireflies{50%{background-position:35px -54px;transform:translateY(-10px)}}@keyframes nyx-founder-cosmic-dust{to{background-position:0 0,127px -149px,-181px -167px,211px -193px,-157px 223px,239px -179px}}@keyframes nyx-founder-electric-storm{0%,16%,18%,55%,57%,100%{opacity:.08}17%,56%{opacity:.88}17.4%,56.4%{opacity:.28}17.8%,56.8%{opacity:.72}40%{background-position:-50% 90%,140% -20%}}@keyframes nyx-founder-meteor-shower{to{background-position:18% 260px,72% 320px,38% 300px}}@keyframes nyx-founder-cyber-grid{to{background-position:0 68px,68px 0,0 0}}@keyframes nyx-founder-plasma{to{transform:rotate(360deg) scale(1.06)}}@keyframes nyx-founder-snowfall{to{background-position:12px 650px,63px 620px,116px 590px}}@keyframes nyx-founder-embers{to{background-position:18px -280px,56px -370px,174px -450px}}@keyframes nyx-founder-bubbles{to{background-position:31px -290px,39px -390px,178px -510px}}@keyframes nyx-founder-decoration-orbit{to{transform:rotate(360deg)}}@keyframes nyx-founder-decoration-twinkle{0%,100%{opacity:.55;filter:brightness(.85)}50%{opacity:1;filter:brightness(1.35)}}@media(prefers-reduced-motion:reduce){.n7x-founder-profile-effect,.n7x-avatar-decoration,.n7x-styled-display-name{animation:none!important}}
     `;
-    const terminalPageScript=`(()=>{const output=document.querySelector('[data-nyx-terminal-output]');const input=document.querySelector('[data-nyx-terminal-input]');const write=(text,type='')=>{const row=document.createElement('div');row.className='nyx-terminal-line'+(type?' '+type:'');row.textContent=String(text);output.appendChild(row);output.scrollTop=output.scrollHeight};const run=raw=>{const command=String(raw||'').trim();if(!command)return;write('nyx> '+command,'command');const name=command.toLowerCase();if(name==='clear'){output.textContent='';return}if(name==='help'){write('Commands: help, status, theme, origin, storage, date, clear');return}if(name==='status'){write('N7X is '+(navigator.onLine?'online':'offline')+' · '+(navigator.platform||'browser'));return}if(name==='theme'){write('Theme: '+(document.body.className.match(/theme-([^ ]+)/)?.[1]||'default'));return}if(name==='origin'){write('Origin: '+parent.location.origin);return}if(name==='storage'){write('Local settings entries: '+localStorage.length);return}if(name==='date'){write(new Date().toLocaleString());return}write('Unknown command: '+command+'. Type "help" for the command list.','error')};write('N7X Developer Console');write('Type "help" to list commands. Browser DevTools cannot be opened by a webpage.');document.querySelector('[data-nyx-terminal-form]')?.addEventListener('submit',event=>{event.preventDefault();run(input?.value);if(input)input.value=''});setTimeout(()=>input?.focus(),50)})();`;
+    const terminalPageScript=`(()=>{const output=document.querySelector('[data-n7x-terminal-output]');const input=document.querySelector('[data-n7x-terminal-input]');const write=(text,type='')=>{const row=document.createElement('div');row.className='n7x-terminal-line'+(type?' '+type:'');row.textContent=String(text);output.appendChild(row);output.scrollTop=output.scrollHeight};const run=raw=>{const command=String(raw||'').trim();if(!command)return;write('nyx> '+command,'command');const name=command.toLowerCase();if(name==='clear'){output.textContent='';return}if(name==='help'){write('Commands: help, status, theme, origin, storage, date, clear');return}if(name==='status'){write('N7X is '+(navigator.onLine?'online':'offline')+' · '+(navigator.platform||'browser'));return}if(name==='theme'){write('Theme: '+(document.body.className.match(/theme-([^ ]+)/)?.[1]||'default'));return}if(name==='origin'){write('Origin: '+parent.location.origin);return}if(name==='storage'){write('Local settings entries: '+localStorage.length);return}if(name==='date'){write(new Date().toLocaleString());return}write('Unknown command: '+command+'. Type "help" for the command list.','error')};write('N7X Developer Console');write('Type "help" to list commands. Browser DevTools cannot be opened by a webpage.');document.querySelector('[data-n7x-terminal-form]')?.addEventListener('submit',event=>{event.preventDefault();run(input?.value);if(input)input.value=''});setTimeout(()=>input?.focus(),50)})();`;
     const pages={
-      apps:{title:'Apps',body:`<style>html,body,.apps-shell-page{background:transparent!important;background-image:none!important}</style><section class="shell-page apps-shell-page"><h1>Apps</h1><p>Everything in Nyx.</p><div class="quick-grid apps-launch-grid" data-nyx-global-app-grid>${quickTiles()}</div></section>`},
+      apps:{title:'Apps',body:`<style>html,body,.apps-shell-page{background:transparent!important;background-image:none!important}</style><section class="shell-page apps-shell-page"><h1>Apps</h1><p>Everything in N7X.</p><div class="quick-grid apps-launch-grid" data-n7x-global-app-grid>${quickTiles()}</div></section>`},
       links:{title:'Bookmarks',body:`<section class="shell-page"><h1>Bookmarks</h1><p>Common links.</p><div class="quick-grid"><button class="quick-tile" data-url="https://www.google.com/"><img class="quick-icon" alt="" src="${appIcon('google.com')}"><span>Google</span></button><button class="quick-tile" data-url="https://duckduckgo.com/"><img class="quick-icon" alt="" src="${appIcon('duckduckgo.com')}"><span>DuckDuckGo</span></button><button class="quick-tile" data-url="https://docs.google.com/"><img class="quick-icon" alt="" src="${appIcon('docs.google.com')}"><span>Docs</span></button></div></section>`},
       terms:{title:'Terms Of Service',style:utilityPageStyle,body:nyxTermsPageMarkup()},
       about:{title:"About N7X",style:utilityPageStyle+nyxCreditsPresentationStyle+nyxCreditsOwnerImageStyle,script:nyxCreditsLinkScript,body:nyxCreditsPageMarkup()},
@@ -6044,15 +6046,15 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return true;
   }
   function applyGlassInternalTheme(frame){
-    if(!frame || frame.dataset.nyxGlassThemePending==='true')return;
-    frame.dataset.nyxGlassThemePending='true';
+    if(!frame || frame.dataset.n7xGlassThemePending==='true')return;
+    frame.dataset.n7xGlassThemePending='true';
     frame.addEventListener('load',()=>{
-      delete frame.dataset.nyxGlassThemePending;
+      delete frame.dataset.n7xGlassThemePending;
       const doc=frame.contentDocument;
       if(!doc?.head)return;
-      doc.documentElement.dataset.nyxAppearance=store.text('nyx.appearance','dark');
-      doc.documentElement.dataset.nyxTheme=normalizeNyxTheme(store.text('nyx.theme','default'));
-      doc.documentElement.style.setProperty('--nyx-custom-base',nyxCustomThemePalette().base);
+      doc.documentElement.dataset.n7xAppearance=store.text('nyx.appearance','dark');
+      doc.documentElement.dataset.n7xTheme=normalizeNyxTheme(store.text('nyx.theme','default'));
+      doc.documentElement.style.setProperty('--n7x-custom-base',nyxCustomThemePalette().base);
       if(!doc.querySelector('link[href*="/apps/obsidian.css"]')){
         const link=doc.createElement('link');link.rel='stylesheet';link.href='/apps/obsidian.css?v=20261001-halloween-v3';doc.head.appendChild(link);
       }
@@ -6126,8 +6128,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     document.body.classList.toggle('performance-lite',lite);
     store.set('nyx.lagReducer',low);
     store.set('nyx.performanceLite',tier==='medium');
-    qsa('[data-nyx-performance-tier]').forEach(button=>{
-      const active=button.dataset.nyxPerformanceTier===tier;
+    qsa('[data-n7x-performance-tier]').forEach(button=>{
+      const active=button.dataset.n7xPerformanceTier===tier;
       button.classList.toggle('is-active',active);
       button.classList.toggle('on',active);
       button.setAttribute('aria-pressed',String(active));
@@ -6282,13 +6284,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const root=document.documentElement;
     const names=['base','canvas','top','field','panel','line','accent','bright','text','muted','dot','constellation-dot'];
     if(theme!=='custom'){
-      names.forEach(name=>root.style.removeProperty('--nyx-custom-'+name));
-      root.style.removeProperty('--nyx-custom-logo-filter');
+      names.forEach(name=>root.style.removeProperty('--n7x-custom-'+name));
+      root.style.removeProperty('--n7x-custom-logo-filter');
       return;
     }
     const palette=nyxCustomThemePalette();
-    names.forEach(name=>root.style.setProperty('--nyx-custom-'+name,palette[name]));
-    root.style.setProperty('--nyx-custom-logo-filter',nyxThemeLogoFilter(palette.bright));
+    names.forEach(name=>root.style.setProperty('--n7x-custom-'+name,palette[name]));
+    root.style.setProperty('--n7x-custom-logo-filter',nyxThemeLogoFilter(palette.bright));
   }
   function applyCustomThemeColor(value){
     const color=nyxThemeHex(value);
@@ -6301,10 +6303,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   function syncCustomThemeMaker(root=document,color=nyxThemeHex(store.text('nyx.customThemeColor',nyxCustomThemeDefaults.base))){
     root.querySelectorAll?.('[data-custom-theme-color],[data-custom-theme-hex]')?.forEach(input=>{input.value=color});
-    root.querySelectorAll?.('[data-custom-theme-swatch]')?.forEach(swatch=>swatch.style.setProperty('--nyx-swatch',color));
+    root.querySelectorAll?.('[data-custom-theme-swatch]')?.forEach(swatch=>swatch.style.setProperty('--n7x-swatch',color));
   }
   function syncHomeDotFieldVisibility(){
-    qsa('.nyx-home-dot-field').forEach(canvas=>canvas.remove());
+    qsa('.n7x-home-dot-field').forEach(canvas=>canvas.remove());
   }
   function shouldShowDefaultVanta(){
     const theme=store.text('nyx.theme','default');
@@ -6504,9 +6506,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     syncNyxWaveBackground();
   }
   function syncNyxWaveBackground(){
-    const wave=$('nyxWaveBg');
+    const wave=$('n7xWaveBg');
     if(!wave) return;
-    const active=!document.documentElement.dataset.nyxBeamWallpaper && !threeDBackgroundsEnabled() && !store.get('nyx.lagReducer',false) && !document.body.classList.contains('browser-content-active') && !document.body.classList.contains('custom-bg-active');
+    const active=!document.documentElement.dataset.n7xBeamWallpaper && !threeDBackgroundsEnabled() && !store.get('nyx.lagReducer',false) && !document.body.classList.contains('browser-content-active') && !document.body.classList.contains('custom-bg-active');
     const notify=()=>{
       try{wave.contentWindow?.postMessage({type:'nyx-wave-active',active},location.origin)}catch{}
     };
@@ -6558,8 +6560,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(store.text('nyx.theme','default')!==theme) store.setText('nyx.theme',theme);
     document.body.classList.remove(...nyxThemeClasses);
     document.body.classList.add('theme-'+theme);
-    document.body.dataset.nyxTheme=theme;
-    document.documentElement.dataset.nyxTheme=theme;
+    document.body.dataset.n7xTheme=theme;
+    document.documentElement.dataset.n7xTheme=theme;
     document.documentElement.style.colorScheme='dark';
     qsa('#userGreeting').forEach(el=>{
       if(theme==='fresh'){
@@ -6576,8 +6578,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     applyNyxLogoTheme(theme);
     ensureFreshThemeOptions();
     qsa('[data-theme-value]').forEach(el=>{el.value=theme});
-    qsa('[data-nyx-theme-card]').forEach(card=>{
-      const selected=card.dataset.nyxThemeCard===theme;
+    qsa('[data-n7x-theme-card]').forEach(card=>{
+      const selected=card.dataset.n7xThemeCard===theme;
       card.classList.toggle('selected',selected);
       card.setAttribute('aria-pressed',String(selected));
     });
@@ -6588,8 +6590,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function applyHomeDesignSetting(){
     const homeDesign='redesigned';
     if(store.text('nyx.homeDesign','redesigned')!==homeDesign) store.setText('nyx.homeDesign',homeDesign);
-    document.documentElement.dataset.nyxHomeDesign=homeDesign;
-    document.body.dataset.nyxHomeDesign=homeDesign;
+    document.documentElement.dataset.n7xHomeDesign=homeDesign;
+    document.body.dataset.n7xHomeDesign=homeDesign;
     ['nyxHomepageMinimalStyles','nyxBrowserMicrointeractionsStyles'].forEach(id=>{
       const stylesheet=document.getElementById(id);
       if(stylesheet) stylesheet.disabled=false;
@@ -6609,15 +6611,15 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         frame.classList.add('transparent-internal-page');
         frame.setAttribute('allowtransparency','true');
         frame.style.backgroundColor='transparent';
-        doc.documentElement.classList.add('nyx-embedded-built-in');
-        doc.body.classList.add('nyx-embedded-built-in');
+        doc.documentElement.classList.add('n7x-embedded-built-in');
+        doc.body.classList.add('n7x-embedded-built-in');
         doc.body.classList.remove(...nyxThemeClasses);
         doc.body.classList.add('theme-'+clean);
-        doc.body.dataset.nyxTheme=clean;
-        doc.documentElement.dataset.nyxTheme=clean;
-        if(clean==='custom') doc.documentElement.style.setProperty('--nyx-custom-base',nyxCustomThemePalette().base);
-        else doc.documentElement.style.removeProperty('--nyx-custom-base');
-        doc.documentElement.dataset.nyxAppearance=store.text('nyx.appearance','dark');
+        doc.body.dataset.n7xTheme=clean;
+        doc.documentElement.dataset.n7xTheme=clean;
+        if(clean==='custom') doc.documentElement.style.setProperty('--n7x-custom-base',nyxCustomThemePalette().base);
+        else doc.documentElement.style.removeProperty('--n7x-custom-base');
+        doc.documentElement.dataset.n7xAppearance=store.text('nyx.appearance','dark');
         ensureFreshThemeOptions(doc);
         doc.querySelectorAll('[data-theme-value]').forEach(el=>{el.value=clean});
       }catch{}
@@ -6703,9 +6705,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function applyUserSettings(){
     document.body.classList.toggle('three-d-backgrounds',store.get('nyx.threeDBackgrounds',false));
     applyNyxBeamWallpaper();
-    document.body.classList.toggle('nyx-home-hide-search',!store.get('nyx.homeShowSearch',true));
-    document.body.classList.toggle('nyx-home-hide-quick-actions',!store.get('nyx.homeShowQuickActions',true));
-    document.body.classList.add('nyx-home-hide-constellations');
+    document.body.classList.toggle('n7x-home-hide-search',!store.get('nyx.homeShowSearch',true));
+    document.body.classList.toggle('n7x-home-hide-quick-actions',!store.get('nyx.homeShowQuickActions',true));
+    document.body.classList.add('n7x-home-hide-constellations');
     applyNyxSidebarLocation();
     applyLagReducerSetting();
     applyBrowserShellMode();
@@ -6737,7 +6739,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     document.documentElement.style.setProperty('--bg-enhanced-render',normalizeBgValue(value));
     document.documentElement.style.setProperty('--browser-bg-render',normalizeBgValue(currentBrowserBackgroundValue()));
     syncBackgroundPreview(value);
-    updateWeatherContrast(value);
+    
     store.set('nyx.backgroundEnhancer',false);
     const enhance=false;
     document.body.classList.remove('bg-enhanced');
@@ -6956,57 +6958,6 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       done('', 'Background link could not be loaded');
     };
     img.src=candidates[index] || src;
-  }
-  function setWeatherContrast(lightBackground){
-    const root=document.documentElement;
-    if(lightBackground){
-      root.style.setProperty('--weather-text','#0f172a');
-      root.style.setProperty('--weather-muted','#334155');
-      root.style.setProperty('--weather-control','rgba(15,23,42,.14)');
-      root.style.setProperty('--weather-control-border','rgba(15,23,42,.16)');
-      root.style.setProperty('--weather-shadow','0 1px 10px rgba(255,255,255,.34)');
-    }else{
-      root.style.setProperty('--weather-text','#f8fafc');
-      root.style.setProperty('--weather-muted','#dbeafe');
-      root.style.setProperty('--weather-control','rgba(0,0,0,.28)');
-      root.style.setProperty('--weather-control-border','rgba(255,255,255,.16)');
-      root.style.setProperty('--weather-shadow','0 1px 12px rgba(0,0,0,.36)');
-    }
-  }
-  function updateWeatherContrast(value){
-    const cssValue=normalizeBgValue(value || bgPresets.dragon);
-    const src=bgSrc(cssValue);
-    if(!src || cssValue.startsWith('linear-gradient')){setWeatherContrast(false); return}
-    const img=new Image();
-    const maskCandidates=imageCandidates(src);
-    let maskIndex=0;
-    img.crossOrigin='anonymous';
-    img.referrerPolicy='no-referrer';
-    img.onload=()=>{
-      try{
-        const w=360, h=210;
-        const canvas=document.createElement('canvas');
-        canvas.width=w;
-        canvas.height=h;
-        const ctx=canvas.getContext('2d',{willReadFrequently:true});
-        if(!ctx) return;
-        const scale=Math.max(w/img.naturalWidth,h/img.naturalHeight);
-        const drawW=img.naturalWidth*scale;
-        const drawH=img.naturalHeight*scale;
-        ctx.drawImage(img,(w-drawW)/2,(h-drawH)/2,drawW,drawH);
-        const sample=ctx.getImageData(Math.floor(w*.72),0,Math.floor(w*.28),Math.floor(h*.46)).data;
-        let total=0, count=0;
-        for(let i=0;i<sample.length;i+=16){
-          total+=.2126*sample[i] + .7152*sample[i+1] + .0722*sample[i+2];
-          count++;
-        }
-        setWeatherContrast(count ? total/count > 150 : false);
-      }catch{
-        setWeatherContrast(false);
-      }
-    };
-    img.onerror=()=>setWeatherContrast(false);
-    img.src=src;
   }
   function applyBackgroundValue(value, allowFallback=true){
     const cssValue=normalizeBgValue(value || bgPresets.dragon);
@@ -7235,7 +7186,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       ))],
       ['Checking servers',async()=>doubleCheck(async()=>(
         location.protocol==='file:'
-        || await Promise.all(['/uv/uv.bundle.js','/scramjet/scramjet.js','/baremux/index.mjs'].map(path=>fetchOk(path,900)))
+        || await Promise.all(['/scramjet/scramjet.js','/baremux/index.mjs'].map(path=>fetchOk(path,900)))
           .then(results=>results.some(Boolean))
       ))],
       ['Checking browser engine',async()=>doubleCheck(async()=>Boolean(window.fetch && window.Promise && window.URL && window.Blob))],
@@ -7290,8 +7241,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(nyxStartupOpened) return;
     nyxStartupOpened=true;
     applyThemeSetting();
-    document.body.classList.add('nyx-startup-prep');
-    document.querySelectorAll('.nyx-preflight').forEach(overlay=>overlay.remove());
+    document.body.classList.add('n7x-startup-prep');
+    document.querySelectorAll('.n7x-preflight').forEach(overlay=>overlay.remove());
     document.body.classList.add('runtime-lag-guard');
     const startupProgress=showSetupLaunchSplash();
     setTimeout(async()=>{
@@ -7341,7 +7292,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         applyVisualEffectSetting();
         document.body.classList.remove('runtime-lag-guard');
         if(shouldShowStartupCustomization()){
-          document.body.classList.remove('nyx-startup-prep');
+          document.body.classList.remove('n7x-startup-prep');
           suppressHomeEntranceOnStartup=false;
           showSetup();
         }else{
@@ -7419,7 +7370,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     mode=normalizeBrowserModeName(mode);
     const target=proxyTargetUrl(url);
     if(!target) return url;
-    if(mode==='ultraviolet') return nativeUvUrl(target,privacySessionId) || target;
+    {}
     if(mode==='scramjet') return scramjetUrl(target) || target;
     return url;
   }
@@ -7521,7 +7472,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       try{value=JSON.parse(value)}catch{value=value.slice(1,-1)}
     }
     value=String(value || 'auto').trim().toLowerCase().replace(atob('c2NyYW1qZXQ='),'scramjet').replace('studyjet','scramjet');
-    if(value==='uv' || value==='ultra' || value==='ultraviolet' || value==='stemconnect' || value==='stem-connect') return 'ultraviolet';
+    if(value==='uv' || value==='ultra' || value==='ultraviolet' || value==='stemconnect' || value==='stem-connect') return 'scramjet';
     if(value==='sj' || value==='scram' || value==='scramjet' || value==='scramjet-v2' || value==='sjv2') return 'scramjet';
     if(value==='scramjet-v1' || value==='sjv1' || value==='scram-v1') return 'scramjet';
     if(value==='rh' || value==='rammerhead') return 'rammerhead';
@@ -7615,15 +7566,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       return parsed.href;
     }catch{return url}
   }
-  function nativeUvUrl(url,privacySessionId=''){
-    const target=proxyTargetUrl(url);
-    if(!target) return '';
-    const config=window.__uv$config;
-    if(!config || typeof config.encodeUrl!=='function' || !config.prefix) return '';
-    const session=/^nyx_[a-z0-9_-]{12,80}$/i.test(String(privacySessionId || '')) ? String(privacySessionId) : '';
-    const prefix=session ? `/service/${session}/` : config.prefix;
-    return prefix + config.encodeUrl(target);
-  }
+
   function scramjetUrl(url){
     const target=proxyTargetUrl(url);
     if(!target || !scramjetController?.prefix) return '';
@@ -7716,7 +7659,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return endpoint.href;
   }
   function defaultWispUrl(){
-    const configured=String(globalThis.__NYX_RUNTIME_CONFIG__?.wispUrl || '').trim();
+    const configured=String(globalThis.english_RUNTIME_CONFIG?.wispUrl || '').trim();
     if(/^wss?:\/\//i.test(configured)) return configured.endsWith('/') ? configured : configured+'/';
     if(!hasHostedBackend()) return 'wss://wisp.mercurywork.shop/';
     const protocol=location.protocol==='https:' ? 'wss:' : 'ws:';
@@ -7733,7 +7676,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   }
   function configuredWispUrls(){
     if(store.get('nyx.httpBridge',true))return [browserHttpRelayUrl()];
-    const extras=globalThis.__NYX_RUNTIME_CONFIG__?.wispUrls;
+    const extras=globalThis.english_RUNTIME_CONFIG?.wispUrls;
     const urls=[...new Set([defaultWispUrl(),...(Array.isArray(extras)?extras:[])].map(value=>{
       try{return normalizeWispUrl(value)}catch{return ''}
     }).filter(url=>url&&url!==browserHttpRelayUrl()))];
@@ -7762,7 +7705,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     scramjetTransport=null;
     scramjetTransportPending=null;
     scramjetTransportKey='';
-    uvInstallPromise=null;
+
     if(reloadActive && /^https?:\/\//i.test(activeSource)) setTimeout(()=>activeBrowser?.navigate?.(activeSource),0);
   }
   function saveBrowserWispUrl(root,reset=false){
@@ -7829,13 +7772,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const link=document.createElement('a');
     const date=new Date().toISOString().slice(0,10);
     link.href=url;
-    link.download=`nyx-data-${date}.json`;
+    link.download=`n7x-data-${date}.json`;
     document.body.appendChild(link);
     link.click();
     link.remove();
     setTimeout(()=>URL.revokeObjectURL(url),1000);
     const count=Object.keys(storage).length;
-    const status=root?.querySelector('[data-nyx-data-transfer-status]');
+    const status=root?.querySelector('[data-n7x-data-transfer-status]');
     if(status) status.textContent=`Exported ${count} safe data ${count===1?'entry':'entries'} from ${location.hostname}.`;
     toast(`Exported ${count} N7X data ${count===1?'entry':'entries'}`);
     return payload;
@@ -7871,9 +7814,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
     applyUserSettings();
     queueNyxCloudPreferencesSave();
-    const status=root?.querySelector('[data-nyx-data-transfer-status]');
+    const status=root?.querySelector('[data-n7x-data-transfer-status]');
     if(status) status.textContent=`Imported ${entries.length} data ${entries.length===1?'entry':'entries'}. Reload N7X to finish applying the backup.`;
-    const reload=root?.querySelector('[data-nyx-data-reload]');
+    const reload=root?.querySelector('[data-n7x-data-reload]');
     if(reload) reload.hidden=false;
     toast(`Imported ${entries.length} N7X data ${entries.length===1?'entry':'entries'}`);
     return true;
@@ -7882,7 +7825,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(hasHostedBackend()){
       try{return new URL('/api/presence',location.origin).href}catch{}
     }
-    const configured=String(globalThis.__NYX_RUNTIME_CONFIG__?.presenceUrl||'').trim();
+    const configured=String(globalThis.english_RUNTIME_CONFIG?.presenceUrl||'').trim();
     if(configured){
       try{
         const endpoint=new URL(configured,location.href);
@@ -7901,9 +7844,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function renderNyxPresence(count=nyxPresenceCount,state='connecting'){
     const pendingLabel=state==='unavailable' ? 'Unavailable' : 'Connecting\u2026';
     const label=Number.isFinite(count) ? `${count} online` : pendingLabel;
-    qsa('[data-nyx-online-count]').forEach(element=>{element.textContent=label});
+    qsa('[data-n7x-online-count]').forEach(element=>{element.textContent=label});
     const usersLabel=Number.isFinite(count) ? `${count} users` : pendingLabel;
-    qsa('[data-nyx-online-users]').forEach(element=>{element.textContent=usersLabel});
+    qsa('[data-n7x-online-users]').forEach(element=>{element.textContent=usersLabel});
     if(Number.isFinite(count)) window.dispatchEvent(new CustomEvent('nyx:presence',{detail:{online:count}}));
   }
   async function nyxPresenceFirebaseToken(timeoutMs=1200){
@@ -8162,10 +8105,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const sessionId=String(tab.privacySessionId || '');
     if(/^nyx_[a-z0-9_-]{12,80}$/i.test(sessionId) && navigator.serviceWorker){
       const message={type:'nyx:destroy-proxy-session',sessionId};
-      if(uvRegistration?.active) uvRegistration.active.postMessage(message);
-      else navigator.serviceWorker.getRegistration('/service/').then(registration=>{
-        registration?.active?.postMessage?.(message);
-      }).catch(()=>{});
+
     }
   }
   window.addEventListener('pagehide',event=>{
@@ -8204,11 +8144,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const target=findScramjetHtmlNode(root,'head') || findScramjetHtmlNode(root,'html') || root;
     const children=target?.childNodes || target?.children;
     if(!Array.isArray(children)) return;
-    if(children.some(child=>child?.attribs?.['data-nyx-runtime-guard']===key)) return;
+    if(children.some(child=>child?.attribs?.['data-n7x-runtime-guard']===key)) return;
     const script={
       type:'script',
       name:'script',
-      attribs:{'data-nyx-runtime-guard':key},
+      attribs:{'data-n7x-runtime-guard':key},
       children:[],
       parent:target,
       prev:null,
@@ -8392,7 +8332,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const hasVisibleStructure=!!doc.querySelector('main,button,a,input,[role],[data-testid],svg,img,canvas,video,audio');
 
 
-      const hasErrorText=/^(?:Error:\s*)?(?:scramjet did not start|scramjet route missed|ultraviolet did not start|error processing your request|internal server error|internal service worker error|Reconnecting (?:Scramjet|Studyjet)|request failed with error code\s*(?:35|52|56|60)|ssl connect error|ssl peer certificate|failure when receiving data from the peer|localhost refused to connect)\b/i.test(visibleText);
+      const hasErrorText=/^(?:Error:\s*)?(?:scramjet did not start|scramjet route missed|error processing your request|internal server error|internal service worker error|Reconnecting (?:Scramjet|Studyjet)|request failed with error code\s*(?:35|52|56|60)|ssl connect error|ssl peer certificate|failure when receiving data from the peer|localhost refused to connect)\b/i.test(visibleText);
       const blank=!hasVisibleStructure && text.length<12 && structureCount<4;
       return {reachable:true,blank,hasErrorText,text,visibleText,title,htmlLength:structureCount,readyState:doc.readyState};
     }catch(error){
@@ -8543,100 +8483,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     setTimeout(check,5000);
     setTimeout(check,8200);
   }
-  function watchUvPresentation(t,sourceUrl){
-    if(!t?.frame || !sourceUrl) return;
-    const source=browserShellSourceUrl(sourceUrl) || String(sourceUrl);
-    if(!/^https?:/i.test(source)) return;
-    if(t.uvPresentationSource!==source){
-      t.uvPresentationSource=source;
-      t.uvPresentationRetries=0;
-    }
-    if(t.uvPresentationLoadHandler){
-      try{t.frame.removeEventListener('load',t.uvPresentationLoadHandler)}catch{}
-    }
-    const token='uv-presentation-'+Date.now()+Math.random().toString(16).slice(2);
-    const navigationIntent=t.navigationIntent || '';
-    t.uvPresentationWatchToken=token;
-    let badKind='';
-    let badChecks=0;
-    let recoveryStarted=false;
-    const current=()=>t.frame?.isConnected
-      && t.uvPresentationWatchToken===token
-      && (t.navigationIntent || '')===navigationIntent
-      && t.uvPresentationSource===source
-      && browserFrameStillAtSource(t,source);
-    const recover=async reason=>{
-      if(recoveryStarted || !current() || Number(t.uvPresentationRetries || 0)>=1) return;
-      recoveryStarted=true;
-      t.uvPresentationRetries=Number(t.uvPresentationRetries || 0)+1;
-      t.uvPresentationWatchToken='recovering-'+token;
-      if(reason==='YouTube component styles did not initialize'){
-        if(typeof t.retryUvPresentation==='function') t.retryUvPresentation(source,reason);
-        return;
-      }
-      const registration=await navigator.serviceWorker.getRegistration('/service/').catch(()=>null);
-      if(registration) await registration.update().catch(()=>null);
-      uvInstallPromise=null;
-      const ok=await installUltraviolet();
-      if(!ok || !t.frame?.isConnected || (t.navigationIntent || '')!==navigationIntent || t.uvPresentationSource!==source || !browserFrameStillAtSource(t,source)) return;
-      if(typeof t.retryUvPresentation==='function') t.retryUvPresentation(source);
-    };
-    const youtubePresentationIncomplete=presentation=>{
-      if(!hostMatches(browserHost(source),['youtube.com','youtu.be'])) return false;
-      try{
-        const doc=t.frame?.contentDocument;
-        const app=doc?.querySelector('ytd-app');
-        if(!app) return false;
-        const masthead=doc.querySelector('ytd-masthead');
-        const appStyle=doc.defaultView?.getComputedStyle?.(app);
-        const mastheadStyle=masthead ? doc.defaultView?.getComputedStyle?.(masthead) : null;
-        if(appStyle?.display==='inline' || mastheadStyle?.display==='inline') return true;
-        const links=Array.from(doc.querySelectorAll('link[rel~="stylesheet"][href]'));
-        const mainLinks=links.filter(link=>{
-          const raw=String(link.getAttribute('href') || '');
-          const absolute=String(link.href || '');
-          const decoded=browserShellSourceUrl(absolute);
-          return /ytmainappweb|kevlar_base|www-main-desktop/i.test(raw+' '+absolute+' '+decoded);
-        });
-        const rulesFor=link=>{
-          try{return Number(link.sheet?.cssRules?.length || 0)}catch{return 0}
-        };
-        const largestMainSheet=Math.max(0,...mainLinks.map(rulesFor));
-        const largestLinkedSheet=Math.max(0,...links.map(rulesFor));
-        if(mainLinks.length && (largestMainSheet>=1000 || largestLinkedSheet>=5000)) return false;
-        return links.length<3 || largestLinkedSheet<5000;
-      }catch{return false}
-    };
-    const check=()=>{
-      if(!current()) return;
-      const presentation=inspectFramePresentation(t);
-      if(!presentation.reachable || presentation.hasErrorText || presentation.readyState!=='complete') return;
-      const kind=youtubePresentationIncomplete(presentation)
-        ? 'YouTube component styles did not initialize'
-        : (presentation.unstyled ? 'stylesheets did not load' : (presentation.blank ? 'page stayed blank' : ''));
-      if(!kind){
-        badKind='';
-        badChecks=0;
-        return;
-      }
-      if(kind===badKind) badChecks+=1;
-      else{
-        badKind=kind;
-        badChecks=1;
-      }
-      if(badChecks>=2) void recover(kind);
-    };
-    const onLoad=()=>{
-      setTimeout(check,850);
-      setTimeout(check,2100);
-      setTimeout(check,4200);
-    };
-    t.uvPresentationLoadHandler=onLoad;
-    t.frame.addEventListener('load',onLoad);
-    setTimeout(check,2800);
-    setTimeout(check,5600);
-    setTimeout(check,9000);
-  }
+
   function removeScramjetHtmlNodes(root,predicate){
     const children=root?.childNodes || root?.children;
     if(!Array.isArray(children)) return;
@@ -8716,6 +8563,126 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }
     installScramjetRuntimeGuards(root,source,key);
   }
+  function createNavigationIntentPlugin(onBlocked,isAuthentication){
+    // Per-tab navigation permissions. Resource requests and nested frames are
+    // deliberately outside this policy; the iframe sandbox protects the shell.
+    let committed='', intent=null, authReturn=null, authGestureUntil=0;
+    const approved=new Map();
+    const clean=value=>{try{const u=new URL(browserShellSourceUrl(String(value)) || String(value));u.hash='';return u;}catch{return null;}};
+    const sameSite=(a,b)=>a && b && (a.origin===b.origin ||
+      (a.hostname.replace(/^www\./,'')===b.hostname.replace(/^www\./,'') &&
+       !a.port && !b.port && (a.protocol===b.protocol || (a.protocol==='http:' && b.protocol==='https:'))));
+    const grant=(value,form=false)=>{
+      const url=clean(value);if(!url || !/^https?:$/.test(url.protocol))return;
+      intent={url,form,until:Date.now()+15000};
+      if(committed && (isAuthentication(url.href) || isAuthentication(committed))){
+        authReturn={url:clean(committed),until:Date.now()+180000};
+      }
+    };
+    const isDocument=context=>!context.parsed.isIframe &&
+      (context.parsed.destination==='document' || context.parsed.destination==='iframe') &&
+      context.request.mode==='navigate';
+    const plugin={name:'nyx-navigation-intent',dependencies:[],install(frame){
+      const Tap=window.$scramjet?.Tap;
+      if(!Tap?.tap || !frame.hooks?.init?.pre || !frame.hooks?.fetch?.intercept)return;
+      const go=frame.go;
+      frame.go=function(url){grant(url);return go.call(this,url);};
+      Tap.tap(frame.hooks.init.pre,context=>{
+        if(!context.isTopLevel)return;
+        const source=clean(context.client.url);
+        if(source)committed=source.href;
+        intent=null;
+        const doc=context.window.document;
+        context.window.addEventListener('click',event=>{
+          if(!event.isTrusted)return;
+          const target=event.composedPath().find(node=>node?.closest)?.closest('a,button,input,[role="button"]');
+          if(!target)return;
+          const link=target.closest('a[href]');
+          if(link && !link.hasAttribute('download')){
+            const href=link.getAttribute('href');
+            try{grant(new URL(href,context.client.url).href);}catch{}
+          }
+          // JS-driven sign-in buttons have no href. Give that gesture one
+          // short-lived authorization, restricted to an authentication URL.
+          const label=(target.textContent || target.getAttribute('aria-label') || target.value || '').normalize('NFKC');
+          if(/\b(sign[ -]?in|log[ -]?in|continue with|sign[ -]?up)\b/i.test(label))authGestureUntil=Date.now()+2000;
+        },true);
+        doc.addEventListener('submit',event=>{
+          if(!event.isTrusted)return;
+          const form=event.target;
+          try{grant(new URL(event.submitter?.getAttribute('formaction') || form.getAttribute('action') || context.client.url,context.client.url).href,true);}catch{}
+        },true);
+      },plugin);
+      Tap.tap(frame.hooks.init.post,context=>{
+        if(!context.isTopLevel)return;
+        // The engine handles static refresh tags, but its DOM layer does not
+        // rewrite HTMLMetaElement.content. Route dynamic refresh through the
+        // same document request policy before the browser schedules it.
+        const realm=context.window, metaProto=realm.HTMLMetaElement.prototype;
+        const content=Object.getOwnPropertyDescriptor(metaProto,'content');
+        const equiv=Object.getOwnPropertyDescriptor(metaProto,'httpEquiv');
+        const setAttribute=realm.Element.prototype.setAttribute;
+        const rewriteRefresh=value=>{
+          const raw=String(value),match=raw.match(/^(\s*\d+(?:\.\d+)?\s*;\s*url\s*=\s*)(.*)$/i);
+          if(!match)return raw;
+          const target=match[2].trim().replace(/^(['"])(.*)\1$/,'$2');
+          try{
+            const url=clean(new URL(target,context.client.url).href);
+            return match[1]+window.$scramjet.rewriteUrl(url.href,context.client.context,context.client.meta);
+          }catch{return raw;}
+        };
+        const refresh=element=>String(equiv.get.call(element)).toLowerCase()==='refresh';
+        Object.defineProperty(metaProto,'content',{...content,set(value){
+          content.set.call(this,refresh(this)?rewriteRefresh(value):value);
+        }});
+        Object.defineProperty(metaProto,'httpEquiv',{...equiv,set(value){
+          if(String(value).toLowerCase()==='refresh')content.set.call(this,rewriteRefresh(content.get.call(this)));
+          equiv.set.call(this,value);
+        }});
+        realm.Element.prototype.setAttribute=function(name,value){
+          if(this.localName==='meta'){
+            const key=String(name).toLowerCase();
+            if(key==='content' && refresh(this))value=rewriteRefresh(value);
+            if(key==='http-equiv' && String(value).toLowerCase()==='refresh')content.set.call(this,rewriteRefresh(content.get.call(this)));
+          }
+          return setAttribute.call(this,name,value);
+        };
+      },plugin);
+      Tap.tap(frame.hooks.fetch.intercept,(context,props)=>{
+        if(!isDocument(context))return;
+        const url=context.parsed.url, now=Date.now();
+        const destination=clean(url.href), current=clean(committed);
+        const explicit=!!(intent && now<intent.until && destination &&
+          (destination.href===intent.url.href || (intent.form && destination.origin===intent.url.origin && destination.pathname===intent.url.pathname)));
+        const authentication=now<authGestureUntil && isAuthentication(url.href);
+        const returning=authReturn && now<authReturn.until && isAuthentication(committed) && sameSite(destination,authReturn.url);
+        if(!current || sameSite(current,destination) || explicit || authentication || returning){
+          if(authentication){authGestureUntil=0;authReturn={url:current,until:now+180000};}
+          // GET forms first pass through the engine's canonical-URL redirect.
+          // Carry their one navigation permission to that normalized request.
+          if(explicit)intent=context.parsed.hadExtraParams ? {url:destination,form:false,until:now+15000} : null;
+          if(approved.size>64)approved.clear();
+          approved.set(url.href,!!(explicit || authentication || returning));
+          return;
+        }
+        // 204 cancels the navigation without replacing the current document.
+        props.response={status:204,statusText:'No Content',body:null,headers:new context.request.initialHeaders.constructor()};
+        onBlocked?.(committed,url.href);
+      },plugin);
+      Tap.tap(frame.hooks.fetch.preresponse,(context,props)=>{
+        if(!isDocument(context))return;
+        const allowed=approved.get(context.parsed.url.href);
+        approved.delete(context.parsed.url.href);
+        const response=props.response;
+        if(!allowed || ![301,302,303,307,308].includes(response.status))return;
+        const headers=response.rawHeaders;
+        const location=Array.isArray(headers) ? headers.find(([name])=>name.toLowerCase()==='location')?.[1]
+          : Object.entries(headers || {}).find(([name])=>name.toLowerCase()==='location')?.[1];
+        if(location){try{grant(new URL(String(location),context.parsed.url).href);}catch{}}
+      },plugin);
+    }};
+    return plugin;
+  }
   function createScramjetCompatibilityPlugin(source=scramjetRuntimeGuardSource,key='runtime-guard'){
     const plugin={
       name:'nyx-compatibility-'+key,
@@ -8790,16 +8757,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const names=await caches.keys().catch(()=>[]);
     await Promise.all(names.filter(name=>/scramjet/i.test(name)).map(name=>caches.delete(name).catch(()=>false)));
   }
-  async function repairUvStorage(){
-    if(navigator.serviceWorker){
-      await Promise.all(['/service/','/uv/'].map(unregisterProxyScope));
-    }
-  }
-  async function repairUvCaches(){
-    if(!window.caches?.keys) return;
-    const names=await caches.keys().catch(()=>[]);
-    await Promise.all(names.filter(name=>/(ultraviolet|uv|bare|epoxy|libcurl)/i.test(name)).map(name=>caches.delete(name).catch(()=>false)));
-  }
+
+
   function clearNyxCookies(){
     try{
       const hostParts=location.hostname.split('.').filter(Boolean);
@@ -8826,7 +8785,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     }catch{}
   }
   async function clearAllNyxData(){
-    try{document.body.classList.add('nyx-resetting')}catch{}
+    try{document.body.classList.add('n7x-resetting')}catch{}
     try{toast('Clearing cache...')}catch{}
     try{
       if(navigator.serviceWorker?.getRegistrations){
@@ -8853,18 +8812,35 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     try{localStorage.clear()}catch{}
     setTimeout(()=>location.replace(location.pathname || '/'),220);
   }
+  let retiredEngineCleanup=null;
+  function retireAlternateEngine(){
+    if(retiredEngineCleanup) return retiredEngineCleanup;
+    retiredEngineCleanup=(async()=>{
+      // Saved preferences/addresses are migration data, not a retained engine.
+      const saved=store.text('nyx.browserMode',DEFAULT_BROWSER_MODE);
+      if(/^(?:ultraviolet|uv|ultra|stem-?connect)$/i.test(saved.replaceAll('"',''))){
+        store.setText('nyx.browserMode','scramjet');
+      }
+      const registrations=await navigator.serviceWorker?.getRegistrations?.().catch(()=>[]) || [];
+      await Promise.all(registrations.filter(registration=>{
+        const scope=new URL(registration.scope);
+        return scope.origin===location.origin && ['/service/','/uv/'].includes(scope.pathname);
+      }).map(registration=>registration.unregister()));
+    })();
+    return retiredEngineCleanup;
+  }
   async function ensureFreshProxyState(){
+    await retireAlternateEngine();
     if(store.text('nyx.proxyStateVersion','')===proxyStateVersion) return;
     await Promise.all([
       repairScramjetStorage(),
       repairScramjetCaches(),
-      repairUvStorage(),
-      repairUvCaches()
+
     ]);
     scramjetController=null;
     scramjetTransport=null;
     scramjetTransportKey='';
-    uvInstallPromise=null;
+
     store.setText('nyx.scramjetStateVersion',scramjetStateVersion);
     store.setText('nyx.proxyStateVersion',proxyStateVersion);
   }
@@ -8884,25 +8860,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     bareMuxConnection=null;
     store.setText('nyx.scramjetV1StateVersion',scramjetV1StateVersion);
   }
-  function installUltraviolet(){
-    if(uvInstallPromise) return uvInstallPromise;
-    if(!('serviceWorker' in navigator)) return Promise.resolve(false);
-    uvInstallPromise=(async()=>{
-      const {loadProxyScript}=await import('/js/proxy-startup.mjs');
-      await loadProxyScript('/uv/uv.bundle.js',()=>Boolean(window.Ultraviolet));
-      await loadProxyScript('/uv.config.js',()=>Boolean(window.__uv$config));
-      await installBareMuxTransport();
-      const workerUrl='/stem-connect.sw.js?v=stem-connect-20261003';
-      uvRegistration=await navigator.serviceWorker.register(workerUrl,{scope:'/service/',updateViaCache:'none'});
-      const worker=await waitForServiceWorkerScript(uvRegistration,workerUrl,'/service/');
-      if(!worker) throw new Error('U1TR4V10L$T service worker did not activate');
-      return true;
-    })().catch(()=>{
-      uvInstallPromise=null;
-      return false;
-    });
-    return uvInstallPromise;
-  }
+
   function scramjetV1Config(){
     return {
       prefix:'/~/sj-v1/',
@@ -9057,7 +9015,6 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     const dock=document.querySelector('.dock');
     const hasFullscreen=[...document.querySelectorAll('.window.maximized')].some(win=>win.style.display!=='none' && !win.classList.contains('closing'));
     dock?.classList.toggle('hidden-for-window',hasFullscreen);
-    if(hasFullscreen) closeWeatherPanelAnimated();
   }
   function minimizeWindow(win){
     const tray=$('minimizedTray');
@@ -9170,7 +9127,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const maxBtn=win.querySelector('[data-maximize]');
       if(maxBtn) maxBtn.setAttribute('aria-label','Restore');
     }
-    closeWeatherForWindowOpen();
+    
     updateWindowSizeClasses(win); updateDockFullscreenState(); initDesktopSplash(); return win;
   }
   function addResizeHandles(win){
@@ -9258,13 +9215,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     {
       const searchEngine=selectedSearchEngineMeta();
       const searchLabel=`S3ARC4 ${searchEngine.label} or type a U3L`;
-      return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="S3ARC4"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home nyx-minimal-home nyx-visual-home"><main class="browser-shell-start nyx-minimal-hero"><div class="nyx-minimal-brand"><img class="nyx-home-logo" data-nyx-logo src="/assets/icons/nyx-cat-moon.svg?v=3" alt="N7X"><h1>N7X</h1></div><form class="browser-blank-search nyx-minimal-search" data-browser-blank-search><svg class="nyx-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input data-browser-blank-input data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"></form><nav class="nyx-home-links" data-nyx-recent-searches aria-label="Recent searches" hidden></nav></main><nav class="nyx-minimal-utility-links" aria-label="N7X tools and terms"><a data-open="terms" href="nyx://terms">Terms</a></nav><button class="nyx-appearance-toggle" data-nyx-appearance type="button" aria-label="Use light appearance" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button><button class="nyx-visual-customize" data-open="settings" type="button">${nyxDashboardIcon('settings')}<span>Customize</span></button><div class="nyx-home-presence${nyxFounderIsOwner&&nyxOwnerDashboardAccess?' nyx-owner-presence-action':''}" data-nyx-owner-presence role="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'button':'status'}" tabindex="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="nyx-home-presence-dot" aria-hidden="true"></span><span data-nyx-online-count>${minimalPresenceText}</span></div></div></div>`;
+      return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="S3ARC4"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home n7x-minimal-home n7x-visual-home"><main class="browser-shell-start n7x-minimal-hero"><div class="n7x-minimal-brand"><img class="n7x-home-logo" data-n7x-logo src="/assets/icons/nyx-cat-moon.svg?v=3" alt="N7X"><h1 aria-label="N7X" data-no-interface-text><span class="n7x-wordmark-letter" aria-hidden="true"><span class="n7x-wordmark-glyph">N</span></span><span class="n7x-wordmark-letter" aria-hidden="true"><span class="n7x-wordmark-glyph">7</span></span><span class="n7x-wordmark-letter" aria-hidden="true"><span class="n7x-wordmark-glyph">X</span></span></h1></div><form class="browser-blank-search n7x-minimal-search" data-browser-blank-search><svg class="n7x-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input data-browser-blank-input data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"></form><nav class="n7x-home-links" data-n7x-recent-searches aria-label="Recent searches" hidden></nav></main><nav class="n7x-minimal-utility-links" aria-label="N7X tools and terms"><a data-open="terms" href="nyx://terms">Terms</a></nav><button class="n7x-appearance-toggle" data-n7x-appearance type="button" aria-label="Use light appearance" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button><button class="n7x-visual-customize" data-open="settings" type="button">${nyxDashboardIcon('settings')}<span>Customize</span></button><div class="n7x-home-presence${nyxFounderIsOwner&&nyxOwnerDashboardAccess?' n7x-owner-presence-action':''}" data-n7x-owner-presence role="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'button':'status'}" tabindex="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="n7x-home-presence-dot" aria-hidden="true"></span><span data-n7x-online-count>${minimalPresenceText}</span></div></div></div>`;
     }
   }
 
   const nyxAiHomeShortcut={domain:'nyx-ai',title:"A1 Tutor",url:'nyx://ai',favorite:false};
   const nyxAiHomeShortcutMigrationKey='nyx.homeShortcuts.aiShortcutV1';
-  const nyxTubeHomeShortcut={domain:'youtube.com',title:'NyxTube',url:'/apps/nyxtube/',favorite:false};
+  const nyxTubeHomeShortcut={domain:'youtube.com',title:"N7X7UB3",url:'/apps/nyxtube/',favorite:false};
   const nyxTubeHomeShortcutMigrationKey='nyx.homeShortcuts.nyxTubeShortcutV1';
   const moviesHomeShortcut={domain:'nyx-movies',title:'Movies',url:'/apps/movies/',favorite:false};
   const defaultHomeShortcuts=[
@@ -9449,19 +9406,19 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function playNyxStartupReveal(){
     const body=document.body;
     const targets=[
-      ...document.querySelectorAll('body.browser-shell .top-os .brand-mini > button, body.browser-shell .top-os > :is(.browser-top-clock,.nyx-latency-bubble), body.browser-shell .top-os .browser-mode-address > *, body.browser-shell .browser-home [data-home-shortcuts], body.browser-shell .browser-home [data-home-shortcuts] > .quick-tile')
+      ...document.querySelectorAll('body.browser-shell .top-os .brand-mini > button, body.browser-shell .top-os > :is(.browser-top-clock,.n7x-latency-bubble), body.browser-shell .top-os .browser-mode-address > *, body.browser-shell .browser-home [data-home-shortcuts], body.browser-shell .browser-home [data-home-shortcuts] > .quick-tile')
     ];
     document.querySelectorAll('.shortcut-entrance').forEach(el=>el.classList.remove('shortcut-entrance'));
     document.querySelectorAll('.tab-opening,.tab-activating').forEach(el=>el.classList.remove('tab-opening','tab-activating'));
     targets.forEach(el=>el.getAnimations?.().forEach(animation=>animation.cancel()));
     clearTimeout(nyxStartupRevealTimer);
-    body.classList.remove('nyx-startup-reveal');
+    body.classList.remove('n7x-startup-reveal');
     void body.offsetWidth;
     requestAnimationFrame(()=>{
-      body.classList.remove('nyx-startup-prep');
-      body.classList.add('nyx-startup-reveal');
+      body.classList.remove('n7x-startup-prep');
+      body.classList.add('n7x-startup-reveal');
       nyxStartupRevealTimer=setTimeout(()=>{
-        body.classList.remove('nyx-startup-reveal');
+        body.classList.remove('n7x-startup-reveal');
         suppressHomeEntranceOnStartup=false;
       },1250);
     });
@@ -9469,13 +9426,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function playHomeChromeAnimation(root=document){
     if(!homeEntranceCanPlay(root)) return;
     const scope=root || document;
-    scope.querySelectorAll?.('.browser-shell-start').forEach((el,index)=>animateHomeElement(el,index,{delay:60,duration:1200,start:'translate(-28px,44px) scale(.9)',mid:'translate(-8px,13px) scale(.98)'}));
+    scope.querySelectorAll?.('.browser-shell-start:not(.n7x-minimal-hero)').forEach((el,index)=>animateHomeElement(el,index,{delay:60,duration:1200,start:'translate(-28px,44px) scale(.9)',mid:'translate(-8px,13px) scale(.98)'}));
     const tabItems=[
       ...document.querySelectorAll('body.browser-shell .brand-mini [data-browser-shell-home], body.browser-shell .brand-mini .browser-mode-shell-tab, body.browser-shell .brand-mini [data-browser-shell-new-tab]')
     ];
     tabItems.forEach((el,index)=>animateHomeElement(el,index,{delay:45+(index*65),duration:650,start:'translate(-24px,34px) scale(.88)',mid:'translate(-7px,10px) scale(.97)'}));
     const toolbarItems=[
-      ...document.querySelectorAll('body.browser-shell [data-browser-shell-back], body.browser-shell [data-browser-shell-forward], body.browser-shell [data-browser-shell-reload], body.browser-shell [data-browser-shell-home-nav], body.browser-shell [data-browser-shell-url], body.browser-shell [data-browser-shell-settings], body.browser-shell .browser-mode-weather, body.browser-shell [data-browser-shell-menu], body.browser-shell #clock')
+      ...document.querySelectorAll('body.browser-shell [data-browser-shell-back], body.browser-shell [data-browser-shell-forward], body.browser-shell [data-browser-shell-reload], body.browser-shell [data-browser-shell-home-nav], body.browser-shell [data-browser-shell-url], body.browser-shell [data-browser-shell-settings], body.browser-shell [data-browser-shell-menu], body.browser-shell #clock')
     ];
     toolbarItems.forEach((el,index)=>animateHomeElement(el,index,{delay:120+(index*58),duration:690,start:'translate(-26px,38px) scale(.9)',mid:'translate(-8px,12px) scale(.98)'}));
   }
@@ -9533,10 +9490,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     interactiveHomeDotsInstalled=true;
     const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
     const initialize=home=>{
-      if(!home || home.dataset.nyxDotField==='true') return;
-      home.dataset.nyxDotField='true';
+      if(!home || home.dataset.n7xDotField==='true') return;
+      home.dataset.n7xDotField='true';
       const canvas=document.createElement('canvas');
-      canvas.className='nyx-home-dot-field';
+      canvas.className='n7x-home-dot-field';
       canvas.setAttribute('aria-hidden','true');
       home.prepend(canvas);
       syncHomeDotFieldVisibility();
@@ -9623,8 +9580,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         state.frame=0;
         context.clearRect(0,0,state.width,state.height);
         const styles=getComputedStyle(home);
-        const dotColor=styles.getPropertyValue('--nyx-constellation-dot-color').trim() || styles.getPropertyValue('--nyx-dot-color').trim() || '#759488';
-        const linkColor=styles.getPropertyValue('--nyx-constellation-link-color').trim() || styles.getPropertyValue('--nyx-link-color').trim() || '#4c675f';
+        const dotColor=styles.getPropertyValue('--n7x-constellation-dot-color').trim() || styles.getPropertyValue('--n7x-dot-color').trim() || '#759488';
+        const linkColor=styles.getPropertyValue('--n7x-constellation-link-color').trim() || styles.getPropertyValue('--n7x-link-color').trim() || '#4c675f';
         const motionAllowed=fieldMotionAllowed();
         const pointer=motionAllowed ? state.pointer : null;
         const previous=state.previousPointer || pointer;
@@ -9703,247 +9660,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(typeof ResizeObserver==='function') new ResizeObserver(resize).observe(home);
       else addEventListener('resize',resize,{passive:true});
       resize();
-      syncHomeWeatherWidgets();
+      
     };
     const scan=root=>{
-      if(root?.matches?.('.browser-home.nyx-minimal-home')) initialize(root);
-      root?.querySelectorAll?.('.browser-home.nyx-minimal-home').forEach(initialize);
-    };
-    new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{
-      if(node.nodeType===1) scan(node);
-    }))).observe(document.body,{childList:true,subtree:true});
-    scan(document);
-  }
-  let interactiveHomeTitleDotsInstalled=false;
-  function installInteractiveHomeTitleDots(){
-    if(interactiveHomeTitleDotsInstalled) return;
-    interactiveHomeTitleDotsInstalled=true;
-    if(!window.requestAnimationFrame) return;
-    try{
-      if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    }catch{}
-    const initialize=title=>{
-      if(!title || title.dataset.nyxTitleDotField==='true') return;
-      title.dataset.nyxTitleDotField='true';
-      const label=title.textContent.trim();
-      if(!label) return;
-      const canvas=document.createElement('canvas');
-      canvas.className='nyx-title-dot-canvas';
-      canvas.setAttribute('aria-hidden','true');
-      const context=canvas.getContext('2d',{alpha:true});
-      if(!context) return;
-      const resolveDotColor=()=>{
-        const home=title.closest('.nyx-minimal-home');
-        const styles=getComputedStyle(home || title);
-        return styles.getPropertyValue('--nyx-home-wordmark').trim() || getComputedStyle(title).color || '#e8e5f4';
-      };
-      title.append(canvas);
-      const ratio=Math.max(1,Math.min(devicePixelRatio || 1,2));
-      const canvasPadding=90;
-      const pointerRadius=55;
-      const repelStrength=2.2;
-
-      const spring=.14;
-      const friction=.7;
-      const fadeDistance=42;
-      let dotRadius=3;
-      let width=0;
-      let height=0;
-      let textLeft=canvasPadding;
-      let textTop=canvasPadding;
-      let textRight=canvasPadding;
-      let textBottom=canvasPadding;
-      let dots=[];
-      let frame=0;
-      let isReady=false;
-      let pointerInside=false;
-      let previousX=-9999;
-      let previousY=-9999;
-      let pointerX=-9999;
-      let pointerY=-9999;
-      const getFont=()=>{
-        const styles=getComputedStyle(title);
-        return {
-          value:`${styles.fontWeight || '500'} ${styles.fontSize || '48px'} ${styles.fontFamily || 'Inter, sans-serif'}`,
-          size:parseFloat(styles.fontSize) || 48,
-          letterSpacing:Number.isFinite(parseFloat(styles.letterSpacing)) ? parseFloat(styles.letterSpacing) : 0
-        };
-      };
-      const setup=()=>{
-        const font=getFont();
-        const measure=document.createElement('canvas').getContext('2d');
-        if(!measure) return;
-        measure.font=font.value;
-        const characters=Array.from(label);
-        const glyphWidths=characters.map(character=>measure.measureText(character).width);
-        const textWidth=Math.ceil(glyphWidths.reduce((total,width)=>total+width,0)+font.letterSpacing*Math.max(0,characters.length-1))+6;
-        const metrics=measure.measureText(label);
-        const ascent=metrics.actualBoundingBoxAscent || font.size*.8;
-        const descent=metrics.actualBoundingBoxDescent || font.size*.25;
-        const textHeight=Math.ceil(ascent+descent)+6;
-        width=textWidth+canvasPadding*2;
-        height=textHeight+canvasPadding*2;
-        canvas.style.width=width+'px';
-        canvas.style.height=height+'px';
-        canvas.style.left=`calc(50% - ${width/2}px)`;
-        canvas.style.top=`calc(50% - ${height/2}px)`;
-        canvas.width=Math.round(width*ratio);
-        canvas.height=Math.round(height*ratio);
-        context.setTransform(ratio,0,0,ratio,0,0);
-        const mask=document.createElement('canvas');
-        mask.width=Math.round(textWidth*ratio);
-        mask.height=Math.round(textHeight*ratio);
-        const maskContext=mask.getContext('2d',{willReadFrequently:true});
-        if(!maskContext) return;
-        maskContext.setTransform(ratio,0,0,ratio,0,0);
-        maskContext.font=font.value;
-        maskContext.textBaseline='alphabetic';
-        maskContext.fillStyle='#fff';
-        let glyphX=3;
-        characters.forEach((character,index)=>{
-          maskContext.fillText(character,glyphX,ascent+3);
-          glyphX+=glyphWidths[index]+font.letterSpacing;
-        });
-        let pixels;
-        try{pixels=maskContext.getImageData(0,0,mask.width,mask.height).data;}catch{return}
-        const spacing=Math.max(4,Math.round(font.size/11));
-
-        dotRadius=Math.max(1.15,Math.min(2.1,spacing*.3));
-        const nextDots=[];
-        for(let y=0;y<textHeight;y+=spacing){
-          for(let x=0;x<textWidth;x+=spacing){
-            const pixel=(Math.round(y*ratio)*mask.width+Math.round(x*ratio))*4;
-            if(pixels[pixel+3]>130){
-              const homeX=x+canvasPadding;
-              const homeY=y+canvasPadding;
-              nextDots.push({homeX,homeY,x:homeX,y:homeY,vx:0,vy:0,opacity:1});
-            }
-          }
-        }
-        dots=nextDots;
-        textLeft=canvasPadding;
-        textTop=canvasPadding;
-        textRight=canvasPadding+textWidth;
-        textBottom=canvasPadding+textHeight;
-        isReady=true;
-        canvas.dataset.particleCount=String(dots.length);
-        canvas.dataset.pointerEffect='repel-and-return';
-        title.classList.add('nyx-title-dot-ready');
-        draw();
-      };
-      function render(){
-        context.clearRect(0,0,width,height);
-        context.fillStyle=resolveDotColor();
-        for(const dot of dots){
-          if(dot.opacity<=.02) continue;
-          context.globalAlpha=Math.min(1,dot.opacity);
-          context.beginPath();
-          context.arc(dot.x,dot.y,dotRadius,0,Math.PI*2);
-          context.fill();
-        }
-        context.globalAlpha=1;
-      }
-      function draw(){
-        frame=0;
-        let unsettled=false;
-        const radiusSquared=pointerRadius*pointerRadius;
-        const deltaX=pointerX-previousX;
-        const deltaY=pointerY-previousY;
-        const segmentLengthSquared=deltaX*deltaX+deltaY*deltaY;
-        for(const dot of dots){
-          if(pointerInside){
-            let progress=segmentLengthSquared ? ((dot.x-previousX)*deltaX+(dot.y-previousY)*deltaY)/segmentLengthSquared : 0;
-            progress=Math.max(0,Math.min(1,progress));
-            const nearestX=previousX+progress*deltaX;
-            const nearestY=previousY+progress*deltaY;
-            const deltaDotX=dot.x-nearestX;
-            const deltaDotY=dot.y-nearestY;
-            const distanceSquared=deltaDotX*deltaDotX+deltaDotY*deltaDotY;
-            if(distanceSquared<radiusSquared){
-              const distance=Math.sqrt(distanceSquared) || .0001;
-              const strength=(1-distance/pointerRadius)*repelStrength;
-              dot.vx+=deltaDotX/distance*strength;
-              dot.vy+=deltaDotY/distance*strength;
-            }
-          }
-          dot.vx+=(dot.homeX-dot.x)*spring;
-          dot.vy+=(dot.homeY-dot.y)*spring;
-          dot.vx*=friction;
-          dot.vy*=friction;
-          dot.x+=dot.vx;
-          dot.y+=dot.vy;
-          const displacementX=dot.x-dot.homeX;
-          const displacementY=dot.y-dot.homeY;
-          const displacement=Math.sqrt(displacementX*displacementX+displacementY*displacementY);
-          dot.opacity=displacement>=fadeDistance ? 0 : 1-displacement/fadeDistance;
-          if(displacement>.35 || dot.vx*dot.vx+dot.vy*dot.vy>.05) unsettled=true;
-        }
-        previousX=pointerX;
-        previousY=pointerY;
-        render();
-        if(pointerInside || unsettled) frame=requestAnimationFrame(draw);
-      }
-      const requestFrame=()=>{
-        if(!frame && isReady) frame=requestAnimationFrame(draw);
-      };
-      const redrawForTheme=()=>{
-        if(!title.isConnected){
-          removeEventListener('nyx:themechange',redrawForTheme);
-          return;
-        }
-        if(isReady) render();
-      };
-      addEventListener('nyx:themechange',redrawForTheme);
-      const movePointer=event=>{
-        if(!isReady) return;
-        const bounds=canvas.getBoundingClientRect();
-        const x=event.clientX-bounds.left;
-        const y=event.clientY-bounds.top;
-        const inside=x>textLeft-pointerRadius && x<textRight+pointerRadius && y>textTop-pointerRadius && y<textBottom+pointerRadius;
-        if(inside && !pointerInside){
-          previousX=x;
-          previousY=y;
-        }
-        pointerX=x;
-        pointerY=y;
-        pointerInside=inside;
-        if(inside) requestFrame();
-      };
-
-
-      title.addEventListener('pointermove',movePointer,{passive:true});
-      title.addEventListener('pointerdown',movePointer,{passive:true});
-      title.addEventListener('pointerleave',()=>{
-        pointerInside=false;
-        requestFrame();
-      },{passive:true});
-      addEventListener('pointerup',event=>{
-        if(event.pointerType==='touch'){
-          pointerInside=false;
-          requestFrame();
-        }
-      },{passive:true});
-      addEventListener('pointercancel',()=>{
-        pointerInside=false;
-        requestFrame();
-      },{passive:true});
-      document.addEventListener('mouseleave',()=>{
-        if(pointerInside){
-          pointerInside=false;
-          requestFrame();
-        }
-      });
-      setup();
-      document.fonts?.ready?.then(setup).catch(()=>{});
-      let resizeTimer=0;
-      addEventListener('resize',()=>{
-        clearTimeout(resizeTimer);
-        resizeTimer=setTimeout(setup,200);
-      },{passive:true});
-    };
-    const scan=root=>{
-      if(root?.matches?.('.nyx-minimal-brand h1')) initialize(root);
-      root?.querySelectorAll?.('.nyx-minimal-brand h1').forEach(initialize);
+      if(root?.matches?.('.browser-home.n7x-minimal-home')) initialize(root);
+      root?.querySelectorAll?.('.browser-home.n7x-minimal-home').forEach(initialize);
     };
     new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{
       if(node.nodeType===1) scan(node);
@@ -9985,7 +9706,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     ['link-checker','link-checker','Link Checker','/apps/link-checker/'],
     ['link-generator','link-generator','Link Generator','/apps/link-generator/'],
     ['jsdelivr-publisher','jsdelivr-publisher','JSDelivr Publisher','/apps/jsdelivr-publisher/'],
-    ['nyx-api-keys','api-keys',"N7X API Keys",'/apps/api-keys/'],
+    ['n7x-api-keys','api-keys',"N7X API Keys",'/apps/api-keys/'],
     ['youtube','youtube.com','YouTube','/apps/nyxtube/'],
     ['pirate-cove','games','GAMES','/assets/games/'],
     ['nyx-chat','nyx-chat',"N7X Chat",'/apps/chat/'],
@@ -9996,7 +9717,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     ['more-movie-sites','fmhy.net','More Movie Sites','https://fmhy.net/video#p-stream-forks'],
     ['tiktok','tiktok.com','TikTok','https://www.tiktok.com/'],
     ['animex','animex.one','Animex','https://animex.one/']
-  ].map(([id,icon,name,url])=>({id,icon,name,url})).map(app=>app.id==='youtube'?{...app,name:'NyxTube'}:app);
+  ].map(([id,icon,name,url])=>({id,icon,name,url})).map(app=>app.id==='youtube'?{...app,name:"N7X7UB3"}:app);
   const nyxHiddenGlobalAppIds=new Set(['code-tutorials']);
   let nyxGlobalApps=nyxDefaultGlobalApps.map(app=>({...app}));
   function normalizeNyxGlobalApp(app){
@@ -10011,7 +9732,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   function globalAppIconMarkup(app){
     const symbols={'code-studio':'code','link-generator':'link','nyxify':'music','nyx-chat':'chat','nyx-movies':'movies','games':'games'};
     const tools={
-      'nyx-vms':'<rect x="3" y="3" width="18" height="13" rx="2"/><path d="M8 21h8m-4-5v5"/>',
+      'n7x-vms':'<rect x="3" y="3" width="18" height="13" rx="2"/><path d="M8 21h8m-4-5v5"/>',
       'link-checker':'<path d="M10 13a4 4 0 0 0 5.7 0l2.3-2.3A4 4 0 0 0 12.3 5L11 6.3M8 11l-2 2a4 4 0 0 0 3 7"/><path d="m14 19 2 2 5-5"/>',
       'jsdelivr-publisher':'<path d="M12 16V3m-4 4 4-4 4 4M4 14v6h16v-6"/>',
       'api-keys':'<circle cx="8" cy="8" r="5"/><path d="m12 12 9 9m-3-3 3-3m-6 0 3-3"/>'
@@ -10021,14 +9742,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return `<span class="quick-icon" aria-hidden="true">${icon}</span>`;
   }
   function quickTiles(){
-    const apps=nyxGlobalApps.filter(app=>app.id!=='nyx-vms'&&app.url.replace(/\/+$/,'')!=='/apps/nyxcloud');
-    apps.push({id:'nyx-vms',icon:'nyx-vms',name:'VMs',url:'/apps/nyxcloud/'});
+    const apps=nyxGlobalApps.filter(app=>app.id!=='n7x-vms'&&app.url.replace(/\/+$/,'')!=='/apps/nyxcloud');
+    apps.push({id:'n7x-vms',icon:'n7x-vms',name:'VMs',url:'/apps/nyxcloud/'});
     return apps.map((app,i)=>`<button class="quick-tile" draggable="true" style="--tile-delay:${Math.min(i,18)*34}ms" data-global-app-id="${esc(app.id)}" data-domain="${esc(app.icon)}" data-app-url="${esc(app.url)}">${globalAppIconMarkup(app)}<span>${esc(app.name)}</span></button>`).join('');
   }
   function renderNyxGlobalApps(){
     const documents=[document];
     document.querySelectorAll('iframe').forEach(frame=>{try{if(frame.contentDocument) documents.push(frame.contentDocument)}catch{}});
-    documents.forEach(doc=>doc.querySelectorAll('[data-nyx-global-app-grid]').forEach(grid=>{grid.innerHTML=quickTiles()}));
+    documents.forEach(doc=>doc.querySelectorAll('[data-n7x-global-app-grid]').forEach(grid=>{grid.innerHTML=quickTiles()}));
   }
   async function loadNyxGlobalApps(){
     try{
@@ -10114,7 +9835,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(mode!=='auto') return mode;
     try{
       const normalized=normalize(browserShellSourceUrl(target) || target);
-      return selectedBrowserMode(normalized)==='ultraviolet' ? 'ultraviolet' : 'scramjet';
+      return 'scramjet';
     }catch{
       return 'scramjet';
     }
@@ -10162,8 +9883,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     if(location.protocol==='file:') return true;
     const files=[
       '/',
-      '/uv/uv.bundle.js',
-      '/uv.config.js',
+
+
       '/scramjet/scramjet.js',
       '/scramjet.sw.js',
       '/baremux/index.mjs',
@@ -10207,7 +9928,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       return tasks;
     };
     const serverCheck=async()=>{
-      const checks=['/uv/uv.bundle.js','/scramjet/scramjet.js','/baremux/index.mjs'].map(url=>preflightFetchOk(url,2400).catch(()=>false));
+      const checks=['/scramjet/scramjet.js','/baremux/index.mjs'].map(url=>preflightFetchOk(url,2400).catch(()=>false));
       const results=await Promise.all(checks);
       return location.protocol==='file:' || results.some(Boolean);
     };
@@ -10290,13 +10011,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     nyxPreflightPromise=(async()=>{
       const tasks=nyxPreflightTasks(kind,options);
       const overlay=document.createElement('div');
-      overlay.className='nyx-preflight';
+      overlay.className='n7x-preflight';
       const preflightTitle=kind==='startup-diagnostics' ? 'Startup Diagnostics' : kind==='startup' ? 'Starting nyx' : kind==='apps' ? 'Opening Apps' : kind==='search' ? "Checking S3ARC4" : 'Checking Browser';
-      overlay.innerHTML=`<section class="nyx-preflight-card" role="status" aria-live="polite"><h2 class="nyx-preflight-title">${esc(preflightTitle)}</h2><ul class="nyx-preflight-list">${tasks.map((task,index)=>`<li class="nyx-preflight-item" data-preflight-step="${index}"><span class="nyx-preflight-dot">&bull;</span><span>${esc(task.label)}</span></li>`).join('')}</ul><div class="nyx-preflight-bar"><div class="nyx-preflight-fill"></div></div></section>`;
+      overlay.innerHTML=`<section class="n7x-preflight-card" role="status" aria-live="polite"><h2 class="n7x-preflight-title">${esc(preflightTitle)}</h2><ul class="n7x-preflight-list">${tasks.map((task,index)=>`<li class="n7x-preflight-item" data-preflight-step="${index}"><span class="n7x-preflight-dot">&bull;</span><span>${esc(task.label)}</span></li>`).join('')}</ul><div class="n7x-preflight-bar"><div class="n7x-preflight-fill"></div></div></section>`;
       document.body.appendChild(overlay);
       requestAnimationFrame(()=>overlay.classList.add('show'));
       const started=Date.now();
-      const fill=overlay.querySelector('.nyx-preflight-fill');
+      const fill=overlay.querySelector('.n7x-preflight-fill');
       for(let i=0;i<tasks.length;i++){
         const item=overlay.querySelector(`[data-preflight-step="${i}"]`);
         item?.classList.add('running');
@@ -10309,7 +10030,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         }
         item?.classList.remove('running');
         item?.classList.add(ok ? 'done' : 'warn');
-        const dot=item?.querySelector('.nyx-preflight-dot');
+        const dot=item?.querySelector('.n7x-preflight-dot');
         if(dot) dot.textContent=ok ? '\u2713' : '!';
         if(fill) fill.style.width=`${Math.round(((i+1)/tasks.length)*100)}%`;
         await preflightDelay(90);
@@ -10595,8 +10316,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
             if(/connection issues/i.test(pageText)){
               const offline=[...doc.querySelectorAll('button,[role="button"]')]
                 .find(button=>/^\s*continue offline\s*$/i.test(String(button.textContent || button.getAttribute('aria-label') || '')));
-              if(offline && offline.dataset.nyxCrazyGamesRecovery!=='true'){
-                offline.dataset.nyxCrazyGamesRecovery='true';
+              if(offline && offline.dataset.n7xCrazyGamesRecovery!=='true'){
+                offline.dataset.n7xCrazyGamesRecovery='true';
                 offline.click();
                 console.info('nyx CrazyGames: continued through the game frame offline so gameplay can start.');
               }
@@ -10631,10 +10352,10 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         try{
           const doc=t.frame.contentDocument;
           if(!doc?.documentElement) return false;
-          let style=doc.getElementById('nyx-browser-ad-block-style');
+          let style=doc.getElementById('n7x-browser-ad-block-style');
           if(!style){
             style=doc.createElement('style');
-            style.id='nyx-browser-ad-block-style';
+            style.id='n7x-browser-ad-block-style';
             style.textContent=browserAdElementSelector+'{display:none!important;visibility:hidden!important;pointer-events:none!important;width:0!important;height:0!important}';
             (doc.head || doc.documentElement).appendChild(style);
           }
@@ -10655,8 +10376,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const attach=()=>{
         try{
           const doc=t.frame.contentDocument;
-          if(!doc?.documentElement || doc.documentElement.dataset.nyxLinkContextMenu==='true') return;
-          doc.documentElement.dataset.nyxLinkContextMenu='true';
+          if(!doc?.documentElement || doc.documentElement.dataset.n7xLinkContextMenu==='true') return;
+          doc.documentElement.dataset.n7xLinkContextMenu='true';
           doc.addEventListener('pointerdown',closeBrowserLinkMenu,true);
           doc.addEventListener('contextmenu',event=>{
             const link=event.target?.closest?.('a[href]');
@@ -10674,8 +10395,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           },true);
         }catch{}
       };
-      if(t.frame.dataset.nyxLinkContextMenuWatch!=='true'){
-        t.frame.dataset.nyxLinkContextMenuWatch='true';
+      if(t.frame.dataset.n7xLinkContextMenuWatch!=='true'){
+        t.frame.dataset.n7xLinkContextMenuWatch='true';
         t.frame.addEventListener('load',()=>{
           attach();
           setTimeout(attach,50);
@@ -10707,8 +10428,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     function installPopupBridge(t){
       if(!t?.frame) return;
       installBrowserLinkContextMenu(t);
-      if(t.frame.dataset.nyxAdGuardWatch!=='true'){
-        t.frame.dataset.nyxAdGuardWatch='true';
+      if(t.frame.dataset.n7xAdGuardWatch!=='true'){
+        t.frame.dataset.n7xAdGuardWatch='true';
         t.frame.addEventListener('load',()=>{
           installBrowserAdProtection(t);
           setTimeout(()=>installBrowserAdProtection(t),80);
@@ -10717,13 +10438,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       installBrowserAdProtection(t);
       if(t.popupBridgeInstalled) return;
-      if(t.frame.dataset.nyxDuckImageLoadFix!=='true'){
-        t.frame.dataset.nyxDuckImageLoadFix='true';
+      if(t.frame.dataset.n7xDuckImageLoadFix!=='true'){
+        t.frame.dataset.n7xDuckImageLoadFix='true';
         t.frame.addEventListener('load',()=>setTimeout(()=>installDuckDuckGoImageViewportFix(t),40));
       }
       installDuckDuckGoImageViewportFix(t);
-      if(t.frame.dataset.nyxLocationSync!=='true'){
-        t.frame.dataset.nyxLocationSync='true';
+      if(t.frame.dataset.n7xLocationSync!=='true'){
+        t.frame.dataset.n7xLocationSync='true';
         const frame=t.frame;
         const syncLocation=(sameDocument=false)=>{
           if(t.frame!==frame || !state.tabs.includes(t)) return;
@@ -10801,7 +10522,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       };
       const popupProtectionActive=()=>popupProtectionForUrl(currentBridgeUrl());
       const isTrustedGeneratedLink=link=>{
-        if(!link?.matches?.('a[data-nyx-generated-popup][href]')) return false;
+        if(!link?.matches?.('a[data-n7x-generated-popup][href]')) return false;
         if(!isNyxLinkGeneratorUrl(currentBridgeUrl())) return false;
         return isNyxGeneratedCdnUrl(link.href || link.getAttribute('href'));
       };
@@ -10973,11 +10694,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
               };
             }
           }
-          if(!doc?.documentElement || doc.documentElement.dataset.nyxPopupBridge==='true') return;
-          doc.documentElement.dataset.nyxPopupBridge='true';
+          if(!doc?.documentElement || doc.documentElement.dataset.n7xPopupBridge==='true') return;
+          doc.documentElement.dataset.n7xPopupBridge='true';
           const sourceHost=browserHost(currentBridgeUrl());
-          if(hostMatches(sourceHost,['cineby.at']) && !doc.documentElement.dataset.nyxCinebyFrameGuard){
-            doc.documentElement.dataset.nyxCinebyFrameGuard='true';
+          if(hostMatches(sourceHost,['cineby.at']) && !doc.documentElement.dataset.n7xCinebyFrameGuard){
+            doc.documentElement.dataset.n7xCinebyFrameGuard='true';
             const blockDirectCinebyFrame=node=>{
               if(!node?.matches?.('iframe[src],frame[src]')) return;
               const raw=String(node.getAttribute('src') || '').trim();
@@ -11017,7 +10738,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
             if(!link) return;
 
             const partnerInvites=['https://discord.gg/65Bgrbewc7','https://discord.gg/fRe5F3RBQQ','https://discord.gg/CTX942hxX','https://discord.gg/wC9DrfXvr','https://discord.gg/RkGgbJRVP7','https://discord.gg/uncensor','https://dsc.gg/ghostub','https://discord.gg/FHmEqPgMVe','https://discord.gg/w7J5auDhNm','https://discord.gg/3fbJG2emb6','https://discord.gg/uqPH78ZV7X'];
-            if(link.hasAttribute('data-nyx-partner-invite') && partnerInvites.includes(link.href)
+            if(link.hasAttribute('data-n7x-partner-invite') && partnerInvites.includes(link.href)
               && doc.location.origin===location.origin && /^\/apps\/partners\/(?:index\.html)?$/.test(doc.location.pathname)
               && event.isTrusted && (event.type==='click' || event.button===1)){
               event.preventDefault();
@@ -11105,9 +10826,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           const doc=frame.contentDocument;
           const frameWindow=frame.contentWindow;
           if(!doc?.documentElement || !frameWindow) return;
-          if(!doc.getElementById('nyx-youtube-compositor-guard')){
+          if(!doc.getElementById('n7x-youtube-compositor-guard')){
             const style=doc.createElement('style');
-            style.id='nyx-youtube-compositor-guard';
+            style.id='n7x-youtube-compositor-guard';
             style.textContent='html:root,html:root *{view-transition-name:none!important}';
             (doc.head || doc.documentElement).appendChild(style);
           }
@@ -11141,11 +10862,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           disableFor(frameWindow.Document?.prototype);
           disableFor(frameWindow.Element?.prototype);
           disableFor(doc);
-          doc.documentElement.dataset.nyxYouTubeCompositorGuard='true';
+          doc.documentElement.dataset.n7xYouTubeCompositorGuard='true';
         }catch{}
       };
-      if(frame.dataset.nyxYouTubeCompositorGuardWatch!=='true'){
-        frame.dataset.nyxYouTubeCompositorGuardWatch='true';
+      if(frame.dataset.n7xYouTubeCompositorGuardWatch!=='true'){
+        frame.dataset.n7xYouTubeCompositorGuardWatch='true';
         frame.addEventListener('load',()=>{
           install();
           setTimeout(install,40);
@@ -11181,9 +10902,9 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           const player=doc.querySelector('#movie_player');
           try{player?.setPlaybackQualityRange?.('large','large')}catch{}
           try{player?.setPlaybackQuality?.('large')}catch{}
-          doc.documentElement.dataset.nyxYouTubeCompatibility='english-480p';
-          if(doc.documentElement.dataset.nyxYouTubeNavigationWatch!=='true'){
-            doc.documentElement.dataset.nyxYouTubeNavigationWatch='true';
+          doc.documentElement.dataset.n7xYouTubeCompatibility='english-480p';
+          if(doc.documentElement.dataset.n7xYouTubeNavigationWatch!=='true'){
+            doc.documentElement.dataset.n7xYouTubeNavigationWatch='true';
             const reapply=()=>setTimeout(install,240);
             doc.addEventListener('yt-navigate-finish',reapply);
             doc.addEventListener('yt-page-data-updated',reapply);
@@ -11194,8 +10915,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           }
         }catch{}
       };
-      if(frame.dataset.nyxYouTubeCompatibilityWatch!=='true'){
-        frame.dataset.nyxYouTubeCompatibilityWatch='true';
+      if(frame.dataset.n7xYouTubeCompatibilityWatch!=='true'){
+        frame.dataset.n7xYouTubeCompatibilityWatch='true';
         frame.addEventListener('load',()=>{
           install();
           setTimeout(install,350);
@@ -11304,8 +11025,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         setTimeout(()=>installBrowserAltBridgeForFrame(frame),700);
       };
       installAltBridge();
-      if(frame.dataset.nyxInputReady==='true') return;
-      frame.dataset.nyxInputReady='true';
+      if(frame.dataset.n7xInputReady==='true') return;
+      frame.dataset.n7xInputReady='true';
       frame.addEventListener('nyx:app-dom-ready',()=>syncInternalThemeFrames());
       const focusFrame=()=>setTimeout(()=>{
         const focused=document.activeElement;
@@ -11343,7 +11064,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(!t?.frame) return;
       const sourceUrl=t.sourceUrl || t.url || t.frame.getAttribute('src') || '';
       const containPopups=popupProtectionForUrl(sourceUrl);
-      t.frame.dataset.nyxBrowserContained=containPopups ? 'true' : 'false';
+      t.frame.dataset.n7xBrowserContained=containPopups ? 'true' : 'false';
       applyFrameInteractionPermissions(t.frame);
       installYouTubeCompositorGuard(t);
       installYouTubeCompatibilityGuard(t);
@@ -11390,12 +11111,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     function ensureTabLoadingScene(){
       const body=win.querySelector('.browser-body');
       if(!body) return null;
-      let loader=body.querySelector('.nyx-frame-loader');
+      let loader=body.querySelector('.n7x-frame-loader');
       if(loader) return loader;
       loader=document.createElement('div');
-      loader.className='nyx-frame-loader';
+      loader.className='n7x-frame-loader';
       loader.setAttribute('aria-hidden','true');
-      loader.innerHTML='<span class="nyx-page-spinner" aria-hidden="true"></span><span>Loading page…</span>';
+      loader.innerHTML='<span class="n7x-page-spinner" aria-hidden="true"></span><span>Loading page…</span>';
       body.append(loader);
       return loader;
     }
@@ -11404,7 +11125,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       t.loading=!!loading;
       if(t.id===state.active){
         ensureTabLoadingScene()?.setAttribute('aria-hidden',t.loading?'false':'true');
-        win.classList.toggle('nyx-frame-loading',t.loading);
+        win.classList.toggle('n7x-frame-loading',t.loading);
       }
     }
     function activate(id){
@@ -11420,7 +11141,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       const activeLocation=browserShellSourceUrl(t?.sourceUrl || activeUrl) || t?.sourceUrl || activeUrl;
       const activeTitle=t?.title || mappedShellTab?.title || 'New Tab';
       const activeIsBlank=isBrowserShellBlankUrl(activeUrl);
-      win.classList.toggle('nyx-frame-loading',!!t?.loading);
+      win.classList.toggle('n7x-frame-loading',!!t?.loading);
       ensureTabLoadingScene()?.setAttribute('aria-hidden',t?.loading?'false':'true');
       win.classList.toggle('internal-clear',!!t?.frame?.classList.contains('transparent-internal-page'));
       win.querySelectorAll('.view').forEach(f=>f.classList.remove('active'));
@@ -11466,7 +11187,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       t.actualEngine=detectBrowserEngine(url,t);
     }
     function resetProxyInstallers(){
-      uvInstallPromise=null;
+
       scramjetInstallPromise=null;
       scramjetTransport=null;
       scramjetTransportKey='';
@@ -11635,13 +11356,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const nextTransport=transportRetryOrder(currentTransport)[0] || DEFAULT_BROWSER_TRANSPORT;
         setBrowserTransportOverride(nextTransport);
         if(expectedEngine==='scramjet') loadScramjetTab(t,sourceUrl,false);
-        else if(expectedEngine==='ultraviolet'){
-          installUltraviolet().then(ok=>{
-            if(t.transportWatchToken!==token || !state.tabs.includes(t) || !browserFrameStillAtSource(t,sourceUrl)) return;
-            const proxied=ok ? proxyModeUrl('ultraviolet',sourceUrl,t.privacySessionId) : '';
-            if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',sourceUrl);
-          });
-        }
+        else {}
       };
       t.frame.addEventListener('load',()=>setTimeout(check,80),{once:true});
       setTimeout(check,1300);
@@ -11755,17 +11470,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         const currentTransport=proxyTransportName();
         const nextTransport=transportRetryOrder(currentTransport)[0] || '';
         let handled=false;
-        if(expectedEngine==='ultraviolet'){
-          if(canAutoTransport && nextTransport){
-            setBrowserTransportOverride(nextTransport);
-            navigate(sourceUrl,'ultraviolet');
-            handled=true;
-          }else if(browserMode==='auto'){
-            if(canAutoTransport) setBrowserTransportOverride('epoxy');
-            loadScramjetTab(t,sourceUrl,false);
-            handled=true;
-          }
-        }else if(expectedEngine==='scramjet'){
+        if(expectedEngine==='scramjet'){
           if(canAutoTransport && nextTransport){
             setBrowserTransportOverride(nextTransport);
             loadScramjetTab(t,sourceUrl,false);
@@ -11842,17 +11547,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       }
       watchProxyLoad(t,sourceUrl || (/^https?:/i.test(url) ? url : ''),expectedEngine);
       watchFrameTransportErrors(t,sourceUrl || (/^https?:/i.test(url) ? url : ''),expectedEngine);
-      if(expectedEngine==='ultraviolet'){
-        t.retryUvPresentation=(retrySource,reason='')=>{
-          if(reason==='YouTube component styles did not initialize'){
-            loadScramjetTab(t,retrySource,false);
-            return;
-          }
-          const proxied=proxyModeUrl('ultraviolet',retrySource,t.privacySessionId);
-          if(proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',retrySource);
-        };
-        watchUvPresentation(t,sourceUrl || requestedSource);
-      }else t.retryUvPresentation=null;
+
       t.frameHistoryPending={index:t.index};
       monitorBrowserTabSecurity(t,securitySource,securityIntent);
       t.frame.src=url;
@@ -12006,7 +11701,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           t.privateScramjetController.setTransport(scramjetController.transport);
         }
         const existingFrameSrc=String(t.frame.getAttribute('src') || '');
-        if(existingFrameSrc.startsWith('/service/') || t.actualEngine==='ultraviolet'){
+        if(existingFrameSrc.startsWith('/service/')){
           replaceTabFrame(t);
         }
         const spotifyChromeOsCompatibility=/\bCrOS\b/i.test(String(navigator.userAgent || '')) && isSpotifyFamilyUrl(url);
@@ -12041,6 +11736,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           clearFrameDocument(t);
           installPopupBridge(t);
           const plugins=[
+            createNavigationIntentPlugin((previous,blocked)=>{
+              if(!state.tabs.includes(t))return;
+              if(t.history?.[t.index]===blocked && t.index>0){t.history.splice(t.index,1);t.index--;}
+              t.sourceUrl=previous;
+              setTabMeta(t,previous,false);
+              if(t.id===state.active)win.querySelector('.urlbar').value=browserShellDisplayValue(previous);
+              toast('Automatic redirect blocked. Use a link or the address bar to leave this site.');
+            },isAuthSensitiveUrl),
             createScramjetCompatibilityPlugin('','proxy-sri'),
             createScramjetCompatibilityPlugin(proxyPrivacyGuardSource,'privacy'),
             createScramjetCompatibilityPlugin(browserAdBlockRuntimeSource,'ad-block')
@@ -12209,7 +11912,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         };
         const poll=setInterval(()=>{
           const srcdoc=String(t.frame?.getAttribute?.('srcdoc') || '');
-          if(srcdoc && /Scramjet did not start|Ultraviolet did not start|Page Not Found|error/i.test(srcdoc)) finish(false);
+          if(srcdoc && /Scramjet did not start|Page Not Found|error/i.test(srcdoc)) finish(false);
           if(hasMeaningfulContent()) finish(true);
         },420);
         const timer=setTimeout(()=>finish(false),timeout);
@@ -12237,7 +11940,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       if(isSearchQuery){
         void nyxRecordSearchHistory(rawText);
         const url=selectedSearchUrl(rawText);
-        document.querySelectorAll('.nyx-preflight').forEach(overlay=>overlay.remove());
+        document.querySelectorAll('.n7x-preflight').forEach(overlay=>overlay.remove());
         win.querySelector('.urlbar').value=browserShellDisplayValue(url);
         hideBrowserSuggestions();
         const browserMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
@@ -12255,20 +11958,12 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           loadScramjetV1Tab(t,url,true);
         }else if(mode==='scramjet'){
           loadScramjetTab(t,url,true);
-        }else if(mode==='ultraviolet'){
-          setTabMeta(t,url,true);
-          installUltraviolet().then(ok=>{
-            if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-            const proxied=ok ? proxyModeUrl(mode,url,t.privacySessionId) : '';
-            if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',url);
-            else loadScramjetTab(t,url,false);
-          });
-        }else{
+        }else {
           loadTab(t,proxyModeUrl(mode,url,t.privacySessionId),true,mode || 'iframe',url);
         }
         return;
       }
-      if(rawText && looksLikeUrl && !proxyInternal) document.querySelectorAll('.nyx-preflight').forEach(overlay=>overlay.remove());
+      if(rawText && looksLikeUrl && !proxyInternal) document.querySelectorAll('.n7x-preflight').forEach(overlay=>overlay.remove());
       const url=youtubeEnglishUrl(normalize(browserShellSourceUrl(raw) || raw)); if(!url)return;
       win.querySelector('.urlbar').value=browserShellDisplayValue(url);
       const browserMode=normalizeBrowserModeName(store.text('nyx.browserMode',DEFAULT_BROWSER_MODE));
@@ -12309,26 +12004,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         loadScramjetV1Tab(t,url,true);
       }else if(mode==='scramjet'){
         loadScramjetTab(t,url,true);
-      }else if(mode==='ultraviolet'){
-        setTabMeta(t,url,true);
-        installUltraviolet().then(ok=>{
-          if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
-          const proxied=ok ? proxyModeUrl(mode,url,t.privacySessionId) : '';
-          if(ok && proxied.startsWith('/service/')) loadTab(t,proxied,false,'ultraviolet',url);
-          else{
-            if(browserMode==='auto' && !document.body.classList.contains('browser-shell')){
-              loadScramjetTab(t,url,false);
-              return;
-            }
-            t.url=url;
-            setTabMeta(t,url,false);
-            t.actualEngine='ultraviolet-failed';
-            setFrameSandbox(t,true);
-            clearFrameDocument(t);
-            t.frame.srcdoc=proxyFailureHtml('Refresh once so the updated service worker can register, then try again.','Ultraviolet');
-          }
-        });
-      }else{
+      }else {
         loadTab(t,proxyModeUrl(mode,url,t.privacySessionId),true,mode || 'iframe',url);
       }
     }
@@ -12370,13 +12046,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           loadScramjetV1Tab(t,source,false);
         }else if(engine==='scramjet'){
           loadScramjetTab(t,source,false);
-        }else if(engine==='ultraviolet'){
-          installUltraviolet().then(ok=>{
-            if(!ok || !state.tabs.includes(t)) return;
-            const proxied=String(stored).startsWith('/service/') ? stored : proxyModeUrl('ultraviolet',source,t.privacySessionId);
-            loadTab(t,proxied,false,'ultraviolet',source);
-          });
-        }else{
+        }else {
           loadTab(t,stored,false,engine,source);
         }
         return;
@@ -12395,7 +12065,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         if(nextIndex<0) return;
         const closingTab=state.tabs[nextIndex];
         const wasActive=isSelectedBrowserTab(closingTab);
-        if(closingTab.frame?.dataset?.nyxBrowserContained==='true') browserOverlayQuarantineUntil=Date.now()+30000;
+        if(closingTab.frame?.dataset?.n7xBrowserContained==='true') browserOverlayQuarantineUntil=Date.now()+30000;
         if(closingTab.id===state.active) setTabLoading(closingTab,false);
         destroyProxyPrivacySession(closingTab);
         closingTab.frame.remove();
@@ -12682,7 +12352,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           scramjetController=null;
           scramjetTransport=null;
           scramjetTransportKey='';
-          uvInstallPromise=null;
+
         }
         store.setText('nyx.transport',nextTransport);
         applyUserSettings();
@@ -12789,437 +12459,14 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return win;
   }
   function openUpdates(){
-    makeWindow({title:"N7X Fixes",left:'24px',top:'60px',width:'520px',height:'620px',autoMaximize:true,body:`<div class="panel"><h1>N7X Fixes</h1><p class="home-sub">Click N7X in the top-left anytime to see this.</p><div class="glass-grid" style="grid-template-columns:1fr"><div class="glass-card"><h2>Latest fixes</h2><p>- Added animated windows that eject from the bottom dock and fade when closed.</p><p>- Made the Updates window open fullscreen every time.</p><p>- Added one-time Updates popup on startup.</p><p>- Added multiple weather location choices for ambiguous searches.</p><p>- Added hot and freezing weather themes.</p><p>- Updated glassmorphism so 100%+ lowers blur instead of over-brightening.</p><p>- Replaced the Discord logo with the new attached icon.</p><p>- Removed the left desktop Browser and Updates buttons.</p><p>- Changed Weather from an app into a right-side liquid glass panel.</p><p>- Added visible background previews and background upload.</p><p>- Rebuilt the loading screen so it types the welcome text.</p><p>- Added local app icons to avoid blocked favicon requests.</p></div><div class="glass-card"><h2>Browser fixes</h2><p>- Added a Node server for Ultraviolet.</p><p>- Fixed UV static routes for /uv, /baremux, /epoxy, and /wisp.</p><p>- Replaced the old Wisp server package.</p><p>- Pinned the compatible Epoxy transport.</p><p>- Removed hard UV script loading from Live Server mode.</p></div></div></div>`});
+    makeWindow({title:"N7X Fixes",left:'24px',top:'60px',width:'520px',height:'620px',autoMaximize:true,body:`<div class="panel"><h1>N7X Fixes</h1><p class="home-sub">Click N7X in the top-left anytime to see this.</p><div class="glass-grid" style="grid-template-columns:1fr"><div class="glass-card"><h2>Latest fixes</h2><p>- Added animated windows that eject from the bottom dock and fade when closed.</p><p>- Made the Updates window open fullscreen every time.</p><p>- Added one-time Updates popup on startup.</p><p>- Updated glassmorphism so 100%+ lowers blur instead of over-brightening.</p><p>- Replaced the Discord logo with the new attached icon.</p><p>- Removed the left desktop Browser and Updates buttons.</p><p>- Added visible background previews and background upload.</p><p>- Rebuilt the loading screen so it types the welcome text.</p><p>- Added local app icons to avoid blocked favicon requests.</p></div><div class="glass-card"><h2>Browser fixes</h2><p>- Website navigation uses the current engine.</p></div></div></div>`});
   }
-  function weatherDescription(code){
-    const map={0:'Clear',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Rime fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',56:'Freezing drizzle',57:'Freezing drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',66:'Freezing rain',67:'Freezing rain',71:'Light snow',73:'Snow',75:'Heavy snow',77:'Snow grains',80:'Light showers',81:'Showers',82:'Heavy showers',85:'Snow showers',86:'Snow showers',95:'Thunderstorm',96:'Thunderstorm',99:'Thunderstorm, hail'};
-    return map[code] || 'Weather';
-  }
-  function weatherIcon(code,isDay=true){
-    const value=Number(code);
-    const svg=(kind,content)=>`<svg class="nyx-weather-symbol nyx-weather-symbol-${kind}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${content}</svg>`;
-    const sun='<circle class="nyx-weather-sun-fill" cx="12" cy="12" r="4"/><path class="nyx-weather-sun-ray" d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/>';
-    const cloud='<path class="nyx-weather-cloud-fill" d="M6.4 18.2h10.3a4.25 4.25 0 0 0 .5-8.47 6.05 6.05 0 0 0-11.55 1.83A3.38 3.38 0 0 0 6.4 18.2Z"/>';
-    if(!isDay && [0,1,2].includes(value)){
-      return svg('moon','<path class="nyx-weather-moon-fill" d="M18.7 15.45A7.4 7.4 0 0 1 8.55 5.3a7.7 7.7 0 1 0 10.15 10.15Z"/>');
-    }
-    if(value===0) return svg('sun',sun);
-    if([1,2].includes(value)){
-      return svg('partly-cloudy','<circle class="nyx-weather-sun-fill" cx="8" cy="8" r="3.2"/><path class="nyx-weather-sun-ray" d="M8 2.3v1.4M3.97 3.97l1 1M2.3 8h1.4M12.03 3.97l-1 1M13.7 8h-1.4"/><path class="nyx-weather-cloud-fill" d="M7.2 19h10a4 4 0 0 0 .45-7.98A5.55 5.55 0 0 0 7.08 12.6 3.2 3.2 0 0 0 7.2 19Z"/>');
-    }
-    if(value===3) return svg('cloud',cloud);
-    if([45,48].includes(value)){
-      return svg('fog',`${cloud}<path class="nyx-weather-detail" d="M4 20.5h13M7 23h12"/>`);
-    }
-    if([71,73,75,77,85,86].includes(value)){
-      return svg('snow',`${cloud}<path class="nyx-weather-snow" d="M8 19.7v3M6.7 20.45l2.6 1.5M9.3 20.45l-2.6 1.5M15.5 19.7v3M14.2 20.45l2.6 1.5M16.8 20.45l-2.6 1.5"/>`);
-    }
-    if([95,96,99].includes(value)){
-      return svg('storm',`${cloud}<path class="nyx-weather-bolt" d="m12.5 18.4-2.1 3.4h2l-1 2.2 4-4.3h-2.3l1.4-1.3Z"/>`);
-    }
-    if([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(value)){
-      return svg('rain',`${cloud}<path class="nyx-weather-rain" d="m8 19.8-1 2M12.5 19.8l-1 2M17 19.8l-1 2"/>`);
-    }
-    return svg('cloud',cloud);
-  }
-  function forecastDayLabel(dateText,index){
-    if(index===0) return 'Today';
-    try{
-      return new Intl.DateTimeFormat([],{weekday:'short'}).format(new Date(dateText+'T12:00:00'));
-    }catch{
-      return 'Day';
-    }
-  }
-  function renderWeatherForecast(daily){
-    const box=weatherPanel()?.querySelector('[data-weather-forecast]');
-    if(!box) return;
-    const times=daily?.time || [];
-    if(!times.length){
-      box.innerHTML='';
-      return;
-    }
-    box.innerHTML=times.slice(0,7).map((day,index)=>{
-      const code=daily.weather_code?.[index] ?? 3;
-      const rain=Math.round(daily.precipitation_probability_max?.[index] ?? 0);
-      const high=Math.round(daily.temperature_2m_max?.[index] ?? 0);
-      const low=Math.round(daily.temperature_2m_min?.[index] ?? 0);
-      return `<div class="weather-forecast-row" title="${esc(weatherDescription(code))}">
-        <span class="weather-day">${esc(forecastDayLabel(day,index))}</span>
-        <span class="weather-forecast-symbol" aria-hidden="true">${weatherIcon(code,true)}</span>
-        <span class="weather-rain-chance">${rain}%</span>
-        <span class="weather-high-low">${high}&deg; <span>${low}&deg;</span></span>
-      </div>`;
-    }).join('');
-  }
-  function weatherPanel(){
-    return $('weatherPanel');
-  }
-  let latestWeatherSnapshot=null;
-  function syncHomeWeatherWidgets(snapshot=latestWeatherSnapshot){
-    qsa('[data-home-weather]').forEach(widget=>{
-      const icon=widget.querySelector('[data-home-weather-icon]');
-      const temp=widget.querySelector('[data-home-weather-temp]');
-      const desc=widget.querySelector('[data-home-weather-desc]');
-      if(snapshot){
-        const summary=weatherDescription(snapshot.weather_code);
-        const degrees=`${Math.round(snapshot.temperature_2m)}°`;
-        if(icon) icon.innerHTML=weatherIcon(snapshot.weather_code,snapshot.is_day!==0);
-        if(temp) temp.textContent=degrees;
-        if(desc) desc.textContent=summary;
-        widget.setAttribute('aria-label',`Open weather report. ${degrees}, ${summary}`);
-        widget.dataset.loaded='true';
-      }else{
-        if(icon) icon.innerHTML=weatherIcon(1,true);
-        if(temp) temp.textContent='--°';
-        if(desc) desc.textContent='Loading';
-        widget.setAttribute('aria-label','Open weather report');
-        delete widget.dataset.loaded;
-      }
-    });
-    qsa('[data-nyx-dashboard-weather]').forEach(widget=>{
-      const temp=widget.querySelector('[data-nyx-dashboard-weather-temp]');
-      const desc=widget.querySelector('[data-nyx-dashboard-weather-desc]');
-      const place=widget.querySelector('[data-nyx-dashboard-weather-place]');
-      if(snapshot){
-        if(temp) temp.textContent=`${Math.round(snapshot.temperature_2m)}°`;
-        if(desc) desc.textContent=weatherDescription(snapshot.weather_code);
-        if(place) place.textContent=snapshot.place || '';
-      }else{
-        if(temp) temp.textContent='--°';
-        if(desc) desc.textContent='Loading weather';
-        if(place) place.textContent='';
-      }
-    });
-  }
-  function setWeatherStatus(text){
-    const status=weatherPanel()?.querySelector('[data-weather-status]');
-    if(status) status.textContent=text || '';
-  }
-  function savedWeatherLocation(){
-    return {
-      latitude:Number(store.text('nyx.weatherLat','34.0522')),
-      longitude:Number(store.text('nyx.weatherLon','-118.2437')),
-      place:store.text('nyx.weatherPlace','Los Angeles'),
-      timezone:store.text('nyx.weatherTimezone','America/Los_Angeles')
-    };
-  }
-  function weatherEffectClass(code, wind, temp){
-    if(Number(temp) > 100) return 'weather-hot';
-    if(Number(temp) < 32) return 'weather-freezing';
-    if([51,53,55,61,63,65,80,81,82,95].includes(code)) return 'weather-rain';
-    if(Number(wind) >= 18) return 'weather-wind';
-    if([0,1].includes(code)) return 'weather-sun';
-    return 'weather-cloud';
-  }
-
-  function renderWeatherTime(timezone){
-    const time=weatherPanel()?.querySelector('[data-weather-time]');
-    if(!time) return;
-    try{
-      time.textContent='Local time '+new Intl.DateTimeFormat([],{
-        hour:'numeric',
-        minute:'2-digit',
-        timeZone:timezone || savedWeatherLocation().timezone
-      }).format(new Date());
-    }catch{
-      time.textContent='Local time --:--';
-    }
-  }
-  function renderWeather(data, place, timezone, daily){
-    const panel=weatherPanel();
-    if(!panel || !data) return;
-    panel.querySelector('[data-weather-temp]').innerHTML=Math.round(data.temperature_2m)+'&deg;';
-    panel.querySelector('[data-weather-place]').textContent=place || 'Weather';
-    panel.querySelector('[data-weather-desc]').textContent=weatherDescription(data.weather_code);
-    panel.querySelector('[data-weather-icon]').innerHTML=weatherIcon(data.weather_code,data.is_day!==0);
-    panel.querySelector('[data-weather-feels]').innerHTML=Math.round(data.apparent_temperature ?? data.temperature_2m)+'&deg;';
-    panel.querySelector('[data-weather-wind]').textContent=Math.round(data.wind_speed_10m)+' mph';
-    panel.querySelector('[data-weather-humidity]').textContent=Math.round(data.relative_humidity_2m)+'%';
-    panel.querySelector('[data-weather-precip]').textContent=((Number(data.precipitation || 0)).toFixed(Number(data.precipitation || 0) >= 1 ? 1 : 2).replace(/\.00$/,'')).replace(/\.0$/,'')+' in';
-    panel.classList.remove('weather-sun','weather-cloud','weather-rain','weather-wind','weather-hot','weather-freezing');
-    panel.classList.add(weatherEffectClass(data.weather_code,data.wind_speed_10m,data.temperature_2m));
-    renderWeatherForecast(daily);
-    renderWeatherTime(timezone);
-    latestWeatherSnapshot={...data,place:place || 'Weather'};
-    syncHomeWeatherWidgets();
-    const restore=$('weatherRestore');
-    if(restore) restore.dataset.weatherSummary=`${Math.round(data.temperature_2m)}° ${weatherDescription(data.weather_code)}`;
-    setWeatherStatus('');
-  }
-  function clearWeatherOptions(){
-    const box=weatherPanel()?.querySelector('[data-weather-options]');
-    if(box){
-      box.innerHTML='';
-      box.hidden=true;
-      box.onchange=null;
-    }
-  }
-  function weatherPlaceName(match){
-    return [match.name,match.admin1,match.country].filter(Boolean).join(', ');
-  }
-  function weatherTimezoneFallbackName(timezone=''){
-    const raw=String(timezone || '').split('/').pop() || 'Current location';
-    return raw.replace(/_/g,' ') + (/America\//.test(String(timezone || '')) ? ', United States' : '');
-  }
-  async function reverseWeatherPlace(latitude,longitude,timezone=''){
-    const cleanCountry=name=>String(name || '').replace(/\s*\(the\)\s*/i,'').replace(/United States of America/i,'United States').trim();
-    try{
-      const res=await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}&localityLanguage=en`,{cache:'no-store'});
-      if(res.ok){
-        const data=await res.json();
-        const city=data.city || data.locality || '';
-        const region=data.principalSubdivision || '';
-        const country=cleanCountry(data.countryName || '');
-        const place=[city,region,country].filter(Boolean).join(', ');
-        if(place) return place;
-      }
-    }catch{}
-    try{
-      const res=await fetch(`https://geocoding-api.open-meteo.com/v1/reverse?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}&language=en&format=json&count=1`,{cache:'no-store'});
-      if(res.ok){
-        const data=await res.json();
-        const match=Array.isArray(data.results) ? data.results[0] : null;
-        const place=match ? weatherPlaceName(match) : '';
-        if(place) return place;
-      }
-    }catch{}
-    return weatherTimezoneFallbackName(timezone);
-  }
-  function scoreWeatherMatch(term,match){
-    const query=String(term || '').toLowerCase();
-    const name=String(match.name || '').toLowerCase();
-    const admin=String(match.admin1 || '').toLowerCase();
-    const country=String(match.country || '').toLowerCase();
-    let score=0;
-    if(query===name) score+=80;
-    if(query.includes(name)) score+=30;
-    if(admin && query.includes(admin)) score+=35;
-    if(country && query.includes(country)) score+=28;
-    if(/\b(us|usa|united states|america)\b/.test(query) && match.country_code==='US') score+=24;
-    if(match.feature_code==='PPLA' || match.feature_code==='PPLC') score+=8;
-    if(match.population) score+=Math.min(20,Math.log10(Number(match.population))*4);
-    return score;
-  }
-  async function selectWeatherMatch(match){
-    const place=weatherPlaceName(match);
-    store.setText('nyx.weatherLat',match.latitude);
-    store.setText('nyx.weatherLon',match.longitude);
-    store.setText('nyx.weatherPlace',place);
-    if(match.timezone) store.setText('nyx.weatherTimezone',match.timezone);
-    const input=weatherPanel()?.querySelector('[data-weather-query]');
-    if(input) input.value=place;
-    clearWeatherOptions();
-    await loadWeatherLocation({latitude:match.latitude,longitude:match.longitude,place,timezone:match.timezone});
-  }
-  async function loadWeatherLocation(location=savedWeatherLocation()){
-    const coords={
-      latitude:Number(location.latitude) || 34.0522,
-      longitude:Number(location.longitude) || -118.2437
-    };
-    const place=location.place || 'Los Angeles';
-    const timezone=location.timezone || savedWeatherLocation().timezone;
-    const panel=weatherPanel();
-    if(panel) panel.querySelector('[data-weather-place]').textContent=place;
-    setWeatherStatus('Loading...');
-    try{
-      const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto`);
-      if(!res.ok) throw new Error('weather failed');
-      const json=await res.json();
-      const tz=json.timezone || timezone;
-      store.setText('nyx.weatherTimezone',tz);
-      renderWeather(json.current,place,tz,json.daily);
-    }catch{
-      setWeatherStatus('Weather unavailable right now');
-    }
-  }
-  async function searchWeatherPlace(query){
-    const term=String(query||'').trim();
-    if(!term){loadWeatherLocation(); return}
-    clearWeatherOptions();
-    setWeatherStatus('Searching...');
-    try{
-      const fetchMatches=async(searchTerm)=>{
-        const res=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(searchTerm)}&count=10&language=en&format=json`);
-        if(!res.ok) throw new Error('search failed');
-        const data=await res.json();
-        return data.results || [];
-      };
-      let results=await fetchMatches(term);
-      if(!results.length && term.includes(',')){
-        results=await fetchMatches(term.split(',')[0].trim());
-      }
-      const seen=new Set();
-      const unique=results.filter(match=>{
-        const key=[match.name,match.admin1,match.country,match.latitude,match.longitude].join('|');
-        if(seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-      const matches=unique.sort((a,b)=>scoreWeatherMatch(term,b)-scoreWeatherMatch(term,a));
-      if(!matches.length){setWeatherStatus('No location found'); return}
-      if(matches.length===1){
-        await selectWeatherMatch(matches[0]);
-        return;
-      }
-      const box=weatherPanel()?.querySelector('[data-weather-options]');
-      if(!box) return;
-      box.hidden=false;
-      box.innerHTML='<option value="">Choose a matching location...</option>'+matches.map((match,i)=>{
-        const name=weatherPlaceName(match);
-        const detail=[match.timezone,match.population ? `${Number(match.population).toLocaleString()} people` : ''].filter(Boolean).join(' · ');
-        return `<option value="${i}">${esc(name)}${detail ? ` - ${esc(detail)}` : ''}</option>`;
-      }).join('');
-      box.onchange=()=>{if(box.value!=='') selectWeatherMatch(matches[Number(box.value)])};
-      setWeatherStatus('Choose a location');
-    }catch{
-      setWeatherStatus('Location search unavailable');
-    }
-  }
-  function isWeatherPanelOpen(){
-    const panel=weatherPanel();
-    return !!panel && !panel.classList.contains('minimized') && !panel.classList.contains('closing');
-  }
-  function closeWeatherPanelAnimated(){
-    const panel=weatherPanel();
-    const restore=$('weatherRestore');
-    if(!panel) return;
-    if(panel.classList.contains('minimized') || panel.classList.contains('closing')) return;
-    panel.classList.remove('opening');
-    panel.classList.add('closing');
-    setTimeout(()=>{
-      panel.classList.remove('closing');
-      panel.classList.add('minimized');
-      if(!document.body.classList.contains('browser-shell')) restore?.classList.add('show');
-      else restore?.classList.remove('show');
-    },520);
-  }
-  function closeWeatherForWindowOpen(){
-    const panel=weatherPanel();
-    if(!panel || !isWeatherPanelOpen()) return;
-    closeWeatherPanelAnimated();
-  }
-  let weatherPanelAnchorTrigger=null;
-  function setWeatherPanelAnchor(anchor='bottom',trigger=null){
-    const panel=weatherPanel();
-    if(!panel) return 'bottom';
-    const next=anchor==='top' ? 'top' : 'bottom';
-    weatherPanelAnchorTrigger=next==='top' ? (trigger || weatherPanelAnchorTrigger) : null;
-    panel.dataset.weatherAnchor=next;
-    panel.classList.toggle('weather-anchor-top',next==='top');
-    panel.classList.toggle('weather-anchor-bottom',next==='bottom');
-    if(next==='top' && weatherPanelAnchorTrigger?.getBoundingClientRect){
-      const triggerRect=weatherPanelAnchorTrigger.getBoundingClientRect();
-      const panelStyle=getComputedStyle(panel);
-      const scale=Math.max(.1,Number.parseFloat(panelStyle.zoom) || 1);
-      const panelWidth=(Number.parseFloat(panelStyle.width) || 306)*scale;
-      const margin=12;
-      const centered=triggerRect.left+(triggerRect.width-panelWidth)/2;
-      const physicalLeft=Math.max(margin,Math.min(innerWidth-panelWidth-margin,centered));
-      panel.style.setProperty('--weather-top-left',`${physicalLeft/scale}px`);
-    }else{
-      panel.style.removeProperty('--weather-top-left');
-    }
-    return next;
-  }
-  function restoreWeatherPanel(anchor=weatherPanel()?.dataset.weatherAnchor || 'bottom',trigger=null){
-    const panel=weatherPanel();
-    const restore=$('weatherRestore');
-    if(!panel) return;
-    setWeatherPanelAnchor(anchor,trigger);
-    panel.classList.remove('minimized','closing');
-    panel.classList.add('opening');
-    setTimeout(()=>panel.classList.remove('opening'),640);
-    restore?.classList.remove('show');
-    const query=panel.querySelector('[data-weather-query]');
-    if(query){
-      query.blur();
-      try{query.setSelectionRange(0,0)}catch{}
-      query.scrollLeft=0;
-    }
-  }
-  function loadUserWeatherLocation(){
-    if(!navigator.geolocation) return Promise.resolve(false);
-    return new Promise(resolve=>{
-      navigator.geolocation.getCurrentPosition(async position=>{
-        const coords=position.coords || {};
-        if(!Number.isFinite(coords.latitude) || !Number.isFinite(coords.longitude)){
-          resolve(false);
-          return;
-        }
-        const timezone=Intl.DateTimeFormat().resolvedOptions().timeZone || savedWeatherLocation().timezone;
-        const place=await reverseWeatherPlace(coords.latitude,coords.longitude,timezone);
-        store.setText('nyx.weatherLat',coords.latitude);
-        store.setText('nyx.weatherLon',coords.longitude);
-        store.setText('nyx.weatherPlace',place);
-        store.setText('nyx.weatherTimezone',timezone);
-        const input=weatherPanel()?.querySelector('[data-weather-query]');
-        if(input) input.value=place;
-        await loadWeatherLocation({latitude:coords.latitude,longitude:coords.longitude,place,timezone});
-        resolve(true);
-      },()=>{
-        resolve(false);
-      },{enableHighAccuracy:false,maximumAge:600000,timeout:4500});
-    });
-  }
-  async function openWeatherOnStartup(){
-    initWeatherPanel();
-    restoreWeatherPanel();
-    const usedLocation=await loadUserWeatherLocation();
-    if(!usedLocation) loadWeatherLocation(savedWeatherLocation());
-    restoreWeatherPanel();
-  }
-  function initWeatherPanel(){
-    const panel=weatherPanel();
-    if(!panel || panel.dataset.ready) return;
-    panel.dataset.ready='true';
-    const saved=savedWeatherLocation();
-    const query=panel.querySelector('[data-weather-query]');
-    if(query) query.value=saved.place;
-    panel.querySelector('[data-weather-search]')?.addEventListener('submit',e=>{
-      e.preventDefault();
-      searchWeatherPlace(query?.value);
-    });
-    panel.querySelector('[data-weather-refresh]')?.addEventListener('click',()=>loadWeatherLocation());
-    panel.querySelector('[data-weather-minimize]')?.addEventListener('click',closeWeatherPanelAnimated);
-    $('weatherRestore')?.addEventListener('click',restoreWeatherPanel);
-    if(!initWeatherPanel.anchorResizeReady){
-      initWeatherPanel.anchorResizeReady=true;
-      addEventListener('resize',()=>{
-        if(isWeatherPanelOpen() && weatherPanel()?.dataset.weatherAnchor==='top'){
-          setWeatherPanelAnchor('top',weatherPanelAnchorTrigger);
-        }
-      },{passive:true});
-    }
-    loadWeatherLocation(saved);
-    if(!initWeatherPanel.timeTimer) initWeatherPanel.timeTimer=setInterval(()=>renderWeatherTime(savedWeatherLocation().timezone),30000);
-  }
-  function openWeather(anchor='bottom',trigger=null){
-    initWeatherPanel();
-    const panel=weatherPanel();
-    const next=anchor==='top' ? 'top' : 'bottom';
-    if(isWeatherPanelOpen()){
-      if(panel?.dataset.weatherAnchor!==next){
-        setWeatherPanelAnchor(next,trigger);
-        const query=panel.querySelector('[data-weather-query]');
-        if(query){
-          query.blur();
-          try{query.setSelectionRange(0,0)}catch{}
-          query.scrollLeft=0;
-        }
-        return;
-      }
-      closeWeatherPanelAnimated();
-      return;
-    }
-    restoreWeatherPanel(next,trigger);
-  }
-
   let nyxAiModels=[];
   function nyxAiSelectedModel(){
     const saved=store.text('nyx.aiModel','chatgpt-5.4-mini');
     return nyxAiModels.some(([id])=>id===saved) ? saved : (nyxAiModels[0]?.[0]||'');
   }
-  function nyxAiModelLabel(id=nyxAiSelectedModel()){
+  function n7xAiModelLabel(id=nyxAiSelectedModel()){
     return nyxAiModels.find(([modelId])=>modelId===id)?.[1] || 'Models unavailable';
   }
   function nyxAiModelOptions(selected=nyxAiSelectedModel()){
@@ -13243,7 +12490,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         select.innerHTML=nyxAiModelOptions(previous);
         select.value=previous;
       });
-      document.querySelectorAll('[data-nyx-ai-model-label]').forEach(label=>{label.textContent=nyxAiModelLabel(selected)});
+      document.querySelectorAll('[data-n7x-ai-model-label]').forEach(label=>{label.textContent=n7xAiModelLabel(selected)});
     }catch(error){
       console.warn("N7X A1 model catalog could not be loaded:",error);
     }
@@ -13251,7 +12498,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
   void nyxAiLoadModels();
   function lionAiEmptyState(){
     return `<section class="lion-ai-empty" data-lion-ai-empty>
-      <div class="lion-ai-orb" data-nyx-logo aria-hidden="true"></div>
+      <div class="lion-ai-orb" data-n7x-logo aria-hidden="true"></div>
       <p class="lion-ai-eyebrow">N7X INTELLIGENCE</p>
       <h2>What can I help you with?</h2>
       <p class="lion-ai-empty-copy">Ask a question, work through an idea, or start creating.</p>
@@ -13284,7 +12531,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       <main class="lion-ai-main">
         <header class="lion-ai-head">
           <div class="lion-ai-header-brand">
-            <div class="lion-ai-mark" data-nyx-logo aria-label="N7X"></div>
+            <div class="lion-ai-mark" data-n7x-logo aria-label="N7X"></div>
             <div class="lion-ai-title">
               <h1 data-lion-ai-thread-title>New chat</h1>
               <span>N7X A1 workspace</span>
@@ -13293,7 +12540,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           <div class="lion-ai-head-actions">
             <div class="lion-ai-model-pill">
               <span class="lion-ai-ready-dot" aria-hidden="true"></span>
-              <strong data-nyx-ai-model-label>${esc(nyxAiModelLabel())}</strong>
+              <strong data-n7x-ai-model-label>${esc(n7xAiModelLabel())}</strong>
             </div>
             <button class="lion-ai-clear" type="button" data-lion-ai-clear title="Clear conversation" aria-label="Clear conversation">
               <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M7 6l1 14h8l1-14M10 10v6M14 10v6"/></svg>
@@ -14007,7 +13254,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     chat.scrollTop=chat.scrollHeight;
   }
   function openApps(){
-    makeWindow({title:'Apps',left:'12vw',top:'90px',width:'600px',height:'430px',body:`<div class="panel"><h1>Apps</h1><div class="quick-grid apps-launch-grid" data-nyx-global-app-grid>${quickTiles()}</div></div>`});
+    makeWindow({title:'Apps',left:'12vw',top:'90px',width:'600px',height:'430px',body:`<div class="panel"><h1>Apps</h1><div class="quick-grid apps-launch-grid" data-n7x-global-app-grid>${quickTiles()}</div></div>`});
   }
   function openLinks(){
     makeWindow({title:'Links',left:'18vw',top:'100px',width:'520px',height:'380px',body:`<div class="panel"><h1>Links</h1><div class="glass-grid"><div class="glass-card"><h2>S3ARC4 Engines</h2><button data-url="https://www.google.com/">Google</button><button data-url="https://duckduckgo.com/">DuckDuckGo</button></div><div class="glass-card"><h2>School</h2><button data-url="https://docs.google.com/">Docs</button><button data-url="https://classroom.google.com/">Classroom</button></div></div></div>`});
@@ -14021,8 +13268,8 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       width:'720px',
       height:'560px',
       autoMaximize:false,
-      className:'nyx-utility-window',
-      body:nyxTermsPageMarkup('nyx-info-page nyx-terms-page')
+      className:'n7x-utility-window',
+      body:nyxTermsPageMarkup('n7x-info-page nyx-terms-page')
     });
   }
   function openAboutNyx(){
@@ -14034,20 +13281,20 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
       width:'620px',
       height:'430px',
       autoMaximize:false,
-      className:'nyx-utility-window',
-      body:nyxCreditsPageMarkup('nyx-info-page nyx-credits-tab')
+      className:'n7x-utility-window',
+      body:nyxCreditsPageMarkup('n7x-info-page n7x-credits-tab')
     });
   }
   function nyxTerminalWrite(output,text,type=''){
     if(!output) return;
     const row=document.createElement('div');
-    row.className='nyx-terminal-line'+(type?' '+type:'');
+    row.className='n7x-terminal-line'+(type?' '+type:'');
     row.textContent=String(text);
     output.appendChild(row);
     output.scrollTop=output.scrollHeight;
   }
   async function runNyxTerminalCommand(win,raw){
-    const output=win?.querySelector('[data-nyx-terminal-output]');
+    const output=win?.querySelector('[data-n7x-terminal-output]');
     const command=String(raw || '').trim();
     if(!command) return;
     nyxTerminalWrite(output,'nyx> '+command,'command');
@@ -14118,7 +13365,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
     return openBrowserShellInternalTab('developer');
   }
   openApps = function(){
-    makeWindow({title:'Apps',left:'8vw',top:'64px',width:'960px',height:'650px',body:`<div class="panel apps-panel"><h1>Apps</h1><div class="quick-grid apps-launch-grid" data-nyx-global-app-grid>${quickTiles()}</div></div>`});
+    makeWindow({title:'Apps',left:'8vw',top:'64px',width:'960px',height:'650px',body:`<div class="panel apps-panel"><h1>Apps</h1><div class="quick-grid apps-launch-grid" data-n7x-global-app-grid>${quickTiles()}</div></div>`});
   };
 
   function settingsBody(){
@@ -14171,13 +13418,13 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
           <div class="settings-row"><input id="settingName" value="${esc(store.text('nyx.userName',''))}" placeholder="Enter your name" autocomplete="nickname"><button data-save-profile>Save</button></div>
         </section>
         <section class="settings-card" data-founder-account-card hidden>
-          <h2><button class="nyx-account-settings-link" data-open-nyx-account-settings type="button">Account</button></h2>
+          <h2><button class="n7x-account-settings-link" data-open-n7x-account-settings type="button">Account</button></h2>
           <p data-founder-account-status>Sign in to manage your N7X account.</p>
-          <div class="settings-actions"><button data-open-nyx-account type="button">Create or sign in</button><button data-open-nyx-profile type="button" hidden>Edit account</button><button data-nyx-account-sign-out type="button" hidden>Sign out</button></div>
+          <div class="settings-actions"><button data-open-n7x-account type="button">Create or sign in</button><button data-open-n7x-profile type="button" hidden>Edit account</button><button data-n7x-account-sign-out type="button" hidden>Sign out</button></div>
         </section>
         <section class="settings-card" data-founder-profile-settings-card hidden>
           <h2>Founder Profile</h2>
-          <p>Customize the public profile shown on About Nyx.</p>
+          <p>Customize the public profile shown on About N7X.</p>
           <button data-open-founder-profile-editor type="button">Customize Founder Profile</button>
         </section>
         <section class="settings-card">
@@ -14203,7 +13450,7 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         <section class="settings-card">
           <h2>Clear Cache</h2>
           <p>Removes cookies, cache files, saved settings, proxy storage, and service workers, then reloads nyx like a fresh install.</p>
-          <button data-clear-nyx-cache type="button">Clear Cache and Reset</button>
+          <button data-clear-n7x-cache type="button">Clear Cache and Reset</button>
         </section>
         <section class="settings-card">
           <h2>Browser Mode</h2>
@@ -14246,11 +13493,11 @@ html body .nyx-credits-thanks .nyx-credits-p2p-icon{display:block;width:60px;hei
         <section class="settings-card">
           <h2>Change Proxy</h2>
           <p>Choose the browser engine N7X uses for external sites.
-Scramjet supports more websites, while Ultraviolet can work better for some pages.
+The current engine handles website navigation.
 Auto uses Scramjet with Libcurl by default and can recover with another relay if the connection fails.</p>
           <select id="settingBrowserMode">
             <option value="auto">Auto</option>
-            <option value="scramjet">Use Scramjet v2</option><option value="ultraviolet">U1TR4V10L$T</option>
+            <option value="scramjet">Use Scramjet v2</option>
 
           </select>
         </section>
@@ -14354,7 +13601,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     const fontSelect=$('setupFont');
     const theme=themeSelect?.value || 'default';
     const stage=setup.querySelector('[data-setup-final-stage]');
-    if(stage) stage.dataset.nyxPreviewTheme=normalizeNyxTheme(theme);
+    if(stage) stage.dataset.n7xPreviewTheme=normalizeNyxTheme(theme);
     const values=[
       ['[data-setup-preview-theme]',setupOptionText(themeSelect)],
       ['[data-setup-preview-effect]',setupOptionText(effectSelect)],
@@ -14445,7 +13692,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       if(event.key!=='Enter') return;
       if(!setup.classList.contains('show')) return;
       const target=event.target;
-      if(target?.closest?.('.nyx-account-overlay,.nyx-user-profile-overlay,.nyx-email-verification-overlay')) return;
+      if(target?.closest?.('.n7x-account-overlay,.n7x-user-profile-overlay,.nyx-email-verification-overlay')) return;
       if(target?.matches?.('button,a,textarea,select,[contenteditable="true"]')) return;
       const steps=[...setup.querySelectorAll('[data-setup-step]')];
       if(!steps.length) return;
@@ -14500,23 +13747,23 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
   }
   let nyxTermsGateTimer=0;
   function closeNyxTermsGate(){
-    document.querySelector('.nyx-tos-gate')?.remove();
-    document.body.classList.remove('nyx-tos-active');
+    document.querySelector('.n7x-tos-gate')?.remove();
+    document.body.classList.remove('n7x-tos-active');
   }
   function showNyxTermsAcceptanceGate(){
     if(store.text('nyx.tosAcceptedVersion','')===NYX_TERMS_VERSION) return false;
-    if(document.querySelector('.nyx-tos-gate')) return true;
+    if(document.querySelector('.n7x-tos-gate')) return true;
     if($('setupScreen')?.classList.contains('show')) return false;
     const gate=document.createElement('div');
-    gate.className='nyx-tos-gate';
-    gate.innerHTML=`<section class="nyx-tos-dialog" role="dialog" aria-modal="true" aria-labelledby="nyxTosGateTitle" aria-describedby="nyxTosGateIntro"><header class="nyx-tos-gate-header"><span class="nyx-tos-gate-logo" aria-hidden="true"></span><div><span>Before you continue</span><h1 id="nyxTosGateTitle" tabindex="-1">N7X Terms of Service</h1></div></header><div class="nyx-tos-scroll" data-nyx-tos-scroll>${nyxTermsPageMarkup('nyx-tos-document')}<div class="nyx-tos-declined" hidden><span aria-hidden="true">ⓘ</span><h2 tabindex="-1">Terms declined</h2><p>You cannot use N7X without accepting the Terms of Service. You can review the terms again or leave Nyx.</p></div></div><footer class="nyx-tos-actions"><p id="nyxTosGateIntro">By selecting Agree, you confirm that you have read and accept these Terms.</p><div><button class="nyx-tos-disagree" data-nyx-tos-disagree type="button">Disagree</button><button class="nyx-tos-agree" data-nyx-tos-agree type="button">Agree</button></div></footer></section>`;
+    gate.className='n7x-tos-gate';
+    gate.innerHTML=`<section class="n7x-tos-dialog" role="dialog" aria-modal="true" aria-labelledby="n7xTosGateTitle" aria-describedby="n7xTosGateIntro"><header class="n7x-tos-gate-header"><span class="n7x-tos-gate-logo" aria-hidden="true"></span><div><span>Before you continue</span><h1 id="n7xTosGateTitle" tabindex="-1">N7X Terms of Service</h1></div></header><div class="n7x-tos-scroll" data-n7x-tos-scroll>${nyxTermsPageMarkup('n7x-tos-document')}<div class="n7x-tos-declined" hidden><span aria-hidden="true">ⓘ</span><h2 tabindex="-1">Terms declined</h2><p>You cannot use N7X without accepting the Terms of Service. You can review the terms again or leave N7X.</p></div></div><footer class="n7x-tos-actions"><p id="n7xTosGateIntro">By selecting Agree, you confirm that you have read and accept these Terms.</p><div><button class="n7x-tos-disagree" data-n7x-tos-disagree type="button">Disagree</button><button class="n7x-tos-agree" data-n7x-tos-agree type="button">Agree</button></div></footer></section>`;
     document.body.appendChild(gate);
-    document.body.classList.add('nyx-tos-active');
-    const agree=gate.querySelector('[data-nyx-tos-agree]');
-    const disagree=gate.querySelector('[data-nyx-tos-disagree]');
-    const scroll=gate.querySelector('[data-nyx-tos-scroll]');
-    const documentView=gate.querySelector('.nyx-tos-document');
-    const declinedView=gate.querySelector('.nyx-tos-declined');
+    document.body.classList.add('n7x-tos-active');
+    const agree=gate.querySelector('[data-n7x-tos-agree]');
+    const disagree=gate.querySelector('[data-n7x-tos-disagree]');
+    const scroll=gate.querySelector('[data-n7x-tos-scroll]');
+    const documentView=gate.querySelector('.n7x-tos-document');
+    const declinedView=gate.querySelector('.n7x-tos-declined');
     const showTerms=()=>{
       gate.classList.remove('is-declined');
       documentView.hidden=false;
@@ -14524,7 +13771,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       agree.textContent='Agree';
       disagree.textContent='Disagree';
       scroll.scrollTop=0;
-      gate.querySelector('#nyxTosGateTitle')?.focus?.();
+      gate.querySelector('#n7xTosGateTitle')?.focus?.();
     };
     agree.addEventListener('click',()=>{
       if(gate.classList.contains('is-declined')){
@@ -14549,7 +13796,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       declinedView.querySelector('h2')?.focus();
     });
     requestAnimationFrame(()=>gate.classList.add('show'));
-    setTimeout(()=>gate.querySelector('#nyxTosGateTitle')?.focus?.(),80);
+    setTimeout(()=>gate.querySelector('#n7xTosGateTitle')?.focus?.(),80);
     return true;
   }
   function scheduleNyxTermsAcceptanceGate(delay=320){
@@ -14581,39 +13828,39 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     return false;
   }
   function closeNyxReleaseNotes(){
-    document.querySelector('.nyx-release-notes-overlay')?.remove();
+    document.querySelector('.n7x-release-notes-overlay')?.remove();
   }
   function showNyxReleaseNotes(){
     const storageKey=nyxReleaseNotesStorageKey();
     if(nyxReleaseNotesWereSeen()) return 'seen';
-    if($('setupScreen')?.classList.contains('show') || document.querySelector('.nyx-tos-gate,.nyx-email-verification-overlay,.nyx-preflight')) return 'deferred';
+    if($('setupScreen')?.classList.contains('show') || document.querySelector('.n7x-tos-gate,.nyx-email-verification-overlay,.n7x-preflight')) return 'deferred';
     store.setText(storageKey,NYX_RELEASE_NOTES_VERSION);
     const overlay=document.createElement('div');
-    overlay.className='nyx-release-notes-overlay';
-    overlay.innerHTML=`<section class="nyx-release-notes" role="dialog" aria-modal="true" aria-labelledby="nyxReleaseNotesTitle" aria-describedby="nyxReleaseNotesIntro">
-      <header><div><span>Update</span><h1 id="nyxReleaseNotesTitle" tabindex="-1">N7X v1.6.8</h1></div><button type="button" data-nyx-release-notes-close aria-label="Close update log">&times;</button></header>
-      <div class="nyx-release-message" id="nyxReleaseNotesIntro">
-        <p class="nyx-release-greeting"><strong>What's new?</strong></p>
-        <ul class="nyx-release-changes">
+    overlay.className='n7x-release-notes-overlay';
+    overlay.innerHTML=`<section class="n7x-release-notes" role="dialog" aria-modal="true" aria-labelledby="n7xReleaseNotesTitle" aria-describedby="n7xReleaseNotesIntro">
+      <header><div><span>Update</span><h1 id="n7xReleaseNotesTitle" tabindex="-1">N7X v1.6.8</h1></div><button type="button" data-n7x-release-notes-close aria-label="Close update log">&times;</button></header>
+      <div class="n7x-release-message" id="n7xReleaseNotesIntro">
+        <p class="n7x-release-greeting"><strong>What's new?</strong></p>
+        <ul class="n7x-release-changes">
           <li><strong>Fixed a lot of games</strong></li>
           <li><strong>Fixed AI issues</strong></li>
           <li><strong>Added more themes</strong></li>
         </ul>
-        <p class="nyx-release-community">Join the <a href="https://discord.com/invite/cAdjYAJs3u" target="_blank" rel="noopener noreferrer">Discord</a> for more links and updates!</p>
+        <p class="n7x-release-community">Join the <a href="https://discord.com/invite/cAdjYAJs3u" target="_blank" rel="noopener noreferrer">Discord</a> for more links and updates!</p>
       </div>
-      <footer><button type="button" data-nyx-release-notes-close>Got it</button></footer>
+      <footer><button type="button" data-n7x-release-notes-close>Got it</button></footer>
     </section>`;
     const close=()=>{
       store.setText(storageKey,NYX_RELEASE_NOTES_VERSION);
       closeNyxReleaseNotes();
     };
     overlay.addEventListener('click',event=>{
-      if(event.target===overlay || event.target.closest('[data-nyx-release-notes-close]')) close();
+      if(event.target===overlay || event.target.closest('[data-n7x-release-notes-close]')) close();
     });
     overlay.addEventListener('keydown',event=>{if(event.key==='Escape') close()});
     document.body.appendChild(overlay);
     requestAnimationFrame(()=>overlay.classList.add('show'));
-    setTimeout(()=>overlay.querySelector('#nyxReleaseNotesTitle')?.focus(),80);
+    setTimeout(()=>overlay.querySelector('#n7xReleaseNotesTitle')?.focus(),80);
     return 'shown';
   }
   function scheduleNyxReleaseNotes(delay=760){
@@ -14661,7 +13908,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         : btn.dataset.switch==='nyx.hieroglyphText'
           ? hieroglyphTextEnabled()
 
-        : store.get(btn.dataset.switch,btn.dataset.switch==='nyx.httpBridge');
+        : store.get(btn.dataset.switch,(btn.dataset.switch==='nyx.httpBridge'||btn.dataset.switch==='n7x.pointerCat'));
       btn.classList.toggle('on',initial);
       btn.setAttribute('role','switch');
       btn.setAttribute('aria-checked',String(!!initial));
@@ -14680,8 +13927,9 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         const v=key==='nyx.popupProtection'
           ? !popupProtectionEnabled()
 
-            : !store.get(key,key==='nyx.httpBridge');
+            : !store.get(key,key==='nyx.httpBridge'||key==='n7x.pointerCat');
         store.set(key,v);
+        if(key==='n7x.pointerCat') window.dispatchEvent(new Event('n7x:pointer-cat-change'));
         if(key==='nyx.httpBridge'){
           resetBrowserProxyRuntime(false);
           toast('Connection setting saved. Reload website tabs to apply.');
@@ -15415,11 +14663,11 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       document.addEventListener('click',event=>{
         const button=event.target.closest?.('button');
         if(!button || button.disabled || button.matches('.quick-tile,.setup-theme-card,.bg-choice,.game-card,[data-no-button-motion]')) return;
-        button.classList.remove('nyx-button-click');
+        button.classList.remove('n7x-button-click');
         void button.offsetWidth;
-        button.classList.add('nyx-button-click');
+        button.classList.add('n7x-button-click');
         clearTimeout(button.__nyxButtonClickTimer);
-        button.__nyxButtonClickTimer=setTimeout(()=>button.classList.remove('nyx-button-click'),360);
+        button.__nyxButtonClickTimer=setTimeout(()=>button.classList.remove('n7x-button-click'),360);
       },true);
     }
     if(!document.__nyxSetupEnterBind){
@@ -15428,7 +14676,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         if(e.key!=='Enter') return;
         const setup=$('setupScreen');
         if(!setup?.classList.contains('show')) return;
-        if(e.target?.closest?.('.nyx-account-overlay,.nyx-user-profile-overlay,.nyx-email-verification-overlay')) return;
+        if(e.target?.closest?.('.n7x-account-overlay,.n7x-user-profile-overlay,.nyx-email-verification-overlay')) return;
         if(e.target?.matches?.('button,a,textarea,select,[contenteditable="true"]')) return;
         const steps=[...setup.querySelectorAll('[data-setup-step]')];
         if(!steps.length) return;
@@ -15475,7 +14723,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       const link=e.target.closest?.('a[href]');
       if(!link) return;
       if(nyxCreditsLinkClick(e)) return;
-      const trustedExternal=String(link.dataset.nyxTrustedExternal || '').trim().toLowerCase();
+      const trustedExternal=String(link.dataset.n7xTrustedExternal || '').trim().toLowerCase();
       if(trustedExternal==='discord'){
         e.preventDefault();
         e.stopPropagation();
@@ -15534,19 +14782,19 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         saveBrowserWispUrl(wispReset.closest('.browser-shell-settings-overlay'),true);
         return;
       }
-      const dataExport=e.target.closest?.('[data-nyx-data-export]');
+      const dataExport=e.target.closest?.('[data-n7x-data-export]');
       if(dataExport){
         e.preventDefault();
         exportNyxPortableBackup(dataExport.closest('.browser-shell-settings-overlay'));
         return;
       }
-      const dataImport=e.target.closest?.('[data-nyx-data-import]');
+      const dataImport=e.target.closest?.('[data-n7x-data-import]');
       if(dataImport){
         e.preventDefault();
-        dataImport.closest('.browser-shell-settings-overlay')?.querySelector('[data-nyx-data-import-file]')?.click();
+        dataImport.closest('.browser-shell-settings-overlay')?.querySelector('[data-n7x-data-import-file]')?.click();
         return;
       }
-      if(e.target.closest?.('[data-nyx-data-reload]')){
+      if(e.target.closest?.('[data-n7x-data-reload]')){
         e.preventDefault();
         location.reload();
         return;
@@ -15658,7 +14906,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
     });
     document.addEventListener('keydown',e=>{
-      if(e.key!=='Escape' || !document.body.classList.contains('nyx-tab-sidebar-open')) return;
+      if(e.key!=='Escape' || !document.body.classList.contains('n7x-tab-sidebar-open')) return;
       e.preventDefault();
       e.stopImmediatePropagation();
       setBrowserTabSidebarOpen(false,{restoreFocus:true});
@@ -15708,7 +14956,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       addLionAiMessage(chat,'user',prompt || 'Please read this image and answer it.');
       if(win) win.lionAiLastUser=prompt || 'Please read this image and answer it.';
       input.value='';
-      addLionAiMessage(chat,'bot',win?.lionAiImage ? 'Reading image, then contacting model...' : `Contacting ${nyxAiModelLabel(win?.querySelector?.('[data-lion-ai-model]')?.value || nyxAiSelectedModel())}...`);
+      addLionAiMessage(chat,'bot',win?.lionAiImage ? 'Reading image, then contacting model...' : `Contacting ${n7xAiModelLabel(win?.querySelector?.('[data-lion-ai-model]')?.value || nyxAiSelectedModel())}...`);
       const pending=chat.lastElementChild;
       if(input) input.disabled=true;
       form.querySelector('.lion-ai-send').disabled=true;
@@ -15742,7 +14990,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       if(title) title.textContent='New chat';
     });
     document.addEventListener('keydown',e=>{
-      if(nyxFounderIsOwner&&nyxOwnerDashboardAccess&&(e.key==='Enter'||e.key===' ')&&e.target.closest?.('[data-nyx-owner-presence]')&&!e.target.closest?.('[data-toggle-nyx-account-menu]')){
+      if(nyxFounderIsOwner&&nyxOwnerDashboardAccess&&(e.key==='Enter'||e.key===' ')&&e.target.closest?.('[data-n7x-owner-presence]')&&!e.target.closest?.('[data-toggle-n7x-account-menu]')){
         e.preventDefault();
         openNyxOwnerDashboard();
         return;
@@ -15767,8 +15015,8 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       if(!model) return;
       store.setText('nyx.aiModel',model.value || 'chatgpt-5.4-mini');
       const win=model.closest('.window');
-      const label=win?.querySelector('[data-nyx-ai-model-label]');
-      if(label) label.textContent=nyxAiModelLabel(model.value);
+      const label=win?.querySelector('[data-n7x-ai-model-label]');
+      if(label) label.textContent=n7xAiModelLabel(model.value);
     });
     document.addEventListener('dragstart',e=>{
       if(!e.target.closest?.('.browser-mode-shell-tab')){
@@ -15777,47 +15025,47 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
     });
     document.addEventListener('click',async e=>{
-      if(e.target.closest?.('[data-nyx-ai-settings]')){
+      if(e.target.closest?.('[data-n7x-ai-settings]')){
         e.preventDefault();
         openNyxAiSettings();
         return;
       }
-      const performanceTier=e.target.closest?.('[data-nyx-performance-tier]');
+      const performanceTier=e.target.closest?.('[data-n7x-performance-tier]');
       if(performanceTier){
         e.preventDefault();
-        const tier=setNyxPerformanceTier(performanceTier.dataset.nyxPerformanceTier);
+        const tier=setNyxPerformanceTier(performanceTier.dataset.n7xPerformanceTier);
         applyUserSettings();
         toast(tier==='high' ? 'Performance set to High' : tier==='medium' ? 'Performance set to Medium' : 'Performance set to Low');
         return;
       }
-      const appsToggle=e.target.closest?.('[data-nyx-apps-toggle]');
+      const appsToggle=e.target.closest?.('[data-n7x-apps-toggle]');
       if(appsToggle){
         e.preventDefault();
         openBrowserShellInternalTab('apps');
         return;
       }
-      if(e.target.closest?.('[data-nyx-focus-search]')){
+      if(e.target.closest?.('[data-n7x-focus-search]')){
         e.preventDefault();
-        document.body.classList.remove('nyx-home-search-active');
+        document.body.classList.remove('n7x-home-search-active');
         openBrowserShellTab();
         document.querySelector('[data-browser-shell-url]')?.focus();
         return;
       }
-      const accountToggle=e.target.closest?.('[data-toggle-nyx-account-menu]');
+      const accountToggle=e.target.closest?.('[data-toggle-n7x-account-menu]');
       if(accountToggle){
         e.preventDefault();
         e.stopPropagation();
-        if(nyxFounderSignedInUser) toggleNyxAccountMenu(accountToggle);
+        if(nyxFounderSignedInUser) toggleN7xAccountMenu(accountToggle);
         else openNyxAccountAccess();
         return;
       }
-      const ownerPresence=e.target.closest?.('[data-nyx-owner-presence]');
+      const ownerPresence=e.target.closest?.('[data-n7x-owner-presence]');
       if(ownerPresence&&nyxFounderIsOwner&&nyxOwnerDashboardAccess){
         e.preventDefault();
         openNyxOwnerDashboard();
         return;
       }
-      const accountMenuAction=e.target.closest?.('[data-nyx-account-menu-action]')?.dataset.nyxAccountMenuAction;
+      const accountMenuAction=e.target.closest?.('[data-n7x-account-menu-action]')?.dataset.n7xAccountMenuAction;
       if(accountMenuAction){
         e.preventDefault();
         if(accountMenuAction==='copy-id'){
@@ -15839,7 +15087,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         }
         if(accountMenuAction==='status'){
           await openNyxUserProfile();
-          const field=document.querySelector('.nyx-user-profile-overlay [name="status"]');
+          const field=document.querySelector('.n7x-user-profile-overlay [name="status"]');
           field?.scrollIntoView({block:'center',behavior:'smooth'});
           field?.focus();
           try{field?.showPicker?.()}catch{}
@@ -15850,8 +15098,8 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
           return;
         }
       }
-      if(document.querySelector('.nyx-account-menu')&&!e.target.closest?.('.nyx-account-menu')) closeNyxAccountMenu();
-      if(e.target.closest?.('[data-open-nyx-account-settings]')){
+      if(document.querySelector('.n7x-account-menu')&&!e.target.closest?.('.n7x-account-menu')) closeNyxAccountMenu();
+      if(e.target.closest?.('[data-open-n7x-account-settings]')){
         e.preventDefault();
         if(nyxFounderSignedInUser) openNyxUserProfile();
         else openNyxAccountAccess();
@@ -15873,14 +15121,14 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       const shellTabsToggle=e.target.closest('[data-browser-shell-tabs-toggle]');
       if(shellTabsToggle){
         e.preventDefault();
-        setBrowserTabSidebarOpen(!document.body.classList.contains('nyx-tab-sidebar-open'));
+        setBrowserTabSidebarOpen(!document.body.classList.contains('n7x-tab-sidebar-open'));
         return;
       }
-      if(document.body.classList.contains('nyx-tab-sidebar-open') && !e.target.closest('#nyxBrowserTabSidebar')) setBrowserTabSidebarOpen(false);
-      const recentSearch=e.target.closest('[data-nyx-recent-search]');
+      if(document.body.classList.contains('n7x-tab-sidebar-open') && !e.target.closest('#n7xBrowserTabSidebar')) setBrowserTabSidebarOpen(false);
+      const recentSearch=e.target.closest('[data-n7x-recent-search]');
       if(recentSearch){
         e.preventDefault();
-        navigateBrowserShell(recentSearch.dataset.nyxRecentSearch);
+        navigateBrowserShell(recentSearch.dataset.n7xRecentSearch);
         return;
       }
       const shellNewAfter=e.target.closest('[data-browser-shell-new-tab-after]');
@@ -15961,7 +15209,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
           return;
         }
         const browserTabId=shellTab.browserTabId || activeBrowser?.active || '';
-        document.querySelectorAll('.nyx-preflight').forEach(overlay=>overlay.remove());
+        document.querySelectorAll('.n7x-preflight').forEach(overlay=>overlay.remove());
         const targetTab=activeBrowser?.tabs?.find(tab=>tab.id===browserTabId) || activeBrowser?.tabs?.find(tab=>tab.id===activeBrowser?.active);
         if(targetTab){
           activeBrowser?.activate?.(targetTab.id);
@@ -16096,7 +15344,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       if(!e.target.closest('.home-shortcut-menu') && !e.target.closest('[data-home-shortcut-menu]')){
         document.querySelectorAll('.home-shortcut.menu-open').forEach(item=>item.classList.remove('menu-open'));
       }
-      const open=e.target.closest('[data-open]'); if(open){e.preventDefault(); document.body.classList.remove('menu-open'); const v=open.dataset.open; if(v==='browser')openBrowser(); if(v==='home')openBrowser(); if(v==='updates')openUpdates(); if(v==='settings')openSettings(); if(v==='apps')openApps(); if(v==='links')openLinks(); if(v==='weather')openWeather(open.matches('.browser-mode-weather')?'top':'bottom',open); if(v==='terms')openTermsOfService(); if(v==='developer')openDeveloperConsole(); if(v==='about'||v==='credits')openAboutNyx(); return}
+      const open=e.target.closest('[data-open]'); if(open){e.preventDefault(); document.body.classList.remove('menu-open'); const v=open.dataset.open; if(v==='browser')openBrowser(); if(v==='home')openBrowser(); if(v==='updates')openUpdates(); if(v==='settings')openSettings(); if(v==='apps')openApps(); if(v==='links')openLinks(); if(v==='terms')openTermsOfService(); if(v==='developer')openDeveloperConsole(); if(v==='about'||v==='credits')openAboutNyx(); return}
       const app=e.target.closest('[data-app-url]');
       if(app && !app.closest('.browser-window')){
         if(app.dataset.appUrl==='/apps/nyxcloud/'){e.preventDefault();void openNyxVmsApp();return;}
@@ -16126,7 +15374,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
           scramjetController=null;
           scramjetTransport=null;
           scramjetTransportKey='';
-          uvInstallPromise=null;
+
         }
         store.setText('nyx.transport', nextTransport);
         applyUserSettings(); toast('Browser settings saved'); return;
@@ -16158,23 +15406,23 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         toast('Background enhancer disabled');
         return;
       }
-      if(e.target.closest('[data-open-nyx-account]')){
+      if(e.target.closest('[data-open-n7x-account]')){
         e.preventDefault();
         openNyxAccountAccess();
         return;
       }
-      if(e.target.closest('[data-open-nyx-profile-entry]')){
+      if(e.target.closest('[data-open-n7x-profile-entry]')){
         e.preventDefault();
         if(nyxFounderSignedInUser) openNyxUserProfile();
         else openNyxAccountAccess();
         return;
       }
-      if(e.target.closest('[data-open-nyx-profile]')){
+      if(e.target.closest('[data-open-n7x-profile]')){
         e.preventDefault();
         openNyxUserProfile();
         return;
       }
-      if(e.target.closest('[data-nyx-account-sign-out]')){
+      if(e.target.closest('[data-n7x-account-sign-out]')){
         e.preventDefault();
         signOutFounderOwner();
         return;
@@ -16204,7 +15452,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         saveCloakSettings(e.target.closest('.window,.settings-app,.browser-shell-settings-overlay') || document);
         return;
       }
-      if(e.target.closest('[data-clear-nyx-cache]')){
+      if(e.target.closest('[data-clear-n7x-cache]')){
         e.preventDefault();
         const ok=confirm("Clear cache, cookies, saved settings, and reset N7X? This cannot be undone.");
         if(!ok) return;
@@ -16300,7 +15548,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         const color=nyxThemeHex(raw,store.text('nyx.customThemeColor',nyxCustomThemeDefaults.base));
         const root=e.target.closest('.settings-block,.browser-shell-settings-overlay,.window') || document;
         root.querySelectorAll?.('[data-custom-theme-color],[data-custom-theme-hex]')?.forEach(input=>{if(input!==e.target || input.type==='color') input.value=color});
-        root.querySelectorAll?.('[data-custom-theme-swatch]')?.forEach(swatch=>swatch.style.setProperty('--nyx-swatch',color));
+        root.querySelectorAll?.('[data-custom-theme-swatch]')?.forEach(swatch=>swatch.style.setProperty('--n7x-swatch',color));
       }
       if(e.target?.id==='settingName') saveProfile(e.target.closest('.window'),true);
       if(e.target?.matches?.('[data-glass-value]')){
@@ -16342,7 +15590,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     });
     document.addEventListener('change',e=>{
       const browserSettingsRoot=e.target.closest?.('.browser-shell-settings-overlay');
-      if(browserSettingsRoot && e.target.matches?.('[data-nyx-data-import-file]')){
+      if(browserSettingsRoot && e.target.matches?.('[data-n7x-data-import-file]')){
         const file=e.target.files?.[0] || null;
         void importNyxPortableBackup(file,browserSettingsRoot).finally(()=>{e.target.value=''});
         return;
@@ -16429,20 +15677,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       };
       reader.readAsDataURL(imageFile);
     });
-    document.addEventListener('click',e=>{
-      if(e.target.closest('[data-weather-refresh]')){
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        loadWeatherLocation();
-        return;
-      }
-      if(e.target.closest('#weatherRestore')){
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        restoreWeatherPanel();
-        return;
-      }
-    },true);
+
   }
 
   function syncNyxDashboardClock(date=new Date()){
@@ -16451,9 +15686,9 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     window.__nyxDashboardStartedAt=window.__nyxDashboardStartedAt || Date.now();
     const elapsed=Math.max(0,Math.floor((Date.now()-window.__nyxDashboardStartedAt)/1000));
     const uptime=elapsed>=3600?`${Math.floor(elapsed/3600)}h ${Math.floor((elapsed%3600)/60)}m`:`${Math.floor(elapsed/60)}m ${elapsed%60}s`;
-    qsa('[data-nyx-dashboard-time]').forEach(element=>{element.textContent=time});
-    qsa('[data-nyx-dashboard-date]').forEach(element=>{element.textContent=day});
-    qsa('[data-nyx-dashboard-uptime]').forEach(element=>{element.textContent=uptime});
+    qsa('[data-n7x-dashboard-time]').forEach(element=>{element.textContent=time});
+    qsa('[data-n7x-dashboard-date]').forEach(element=>{element.textContent=day});
+    qsa('[data-n7x-dashboard-uptime]').forEach(element=>{element.textContent=uptime});
   }
   let nyxDashboardPerformanceFrames=0;
   let nyxDashboardPerformanceLast=performance.now();
@@ -16472,8 +15707,8 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
   }
   function nyxDashboardPerformanceVisible(){
     if(document.hidden) return false;
-    return qsa('[data-nyx-dashboard-page="performance"].is-active').some(page=>{
-      const dashboard=page.closest('[data-nyx-dashboard]');
+    return qsa('[data-n7x-dashboard-page="performance"].is-active').some(page=>{
+      const dashboard=page.closest('[data-n7x-dashboard]');
       return dashboard?.classList.contains('is-open') || dashboard?.matches(':hover,:focus-within');
     });
   }
@@ -16546,12 +15781,12 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     const latencyText=Number.isFinite(nyxDashboardLatencyMs) ? `${nyxDashboardLatencyMs} ms` : nyxDashboardLatencyState;
     const fpsText=Number.isFinite(nyxDashboardPerformanceFps) ? `${Math.max(1,Math.round(nyxDashboardPerformanceFps))} fps` : 'Sampling…';
     const values={fps:fpsText,memory:memoryText,ping:latencyText,cpu:String(navigator.hardwareConcurrency || '—'),worker:nyxDashboardWorkerState,engine:nyxDashboardProxyEngine()};
-    qsa('[data-nyx-perf-stat]').forEach(stat=>{stat.textContent=values[stat.dataset.nyxPerfStat] || '—'});
+    qsa('[data-n7x-perf-stat]').forEach(stat=>{stat.textContent=values[stat.dataset.n7xPerfStat] || '—'});
     const memoryPercent=memoryUsedMb!==null && memoryLimitMb ? memoryUsedMb/memoryLimitMb*100 : 0;
     const latencyValue=Number.isFinite(nyxDashboardLatencyMs) ? nyxDashboardLatencyMs : 0;
     const fpsValue=Number.isFinite(nyxDashboardPerformanceFps) ? nyxDashboardPerformanceFps : 0;
     const meterValues={fps:fpsValue?Math.min(100,Math.max(4,fpsValue/60*100)):4,memory:Math.min(100,Math.max(4,memoryPercent)),ping:latencyValue?Math.min(100,Math.max(4,100-latencyValue/8)):4};
-    qsa('[data-nyx-perf-meter]').forEach(meter=>{meter.style.height=`${meterValues[meter.dataset.nyxPerfMeter] || 4}%`});
+    qsa('[data-n7x-perf-meter]').forEach(meter=>{meter.style.height=`${meterValues[meter.dataset.n7xPerfMeter] || 4}%`});
     if(nyxDashboardPerformanceVisible()){
       void sampleNyxDashboardLatency();
       void sampleNyxDashboardWorkerState();
@@ -16596,7 +15831,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
   }
 
   let nyxLatencyMs=null;
-  let nyxLatencyQuality='sampling';
+  let n7xLatencyQuality='sampling';
   let nyxLatencySampledAt=0;
   let nyxLatencyProbe=null;
   let nyxLatencySamples=[];
@@ -16605,19 +15840,19 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
   let nyxLatencyHealth={ok:null,service:'',wisp:'',chatRealtime:''};
   let nyxLatencyLastSuccessAt=0;
   function nyxLatencyQualityFor(ms){
-    if(!Number.isFinite(ms)) return nyxLatencyQuality==='offline' ? 'offline' : 'sampling';
+    if(!Number.isFinite(ms)) return n7xLatencyQuality==='offline' ? 'offline' : 'sampling';
     if(ms<=100) return 'excellent';
     if(ms<=200) return 'good';
     if(ms<=400) return 'fair';
     return 'slow';
   }
   function syncNyxLatencyBubble(){
-    const bubble=document.querySelector('[data-nyx-latency-bubble]');
+    const bubble=document.querySelector('[data-n7x-latency-bubble]');
     if(!bubble) return;
-    const value=bubble.querySelector('[data-nyx-latency-value]');
-    const text=Number.isFinite(nyxLatencyMs) ? `${nyxLatencyMs} ms` : nyxLatencyQuality==='offline' ? 'Offline' : '-- ms';
-    const qualityLabel={excellent:'Excellent',good:'Good',fair:'Fair',slow:'Slow',offline:'Offline',sampling:'Measuring'}[nyxLatencyQuality] || 'Measuring';
-    bubble.className=`nyx-latency-bubble is-${nyxLatencyQuality}`;
+    const value=bubble.querySelector('[data-n7x-latency-value]');
+    const text=Number.isFinite(nyxLatencyMs) ? `${nyxLatencyMs} ms` : n7xLatencyQuality==='offline' ? 'Offline' : '-- ms';
+    const qualityLabel={excellent:'Excellent',good:'Good',fair:'Fair',slow:'Slow',offline:'Offline',sampling:'Measuring'}[n7xLatencyQuality] || 'Measuring';
+    bubble.className=`n7x-latency-bubble is-${n7xLatencyQuality}`;
     if(value) value.textContent=text;
     const label=Number.isFinite(nyxLatencyMs) ? `N7X latency ${nyxLatencyMs} milliseconds, ${qualityLabel}` : `N7X status ${qualityLabel}`;
     bubble.setAttribute('aria-label',label);
@@ -16626,21 +15861,21 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     const recentValues=finiteHistory.map(entry=>entry.ms);
     const rangeMin=recentValues.length ? Math.min(...recentValues) : null;
     const rangeMax=recentValues.length ? Math.max(...recentValues) : null;
-    setText('[data-nyx-latency-quality]',qualityLabel);
-    setText('[data-nyx-latency-current]',Number.isFinite(nyxLatencyLatestMs) ? `${nyxLatencyLatestMs} ms` : '-- ms');
-    setText('[data-nyx-latency-stable]',Number.isFinite(nyxLatencyMs) ? `${nyxLatencyMs} ms` : '-- ms');
-    setText('[data-nyx-latency-range]',Number.isFinite(rangeMin) ? `${rangeMin}–${rangeMax} ms` : '-- ms');
-    setText('[data-nyx-health-overall]',nyxLatencyHealth.ok===true ? 'Healthy' : nyxLatencyHealth.ok===false ? 'Unavailable' : 'Checking');
-    setText('[data-nyx-health-browser]',navigator.onLine ? 'Online' : 'Offline');
-    setText('[data-nyx-health-wisp]',nyxLatencyHealth.ok===false ? 'Unavailable' : nyxLatencyHealth.wisp ? nyxLatencyHealth.wisp==='embedded' ? 'Embedded' : nyxLatencyHealth.wisp : 'Checking');
-    setText('[data-nyx-health-chat]',nyxLatencyHealth.ok===false ? 'Unavailable' : nyxLatencyHealth.chatRealtime ? nyxLatencyHealth.chatRealtime==='socket.io' ? 'Realtime' : nyxLatencyHealth.chatRealtime : 'Checking');
+    setText('[data-n7x-latency-quality]',qualityLabel);
+    setText('[data-n7x-latency-current]',Number.isFinite(nyxLatencyLatestMs) ? `${nyxLatencyLatestMs} ms` : '-- ms');
+    setText('[data-n7x-latency-stable]',Number.isFinite(nyxLatencyMs) ? `${nyxLatencyMs} ms` : '-- ms');
+    setText('[data-n7x-latency-range]',Number.isFinite(rangeMin) ? `${rangeMin}–${rangeMax} ms` : '-- ms');
+    setText('[data-n7x-health-overall]',nyxLatencyHealth.ok===true ? 'Healthy' : nyxLatencyHealth.ok===false ? 'Unavailable' : 'Checking');
+    setText('[data-n7x-health-browser]',navigator.onLine ? 'Online' : 'Offline');
+    setText('[data-n7x-health-wisp]',nyxLatencyHealth.ok===false ? 'Unavailable' : nyxLatencyHealth.wisp ? nyxLatencyHealth.wisp==='embedded' ? 'Embedded' : nyxLatencyHealth.wisp : 'Checking');
+    setText('[data-n7x-health-chat]',nyxLatencyHealth.ok===false ? 'Unavailable' : nyxLatencyHealth.chatRealtime ? nyxLatencyHealth.chatRealtime==='socket.io' ? 'Realtime' : nyxLatencyHealth.chatRealtime : 'Checking');
     const updatedPrefix=nyxLatencyHealth.ok===false ? 'Last healthy' : 'Updated';
-    setText('[data-nyx-latency-updated]',nyxLatencyLastSuccessAt ? `${updatedPrefix} ${new Date(nyxLatencyLastSuccessAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit',second:'2-digit'})} · every second` : 'Waiting for the first health check');
-    const svg=bubble.querySelector('[data-nyx-latency-chart] svg');
-    const line=bubble.querySelector('[data-nyx-latency-line]');
-    const area=bubble.querySelector('[data-nyx-latency-area]');
-    const point=bubble.querySelector('[data-nyx-latency-point]');
-    const empty=bubble.querySelector('[data-nyx-latency-chart-empty]');
+    setText('[data-n7x-latency-updated]',nyxLatencyLastSuccessAt ? `${updatedPrefix} ${new Date(nyxLatencyLastSuccessAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit',second:'2-digit'})} · every second` : 'Waiting for the first health check');
+    const svg=bubble.querySelector('[data-n7x-latency-chart] svg');
+    const line=bubble.querySelector('[data-n7x-latency-line]');
+    const area=bubble.querySelector('[data-n7x-latency-area]');
+    const point=bubble.querySelector('[data-n7x-latency-point]');
+    const empty=bubble.querySelector('[data-n7x-latency-chart-empty]');
     if(svg && line && area && point){
       const chartWidth=280;
       const chartTop=9;
@@ -16674,7 +15909,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }else point.hidden=true;
       const latestLabel=Number.isFinite(nyxLatencyLatestMs) ? `latest ${nyxLatencyLatestMs} milliseconds` : 'currently offline';
       svg.setAttribute('aria-label',recentValues.length ? `Latency history from ${rangeMin} to ${rangeMax} milliseconds; ${latestLabel}` : 'Waiting for latency samples');
-      setText('[data-nyx-latency-axis-high]',`${chartMax} ms`);
+      setText('[data-n7x-latency-axis-high]',`${chartMax} ms`);
       if(empty) empty.hidden=recentValues.length>0;
     }
   }
@@ -16695,7 +15930,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     const sorted=[...nyxLatencySamples].sort((a,b)=>a-b);
     const middle=Math.floor(sorted.length/2);
     nyxLatencyMs=sorted[middle];
-    nyxLatencyQuality=nyxLatencyQualityFor(nyxLatencyMs);
+    n7xLatencyQuality=nyxLatencyQualityFor(nyxLatencyMs);
   }
   async function sampleNyxLatency(force=false,publish=true){
     if(document.hidden || nyxLatencyProbe) return nyxLatencyProbe;
@@ -16716,7 +15951,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         window.NyxAvailability?.recordHealth(false);
         nyxLatencyMs=null;
         nyxLatencyLatestMs=null;
-        nyxLatencyQuality='offline';
+        n7xLatencyQuality='offline';
         nyxLatencySamples=[];
         nyxLatencyHealth={...nyxLatencyHealth,ok:false};
         nyxLatencyHistory.push({ms:null,at:Date.now()});
@@ -16733,7 +15968,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
   async function calibrateNyxLatency(){
     nyxLatencyMs=null;
     nyxLatencyLatestMs=null;
-    nyxLatencyQuality='sampling';
+    n7xLatencyQuality='sampling';
     nyxLatencySamples=[];
     nyxLatencyHistory=[];
     nyxLatencyHealth={ok:null,service:'',wisp:'',chatRealtime:''};
@@ -16741,7 +15976,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     syncNyxLatencyBubble();
     for(let sample=0;sample<3;sample+=1){
       await sampleNyxLatency(true,false);
-      if(nyxLatencyQuality==='offline') break;
+      if(n7xLatencyQuality==='offline') break;
       if(sample<2) await new Promise(resolve=>setTimeout(resolve,150));
     }
     syncNyxLatencyBubble();
@@ -16764,7 +15999,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     addEventListener('offline',()=>{
       nyxLatencyMs=null;
       nyxLatencyLatestMs=null;
-      nyxLatencyQuality='offline';
+      n7xLatencyQuality='offline';
       nyxLatencySamples=[];
       nyxLatencyHealth={...nyxLatencyHealth,ok:false};
       nyxLatencyHistory.push({ms:null,at:Date.now()});
@@ -16824,13 +16059,13 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         if(!nyxFounderSignedInUser){status.textContent='Sign in to view profiles.';send({type:'tutsi:profile-signin'});return}
         await Promise.all([refreshFounderOwnerAccess(),loadNyxUserProfile()]);
         if(!nyxUserProfile)throw new Error('Your profile could not be loaded. Try again.');
-        document.querySelectorAll('.nyx-user-profile-overlay,.nyx-profile-directory-overlay').forEach(el=>el.remove());
+        document.querySelectorAll('.n7x-user-profile-overlay,.n7x-profile-directory-overlay').forEach(el=>el.remove());
         if(data.mode==='edit')await openNyxUserProfile();
         else await openNyxProfileDirectory(data.uid||nyxFounderSignedInUser.uid);
         status.textContent='';
         opened=true;
-        const header=document.querySelector('.nyx-discord-profile-header p');
-        if(header)header.textContent='Your profile is shared between Tutsi and Nyx.';
+        const header=document.querySelector('.n7x-discord-profile-header p');
+        if(header)header.textContent="Your profile is shared between Tutsi and N7X.";
       }catch(error){status.textContent=error.message||'Profile unavailable.'}
       finally{busy=false}
     };
@@ -16851,7 +16086,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       send({type:'tutsi:profile-ready'});
       if(parent===window)void open({mode:'view'});
       new MutationObserver(()=>{
-        if(opened&&!busy&&!document.querySelector('.nyx-user-profile-overlay,.nyx-profile-directory-overlay')){
+        if(opened&&!busy&&!document.querySelector('.n7x-user-profile-overlay,.n7x-profile-directory-overlay')){
           opened=false;send({type:'tutsi:profile-close'});
         }
       }).observe(document.body,{childList:true});
@@ -16861,9 +16096,9 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     if(location.pathname==='/apps/tutsi/profiles.html'){void bootTutsiProfiles();return}
     const hostedCloakEntry=shouldAutoLaunchHostedCloak();
     if(hostedCloakEntry) document.body.classList.add('hosted-cloak-entry');
-    document.documentElement.classList.toggle('nyx-chromeos',isChromeOsUser());
+    document.documentElement.classList.toggle('n7x-chromeos',isChromeOsUser());
     document.body.classList.add('runtime-lag-guard');
-    removeLegacyStartupPdfData(); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); startNyxGlobalApps(); installInteractiveHomeTitleDots(); initWeatherPanel(); startCenterClock(); startNyxPresence(); startNyxLatencyMonitor(); startSpotifyChromeOsCompatibilitySweep(); loadFounderProfile(); initializeFounderOwnerAccess(); startNyx();
+    removeLegacyStartupPdfData(); installDeltaNewTabRedirect(); installBareMuxPortResponder(); installAntiClose(); bind(); startNyxGlobalApps();  startCenterClock(); startNyxPresence(); startNyxLatencyMonitor(); startSpotifyChromeOsCompatibilitySweep(); loadFounderProfile(); initializeFounderOwnerAccess(); startNyx();
     if(hostedCloakEntry){
       scheduleHostedCloakLaunch();
       return;

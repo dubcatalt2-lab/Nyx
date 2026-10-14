@@ -128,7 +128,7 @@ try {
   assert.equal(githubRequests.some(request => request.method === 'GET' && request.url.includes('?recursive=1')), false, 'The global publisher scanned the existing repository tree');
   const tree = JSON.parse(treeRequest.body);
   assert.equal(tree.tree.filter(entry => entry.type === 'blob').length, 2, 'The Git tree did not contain every requested Nyx SVG');
-  assert.ok(tree.tree.filter(entry => entry.type === 'blob').every(entry => entry.content.includes('nyx-static/Nyx.svg') && !entry.content.includes('<iframe')), 'The server did not publish static launchers');
+  assert.ok(tree.tree.filter(entry => entry.type === 'blob').every(entry => entry.content.includes('nyx-static/N7X.svg') && !entry.content.includes('<iframe')), 'The server did not publish static launchers');
   assert.ok(tree.tree.some(entry => entry.path === 'nyx-static' && entry.type === 'tree'), 'Package missing from atomic commit');
   assert.ok(githubRequests.every(request => request.authorization === 'Bearer github_pat_server_only_test'), 'A server-side GitHub request omitted the configured token');
   const browserState = await page.evaluate(() => `${document.documentElement.innerHTML}\n${JSON.stringify({ ...localStorage, ...sessionStorage })}`);
@@ -165,10 +165,10 @@ try {
   shellPage.on('pageerror', error => shellErrors.push(error.message));
   await shellPage.goto(`${origin}/nyx`, { waitUntil: 'domcontentloaded' });
   await shellPage.evaluate(() => {
-    document.querySelectorAll('#nyxStudyHubStartup,#setupLaunchScreen,#setupScreen,.nyx-tos-gate,.nyx-release-notes-overlay').forEach(element => { element.style.pointerEvents = 'none'; });
+    document.querySelectorAll('#n7xStudyHubStartup,#setupLaunchScreen,#setupScreen,.n7x-tos-gate,.n7x-release-notes-overlay').forEach(element => { element.style.pointerEvents = 'none'; });
   });
-  await shellPage.waitForFunction(() => !document.querySelector('#nyxStudyHubStartup') && !document.body.classList.contains('nyx-loading-active'), null, { timeout: 20_000 });
-  await shellPage.locator('[data-nyx-dock-item="apps"]').click();
+  await shellPage.waitForFunction(() => !document.querySelector('#n7xStudyHubStartup') && !document.body.classList.contains('n7x-loading-active'), null, { timeout: 20_000 });
+  await shellPage.locator('[data-n7x-dock-item="apps"]').click();
   await shellPage.frameLocator('iframe.view.active').locator('[data-app-url="/apps/link-generator/"]').click();
   const shellFrameElement = shellPage.locator('iframe.view.active');
   await shellFrameElement.waitFor({ state: 'attached' });
@@ -176,7 +176,7 @@ try {
   const popupTestHost = shellPage.locator('.browser-window[data-popup-test-host="true"]');
   const shellFrame = shellPage.frameLocator('iframe.view.active');
   await shellFrame.locator('[data-filter-select]:not([disabled])').waitFor({ state: 'attached' });
-  await shellFrame.locator('html[data-nyx-popup-bridge="true"]').waitFor({ state: 'attached' });
+  await shellFrame.locator('html[data-n7x-popup-bridge="true"]').waitFor({ state: 'attached' });
   const popupBridgeUrl = 'https://jsdelivr.b-cdn.net/gh/dubcatalt2-lab/nyx-jsdelivr-links@main/popup-bridge-learning-0123456789abcdef0123456789abcdef.svg';
   await shellFrame.locator('[data-open]').evaluate((link, url) => {
     const card = link.closest('[data-result-card]');
@@ -199,7 +199,7 @@ try {
   assert.equal(await popupTestHost.locator('iframe.view').count(), hostViewsBeforeOpen + 1, 'Open first did not create a Nyx browser tab');
   assert.equal(await popupTestHost.locator('.urlbar').inputValue(), popupBridgeUrl, 'Open first did not navigate the new Nyx tab to the generated JSDelivr link');
   assert.equal(await shellPage.locator('iframe[src="nyx://blocked67haha"]').count(), 0, 'Open first was routed into the malware popup blocker');
-  const signedOutProfileSymbol = shellPage.locator('#nyxAccountButton.nyx-account-button-default > span');
+  const signedOutProfileSymbol = shellPage.locator('#n7xAccountButton.n7x-account-button-default > span');
   await signedOutProfileSymbol.waitFor({ state: 'attached' });
   const signedOutProfileSize = await signedOutProfileSymbol.evaluate(symbol => Number.parseFloat(getComputedStyle(symbol).width));
   assert.ok(signedOutProfileSize >= 18, `The signed-out profile symbol remained too small (${signedOutProfileSize}px)`);

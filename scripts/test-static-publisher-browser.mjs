@@ -64,6 +64,7 @@ try {
   await cdp.send('Network.enable');
   await cdp.send('Network.setBlockedURLs',{urls:['https://*']});
   await page.addInitScript(() => {
+    if(location.protocol!=='http:' && location.protocol!=='https:')return;
     localStorage.setItem('nyx.setupComplete', 'true');
     localStorage.setItem('nyx.browserShellMode', 'true');
     localStorage.setItem('nyx.tosAcceptedVersion', '2026-07-30');
@@ -78,9 +79,9 @@ try {
   // The unversioned URL is still stale in this existing browser profile.
   assert.equal(await page.evaluate(async url=>(await fetch(url).then(r=>r.json())).includeUnillustrated,origin+base+'assets/games/games.json'),undefined);
   await page.goto(origin + '/gh/test/repo@main/link.svg', { waitUntil: 'domcontentloaded' });
-  await page.waitForURL(origin + base + 'index.html');
-  await page.waitForFunction(() => !document.querySelector('#nyxStudyHubStartup') && !document.body.classList.contains('nyx-loading-active'));
-  await page.locator('[data-nyx-dock-item="apps"]').waitFor({ state: 'visible' });
+  await page.waitForURL(origin + base + 'index.html').catch(async error=>{console.error(JSON.stringify({url:page.url(),body:await page.locator('body').innerText().catch(()=>''),errors,failures},null,2));throw error;});
+  await page.waitForFunction(() => !document.querySelector('#n7xStudyHubStartup') && !document.body.classList.contains('n7x-loading-active'));
+  await page.locator('[data-n7x-dock-item="apps"]').waitFor({ state: 'visible' });
   assert.equal(await page.evaluate(() => globalThis.__NYX_STATIC_CONFIG__.base), base);
   assert.equal(await page.evaluate(() => !!navigator.serviceWorker.controller), true);
   assert.equal(await page.evaluate(() => crossOriginIsolated), true);
@@ -90,14 +91,14 @@ try {
   const exports=await page.evaluate(async url=>Object.keys(await import(url)),origin+base+legacyModule);
   assert(exports.length,'Legacy module must execute through the static worker');
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.locator('[data-nyx-dock-item="apps"]').waitFor({ state: 'visible' });
-  await page.waitForFunction(() => !document.querySelector('#nyxStudyHubStartup') && !document.body.classList.contains('nyx-loading-active'));
-  await page.locator('[data-nyx-dock-item="apps"]').click();
+  await page.locator('[data-n7x-dock-item="apps"]').waitFor({ state: 'visible' });
+  await page.waitForFunction(() => !document.querySelector('#n7xStudyHubStartup') && !document.body.classList.contains('n7x-loading-active'));
+  await page.locator('[data-n7x-dock-item="apps"]').click();
   await page.frameLocator('iframe.view.active').locator('[data-global-app-id="code-studio"]').waitFor({state:'visible'});
-  for (const id of ['nyx-vms','nyx-ai','nyx-chat','link-generator','jsdelivr-publisher']) {
+  for (const id of ['n7x-vms','nyx-ai','nyx-chat','link-generator','jsdelivr-publisher']) {
     assert.equal(await page.frameLocator('iframe.view.active').locator(`[data-global-app-id="${id}"]`).isVisible(), false, 'Static-only app picker must hide '+id);
   }
-  await page.locator('[data-nyx-dock-item="games"]').click();
+  await page.locator('[data-n7x-dock-item="games"]').click();
   const games = page.frameLocator('iframe.view.active');
   await games.locator('#catalogProgress.done').waitFor({ state: 'attached' });
   const allCount = Number((await games.locator('[data-library="all"] .library-tab-count').innerText()).replaceAll(',', ''));
@@ -108,10 +109,10 @@ try {
   assert.equal(await games.locator('#emptyState').isVisible(), false);
   assert.equal(await games.locator('.arcade-random').isEnabled(), true);
   await games.locator('#nextPage').click();
-  assert.match(await games.locator('#pageInfo').innerText(), /Page 2 of/);
+  assert.match((await games.locator('#pageInfo').innerText()).normalize('NFKC'), /Page 2 of/);
   await games.locator('#gameSearch').fill('Slope');
   await games.locator('.game-card').first().waitFor();
-  assert.match(await games.locator('#gameGrid').innerText(), /slope/i);
+  assert.match((await games.locator('#gameGrid').innerText()).normalize('NFKC'), /slope/i);
   await games.locator('.game-card').first().click();
   await games.locator('#gameFrame[src^="https://vps-a556737a.vps.ovh.us/assets/ugs/play.html"]').waitFor({ state: 'attached' });
   assert.match(await games.locator('#gameFrame').getAttribute('src'), /^https:\/\/vps-a556737a\.vps\.ovh\.us\/assets\/ugs\/play\.html/);

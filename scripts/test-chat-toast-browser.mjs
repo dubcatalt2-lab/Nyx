@@ -3,15 +3,15 @@ const source=readFileSync('apps/chat/app.js','utf8');const a=source.indexOf('  f
 const browser=await chromium.launch({channel:'msedge',headless:true});
 try{const page=await browser.newPage({viewport:{width:1280,height:800}});
 await page.addInitScript(()=>{localStorage.setItem('nyx.releaseNotes.2026-09-14-nyx-1.0.3.seen','2026-09-14-nyx-1.0.3');localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.browserShellMode','true');localStorage.setItem('nyx.homeDesign','redesigned');});
-await page.goto((process.env.NYX_TEST_BASE_URL||'http://localhost:8080')+'/');await page.locator('#nyxStudyHubStartup').waitFor({state:'hidden'});await page.waitForFunction(()=>!document.body.classList.contains('nyx-loading-active'));
-await page.locator('[data-nyx-dock-item="chat"]').click();
+await page.goto((process.env.NYX_TEST_BASE_URL||'http://localhost:8080')+'/');await page.locator('#n7xStudyHubStartup').waitFor({state:'hidden'});await page.waitForFunction(()=>!document.body.classList.contains('n7x-loading-active'));
+await page.locator('[data-n7x-dock-item="chat"]').click();
 const frame=page.frameLocator('iframe.view[src*="/apps/chat/"]');await frame.locator('[data-chat-app]').waitFor();
 await frame.locator('body').evaluate((_,code)=>{window.testPing=new Function('state',code+';return playChatPing')({notifiedDm:new Set()});},pingCode);
 await frame.locator('body').evaluate(()=>{testPing('race','chat');testPing('race','mention',{sender:'Alex',preview:'@you hello'});});
 await page.locator('#toast.show').waitFor();assert.deepEqual(await page.evaluate(()=>window.__nyxStartupErrors||[]),[]);assert.match(await page.locator('#toast').innerText(),/Alex mentioned you: @you hello/);assert((await page.locator('#toast').boundingBox()).height<=60);
 await page.screenshot({path:'.codex-artifacts/mention-shell.png'});
 assert.equal(await page.locator('#toast').evaluate(e=>getComputedStyle(e).zIndex),'2147483647','Toast stays above app windows');
-await page.locator('[data-nyx-dock-item="home"]').click();
+await page.locator('[data-n7x-dock-item="home"]').click();
 await frame.locator('body').evaluate(()=>testPing('other-page','mention',{sender:'Alex',preview:'@you on another page'}));
 await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('on another page'));
 assert(await page.locator('#toast').isVisible());

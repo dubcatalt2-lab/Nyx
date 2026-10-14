@@ -21,7 +21,8 @@ try {
     execute:async(binary,args,opts)=>{
       if(binary!=='mock-ytdlp'){await exec(binary,args,{timeout:opts.timeout});return '';}
       calls++; const sessionPath=args[args.indexOf('--cookies')+1];assert.equal(await readFile(sessionPath,'utf8'),'PRIVATE-TEST-SESSION');assert.ok(!args.includes('--cookies-from-browser'));
-      if(mode==='auth')throw extractionFailure('Sign in to confirm you are not a bot PRIVATE-TEST-SESSION');
+      if(mode==='auth')throw extractionFailure('cookies are no longer valid PRIVATE-TEST-SESSION');
+      if(mode==='challenge')throw extractionFailure('Sign in to confirm you are not a bot PRIVATE-TEST-SESSION');
       if(mode==='removed')throw extractionFailure('Video unavailable');
       return JSON.stringify(mode==='large'?{...info,formats:info.formats.map(f=>({...f,height:f.height?480:undefined,filesize:600*1024**2}))}:info);
     },fetch:async(url,options)=>{mediaCalls++;if(mediaCalls===2)throw new TypeError('Transient connection reset');if(mediaCalls===3)return new Response(new ReadableStream({start(controller){controller.enqueue(bytes.video.subarray(0,100));setTimeout(()=>controller.error(new Error('Interrupted range')),10);}}),{status:206,headers:{'Content-Type':'video/mp4','Content-Range':`bytes 0-999/${bytes.video.length}`}});if(mediaCalls===1)return new Response(null,{status:302,headers:{Location:'https://r2.googlevideo.com/video'}});assert.equal(options.redirect,'manual');assert.ok(!JSON.stringify(options.headers).includes('PRIVATE'));const data=bytes[url.endsWith('audio')?'audio':'video'];const range=/bytes=(\d+)-(\d+)/.exec(options.headers.Range||'');const start=range?Number(range[1]):0,end=range?Math.min(Number(range[2]),start+999,data.length-1):data.length-1;return new Response(data.subarray(start,end+1),{status:range?206:200,headers:{'Content-Type':url.endsWith('audio')?'audio/mp4':'video/mp4',...(range?{'Content-Range':`bytes ${start}-${end}/${data.length}`}:{})}});}};
@@ -62,6 +63,8 @@ try {
   const invalidRange=await fetch(base+`/api/nyxtube/native/media/${name}`,{headers:{Range:'bytes=999999999-'}});assert.equal(invalidRange.status,416);await invalidRange.arrayBuffer();
   deniedPublic=true;assert.equal((await fetch(base+`/api/nyxtube/native/prepare/${id}/720`,{method:'POST'})).status,404);deniedPublic=false;
   for(let i=0;i<11;i++) { const r=await fetch(base+`/api/nyxtube/native/formats/${id}`);if(i===10)assert.equal(r.status,429);await r.arrayBuffer(); }
+  mode='challenge';
+  for(let attempt=0;attempt<2;attempt++){clock+=6*60000;const status=await backend.check();assert.equal(status.state,'trouble');assert.equal(status.lastError,'challenge');assert.equal(status.authFailures,0);}
   mode='auth';clock+=6*60000;assert.equal((await backend.check()).state,'trouble');
   assert.deepEqual(await backend.formats(id),[{height:720}], 'Cached playback should survive a service cooldown');
   await assert.rejects(backend.check(),e=>e.code==='busy');

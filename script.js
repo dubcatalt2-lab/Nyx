@@ -13833,6 +13833,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
   function showNyxReleaseNotes(){
     const storageKey=nyxReleaseNotesStorageKey();
     if(nyxReleaseNotesWereSeen()) return 'seen';
+    if(store.text('nyx.tosAcceptedVersion','')!==NYX_TERMS_VERSION) return 'deferred';
     if($('setupScreen')?.classList.contains('show') || document.querySelector('.n7x-tos-gate,.nyx-email-verification-overlay,.n7x-preflight')) return 'deferred';
     store.setText(storageKey,NYX_RELEASE_NOTES_VERSION);
     const overlay=document.createElement('div');

@@ -6,6 +6,7 @@ try{const page=await browser.newPage();const errors=[];page.on('pageerror',e=>er
  assert(await page.locator('#setupScreen').evaluate(el=>/[\u{1d5a0}-\u{1d5d3}]/u.test(el.textContent)),'Wizard labels must be Unicode');
  await page.locator('[data-skip-setup]:visible').click();await page.locator('.n7x-tos-gate').waitFor();
  assert(await page.locator('.n7x-tos-gate').evaluate(el=>/[\u{1d5a0}-\u{1d5d3}]/u.test(el.textContent)),'Terms labels must be Unicode');
+ assert.equal(await page.locator('.n7x-release-notes-overlay').count(),0,'Update dialog must wait for consent');
  await page.locator('[data-n7x-tos-agree]').click();await page.waitForFunction(()=>localStorage.getItem('nyx.tosAcceptedVersion')==='2026-07-30');
  assert.equal(await page.locator('#setupBrowserMode option[value="ultraviolet"]').count(),0);
  await page.goto(base+'/about-nyx.html');assert(!/StudyHub|\bNyx\b/i.test(await page.locator('body').innerText()));

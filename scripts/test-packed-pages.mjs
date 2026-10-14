@@ -24,12 +24,12 @@ for(const [path,entry] of Object.entries(pages)) {
  assert.equal(payload.length,entry.bytes);
  assert.equal(await unpackPublishedDocument('dist',entry),payload.toString('utf8'));
  let written='',opened=0,closed=0;
- const result=vm.runInNewContext(code,{TextDecoder,Uint8Array,atob,document:{readyState:'complete',open(){opened++;},write(value){written+=value;},close(){closed++;}}});
+ const result=vm.runInNewContext(code,{TextDecoder,Uint8Array,atob,setTimeout,document:{readyState:'complete',open(){opened++;},write(value){written+=value;},close(){closed++;}}});
  await result;
  assert.equal(written,payload.toString('utf8').replace(/^\uFEFF/,''),path+' loader writes complete document');
  assert.equal(opened,1);assert.equal(closed,1);
  let ready,earlyWrites=0;
- const pending=vm.runInNewContext(code,{TextDecoder,Uint8Array,atob,document:{readyState:'loading',addEventListener(event,fn){assert.equal(event,'DOMContentLoaded');ready=fn;},open(){earlyWrites++;},write(){},close(){}}});
+ const pending=vm.runInNewContext(code,{TextDecoder,Uint8Array,atob,setTimeout,window:{addEventListener(event,fn){assert.equal(event,'load');ready=fn;}},document:{readyState:'loading',open(){earlyWrites++;},write(){},close(){}}});
  await Promise.resolve();assert.equal(earlyWrites,0,path+' waits for shell parser');assert.equal(typeof ready,'function');ready();await pending;assert.equal(earlyWrites,1);
 }
 console.log(`PASS ${Object.keys(pages).length} encoded documents: linked loaders, exact payload hashes, UTF-8 round trip, and document reconstruction.`);

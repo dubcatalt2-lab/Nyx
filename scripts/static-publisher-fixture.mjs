@@ -6,7 +6,7 @@ export async function staticPublisherFixture() {
   const root = resolve('.codex-artifacts/jsdelivr-static-fixture');
   const contents = {
     'index.html': '<!doctype html><title>Static Nyx fixture</title><p>Packaged application</p>',
-    'Nyx.svg': '<svg xmlns="http://www.w3.org/2000/svg"><title>Static Nyx</title></svg>',
+    'N7X.svg': '<svg xmlns="http://www.w3.org/2000/svg"><title>Static Nyx</title></svg>',
     'library-worker.js': 'const base="/__NYX_STATIC_BASE__/";',
     'pixel.bin': Buffer.from([0, 128, 255, 0])
   };

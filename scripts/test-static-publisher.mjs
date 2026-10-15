@@ -22,7 +22,7 @@ async function api(path, options = {}) {
 }
 const prepare = () => prepareStaticPackage({ api, repository: 'test/repo', branch: 'main', headTree: 'head', manifest, readBytes: path => corruptRead ? Buffer.from('bad') : Buffer.from(contents[path]) });
 assert.doesNotMatch(staticLauncher(), /iframe|https:\/\/nyxlearning\.org/);
-assert.match(staticLauncher(), /nyx-static\/Nyx\.svg/);
+assert.match(staticLauncher(), /nyx-static\/N7X\.svg/);
 const entry = await prepare();
 assert.equal(entry.type, 'tree');
 assert.equal(entry.path, 'nyx-static');
@@ -41,7 +41,7 @@ assert.equal((await prepare()).sha, 'package-tree');
 previousMarker = JSON.stringify({ format: 'another-project' });
 await assert.rejects(prepare, /another project/);
 previousMarker = null;
-await assert.rejects(prepare, /not a Nyx package/);
+await assert.rejects(prepare, /not a N7X package/);
 existing = null; corruptRead = true;
 await assert.rejects(prepare, /failed verification/);
 assert.throws(() => validateStaticManifest({ ...manifest, files: [{ ...manifest.files[0], path: '../server.js' }] }), /unsupported/);

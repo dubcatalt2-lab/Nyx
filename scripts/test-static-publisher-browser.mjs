@@ -27,6 +27,8 @@ const entry = await prepareStaticPackage({
   }
 });
 const published = objects.get(entry.sha);
+assert.deepEqual(published.get('Nyx.svg'),published.get('N7X.svg'),'Legacy SVG links must keep working');
+assert.deepEqual(published.get('Nyx.html'),published.get('N7X.html'),'Legacy HTML links must keep working');
 const base = '/gh/test/repo@main/nyx-static/';
 const gameScriptUrl=[...published.get('assets/games/index.html').toString().matchAll(/<script[^>]+src="([^"]+)/g)].map(m=>m[1]).find(url=>url.includes('/assets/games/')&&url.includes('.js'));
 assert(gameScriptUrl,'Arcade renderer script missing');
@@ -78,7 +80,7 @@ try {
   assert.equal(await page.evaluate(async url=>(await fetch(url).then(r=>r.text())).includes('includeUnillustrated'),origin+gameScriptUrl),false);
   // The unversioned URL is still stale in this existing browser profile.
   assert.equal(await page.evaluate(async url=>(await fetch(url).then(r=>r.json())).includeUnillustrated,origin+base+'assets/games/games.json'),undefined);
-  await page.goto(origin + '/gh/test/repo@main/link.svg', { waitUntil: 'domcontentloaded' });
+  await page.goto(origin + base + 'Nyx.svg', { waitUntil: 'domcontentloaded' });
   await page.waitForURL(origin + base + 'index.html').catch(async error=>{console.error(JSON.stringify({url:page.url(),body:await page.locator('body').innerText().catch(()=>''),errors,failures},null,2));throw error;});
   await page.waitForFunction(() => !document.querySelector('#n7xStudyHubStartup') && !document.body.classList.contains('n7x-loading-active'));
   await page.locator('[data-n7x-dock-item="apps"]').waitFor({ state: 'visible' });

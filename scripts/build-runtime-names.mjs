@@ -1,7 +1,10 @@
+import {readFileSync} from 'node:fs';
+export const runtimeHookNames=JSON.parse(readFileSync(new URL('./runtime-hook-names.json',import.meta.url),'utf8'));
 // Keep substitutions byte-for-byte the same length: the compiler's WASM data
 // segments contain runtime hook names as well as its import/export names.
 export const runtimeNames = {scramjet:'studyjet', Scramjet:'StudyJet', SCRAMJET:'STUDYJET', libcurl:'textlib', Libcurl:'Textlib', LibCurl:'TextLib', LIBCURL:'TEXTLIB', epoxy:'atlas', Epoxy:'Atlas', EPOXY:'ATLAS'};
 export function renameRuntimeText(source) {
+  for(const [before,after] of Object.entries(runtimeHookNames).sort((a,b)=>b[0].length-a[0].length)) source=source.split(before).join(after);
   return source.replace(/scramjet|libcurl|epoxy/gi, name => runtimeNames[name] || runtimeNames[name.toLowerCase()]);
 }
 export function renameRuntimeWasm(bytes) {

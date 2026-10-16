@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {parse} from 'acorn';
-import {runtimeNames,renameRuntimeText,rewriteRuntimeNames,renameRuntimeWasm} from './build-runtime-names.mjs';
+import {runtimeHookNames,runtimeNames,renameRuntimeText,rewriteRuntimeNames,renameRuntimeWasm} from './build-runtime-names.mjs';
 import {proxyAssetNames,rewriteProxyReferences} from './build-proxy-assets.mjs';
+assert.equal(new Set(Object.values(runtimeHookNames)).size,Object.keys(runtimeHookNames).length);
+for(const [before,after] of Object.entries(runtimeHookNames)){
+ assert.equal(Buffer.byteLength(before),Buffer.byteLength(after));
+ assert.equal(renameRuntimeText(before),after);
+}
 for(const [before,after] of Object.entries(runtimeNames)) assert.equal(Buffer.byteLength(before),Buffer.byteLength(after));
 assert.equal(renameRuntimeText('ScramjetController ScramjetClient libcurlClient LibcurlTransport EpoxyClient EpoxyTransport Epoxy_wbg_fetch'),'StudyJetController StudyJetClient textlibClient TextlibTransport AtlasClient AtlasTransport Atlas_wbg_fetch');
 assert.equal(rewriteRuntimeNames('/scramjet/ /~sj/ /~/sj/ /~/sj-v1/'),'/studyjet/ /~study/ /4otig/ /~/study-v1/');
@@ -16,7 +21,7 @@ assert.equal(rewriteRuntimeNames('"bare-mux-worker" "wisp-v2" "WebSocket"'), '"r
 assert.throws(()=>renameRuntimeWasm(Buffer.from('bad wasm')));
 const linked=rewriteProxyReferences('import "../epoxy/index.mjs";','/libcurl/index.mjs');
 assert(linked.includes('../atlas/'));assert(!linked.includes('/epoxy/'));
-const old=/scramjet|libcurl|epoxy|\/\~sj\/|\/\~\/sj\//i;
+const old=/__wbindgen_|__wbg_|setrealmfn|scramjet|libcurl|epoxy|\/\~sj\/|\/\~\/sj\//i;
 let binaries=0,modules=0;
 const testDist=process.env.NYX_TEST_DIST||'dist';
 const publicModules=JSON.parse(await readFile(testDist+'/public-modules.json','utf8')).aliases;

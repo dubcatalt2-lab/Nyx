@@ -1,7 +1,7 @@
 ﻿import assert from 'node:assert/strict';
 import express from 'express';
 import {chromium} from 'playwright';
-const app=express();app.get('/fixture',(_req,res)=>res.type('html').send('<!doctype html><title>Embedded apps</title><body><main>Parent</main></body>'));app.use(express.static('dist'));
+const app=express();app.get('/fixture',(_req,res)=>res.type('html').send('<!doctype html><title>Embedded apps</title><body><main>Parent</main></body>'));app.use(express.static(process.env.NYX_TEST_DIST||'dist'));
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
 const origin='http://127.0.0.1:'+server.address().port;
 const browser=await chromium.launch({channel:'msedge'});

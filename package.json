@@ -32,7 +32,8 @@
     "test:utility-theme": "node scripts/test-utility-neutral-theme.mjs",
     "build:vps": "node scripts/build-vps.mjs",
     "check:branding": "node scripts/check-branding.mjs",
-    "check:deploy": "node scripts/check-deploy.mjs && npm run check:branding"
+    "check:deploy": "node scripts/check-deploy.mjs && npm run check:branding",
+    "build:zaka": "node scripts/build-zaka.mjs"
   },
   "engines": {
     "node": ">=20 <25"

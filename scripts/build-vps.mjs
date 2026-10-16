@@ -1,3 +1,4 @@
+import {zakaEnabled,zakaIdentifiers} from './zaka-identifiers.mjs';
 import {patchClientSockets} from './patch-client-sockets.mjs';
 import {buildInterfaceText} from './build-interface-text.mjs';
 import {buildGameStorage} from './build-game-storage.mjs';
@@ -9,7 +10,7 @@ import { createRequire } from "node:module";
 import { createHash, randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
 import { cp, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parse } from "acorn";
 import CleanCSS from "clean-css";
@@ -20,7 +21,8 @@ import { buildProxyAssets } from "./build-proxy-assets.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
-const output = join(root, "dist");
+const output = resolve(root, process.env.NYX_BUILD_OUTPUT || "dist");
+if(output!==join(root,"dist")&&!output.startsWith(join(root,".codex-artifacts")+sep))throw Error("Build output must stay in dist or .codex-artifacts");
 const require = createRequire(import.meta.url);
 const rootFiles = new Set([
   "index.html",
@@ -241,7 +243,7 @@ function runtimeMangleOptions(topLevel) {
   return {
     toplevel: topLevel,
     safari10: true,
-    nth_identifier: { get(n) { return "_" + createHash("sha256").update(buildNameSeed + ":" + n).digest("hex").slice(0,12); } }
+    nth_identifier: zakaEnabled ? zakaIdentifiers() : { get(n) { return "_" + createHash("sha256").update(buildNameSeed + ":" + n).digest("hex").slice(0,12); } }
   };
 }
 

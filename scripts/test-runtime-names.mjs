@@ -18,11 +18,12 @@ const linked=rewriteProxyReferences('import "../epoxy/index.mjs";','/libcurl/ind
 assert(linked.includes('../atlas/'));assert(!linked.includes('/epoxy/'));
 const old=/scramjet|libcurl|epoxy|\/\~sj\/|\/\~\/sj\//i;
 let binaries=0,modules=0;
-const publicModules=JSON.parse(await readFile('dist/public-modules.json','utf8')).aliases;
+const testDist=process.env.NYX_TEST_DIST||'dist';
+const publicModules=JSON.parse(await readFile(testDist+'/public-modules.json','utf8')).aliases;
 const publishedPath=value=>publicModules[value]||value;
 for(const [original,path] of Object.entries(proxyAssetNames)){
  assert(!old.test(path),path);
- const bytes=await readFile('dist'+publishedPath(path));
+ const bytes=await readFile(testDist+publishedPath(path));
  if(path.endsWith('.wasm')){assert(WebAssembly.validate(bytes),path);assert(!old.test(bytes.toString('latin1')),path);binaries++;continue;}
  const code=bytes.toString();try{parse(code,{ecmaVersion:'latest',sourceType:'script'});}catch{parse(code,{ecmaVersion:'latest',sourceType:'module'});}
  const withoutNotices=code.replace(/\/\*[\s\S]*?\*\//g,'');

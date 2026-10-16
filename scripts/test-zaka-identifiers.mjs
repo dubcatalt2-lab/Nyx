@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {minify} from 'terser';
+import {zakaIdentifiers} from './zaka-identifiers.mjs';
+const names=zakaIdentifiers();
+assert.equal(new Set(Array.from({length:65000},(_,i)=>names.get(i))).size,65000);
+assert.throws(()=>names.get(65000),/capacity/);
+const source='globalThis.result=(()=>{const scramjet=2;const $scramjet=3;return {total:scramjet+$scramjet,url:"/scramjet/scramjet.sw.js",hook:"$scramjet"};})();';
+const output=await minify(source,{compress:false,mangle:{toplevel:false,properties:false,eval:false,nth_identifier:names}});
+const sandbox={};vm.runInNewContext(output.code,sandbox);
+assert.equal(sandbox.result.total,5);assert.equal(sandbox.result.url,'/scramjet/scramjet.sw.js');assert.equal(sandbox.result.hook,'$scramjet');assert.match(output.code,/__\d{5}/);
+const mod=await minify('export function publicEntry(value){const scramjet=value+1;return scramjet}',{module:true,compress:false,mangle:{nth_identifier:names,properties:false,eval:false},keep_fnames:true});
+const imported=await import('data:text/javascript,'+encodeURIComponent(mod.code));assert.equal(imported.publicEntry(8),9);
+console.log('PASS Zaka names: 65,000 unique identifiers, distinct bindings, public exports, paths and runtime strings preserved.');

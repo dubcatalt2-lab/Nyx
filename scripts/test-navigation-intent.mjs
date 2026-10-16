@@ -4,8 +4,8 @@ import express from 'express';
 import {chromium} from 'playwright';
 import {proxyAssetNames} from './build-proxy-assets.mjs';
 
-const builtAliases=JSON.parse(await readFile('dist/proxy-assets.json','utf8')).aliases;
-const app=express(),root=process.env.NYX_TEST_BUILT==='1'?'dist':'.';
+const builtAliases=JSON.parse(await readFile((process.env.NYX_TEST_DIST||'dist')+'/proxy-assets.json','utf8')).aliases;
+const app=express(),root=process.env.NYX_TEST_DIST||(process.env.NYX_TEST_BUILT==='1'?'dist':'.');
 app.use((req,res,next)=>{res.set('Service-Worker-Allowed','/');next();});
 app.get('/healthz',(_req,res)=>res.json({ok:true}));
 app.use(express.static(root));app.use(express.static('dist'));
@@ -24,7 +24,9 @@ const transport=`export default class {ready=false;async init(){this.ready=true}
 const browser=await chromium.launch({channel:'msedge',headless:true});
 try{for(const brand of ['nyx']){
  const context=await browser.newContext();
+ await context.routeWebSocket('**/api/tutsi-relay/socket/',socket=>socket.send(Buffer.from([3,0,0,0,0,10,0,0,0])));
  await context.addInitScript(()=>{
+  if(!/^https?:$/.test(location.protocol))return;
   localStorage.setItem('tutsi.customize.seen','1');localStorage.setItem('tutsi.settings.v1',JSON.stringify({closePrevention:false,httpBridge:true}));
   localStorage.setItem('drop.setupComplete','1');localStorage.setItem('drop.settings',JSON.stringify({connection:'bridge',restore:false}));
   localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.releaseNotes.2026-09-26-nyx-1.3.6.7.seen','2026-09-26-nyx-1.3.6.7');localStorage.setItem('nyx.browserMode','scramjet');
@@ -41,7 +43,7 @@ try{for(const brand of ['nyx']){
  });
  const page=await context.newPage(),errors=[];
  page.on('pageerror',error=>errors.push(error.message));
- if(process.argv.includes('--debug')){page.on('framenavigated',f=>console.log('NAV',f.url()));page.on('console',m=>{console.log(m.type(),m.text().slice(0,700),m.location());});}
+ if(process.argv.includes('--debug')){page.on('request',r=>{if(/transports|studyjet/.test(r.url()))console.log('REQUEST',r.url())});page.on('framenavigated',f=>console.log('NAV',f.url()));page.on('console',m=>{console.log(m.type(),m.text().slice(0,700),m.location());});}
  await page.goto(base+(brand==='nyx'?'/index.html':'/apps/'+brand+'/'));await page.waitForTimeout(8500);
  const dismiss=page.getByRole('button',{name:'Got it',exact:true});if(await dismiss.isVisible())await dismiss.click();
  const query=page.locator('[data-browser-blank-input]:visible').first();
@@ -51,7 +53,7 @@ try{for(const brand of ['nyx']){
  const source=()=>frame.locator('body').getAttribute('data-source');
  const requests=()=>page.evaluate(()=>globalThis.__navRequests||[]);
  async function go(url){await address.fill(url);await address.press('Enter');await page.waitForTimeout(1800);await frame.locator('#ready').waitFor();assert.equal(await source(),url);}
- try{await frame.locator('#ready').waitFor({timeout:30000});}catch(e){console.log('INITIAL FAILURE',errors,await requests(),await page.locator('body').innerText());throw e;}
+ try{await frame.locator('#ready').waitFor({timeout:30000});}catch(e){console.log('INITIAL FAILURE',[...loadedTransports],errors,await requests(),await page.locator('body').innerText());throw e;}
  await frame.locator('#draft').fill('Keep me');
  const instance=await frame.locator('body').getAttribute('data-instance');
  // Script-initiated cross-site navigation must never reach the transport.

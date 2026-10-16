@@ -18,7 +18,7 @@ const output=path.join(root,'.codex-artifacts','nyx-static-'+id);
 if(path.dirname(path.resolve(output))!==path.resolve(root,'.codex-artifacts'))throw Error('Invalid artifact directory.');
 await rm(output,{recursive:true,force:true});
 await mkdir(output,{recursive:true});
-const dist=path.join(root,'dist'),aliases=JSON.parse(await readFile(path.join(dist,'frontend-assets.json'),'utf8')).aliases;
+const dist=path.resolve(root,process.env.NYX_BUILD_OUTPUT||'dist'),aliases=JSON.parse(await readFile(path.join(dist,'frontend-assets.json'),'utf8')).aliases;
 const publishedPages=JSON.parse(await readFile(path.join(dist,'published-pages.json'),'utf8')).pages;
 const moduleAliases=JSON.parse(await readFile(path.join(dist,'public-modules.json'),'utf8')).aliases;
 const publicName=value=>moduleAliases[value]||value;

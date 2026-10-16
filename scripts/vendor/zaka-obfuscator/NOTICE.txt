@@ -1,0 +1,8 @@
+Upstream: https://github.com/zaka13alt/obfuscator
+Pinned revision: a15c02d25f05d101e952782a89c9b091cdde8e52
+
+obfuscator.py is the unmodified user-requested upstream tool. Nyx imports its generate_valid_js_identifier function through scripts/zaka-identifiers.py. Its whole-text replacement entry point is deliberately not executed in production: distinct names collapse to the same identifier, and strings/paths are rewritten without their corresponding files or WASM interfaces.
+
+Nyx deduplicates generated names and supplies them to Terser's scope-aware mangler. Existing path, HTML, CSS, runtime/WASM and public-module build passes retain their contracts. This does not rename native browser APIs, public exports, wire fields or arbitrary binary/media contents. Required license notices remain intact. npm run build:zaka creates a separate candidate under .codex-artifacts/nyx-zaka-build; it does not publish or overwrite the current served build.
+
+The adapted identifier generator is enabled by default for normal builds. NYX_ZAKA_OBFUSCATION=0 restores the previous identifier generator for diagnosis.

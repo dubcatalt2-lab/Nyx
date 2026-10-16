@@ -1,3 +1,4 @@
+import {zakaEnabled,zakaIdentifiers} from './zaka-identifiers.mjs';
 import {renameRuntimeText,rewriteRuntimeNames,renameRuntimeWasm} from './build-runtime-names.mjs';
 import {createHash} from 'node:crypto';
 import {rewriteStorageNames} from './build-storage.mjs';
@@ -40,7 +41,7 @@ export async function scrambleProxyCode(source,{module=false}={}){
     // Public properties, exports, function/class names, eval bindings and WASM
     // interfaces are contracts, not safe targets for arbitrary replacement.
     keep_fnames:true,keep_classnames:true,
-    mangle:{toplevel:module,eval:false,properties:false,nth_identifier:{get(n){if(!names.has(n))names.set(n,prefix+randomBytes(6).toString('hex'));return names.get(n);}}},
+    mangle:{toplevel:module,eval:false,properties:false,nth_identifier:{get(n){if(zakaEnabled){if(!names.has(n))names.set(n,zakaIdentifiers().get(n));return names.get(n);}if(!names.has(n))names.set(n,prefix+randomBytes(6).toString('hex'));return names.get(n);}}},
     format:{comments:/@license|@preserve|^!/,ascii_only:false,beautify:false,indent_level:2}
   });
   if(!result.code)throw Error('Proxy transformation produced empty code');

@@ -9,7 +9,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { createHash, randomBytes } from "node:crypto";
 import { existsSync } from "node:fs";
-import { cp, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parse } from "acorn";
@@ -454,6 +454,9 @@ async function main() {
   await copyProxyRuntimes();
   await writePatchedRuntimes(wispUrl);
   await removeUnavailableUgsEntries();
+  const thumbs = await readdir(join(output,"assets/ugs/thumbs"),{withFileTypes:true}).catch(error => { if(error.code === "ENOENT") return []; throw error; });
+  await mkdir(join(output,"assets/ugs"),{recursive:true});
+  await writeFile(join(output,"assets/ugs/thumbs.json"),JSON.stringify(thumbs.filter(entry=>entry.isFile() && /\.(?:png|jpe?g|webp|gif)$/i.test(entry.name)).map(entry=>entry.name).sort()));
   await buildInterfaceText(output);
   await minifyFirstPartyBrowserRuntimes();
   await versionStylesheets();

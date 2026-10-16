@@ -1,10 +1,10 @@
 @import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Inter:wght@400;500;600;700&family=Lexend:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Poppins:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&family=Raleway:wght@400;500;600;700&display=swap");
 
 :root{
-  --bg:url("../assets/backgrounds/nyx-blue-light-trails.jpg");
+  --bg:url("/assets/backgrounds/nyx-blue-light-trails.jpg");
   --bg-render:var(--bg);
   --bg-enhanced-render:var(--bg-render);
-  --browser-bg-render:url("../assets/backgrounds/nyx-blue-light-trails.jpg");
+  --browser-bg-render:url("/assets/backgrounds/nyx-blue-light-trails.jpg");
   --glass:rgba(8,7,13,.82);
   --glass2:rgba(190,148,255,.08);
   --glass-panel:rgba(8,7,13,.54);

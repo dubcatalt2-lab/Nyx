@@ -1,6 +1,5 @@
 import {renderReply,scheduleReply} from './reply-content.js';
 const dropEmbed=new URLSearchParams(location.search).get('shell')==='drop'&&parent!==window;
-import {setupDropEmbed} from '../drop/ai-embed.mjs';
 import {setupKeys} from './keys.js?v=20261002-haiku-v1';
 import {readResponse} from './response.js';
 import {supportsConversationVoice} from './voice-capabilities.js';
@@ -229,4 +228,4 @@ $('effortPanel').addEventListener('beforetoggle',event=>{if(event.newState==='op
 $('effortPanel').addEventListener('toggle',event=>{$('effortTrigger').setAttribute('aria-expanded',String(event.newState==='open'));});
 refreshEffort();
 
-if(dropEmbed)setupDropEmbed({user:()=>auth?.currentUser,signup:()=>{setAuthMode(true);$('login').showModal();}});
+if(dropEmbed)import('../drop/ai-embed.mjs').then(({setupDropEmbed})=>setupDropEmbed({user:()=>auth?.currentUser,signup:()=>{setAuthMode(true);$('login').showModal();}}));

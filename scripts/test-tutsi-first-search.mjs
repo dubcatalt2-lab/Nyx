@@ -11,6 +11,6 @@ try {
  await page.locator('#studyready-startup').waitFor({state:'detached',timeout:10000});
  await page.fill('#query','https://fixture.test/');await page.locator('#search button').click();
  await page.frameLocator('#browser-stage iframe:not([hidden])').getByRole('heading',{name:'Recovered first search'}).waitFor({timeout:45000});
- assert.equal(await page.locator('#browser-tabs [role=tab]').count(),1);
+ assert.equal(await page.locator('#ne4236faa3775 [role=tab]').count(),1);
  console.log('PASS: actual first navigation recovers from transport timeout without refresh');
 }finally{await browser.close()}

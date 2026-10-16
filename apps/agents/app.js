@@ -4,7 +4,7 @@ import {setupKeys} from './keys.js?v=20261002-haiku-v1';
 import {readResponse} from './response.js';
 import {supportsConversationVoice} from './voice-capabilities.js';
 import {setupChats} from './chats.js?v=20260928-projects-v1';
-import {setupScreen} from './screen.js?v=20260927-chat';
+import {n79425056e076} from './screen.js?v=20260927-chat';
 import {setupPicker} from './models.js?v=20261002-haiku-v1';
 import {setupMedia} from './media.js?v=20260928-voice-v2';
 const $=id=>document.getElementById(id);
@@ -19,7 +19,7 @@ const welcomeTemplate=document.getElementById('welcome').cloneNode(true);
 const picker=setupPicker($('model'),{compact:dropEmbed});
 const media=setupMedia({notice,sizePrompt,canSend:()=>!running&&(chatMode||connected)&&!!auth?.currentUser&&!!$('model').value,voiceModel:()=>{if(!chatMode){notice('Switch to Chat for model voice conversations.');return false;}if(!supportsConversationVoice(models.find(item=>item.id===$('model').value))){picker.openVoice();notice('Choose a model with native voice output.');return false;}return true;}});
 const keys=setupKeys({appName:dropEmbed?'Drop':'Nook',user:()=>auth?.currentUser,busy:()=>running,notice,changed:async()=>{media.stopVoice();await loadModels();}});
-const screen=setupScreen({notice});
+const screen=n79425056e076({notice});
 const chats=setupChats({notice,busy:()=>running,changed:renderRecentSuggestions,open:item=>{
  media.reset();screen.stop();history=item.messages||[];
  if(typeof item.computer==='boolean'&&chatMode===item.computer)changeMode(!item.computer,false);

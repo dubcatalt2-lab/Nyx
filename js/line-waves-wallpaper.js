@@ -61,7 +61,7 @@ void main(){vec2 coords=gl_FragCoord.xy/uResolution.xy;coords=coords*2.0-1.0;coo
   function shouldShow(){const external=document.body?.classList.contains('browser-content-active')&&!document.body?.classList.contains('n7x-built-in-content-active');return document.documentElement.dataset.n7xBeamWallpaper==='lineWaves'&&!document.body?.classList.contains('custom-bg-active')&&!document.body?.classList.contains('three-d-backgrounds')&&!external;}
   function shouldAnimate(){return shouldShow()&&!document.hidden&&!reducedMotion.matches&&!document.body?.classList.contains('lag-reducer');}
   function syncVisibility(){
-    canvas=document.getElementById('n7xLineWavesBg')||canvas;if(!canvas)return;
+    canvas=document.getElementById('n21c484be6235')||canvas;if(!canvas)return;
     const show=shouldShow();canvas.hidden=!show;if(!show){renderer?.stop();return;}
     try{renderer||=(makeRenderer(canvas));renderer.draw(performance.now());if(shouldAnimate())renderer.start();else renderer.stop();canvas.dataset.renderer='react-bits-line-waves';}catch(error){canvas.hidden=true;console.warn("N7X Line Waves renderer unavailable",error);}
   }
@@ -71,7 +71,7 @@ void main(){vec2 coords=gl_FragCoord.xy/uResolution.xy;coords=coords*2.0-1.0;coo
     try{const preview=makeRenderer(target,true,{...options,colorVariant});preview.draw(860);preview.dispose(false);}catch(error){console.warn("N7X Line Waves preview unavailable",error);const context=target.getContext('2d');if(context){context.fillStyle='#080c13';context.fillRect(0,0,target.width,target.height);}}
   }
   function init(){
-    canvas=document.getElementById('n7xLineWavesBg');if(!canvas)return;
+    canvas=document.getElementById('n21c484be6235');if(!canvas)return;
     new MutationObserver(syncVisibility).observe(document.documentElement,{attributes:true,attributeFilter:['data-n7x-beam-wallpaper','data-n7x-theme']});
     new MutationObserver(syncVisibility).observe(document.body,{attributes:true,attributeFilter:['class']});
     addEventListener('resize',()=>{if(shouldShow()){renderer?.draw(performance.now());}},{passive:true});

@@ -844,7 +844,7 @@
   function ensureNyxAccountButton(){
     const existing=document.getElementById('n7xAccountButton');
     const signedIn=Boolean(nyxFounderSignedInUser);
-    const host=document.body.classList.contains('browser-shell')?document.querySelector('.n7x-visual-dock [data-n7x-profile-slot]')||document.querySelector('.top-os [data-n7x-profile-slot]')||document.querySelector('.browser-home:not(.hidden) [data-n7x-profile-slot]')||document.querySelector('.browser-home [data-n7x-profile-slot]'):document.querySelector('.status-icons');
+    const host=document.body.classList.contains('browser-shell')?document.querySelector('.n7x-visual-dock [data-n7x-profile-slot]')||document.querySelector('.n11c31f2b2fec [data-n7x-profile-slot]')||document.querySelector('.browser-home:not(.hidden) [data-n7x-profile-slot]')||document.querySelector('.browser-home [data-n7x-profile-slot]'):document.querySelector('.status-icons');
     if(!host){return}
     if(existing&&existing.parentElement!==host){closeNyxAccountMenu();existing.remove()}
     const button=document.getElementById('n7xAccountButton')||document.createElement('button');
@@ -1936,13 +1936,13 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
 
 
 
-  const knownNyxOverlaySelector='.n7x-prompt-shade,.nyx-modal-shade,.n7x-download-safety-shade,.n7x-tos-gate,.n7x-release-notes-overlay,.setup-screen,.setup-panel,.lock-screen,.n7x-browser-tab-sidebar,.n7x-visual-dock,.browser-shell-settings-overlay,.nyx-dashboard-menu,.n7x-account-menu,.n7x-account-overlay,.n7x-user-profile-overlay,.n7x-profile-directory-overlay,.n7x-founder-editor-overlay,.n7x-owner-dashboard-overlay,.context-menu,[data-n7x-owned-overlay]';
+  const knownNyxOverlaySelector='.n7x-prompt-shade,.nyx-modal-shade,.n7x-download-safety-shade,.n7x-tos-gate,.n7x-release-notes-overlay,.n0b65cf0467df,.nd51f15413965,.lock-screen,.n7x-browser-tab-sidebar,.n7x-visual-dock,.browser-shell-settings-overlay,.nyx-dashboard-menu,.n7x-account-menu,.n7x-account-overlay,.n7x-user-profile-overlay,.n7x-profile-directory-overlay,.n7x-founder-editor-overlay,.n7x-owner-dashboard-overlay,.context-menu,[data-n7x-owned-overlay]';
   function isBrowserInjectedOverlay(node){
     if(!(node instanceof Element) || node===document.body || node===document.documentElement) return false;
-    if(node.matches('#desktop,.top-os,.window,.browser-window,.browser-body,.browser-home,#n7xPrivacyCover,#n7xWaveBg,#setupLaunchScreen,.n7x-prompt-shade,.nyx-modal-shade')) return false;
+    if(node.matches("#n4db184acef21,.n11c31f2b2fec,.n238da90cb7ed,.n2ac0604c6ebc,.browser-body,.browser-home,#n7xPrivacyCover,#nd9720eea6773,#n3e8549522c8c,.n7x-prompt-shade,.nyx-modal-shade")) return false;
     if(node.closest(knownNyxOverlaySelector)) return false;
     const frames=node.matches('iframe') ? [node] : [...node.querySelectorAll('iframe')];
-    if(frames.some(frame=>!frame.matches('#n7xPrivacyCover,#n7xWaveBg,.browser-body > iframe.view,iframe[title="nyx"]'))) return true;
+    if(frames.some(frame=>!frame.matches('#n7xPrivacyCover,#nd9720eea6773,.browser-body > iframe.view,iframe[title="nyx"]'))) return true;
     const resource=String(node.getAttribute('src') || node.getAttribute('href') || node.getAttribute('data-src') || '');
     if(resource && browserAdResourceSignature.test(resource)) return true;
     const text=String(node.innerText || node.textContent || '').replace(/\s+/g,' ').trim().slice(0,1200);
@@ -1966,7 +1966,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     for(let depth=0;root?.parentElement && depth<8;depth+=1){
       const parent=root.parentElement;
       if(parent===document.body || parent===document.documentElement) break;
-      if(parent.matches('#desktop,.top-os,.window,.browser-window,.browser-body,.browser-home')) break;
+      if(parent.matches("#n4db184acef21,.n11c31f2b2fec,.n238da90cb7ed,.n2ac0604c6ebc,.browser-body,.browser-home")) break;
       root=parent;
       if(isBrowserInjectedOverlay(root)) candidate=root;
     }
@@ -1975,7 +1975,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
   function cleanupBrowserInjectedAds(root=document){
     const candidates=[];
     if(root instanceof Element) candidates.push(root);
-    root.querySelectorAll?.('body > *, #desktop > *, .browser-window > *')?.forEach(node=>candidates.push(node));
+    root.querySelectorAll?.('body > *, #n4db184acef21 > *, .n2ac0604c6ebc > *')?.forEach(node=>candidates.push(node));
     const removed=new Set();
     for(const candidate of candidates){
       const overlay=browserInjectedOverlayRoot(candidate);
@@ -2876,8 +2876,8 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     const shellTab=browserShellTabs.find(tab=>tab.id===browserShellActiveTab);
     const url=activeTab?.sourceUrl || activeTab?.url || shellTab?.url || '';
     const title=activeTab?.title || shellTab?.title || 'New Tab';
-    const titlebar=activeBrowser?.win?.querySelector?.('.titlebar-title');
-    if(titlebar) titlebar.textContent=browserChromeTitle(title,url);
+    const n33be94c4a5f7=activeBrowser?.win?.querySelector?.('.titlebar-title');
+    if(n33be94c4a5f7) n33be94c4a5f7.textContent=browserChromeTitle(title,url);
   }
   let zTop = 20, winCount = 0, activeBrowser = null, antiCloseEnabled = store.get('nyx.antiClose',true), panicCaptureArmed = false, antiClosePanicBypass = false;
   let antiCloseConfirmHandler = null, antiCloseGestureHandler = null, antiCloseRearmTimer = null, antiCloseHadGesture = false;
@@ -3617,7 +3617,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     dock.hidden=false;dock.inert=false;dock.removeAttribute('aria-hidden');
 
     dock.removeAttribute('style');
-    document.querySelectorAll('#desktop>.window.maximized').forEach(win=>{
+    document.querySelectorAll("#n4db184acef21>.n238da90cb7ed.maximized").forEach(win=>{
       ['left','right','width','max-width','box-sizing'].forEach(key=>win.style.removeProperty(key));
     });
   }
@@ -3848,7 +3848,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     return dock;
   }
   function renderChromeFixed(){
-    const top=document.querySelector('.top-os');
+    const top=document.querySelector('.n11c31f2b2fec');
     if(top){
       top.innerHTML="<div class=\"brand-mini\"><button class=\"browser-mode-app-button active\" data-browser-shell-home title=\"Current tab\"><span class=\"browser-home-icon\" aria-hidden=\"true\"></span><span class=\"browser-home-label\">Home</span></button><button class=\"browser-mode-tab\" data-browser-shell-new-tab title=\"New tab\"><span>New tab</span></button></div><span class=\"browser-top-clock\" data-browser-shell-clock>--:--:--</span><form class=\"browser-mode-address\" data-browser-shell-search><button class=\"browser-nav-control\" data-browser-shell-back type=\"button\" title=\"Back\" aria-label=\"Back\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m15 18-6-6 6-6\"></path></svg></button><button class=\"browser-nav-control\" data-browser-shell-forward type=\"button\" title=\"Forward\" aria-label=\"Forward\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"></path></svg></button><button class=\"browser-nav-control\" data-browser-shell-reload type=\"button\" title=\"Reload\" aria-label=\"Reload\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M20 11a8 8 0 1 0-2.35 5.65\"></path><path d=\"M20 4v7h-7\"></path></svg></button><button class=\"browser-nav-control\" data-browser-shell-home-nav type=\"button\" title=\"Home\" aria-label=\"Home\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"m3 11 9-8 9 8\"></path><path d=\"M5 10v10h14V10\"></path><path d=\"M9 20v-6h6v6\"></path></svg></button><input class=\"browser-mode-url\" data-browser-shell-url placeholder=\"S3ARC4 or enter a U3L\" autocomplete=\"off\"><button class=\"browser-mode-bookmark browser-mode-settings\" data-browser-shell-settings data-open=\"settings\" type=\"button\" title=\"Settings\" aria-label=\"Settings\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3\"></circle><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z\"></path></svg></button><button data-browser-shell-menu type=\"button\" title=\"Menu\"><span class=\"fresh-real-icon\" aria-hidden=\"true\">⋮</span></button></form><div class=\"browser-bookmark-panel\" id=\"browserBookmarkPanel\" hidden></div><div class=\"browser-mode-menu\" id=\"browserModeMenu\"><button data-browser-shell-new-tab type=\"button\">New tab</button><button data-browser-bookmarks-toggle type=\"button\">Bookmarks</button><button data-open=\"apps\" type=\"button\">Apps</button><hr><button data-open=\"settings\" type=\"button\">Settings</button><button data-browser-hieroglyph-toggle type=\"button\">Hieroglyph Mode</button><button data-app-url=\"/assets/games/index.html\" type=\"button\">GAMES</button><button data-app-url=\"/apps/chat/\" type=\"button\">Chat</button><button data-app-url=\"https://discord.com/app\" type=\"button\">Discord</button><hr><button data-page-fullscreen type=\"button\">Fullscreen</button><button data-shell-about type=\"button\">Open About:Blank</button><button data-shell-about-tab type=\"button\">Open Tab in Abt:Blank</button></div>";
       const homeNav=top.querySelector('[data-browser-shell-home-nav]');
@@ -3893,7 +3893,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         shellAddress.replaceChildren(backButton,forwardButton,reloadButton,secureIndicator,urlField,bookmarkButton,menuButton);
       }
       renderNyxPresence();
-      
+
       syncNyxLatencyBubble();
       ensureNyxVisualDock();
       }
@@ -3939,7 +3939,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     return !homeEl || homeEl.classList.contains('hidden');
   }
   function syncChromeMode(){
-    if(renderedChromeMode==='browser-shell' && document.querySelector('.top-os [data-browser-shell-search]')){
+    if(renderedChromeMode==='browser-shell' && document.querySelector('.n11c31f2b2fec [data-browser-shell-search]')){
       if(browserShellNeedsStartupHome()) setBrowserShellHomeActive();
       return;
     }
@@ -4255,7 +4255,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     if(!document.body.classList.contains('browser-shell')) return;
     requestNyxKeyboardLock();
     try{window.focus()}catch{}
-    const target=document.querySelector('.top-os') || document.body;
+    const target=document.querySelector('.n11c31f2b2fec') || document.body;
     try{
       if(!target.hasAttribute('tabindex')) target.setAttribute('tabindex','-1');
       target.focus({preventScroll:true});
@@ -4615,7 +4615,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
   }
   function renderNyxVisualTabStrip(){
     if(!nyxVisualDockUsesSideLayout()) return;
-    const top=document.querySelector('.top-os');
+    const top=document.querySelector('.n11c31f2b2fec');
     if(!top) return;
     let strip=top.querySelector('[data-n7x-dock-tabs]');
     if(!strip){
@@ -4740,7 +4740,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       document.body.classList.remove('browser-content-active');
       document.body.classList.remove('n7x-built-in-content-active');
       window.NyxBeamsWallpaper?.syncVisibility?.();
-      if(contentStateChanged) queueMicrotask(()=>syncThemeVantaBackgrounds());
+      if(contentStateChanged) queueMicrotask(()=>syncSceneLayers());
       if(home){
         home.style.display='none';
         delete home.dataset.browserShellTab;
@@ -4777,7 +4777,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     }catch{activeIsBuiltIn=/^nyx:\/\//i.test(String(active?.url || ''))}
     document.body.classList.toggle('n7x-built-in-content-active',activeShowsContent && activeIsBuiltIn);
     window.NyxBeamsWallpaper?.syncVisibility?.();
-    if(contentStateChanged) queueMicrotask(()=>syncThemeVantaBackgrounds());
+    if(contentStateChanged) queueMicrotask(()=>syncSceneLayers());
     if(home){
       home.style.display='';
       home.innerHTML="<span class=\"browser-home-icon\" aria-hidden=\"true\"></span><span class=\"browser-home-label\">N7X</span>";
@@ -4850,7 +4850,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     syncNyxVisualDockState();
   }
   function openBrowserShellTab(url='',options={}){
-    
+
 
 
 
@@ -5006,7 +5006,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     }
     if(String(url||'').replace(/\/+$/,'')==='/apps/nyxcloud'){void openNyxVmsApp();return;}
     hideBrowserSuggestions();
-    
+
     if(String(url || '').trim().toLowerCase()==='nyx://settings'){
       return openBrowserShellInternalTab('settings');
     }
@@ -5055,7 +5055,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     if(!browserShellTabs.some(tab=>tab.id===id)) return;
     hideBrowserSuggestions();
     setBrowserTabSidebarOpen(false);
-    
+
     browserShellActiveTab=id;
     const shellTab=browserShellTabs.find(tab=>tab.id===id);
     if(shellTab?.url==='nyx://settings') renderBrowserShellSettingsTab();
@@ -5082,7 +5082,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
   }
   function setBrowserShellHomeActive(){
     document.body.classList.remove('n7x-home-search-active');
-    
+
     closeBrowserShellSettings();
     ensureBrowserShellHome();
     let homeTab=browserShellTabs.find(tab=>tab.title==='Home' && !tab.url);
@@ -5448,11 +5448,6 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         toast('Theme background restored');
       });
       backgroundsBlock.append(upload,wallpaperPicker);
-      const legacyScene=document.createElement('div');
-      legacyScene.className='settings-row n7x-wallpaper-legacy';
-      const threeDOn=store.get('nyx.threeDBackgrounds',false);
-      legacyScene.innerHTML=`<span>Legacy 3D scene</span><button class="settings-action ${threeDOn?'on':''}" data-switch="nyx.threeDBackgrounds" type="button" aria-checked="${threeDOn}">${threeDOn?'On':'Off'}</button>`;
-      backgroundsBlock.append(legacyScene);
       const customThemeBlock=document.createElement('section');
       customThemeBlock.className='settings-block n7x-custom-theme-maker';
       const customColor=nyxThemeHex(store.text('nyx.customThemeColor',nyxCustomThemeDefaults.base));
@@ -6043,7 +6038,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     updateDockFullscreenState();
   }
   function ensureVisualEffectNodes(count=64){
-    const layer=$('visualEffects');
+    const layer=$('n0148d6c24d0c');
     if(!layer) return [];
     while(layer.children.length<count) layer.appendChild(document.createElement('i'));
     while(layer.children.length>count) layer.lastElementChild?.remove();
@@ -6051,17 +6046,12 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
   }
 
   let nyxStartupOpened=false;
-  let defaultVantaInstance=null;
-  let rubyVantaInstance=null;
-  let whiteVantaInstance=null;
-  let emeraldVantaInstance=null;
-  let sakuraVantaInstance=null;
-  function shouldPauseVantaBackgrounds(){
-    return document.body.classList.contains('browser-content-active');
-  }
-  function threeDBackgroundsEnabled(){
-    return store.get('nyx.threeDBackgrounds',false);
-  }
+
+
+
+
+
+
   const nyxCustomThemeDefaults={base:'#6f9ee8'};
   function nyxThemeHex(value,fallback=nyxCustomThemeDefaults.base){
     const raw=String(value || '').trim();
@@ -6134,7 +6124,6 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     const color=nyxThemeHex(value);
     store.setText('nyx.customThemeColor',color);
     store.setText('nyx.theme','custom');
-    stopDefaultVanta();
     applyThemeSetting();
     applyNyxThemeBeamWallpaper('custom');
     return color;
@@ -6146,207 +6135,26 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
   function syncHomeDotFieldVisibility(){
     qsa('.n7x-home-dot-field').forEach(canvas=>canvas.remove());
   }
-  function shouldShowDefaultVanta(){
-    const theme=store.text('nyx.theme','default');
-    return threeDBackgroundsEnabled() && (theme==='default' || theme==='midnight' || theme==='custom') && !shouldPauseVantaBackgrounds() && !document.body.classList.contains('custom-bg-active');
-  }
-  function shouldShowRubyVanta(){
-    const theme=store.text('nyx.theme','default');
-    return threeDBackgroundsEnabled() && theme==='ruby' && !shouldPauseVantaBackgrounds() && !document.body.classList.contains('custom-bg-active');
-  }
-  function shouldShowWhiteVanta(){
-    const theme=store.text('nyx.theme','default');
-    return threeDBackgroundsEnabled() && theme==='fresh' && !shouldPauseVantaBackgrounds() && !document.body.classList.contains('custom-bg-active');
-  }
-  function shouldShowEmeraldVanta(){
-    const theme=store.text('nyx.theme','default');
-    return threeDBackgroundsEnabled() && theme==='emerald' && !shouldPauseVantaBackgrounds() && !document.body.classList.contains('custom-bg-active');
-  }
-  function shouldShowSakuraVanta(){
-    const theme=store.text('nyx.theme','default');
-    return threeDBackgroundsEnabled() && theme==='sakura' && !shouldPauseVantaBackgrounds() && !document.body.classList.contains('custom-bg-active');
-  }
-  function stopDefaultVanta(){
-    if(!defaultVantaInstance) return;
-    try{defaultVantaInstance.destroy()}catch{}
-    defaultVantaInstance=null;
-  }
-  function stopRubyVanta(){
-    if(!rubyVantaInstance) return;
-    try{rubyVantaInstance.destroy()}catch{}
-    rubyVantaInstance=null;
-  }
-  function stopWhiteVanta(){
-    if(!whiteVantaInstance) return;
-    try{whiteVantaInstance.destroy()}catch{}
-    whiteVantaInstance=null;
-  }
-  function stopEmeraldVanta(){
-    if(!emeraldVantaInstance) return;
-    try{emeraldVantaInstance.destroy()}catch{}
-    emeraldVantaInstance=null;
-  }
-  function stopSakuraVanta(){
-    if(!sakuraVantaInstance) return;
-    try{sakuraVantaInstance.destroy()}catch{}
-    sakuraVantaInstance=null;
-  }
-  function syncDefaultVantaBackground(){
-    const layer=$('defaultVantaBg');
-    if(!layer) return;
-    const show=shouldShowDefaultVanta();
-    layer.hidden=!show;
-    if(!show){
-      stopDefaultVanta();
-      return;
-    }
-    if(defaultVantaInstance || !window.VANTA?.NET || !window.THREE) return;
-    try{
-      const customPalette=store.text('nyx.theme','default')==='custom' ? nyxCustomThemePalette() : null;
-      defaultVantaInstance=VANTA.NET({
-        el:layer,
-        mouseControls:true,
-        touchControls:true,
-        gyroControls:false,
-        minHeight:200.00,
-        minWidth:200.00,
-        scale:1.00,
-        scaleMobile:1.00,
-        color:customPalette ? nyxHexToNumber(customPalette.accent) : 0x511151,
-        backgroundColor:customPalette ? nyxHexToNumber(customPalette.canvas) : 0x241933
-      });
-    }catch{
-      stopDefaultVanta();
-    }
-  }
-  function syncRubyVantaBackground(){
-    const layer=$('rubyVantaBg');
-    if(!layer) return;
-    const show=shouldShowRubyVanta();
-    layer.hidden=!show;
-    if(!show){
-      stopRubyVanta();
-      return;
-    }
-    if(rubyVantaInstance || !window.VANTA?.GLOBE || !window.THREE) return;
-    try{
-      rubyVantaInstance=VANTA.GLOBE({
-        el:layer,
-        mouseControls:true,
-        touchControls:true,
-        gyroControls:false,
-        minHeight:200.00,
-        minWidth:200.00,
-        scale:1.00,
-        scaleMobile:1.00,
-        color:0xab1a1a
-      });
-    }catch{
-      stopRubyVanta();
-    }
-  }
-  function syncWhiteVantaBackground(){
-    const layer=$('whiteVantaBg');
-    if(!layer) return;
-    const show=shouldShowWhiteVanta();
-    layer.hidden=!show;
-    if(!show){
-      stopWhiteVanta();
-      return;
-    }
-    if(whiteVantaInstance || !window.VANTA?.BIRDS || !window.THREE) return;
-    try{
-      whiteVantaInstance=VANTA.BIRDS({
-        el:layer,
-        mouseControls:true,
-        touchControls:true,
-        gyroControls:false,
-        minHeight:200.00,
-        minWidth:200.00,
-        scale:1.00,
-        scaleMobile:1.00,
-        backgroundColor:0x162019,
-        color1:0xd9e5d6,
-        color2:0x728f6b,
-        separation:24.00,
-        cohesion:22.00
-      });
-    }catch{
-      stopWhiteVanta();
-    }
-  }
-  function syncEmeraldVantaBackground(){
-    const layer=$('emeraldVantaBg');
-    if(!layer) return;
-    const show=shouldShowEmeraldVanta();
-    layer.hidden=!show;
-    if(!show){
-      stopEmeraldVanta();
-      return;
-    }
-    if(emeraldVantaInstance || !window.VANTA?.DOTS || !window.THREE) return;
-    try{
-      emeraldVantaInstance=VANTA.DOTS({
-        el:layer,
-        mouseControls:true,
-        touchControls:true,
-        gyroControls:false,
-        minHeight:200.00,
-        minWidth:200.00,
-        scale:1.00,
-        scaleMobile:1.00,
-        color:0x10ab3b,
-        color2:0x3bae28,
-        backgroundColor:0x123025,
-        size:2.00
-      });
-    }catch{
-      stopEmeraldVanta();
-    }
-  }
-  function syncSakuraVantaBackground(){
-    const layer=$('sakuraVantaBg');
-    if(!layer) return;
-    const show=shouldShowSakuraVanta();
-    layer.hidden=!show;
-    if(!show){
-      stopSakuraVanta();
-      return;
-    }
-    if(sakuraVantaInstance || !window.VANTA?.CLOUDS || !window.THREE) return;
-    try{
-      sakuraVantaInstance=VANTA.CLOUDS({
-        el:layer,
-        mouseControls:true,
-        touchControls:true,
-        gyroControls:false,
-        minHeight:200.00,
-        minWidth:200.00,
-        cloudColor:0xc9adde,
-        sunColor:0xff1818,
-        sunGlareColor:0xf23f04,
-        sunlightColor:0xde1d4b
-      });
-    }catch{
-      stopSakuraVanta();
-    }
-  }
-  function syncThemeVantaBackgrounds(){
 
 
 
-    syncDefaultVantaBackground();
-    syncRubyVantaBackground();
-    syncWhiteVantaBackground();
-    syncEmeraldVantaBackground();
-    syncSakuraVantaBackground();
-    syncHomeDotFieldVisibility();
-    syncNyxWaveBackground();
-  }
+
+
+
+
+
+
+
+
+
+
+
+
+  function syncSceneLayers(){syncHomeDotFieldVisibility();syncNyxWaveBackground();}
   function syncNyxWaveBackground(){
-    const wave=$('n7xWaveBg');
+    const wave=$('nd9720eea6773');
     if(!wave) return;
-    const active=!document.documentElement.dataset.n7xBeamWallpaper && !threeDBackgroundsEnabled() && !store.get('nyx.lagReducer',false) && !document.body.classList.contains('browser-content-active') && !document.body.classList.contains('custom-bg-active');
+    const active=!document.documentElement.dataset.n7xBeamWallpaper && !store.get('nyx.lagReducer',false) && !document.body.classList.contains('browser-content-active') && !document.body.classList.contains('custom-bg-active');
     const notify=()=>{
       try{wave.contentWindow?.postMessage({type:'nyx-wave-active',active},location.origin)}catch{}
     };
@@ -6422,7 +6230,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       card.setAttribute('aria-pressed',String(selected));
     });
     syncInternalThemeFrames(theme);
-    syncThemeVantaBackgrounds();
+    syncSceneLayers();
     window.dispatchEvent(new CustomEvent('nyx:themechange',{detail:{theme}}));
   }
   function applyHomeDesignSetting(){
@@ -6541,7 +6349,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
   }
 
   function applyUserSettings(){
-    document.body.classList.toggle('three-d-backgrounds',store.get('nyx.threeDBackgrounds',false));
+    document.body.classList.remove('three-d-backgrounds');
     applyNyxBeamWallpaper();
     document.body.classList.toggle('n7x-home-hide-search',!store.get('nyx.homeShowSearch',true));
     document.body.classList.toggle('n7x-home-hide-quick-actions',!store.get('nyx.homeShowQuickActions',true));
@@ -6553,7 +6361,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     applyBrowserTabDesignSetting();
     applyThemeSetting();
     syncPerformanceLite();
-    syncThemeVantaBackgrounds();
+    syncSceneLayers();
     applyFontSetting();
     applyVisualEffectSetting();
     const name=store.text('nyx.userName','').trim();
@@ -6577,7 +6385,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     document.documentElement.style.setProperty('--bg-enhanced-render',normalizeBgValue(value));
     document.documentElement.style.setProperty('--browser-bg-render',normalizeBgValue(currentBrowserBackgroundValue()));
     syncBackgroundPreview(value);
-    
+
     store.set('nyx.backgroundEnhancer',false);
     const enhance=false;
     document.body.classList.remove('bg-enhanced');
@@ -6703,7 +6511,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     if(!next){
       document.body.classList.remove('custom-bg-active');
       img.removeAttribute('src');
-      syncThemeVantaBackgrounds();
+      syncSceneLayers();
       return Promise.resolve(null);
     }
     return new Promise(resolve=>{
@@ -6713,12 +6521,12 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       document.documentElement.style.setProperty('--bg-render',loadedCss);
       document.documentElement.style.setProperty('--bg-enhanced-render',loadedCss);
       document.body.classList.add('custom-bg-active');
-      syncThemeVantaBackgrounds();
+      syncSceneLayers();
       resolve({src:loadedSrc,width:loadedImg.naturalWidth,height:loadedImg.naturalHeight});
     },()=>{
       if(layerRun!==customBgLayerRun){resolve(null); return}
       document.body.classList.remove('custom-bg-active');
-      syncThemeVantaBackgrounds();
+      syncSceneLayers();
       resolve(null);
     });
     });
@@ -7043,10 +6851,10 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         return typeof proxyStateVersion==='string' && typeof scramjetStateVersion==='string';
       })],
       ['Checking for bugs',async()=>doubleCheck(async()=>(
-        Boolean(document.body && $('desktop') && $('visualEffects') && $('customBgImage'))
+        Boolean(document.body && $('n4db184acef21') && $('n0148d6c24d0c') && $('customBgImage'))
         && window.__nyxStartupErrors.length===0
       ))],
-      ["Launching N7X",async()=>doubleCheck(async()=>Boolean($('browserShell') || $('desktop')))]
+      ["Launching N7X",async()=>doubleCheck(async()=>Boolean($('browserShell') || $('n4db184acef21')))]
     ];
     setProgress(0,"Checking N7X");
     for(let i=0;i<checks.length;i++){
@@ -8805,7 +8613,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     if(browserProxyHomeWarmTimer || browserProxyPrewarmScheduled) return;
     browserProxyHomeWarmTimer=setTimeout(()=>{
       browserProxyHomeWarmTimer=0;
-      if(!document.querySelector('.browser-window.browser-home-page [data-browser-blank-input]')) return;
+      if(!document.querySelector('.n2ac0604c6ebc.browser-home-page [data-browser-blank-input]')) return;
       scheduleBrowserProxyPrewarm();
     },800);
   }
@@ -8842,7 +8650,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
   }
   function updateDockFullscreenState(){
     const dock=document.querySelector('.dock');
-    const hasFullscreen=[...document.querySelectorAll('.window.maximized')].some(win=>win.style.display!=='none' && !win.classList.contains('closing'));
+    const hasFullscreen=[...document.querySelectorAll(".n238da90cb7ed.maximized")].some(win=>win.style.display!=='none' && !win.classList.contains('closing'));
     dock?.classList.toggle('hidden-for-window',hasFullscreen);
   }
   function minimizeWindow(win){
@@ -8904,7 +8712,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     root.style.setProperty('--desktop-icon-size',desktopIconSize+'px');
     root.style.setProperty('--search-width','min(620px, calc(100vw - '+sideReserve+'px))');
     root.style.setProperty('--safe-bottom',safeBottom+'px');
-    document.querySelectorAll('.window').forEach(clampWindowToScreen);
+    document.querySelectorAll(".n238da90cb7ed").forEach(clampWindowToScreen);
   }
   let responsiveFitTimer=0;
   let nyxVisualDockViewportTimer=0;
@@ -8942,21 +8750,21 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
 
   function makeWindow(opts){
     const win=document.createElement('section');
-    win.className='window '+(opts.className||'');
+    win.className='n238da90cb7ed '+(opts.className||'');
     win.style.left=opts.left||`${120+winCount*28}px`;
     win.style.top=opts.top||`${80+winCount*24}px`;
     win.style.width=opts.width||'560px';
     win.style.height=opts.height||'420px';
-    win.innerHTML=`<div class="titlebar"><div class="titlebar-title">${esc(opts.title||'Window')}</div><div class="window-controls"><button data-minimize title="Minimize" aria-label="Minimize"></button><button data-maximize title="Maximize" aria-label="Maximize"></button><button class="close" data-close title="Close" aria-label="Close"></button></div></div>${opts.body||''}`;
+    win.innerHTML=`<div class="n33be94c4a5f7"><div class="titlebar-title">${esc(opts.title||'Window')}</div><div class="window-controls"><button data-minimize title="Minimize" aria-label="Minimize"></button><button data-maximize title="Maximize" aria-label="Maximize"></button><button class="close" data-close title="Close" aria-label="Close"></button></div></div>${opts.body||''}`;
     addResizeHandles(win);
-    $('desktop').appendChild(win); winCount++; bring(win); wireWindow(win);
+    $('n4db184acef21').appendChild(win); winCount++; bring(win); wireWindow(win);
     clampWindowToScreen(win);
     if(opts.autoMaximize !== false){
       win.classList.add('maximized');
       const maxBtn=win.querySelector('[data-maximize]');
       if(maxBtn) maxBtn.setAttribute('aria-label','Restore');
     }
-    
+
     updateWindowSizeClasses(win); updateDockFullscreenState(); initDesktopSplash(); return win;
   }
   function addResizeHandles(win){
@@ -8968,7 +8776,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     });
   }
   function wireWindow(win){
-    const bar=win.querySelector('.titlebar');
+    const bar=win.querySelector('.n33be94c4a5f7');
     let drag=null, resize=null;
     if('ResizeObserver' in window) new ResizeObserver(()=>updateWindowSizeClasses(win)).observe(win);
     win.addEventListener('pointerdown',()=>bring(win));
@@ -8987,7 +8795,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       bar.classList.add('dragging'); e.preventDefault();
     };
     bar.addEventListener('pointerdown',startDrag);
-    win.querySelector('.browser-tabs')?.addEventListener('pointerdown',startDrag);
+    win.querySelector('.ne4236faa3775')?.addEventListener('pointerdown',startDrag);
     win.querySelectorAll('[data-resize]').forEach(handle=>{
       handle.addEventListener('pointerdown',e=>{
         if(win.classList.contains('maximized')) return;
@@ -9044,7 +8852,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     {
       const searchEngine=selectedSearchEngineMeta();
       const searchLabel=`S3ARC4 ${searchEngine.label} or type a U3L`;
-      return `<div class="browser-tabs"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="S3ARC4"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home n7x-minimal-home n7x-visual-home"><main class="browser-shell-start n7x-minimal-hero"><div class="n7x-minimal-brand"><img class="n7x-home-logo" data-n7x-logo src="/assets/icons/nyx-cat-moon.svg?v=3" alt="N7X"><h1 aria-label="N7X" data-no-interface-text><span class="n7x-wordmark-letter" aria-hidden="true"><span class="n7x-wordmark-glyph">N</span></span><span class="n7x-wordmark-letter" aria-hidden="true"><span class="n7x-wordmark-glyph">7</span></span><span class="n7x-wordmark-letter" aria-hidden="true"><span class="n7x-wordmark-glyph">X</span></span></h1></div><form class="browser-blank-search n7x-minimal-search" data-browser-blank-search><svg class="n7x-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input data-browser-blank-input data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"></form><nav class="n7x-home-links" data-n7x-recent-searches aria-label="Recent searches" hidden></nav></main><nav class="n7x-minimal-utility-links" aria-label="N7X tools and terms"><a data-open="terms" href="nyx://terms">Terms</a></nav><button class="n7x-appearance-toggle" data-n7x-appearance type="button" aria-label="Use light appearance" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button><button class="n7x-visual-customize" data-open="settings" type="button">${nyxDashboardIcon('settings')}<span>Customize</span></button><div class="n7x-home-presence${nyxFounderIsOwner&&nyxOwnerDashboardAccess?' n7x-owner-presence-action':''}" data-n7x-owner-presence role="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'button':'status'}" tabindex="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="n7x-home-presence-dot" aria-hidden="true"></span><span data-n7x-online-count>${minimalPresenceText}</span></div></div></div>`;
+      return `<div class="ne4236faa3775"><button class="new-tab" data-new-tab>+</button></div><div class="browser-tools"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="S3ARC4"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="browser-body"><div class="browser-home n7x-minimal-home n7x-visual-home"><main class="browser-shell-start n7x-minimal-hero"><div class="n7x-minimal-brand"><img class="n7x-home-logo" data-n7x-logo src="/assets/icons/nyx-cat-moon.svg?v=3" alt="N7X"><h1 aria-label="N7X" data-no-interface-text><span class="n7x-wordmark-letter" aria-hidden="true"><span class="n7x-wordmark-glyph">N</span></span><span class="n7x-wordmark-letter" aria-hidden="true"><span class="n7x-wordmark-glyph">7</span></span><span class="n7x-wordmark-letter" aria-hidden="true"><span class="n7x-wordmark-glyph">X</span></span></h1></div><form class="browser-blank-search n7x-minimal-search" data-browser-blank-search><svg class="n7x-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input data-browser-blank-input data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"></form><nav class="n7x-home-links" data-n7x-recent-searches aria-label="Recent searches" hidden></nav></main><nav class="n7x-minimal-utility-links" aria-label="N7X tools and terms"><a data-open="terms" href="nyx://terms">Terms</a></nav><button class="n7x-appearance-toggle" data-n7x-appearance type="button" aria-label="Use light appearance" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button><button class="n7x-visual-customize" data-open="settings" type="button">${nyxDashboardIcon('settings')}<span>Customize</span></button><div class="n7x-home-presence${nyxFounderIsOwner&&nyxOwnerDashboardAccess?' n7x-owner-presence-action':''}" data-n7x-owner-presence role="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'button':'status'}" tabindex="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'0':'-1'}" aria-live="polite" aria-label="${nyxFounderIsOwner&&nyxOwnerDashboardAccess?'Open Owner Dashboard':'Current users online'}"><span class="n7x-home-presence-dot" aria-hidden="true"></span><span data-n7x-online-count>${minimalPresenceText}</span></div></div></div>`;
     }
   }
 
@@ -9162,7 +8970,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     const scope=root || document;
     if(document.body.classList.contains('hosted-cloak-entry')) return false;
     if(document.documentElement.classList.contains('hosted-cloak-entry')) return false;
-    if($('cloakLaunchScreen')?.classList.contains('show')) return false;
+    if($('n92b6bf3e8f4f')?.classList.contains('show')) return false;
     const welcome=$('welcomeScreen');
     if(welcome && !welcome.classList.contains('hidden')) return false;
     if(!document.body.classList.contains('browser-shell')) return false;
@@ -9235,7 +9043,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
   function playNyxStartupReveal(){
     const body=document.body;
     const targets=[
-      ...document.querySelectorAll('body.browser-shell .top-os .brand-mini > button, body.browser-shell .top-os > :is(.browser-top-clock,.n7x-latency-bubble), body.browser-shell .top-os .browser-mode-address > *, body.browser-shell .browser-home [data-home-shortcuts], body.browser-shell .browser-home [data-home-shortcuts] > .quick-tile')
+      ...document.querySelectorAll('body.browser-shell .n11c31f2b2fec .brand-mini > button, body.browser-shell .n11c31f2b2fec > :is(.browser-top-clock,.n7x-latency-bubble), body.browser-shell .n11c31f2b2fec .browser-mode-address > *, body.browser-shell .browser-home [data-home-shortcuts], body.browser-shell .browser-home [data-home-shortcuts] > .quick-tile')
     ];
     document.querySelectorAll('.shortcut-entrance').forEach(el=>el.classList.remove('shortcut-entrance'));
     document.querySelectorAll('.tab-opening,.tab-activating').forEach(el=>el.classList.remove('tab-opening','tab-activating'));
@@ -9489,7 +9297,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       if(typeof ResizeObserver==='function') new ResizeObserver(resize).observe(home);
       else addEventListener('resize',resize,{passive:true});
       resize();
-      
+
     };
     const scan=root=>{
       if(root?.matches?.('.browser-home.n7x-minimal-home')) initialize(root);
@@ -9730,8 +9538,8 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
   async function preflightBugScan(){
     const required=[
       document.body,
-      document.querySelector('#desktop'),
-      document.querySelector('#visualEffects'),
+      document.querySelector('#n4db184acef21'),
+      document.querySelector('#n0148d6c24d0c'),
       document.querySelector('#customBgImage')
     ];
     const browserApis=Boolean(window.fetch && window.Promise && window.URL && window.localStorage);
@@ -9875,7 +9683,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
   }
 
   function openBrowser(url='https://duckduckgo.com/',options={}){
-    const win=makeWindow({title:'New Tab',className:'browser-window',body:browserBody()});
+    const win=makeWindow({title:'New Tab',className:'n2ac0604c6ebc',body:browserBody()});
 
     cleanBrowserControls(win);
     tick();
@@ -9884,16 +9692,16 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     const chatNotificationIds=new Set();
     win.browserState=state; activeBrowser=state;
     function renderTabs(){
-      const row=win.querySelector('.browser-tabs');
-      row.querySelectorAll('.browser-tab').forEach(x=>x.remove());
+      const row=win.querySelector('.ne4236faa3775');
+      row.querySelectorAll('.n523f56a4d19c').forEach(x=>x.remove());
       state.tabs.forEach(t=>{
-        const el=document.createElement('div'); el.className='browser-tab'+(t.id===state.active?' active':'')+(t.opening?' tab-opening':'')+(t.chatUnread?' chat-unread':'');
+        const el=document.createElement('div'); el.className='n523f56a4d19c'+(t.id===state.active?' active':'')+(t.opening?' tab-opening':'')+(t.chatUnread?' chat-unread':'');
         const displayUrl=t.sourceUrl || t.url;
         el.innerHTML=`<span>${esc(browserChromeTitle(t.title,displayUrl))}</span><button data-close-tab="${t.id}">×</button>`;
         const label=el.querySelector('span');
         if(label){
           const icon=document.createElement('img');
-          icon.className='browser-tab-icon';
+          icon.className='n42f740c5b3e1';
           icon.alt='';
           icon.src=browserChromeIcon(t.icon,displayUrl);
           bindTabIconFallback(icon);
@@ -11238,7 +11046,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
           }catch{}
         }
         try{
-          if(t.frame?.contentDocument?.querySelector('#desktop,#welcomeScreen')) return true;
+          if(t.frame?.contentDocument?.querySelector('#n4db184acef21,#welcomeScreen')) return true;
         }catch{}
         return !!(health.blank || health.hasErrorText);
       };
@@ -11666,7 +11474,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
           if(!state.tabs.includes(t) || t.navigationIntent!==navigationIntent) return;
           try{
             const isScramjetPath=t.frame.contentWindow?.location?.pathname?.startsWith('/~/sj/');
-            const loadednyx=!!t.frame.contentDocument?.querySelector('#desktop,#welcomeScreen');
+            const loadednyx=!!t.frame.contentDocument?.querySelector('#n4db184acef21,#welcomeScreen');
             if(isScramjetPath && loadednyx) retryScramjetTab(t,url);
           }catch{}
         },1800);
@@ -11690,7 +11498,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
           try{
             const doc=t.frame.contentDocument;
             if(!doc?.body) return false;
-            if(doc.querySelector('#desktop,#welcomeScreen')) return false;
+            if(doc.querySelector('#n4db184acef21,#welcomeScreen')) return false;
             const text=String(doc.body.textContent || '').replace(/\s+/g,' ').trim().slice(0,6000);
             const ready=doc.readyState==='complete' || doc.readyState==='interactive';
             const source=sourceForReadiness();
@@ -13308,7 +13116,6 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
           <h2>${document.body.classList.contains('browser-shell') ? 'Browser Background' : 'Change Background'}</h2>
           <p>Pick one of your current N7X backgrounds.</p>
           <div class="background-picker" data-bg-picker data-bg-scope="${document.body.classList.contains('browser-shell') ? 'browser' : 'windows'}"></div>
-          <div class="settings-row"><span>3D Backgrounds</span><button class="switch ${store.get('nyx.threeDBackgrounds',false)?'on':''}" data-switch="nyx.threeDBackgrounds" aria-label="3D backgrounds"></button></div>
           <div class="settings-row"><span>Background Enhancer</span><button class="switch ${store.get('nyx.backgroundEnhancer',false)?'on':''}" data-bg-enhancer aria-label="Background enhancer"></button></div>
           <p class="bg-quality-status" data-bg-quality-status></p>
           <div class="settings-upload" ${document.body.classList.contains('browser-shell') ? 'hidden' : ''}>
@@ -13368,7 +13175,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     </div>`;
   }
   function openSettings(){
-    const existing=document.querySelector('.window.settings-window');
+    const existing=document.querySelector(".n238da90cb7ed.settings-window");
     if(existing){
       bring(existing);
       return existing;
@@ -13395,12 +13202,12 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
   let setupStepIndex=0;
   const setupStepTitles=['Welcome','Username','Account','Profile','Theme','Effects','Browser','Font','Preview','Shortcuts'];
   function syncSetupAccountStep(){
-    const setup=$('setupScreen');
+    const setup=$('n79425056e076');
     if(!setup)return;
     const card=setup.querySelector('[data-setup-account-card]');
     const title=setup.querySelector('[data-setup-account-title]');
     const status=setup.querySelector('[data-setup-account-status]');
-    const actions=setup.querySelector('.setup-account-actions');
+    const actions=setup.querySelector('.n77260e444235');
     const signedIn=Boolean(nyxFounderSignedInUser);
     card?.classList.toggle('is-ready',signedIn);
     if(title)title.textContent=signedIn?'Account ready':'Create a free account';
@@ -13414,7 +13221,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     return select?.options?.[select.selectedIndex]?.textContent?.trim() || select?.value || '';
   }
   function syncSetupThemeCards(){
-    const setup=$('setupScreen');
+    const setup=$('n79425056e076');
     const theme=$('setupTheme')?.value || 'default';
     if(setup) setup.dataset.previewTheme=normalizeNyxTheme(theme);
     setup?.querySelectorAll('[data-setup-theme-card]').forEach(card=>{
@@ -13423,7 +13230,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     if(setup?.classList.contains('show')) window.NyxBeamsWallpaper?.apply(nyxThemeBeamWallpaper(theme));
   }
   function updateSetupPreview(){
-    const setup=$('setupScreen');
+    const setup=$('n79425056e076');
     if(!setup) return;
     const themeSelect=$('setupTheme');
     const effectSelect=$('setupEffect');
@@ -13446,16 +13253,16 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     });
   }
   function setSetupStep(index=0){
-    const setup=$('setupScreen');
+    const setup=$('n79425056e076');
     if(!setup) return;
     const steps=[...setup.querySelectorAll('[data-setup-step]')];
     if(!steps.length) return;
     const previous=setupStepIndex;
     setupStepIndex=Math.max(0,Math.min(steps.length-1,Number(index)||0));
-    setup.classList.remove('setup-forward','setup-back');
-    setup.classList.add(setupStepIndex >= previous ? 'setup-forward' : 'setup-back');
+    setup.classList.remove('n48b3af552e44','nee0e66041708');
+    setup.classList.add(setupStepIndex >= previous ? 'n48b3af552e44' : 'nee0e66041708');
     steps.forEach((step,i)=>step.classList.toggle('active',i===setupStepIndex));
-    setup.querySelectorAll('.setup-dot').forEach((dot,i)=>dot.classList.toggle('active',i===setupStepIndex));
+    setup.querySelectorAll('.nfe49a38e435a').forEach((dot,i)=>dot.classList.toggle('active',i===setupStepIndex));
     const subtitle=setup.querySelector('[data-setup-subtitle]');
     if(subtitle) subtitle.textContent=`${setupStepIndex+1} of ${steps.length} / ${setupStepTitles[setupStepIndex] || setupStepTitles[0]}`;
     const back=setup.querySelector('[data-setup-back]');
@@ -13483,7 +13290,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     if(next===3&&!nyxFounderSignedInUser)next+=delta>0?1:-1;
     setSetupStep(next);
   }
-  function wireSetupWizardControls(setup=$('setupScreen')){
+  function wireSetupWizardControls(setup=$('n79425056e076')){
     if(!setup || setup.__nyxSetupWizardWired) return;
     setup.__nyxSetupWizardWired=true;
     setup.addEventListener('click',event=>{
@@ -13537,14 +13344,14 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     if(!document.__nyxSetupEnterWired){
       document.__nyxSetupEnterWired=true;
       document.addEventListener('keydown',event=>{
-        const activeSetup=$('setupScreen');
+        const activeSetup=$('n79425056e076');
         if(!activeSetup?.classList.contains('show')) return;
         handleSetupEnter(event);
       },true);
     }
   }
   function showSetup(){
-    const setup=$('setupScreen');
+    const setup=$('n79425056e076');
     const name=$('setupName');
     if(!setup) return;
     wireSetupWizardControls(setup);
@@ -13567,7 +13374,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     syncSetupAccountStep();
     setup.hidden=false;
     setup.inert=false;
-    document.body.classList.add('setup-active');
+    document.body.classList.add('n8b202d555e23');
     setup.classList.add('show');
     setup.setAttribute('aria-hidden','false');
     setSetupStep(0);
@@ -13584,7 +13391,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
   function showNyxTermsAcceptanceGate(){
     if(store.text('nyx.tosAcceptedVersion','')===NYX_TERMS_VERSION) return false;
     if(document.querySelector('.n7x-tos-gate')) return true;
-    if($('setupScreen')?.classList.contains('show')) return false;
+    if($('n79425056e076')?.classList.contains('show')) return false;
     const gate=document.createElement('div');
     gate.className='n7x-tos-gate';
     gate.innerHTML=`<section class="n7x-tos-dialog" role="dialog" aria-modal="true" aria-labelledby="n7xTosGateTitle" aria-describedby="n7xTosGateIntro"><header class="n7x-tos-gate-header"><span class="n7x-tos-gate-logo" aria-hidden="true"></span><div><span>Before you continue</span><h1 id="n7xTosGateTitle" tabindex="-1">N7X Terms of Service</h1></div></header><div class="n7x-tos-scroll" data-n7x-tos-scroll>${nyxTermsPageMarkup('n7x-tos-document')}<div class="n7x-tos-declined" hidden><span aria-hidden="true">ⓘ</span><h2 tabindex="-1">Terms declined</h2><p>You cannot use N7X without accepting the Terms of Service. You can review the terms again or leave N7X.</p></div></div><footer class="n7x-tos-actions"><p id="n7xTosGateIntro">By selecting Agree, you confirm that you have read and accept these Terms.</p><div><button class="n7x-tos-disagree" data-n7x-tos-disagree type="button">Disagree</button><button class="n7x-tos-agree" data-n7x-tos-agree type="button">Agree</button></div></footer></section>`;
@@ -13665,7 +13472,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     const storageKey=nyxReleaseNotesStorageKey();
     if(nyxReleaseNotesWereSeen()) return 'seen';
     if(store.text('nyx.tosAcceptedVersion','')!==NYX_TERMS_VERSION) return 'deferred';
-    if($('setupScreen')?.classList.contains('show') || document.querySelector('.n7x-tos-gate,.nyx-email-verification-overlay,.n7x-preflight')) return 'deferred';
+    if($('n79425056e076')?.classList.contains('show') || document.querySelector('.n7x-tos-gate,.nyx-email-verification-overlay,.n7x-preflight')) return 'deferred';
     store.setText(storageKey,NYX_RELEASE_NOTES_VERSION);
     const overlay=document.createElement('div');
     overlay.className='n7x-release-notes-overlay';
@@ -13703,13 +13510,13 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     },delay);
   }
   function hideSetup(){
-    const setup=$('setupScreen');
+    const setup=$('n79425056e076');
     if(!setup) return;
     setup.classList.remove('show');
     setup.setAttribute('aria-hidden','true');
     setup.hidden=true;
     setup.inert=true;
-    document.body.classList.remove('setup-active');
+    document.body.classList.remove('n8b202d555e23');
     if(store.get('nyx.setupComplete',false)) scheduleNyxTermsAcceptanceGate(180);
   }
   function showSetupLaunchSplash(){
@@ -14167,28 +13974,28 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     }
   }
   function showCloakLaunchScreen(){
-    const screen=$('cloakLaunchScreen');
+    const screen=$('n92b6bf3e8f4f');
     if(!screen) return;
     screen.classList.add('show');
     screen.setAttribute('aria-hidden','false');
     setTimeout(()=>screen.querySelector('[data-cloak-input]')?.focus(),40);
   }
   function hideCloakLaunchScreen(){
-    const screen=$('cloakLaunchScreen');
+    const screen=$('n92b6bf3e8f4f');
     if(!screen) return;
     screen.classList.remove('show');
     screen.setAttribute('aria-hidden','true');
   }
   function setCloakLaunchMessage(text){
-    const panel=$('cloakLaunchScreen')?.querySelector('p');
+    const panel=$('n92b6bf3e8f4f')?.querySelector('p');
     if(panel) panel.textContent=text;
   }
   function setCloakStatus(text){
-    const status=$('cloakLaunchScreen')?.querySelector('[data-cloak-status]');
+    const status=$('n92b6bf3e8f4f')?.querySelector('[data-cloak-status]');
     if(status) status.textContent=text;
   }
   function launchTypedCloakMode(){
-    const input=$('cloakLaunchScreen')?.querySelector('[data-cloak-input]');
+    const input=$('n92b6bf3e8f4f')?.querySelector('[data-cloak-input]');
     const mode=(input?.value || '').trim().toLowerCase();
     return launchHostedCloak(mode || 'm');
   }
@@ -14250,7 +14057,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     store.set('autoBlob',false);
     const mode=store.text('nyx.cloakType','a');
     showCloakLaunchScreen();
-    const input=$('cloakLaunchScreen')?.querySelector('[data-cloak-input]');
+    const input=$('n92b6bf3e8f4f')?.querySelector('[data-cloak-input]');
     if(input) input.value=mode;
     setCloakStatus('Auto Cloak ready. If the popup is blocked, click or press any key.');
     const tryLaunch=()=>{
@@ -14494,7 +14301,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       document.__nyxUnifiedButtonMotion=true;
       document.addEventListener('click',event=>{
         const button=event.target.closest?.('button');
-        if(!button || button.disabled || button.matches('.quick-tile,.setup-theme-card,.bg-choice,.game-card,[data-no-button-motion]')) return;
+        if(!button || button.disabled || button.matches('.quick-tile,.nc722c12b1550,.bg-choice,.game-card,[data-no-button-motion]')) return;
         button.classList.remove('n7x-button-click');
         void button.offsetWidth;
         button.classList.add('n7x-button-click');
@@ -14506,7 +14313,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       document.__nyxSetupEnterBind=true;
       document.addEventListener('keydown',e=>{
         if(e.key!=='Enter') return;
-        const setup=$('setupScreen');
+        const setup=$('n79425056e076');
         if(!setup?.classList.contains('show')) return;
         if(e.target?.closest?.('.n7x-account-overlay,.n7x-user-profile-overlay,.nyx-email-verification-overlay')) return;
         if(e.target?.matches?.('button,a,textarea,select,[contenteditable="true"]')) return;
@@ -14520,7 +14327,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       },true);
     }
     document.addEventListener('click',e=>{
-      const setupRoot=e.target.closest?.('#setupScreen.show');
+      const setupRoot=e.target.closest?.('#n79425056e076.show');
       if(setupRoot){
         if(e.target.closest('[data-setup-next]')){
           e.preventDefault();
@@ -14775,7 +14582,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       const form=e.target.closest?.('[data-lion-ai-form]');
       if(!form) return;
       e.preventDefault();
-      const win=form.closest('.window');
+      const win=form.closest(".n238da90cb7ed");
       const input=win?.querySelector('[data-lion-ai-input]');
       const chat=win?.querySelector('[data-lion-ai-chat]');
       const prompt=(input?.value || '').trim();
@@ -14801,7 +14608,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     document.addEventListener('click',e=>{
       const starter=e.target.closest?.('[data-lion-ai-prompt]');
       if(starter){
-        const win=starter.closest('.window');
+        const win=starter.closest(".n238da90cb7ed");
         const input=win?.querySelector('[data-lion-ai-input]');
         const form=win?.querySelector('[data-lion-ai-form]');
         if(input && form){
@@ -14813,12 +14620,12 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       const clear=e.target.closest?.('[data-lion-ai-clear]');
       if(!clear) return;
       localStorage.removeItem('nyx.aiMessages');
-      const chat=clear.closest('.window')?.querySelector('[data-lion-ai-chat]');
+      const chat=clear.closest(".n238da90cb7ed")?.querySelector('[data-lion-ai-chat]');
       if(chat){
         chat.classList.remove('has-messages');
         chat.innerHTML=lionAiEmptyState();
       }
-      const title=clear.closest('.window')?.querySelector('[data-lion-ai-thread-title]');
+      const title=clear.closest(".n238da90cb7ed")?.querySelector('[data-lion-ai-thread-title]');
       if(title) title.textContent='New chat';
     });
     document.addEventListener('keydown',e=>{
@@ -14828,7 +14635,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         return;
       }
       if((e.ctrlKey || e.metaKey) && String(e.key || '').toLowerCase()==='k' && document.body.classList.contains('browser-shell')){
-        const homeSearch=document.querySelector('.browser-window.browser-home-page .nyx-home-search [data-browser-blank-input]');
+        const homeSearch=document.querySelector('.n2ac0604c6ebc.browser-home-page .nyx-home-search [data-browser-blank-input]');
         if(homeSearch){
           e.preventDefault();
           homeSearch.focus();
@@ -14846,7 +14653,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       const model=e.target.closest?.('[data-lion-ai-model]');
       if(!model) return;
       store.setText('nyx.aiModel',model.value || 'chatgpt-5.4-mini');
-      const win=model.closest('.window');
+      const win=model.closest(".n238da90cb7ed");
       const label=win?.querySelector('[data-n7x-ai-model-label]');
       if(label) label.textContent=n7xAiModelLabel(model.value);
     });
@@ -14947,7 +14754,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         e.preventDefault();
         e.stopPropagation();
         applyPreset(presetButton.dataset.preset || 'nyx');
-        syncPresetCloakFields(presetButton.closest('.window,.settings-app,.browser-shell-settings-overlay') || document);
+        syncPresetCloakFields(presetButton.closest(".n238da90cb7ed,.settings-app,.browser-shell-settings-overlay") || document);
         return;
       }
       const shellTabsToggle=e.target.closest('[data-browser-shell-tabs-toggle]');
@@ -15145,7 +14952,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
           }
         }
         const browserModeApp=e.target.closest('[data-app-url]');
-        if(browserModeApp && !browserModeApp.closest('.browser-window')){
+        if(browserModeApp && !browserModeApp.closest('.n2ac0604c6ebc')){
           e.preventDefault();
           document.body.classList.remove('menu-open');
           openBrowserShellAppTab(browserModeApp.dataset.appUrl);
@@ -15178,7 +14985,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
       const open=e.target.closest('[data-open]'); if(open){e.preventDefault(); document.body.classList.remove('menu-open'); const v=open.dataset.open; if(v==='browser')openBrowser(); if(v==='home')openBrowser(); if(v==='updates')openUpdates(); if(v==='settings')openSettings(); if(v==='apps')openApps(); if(v==='links')openLinks(); if(v==='terms')openTermsOfService(); if(v==='developer')openDeveloperConsole(); if(v==='about'||v==='credits')openAboutNyx(); return}
       const app=e.target.closest('[data-app-url]');
-      if(app && !app.closest('.browser-window')){
+      if(app && !app.closest('.n2ac0604c6ebc')){
         if(app.dataset.appUrl==='/apps/nyxcloud/'){e.preventDefault();void openNyxVmsApp();return;}
         e.preventDefault();
         document.body.classList.remove('menu-open');
@@ -15187,13 +14994,13 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         return
       }
       const url=e.target.closest('[data-url]');
-      if(url && !url.closest('.browser-window')){e.preventDefault(); document.body.classList.remove('menu-open'); openBrowser(url.dataset.url); return}
+      if(url && !url.closest('.n2ac0604c6ebc')){e.preventDefault(); document.body.classList.remove('menu-open'); openBrowser(url.dataset.url); return}
       if(e.target.closest('[data-save-profile]')){
-        saveProfile(e.target.closest('.window'));
+        saveProfile(e.target.closest(".n238da90cb7ed"));
         return;
       }
       if(e.target.closest('[data-save-browser]')){
-        const win=e.target.closest('.window');
+        const win=e.target.closest(".n238da90cb7ed");
         const input=win?.querySelector('#settingEngine');
         const mode=win?.querySelector('#settingBrowserMode');
         const transport=win?.querySelector('#settingTransport');
@@ -15220,7 +15027,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         toast(scope==='browser' ? 'Browser background applied' : 'Background applied'); return;
       }
       if(e.target.closest('[data-save-bg]')){
-        const win=e.target.closest('.window');
+        const win=e.target.closest(".n238da90cb7ed");
         const urlInput=win?.querySelector('#settingBgUrl')?.value.trim() || '';
         store.setText('nyx.customBgUrl', urlInput);
         if(urlInput) store.setText('nyx.customBgData','');
@@ -15266,7 +15073,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
       const customThemeApply=e.target.closest('[data-apply-custom-theme]');
       if(customThemeApply){
-        const root=customThemeApply.closest('.settings-block,.browser-shell-settings-overlay,.window') || document;
+        const root=customThemeApply.closest(".settings-block,.browser-shell-settings-overlay,.n238da90cb7ed") || document;
         const color=nyxThemeHex(root.querySelector('[data-custom-theme-hex]')?.value || root.querySelector('[data-custom-theme-color]')?.value);
         applyCustomThemeColor(color);
         syncCustomThemeMaker(document,color);
@@ -15281,7 +15088,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         return;
       }
       if(e.target.closest('[data-save-cloak]')){
-        saveCloakSettings(e.target.closest('.window,.settings-app,.browser-shell-settings-overlay') || document);
+        saveCloakSettings(e.target.closest(".n238da90cb7ed,.settings-app,.browser-shell-settings-overlay") || document);
         return;
       }
       if(e.target.closest('[data-clear-n7x-cache]')){
@@ -15292,13 +15099,13 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         return;
       }
       if(e.target.closest('[data-launch-selected-cloak]')){
-        const root=e.target.closest('.window,.settings-app,.browser-shell-settings-overlay') || document;
+        const root=e.target.closest(".n238da90cb7ed,.settings-app,.browser-shell-settings-overlay") || document;
         saveCloakSettings(root);
         launchHostedCloak(store.text('nyx.cloakType','a'));
         return;
       }
       if(e.target.closest('[data-tab-cloak-apply]')){
-        const root=e.target.closest('.window,.settings-app,body') || document;
+        const root=e.target.closest(".n238da90cb7ed,.settings-app,body") || document;
         const fileInput=root.querySelector('[data-tab-favicon-file]');
         const file=fileInput?.files?.[0];
         const apply=favicon=>applyCustomTabCloak(root.querySelector('[data-tab-title]')?.value || 'nyx', favicon || root.querySelector('[data-tab-favicon]')?.value || favicons.nyx);
@@ -15348,7 +15155,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         return;
       }
       if(e.target.closest('[data-cloak-cancel]')){
-        const input=$('cloakLaunchScreen')?.querySelector('[data-cloak-input]');
+        const input=$('n92b6bf3e8f4f')?.querySelector('[data-cloak-input]');
         if(input) input.value='';
         setCloakStatus('Choose a mode to change this blank page.');
         return;
@@ -15378,11 +15185,11 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         const raw=String(e.target.value || '').trim();
         if(e.target.matches('[data-custom-theme-hex]') && !/^#[0-9a-f]{6}$/i.test(raw)) return;
         const color=nyxThemeHex(raw,store.text('nyx.customThemeColor',nyxCustomThemeDefaults.base));
-        const root=e.target.closest('.settings-block,.browser-shell-settings-overlay,.window') || document;
+        const root=e.target.closest(".settings-block,.browser-shell-settings-overlay,.n238da90cb7ed") || document;
         root.querySelectorAll?.('[data-custom-theme-color],[data-custom-theme-hex]')?.forEach(input=>{if(input!==e.target || input.type==='color') input.value=color});
         root.querySelectorAll?.('[data-custom-theme-swatch]')?.forEach(swatch=>swatch.style.setProperty('--n7x-swatch',color));
       }
-      if(e.target?.id==='settingName') saveProfile(e.target.closest('.window'),true);
+      if(e.target?.id==='settingName') saveProfile(e.target.closest(".n238da90cb7ed"),true);
       if(e.target?.matches?.('[data-glass-value]')){
         if(store.get('nyx.lagReducer',false)){
           store.setText('nyx.glassLevel','0');
@@ -15412,7 +15219,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
       if(e.target?.id==='settingName' && e.key==='Enter'){
         e.preventDefault();
-        saveProfile(e.target.closest('.window'));
+        saveProfile(e.target.closest(".n238da90cb7ed"));
       }
       if(e.target?.matches?.('[data-cloak-input]') && e.key==='Enter'){
         e.preventDefault();
@@ -15449,7 +15256,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
       const presetSelect=e.target.closest?.('[data-preset-select]');
       if(presetSelect){
-        const root=e.target.closest('.window,.settings-app,.browser-shell-settings-overlay') || document;
+        const root=e.target.closest(".n238da90cb7ed,.settings-app,.browser-shell-settings-overlay") || document;
         applyPreset(presetSelect.value || 'nyx');
         syncPresetCloakFields(root);
         return;
@@ -15478,7 +15285,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
       const aiImage=e.target.closest('[data-lion-ai-image]');
       if(aiImage){
-        lionAiReadImageFile(aiImage.closest('.window'),aiImage.files?.[0]);
+        lionAiReadImageFile(aiImage.closest(".n238da90cb7ed"),aiImage.files?.[0]);
         aiImage.value='';
         return;
       }

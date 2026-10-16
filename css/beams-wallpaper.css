@@ -1,4 +1,4 @@
-#n7xBeamsBg{
+#n22e9fbee8c96{
   position:fixed;
   inset:0;
   z-index:2;
@@ -9,8 +9,8 @@
   pointer-events:none;
   user-select:none;
 }
-#n7xBeamsBg[hidden]{display:none!important}
-#n7xLineWavesBg{
+#n22e9fbee8c96[hidden]{display:none!important}
+#n21c484be6235{
   position:fixed;
   z-index:2;
   inset:0;
@@ -21,5 +21,5 @@
   user-select:none;
   background:#050a12;
 }
-html[data-n7x-beam-wallpaper="lineWaves"] #n7xLineWavesBg{display:block}
-html[data-n7x-beam-wallpaper="lineWaves"] #n7xBeamsBg{display:none!important}
+html[data-n7x-beam-wallpaper="lineWaves"] #n21c484be6235{display:block}
+html[data-n7x-beam-wallpaper="lineWaves"] #n22e9fbee8c96{display:none!important}

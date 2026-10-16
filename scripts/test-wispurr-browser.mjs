@@ -73,7 +73,7 @@ try {
         await page.locator('#studyready-startup').waitFor({state: 'detached', timeout: 15000});
         await page.fill('#query', 'https://example.com/'); await page.locator('#search button').click();
         await page.frameLocator('#browser-stage iframe:not([hidden])').getByRole('heading', {name: 'Example Domain'}).waitFor({timeout: 60000});
-        assert.equal(await page.locator('#browser-tabs [role=tab]').count(), 1);
+        assert.equal(await page.locator('#ne4236faa3775 [role=tab]').count(), 1);
         assert.deepEqual(errors, []);
         if (httpOnly) assert(requests.includes('POST /api/tutsi-relay/send'));
         else assert(!requests.includes('POST /api/tutsi-relay/send'), 'Explicit WebSocket choice stays selected');

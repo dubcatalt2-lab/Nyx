@@ -2,7 +2,7 @@ html body.performance-lite{
   --glass-blur:10px!important;
   --glass-saturate:1.08!important;
 }
-html body.performance-lite #visualEffects i:nth-child(n+17){
+html body.performance-lite #n0148d6c24d0c i:nth-child(n+17){
   display:none!important;
 }
 
@@ -63,20 +63,20 @@ body.browser-shell .browser-blank-center [data-home-shortcuts]{
   justify-content:center!important;
 }
 
-body.browser-shell .browser-window.browser-blank-page .browser-blank-logo{
+body.browser-shell .n2ac0604c6ebc.browser-blank-page .browser-blank-logo{
   animation:blankLogoRise .72s cubic-bezier(.18,.82,.22,1) both!important;
 }
-body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile{
+body.browser-shell .n2ac0604c6ebc.browser-blank-page .home-shortcut-grid > .quick-tile{
   animation:blankShortcutRise .72s cubic-bezier(.18,.82,.22,1) both!important;
 }
-body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(1){animation-delay:.16s!important}
-body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(2){animation-delay:.21s!important}
-body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(3){animation-delay:.26s!important}
-body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(4){animation-delay:.31s!important}
-body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(5){animation-delay:.36s!important}
-body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(6){animation-delay:.41s!important}
-body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(7){animation-delay:.46s!important}
-body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(8){animation-delay:.51s!important}
+body.browser-shell .n2ac0604c6ebc.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(1){animation-delay:.16s!important}
+body.browser-shell .n2ac0604c6ebc.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(2){animation-delay:.21s!important}
+body.browser-shell .n2ac0604c6ebc.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(3){animation-delay:.26s!important}
+body.browser-shell .n2ac0604c6ebc.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(4){animation-delay:.31s!important}
+body.browser-shell .n2ac0604c6ebc.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(5){animation-delay:.36s!important}
+body.browser-shell .n2ac0604c6ebc.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(6){animation-delay:.41s!important}
+body.browser-shell .n2ac0604c6ebc.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(7){animation-delay:.46s!important}
+body.browser-shell .n2ac0604c6ebc.browser-blank-page .home-shortcut-grid > .quick-tile:nth-child(8){animation-delay:.51s!important}
 @keyframes blankLogoRise{
   0%{opacity:0;transform:translateY(20px) scale(.88);filter:blur(8px)}
   64%{opacity:1;transform:translateY(-3px) scale(1.025);filter:blur(0)}
@@ -160,7 +160,7 @@ body.theme-fresh{
 }
 .post-cover-loader-label{max-width:170px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .post-cover-loader-percent{min-width:34px;text-align:right}
-html body.browser-shell .window.maximized{
+html body.browser-shell .n238da90cb7ed.maximized{
   top:52px!important;
   height:calc(100dvh - 52px)!important;
 }
@@ -201,9 +201,9 @@ html body.theme-fresh{
   --fresh-blue-deep:#0b7280!important;
   color:#0b7280!important;
 }
-html body.theme-fresh #visualEffects,
-html body.theme-fresh #visualEffects i,
-html body.theme-fresh #visualEffects i::before{
+html body.theme-fresh #n0148d6c24d0c,
+html body.theme-fresh #n0148d6c24d0c i,
+html body.theme-fresh #n0148d6c24d0c i::before{
   color:#f9a8d4!important;
   -webkit-text-fill-color:#f9a8d4!important;
   text-shadow:0 0 12px rgba(244,114,182,.72),0 8px 20px rgba(255,255,255,.36)!important;
@@ -218,7 +218,7 @@ html body.theme-fresh .post-cover-loader-track{
 }
 html body.theme-fresh .post-cover-loader-fill{background:#54ebd9!important}
 
-html body.browser-shell .browser-window.browser-blank-page .home-shortcut-grid,
+html body.browser-shell .n2ac0604c6ebc.browser-blank-page .home-shortcut-grid,
 html body.browser-shell [data-home-shortcuts]{
   position:absolute!important;
   left:50%!important;
@@ -247,7 +247,7 @@ html body.browser-shell [data-home-shortcuts]{
   transform:translateX(-50%)!important;
   z-index:18!important;
 }
-html body.browser-shell.theme-fresh .browser-window.browser-blank-page .home-shortcut-grid,
+html body.browser-shell.theme-fresh .n2ac0604c6ebc.browser-blank-page .home-shortcut-grid,
 html body.browser-shell.theme-fresh [data-home-shortcuts]{
   background:rgba(255,255,255,.62)!important;
   border-color:rgba(84,235,217,.78)!important;
@@ -355,7 +355,7 @@ html body.browser-shell .browser-mode-menu{
   pointer-events:auto!important;
 }
 
-html body.browser-shell .window.maximized{
+html body.browser-shell .n238da90cb7ed.maximized{
   top:68px!important;
   height:calc(100dvh - 68px)!important;
 }
@@ -368,7 +368,7 @@ html body.browser-shell.menu-open .browser-mode-menu{
   visibility:visible!important;
   transform:none!important;
 }
-html body.browser-shell .browser-window.maximized,
+html body.browser-shell .n2ac0604c6ebc.maximized,
 html body.browser-shell .browser-body{
   overflow:visible!important;
 }
@@ -586,7 +586,7 @@ html body.browser-shell.menu-open #browserModeMenu{
 }
 html body,html body *:not(.fresh-real-icon){font-family:var(--n7x-font)!important}
 
-html body.browser-shell .window.maximized{
+html body.browser-shell .n238da90cb7ed.maximized{
   top:84px!important;
   height:calc(100dvh - 84px)!important;
 }

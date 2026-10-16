@@ -237,7 +237,7 @@ try {
     const themes = ["default", "midnight", "ruby", "emerald", "sakura", "fresh", "custom"];
     const selectors = [
       "[data-browser-shell-url]",
-      ".browser-window.browser-home-page [data-browser-blank-input]",
+      ".n2ac0604c6ebc.browser-home-page [data-browser-blank-input]",
       ".n7x-minimal-utility-links a",
       "[data-n7x-visual-dock] button"
     ];
@@ -291,9 +291,9 @@ try {
   });
   await customHomePage.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await customHomePage.locator("#n7xStudyHubStartup").waitFor({ state: "hidden" });
-  await customHomePage.locator('#n7xBeamsBg[data-light-color="#76dfb5"]').waitFor();
-  assert((await customHomePage.locator("#n7xBeamsBg").getAttribute("data-light-color")) !== "#a98cff", "Custom theme remained locked to the Violet Beams color");
-  const homeSelection = await customHomePage.locator(".browser-window.browser-home-page [data-browser-blank-input]").evaluate(input => {
+  await customHomePage.locator('#n22e9fbee8c96[data-light-color="#76dfb5"]').waitFor();
+  assert((await customHomePage.locator("#n22e9fbee8c96").getAttribute("data-light-color")) !== "#a98cff", "Custom theme remained locked to the Violet Beams color");
+  const homeSelection = await customHomePage.locator(".n2ac0604c6ebc.browser-home-page [data-browser-blank-input]").evaluate(input => {
     const style = getComputedStyle(input, "::selection");
     input.focus();
     input.value = "Search DuckDuckGo or type a URL";

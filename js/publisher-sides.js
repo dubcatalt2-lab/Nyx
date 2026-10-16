@@ -30,7 +30,7 @@ export function startHomeSponsors() {
       const rect = home.getBoundingClientRect();
       const available = eligible && window.__nyxPublisherHome?.() === home;
       const visible = available && !document.hidden && !home.classList.contains('hidden') &&
-        home.closest('.browser-window.browser-blank') && rect.width >= 900 && rect.height >= 520 &&
+        home.closest('.n2ac0604c6ebc.browser-blank') && rect.width >= 900 && rect.height >= 520 &&
         getComputedStyle(home).visibility !== 'hidden' && !document.body.classList.contains('n7x-loading-active');
       if (!visible) {clear(state);state.attempted = false;continue;}
       for (const slot of state.slots) slot.host.hidden = !visible || slot.failed;

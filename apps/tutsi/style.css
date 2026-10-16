@@ -1239,9 +1239,9 @@ body[data-view="browser"] #browser-stage {
   height: auto;
 }
 
-#browser-tabs{display:flex;gap:6px;overflow-x:auto;flex:none;padding:6px 14px;background:var(--mantle)}
-#browser-tabs button{flex:none;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:6px 12px;background:transparent;color:var(--muted);border:0;border-radius:8px}
-#browser-tabs button[aria-selected=true]{background:var(--surface);color:var(--text)}
+#ne4236faa3775{display:flex;gap:6px;overflow-x:auto;flex:none;padding:6px 14px;background:var(--mantle)}
+#ne4236faa3775 button{flex:none;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:6px 12px;background:transparent;color:var(--muted);border:0;border-radius:8px}
+#ne4236faa3775 button[aria-selected=true]{background:var(--surface);color:var(--text)}
 #browser-stage iframe[hidden]{display:none!important}
 .shortcut-list{display:grid;grid-template-columns:minmax(120px,1fr) minmax(0,2fr);gap:12px;margin:20px 0}.shortcut-list dt{color:var(--accent)}.shortcut-list dd{margin:0;color:var(--muted)}
 
@@ -1303,12 +1303,12 @@ html[data-motion="reduce"] #customize-dialog *,html[data-motion="reduce"] .setti
 #new-tab-query{flex:1;min-width:0;background:transparent;border:0;padding:10px;color:var(--text)}
 #new-tab-search button{width:44px;border:0;border-radius:12px;background:var(--surface);color:var(--text)}
 
-#browser-tabs .browser-tab{display:flex;align-items:center;flex:none;min-width:0;border-radius:8px}
-#browser-tabs .browser-tab[data-active=true]{background:var(--surface)}
-#browser-tabs .browser-tab [role=tab]{max-width:160px;background:transparent}
-#browser-tabs .browser-tab-close{width:32px;height:32px;padding:0;font-family:system-ui,sans-serif;font-size:20px;line-height:1;color:var(--muted)}
-#browser-tabs .browser-tab-close:hover{background:var(--mantle);color:var(--text)}
-@media(pointer:coarse){#browser-tabs .browser-tab-close{width:44px;height:44px}}
+#ne4236faa3775 .n523f56a4d19c{display:flex;align-items:center;flex:none;min-width:0;border-radius:8px}
+#ne4236faa3775 .n523f56a4d19c[data-active=true]{background:var(--surface)}
+#ne4236faa3775 .n523f56a4d19c [role=tab]{max-width:160px;background:transparent}
+#ne4236faa3775 .n8cefcf66a491{width:32px;height:32px;padding:0;font-family:system-ui,sans-serif;font-size:20px;line-height:1;color:var(--muted)}
+#ne4236faa3775 .n8cefcf66a491:hover{background:var(--mantle);color:var(--text)}
+@media(pointer:coarse){#ne4236faa3775 .n8cefcf66a491{width:44px;height:44px}}
 
 .all-apps .app-symbol{width:48px;height:48px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;color:var(--accent)}
 

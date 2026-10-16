@@ -7,12 +7,12 @@ html body.theme-midnight{
 }
 html body.browser-shell.theme-midnight .browser-mode-menu button:hover{background:#10244e!important;color:#eff6ff!important}
 
-html body.browser-shell.theme-midnight .window.maximized{top:94px!important;height:calc(100dvh - 94px)!important}
+html body.browser-shell.theme-midnight .n238da90cb7ed.maximized{top:94px!important;height:calc(100dvh - 94px)!important}
 html body.browser-shell.theme-midnight #browserModeMenu,
 html body.browser-shell.theme-midnight.menu-open #browserModeMenu,
 html body.browser-shell.theme-midnight .browser-mode-menu{top:94px!important}
 
-html body.browser-shell.theme-midnight .window.maximized{top:96px!important;height:calc(100dvh - 96px)!important}
+html body.browser-shell.theme-midnight .n238da90cb7ed.maximized{top:96px!important;height:calc(100dvh - 96px)!important}
 html body.browser-shell.theme-midnight #browserModeMenu,
   html body.browser-shell.theme-midnight.menu-open #browserModeMenu,
   html body.browser-shell.theme-midnight .browser-mode-menu{top:96px!important}
@@ -32,7 +32,7 @@ html body.browser-shell.theme-midnight #browserModeMenu,
   100%{opacity:1;transform:translateY(0);scale:1}
 }
 
-html body.browser-shell.theme-midnight .window.maximized{
+html body.browser-shell.theme-midnight .n238da90cb7ed.maximized{
     top:96px!important;
     height:calc(100dvh - 96px)!important;
   }
@@ -66,12 +66,12 @@ html body.browser-shell.theme-fresh{
   --n7x-final-shortcut-icon:#0f8fa3!important;
 }
 
-html body.browser-shell.theme-midnight .window.browser-window.maximized,
-html body.browser-shell.theme-midnight .browser-window.maximized.browser-blank{
+html body.browser-shell.theme-midnight .n238da90cb7ed.n2ac0604c6ebc.maximized,
+html body.browser-shell.theme-midnight .n2ac0604c6ebc.maximized.browser-blank{
   border-color:rgba(59,130,246,.46)!important;
 }
 
-html body.browser-shell .window.maximized{
+html body.browser-shell .n238da90cb7ed.maximized{
     top:96px!important;
     height:calc(100dvh - 96px)!important;
   }
@@ -101,12 +101,12 @@ html body.n7x-startup-reveal.browser-shell iframe.view.tab-opening{
   animation:none!important;
 }
 
-html:not([data-n7x-beam-wallpaper]) body:not(.three-d-backgrounds):not(.custom-bg-active):not(.browser-content-active) .n7x-wave-bg{
+html:not([data-n7x-beam-wallpaper]) body:not(.three-d-backgrounds):not(.custom-bg-active):not(.browser-content-active) .n87434a01ebb1{
   display:block!important;
   opacity:1!important;
   transition:filter .45s ease!important;
 }
-html body.theme-midnight .n7x-wave-bg{filter:none!important}
+html body.theme-midnight .n87434a01ebb1{filter:none!important}
 
 html body{--n7x-nav-arrow:#60a5fa;--n7x-nav-arrow-hover:#bfdbfe}
 html body.theme-midnight{--n7x-nav-arrow:#60a5fa;--n7x-nav-arrow-hover:#bfdbfe}
@@ -114,13 +114,13 @@ html body.theme-ruby{--n7x-nav-arrow:#fb7185;--n7x-nav-arrow-hover:#fecdd3}
 html body.theme-emerald{--n7x-nav-arrow:#34d399;--n7x-nav-arrow-hover:#a7f3d0}
 html body.theme-sakura{--n7x-nav-arrow:#f472b6;--n7x-nav-arrow-hover:#fbcfe8}
 html body.theme-fresh{--n7x-nav-arrow:#0f8fa3;--n7x-nav-arrow-hover:#075f70}
-html body.theme-ruby .n7x-wave-bg{filter:hue-rotate(138deg) saturate(1.24) brightness(.88) contrast(1.06)!important}
-html body.theme-emerald .n7x-wave-bg{filter:hue-rotate(278deg) saturate(1.08) brightness(.86) contrast(1.04)!important}
-html body.theme-sakura .n7x-wave-bg{filter:hue-rotate(85deg) saturate(1.08) brightness(1.02) contrast(.98)!important}
-html body.theme-fresh .n7x-wave-bg{filter:hue-rotate(318deg) saturate(.72) brightness(1.22) contrast(.90)!important}
-html body.three-d-backgrounds .n7x-wave-bg,
-html body.browser-content-active .n7x-wave-bg,
-html body.custom-bg-active .n7x-wave-bg{display:none!important}
+html body.theme-ruby .n87434a01ebb1{filter:hue-rotate(138deg) saturate(1.24) brightness(.88) contrast(1.06)!important}
+html body.theme-emerald .n87434a01ebb1{filter:hue-rotate(278deg) saturate(1.08) brightness(.86) contrast(1.04)!important}
+html body.theme-sakura .n87434a01ebb1{filter:hue-rotate(85deg) saturate(1.08) brightness(1.02) contrast(.98)!important}
+html body.theme-fresh .n87434a01ebb1{filter:hue-rotate(318deg) saturate(.72) brightness(1.22) contrast(.90)!important}
+html body.three-d-backgrounds .n87434a01ebb1,
+html body.browser-content-active .n87434a01ebb1,
+html body.custom-bg-active .n87434a01ebb1{display:none!important}
 
 html body.browser-shell .settings-window .settings-card{
   min-height:0!important;

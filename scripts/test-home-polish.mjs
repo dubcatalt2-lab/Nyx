@@ -10,7 +10,7 @@ for (const channel of ['chrome','msedge']) {
  // Exercise real ad-frame lifecycle without requesting billable test impressions.
  await page.route('https://bicea.org/**',r=>r.fulfill({contentType:'application/javascript',body:`const img=document.createElement('img');img.width=160;img.height=600;img.src='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="600"><rect width="160" height="600" fill="orange"/></svg>');document.body.append(img);`}));
  await page.goto('http://localhost:8080/');
- await page.waitForFunction(()=>document.querySelector('.browser-home.n7x-minimal-home')&&document.getElementById('setupLaunchScreen')?.getAttribute('aria-hidden')==='true'&&!document.body.classList.contains('n7x-loading-active'));
+ await page.waitForFunction(()=>document.querySelector('.browser-home.n7x-minimal-home')&&document.getElementById('n3e8549522c8c')?.getAttribute('aria-hidden')==='true'&&!document.body.classList.contains('n7x-loading-active'));
  const close=page.locator('[data-n7x-release-notes-close]').first();if(await close.isVisible())await close.click();
  await page.waitForTimeout(1500);
  assert.equal(await page.locator('#weatherPanel,#weatherRestore,[data-open="weather"]').count(),0);

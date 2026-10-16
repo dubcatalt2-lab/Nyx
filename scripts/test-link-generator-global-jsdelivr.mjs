@@ -165,15 +165,15 @@ try {
   shellPage.on('pageerror', error => shellErrors.push(error.message));
   await shellPage.goto(`${origin}/nyx`, { waitUntil: 'domcontentloaded' });
   await shellPage.evaluate(() => {
-    document.querySelectorAll('#n7xStudyHubStartup,#setupLaunchScreen,#setupScreen,.n7x-tos-gate,.n7x-release-notes-overlay').forEach(element => { element.style.pointerEvents = 'none'; });
+    document.querySelectorAll('#n7xStudyHubStartup,#n3e8549522c8c,#n79425056e076,.n7x-tos-gate,.n7x-release-notes-overlay').forEach(element => { element.style.pointerEvents = 'none'; });
   });
   await shellPage.waitForFunction(() => !document.querySelector('#n7xStudyHubStartup') && !document.body.classList.contains('n7x-loading-active'), null, { timeout: 20_000 });
   await shellPage.locator('[data-n7x-dock-item="apps"]').click();
   await shellPage.frameLocator('iframe.view.active').locator('[data-app-url="/apps/link-generator/"]').click();
   const shellFrameElement = shellPage.locator('iframe.view.active');
   await shellFrameElement.waitFor({ state: 'attached' });
-  await shellFrameElement.evaluate(frame => frame.closest('.browser-window')?.setAttribute('data-popup-test-host', 'true'));
-  const popupTestHost = shellPage.locator('.browser-window[data-popup-test-host="true"]');
+  await shellFrameElement.evaluate(frame => frame.closest('.n2ac0604c6ebc')?.setAttribute('data-popup-test-host', 'true'));
+  const popupTestHost = shellPage.locator('.n2ac0604c6ebc[data-popup-test-host="true"]');
   const shellFrame = shellPage.frameLocator('iframe.view.active');
   await shellFrame.locator('[data-filter-select]:not([disabled])').waitFor({ state: 'attached' });
   await shellFrame.locator('html[data-n7x-popup-bridge="true"]').waitFor({ state: 'attached' });
@@ -193,7 +193,7 @@ try {
   const hostViewsBeforeOpen = await popupTestHost.locator('iframe.view').count();
   await shellFrame.locator('[data-open]').dispatchEvent('click');
   await shellPage.waitForFunction(({ url, count }) => {
-    const host = document.querySelector('.browser-window[data-popup-test-host="true"]');
+    const host = document.querySelector('.n2ac0604c6ebc[data-popup-test-host="true"]');
     return host?.querySelectorAll('iframe.view').length === count + 1 && host.querySelector('.urlbar')?.value === url;
   }, { url: popupBridgeUrl, count: hostViewsBeforeOpen });
   assert.equal(await popupTestHost.locator('iframe.view').count(), hostViewsBeforeOpen + 1, 'Open first did not create a Nyx browser tab');

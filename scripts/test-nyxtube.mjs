@@ -267,7 +267,7 @@ try {
     await redesignedNyxTubeDestination.waitFor({ state: "attached" });
     await discoveryPage.evaluate(() => {
       document.body.classList.add("browser-content-active");
-      document.querySelectorAll("#n7xStudyHubStartup,#setupLaunchScreen,#setupScreen,.n7x-tos-gate").forEach(element => { element.style.pointerEvents = "none"; });
+      document.querySelectorAll("#n7xStudyHubStartup,#n3e8549522c8c,#n79425056e076,.n7x-tos-gate").forEach(element => { element.style.pointerEvents = "none"; });
     });
     const addressBounds = await discoveryPage.locator('form.browser-mode-address > input.browser-mode-url').boundingBox();
     assert(addressBounds?.width > 100, `Browser address field did not have usable geometry: ${JSON.stringify(addressBounds)}`);

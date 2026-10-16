@@ -745,14 +745,14 @@ html[data-n7x-theme] body .n7x-profile-direct-popover :is(select,textarea,input[
 
 
 
-html[data-n7x-theme] body.browser-shell .top-os.top-os #browserModeMenu.browser-mode-menu,
-html[data-n7x-theme] body.browser-shell.menu-open .top-os.top-os #browserModeMenu.browser-mode-menu{
+html[data-n7x-theme] body.browser-shell .n11c31f2b2fec.n11c31f2b2fec #browserModeMenu.browser-mode-menu,
+html[data-n7x-theme] body.browser-shell.menu-open .n11c31f2b2fec.n11c31f2b2fec #browserModeMenu.browser-mode-menu{
   border:0!important;
   border-radius:0!important;
   box-shadow:none!important;
 }
-html[data-n7x-theme] body.browser-shell .top-os.top-os #browserModeMenu.browser-mode-menu > button,
-html[data-n7x-theme] body.browser-shell .top-os.top-os #browserModeMenu.browser-mode-menu > button:is(:hover,:focus-visible,:active){
+html[data-n7x-theme] body.browser-shell .n11c31f2b2fec.n11c31f2b2fec #browserModeMenu.browser-mode-menu > button,
+html[data-n7x-theme] body.browser-shell .n11c31f2b2fec.n11c31f2b2fec #browserModeMenu.browser-mode-menu > button:is(:hover,:focus-visible,:active){
   border:0!important;
   border-radius:0!important;
   outline:0!important;
@@ -1662,12 +1662,12 @@ html[data-n7x-theme] body .n7x-name-surprise-button:hover{background:#4752c4!imp
 }
 
 html[data-n7x-theme][data-n7x-theme] body.browser-shell:is(body,#n7x-profile-settings-row):is(body,#n7x-profile-settings-controls)
-  .browser-window.browser-home-page .n7x-home-actions{
+  .n2ac0604c6ebc.browser-home-page .n7x-home-actions{
   width:min(620px,100%)!important;
   grid-template-columns:repeat(4,minmax(0,1fr))!important;
 }
 html[data-n7x-theme][data-n7x-theme] body.browser-shell:is(body,#n7x-profile-settings-row):is(body,#n7x-profile-settings-controls)
-  .browser-window.browser-home-page .n7x-home-actions>button{
+  .n2ac0604c6ebc.browser-home-page .n7x-home-actions>button{
   height:38px!important;
   min-height:38px!important;
 }
@@ -2227,7 +2227,7 @@ html body .lion-ai-main{
   overflow:hidden;
 }
 html body .lion-ai-head,
-html body .window.compact .lion-ai-head{
+html body .n238da90cb7ed.compact .lion-ai-head{
   min-width:0;
   display:flex!important;
   flex-direction:row!important;
@@ -2655,7 +2655,7 @@ html[data-n7x-theme="custom"] body.browser-shell.theme-custom.theme-default{
 }
 
 
-html[data-n7x-theme="custom"] body.browser-shell.theme-custom.theme-default .browser-window.browser-home-page :is(
+html[data-n7x-theme="custom"] body.browser-shell.theme-custom.theme-default .n2ac0604c6ebc.browser-home-page :is(
   .n7x-home-title,
   .n7x-home-presence,
   .n7x-home-presence .n7x-account-button,

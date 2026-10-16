@@ -36,9 +36,9 @@ body.browser-shell.n7x-browser-chrome-visible {--n7x-chrome-height:86px}
 body.browser-shell::before {background:var(--obsidian-bg);filter:none;transform:scale(1.02);inset:0}
 body.browser-shell:not(.browser-content-active)::after {background:linear-gradient(145deg,rgba(8,10,14,.29),rgba(4,6,10,.45));box-shadow:inset 0 1px 0 rgba(255,255,255,.025);z-index:2}
 html body.browser-shell.custom-bg-active .custom-bg-image {display:block!important;filter:brightness(.48) saturate(.65);transform:scale(1.02);z-index:1}
-body.browser-shell :is(#n7xBeamsBg,#n7xLineWavesBg,.n7x-wave-bg,#defaultVantaBg,#rubyVantaBg,#emeraldVantaBg,#sakuraVantaBg,#whiteVantaBg) {filter:brightness(.55) saturate(.65);transform:scale(1.02)}
+body.browser-shell :is(#n22e9fbee8c96,#n21c484be6235,.n87434a01ebb1) {filter:brightness(.55) saturate(.65);transform:scale(1.02)}
 html[data-n7x-appearance="light"] body.browser-shell::before {opacity:.12}
-html[data-n7x-appearance="light"] body.browser-shell :is(#n7xBeamsBg,#n7xLineWavesBg,#customBgImage,#defaultVantaBg,#rubyVantaBg,#emeraldVantaBg,#sakuraVantaBg,#whiteVantaBg) {opacity:.14}
+html[data-n7x-appearance="light"] body.browser-shell :is(#n22e9fbee8c96,#n21c484be6235,#customBgImage) {opacity:.14}
 html[data-n7x-beam-wallpaper="obsidian"] body:not(.custom-bg-active)::before {
   background:var(--obsidian-bg) url('../assets/backgrounds/obsidian-fabric.svg') bottom right/cover no-repeat;
 }
@@ -51,11 +51,11 @@ html[data-n7x-beam-wallpaper$="-deep"] body:not(.custom-bg-active)::before {filt
 html[data-n7x-beam-wallpaper$="-mono"] body:not(.custom-bg-active)::before {filter:brightness(.5) grayscale(1)}
 
 html[data-n7x-appearance="light"][data-n7x-beam-wallpaper^="photo-"] body::before {opacity:.14}
-html[data-n7x-beam-wallpaper="obsidian"] :is(#n7xBeamsBg,#n7xWaveBg,#n7xLineWavesBg,#defaultVantaBg){display:none!important}
-html[data-n7x-beam-wallpaper] #n7xWaveBg {display:none!important}
-body.browser-shell :is(.dock,#desktop>.desktop-shortcuts){display:none!important}
-body.browser-shell #desktop {position:fixed;inset:0;overflow:hidden;zoom:1!important;pointer-events:none}
-body.browser-shell #desktop>.window.maximized {
+html[data-n7x-beam-wallpaper="obsidian"] :is(#n22e9fbee8c96,#nd9720eea6773,#n21c484be6235){display:none!important}
+html[data-n7x-beam-wallpaper] #nd9720eea6773 {display:none!important}
+body.browser-shell :is(.dock,#n4db184acef21>.desktop-shortcuts){display:none!important}
+body.browser-shell #n4db184acef21 {position:fixed;inset:0;overflow:hidden;zoom:1!important;pointer-events:none}
+body.browser-shell #n4db184acef21>.n238da90cb7ed.maximized {
   position:fixed!important;top:var(--n7x-chrome-height)!important;left:var(--n7x-sidebar-width)!important;
   right:0!important;bottom:0!important;width:calc(100% - var(--n7x-sidebar-width))!important;
   height:calc(100% - var(--n7x-chrome-height))!important;max-height:none!important;max-width:none!important;
@@ -63,12 +63,12 @@ body.browser-shell #desktop>.window.maximized {
   border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;
   transform:none!important;zoom:1!important;backdrop-filter:none!important;pointer-events:auto;
 }
-body.browser-shell #desktop>.window.maximized::before,
-body.browser-shell #desktop>.window.maximized::after {display:none!important}
-body.browser-shell .browser-window.maximized>:is(.titlebar,.browser-tabs,.browser-tools){display:none!important}
-body.browser-shell .browser-window.maximized .browser-body {position:absolute;inset:0;height:100%;overflow:hidden;background:transparent}
-body.browser-shell .browser-window.maximized .view {inset:0;width:100%;height:100%;border:0}
-body.browser-shell .browser-window.maximized .view.active {display:block}
+body.browser-shell #n4db184acef21>.n238da90cb7ed.maximized::before,
+body.browser-shell #n4db184acef21>.n238da90cb7ed.maximized::after {display:none!important}
+body.browser-shell .n2ac0604c6ebc.maximized>:is(.n33be94c4a5f7,.ne4236faa3775,.browser-tools){display:none!important}
+body.browser-shell .n2ac0604c6ebc.maximized .browser-body {position:absolute;inset:0;height:100%;overflow:hidden;background:transparent}
+body.browser-shell .n2ac0604c6ebc.maximized .view {inset:0;width:100%;height:100%;border:0}
+body.browser-shell .n2ac0604c6ebc.maximized .view.active {display:block}
 
 .n7x-visual-dock {
   position:fixed;z-index:2147482502;inset:0 auto 0 0;width:var(--n7x-sidebar-width);height:100%;
@@ -116,13 +116,13 @@ html[data-n7x-sidebar-width="collapsed"] body .n7x-visual-dock #n7xAccountButton
 .n7x-visual-dock #n7xAccountButton::after{transition:opacity 160ms}
 .n7x-visual-dock button:focus-visible,.n7x-rail-discord:focus-visible {outline:1px solid var(--obsidian-text);outline-offset:-2px}
 
-body.browser-shell .top-os {
+body.browser-shell .n11c31f2b2fec {
   position:fixed;z-index:2147482501;top:0;left:var(--n7x-sidebar-width);right:0;
   width:auto;height:86px;display:none;padding:0;border:0;border-bottom:1px solid var(--obsidian-line);
   background:var(--obsidian-panel);backdrop-filter:blur(24px);box-shadow:none;zoom:1!important;
 }
-body.browser-shell.n7x-browser-chrome-visible .top-os {display:grid;grid-template-columns:minmax(0,1fr) 44px;grid-template-rows:40px 46px}
-.top-os>.browser-mode-address {grid-column:1/-1;grid-row:2}
+body.browser-shell.n7x-browser-chrome-visible .n11c31f2b2fec {display:grid;grid-template-columns:minmax(0,1fr) 44px;grid-template-rows:40px 46px}
+.n11c31f2b2fec>.browser-mode-address {grid-column:1/-1;grid-row:2}
 .n7x-tab-list-toggle {grid-column:2;grid-row:1;align-self:center;justify-self:center;width:30px;height:30px;display:grid;place-items:center;border:0;border-radius:6px;background:none;color:var(--obsidian-muted);padding:6px;transition:background-color 140ms,color 140ms}
 .n7x-tab-list-toggle svg {width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round}
 .n7x-tab-list-toggle:hover,.n7x-tab-list-toggle[aria-expanded="true"] {background:var(--obsidian-hover);color:var(--obsidian-text)}
@@ -143,7 +143,7 @@ body.browser-shell.n7x-browser-chrome-visible .top-os {display:grid;grid-templat
 .n7x-browser-tab-sidebar :focus-visible {outline:1px solid var(--obsidian-muted);outline-offset:-2px}
 .n7x-browser-tab-slot {display:flex;align-items:center}
 .n7x-browser-tab-slot>.n7x-browser-tab-row {flex:1;min-width:0}
-.top-os>:is(.brand-mini,.n7x-dashboard,.n7x-latency-bubble,.status-icons,.n7x-home-tabs-toggle,.n7x-minimal-top-actions){display:none!important}
+.n11c31f2b2fec>:is(.brand-mini,.n7x-dashboard,.n7x-latency-bubble,.status-icons,.n7x-home-tabs-toggle,.n7x-minimal-top-actions){display:none!important}
 .n7x-tab-strip {display:flex;align-items:end;gap:4px;padding:5px 10px 0;overflow-x:auto;scrollbar-width:none;min-width:0}
 .n7x-visual-dock-tab {position:relative;display:flex;align-items:center;gap:9px;flex:0 1 212px;min-width:130px;height:35px;padding:0 9px 0 12px;border:1px solid transparent;border-bottom:0;border-radius:8px 8px 0 0;color:var(--obsidian-muted);font-size:12px;cursor:pointer}
 .n7x-visual-dock-tab.active {background:var(--obsidian-field);border-color:var(--obsidian-line);color:var(--obsidian-text)}
@@ -157,14 +157,14 @@ body.browser-shell.n7x-browser-chrome-visible .top-os {display:grid;grid-templat
 .n7x-tab-strip [role="tab"]:focus-visible {outline:1px solid var(--obsidian-muted);outline-offset:-2px}
 .n7x-tab-strip .tab-drop-before {border-left-color:var(--obsidian-text)}
 .n7x-tab-strip .tab-drop-after {border-right-color:var(--obsidian-text)}
-body.browser-shell .top-os .browser-mode-address {position:relative;inset:auto;display:flex;align-items:center;gap:5px;width:100%;height:46px;padding:5px 10px;margin:0;border:0;background:var(--obsidian-field);box-shadow:none}
+body.browser-shell .n11c31f2b2fec .browser-mode-address {position:relative;inset:auto;display:flex;align-items:center;gap:5px;width:100%;height:46px;padding:5px 10px;margin:0;border:0;background:var(--obsidian-field);box-shadow:none}
 .browser-mode-address>button {display:grid;place-items:center;flex:none;width:30px;height:30px;padding:6px;border:0;border-radius:6px;background:none;color:var(--obsidian-text);box-shadow:none;font-size:17px}
 .browser-mode-address>button:hover {background:var(--obsidian-hover)}
 .browser-mode-address svg {width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .browser-mode-address .browser-mode-secure-indicator {display:grid;place-items:center;width:28px;height:30px;margin-left:6px;color:var(--obsidian-muted)}
 .browser-mode-address .browser-mode-url {flex:1;min-width:0;height:32px;border:1px solid var(--obsidian-line);border-radius:7px;padding:0 12px;background:var(--obsidian-bg);color:var(--obsidian-text);-webkit-text-fill-color:var(--obsidian-text);font-size:12px;box-shadow:none;outline:none}
 .browser-mode-address .browser-mode-url:focus {border-color:var(--obsidian-muted)}
-.browser-mode-address :is(.browser-tabs-toggle,[data-browser-shell-home-nav],[data-browser-shell-settings],[data-page-fullscreen],.browser-mode-url-pointer-border){display:none!important}
+.browser-mode-address :is(.n6e26a41d7d43,[data-browser-shell-home-nav],[data-browser-shell-settings],[data-page-fullscreen],.browser-mode-url-pointer-border){display:none!important}
 
 .browser-home.n7x-minimal-home {position:absolute;inset:0;display:grid;place-items:center;background:transparent;color:var(--obsidian-text);overflow:hidden}
 .browser-home.n7x-minimal-home.hidden {display:none!important}
@@ -228,11 +228,11 @@ html body.menu-open .browser-mode-menu {display:block!important;opacity:1;visibi
 .browser-mode-menu button{display:block;width:100%;padding:10px 12px;text-align:left;background:none;border:0;color:var(--obsidian-text);font-size:12px}
 html body.browser-shell .browser-shell-settings-panel :is(.n7x-settings-side,.n7x-color-theme-card,.n7x-wallpaper-card){border-color:var(--obsidian-line)!important;background:var(--obsidian-panel)!important}
 html body.browser-shell .browser-shell-settings-panel .n7x-settings-nav button.active{background:var(--obsidian-hover)!important;color:var(--obsidian-text)!important}
-body.browser-shell #desktop>.window.maximized{transition:left var(--n7x-rail-motion),width var(--n7x-rail-motion)!important}
-body.browser-shell .top-os,html body.browser-shell .browser-shell-settings-overlay{transition:left var(--n7x-rail-motion)}
+body.browser-shell #n4db184acef21>.n238da90cb7ed.maximized{transition:left var(--n7x-rail-motion),width var(--n7x-rail-motion)!important}
+body.browser-shell .n11c31f2b2fec,html body.browser-shell .browser-shell-settings-overlay{transition:left var(--n7x-rail-motion)}
 @media(prefers-reduced-motion:reduce) {
   :root{--n7x-rail-motion:0ms}
-  .n7x-visual-dock,.n7x-visual-dock *,.n7x-visual-dock *::after,.top-os,.n7x-minimal-hero{transition:none!important;animation:none!important}
+  .n7x-visual-dock,.n7x-visual-dock *,.n7x-visual-dock *::after,.n11c31f2b2fec,.n7x-minimal-hero{transition:none!important;animation:none!important}
 }
 
 html body.browser-shell .browser-mode-address>button {color:var(--obsidian-text)!important;-webkit-text-fill-color:currentColor!important;background:transparent!important;border:0!important;border-radius:6px!important;box-shadow:none!important;transition:background-color 150ms,transform 150ms}

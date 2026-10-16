@@ -369,7 +369,7 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
   function apply(name='frost',nextOptions={}){
     selected=presets[name] ? name : 'frost';
     options={...defaults,...options,lightColor:presets[selected].lightColor,...nextOptions};
-    canvas=document.getElementById('n7xBeamsBg') || canvas;
+    canvas=document.getElementById('n22e9fbee8c96') || canvas;
     if(canvas){canvas.dataset.preset=selected;canvas.dataset.lightColor=options.lightColor;}
     if(instance && name!=='obsidian' && name!=='lineWaves' && !name.startsWith('photo-')){
       try{instance.update(options)}catch(error){failRenderer(error)}
@@ -401,7 +401,7 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
     }
   }
   function init(){
-    canvas=document.getElementById('n7xBeamsBg');
+    canvas=document.getElementById('n22e9fbee8c96');
     if(!canvas) return;
     apply(localStorage.getItem('nyx.beamWallpaper') || 'frost');
     new MutationObserver(syncVisibility).observe(document.body,{attributes:true,attributeFilter:['class']});

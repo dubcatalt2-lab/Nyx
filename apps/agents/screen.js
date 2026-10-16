@@ -1,4 +1,4 @@
-﻿export function setupScreen({notice}){
+﻿export function n79425056e076({notice}){
  const button=document.getElementById('shareScreen'),panel=document.getElementById('screenPanel'),video=document.getElementById('screenPreview');let stream=null,opening=false,session=0;
  button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>';
  function stop(){session++;stream?.getTracks().forEach(track=>track.stop());stream=null;video.srcObject=null;panel.hidden=true;button.setAttribute('aria-pressed','false');}

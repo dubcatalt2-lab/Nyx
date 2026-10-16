@@ -135,11 +135,6 @@ html[data-n7x-theme="fresh"][data-n7x-theme="fresh"][data-n7x-theme="fresh"]
   -webkit-text-fill-color:var(--n7x-fern-text)!important;
 }
 html[data-n7x-theme="fresh"][data-n7x-theme="fresh"][data-n7x-theme="fresh"]
-  body.theme-fresh:is(body,#n7x-fern-global-specificity):not(.custom-bg-active):not(.three-d-backgrounds) #whiteVantaBg{
-  opacity:0!important;
-  background:#080a0f!important;
-}
-html[data-n7x-theme="fresh"][data-n7x-theme="fresh"][data-n7x-theme="fresh"]
   body.theme-fresh:is(body,#n7x-fern-global-specificity) .user-chip.needs-name{
   color:#f1f3f7!important;
   -webkit-text-fill-color:#f1f3f7!important;

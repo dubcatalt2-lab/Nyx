@@ -25,7 +25,7 @@ html body.theme-fresh{
   --n7x-load-bright:#f0fdfa;--n7x-load-mid:#5eead4;--n7x-load-accent:#14b8a6;--n7x-load-deep:#0f766e;--n7x-load-muted:#176b73;--n7x-load-surface:#c9f4ef;--n7x-load-bg:#e8fbf9;--n7x-load-deep-bg:#b9e7e9;--n7x-load-glow:rgba(20,184,166,.38);
 }
 
-html body .setup-launch-screen{
+html body .na4d232506ecd{
   background:
     linear-gradient(color-mix(in srgb,var(--n7x-load-bg) 84%,transparent),color-mix(in srgb,var(--n7x-load-bg) 92%,transparent)),
     linear-gradient(90deg,color-mix(in srgb,var(--n7x-load-accent) 9%,transparent) 1px,transparent 1px),
@@ -33,7 +33,7 @@ html body .setup-launch-screen{
     radial-gradient(ellipse at 50% 52%,var(--n7x-load-surface) 0%,var(--n7x-load-bg) 54%,var(--n7x-load-deep-bg) 100%)!important;
   background-size:auto,28px 28px,28px 28px,auto!important;
 }
-html body #setupLaunchScreen .setup-launch-card h2{
+html body #n3e8549522c8c .nd241a91ed781 h2{
   background:linear-gradient(100deg,var(--n7x-load-deep),var(--n7x-load-mid) 52%,var(--n7x-load-accent))!important;
   background-clip:text!important;
   -webkit-background-clip:text!important;
@@ -41,7 +41,7 @@ html body #setupLaunchScreen .setup-launch-card h2{
   -webkit-text-fill-color:transparent!important;
   filter:drop-shadow(0 6px 10px color-mix(in srgb,var(--n7x-load-deep) 48%,transparent)) drop-shadow(0 0 11px color-mix(in srgb,var(--n7x-load-glow) 58%,transparent))!important;
 }
-html body #setupLaunchScreen .n7x-title-shimmer{
+html body #n3e8549522c8c .n7x-title-shimmer{
   background-image:linear-gradient(90deg,transparent 0%,color-mix(in srgb,var(--n7x-load-deep) 20%,transparent) 36%,var(--n7x-load-deep) 42%,var(--n7x-load-accent) 47%,var(--n7x-load-bright) 50%,var(--n7x-load-accent) 53%,var(--n7x-load-deep) 58%,color-mix(in srgb,var(--n7x-load-deep) 20%,transparent) 64%,transparent 100%)!important;
   background-size:260% 100%!important;
   background-repeat:no-repeat!important;
@@ -50,7 +50,7 @@ html body #setupLaunchScreen .n7x-title-shimmer{
   color:transparent!important;
   -webkit-text-fill-color:transparent!important;
 }
-html body #setupLaunchScreen .n7x-loading-progress{
+html body #n3e8549522c8c .n7x-loading-progress{
   display:block!important;
   visibility:visible!important;
   opacity:1!important;
@@ -61,23 +61,23 @@ html body #setupLaunchScreen .n7x-loading-progress{
   background:color-mix(in srgb,var(--n7x-load-accent) 16%,var(--n7x-load-deep-bg))!important;
   box-shadow:none!important;
 }
-html body #setupLaunchScreen .n7x-loading-progress > span{
+html body #n3e8549522c8c .n7x-loading-progress > span{
   display:block!important;
   visibility:visible!important;
   opacity:1!important;
   background:var(--n7x-load-accent)!important;
   box-shadow:none!important;
 }
-html body #setupLaunchScreen .n7x-loading-progress > span::after{content:none!important;background:none!important;animation:none!important}
-html body #setupLaunchScreen .n7x-loading-percent{color:var(--n7x-load-mid)!important;-webkit-text-fill-color:var(--n7x-load-mid)!important;text-shadow:none!important}
-html body #setupLaunchScreen .n7x-loading-spinner{
+html body #n3e8549522c8c .n7x-loading-progress > span::after{content:none!important;background:none!important;animation:none!important}
+html body #n3e8549522c8c .n7x-loading-percent{color:var(--n7x-load-mid)!important;-webkit-text-fill-color:var(--n7x-load-mid)!important;text-shadow:none!important}
+html body #n3e8549522c8c .n7x-loading-spinner{
   border-color:color-mix(in srgb,var(--n7x-load-accent) 24%,transparent)!important;
   border-top-color:var(--n7x-load-bright)!important;
   border-right-color:var(--n7x-load-accent)!important;
   box-shadow:0 0 9px var(--n7x-load-glow),inset 0 0 6px color-mix(in srgb,var(--n7x-load-deep) 28%,transparent)!important;
 }
-html body #setupLaunchScreen .setup-launch-card .n7x-loading-stage{color:var(--n7x-load-muted)!important;-webkit-text-fill-color:var(--n7x-load-muted)!important}
-html body #setupLaunchScreen .setup-launch-card .setup-launch-credit{color:color-mix(in srgb,var(--n7x-load-muted) 74%,var(--n7x-load-bg))!important;-webkit-text-fill-color:color-mix(in srgb,var(--n7x-load-muted) 74%,var(--n7x-load-bg))!important}
+html body #n3e8549522c8c .nd241a91ed781 .n7x-loading-stage{color:var(--n7x-load-muted)!important;-webkit-text-fill-color:var(--n7x-load-muted)!important}
+html body #n3e8549522c8c .nd241a91ed781 .n6e44c020e052{color:color-mix(in srgb,var(--n7x-load-muted) 74%,var(--n7x-load-bg))!important;-webkit-text-fill-color:color-mix(in srgb,var(--n7x-load-muted) 74%,var(--n7x-load-bg))!important}
 html body.browser-shell .n7x-home-action-apps{
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.7'%3E%3Crect x='3' y='3' width='7' height='7' rx='1'/%3E%3Crect x='14' y='3' width='7' height='7' rx='1'/%3E%3Crect x='3' y='14' width='7' height='7' rx='1'/%3E%3Crect x='14' y='14' width='7' height='7' rx='1'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.7'%3E%3Crect x='3' y='3' width='7' height='7' rx='1'/%3E%3Crect x='14' y='3' width='7' height='7' rx='1'/%3E%3Crect x='3' y='14' width='7' height='7' rx='1'/%3E%3Crect x='14' y='14' width='7' height='7' rx='1'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat;
@@ -98,21 +98,18 @@ html body.browser-shell .n7x-home-action-settings{
 html body.browser-shell.theme-default{
   --n7x-final-shortcut-icon:#a9c7f8!important;
 }
-html body.browser-shell.theme-default #n7xWaveBg,
-html body.browser-shell.theme-default .n7x-wave-bg,
-html body.browser-shell.theme-default:not(.three-d-backgrounds) #defaultVantaBg{display:none!important}
 
-html body .setup-launch-card,
-html body .setup-launch-card :is(h2,p,strong){font-family:var(--n7x-font,Inter),Arial,sans-serif!important}
-html body .setup-launch-card h2{
+html body .nd241a91ed781,
+html body .nd241a91ed781 :is(h2,p,strong){font-family:var(--n7x-font,Inter),Arial,sans-serif!important}
+html body .nd241a91ed781 h2{
   font-weight:500!important;
   letter-spacing:.015em!important;
 }
-html body .setup-launch-card :is(.n7x-loading-percent,.n7x-loading-stage){
+html body .nd241a91ed781 :is(.n7x-loading-percent,.n7x-loading-stage){
   font-weight:400!important;
   letter-spacing:.085em!important;
 }
-html body .setup-launch-card .setup-launch-credit{
+html body .nd241a91ed781 .n6e44c020e052{
   font-weight:300!important;
   letter-spacing:.11em!important;
 }
@@ -134,7 +131,7 @@ html body.browser-shell.theme-fresh{
   --n7x-title-theme-color:#2aa59d;
 }
 
-:is(.setup-welcome-logo,.setup-final-logo,.lion-ai-mark)[data-n7x-logo]{
+:is(.nf42e63813f0c,.nf9aa5c4c3e53,.lion-ai-mark)[data-n7x-logo]{
   border:0!important;
   border-radius:0!important;
   background-color:transparent!important;

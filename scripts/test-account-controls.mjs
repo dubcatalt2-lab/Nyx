@@ -113,10 +113,10 @@ try{
 
   await page.goto(origin+'/nyx',{waitUntil:'domcontentloaded'});
   assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.homeDesign')),'redesigned','Original home preference was not migrated');
-  await page.waitForSelector('#n7xBeamsBg[data-preset]');
-  const setupScreen=page.locator('#setupScreen');
-  assert.equal(await setupScreen.getAttribute('aria-hidden'),'true','Completed setup did not mark its screen hidden');
-  assert.deepEqual(await setupScreen.evaluate(screen=>({
+  await page.waitForSelector('#n22e9fbee8c96[data-preset]');
+  const n79425056e076=page.locator('#n79425056e076');
+  assert.equal(await n79425056e076.getAttribute('aria-hidden'),'true','Completed setup did not mark its screen hidden');
+  assert.deepEqual(await n79425056e076.evaluate(screen=>({
     hidden:screen.hidden,
     inert:screen.inert,
     display:getComputedStyle(screen).display,
@@ -130,13 +130,13 @@ try{
     atCenter:false
   },'Completed setup left an invisible click-blocking layer');
   await page.emulateMedia({reducedMotion:'reduce'});
-  await setupScreen.evaluate(screen=>{
+  await n79425056e076.evaluate(screen=>{
     screen.hidden=false;
     screen.inert=false;
     screen.setAttribute('aria-hidden','false');
     screen.classList.add('show');
   });
-  assert.deepEqual(await setupScreen.evaluate(screen=>({
+  assert.deepEqual(await n79425056e076.evaluate(screen=>({
     display:getComputedStyle(screen).display,
     opacity:getComputedStyle(screen).opacity,
     visibility:getComputedStyle(screen).visibility,
@@ -147,7 +147,7 @@ try{
     visibility:'visible',
     pointerEvents:'auto'
   },'Setup wizard was invisible or non-interactive with reduced motion enabled');
-  await setupScreen.evaluate(screen=>{
+  await n79425056e076.evaluate(screen=>{
     screen.classList.remove('show');
     screen.setAttribute('aria-hidden','true');
     screen.hidden=true;
@@ -162,27 +162,27 @@ try{
   assert.equal(await frameLoader.locator('.nyx-loader-moon').count(),0,'Retired loading moon was still present');
   assert.equal(await frameLoader.locator('.nyx-loader-star').count(),5,'Loading rocket did not include its star stream');
   assert.equal(await page.locator('.n7x-home-dot-field').count(),0,'Retired constellation field was still present');
-  assert.equal(await page.locator('#n7xBeamsBg').getAttribute('data-preset'),'frost','Desktop home did not render the default Beams wallpaper');
+  assert.equal(await page.locator('#n22e9fbee8c96').getAttribute('data-preset'),'frost','Desktop home did not render the default Beams wallpaper');
   await page.setViewportSize({width:2560,height:800});
-  await page.waitForFunction(()=>document.getElementById('n7xBeamsBg')?.getBoundingClientRect().width===innerWidth);
+  await page.waitForFunction(()=>document.getElementById('n22e9fbee8c96')?.getBoundingClientRect().width===innerWidth);
   await page.evaluate(()=>{
     localStorage.setItem('nyx.performanceTier','medium');
     localStorage.setItem('nyx.performanceTierSource','explicit');
   });
   await page.reload({waitUntil:'domcontentloaded'});
-  await page.waitForSelector('#n7xBeamsBg[data-preset="frost"]');
+  await page.waitForSelector('#n22e9fbee8c96[data-preset="frost"]');
   await page.setViewportSize({width:600,height:800});
-  await page.waitForFunction(()=>document.getElementById('n7xBeamsBg')?.getBoundingClientRect().width===innerWidth);
+  await page.waitForFunction(()=>document.getElementById('n22e9fbee8c96')?.getBoundingClientRect().width===innerWidth);
   await page.evaluate(()=>{
     localStorage.setItem('nyx.performanceTier','high');
     localStorage.setItem('nyx.performanceTierSource','explicit');
   });
   await page.setViewportSize({width:1280,height:800});
   await page.reload({waitUntil:'domcontentloaded'});
-  await page.waitForSelector('#n7xBeamsBg[data-preset="frost"]');
+  await page.waitForSelector('#n22e9fbee8c96[data-preset="frost"]');
 
   await page.locator('[data-n7x-dock-item="apps"]').click();
-  const appsFrame=page.frameLocator('.browser-window iframe.active');
+  const appsFrame=page.frameLocator('.n2ac0604c6ebc iframe.active');
   const coloredIcons=appsFrame.locator('[data-global-app-id="crunchyroll"] .quick-icon,[data-global-app-id="newgrounds"] .quick-icon,[data-global-app-id="kick"] .quick-icon,[data-global-app-id="itch"] .quick-icon');
   await coloredIcons.first().waitFor({state:'attached'});
   assert.equal(await coloredIcons.count(),4,'Expected all four dark-background icon replacements');
@@ -211,12 +211,12 @@ try{
   await page.waitForTimeout(500);
 
   const externalPathUrl='https://example.com/pokemon';
-  const homeSearch=page.locator('.browser-window.browser-home-page [data-browser-blank-input]:visible');
+  const homeSearch=page.locator('.n2ac0604c6ebc.browser-home-page [data-browser-blank-input]:visible');
   await page.waitForTimeout(4500);
   await homeSearch.fill(externalPathUrl);
   await homeSearch.press('Enter');
-  await page.waitForFunction(()=>[...document.querySelectorAll('.browser-window iframe.view')].some(frame=>String(frame.getAttribute('src') || '').includes('/~/sj/')));
-  await page.waitForFunction(()=>[...document.querySelectorAll('.browser-window iframe.view')].some(frame=>{
+  await page.waitForFunction(()=>[...document.querySelectorAll('.n2ac0604c6ebc iframe.view')].some(frame=>String(frame.getAttribute('src') || '').includes('/~/sj/')));
+  await page.waitForFunction(()=>[...document.querySelectorAll('.n2ac0604c6ebc iframe.view')].some(frame=>{
     try{return String(frame.getAttribute('src') || '').includes('/~/sj/') && !!frame.contentDocument?.documentElement}catch{return false}
   }));
   await page.evaluate(()=>{
@@ -224,12 +224,12 @@ try{
       configurable:true,
       value:{writeText:async value=>{globalThis.__nyxCopiedLink=String(value)}}
     });
-    const frame=[...document.querySelectorAll('.browser-window iframe.view')].find(node=>String(node.getAttribute('src') || '').includes('/~/sj/'));
+    const frame=[...document.querySelectorAll('.n2ac0604c6ebc iframe.view')].find(node=>String(node.getAttribute('src') || '').includes('/~/sj/'));
     frame.dispatchEvent(new Event('load'));
   });
   await page.waitForTimeout(300);
   await page.evaluate(()=>{
-    const frame=[...document.querySelectorAll('.browser-window iframe.view')].find(node=>String(node.getAttribute('src') || '').includes('/~/sj/'));
+    const frame=[...document.querySelectorAll('.n2ac0604c6ebc iframe.view')].find(node=>String(node.getAttribute('src') || '').includes('/~/sj/'));
     frame.dispatchEvent(new Event('load'));
     const link=frame.contentDocument.createElement('a');
     link.textContent='Cineby test link';
@@ -241,25 +241,25 @@ try{
   await page.locator('[data-n7x-copy-clean-link]').click();
   assert.equal(await page.evaluate(()=>globalThis.__nyxCopiedLink),'https://cineby.at/','Right-click Copy link exposed a Scramjet URL');
   await page.evaluate(()=>{
-    const frame=[...document.querySelectorAll('.browser-window iframe.view')].find(node=>String(node.getAttribute('src') || '').includes('/~/sj/'));
+    const frame=[...document.querySelectorAll('.n2ac0604c6ebc iframe.view')].find(node=>String(node.getAttribute('src') || '').includes('/~/sj/'));
     frame.src='/4poekf=4watepo/w4geriaerjmgotbg';
   });
-  await page.waitForFunction(()=>[...document.querySelectorAll('.browser-window iframe.view')].some(frame=>{
+  await page.waitForFunction(()=>[...document.querySelectorAll('.n2ac0604c6ebc iframe.view')].some(frame=>{
     try{return frame.contentWindow.location.pathname==='/4poekf=4watepo/w4geriaerjmgotbg'}catch{return false}
   }));
   await page.evaluate(()=>{
-    const frame=[...document.querySelectorAll('.browser-window iframe.view')].find(node=>{
+    const frame=[...document.querySelectorAll('.n2ac0604c6ebc iframe.view')].find(node=>{
       try{return node.contentWindow.location.pathname==='/4poekf=4watepo/w4geriaerjmgotbg'}catch{return false}
     });
     frame.dispatchEvent(new Event('load'));
   });
   await page.waitForTimeout(100);
-  assert.equal(await page.locator('.browser-window .urlbar').inputValue(),externalPathUrl,'Proxy path replaced the real legacy address');
+  assert.equal(await page.locator('.n2ac0604c6ebc .urlbar').inputValue(),externalPathUrl,'Proxy path replaced the real legacy address');
   assert.equal(await page.locator('[data-browser-shell-url]').inputValue(),externalPathUrl,'Proxy path replaced the real shell address');
   await page.locator('[data-n7x-dock-item="home"]').click();
   await page.waitForSelector('.n7x-minimal-home');
 
-  const containedBrowserFrame=page.locator('.browser-window iframe.view').first();
+  const containedBrowserFrame=page.locator('.n2ac0604c6ebc iframe.view').first();
   await containedBrowserFrame.evaluate(frame=>{
     frame.dataset.n7xBrowserContained='true';
   });
@@ -360,14 +360,14 @@ try{
   await page.waitForSelector('.browser-shell-settings-overlay',{state:'detached'});
   assert.equal(await page.locator('.n7x-browser-tab-row.active strong').textContent(),'New Tab','New tab created from Settings did not become the active blank tab');
   assert.equal(await page.locator('[data-browser-shell-url]').inputValue(),'','New tab created from Settings inherited its internal URL');
-  assert.equal(await page.locator('.browser-window.browser-home-page .n7x-minimal-home:visible').count(),1,'New tab created from Settings did not show the Nyx homepage');
+  assert.equal(await page.locator('.n2ac0604c6ebc.browser-home-page .n7x-minimal-home:visible').count(),1,'New tab created from Settings did not show the Nyx homepage');
   await page.locator('[data-n7x-dock-item="home"]').click();
-  const tabLifecycleHomeSearch=page.locator('.browser-window.browser-home-page [data-browser-blank-input]');
+  const tabLifecycleHomeSearch=page.locator('.n2ac0604c6ebc.browser-home-page [data-browser-blank-input]');
   await tabLifecycleHomeSearch.fill('stale tab search');
   await page.locator('.brand-mini [data-browser-shell-new-tab]').evaluate(button=>button.click());
-  assert.equal(await page.locator('.browser-window.browser-home-page [data-browser-blank-input]').inputValue(),'','A new blank tab inherited the previous tab search text');
+  assert.equal(await page.locator('.n2ac0604c6ebc.browser-home-page [data-browser-blank-input]').inputValue(),'','A new blank tab inherited the previous tab search text');
   await page.locator('.n7x-browser-tab-row.active [data-browser-shell-close-tab]').evaluate(button=>button.click());
-  assert.equal(await page.locator('.browser-window.browser-home-page [data-browser-blank-input]').inputValue(),'','Closing a blank tab restored stale homepage search text');
+  assert.equal(await page.locator('.n2ac0604c6ebc.browser-home-page [data-browser-blank-input]').inputValue(),'','Closing a blank tab restored stale homepage search text');
   assert.equal(await page.locator('[data-browser-shell-url]').inputValue(),'','Closing a blank tab restored stale address text');
   if(await page.evaluate(()=>document.documentElement.dataset.n7xSidebarWidth!=='expanded')){
     await page.locator('[data-n7x-dock-expand]').click();
@@ -395,7 +395,7 @@ try{
         bodyClass:document.body.className,
         shellPreference:localStorage.getItem('nyx.browserShellMode'),
         homeDesign:localStorage.getItem('nyx.homeDesign'),
-        chrome:document.querySelector('.top-os')?.textContent?.slice(0,80) || ''
+        chrome:document.querySelector('.n11c31f2b2fec')?.textContent?.slice(0,80) || ''
       };
       const box=dock.getBoundingClientRect();
       const style=getComputedStyle(dock);

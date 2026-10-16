@@ -152,7 +152,7 @@
 
   window.nyxLoadingScreen = {
     show() {
-      const splash = document.getElementById('setupLaunchScreen');
+      const splash = document.getElementById('n3e8549522c8c');
       const fill = splash?.querySelector('.n7x-loading-progress span');
       if (!splash || !fill) return null;
 

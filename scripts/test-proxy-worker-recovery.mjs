@@ -53,8 +53,8 @@ try{for(const brand of (process.env.NYX_TEST_BRANDS||'nyx,tutsi').split(',')){
  if(brand==='nyx'){await submit('/assets/games/');await heading('Games fixture');}
  else {await page.evaluate(()=>location.hash='games');await page.frameLocator('#app-view iframe').getByRole('heading',{name:'Games fixture'}).waitFor();await page.keyboard.press('Alt+h');}
  await submit('test search');const frame=await heading('Search results');
- const frameCount=page.frames().length;const tabs=await page.locator(brand==='nyx'?'.browser-tabs .browser-tab':'#browser-tabs [role=tab]').count();
+ const frameCount=page.frames().length;const tabs=await page.locator(brand==='nyx'?'.ne4236faa3775 .n523f56a4d19c':'#ne4236faa3775 [role=tab]').count();
  await frame.locator('#result').click();await heading('/destination');
- assert.equal(page.frames().length,frameCount);assert.equal(await page.locator(brand==='nyx'?'.browser-tabs .browser-tab':'#browser-tabs [role=tab]').count(),tabs);assert.equal(context.pages().length,1);
+ assert.equal(page.frames().length,frameCount);assert.equal(await page.locator(brand==='nyx'?'.ne4236faa3775 .n523f56a4d19c':'#ne4236faa3775 [role=tab]').count(),tabs);assert.equal(context.pages().length,1);
  console.log(brand+': pending address, app-to-search and same-frame result click passed');await context.close();
 }}finally{await browser.close();server.close();}

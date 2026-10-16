@@ -20,14 +20,14 @@ for(const channel of ['chrome','msedge']){
  await page.route('**/api/**',r=>r.fulfill({json:{enabled:false,models:[],apps:[],preferences:{}}}));
  for(let visit=0;visit<2;visit++){
   if(visit)await page.reload();else await page.goto(base+'/');
-  await page.locator('#setupLaunchScreen').waitFor({state:'attached'});
+  await page.locator('#n3e8549522c8c').waitFor({state:'attached'});
   await page.evaluate(()=>{
    window.__maxProgress=Number(document.querySelector('.n7x-loading-progress')?.getAttribute('aria-valuenow'))||0;
    addEventListener('nyx:loading-progress',event=>{window.__maxProgress=Math.max(window.__maxProgress,event.detail.value)});
    const enforce=()=>{if(document.title!=='Classes')document.title='Classes'};
    enforce();new MutationObserver(enforce).observe(document.head,{subtree:true,childList:true,characterData:true});
   });
-  await page.waitForFunction(()=>document.getElementById('setupLaunchScreen')?.getAttribute('aria-hidden')==='true'&&!document.body.classList.contains('n7x-loading-active'));
+  await page.waitForFunction(()=>document.getElementById('n3e8549522c8c')?.getAttribute('aria-hidden')==='true'&&!document.body.classList.contains('n7x-loading-active'));
   await page.waitForTimeout(250);
   assert.equal(await page.evaluate(()=>__loopTrips),0,'No runaway mutation microtasks');
   assert(await page.evaluate(()=>__timerBeats)>8);

@@ -528,14 +528,14 @@ let proxyElement;
 const browserTabs=[],closedWebsites=[];
 let activeTab=null;
 function renderBrowserTabs(){
-  const strip=$('browser-tabs');strip.replaceChildren();
+  const strip=$('ne4236faa3775');strip.replaceChildren();
   browserTabs.forEach((tab,index)=>{
     const button=document.createElement('button');button.type='button';button.setAttribute('role','tab');button.setAttribute('aria-selected',String(tab===activeTab));
     let label='New tab';try{label=new URL(tab.url).hostname}catch{}
     button.textContent=label;button.title=`Alt+${index+1}: ${label}`;button.onclick=()=>selectBrowserTab(tab);
-    const item=document.createElement('div');item.className='browser-tab';item.setAttribute('role','presentation');item.dataset.active=String(tab===activeTab);
-    const close=document.createElement('button');close.type='button';close.className='browser-tab-close';close.textContent=String.fromCharCode(215);close.setAttribute('aria-label',`Close ${label}`);close.title='Close tab';
-    close.onclick=()=>{removeWebsiteTab(tab);$('browser-tabs').querySelector('[aria-selected="true"]')?.focus();};
+    const item=document.createElement('div');item.className='n523f56a4d19c';item.setAttribute('role','presentation');item.dataset.active=String(tab===activeTab);
+    const close=document.createElement('button');close.type='button';close.className='n8cefcf66a491';close.textContent=String.fromCharCode(215);close.setAttribute('aria-label',`Close ${label}`);close.title='Close tab';
+    close.onclick=()=>{removeWebsiteTab(tab);$('ne4236faa3775').querySelector('[aria-selected="true"]')?.focus();};
     item.append(button,close);strip.append(item);
   });
   const add=document.createElement('button');add.textContent='+';add.type='button';add.setAttribute('aria-label','New tab (Alt+T)');add.onclick=()=>newBrowserTab();strip.append(add);

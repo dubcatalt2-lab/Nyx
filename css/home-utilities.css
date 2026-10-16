@@ -1,4 +1,4 @@
-html body.browser-shell .browser-window .browser-body > .n7x-eruda-host{
+html body.browser-shell .n2ac0604c6ebc .browser-body > .n7x-eruda-host{
   position:absolute;
   inset:0;
   z-index:90;
@@ -6,7 +6,7 @@ html body.browser-shell .browser-window .browser-body > .n7x-eruda-host{
   background:#0b0d12;
 }
 
-html body.browser-shell .browser-window .browser-body > .n7x-eruda-host[hidden]{
+html body.browser-shell .n2ac0604c6ebc .browser-body > .n7x-eruda-host[hidden]{
   display:none!important;
 }
 
@@ -34,7 +34,7 @@ html body.browser-shell .n7x-eruda-loading{
 
 html body.browser-shell .n7x-eruda-loading.error{color:#ff9aa7}
 
-html body .window.n7x-utility-window{
+html body .n238da90cb7ed.n7x-utility-window{
   min-width:min(340px,calc(100vw - 24px));
   border-color:color-mix(in srgb,var(--theme-border,#6f9ee8) 72%,transparent);
 }

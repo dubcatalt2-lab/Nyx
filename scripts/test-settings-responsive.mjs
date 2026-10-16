@@ -14,7 +14,7 @@ for(const channel of ['chrome','msedge']){
   });
   await page.route('**/api/**',r=>r.fulfill({json:{enabled:false,models:[],apps:[],preferences:{}}}));
   await page.goto('http://localhost:8080/');
-  await page.waitForFunction(()=>document.querySelector('.browser-home.n7x-minimal-home')&&document.getElementById('setupLaunchScreen')?.getAttribute('aria-hidden')==='true'&&!document.body.classList.contains('n7x-loading-active'));
+  await page.waitForFunction(()=>document.querySelector('.browser-home.n7x-minimal-home')&&document.getElementById('n3e8549522c8c')?.getAttribute('aria-hidden')==='true'&&!document.body.classList.contains('n7x-loading-active'));
   await page.waitForTimeout(1300);
   const close=page.locator('[data-n7x-release-notes-close]').first();if(await close.isVisible())await close.click();
   const responsive=async()=>{const before=await page.evaluate(()=>__beats);await page.waitForTimeout(150);assert.equal(await page.evaluate(()=>__trips),0,'No runaway observer callbacks');assert((await page.evaluate(()=>__beats))>before,'Timers advance after clicks');};

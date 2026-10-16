@@ -45,7 +45,7 @@ try {
     assert.equal(await frame.locator('#sign-in').isVisible(),false,'Signed-in users must not see a sign-in link');
     assert.equal(await frame.locator('body').evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(11, 16, 13)');
     assert.equal(await frame.locator('body').evaluate(el=>getComputedStyle(el).backgroundImage),'none');
-    assert.equal(await frame.locator('#n7xBeamsBg').count(),0,'Embedded page must not duplicate wallpaper rendering');
+    assert.equal(await frame.locator('#n22e9fbee8c96').count(),0,'Embedded page must not duplicate wallpaper rendering');
     assert.equal(await frame.locator('#create-button').isDisabled(),false,'Email verification is not required');
     assert.equal(await frame.locator('#verify').count(),0);
     verified=true;await frame.locator('#refresh').click();
@@ -95,7 +95,7 @@ try {
     assert.equal(await frame.locator('#owner-tab').isVisible(),false);
     assert.deepEqual(errors,[]);
     await page.addInitScript(()=>localStorage.setItem('nyx.beamWallpaper','rose'));
-    await page.goto('http://nyx.test/api');await page.locator('#n7xBeamsBg[data-preset=rose]').waitFor();
+    await page.goto('http://nyx.test/api');await page.locator('#n22e9fbee8c96[data-preset=rose]').waitFor();
     assert.equal(await page.locator('html').getAttribute('data-n7x-beam-wallpaper'),'rose');
     assert.match(await page.locator('body').evaluate(el=>getComputedStyle(el).fontFamily),/Inter/);
     assert.equal(await page.locator('body').evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);

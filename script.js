@@ -4121,176 +4121,11 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     const tab=activeBrowserShellTab();
     return normalize(browserShellSourceUrl(tab?.url) || document.querySelector('[data-browser-shell-url]')?.value || '');
   }
-  const browserSuggestionSeeds=[
-    'youtube','tiktok','spotify','discord','roblox','github','google classroom','google docs',
-    'duck ai','geforce now','games','anime','music','unblocked games','calculator',
-    'roblox codes','gmail','google translate','cool math games','chatgpt','amazon','reddit','netflix'
-  ];
-  const browserSuggestionCache=new Map();
-  let browserSuggestionTimer=0;
-  let browserSuggestionAbort=null;
-  function ensureBrowserSuggestionBox(input){
-    let box=$('browserSearchSuggestions');
-    if(!box){
-      box=document.createElement('div');
-      box.id='browserSearchSuggestions';
-      box.className='browser-search-suggestions';
-      box.setAttribute('role','listbox');
-      document.body.appendChild(box);
-    }
-    if(input){
-      const anchor=input.closest?.('[data-browser-blank-search]') || input;
-      const rect=anchor.getBoundingClientRect();
-      box.nyxSourceInput=input;
-      box.style.left=Math.max(8,rect.left)+'px';
-      box.style.top=Math.min(window.innerHeight-12,rect.bottom+8)+'px';
-      box.style.width=Math.min(rect.width,window.innerWidth-16)+'px';
-    }
-    return box;
-  }
-  function browserSuggestionsAllowed(){
-    if(!document.body.classList.contains('browser-shell')) return false;
-    const tab=activeBrowserShellTab?.();
-    const url=String(tab?.url || '');
-    const title=String(tab?.title || '').trim().toLowerCase();
-    if(url.startsWith('nyx://')) return false;
-    if(['apps','lion ai','lionai','ai','bookmarks','links','settings','games'].includes(title)) return false;
-    const state=activeBrowser;
-    const browserTab=state?.tabs?.find(item=>item.id===state.active);
-    if(browserTab?.frame?.getAttribute('srcdoc') && String(browserTab.url || '').startsWith('nyx://')) return false;
-    return true;
-  }
-  function browserSuggestionItems(query,remoteItems=[]){
-    const q=String(query || '').trim().toLowerCase();
-    if(!q) return [];
-    const tabItems=browserShellTabs.map(tab=>browserShellSourceUrl(tab.url) || tab.title).filter(Boolean);
-    const bookmarkItems=browserBookmarks().flatMap(item=>[item.title,item.url]).filter(Boolean);
-    const popularByPrefix=[
-      ['mine',['minecraft skins','minecraft movie','minecraft seed map','minecraft download','minecraft launcher','minecraft wiki']],
-      ['rob',['roblox codes','roblox login','roblox redeem','roblox support','roblox marketplace','roblox avatar']],
-      ['you',['youtube','youtube music','youtube tv','youtube studio','youtube shorts','youtube downloader']],
-      ['tik',['tiktok','tiktok shop','tiktok login','tiktok trends','tiktok sounds','tiktok studio']],
-      ['spo',['spotify','spotify web player','spotify wrapped','spotify login','spotify playlist','spotify download']],
-      ['dis',['discord','discord login','discord app','discord status','discord download','discord servers']],
-      ['goo',['google classroom','google docs','google drive','google translate','google maps','google flights']]
-    ];
-    const prefixItems=popularByPrefix.find(([prefix])=>q.startsWith(prefix))?.[1] || [];
-    const pool=[...remoteItems,...prefixItems,...tabItems,...bookmarkItems,...browserSuggestionSeeds];
-    const seen=new Set();
-    const out=[];
-    pool
-      .map(item=>String(item || '').trim())
-      .filter(Boolean)
-      .sort((a,b)=>{
-        const ak=a.toLowerCase();
-        const bk=b.toLowerCase();
-        const aStarts=ak.startsWith(q) ? 0 : 1;
-        const bStarts=bk.startsWith(q) ? 0 : 1;
-        if(aStarts!==bStarts) return aStarts-bStarts;
-        const aIndex=ak.indexOf(q);
-        const bIndex=bk.indexOf(q);
-        if(aIndex!==bIndex) return aIndex-bIndex;
-        return a.length-b.length;
-      })
-      .forEach(item=>{
-      const text=String(item || '').trim();
-      const key=text.toLowerCase();
-      if(!text || seen.has(key)) return;
-      if(key.includes(q) || (q.length<=4 && q.includes(key))){
-        seen.add(key);
-        out.push(text);
-      }
-    });
-    if(!out.includes(query)) out.unshift(query);
-    return out.slice(0,6);
-  }
-  function renderBrowserSuggestions(input,items){
-    if(!input || !browserSuggestionsAllowed()) return;
-    const box=ensureBrowserSuggestionBox(input);
-    if(!items.length){
-      box.classList.remove('show');
-      box.innerHTML='';
-      return;
-    }
-    box.innerHTML=items.map((item,index)=>`<button class="browser-search-suggestion${index===0?' active':''}" data-browser-suggestion="${esc(item)}" type="button" role="option">${esc(item)}</button>`).join('');
-    box.classList.add('show');
-  }
-  async function fetchBrowserAutocomplete(query,signal){
-    const q=String(query || '').trim();
-    if(q.length<2) return [];
-    const key=q.toLowerCase();
-    if(browserSuggestionCache.has(key)) return browserSuggestionCache.get(key);
-    try{
-      const response=await fetch(`/api/search-suggestions?q=${encodeURIComponent(q)}`,{
-        headers:{accept:'application/json'},
-        signal
-      });
-      if(response.ok){
-        const payload=await response.json();
-        const clean=(Array.isArray(payload?.suggestions) ? payload.suggestions : [])
-          .map(item=>String(item || '').trim()).filter(Boolean).slice(0,8);
-        if(clean.length){
-          browserSuggestionCache.set(key,clean);
-          return clean;
-        }
-      }
-    }catch(error){
-      if(signal?.aborted) return [];
-    }
-    const callback='nyxSuggest_'+Math.random().toString(36).slice(2);
-    try{
-      const items=await new Promise(resolve=>{
-        if(signal?.aborted){resolve([]); return}
-        const script=document.createElement('script');
-        const cleanup=()=>{
-          try{window[callback]=()=>{}}catch{}
-          setTimeout(()=>{try{delete window[callback]}catch{window[callback]=undefined}},8000);
-          script.remove();
-        };
-        const timer=setTimeout(()=>{cleanup(); resolve([])},1800);
-        window[callback]=data=>{
-          clearTimeout(timer);
-          cleanup();
-          resolve(Array.isArray(data?.[1]) ? data[1] : []);
-        };
-        signal?.addEventListener('abort',()=>{clearTimeout(timer); cleanup(); resolve([])},{once:true});
-        script.onerror=()=>{clearTimeout(timer); cleanup(); resolve([])};
-        script.src=`https://suggestqueries.google.com/complete/search?client=chrome&q=${encodeURIComponent(q)}&callback=${callback}`;
-        document.head.appendChild(script);
-      });
-      const clean=items.map(item=>String(item || '').trim()).filter(Boolean).slice(0,8);
-      if(clean.length){
-        browserSuggestionCache.set(key,clean);
-        return clean;
-      }
-    }catch{}
-    browserSuggestionCache.set(key,[]);
-    return [];
-  }
-  function showBrowserSuggestions(input){
-    if(!input || !browserSuggestionsAllowed()){
-      hideBrowserSuggestions();
-      return;
-    }
-    const value=String(input.value || '').trim();
-    renderBrowserSuggestions(input,browserSuggestionItems(value));
-    clearTimeout(browserSuggestionTimer);
-    browserSuggestionAbort?.abort?.();
-    if(value.length<2 || document.body.classList.contains('runtime-lag-guard')) return;
-    browserSuggestionAbort=new AbortController();
-    const signal=browserSuggestionAbort.signal;
-    browserSuggestionTimer=setTimeout(async()=>{
-      const remote=await fetchBrowserAutocomplete(value,signal);
-      if(signal.aborted) return;
-      if(!input.isConnected || String(input.value || '').trim()!==value) return;
-      renderBrowserSuggestions(input,browserSuggestionItems(value,remote));
-    },180);
+  function showBrowserSuggestions(){
+    hideBrowserSuggestions();
   }
   function hideBrowserSuggestions(){
-    clearTimeout(browserSuggestionTimer);
-    browserSuggestionAbort?.abort?.();
-    const box=$('browserSearchSuggestions');
-    if(box) box.classList.remove('show');
+    $('browserSearchSuggestions')?.remove();
   }
   function browserSuggestionPointerInside(target){
     return !!target?.closest?.('[data-browser-shell-url],[data-browser-blank-input],#browserSearchSuggestions,.browser-search-suggestions');
@@ -5009,7 +4844,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     syncBrowserShellSecurityIndicator(active.url,active.securityState);
     renderBrowserBookmarks();
     if(typeof applyVisualEffectSetting==='function') applyVisualEffectSetting();
-    if(!browserSuggestionsAllowed()) hideBrowserSuggestions();
+    hideBrowserSuggestions();
     if(active?.url!=='nyx://developer') hideNyxErudaPanel();
     renderNyxVisualTabStrip();
     syncNyxVisualDockState();

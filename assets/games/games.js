@@ -1,4 +1,26 @@
 const dropGames = document.body.classList.contains('drop-games');
+const fittedGameFrames=new WeakSet(),fittedGameDocuments=new WeakSet();
+function fitGameFrame(frame){
+  if(!fittedGameFrames.has(frame)){
+    fittedGameFrames.add(frame);
+    frame.addEventListener('load',()=>fitGameFrame(frame));
+  }
+  let doc;
+  try{doc=frame.contentDocument;}catch{return;}
+  if(!doc?.documentElement || fittedGameDocuments.has(doc))return;
+  fittedGameDocuments.add(doc);
+  const script=doc.createElement('script');
+  script.src=new URL('/assets/games/game-viewport.js',location.origin).href;
+  (doc.head||doc.documentElement).append(script);
+  const scan=node=>{
+    if(node.nodeType!==1)return;
+    if(node.matches('iframe'))fitGameFrame(node);
+    node.querySelectorAll('iframe').forEach(fitGameFrame);
+  };
+  scan(doc.documentElement);
+  new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(scan)))
+    .observe(doc.documentElement,{childList:true,subtree:true});
+}
 const nyxArcade = !dropGames && document.documentElement.dataset.appShell !== 'tutsi'
   && !document.documentElement.dataset.tutsiApp;
 const elements = {
@@ -1313,6 +1335,7 @@ elements.fullscreen.addEventListener('click', async () => {
   } catch {}
 });
 elements.frame.addEventListener('load', () => {
+  fitGameFrame(elements.frame);
   if (elements.player.hidden || !state.activeGame || elements.frame.src === 'about:blank') return;
   const source = gameSources()[state.activeSourceIndex];
   let sameOrigin = false;

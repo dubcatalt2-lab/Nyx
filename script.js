@@ -5166,6 +5166,9 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     }catch(error){toast(error.message);}
   }
   function openBrowserShellAppTab(url){
+    if(/^\/apps\/code-studio(?:\/|$)/.test(String(url)) && navigator.userActivation?.isActive && !document.fullscreenElement){
+      document.documentElement.requestFullscreen?.().catch(error=>console.info('Fullscreen unavailable:',error.message));
+    }
     if(String(url||'').replace(/\/+$/,'')==='/apps/nyxcloud'){void openNyxVmsApp();return;}
     hideBrowserSuggestions();
     
@@ -7119,6 +7122,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     clearTimeout(t.nyxDismissTimer);
     const message=String(msg??'');
     const warning=/denied|failed|error|unable|unavailable|blocked|invalid/i.test(message);
+    if(warning || kind==='error'){console.warn(message);t.classList.remove('show');return;}
     const success=/saved|copied|enabled|updated|added|success|connected/i.test(message);
     const symbol=kind==='mention'?'<path d="M21 11.5a8.5 8.5 0 1 1-3-6.5M16 8v6c0 3 5 3 5-1v-2"/><circle cx="12" cy="12" r="4"/>':warning?'<path d="m12 3 10 18H2L12 3Z"/><path d="M12 9v4m0 4h.01"/>':success?'<path d="m5 12 4 4L19 6"/>':'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/>';
     const badge=document.createElement('span');badge.className='toast-icon';badge.setAttribute('aria-hidden','true');
@@ -7456,16 +7460,6 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     throw new Error("N7X game proxy is unavailable.");
   };
 
-  window.nyxLaunchMovieFrame=async(frame,url,{signal,recover=false}={})=>{
-    const {movieSourceUrl}=await import('/apps/movies/providers.mjs?v=20260915-aniembed-v1');
-    if(!movieSourceUrl(url))throw new Error('Unsupported movie provider.');
-    if(frame?.tagName!=='IFRAME'||frame.ownerDocument.location.origin!==location.origin||frame.ownerDocument.location.pathname!=='/apps/movies/')throw new Error('Invalid movie frame.');
-    const sandbox='allow-scripts allow-same-origin allow-forms allow-presentation';
-    if(frame.getAttribute('sandbox')!==sandbox)throw new Error('Movie sandbox is required.');
-    if(signal?.aborted||!frame.isConnected)return;
-    if(recover) nyxManagedGameFrames.delete(frame);
-    await window.nyxLaunchGameFrame(frame,url,{forceProxy:true,signal});
-  };
   function normalizeBrowserModeName(mode){
     let value=String(mode || 'auto').trim();
     if((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))){
@@ -7575,11 +7569,11 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     return config.prefix + encode(target);
   }
   function proxyFailureHtml(message,engine="N7X",{allowDirect=false,heading=''}={}){
-    const safe=String(message || 'Refresh this page once so the updated service worker can take over, then search again.').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const safeHeading=String(heading || `${engine || "N7X"} did not start`).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const directAction=allowDirect?'<button type="button" onclick="parent.postMessage({type:\'nyx:proxy-direct-fallback\'},\'*\')">Try direct mode</button><small>Direct mode works only when the site allows embedding.</small>':'';
-    return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;font-family:Outfit,Arial,sans-serif;background:#101318;color:#f5f7fb;display:grid;place-items:center;min-height:100vh}main{box-sizing:border-box;width:min(560px,100%);padding:28px;text-align:center}h1{font-size:20px;margin:0 0 10px}p{margin:0;color:#c8ced8;line-height:1.45}button{min-height:42px;margin:18px 0 0;padding:0 18px;border:1px solid #6379a0;border-radius:12px;background:#1a2841;color:#f5f7fb;font:700 14px Outfit,Arial,sans-serif;cursor:pointer}small{display:block;margin-top:9px;color:#98a6bb;line-height:1.4}@media(max-width:480px) and (max-height:520px){main{padding:18px}h1{font-size:18px}p{font-size:13px}button{width:100%}}</style><main><h1>${safeHeading}</h1><p>${safe}</p>${directAction}</main>`;
+    console.warn(engine,heading,message);
+    const directAction=allowDirect?'<button type="button" onclick="parent.postMessage({type:\'nyx:proxy-direct-fallback\'},\'*\')">Open directly</button>':'';
+    return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#101318;color:#ddd;display:grid;place-items:center;min-height:100vh;font:14px system-ui}main{display:flex;gap:12px}button{padding:12px 18px;border:1px solid #ffffff26;border-radius:12px;background:#ffffff0a;color:inherit;cursor:pointer}</style><main data-nyx-error><button type="button" onclick="parent.location.reload()" aria-label="Reload page">? Reload</button>${directAction}</main>`;
   }
+
   function loadScript(src){
     return new Promise((resolve,reject)=>{
       const existing=document.querySelector(`script[src="${src}"]`);
@@ -9223,7 +9217,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
   const nyxAiHomeShortcutMigrationKey='nyx.homeShortcuts.aiShortcutV1';
   const nyxTubeHomeShortcut={domain:'youtube.com',title:"N7X7UB3",url:'/apps/nyxtube/',favorite:false};
   const nyxTubeHomeShortcutMigrationKey='nyx.homeShortcuts.nyxTubeShortcutV1';
-  const moviesHomeShortcut={domain:'nyx-movies',title:'Movies',url:'/apps/movies/',favorite:false};
+  const moviesHomeShortcut={domain:'nyx-movies',title:'Movies',url:'https://cinejoy.to/',favorite:false};
   const defaultHomeShortcuts=[
     {domain:'geforcenow',title:'Course Library',url:'https://play.geforcenow.com/',favorite:true},
     {domain:'duck.ai',title:'Research Assistant',url:'https://duck.ai/',favorite:false},
@@ -9242,8 +9236,8 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
   }
   function normalizeHomeShortcut(item){
     const next={...item,url:normalizeInternalAppUrl(item?.url)};
-    if(['http://icefy.top','https://aether.cx','https://cinejoy.to','/apps/movies'].includes(String(next.url || '').trim().replace(/\/+$/,'').toLowerCase())){
-      next.url='/apps/movies/';
+    if(['http://icefy.top','https://aether.cx','https://cinejoy.to','/apps/movies','/apps/movies/index.html'].includes(String(next.url || '').trim().replace(/\/+$/,'').toLowerCase())){
+      next.url='https://cinejoy.to/';
       next.domain='nyx-movies';
     }
     if(next.url==='/assets/games/index.html') next.url='/assets/games/';
@@ -9713,7 +9707,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     ['nyxify','nyxify','Nyxify/built in music','/apps/nyxify/'],
     ['duck-ai','duck.ai',"Duck A1",'https://duck.ai/'],
     ['nyx-ai','nyx-ai',"N7X A1",'nyx://ai'],
-    ['movies','nyx-movies','Movies','/apps/movies/'],
+    ['movies','nyx-movies','Movies','https://cinejoy.to/'],
     ['more-movie-sites','fmhy.net','More Movie Sites','https://fmhy.net/video#p-stream-forks'],
     ['tiktok','tiktok.com','TikTok','https://www.tiktok.com/'],
     ['animex','animex.one','Animex','https://animex.one/']

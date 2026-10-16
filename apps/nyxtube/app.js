@@ -64,7 +64,7 @@
     if (event.source === parent && event.origin === location.origin && event.data?.type === 'nyx:theme-sync') applyTheme();
   });
   const icon = id => `<svg aria-hidden="true"><use href="#${id}"></use></svg>`;
-  function notice(message = "") { refs.notice.textContent = dropTube ? String(message).replace(/NyxTube/g, 'DropTube') : message; refs.notice.hidden = !message; }
+  function notice(message = "") { if(message)console.info(message);refs.notice.textContent = '';refs.notice.hidden = true; }
   async function json(url, signal) {
     const response = await fetch(url, { credentials: "same-origin", headers: { Accept: "application/json" }, signal });
     let payload = null;
@@ -179,7 +179,14 @@
   async function loadInitialView() {
     const videoId = String(new URLSearchParams(location.search).get("video") || "").trim();
     if (!/^[A-Za-z0-9_-]{11}$/.test(videoId)) return loadFeed();
-    const payload = await json(`/api/nyxtube/video?id=${encodeURIComponent(videoId)}`);
+    let payload;
+    try { payload = await json(`/api/nyxtube/video?id=${encodeURIComponent(videoId)}`); }
+    catch (error) {
+      if (dropTube || !(error.status >= 500 || error instanceof TypeError)) throw error;
+      const video = {id:videoId,title:"YouTube video",sourceUrl:`https://www.youtube.com/watch?v=${videoId}`};
+      state.catalog = [video];
+      return openWatch(video,{recoveryMessage:"Video details are temporarily unavailable. Trying playback."});
+    }
     const video = Array.isArray(payload?.videos) ? payload.videos[0] : null;
     if (!video?.id) throw new Error("That video could not be loaded in N7X7UB3.");
     if (!allowedVideo(video)) { await loadFeed(); notice("This video is not available in DropTube."); return; }
@@ -356,8 +363,9 @@
         state.catalog = state.catalog.map(item => item.id === detail.id ? detail : item);
       } catch (error) {
         if (state.view !== "watch" || state.watchGeneration !== requestGeneration) return;
-        if (state.invidiousEmbedOrigin && (error.status >= 500 || error instanceof TypeError)) {
-          metadataUnavailable = true; recoveryMessage = 'Video details could not load. Opening the Invidious player.';
+        if (!dropTube && (error.status >= 500 || error instanceof TypeError)) {
+          metadataUnavailable = !state.nativeAvailable && Boolean(state.invidiousEmbedOrigin);
+          recoveryMessage = 'Video details are temporarily unavailable. Trying playback.';
         } else {
           refs.watchLoading.hidden = true; notice(error.message || "Video details could not be loaded.");
           return;

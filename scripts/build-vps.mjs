@@ -239,11 +239,11 @@ async function copyRemoteViewer() {
 }
 
 const buildNameSeed = randomBytes(16).toString("hex");
-function runtimeMangleOptions(topLevel) {
+function runtimeMangleOptions(topLevel, source) {
   return {
     toplevel: topLevel,
     safari10: true,
-    nth_identifier: zakaEnabled ? zakaIdentifiers() : { get(n) { return "_" + createHash("sha256").update(buildNameSeed + ":" + n).digest("hex").slice(0,12); } }
+    nth_identifier: zakaEnabled ? zakaIdentifiers(source) : { get(n) { return "_" + createHash("sha256").update(buildNameSeed + ":" + n).digest("hex").slice(0,12); } }
   };
 }
 
@@ -284,7 +284,7 @@ async function minifyEmbeddedScramjetGuards(source, nameCache) {
     ) {
       const result = await minify(node.init.quasis[0].value.cooked, {
         compress: runtimeCompressOptions(),
-        mangle: runtimeMangleOptions(false),
+        mangle: runtimeMangleOptions(false, source),
         format: runtimeFormatOptions(),
         nameCache
       });
@@ -338,7 +338,7 @@ async function minifyFirstPartyBrowserRuntimes() {
     const result = await minify(source, {
       module: target.path.endsWith(".mjs"),
       compress: runtimeCompressOptions(),
-      mangle: runtimeMangleOptions(target.topLevel),
+      mangle: runtimeMangleOptions(target.topLevel, source),
       format: runtimeFormatOptions(),
       nameCache
     });

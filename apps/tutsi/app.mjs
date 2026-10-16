@@ -411,7 +411,7 @@ $("test-connection").onclick = async () => {
 $("connection-shortcut").onclick = () => (location.hash = "connection");
 const appPaths = {
   ai: "/ai.html",
-  movies: "/apps/movies/",
+  movies: "https://cinejoy.to/",
   music: "/apps/nyxify/",
   games: "/assets/games/",
   cloud: "/apps/cloud-gaming/",
@@ -435,12 +435,6 @@ window.nyxLaunchGameFrame=async(frame,url,{signal}={})=>{
   signal?.addEventListener('abort',cancel,{once:true});
   try { await browse(target.href,settings,frame); if(signal?.aborted){closeBrowser(frame);return;} return {managed:true,engine:'scramjet',url:target.href}; }
   catch(error){signal?.removeEventListener('abort',cancel);cancel();throw error;}
-};
-window.nyxLaunchMovieFrame=async(frame,url,{signal,recover=false}={})=>{
-  const {movieSourceUrl}=await import('/apps/movies/providers.mjs');
-  if(!movieSourceUrl(url)||frame?.ownerDocument?.location?.pathname!=='/apps/movies/'||frame.getAttribute('sandbox')!=='allow-scripts allow-same-origin allow-forms allow-presentation')throw Error('Invalid movie proxy request.');
-  if(recover)closeBrowser(frame);
-  await window.nyxLaunchGameFrame(frame,url,{signal});
 };
 const protectedAppDocs=new WeakSet();
 function protectAppContents(frame){
@@ -501,6 +495,7 @@ function appFrame(name) {
 $('address').addEventListener('blur',()=>{$('address').scrollLeft=0;});
 function route() {
   const name = location.hash.slice(1) || "home";
+  if(name==='movies'){void navigate('https://cinejoy.to/');return;}
   const section = appPaths[name]
     ? "app-view"
     : ["appearance", "connection", "protections", "shortcuts", "privacy", "tab-appearance"].includes(name)

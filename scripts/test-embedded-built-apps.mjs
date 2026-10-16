@@ -9,7 +9,7 @@ try{
  const page=await browser.newPage();
  await page.route('**/api/**',r=>r.fulfill({json:{enabled:false,tracks:[],albums:[],artists:[],models:[],apps:[],preferences:{}}}));
  await page.route('https://**',r=>r.abort());
- for(const path of ['/assets/games/','/apps/nyxify/','/apps/nyxtube/','/apps/nyxcloud/','/apps/movies/','/ai.html']){
+ for(const path of ['/assets/games/','/apps/nyxify/','/apps/nyxtube/','/apps/nyxcloud/','/ai.html']){
   await page.goto(origin+'/fixture');
   await page.evaluate(path=>{const frame=document.createElement('iframe');frame.id='app';frame.sandbox='allow-scripts allow-same-origin allow-forms allow-modals allow-presentation';frame.src=path;document.body.append(frame);},path);
   await page.waitForFunction(()=>{const doc=document.getElementById('app')?.contentDocument;return doc?.readyState==='complete'&&doc.body?.textContent.trim().length>40&&!doc.documentElement.dataset.appPresentation;},null,{timeout:15000});

@@ -3,6 +3,8 @@ import vm from 'node:vm';
 import {minify} from 'terser';
 import {zakaIdentifiers} from './zaka-identifiers.mjs';
 const names=zakaIdentifiers();
+const occupied=names.get(0);
+assert.notEqual(zakaIdentifiers('function '+occupied+'(){}').get(0),occupied,'Later passes must not reuse existing generated names');
 assert.equal(new Set(Array.from({length:65000},(_,i)=>names.get(i))).size,65000);
 assert.throws(()=>names.get(65000),/capacity/);
 const source='globalThis.result=(()=>{const scramjet=2;const $scramjet=3;return {total:scramjet+$scramjet,url:"/scramjet/scramjet.sw.js",hook:"$scramjet"};})();';

@@ -13,12 +13,12 @@ try {
   const file=join(root,'fixture.mp4');
   await promisify(execFile)(process.env.NYX_FFMPEG_BIN||'ffmpeg',['-nostdin','-v','error','-f','lavfi','-i','color=c=blue:s=640x360:r=24','-f','lavfi','-i','sine=frequency=440:sample_rate=44100','-t','30','-c:v','libx264','-pix_fmt','yuv420p','-c:a','aac','-movflags','+faststart',file]);
   const video={id:'YE7VzlLtp-4',title:'Native player test',creator:'Test creator',description:'A test video.',durationSeconds:30,captions:true};
-  let busyReplies=2,failed=false,hold=false,checks=0,detailCalls=0,ownerState='working',ownerRole='owner';
+  let metadataStatus=200,busyReplies=2,failed=false,hold=false,checks=0,detailCalls=0,ownerState='working',ownerRole='owner';
   const app=express();
   app.get('/assets/vendor/hls.min.js',(_req,res)=>res.sendFile(createRequire(import.meta.url).resolve('hls.js/dist/hls.min.js'),{dotfiles:'allow'}));
   app.use('/api/nyxtube',(req,res)=>{
     if(req.path==='/status')return res.json({configured:true,nativeAvailable:true});
-    if(req.path==='/video'){detailCalls++;return res.json({videos:[{...video,description:'Loaded full details',likeCount:null}]});}
+    if(req.path==='/video'){detailCalls++;if(metadataStatus!==200)return res.status(metadataStatus).json({error:'Video details unavailable'});return res.json({videos:[{...video,description:'Loaded full details',likeCount:null}]});}
     if(req.path==='/channel')return res.json({channel:{title:'Creator profile',subscriberCount:null},videos:[{...video,detailsPending:true}]});
     if(req.path.startsWith('/native/media/'))return res.sendFile(file);
     if(req.path.startsWith('/native/formats/') && busyReplies-->0)return res.status(429).json({code:'busy',error:'Another video is being prepared.'});
@@ -108,6 +108,14 @@ try {
   await page.getByRole('button',{name:'Switch to N7X7UB3',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-watch-player] video')?.readyState>=1);
   await page.getByRole('button',{name:'Switch to embedded',exact:true}).click();await page.locator('[data-test-embed]').waitFor();
   hold=true;await page.getByRole('button',{name:'Switch to N7X7UB3',exact:true}).click();await page.locator('[data-back]').click();await page.waitForTimeout(1700);assert.equal(await page.locator('[data-watch-player] video').count(),0);
+  hold=false;metadataStatus=503;
+  await page.goto(base+'/apps/nyxtube/?video='+video.id);
+  await page.waitForFunction(()=>document.querySelector('[data-watch-player] video')?.readyState>=2);
+  await page.goto(base+'/apps/nyxtube/');await page.locator('.video-cover').first().click();
+  await page.waitForFunction(()=>document.querySelector('[data-watch-player] video')?.readyState>=2);
+  metadataStatus=404;await page.goto(base+'/apps/nyxtube/?video='+video.id);
+  await page.waitForTimeout(500);assert.equal(await page.locator('[data-watch-player] video').count(),0,'Unavailable videos must not start fallback playback');
+  metadataStatus=200;
   await page.goto(base+'/owner-test');await page.evaluate(()=>NyxOwnerDashboard.open({getToken:async()=> 'mock'}));
   await page.locator('[data-owner-section="services"]').click();
   await page.locator('[data-owner-tube-state="working"]').waitFor();

@@ -33,10 +33,7 @@ import {createCloudLaunchLimit} from "./lib/cloud-launch-limit.mjs";
 import { tutsiHostnames, isTutsiHostname } from "./lib/tutsi-hostnames.mjs";
 import {installTutsiCrawlerControls} from "./lib/tutsi-crawler-controls.mjs";
 import { createTubeCaptions } from './lib/nyxtube-captions.mjs';
-import {installMovieImages} from './lib/movie-images.mjs';
 import {chatSendDecision} from './lib/chat-send-policy.mjs';
-import { createMovieCatalog, installMovieApi } from './lib/movies.mjs';
-import { installMoviePlayback } from './lib/movie-playback.mjs';
 import { createApiKeyVault } from './lib/api-key-vault.mjs';
 import { installDeveloperApi } from './lib/developer-api.mjs';
 import { createNookDeveloper } from './lib/nook-developer.mjs';
@@ -368,7 +365,7 @@ const nyxGamesAppMigrationField = "gamesAppRenamed";
 const nyxGamesGlobalApp = Object.freeze({ id: "pirate-cove", icon: "games", name: "GAMES", url: "/assets/games/" });
 const nyxMoviesBuiltinMigrationField = "nyxMoviesBuiltin20260911";
 const nyxMoviesCinejoyMigrationField = "moviesCinejoyTarget";
-const nyxMoviesGlobalApp = Object.freeze({ id: "movies", icon: "nyx-movies", name: "Movies", url: "/apps/movies/" });
+const nyxMoviesGlobalApp = Object.freeze({ id: "movies", icon: "nyx-movies", name: "Movies", url: "https://cinejoy.to/" });
 const nyxDefaultGlobalApps = Object.freeze([
   { id: "link-checker", icon: "link-checker", name: "Link Checker", url: "/apps/link-checker/" },
   { id: "link-generator", icon: "link-generator", name: "Link Generator", url: "/apps/link-generator/" },
@@ -8039,12 +8036,8 @@ app.get(["/apps/nyxify", "/apps/nyxify/"], (_req, res) => {
   res.sendFile(join(staticRoot, "apps", "nyxify", "index.html"));
 });
 
-const movieCatalog = createMovieCatalog();
-installMovieImages(app);
-installMovieApi(app, { catalog: movieCatalog, clientId: nyxClientIp });
-installMoviePlayback(app, { clientId: nyxClientIp, validateMovie: id => movieCatalog.details(id) });
-app.get(/^\/apps\/movies$/, (_req, res) => res.redirect(302, "/apps/movies/"));
-app.get("/apps/movies/", (_req, res) => { res.set("Content-Security-Policy", "frame-src 'self' https://nhdapi.com https://supaplay.fun https://ani.megaplay.su https://watch.rivestream.app https://framextv.tech https://plyr.animex.one; object-src 'none'"); res.sendFile(join(staticRoot, "apps", "movies", "index.html")); });
+app.get(/^\/apps\/movies(?:\/index\.html|\/)?$/, (_req,res)=>res.redirect(302,'https://cinejoy.to/'));
+app.use('/api/movies',(_req,res)=>res.status(410).json({error:'The built-in Movies service has been removed.'}));
 
 function linkGeneratorRateState(clientId, now = Date.now()) {
   for (const [key, state] of linkGeneratorAttempts) {

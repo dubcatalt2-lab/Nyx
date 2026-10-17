@@ -38,7 +38,7 @@ try{
                                                                      
  vms.push(item(200),item(201),item(202));
  state.entries.push({uid:'overflow',status:'queued',joinedAt:clock,lastSeen:clock});clock+=5100;
- assert.equal((await request('overflow')).status,'queued');assert.equal(creates,1);
+ const blocked=await request('overflow');assert.equal(blocked.status,'queued');assert.equal(blocked.reason,'stopped_capacity');assert.equal(creates,1);
                                                                         
  vms.pop();state.entries.push({uid:'conflict',status:'conflict',vm:vms[0],lastSeen:clock});clock+=5100;
  assert.equal((await request('overflow')).status,'ready');assert.equal(creates,2);

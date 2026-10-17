@@ -17,6 +17,7 @@ import {loremDesktop} from '/app/apps/nyxcloud/lorem.js';
 const scenario=new URLSearchParams(location.search).get('case');
 window.calls=[];window.dispose=loremDesktop({screen:document.querySelector('#screen'),status:t=>document.querySelector('#status').textContent=t,connected:()=>{},api:async(path,method)=>{
  calls.push({path,method});
+ if(path.startsWith('/lorem/start/')&&scenario==='new-stopped')await new Promise(r=>setTimeout(r,700));
  if(path==='/lorem/vms'){
    if(scenario==='disposed')await new Promise(r=>setTimeout(r,100));
    return {vms:['existing','stopped','timed','revoked'].includes(scenario)?[{id:'one',state:scenario==='stopped'?'stopped':'running',url:'https://loremgroup.org/vm/fixture/'}]:[],queued:scenario==='queued',expiresAt:scenario==='timed'?Date.now()+2000:null};
@@ -28,7 +29,7 @@ window.calls=[];window.dispose=loremDesktop({screen:document.querySelector('#scr
      return {status:'queued',position:3,reason:scenario==='service-error'&&!window.serviceRecovered?'service_unavailable':'capacity'};
    }
    if(scenario==='recovering')return {status:'recovering',message:'Provider confirmation pending.'};
-   return {status:'ready',vm:{url:'https://loremgroup.org/vm/fixture/'}};
+   return {status:'ready',vm:{id:'one',state:scenario==='new-stopped'?'exited':'running',url:'https://loremgroup.org/vm/fixture/'}};
  }
  return {};
 }});
@@ -39,16 +40,17 @@ const browser=await chromium.launch({channel:'msedge',headless:true});
 try{
   const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.route('https://loremgroup.org/**',r=>r.fulfill({contentType:'text/html',body:'<h1>Fixture desktop</h1>'}));
-  for(const scenario of ['new','existing','stopped','queued','disposed']){
+  for(const scenario of ['new','new-stopped','existing','stopped','queued','disposed']){
     await page.goto('http://127.0.0.1:'+server.address().port+'/?case='+scenario);
     if(scenario==='disposed'){
       await page.waitForTimeout(200);assert.equal(await page.locator('iframe').count(),0);
     }else{
+      if(scenario==='new-stopped'){await page.waitForFunction(()=>window.calls.some(c=>c.path==='/lorem/start/one'));assert.equal(await page.locator('iframe').count(),0,'display waits for startup confirmation');}
       await page.locator('iframe').waitFor();assert.equal(await page.locator('iframe').getAttribute('src'),'https://loremgroup.org/vm/fixture/');
     }
     const calls=await page.evaluate(()=>window.calls);
-    assert.equal(calls.filter(c=>c.path==='/lorem/create').length,scenario==='new'?1:0);
-    assert.equal(calls.filter(c=>c.path==='/lorem/start/one').length,scenario==='stopped'?1:0);
+    assert.equal(calls.filter(c=>c.path==='/lorem/create').length,['new','new-stopped'].includes(scenario)?1:0);
+    assert.equal(calls.filter(c=>c.path==='/lorem/start/one').length,['stopped','new-stopped'].includes(scenario)?1:0);
     assert.equal(calls.filter(c=>c.path==='/lorem/queue').length,scenario==='queued'?1:0);
     assert(!(await page.locator('body').innerText()).includes('LoremGroup'));
     await page.evaluate(()=>dispose());

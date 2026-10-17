@@ -47,6 +47,14 @@ export function loremDesktop({api,screen,status,connected,reconnect}){
   function progress(text,stage=0){if(disposed)return;message.textContent=text;status(text);loading.querySelectorAll('.boot-step').forEach((step,i)=>{step.classList.toggle('active',i===stage);step.classList.toggle('done',i<stage);});}
   function failed(error){if(disposed)return;indicator.hidden=true;loading.dataset.error='true';loading.querySelector('h1').textContent='Unable to open desktop';retryButton.hidden=!reconnect;progress(error.message||'The desktop could not start.');}
   function open(vm,deadline){
+    prepare(vm,deadline).catch(error=>{if(!disposed)failed(error);});
+  }
+  async function prepare(vm,deadline){
+    if(disposed)return;
+    if(vm.id && !/^(running|started)$/i.test(vm.state||'')){
+      progress('Starting the virtual machine...',1);
+      await api('/lorem/start/'+encodeURIComponent(vm.id),'POST');
+    }
     if(disposed)return;
     opened=true;openedUrl=vm.url;expiresAt=Number(deadline)||null;displayReady=false;cancelButton.hidden=true;loading.querySelector('h1').textContent='Opening your desktop';
     const u=new URL(vm.url);if(u.origin!=='https://loremgroup.org'||u.username||u.password||u.search||u.hash||!/^\/vm\/[A-Za-z0-9_-]+\/$/.test(u.pathname))throw Error('Unsupported desktop URL.');
@@ -63,8 +71,8 @@ export function loremDesktop({api,screen,status,connected,reconnect}){
       if(data.status==='ready'){open(data.vm,data.expiresAt);return;}
       if(data.status==='recovering')throw Error(data.message);
       if(data.status!=='queued')throw Error('Your queue reservation ended. Use Reconnect to join again.');
-      cancelButton.hidden=false;loading.querySelector('h1').textContent=data.reason==='service_unavailable'?'Desktop service unavailable':data.position?'You’re #'+data.position+' in line':'Waiting for a desktop';
-      progress(data.reason==='isolated_desktop_pending'?'Waiting for a separate desktop. Your place is saved.':data.reason==='service_unavailable'?'The service is reconnecting. Your place is saved.':data.providerPosition?'Waiting for provider capacity · provider position '+data.providerPosition:'Desktops are busy. Yours will open automatically.');
+      cancelButton.hidden=false;loading.querySelector('h1').textContent=data.reason==='stopped_capacity'?'Desktop capacity needs recovery':data.reason==='service_unavailable'?'Desktop service unavailable':data.position?'You’re #'+data.position+' in line':'Waiting for a desktop';
+      progress(data.reason==='stopped_capacity'?'Stopped desktops are occupying the provider slots. The site owner needs to release them. Your place is saved.':data.reason==='isolated_desktop_pending'?'Waiting for a separate desktop. Your place is saved.':data.reason==='service_unavailable'?'The service is reconnecting. Your place is saved.':data.providerPosition?'Waiting for provider capacity · provider position '+data.providerPosition:'Desktops are busy. Yours will open automatically.');
       timer=setTimeout(poll,5000);
     }catch(error){
       if(disposed||queueCancelled)return;
@@ -76,9 +84,6 @@ export function loremDesktop({api,screen,status,connected,reconnect}){
     progress('Preparing your workspace...');const data=await api('/lorem/vms');if(disposed)return;
     const existing=data.vms.find(vm=>vm.url&&/running|started/i.test(vm.state))||data.vms.find(vm=>vm.url);
     if(existing){
-      if(/stopped|exited/i.test(existing.state)){
-        progress('Starting the virtual machine...',1);await api('/lorem/start/'+encodeURIComponent(existing.id),'POST');if(disposed)return;
-      }
       open(existing,data.expiresAt);return;
     }
     if(data.queued){await poll();return;}

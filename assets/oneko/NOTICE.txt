@@ -1,0 +1,4 @@
+Oneko sprites and animation reference: https://github.com/glreno/oneko
+Revision: 9751537673f682dba564eced2b68ecb8e77c6ca2
+Public-domain sprites; repository distributed under the Unlicense.
+Browser adaptation for N7X; no Java runtime required.

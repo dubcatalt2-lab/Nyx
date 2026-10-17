@@ -1,0 +1,467 @@
+import assert from 'node:assert/strict';
+import {spawn} from 'node:child_process';
+import {chromium} from 'playwright';
+
+const port=8197;
+const origin=`http://127.0.0.1:${port}`;
+const server=spawn(process.execPath,['server.js'],{
+  cwd:process.cwd(),
+  env:{...process.env,PORT:String(port)},
+  stdio:['ignore','pipe','pipe']
+});
+let serverOutput='';
+server.stdout.on('data',chunk=>{serverOutput+=chunk});
+server.stderr.on('data',chunk=>{serverOutput+=chunk});
+
+const waitForServer=async()=>{
+  const deadline=Date.now()+15_000;
+  while(Date.now()<deadline){
+    if(server.exitCode!==null)throw new Error(`Nyx test server stopped early.\n${serverOutput}`);
+    try{if((await fetch(`${origin}/healthz`)).ok)return}catch{}
+    await new Promise(resolve=>setTimeout(resolve,150));
+  }
+  throw new Error(`Nyx test server did not start.\n${serverOutput}`);
+};
+
+const profile={
+  displayName:'Account Test',handle:'@account-test',bio:'Browser regression profile',
+  avatarUrl:'',bannerUrl:'',accentPrimary:'#5865f2',accentSecondary:'#8ea1ff',
+  bannerColor:'#8ea1ff',displayNameFont:'gg-sans',displayNameEffect:'solid',
+  displayNameColorPrimary:'#ffffff',displayNameColorSecondary:'#8ea1ff',
+  profileEffect:'blooming-roses',avatarDecoration:'candlelight',status:'online',customStatus:'Testing controls'
+};
+const firebaseAppModule=`
+  const apps=[];
+  export const getApps=()=>apps;
+  export function initializeApp(config,name){const app={config,name};apps.push(app);return app}
+`;
+const firebaseAuthModule=`
+  const listeners=[];
+  const user={uid:'test-user-1234',email:'account-test@example.com',emailVerified:true,async getIdToken(){return 'test-token'},async reload(){}};
+  const auth={currentUser:user,async authStateReady(){},async signOut(){globalThis.__nyxMockSignOuts=(globalThis.__nyxMockSignOuts||0)+1;this.currentUser=null;listeners.forEach(listener=>listener(null))}};
+  export const browserLocalPersistence={};
+  export const getAuth=()=>auth;
+  export async function setPersistence(){}
+  export function onAuthStateChanged(_auth,listener){listeners.push(listener);queueMicrotask(()=>listener(auth.currentUser));return()=>{}}
+  export async function signInWithCustomToken(){return {user:auth.currentUser}}
+`;
+
+let browser;
+let postedChatMessage=null;
+try{
+  await waitForServer();
+  browser=await chromium.launch({headless:true});
+  const page=await browser.newPage({viewport:{width:1280,height:800}});
+  const pageErrors=[];
+  page.on('pageerror',error=>pageErrors.push(error.message));
+  await page.addInitScript(()=>{
+    localStorage.setItem('nyx.setupComplete','true');
+    localStorage.setItem('nyx.browserShellMode','true');
+    if(!sessionStorage.getItem('nyx.test.originalMigration')){
+      localStorage.setItem('nyx.homeDesign','original');
+      sessionStorage.setItem('nyx.test.originalMigration','true');
+    }
+    localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');
+    if(sessionStorage.getItem('nyx.test.releaseNotesFresh')!=='true'){
+      localStorage.setItem('nyx.releaseNotes.2026-08-31-new-nyx.device','2026-08-31-new-nyx');
+      localStorage.setItem('nyx.releaseNotes.2026-08-31-new-nyx.test-user-1234','2026-08-31-new-nyx');
+    }
+    globalThis.__nyxMockSignOuts=0;
+    const removeStartup=()=>{
+      document.querySelector('#n7xStudyHubStartup')?.remove();
+      document.documentElement.classList.remove('n7x-studyhub-starting');
+      document.body?.classList.remove('n7x-startup-prep','n7x-loading-active');
+    };
+    document.addEventListener('DOMContentLoaded',()=>{
+      removeStartup();
+      new MutationObserver(removeStartup).observe(document.documentElement,{childList:true,subtree:true});
+    });
+  });
+  await page.route('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js',route=>route.fulfill({status:200,contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:firebaseAppModule}));
+  await page.route('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js',route=>route.fulfill({status:200,contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:firebaseAuthModule}));
+  await page.route('**/api/**',async route=>{
+    const url=new URL(route.request().url());
+    const path=url.pathname;
+    const method=route.request().method();
+    const json=body=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
+    if(path==='/api/founder-profile/auth-config')return json({enabled:true,projectId:'nyx-test',apiKey:'test',ownerConfigured:true});
+    if(path==='/api/founder-profile/owner')return json({founder:true,dashboard:true,role:'owner',permissions:[]});
+    if(path==='/api/profiles/me')return json({uid:'test-user-1234',profile,createdAt:'2026-01-01T00:00:00.000Z'});
+    if(path==='/api/account/me')return json({email:'account-test@example.com',role:'owner',subscriptionStatus:'premium'});
+    if(path==='/api/profiles/test-member-5678')return json({uid:'test-member-5678',profile:{...profile,displayName:'Chat Member',handle:'@chat-member'},role:'member',createdAt:'2026-02-01T00:00:00.000Z',online:true});
+    if(path==='/api/chat/bootstrap')return json({
+      me:{uid:'test-user-1234',displayName:'Account Test',handle:'@account-test',role:'owner'},
+      members:[
+        {uid:'test-user-1234',displayName:'Account Test',handle:'@account-test',role:'owner',online:true,self:true},
+        {uid:'test-member-5678',displayName:'Chat Member',handle:'@chat-member',role:'member',online:true,self:false}
+      ],
+      channels:[{id:'general',name:'general',description:'Test channel'}],conversations:[],latestActivity:{},revision:1,
+      voice:{channels:[],participants:[]}
+    });
+    if(path==='/api/chat/messages'&&method==='POST'){
+      postedChatMessage=route.request().postDataJSON();
+      const replyTo=postedChatMessage.replyToMessageId?{id:'test-message-1',text:'Existing message',attachmentName:'',author:{uid:'test-member-5678',displayName:'Chat Member',handle:'@chat-member'}}:null;
+      return json({message:{id:'test-message-2',text:'Smooth send',replyTo,attachments:[],reactions:[],createdAt:'2026-08-20T20:01:00.000Z',createdAtMs:1787256060000,author:{uid:'test-user-1234',displayName:'Account Test',handle:'@account-test',role:'owner'}}});
+    }
+    if(path==='/api/chat/messages')return json({messages:[{id:'test-message-1',text:'Existing message',attachments:[],reactions:[],createdAt:'2026-08-20T20:00:00.000Z',createdAtMs:1787256000000,author:{uid:'test-member-5678',displayName:'Chat Member',handle:'@chat-member',role:'member'}}],hasMore:false});
+    if(path==='/api/chat/conversations')return json({conversations:[],channelActivity:{}});
+    if(path==='/api/chat/caffeine')return json({caffeine:null});
+    if(path==='/api/chat/voice/status')return json({channels:[],participants:[]});
+    if(path.startsWith('/api/activity/'))return json({ok:true});
+    return route.continue();
+  });
+
+  await page.goto(origin+'/nyx',{waitUntil:'domcontentloaded'});
+  assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.homeDesign')),'redesigned','Original home preference was not migrated');
+  await page.waitForSelector('#n22e9fbee8c96[data-preset]');
+  const n79425056e076=page.locator('#n79425056e076');
+  assert.equal(await n79425056e076.getAttribute('aria-hidden'),'true','Completed setup did not mark its screen hidden');
+  assert.deepEqual(await n79425056e076.evaluate(screen=>({
+    hidden:screen.hidden,
+    inert:screen.inert,
+    display:getComputedStyle(screen).display,
+    pointerEvents:getComputedStyle(screen).pointerEvents,
+    atCenter:document.elementFromPoint(innerWidth/2,innerHeight/2)===screen
+  })),{
+    hidden:true,
+    inert:true,
+    display:'none',
+    pointerEvents:'none',
+    atCenter:false
+  },'Completed setup left an invisible click-blocking layer');
+  await page.emulateMedia({reducedMotion:'reduce'});
+  await n79425056e076.evaluate(screen=>{
+    screen.hidden=false;
+    screen.inert=false;
+    screen.setAttribute('aria-hidden','false');
+    screen.classList.add('show');
+  });
+  assert.deepEqual(await n79425056e076.evaluate(screen=>({
+    display:getComputedStyle(screen).display,
+    opacity:getComputedStyle(screen).opacity,
+    visibility:getComputedStyle(screen).visibility,
+    pointerEvents:getComputedStyle(screen).pointerEvents
+  })),{
+    display:'grid',
+    opacity:'1',
+    visibility:'visible',
+    pointerEvents:'auto'
+  },'Setup wizard was invisible or non-interactive with reduced motion enabled');
+  await n79425056e076.evaluate(screen=>{
+    screen.classList.remove('show');
+    screen.setAttribute('aria-hidden','true');
+    screen.hidden=true;
+    screen.inert=true;
+  });
+  await page.emulateMedia({reducedMotion:'no-preference'});
+  const frameLoader=page.locator('.n7x-frame-loader svg').first();
+  await frameLoader.waitFor({state:'attached'});
+  assert.equal(await frameLoader.getAttribute('viewBox'),'0 0 210 110','External page loader was not laid out horizontally');
+  assert.match(await frameLoader.locator('.nyx-loader-rocket').evaluate(node=>node.parentElement?.getAttribute('transform')||''),/rotate\(90\b/,'Loading rocket was not oriented horizontally');
+  assert.equal(await frameLoader.locator('.nyx-loader-flame').count(),3,'Loading rocket did not keep all three flame trails');
+  assert.equal(await frameLoader.locator('.nyx-loader-moon').count(),0,'Retired loading moon was still present');
+  assert.equal(await frameLoader.locator('.nyx-loader-star').count(),5,'Loading rocket did not include its star stream');
+  assert.equal(await page.locator('.n7x-home-dot-field').count(),0,'Retired constellation field was still present');
+  assert.equal(await page.locator('#n22e9fbee8c96').getAttribute('data-preset'),'frost','Desktop home did not render the default Beams wallpaper');
+  await page.setViewportSize({width:2560,height:800});
+  await page.waitForFunction(()=>document.getElementById('n22e9fbee8c96')?.getBoundingClientRect().width===innerWidth);
+  await page.evaluate(()=>{
+    localStorage.setItem('nyx.performanceTier','medium');
+    localStorage.setItem('nyx.performanceTierSource','explicit');
+  });
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForSelector('#n22e9fbee8c96[data-preset="frost"]');
+  await page.setViewportSize({width:600,height:800});
+  await page.waitForFunction(()=>document.getElementById('n22e9fbee8c96')?.getBoundingClientRect().width===innerWidth);
+  await page.evaluate(()=>{
+    localStorage.setItem('nyx.performanceTier','high');
+    localStorage.setItem('nyx.performanceTierSource','explicit');
+  });
+  await page.setViewportSize({width:1280,height:800});
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForSelector('#n22e9fbee8c96[data-preset="frost"]');
+
+  await page.locator('[data-n7x-dock-item="apps"]').click();
+  const appsFrame=page.frameLocator('.n2ac0604c6ebc iframe.active');
+  const coloredIcons=appsFrame.locator('[data-global-app-id="crunchyroll"] .quick-icon,[data-global-app-id="newgrounds"] .quick-icon,[data-global-app-id="kick"] .quick-icon,[data-global-app-id="itch"] .quick-icon');
+  await coloredIcons.first().waitFor({state:'attached'});
+  assert.equal(await coloredIcons.count(),4,'Expected all four dark-background icon replacements');
+  const iconStats=await coloredIcons.evaluateAll(async images=>Promise.all(images.map(async image=>{
+    await image.decode();
+    const canvas=document.createElement('canvas');
+    canvas.width=64;
+    canvas.height=64;
+    const context=canvas.getContext('2d');
+    context.drawImage(image,0,0,64,64);
+    const pixels=context.getImageData(0,0,64,64).data;
+    let colored=0;
+    for(let index=0;index<pixels.length;index+=4){
+      const red=pixels[index],green=pixels[index+1],blue=pixels[index+2],alpha=pixels[index+3];
+      if(alpha>32 && Math.max(red,green,blue)-Math.min(red,green,blue)>28 && Math.max(red,green,blue)>80) colored++;
+    }
+    return {src:new URL(image.src).pathname,naturalWidth:image.naturalWidth,naturalHeight:image.naturalHeight,colored};
+  })));
+  for(const icon of iconStats){
+    assert.ok(icon.naturalWidth>0 && icon.naturalHeight>0,`App icon failed to load: ${icon.src}`);
+    assert.ok(icon.colored>20,`App icon remained monochrome or invisible: ${icon.src}`);
+  }
+  await page.locator('[data-n7x-dock-item="home"]').click();
+  await page.waitForSelector('.n7x-minimal-home');
+  await page.waitForSelector('#n7xAccountButton.n7x-account-button-rich',{timeout:15_000});
+  await page.waitForTimeout(500);
+
+  const externalPathUrl='https://example.com/pokemon';
+  const homeSearch=page.locator('.n2ac0604c6ebc.q276ba5cc5bedf5dcef [data-q53154c3f0fbe71a11b]:visible');
+  await page.waitForTimeout(4500);
+  await homeSearch.fill(externalPathUrl);
+  await homeSearch.press('Enter');
+  await page.waitForFunction(()=>[...document.querySelectorAll('.n2ac0604c6ebc iframe.view')].some(frame=>String(frame.getAttribute('src') || '').includes('/~/sj/')));
+  await page.waitForFunction(()=>[...document.querySelectorAll('.n2ac0604c6ebc iframe.view')].some(frame=>{
+    try{return String(frame.getAttribute('src') || '').includes('/~/sj/') && !!frame.contentDocument?.documentElement}catch{return false}
+  }));
+  await page.evaluate(()=>{
+    Object.defineProperty(navigator,'clipboard',{
+      configurable:true,
+      value:{writeText:async value=>{globalThis.__nyxCopiedLink=String(value)}}
+    });
+    const frame=[...document.querySelectorAll('.n2ac0604c6ebc iframe.view')].find(node=>String(node.getAttribute('src') || '').includes('/~/sj/'));
+    frame.dispatchEvent(new Event('load'));
+  });
+  await page.waitForTimeout(300);
+  await page.evaluate(()=>{
+    const frame=[...document.querySelectorAll('.n2ac0604c6ebc iframe.view')].find(node=>String(node.getAttribute('src') || '').includes('/~/sj/'));
+    frame.dispatchEvent(new Event('load'));
+    const link=frame.contentDocument.createElement('a');
+    link.textContent='Cineby test link';
+    link.href=`${location.origin}/~/sj/tbsmrs4y/0jbe7xpv/https%3A%2F%2Fcineby.at%2F?%24rfp=strict-origin-when-cross-origin&%24io=https%3A%2F%2Ffmhy.net`;
+    frame.contentDocument.documentElement.appendChild(link);
+    link.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:24,clientY:24}));
+  });
+  await page.locator('.qe08c033fce3d8f6a26').waitFor();
+  await page.locator('[data-n7x-copy-clean-link]').click();
+  assert.equal(await page.evaluate(()=>globalThis.__nyxCopiedLink),'https://cineby.at/','Right-click Copy link exposed a Scramjet URL');
+  await page.evaluate(()=>{
+    const frame=[...document.querySelectorAll('.n2ac0604c6ebc iframe.view')].find(node=>String(node.getAttribute('src') || '').includes('/~/sj/'));
+    frame.src='/4poekf=4watepo/w4geriaerjmgotbg';
+  });
+  await page.waitForFunction(()=>[...document.querySelectorAll('.n2ac0604c6ebc iframe.view')].some(frame=>{
+    try{return frame.contentWindow.location.pathname==='/4poekf=4watepo/w4geriaerjmgotbg'}catch{return false}
+  }));
+  await page.evaluate(()=>{
+    const frame=[...document.querySelectorAll('.n2ac0604c6ebc iframe.view')].find(node=>{
+      try{return node.contentWindow.location.pathname==='/4poekf=4watepo/w4geriaerjmgotbg'}catch{return false}
+    });
+    frame.dispatchEvent(new Event('load'));
+  });
+  await page.waitForTimeout(100);
+  assert.equal(await page.locator('.n2ac0604c6ebc .urlbar').inputValue(),externalPathUrl,'Proxy path replaced the real legacy address');
+  assert.equal(await page.locator('[data-qdb41a1359ce5a90298]').inputValue(),externalPathUrl,'Proxy path replaced the real shell address');
+  await page.locator('[data-n7x-dock-item="home"]').click();
+  await page.waitForSelector('.n7x-minimal-home');
+
+  const containedBrowserFrame=page.locator('.n2ac0604c6ebc iframe.view').first();
+  await containedBrowserFrame.evaluate(frame=>{
+    frame.dataset.q0a6f583a6295dfc3e6='true';
+  });
+  await page.locator('#n7xAccountButton').click();
+  await page.locator('[data-n7x-account-menu-action="owner-dashboard"]').click();
+  await page.waitForSelector('.n7x-owner-dashboard-overlay');
+  await page.waitForTimeout(350);
+  assert.equal(await page.locator('.n7x-owner-dashboard-overlay').count(),1,'Owner Dashboard was removed after opening');
+  await page.locator('[data-owner-close]').click();
+  await page.waitForSelector('.n7x-owner-dashboard-overlay',{state:'detached'});
+  await containedBrowserFrame.evaluate(frame=>{
+    delete frame.dataset.q0a6f583a6295dfc3e6;
+  });
+
+  await page.locator('#n7xAccountButton').click();
+  await page.locator('[data-n7x-account-menu-action="edit"]').click();
+  await page.waitForSelector('.n7x-user-profile-overlay.show');
+  await page.waitForTimeout(200);
+  assert.equal(await page.locator('.n7x-user-profile-overlay.show').count(),1,'Profile editor was removed after opening');
+  assert.equal(await page.locator('#n7xUserProfileTitle').textContent(),'Profiles');
+  await page.locator('[data-close-n7x-profile]').click();
+  await page.waitForSelector('.n7x-user-profile-overlay',{state:'detached'});
+
+  await page.locator('#n7xAccountButton').click();
+  await page.locator('[data-n7x-account-menu-action="switch"]').click();
+  await page.waitForSelector('.n7x-account-overlay');
+  await page.waitForTimeout(200);
+  assert.equal(await page.locator('.n7x-account-overlay').count(),1,'Account switcher was removed after opening');
+  assert.equal(await page.locator('#n7xAccountTitle').textContent(),'Switch accounts');
+  assert.equal(await page.evaluate(()=>globalThis.__nyxMockSignOuts),0,'Switch Accounts signed the active account out before replacement login');
+  await page.locator('[data-close-n7x-account]').click();
+
+  await page.locator('[data-n7x-dock-item="settings"]').click();
+  await page.waitForSelector('.q1b8b57bdd44ab91267');
+  assert.equal(await page.locator('[data-home-design-value],.nyx-home-design-setting,.nyx-tab-design-setting').count(),0,'Retired layout controls remain in Settings');
+  assert.equal(await page.locator('.n7x-minimal-top-actions,.qbcc199b54fd8cb6e0b,.n7x-latency-bubble').count(),0,'Retired toolbar is still created');
+  await page.waitForTimeout(200);
+  assert.equal(await page.locator('.q1b8b57bdd44ab91267').count(),1,'Homepage Settings was removed after opening');
+  await page.locator('[data-n7x-dock-item="links"]').click();
+  await page.waitForSelector('.q1b8b57bdd44ab91267',{state:'detached'});
+  await page.waitForFunction(()=>document.querySelector('.qabe30eb136bdd4788a.active strong')?.textContent?.trim()==='Link Generator');
+  assert.equal(await page.locator('.q1b8b57bdd44ab91267').count(),0,'Settings remained stacked over a newly opened app tab');
+  await page.locator('[data-n7x-dock-item="home"]').click();
+  await page.locator('[data-q0882cea5d2bc5ce380]').evaluate(button=>button.click());
+  await page.waitForSelector('.q1b8b57bdd44ab91267');
+  await page.waitForTimeout(200);
+  assert.equal(await page.locator('.q1b8b57bdd44ab91267').count(),1,'Toolbar Settings was removed after opening');
+  await page.locator('[data-settings-category-button="data"]').click();
+  await page.waitForSelector('[data-settings-category="data"].active');
+  await page.evaluate(()=>{
+    localStorage.setItem('portable-game-save','level=7');
+    localStorage.setItem('nyx.aiMessages','[{"role":"user","content":"portable conversation"}]');
+    localStorage.setItem('nyx.aiPersonalKey.device','do-not-export');
+  });
+  await page.evaluate(()=>{
+    const createObjectUrl=URL.createObjectURL.bind(URL);
+    URL.createObjectURL=blob=>{
+      globalThis.__nyxTestExportBlob=blob;
+      return createObjectUrl(blob);
+    };
+  });
+  await page.locator('[data-n7x-data-export]').click();
+  await page.waitForFunction(()=>document.querySelector('[data-n7x-data-transfer-status]')?.textContent?.startsWith('Exported '));
+  const backup=await page.evaluate(async()=>JSON.parse(await globalThis.__nyxTestExportBlob.text()));
+  assert.equal(backup.format,'nyx-portable-backup','Data export used the wrong backup format');
+  assert.equal(backup.storage['portable-game-save'],'level=7','Data export omitted supported game storage');
+  assert.match(backup.storage['nyx.aiMessages'],/portable conversation/,'Data export omitted AI conversation history');
+  assert.equal(backup.storage['nyx.aiPersonalKey.device'],undefined,'Data export included a personal API key');
+  page.once('dialog',dialog=>dialog.accept());
+  await page.locator('[data-n7x-data-import-file]').setInputFiles({
+    name:'nyx-data-test.json',
+    mimeType:'application/json',
+    buffer:Buffer.from(JSON.stringify({format:'nyx-portable-backup',version:1,sourceOrigin:'https://old-nyx.example',storage:{'portable-game-save':'level=12','nyx.font':'outfit','nyx.aiPersonalKey.device':'must-stay-blocked'}}))
+  });
+  await page.waitForFunction(()=>document.querySelector('[data-n7x-data-transfer-status]')?.textContent?.startsWith('Imported 2 data entries'));
+  assert.equal(await page.evaluate(()=>localStorage.getItem('portable-game-save')),'level=12','Data import did not restore supported game storage');
+  assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.aiPersonalKey.device')),'do-not-export','Data import replaced a personal API key');
+  assert.equal(await page.locator('[data-n7x-data-reload]').isVisible(),true,'Data import did not offer to reload Nyx');
+  await page.setViewportSize({width:390,height:844});
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=document.documentElement.clientWidth),true,'Portable Data Transfer settings overflowed a mobile viewport');
+  await page.setViewportSize({width:1280,height:800});
+  await page.locator('[data-settings-category-button="proxy"]').click();
+  await page.waitForSelector('[data-settings-category="proxy"].active');
+  const wispInput=page.locator('[data-qbf7e2f2d88932dfd40]');
+  await wispInput.waitFor();
+  assert.equal(await wispInput.isVisible(),true,'Wisp URL control was not visible in Proxy settings');
+  await wispInput.fill('wss://relay.example.test/custom-wisp');
+  await page.locator('[data-q1123eb0020138b2f49]').click();
+  assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.wispUrl')),'wss://relay.example.test/custom-wisp','Custom Wisp URL was not persisted');
+  assert.match(await page.locator('[data-q86dde24274e14c31d0]').textContent(),/Custom relay: wss:\/\/relay\.example\.test\/custom-wisp/,'Custom Wisp URL was not selected at runtime');
+  await wispInput.fill('https://relay.example.test/wisp');
+  await page.locator('[data-q1123eb0020138b2f49]').click();
+  assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.wispUrl')),'wss://relay.example.test/custom-wisp','Invalid Wisp protocol replaced the saved relay');
+  await page.locator('[data-q8d023add461854c6a8]').click();
+  assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.wispUrl')),'','Reset did not restore the default Wisp relay');
+  assert.match(await page.locator('[data-q86dde24274e14c31d0]').textContent(),/^Default relay: wss?:\/\//,'Default Wisp relay status was not restored');
+  await page.locator('.brand-mini [data-q9d19fb46ab08b6ee2e]').evaluate(button=>button.click());
+  await page.waitForSelector('.q1b8b57bdd44ab91267',{state:'detached'});
+  assert.equal(await page.locator('.qabe30eb136bdd4788a.active strong').textContent(),'New Tab','New tab created from Settings did not become the active blank tab');
+  assert.equal(await page.locator('[data-qdb41a1359ce5a90298]').inputValue(),'','New tab created from Settings inherited its internal URL');
+  assert.equal(await page.locator('.n2ac0604c6ebc.q276ba5cc5bedf5dcef .n7x-minimal-home:visible').count(),1,'New tab created from Settings did not show the Nyx homepage');
+  await page.locator('[data-n7x-dock-item="home"]').click();
+  const tabLifecycleHomeSearch=page.locator('.n2ac0604c6ebc.q276ba5cc5bedf5dcef [data-q53154c3f0fbe71a11b]');
+  await tabLifecycleHomeSearch.fill('stale tab search');
+  await page.locator('.brand-mini [data-q9d19fb46ab08b6ee2e]').evaluate(button=>button.click());
+  assert.equal(await page.locator('.n2ac0604c6ebc.q276ba5cc5bedf5dcef [data-q53154c3f0fbe71a11b]').inputValue(),'','A new blank tab inherited the previous tab search text');
+  await page.locator('.qabe30eb136bdd4788a.active [data-q47005c6be549e6ea19]').evaluate(button=>button.click());
+  assert.equal(await page.locator('.n2ac0604c6ebc.q276ba5cc5bedf5dcef [data-q53154c3f0fbe71a11b]').inputValue(),'','Closing a blank tab restored stale homepage search text');
+  assert.equal(await page.locator('[data-qdb41a1359ce5a90298]').inputValue(),'','Closing a blank tab restored stale address text');
+  if(await page.evaluate(()=>document.documentElement.dataset.n7xSidebarWidth!=='expanded')){
+    await page.locator('[data-n7x-dock-expand]').click();
+  }
+  assert.equal(await page.evaluate(()=>document.documentElement.dataset.n7xSidebarWidth),'expanded','Visual tab rail did not expand for close-button regression');
+  const dockDate=page.locator('[data-n7x-dock-date]');
+  await page.waitForFunction(()=>Boolean(document.querySelector('[data-n7x-visual-dock]')),{timeout:1_500});
+  assert.match(await dockDate.textContent(),/\b20\d{2}\b/,'Expanded rail date did not include the year');
+  assert.equal(await dockDate.evaluate(date=>date.scrollWidth<=date.clientWidth),true,'Expanded rail date was clipped');
+  if(!await page.evaluate(()=>document.body.classList.contains('q6e96f5349ef4ff828d'))){
+    await page.locator('[data-qf82a8e00c871cbd8d2]').first().evaluate(button=>button.click());
+  }
+  assert.equal(await page.evaluate(()=>document.body.classList.contains('q6e96f5349ef4ff828d')),true,'Tab sidebar did not open for close-button regression');
+  for(let closeCycle=0;closeCycle<5;closeCycle+=1){
+    await page.locator('#q5672b0e51cce534e59 [data-q9d19fb46ab08b6ee2e]').evaluate(button=>button.click());
+    const activeClose=page.locator('#q5672b0e51cce534e59 .qabe30eb136bdd4788a.active [data-q47005c6be549e6ea19]');
+    await activeClose.waitFor();
+    assert.equal(await activeClose.evaluate(button=>button.tagName),'BUTTON','Tab close control was not a native button');
+    await activeClose.evaluate(button=>button.click());
+    await page.waitForFunction(()=>Boolean(document.querySelector('[data-n7x-visual-dock]')),{timeout:1_500});
+    const railState=await page.evaluate(()=>{
+      const dock=document.querySelector('[data-n7x-visual-dock]');
+      if(!dock) return {
+        connected:false,
+        bodyClass:document.body.className,
+        shellPreference:localStorage.getItem('nyx.browserShellMode'),
+        homeDesign:localStorage.getItem('nyx.homeDesign'),
+        chrome:document.querySelector('.n11c31f2b2fec')?.textContent?.slice(0,80) || ''
+      };
+      const box=dock.getBoundingClientRect();
+      const style=getComputedStyle(dock);
+      return {connected:dock.isConnected,width:box.width,height:box.height,display:style.display,visibility:style.visibility};
+    });
+    assert.equal(railState.connected,true,`Visual tab rail detached after close cycle ${closeCycle+1}: ${JSON.stringify(railState)}`);
+    assert.ok(railState.width>200&&railState.height>200&&railState.display!=='none'&&railState.visibility!=='hidden',`Visual tab rail disappeared after close cycle ${closeCycle+1}`);
+    assert.equal(await page.evaluate(()=>document.documentElement.dataset.n7xSidebarWidth),'expanded',`Closing a tab collapsed the visual rail on cycle ${closeCycle+1}`);
+    assert.equal(await page.evaluate(()=>document.body.classList.contains('q6e96f5349ef4ff828d')),true,`Closing a tab dismissed the tab sidebar on cycle ${closeCycle+1}`);
+  }
+
+  await page.locator('[data-n7x-dock-item="chat"]').click();
+  const chatFrame=page.frames().find(frame=>new URL(frame.url()).pathname==='/apps/chat/');
+  if(!chatFrame)await page.waitForTimeout(500);
+  const activeChatFrame=page.frames().find(frame=>new URL(frame.url()).pathname==='/apps/chat/');
+  assert.ok(activeChatFrame,'Embedded Chat frame did not open');
+  const existingMessage=activeChatFrame.locator('[data-message-id="test-message-1"]');
+  await existingMessage.waitFor();
+  await existingMessage.evaluate(node=>{node.dataset.renderIdentity='retained'});
+  const chatInput=activeChatFrame.locator('[data-message-input]');
+  await chatInput.fill(':sku');
+  await activeChatFrame.locator('.mention-menu:not([hidden])').waitFor();
+  assert.equal(await activeChatFrame.locator('.mention-option').first().locator('strong').textContent(),':skull:','Emoji shortcode suggestion did not rank the matching emoji first');
+  await chatInput.press('Enter');
+  assert.equal(await chatInput.inputValue(),'\u{1F480} ','Emoji suggestion did not insert the selected emoji');
+  await chatInput.fill('');
+  const replyActionFound=await existingMessage.evaluate(node=>{
+    node.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:180,clientY:180}));
+    const action=[...document.querySelectorAll('[data-message-context-menu] .message-context-action')].find(button=>button.textContent.includes('Reply'));
+    action?.click();
+    return Boolean(action);
+  });
+  assert.equal(replyActionFound,true,'Message context menu did not offer Reply');
+  const replyPreview=activeChatFrame.locator('[data-reply-preview]:not([hidden])');
+  await replyPreview.waitFor();
+  assert.match(await replyPreview.textContent(),/Replying to Chat Member.*Existing message/s,'Replying did not show the referenced message in the composer');
+  await chatInput.fill('Smooth send');
+  await chatInput.press('Enter');
+  await activeChatFrame.locator('[data-message-id="test-message-2"]').waitFor();
+  assert.equal(postedChatMessage?.replyToMessageId,'test-message-1','Chat did not send the referenced message ID');
+  assert.match(await activeChatFrame.locator('[data-message-id="test-message-2"] .message-reply-reference').textContent(),/Chat Member.*Existing message/s,'Sent reply did not render its referenced message');
+  assert.equal(await activeChatFrame.locator('[data-reply-preview]:not([hidden])').count(),0,'Reply preview remained after sending');
+  assert.equal(await existingMessage.getAttribute('data-render-identity'),'retained','An unchanged message was rebuilt during a realtime-style send');
+  await activeChatFrame.waitForSelector('.member-button');
+  await activeChatFrame.locator('.member-button').filter({hasText:'Chat Member'}).click();
+  await activeChatFrame.locator('[data-member-dialog][open] .member-card-title').waitFor();
+  assert.match(await activeChatFrame.locator('[data-member-dialog]').textContent(),/Chat Member/);
+  assert.equal(await page.locator('.n7x-profile-directory-overlay.show').count(),0,'Chat should open its compact card without the profile directory');
+
+
+  await page.evaluate(()=>{
+    sessionStorage.setItem('nyx.test.releaseNotesFresh','true');
+  Object.keys(localStorage).filter(key=>key.startsWith('nyx.releaseNotes.2026-08-31-new-nyx.')).forEach(key=>localStorage.removeItem(key));
+  });
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForSelector('.n7x-release-notes-overlay.show',{timeout:10_000});
+  assert.equal(await page.locator('.n7x-release-notes footer span').count(),0,'Release notes still showed the one-time explanatory text');
+  assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.releaseNotes.2026-08-31-new-nyx.seen')),'2026-08-31-new-nyx','Release notes were not acknowledged when shown');
+  await page.locator('.n7x-release-notes [data-n7x-release-notes-close]').last().click();
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.waitForTimeout(1400);
+  assert.equal(await page.locator('.n7x-release-notes-overlay').count(),0,'Release notes appeared again after acknowledgement');
+
+  assert.deepEqual(pageErrors,[],`Browser errors: ${pageErrors.join(' | ')}`);
+  console.log('Homepage constellation, browser URL privacy, colored app icons, account controls, and embedded Chat profile regression passed.');
+}finally{
+  await browser?.close().catch(()=>{});
+  if(server.exitCode===null)server.kill();
+}

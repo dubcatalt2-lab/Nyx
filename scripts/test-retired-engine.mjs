@@ -1,0 +1,11 @@
+﻿import assert from 'node:assert/strict';import {readFileSync,existsSync,readdirSync} from 'node:fs';import {parse} from 'acorn';import vm from 'node:vm';
+const manifest=JSON.parse(readFileSync('package.json'));const lock=JSON.parse(readFileSync('package-lock.json'));
+assert(!Object.keys(manifest.dependencies).some(n=>/ultraviolet/i.test(n)));assert(!Object.keys(lock.packages).some(n=>/ultraviolet/i.test(n)));
+assert(!existsSync('node_modules/@titaniumnetwork-dev/ultraviolet'));
+for(const path of ['uv.config.js','uv.sw.js','stem-connect.sw.js','uv/uv.bundle.js','uv/uv.handler.js','uv/uv.client.js','uv/uv.sw.js'])assert(!existsSync(path));
+const aliases=JSON.parse(readFileSync('dist/proxy-assets.json')).aliases;assert(!Object.keys(aliases).some(k=>/^\/(uv[/.]|stem-connect)/.test(k)));
+const source=readFileSync('script.js','utf8');let code='';const visit=n=>{if(!n||typeof n!=='object')return;if(n.type==='FunctionDeclaration'&&n.id.name==='retireAlternateEngine')code=source.slice(n.start,n.end);for(const v of Object.values(n))if(Array.isArray(v))v.forEach(visit);else if(v&&typeof v==='object')visit(v);};visit(parse(source,{ecmaVersion:'latest'}));
+const removed=[];const state={'nyx.browserMode':'ultraviolet','nyx.saved':'keep'};const scopes=['https://fixture.test/service/','https://fixture.test/uv/','https://fixture.test/~/sj/','https://other.test/service/'];
+const context={URL,DEFAULT_BROWSER_MODE:'scramjet',location:{origin:'https://fixture.test'},store:{text:(k,d)=>state[k]??d,setText:(k,v)=>state[k]=v},navigator:{serviceWorker:{getRegistrations:async()=>scopes.map(scope=>({scope,unregister:async()=>removed.push(scope)}))}}};
+const retire=vm.runInNewContext('let retiredEngineCleanup=null;'+code+';retireAlternateEngine',context);await retire();await retire();assert.deepEqual(removed,scopes.slice(0,2));assert.equal(state['nyx.browserMode'],'scramjet');assert.equal(state['nyx.saved'],'keep');
+console.log('PASS retired dependency absent from manifest, lock, installation, source assets and build aliases; scoped worker cleanup and saved-selection migration preserve unrelated state.');

@@ -1,0 +1,197 @@
+
+.n7x-avatar-decoration-astral-ring-alpha { --n7x-decoration-image: url("/assets/profile/decorations/astral-ring-alpha.png"); --n7x-decoration-still: url("/assets/profile/decorations/astral-ring-alpha-still.png"); }
+.n7x-avatar-decoration-celestial-crown { --n7x-decoration-image: url("/assets/profile/decorations/celestial-crown.png"); --n7x-decoration-still: url("/assets/profile/decorations/celestial-crown-still.png"); }
+.n7x-avatar-decoration-neon-vortex { --n7x-decoration-image: url("/assets/profile/decorations/neon-vortex.png"); --n7x-decoration-still: url("/assets/profile/decorations/neon-vortex-still.png"); }
+.n7x-avatar-decoration-solar-flare-ring { --n7x-decoration-image: url("/assets/profile/decorations/solar-flare-ring.png"); --n7x-decoration-still: url("/assets/profile/decorations/solar-flare-ring-still.png"); }
+.n7x-avatar-decoration-void-ring { --n7x-decoration-image: url("/assets/profile/decorations/void-ring.png"); --n7x-decoration-still: url("/assets/profile/decorations/void-ring-still.png"); }
+.n7x-avatar-decoration-cybernetic-halo { --n7x-decoration-image: url("/assets/profile/decorations/cybernetic-halo.png"); --n7x-decoration-still: url("/assets/profile/decorations/cybernetic-halo-still.png"); }
+.n7x-avatar-decoration-crimson-shield { --n7x-decoration-image: url("/assets/profile/decorations/crimson-shield.png"); --n7x-decoration-still: url("/assets/profile/decorations/crimson-shield-still.png"); }
+.n7x-avatar-decoration-quantum-ring { --n7x-decoration-image: url("/assets/profile/decorations/quantum-ring.png"); --n7x-decoration-still: url("/assets/profile/decorations/quantum-ring-still.png"); }
+.n7x-avatar-decoration-ethereal-aura { --n7x-decoration-image: url("/assets/profile/decorations/ethereal-aura.png"); --n7x-decoration-still: url("/assets/profile/decorations/ethereal-aura-still.png"); }
+.n7x-avatar-decoration-static-frost { --n7x-decoration-image: url("/assets/profile/decorations/static-frost.png"); --n7x-decoration-still: url("/assets/profile/decorations/static-frost-still.png"); }
+.n7x-avatar-decoration-prismatic-glow { --n7x-decoration-image: url("/assets/profile/decorations/prismatic-glow.png"); --n7x-decoration-still: url("/assets/profile/decorations/prismatic-glow-still.png"); }
+.n7x-avatar-decoration-supernova-ring { --n7x-decoration-image: url("/assets/profile/decorations/supernova-ring.png"); --n7x-decoration-still: url("/assets/profile/decorations/supernova-ring-still.png"); }
+.n7x-avatar-decoration-neon-pulse { --n7x-decoration-image: url("/assets/profile/decorations/neon-pulse.png"); --n7x-decoration-still: url("/assets/profile/decorations/neon-pulse-still.png"); }
+.n7x-avatar-decoration-arcane-circle { --n7x-decoration-image: url("/assets/profile/decorations/arcane-circle.png"); --n7x-decoration-still: url("/assets/profile/decorations/arcane-circle-still.png"); }
+.n7x-avatar-decoration-cosmic-dust { --n7x-decoration-image: url("/assets/profile/decorations/cosmic-dust.png"); --n7x-decoration-still: url("/assets/profile/decorations/cosmic-dust-still.png"); }
+.n7x-avatar-decoration-stellar-ring { --n7x-decoration-image: url("/assets/profile/decorations/stellar-ring.png"); --n7x-decoration-still: url("/assets/profile/decorations/stellar-ring-still.png"); }
+.n7x-avatar-decoration-gilded-halo { --n7x-decoration-image: url("/assets/profile/decorations/gilded-halo.png"); --n7x-decoration-still: url("/assets/profile/decorations/gilded-halo-still.png"); }
+.n7x-avatar-decoration-plasma-ring { --n7x-decoration-image: url("/assets/profile/decorations/plasma-ring.png"); --n7x-decoration-still: url("/assets/profile/decorations/plasma-ring-still.png"); }
+.n7x-avatar-decoration-hyperdrive { --n7x-decoration-image: url("/assets/profile/decorations/hyperdrive.png"); --n7x-decoration-still: url("/assets/profile/decorations/hyperdrive-still.png"); }
+.n7x-avatar-decoration-infernal-ring { --n7x-decoration-image: url("/assets/profile/decorations/infernal-ring.png"); --n7x-decoration-still: url("/assets/profile/decorations/infernal-ring-still.png"); }
+.n7x-avatar-decoration-solar-ring { --n7x-decoration-image: url("/assets/profile/decorations/solar-ring.png"); --n7x-decoration-still: url("/assets/profile/decorations/solar-ring-still.png"); }
+.n7x-avatar-decoration-nebula-ring { --n7x-decoration-image: url("/assets/profile/decorations/nebula-ring.png"); --n7x-decoration-still: url("/assets/profile/decorations/nebula-ring-still.png"); }
+.n7x-avatar-decoration-prism-crown { --n7x-decoration-image: url("/assets/profile/decorations/prism-crown.png"); --n7x-decoration-still: url("/assets/profile/decorations/prism-crown-still.png"); }
+.n7x-avatar-decoration-ember-ring { --n7x-decoration-image: url("/assets/profile/decorations/ember-ring.png"); --n7x-decoration-still: url("/assets/profile/decorations/ember-ring-still.png"); }
+.n7x-avatar-decoration-vortex-crown { --n7x-decoration-image: url("/assets/profile/decorations/vortex-crown.png"); --n7x-decoration-still: url("/assets/profile/decorations/vortex-crown-still.png"); }
+.n7x-avatar-decoration-astral-ring-alpha>.n7x-avatar-decoration,
+.n7x-avatar-decoration-celestial-crown>.n7x-avatar-decoration,
+.n7x-avatar-decoration-neon-vortex>.n7x-avatar-decoration,
+.n7x-avatar-decoration-solar-flare-ring>.n7x-avatar-decoration,
+.n7x-avatar-decoration-void-ring>.n7x-avatar-decoration,
+.n7x-avatar-decoration-cybernetic-halo>.n7x-avatar-decoration,
+.n7x-avatar-decoration-crimson-shield>.n7x-avatar-decoration,
+.n7x-avatar-decoration-quantum-ring>.n7x-avatar-decoration,
+.n7x-avatar-decoration-ethereal-aura>.n7x-avatar-decoration,
+.n7x-avatar-decoration-static-frost>.n7x-avatar-decoration,
+.n7x-avatar-decoration-prismatic-glow>.n7x-avatar-decoration,
+.n7x-avatar-decoration-supernova-ring>.n7x-avatar-decoration,
+.n7x-avatar-decoration-neon-pulse>.n7x-avatar-decoration,
+.n7x-avatar-decoration-arcane-circle>.n7x-avatar-decoration,
+.n7x-avatar-decoration-cosmic-dust>.n7x-avatar-decoration,
+.n7x-avatar-decoration-stellar-ring>.n7x-avatar-decoration,
+.n7x-avatar-decoration-gilded-halo>.n7x-avatar-decoration,
+.n7x-avatar-decoration-plasma-ring>.n7x-avatar-decoration,
+.n7x-avatar-decoration-hyperdrive>.n7x-avatar-decoration,
+.n7x-avatar-decoration-infernal-ring>.n7x-avatar-decoration,
+.n7x-avatar-decoration-solar-ring>.n7x-avatar-decoration,
+.n7x-avatar-decoration-nebula-ring>.n7x-avatar-decoration,
+.n7x-avatar-decoration-prism-crown>.n7x-avatar-decoration,
+.n7x-avatar-decoration-ember-ring>.n7x-avatar-decoration,
+.n7x-avatar-decoration-vortex-crown>.n7x-avatar-decoration {
+  display: block !important;
+  position: absolute !important;
+  inset: -15% !important;
+  width: 130% !important;
+  height: 130% !important;
+  z-index: 3 !important;
+  background: var(--n7x-decoration-current, var(--n7x-decoration-still)) center / contain no-repeat !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  filter: none !important;
+  transform: none !important;
+  pointer-events: none !important;
+}
+.n7x-avatar-decoration-astral-ring-alpha>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-astral-ring-alpha>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-astral-ring-alpha>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-celestial-crown>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-celestial-crown>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-celestial-crown>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-neon-vortex>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-neon-vortex>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-neon-vortex>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-solar-flare-ring>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-solar-flare-ring>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-solar-flare-ring>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-void-ring>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-void-ring>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-void-ring>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-cybernetic-halo>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-cybernetic-halo>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-cybernetic-halo>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-crimson-shield>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-crimson-shield>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-crimson-shield>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-quantum-ring>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-quantum-ring>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-quantum-ring>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-ethereal-aura>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-ethereal-aura>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-ethereal-aura>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-static-frost>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-static-frost>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-static-frost>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-prismatic-glow>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-prismatic-glow>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-prismatic-glow>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-supernova-ring>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-supernova-ring>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-supernova-ring>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-neon-pulse>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-neon-pulse>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-neon-pulse>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-arcane-circle>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-arcane-circle>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-arcane-circle>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-cosmic-dust>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-cosmic-dust>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-cosmic-dust>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-stellar-ring>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-stellar-ring>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-stellar-ring>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-gilded-halo>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-gilded-halo>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-gilded-halo>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-plasma-ring>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-plasma-ring>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-plasma-ring>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-hyperdrive>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-hyperdrive>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-hyperdrive>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-infernal-ring>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-infernal-ring>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-infernal-ring>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-solar-ring>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-solar-ring>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-solar-ring>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-nebula-ring>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-nebula-ring>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-nebula-ring>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-prism-crown>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-prism-crown>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-prism-crown>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-ember-ring>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-ember-ring>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-ember-ring>.n7x-avatar-decoration>span,
+.n7x-avatar-decoration-vortex-crown>.n7x-avatar-decoration::before,
+.n7x-avatar-decoration-vortex-crown>.n7x-avatar-decoration::after,
+.n7x-avatar-decoration-vortex-crown>.n7x-avatar-decoration>span { display: none !important; }
+@media (prefers-reduced-motion: reduce) {
+.n7x-avatar-decoration-astral-ring-alpha>.n7x-avatar-decoration,
+.n7x-avatar-decoration-celestial-crown>.n7x-avatar-decoration,
+.n7x-avatar-decoration-neon-vortex>.n7x-avatar-decoration,
+.n7x-avatar-decoration-solar-flare-ring>.n7x-avatar-decoration,
+.n7x-avatar-decoration-void-ring>.n7x-avatar-decoration,
+.n7x-avatar-decoration-cybernetic-halo>.n7x-avatar-decoration,
+.n7x-avatar-decoration-crimson-shield>.n7x-avatar-decoration,
+.n7x-avatar-decoration-quantum-ring>.n7x-avatar-decoration,
+.n7x-avatar-decoration-ethereal-aura>.n7x-avatar-decoration,
+.n7x-avatar-decoration-static-frost>.n7x-avatar-decoration,
+.n7x-avatar-decoration-prismatic-glow>.n7x-avatar-decoration,
+.n7x-avatar-decoration-supernova-ring>.n7x-avatar-decoration,
+.n7x-avatar-decoration-neon-pulse>.n7x-avatar-decoration,
+.n7x-avatar-decoration-arcane-circle>.n7x-avatar-decoration,
+.n7x-avatar-decoration-cosmic-dust>.n7x-avatar-decoration,
+.n7x-avatar-decoration-stellar-ring>.n7x-avatar-decoration,
+.n7x-avatar-decoration-gilded-halo>.n7x-avatar-decoration,
+.n7x-avatar-decoration-plasma-ring>.n7x-avatar-decoration,
+.n7x-avatar-decoration-hyperdrive>.n7x-avatar-decoration,
+.n7x-avatar-decoration-infernal-ring>.n7x-avatar-decoration,
+.n7x-avatar-decoration-solar-ring>.n7x-avatar-decoration,
+.n7x-avatar-decoration-nebula-ring>.n7x-avatar-decoration,
+.n7x-avatar-decoration-prism-crown>.n7x-avatar-decoration,
+.n7x-avatar-decoration-ember-ring>.n7x-avatar-decoration,
+.n7x-avatar-decoration-vortex-crown>.n7x-avatar-decoration { background-image: var(--n7x-decoration-still) !important; }
+}
+body.lag-reducer .n7x-avatar-decoration-astral-ring-alpha>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-celestial-crown>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-neon-vortex>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-solar-flare-ring>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-void-ring>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-cybernetic-halo>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-crimson-shield>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-quantum-ring>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-ethereal-aura>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-static-frost>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-prismatic-glow>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-supernova-ring>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-neon-pulse>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-arcane-circle>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-cosmic-dust>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-stellar-ring>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-gilded-halo>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-plasma-ring>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-hyperdrive>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-infernal-ring>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-solar-ring>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-nebula-ring>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-prism-crown>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-ember-ring>.n7x-avatar-decoration,
+body.lag-reducer .n7x-avatar-decoration-vortex-crown>.n7x-avatar-decoration { background-image: var(--n7x-decoration-still) !important; }
+
+.n7x-avatar-decoration,.n7x-avatar-decoration::before,.n7x-avatar-decoration::after,.n7x-avatar-decoration *{animation-play-state:paused!important}
+@media(hover:hover) and (prefers-reduced-motion:no-preference){
+[class*="n7x-avatar-decoration-"]:hover{--n7x-decoration-current:var(--n7x-decoration-image)}
+[class*="n7x-avatar-decoration-"]:hover>.n7x-avatar-decoration,[class*="n7x-avatar-decoration-"]:hover>.n7x-avatar-decoration::before,[class*="n7x-avatar-decoration-"]:hover>.n7x-avatar-decoration::after,[class*="n7x-avatar-decoration-"]:hover>.n7x-avatar-decoration *{animation-play-state:running!important}
+}

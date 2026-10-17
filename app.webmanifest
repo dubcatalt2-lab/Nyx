@@ -1,0 +1,26 @@
+{
+  "id": "/",
+  "name": "N7X",
+  "short_name": "N7X",
+  "description": "Your browser workspace and apps.",
+  "start_url": "/?source=installed-app",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0b1628",
+  "theme_color": "#0b1628",
+  "icons": [
+    {
+      "src": "/assets/icons/nyx-app-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/nyx-app-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "prefer_related_applications": false
+}

@@ -1,7 +1,5 @@
 *
 !package.json
 !package-lock.json
-!fellowship-server.js
-!scripture/
-!scripture/fellowship-relay.mjs
-!Dockerfile.fellowship
+!wisp-server.js
+!Dockerfile.wisp

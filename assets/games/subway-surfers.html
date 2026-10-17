@@ -1,0 +1,25 @@
+<!doctype html>
+<html data-edition="barcelona"><head><meta charset="utf-8">
+<base href="https://cdn.jsdelivr.net/gh/bubbls/subwaysurfersmerge@main/">
+<style>html,body,#game{margin:0;width:100%;height:100%;background:#111}#status{position:fixed;inset:0;display:grid;place-items:center;color:#eee;font:16px system-ui;pointer-events:none}</style>
+<script src="4399.ss.js"></script><script src="UnityLoader.2019.2.js"></script></head><body><div id="game"></div><div id="status">Loading Subway Surfers…</div>
+<script>
+(async()=>{
+ const winter=document.documentElement.dataset.edition==='winter-holiday';
+ const title=winter?'WinterHoliday':'Barcelona',base=document.baseURI,status=document.getElementById('status');
+ const urls=[];
+ async function read(path){const response=await fetch(new URL(path,base));if(!response.ok)throw Error(`Game file unavailable (${response.status})`);return response;}
+ async function asset(suffix){
+   if(winter)return new URL(`winter-holiday/${title}.${suffix}`,base).href;
+   const chunks=await Promise.all([1,2].map(async part=>(await read(`${title}.${suffix}.part${part}`)).arrayBuffer()));
+   const url=URL.createObjectURL(new Blob(chunks));urls.push(url);return url;
+ }
+ try {
+   const [config,dataUrl,wasmCodeUrl]=await Promise.all([(await read(title+'.json')).json(),asset('data.unityweb'),asset('wasm.code.unityweb')]);
+   Object.assign(config,{dataUrl,wasmCodeUrl,wasmFrameworkUrl:new URL(title+'.wasm.framework.unityweb',base).href});
+   const url=URL.createObjectURL(new Blob([JSON.stringify(config)],{type:'application/json'}));urls.push(url);
+   UnityLoader.instantiate('game',url,{onProgress:(_game,progress)=>{status.textContent=`Loading Subway Surfers… ${Math.round(progress*100)}%`;if(progress===1)status.remove();}});
+ } catch(error){status.textContent=error.message;parent.postMessage({type:'gn-math:error',message:error.message},'*');}
+ addEventListener('pagehide',()=>urls.forEach(url=>URL.revokeObjectURL(url)),{once:true});
+})();
+</script></body></html>

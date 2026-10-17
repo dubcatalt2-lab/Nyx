@@ -1,5 +1,5 @@
 {
   "firestore": {
-    "rules": "covenant.rules"
+    "rules": "firestore.rules"
   }
 }

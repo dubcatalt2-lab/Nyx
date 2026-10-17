@@ -1,0 +1,94 @@
+﻿(() => {
+  // Presentation only: API names, form values, stored records and external pages
+  // keep their original text. Accessible names remain readable plain text.
+  if (globalThis.__interfaceTextReady) return;
+  globalThis.__interfaceTextReady = true;
+  const excluded = 'script,style,textarea,input,code,pre,kbd,samp,[contenteditable],[data-no-interface-text],[data-user-content],.chat-messages,.ai-messages,.lyrics,.captions,.ai-message,.message-content,[data-chat-history],[data-chat-messages]';
+  const originals = new WeakMap();
+  // document.title replaces its text node. Track the title element so a tab
+  // manager restoring its chosen title cannot trigger an endless rewrite loop.
+  const titleWrites = new WeakMap();
+  const managedTitles = new WeakSet();
+  const implicitOptionValues = new WeakMap();
+  const attributeExcluded = excluded.replace('textarea,input,','');
+  const attributes = ['title', 'placeholder', 'label'];
+  const accessibleLabels = new WeakMap();
+  const convertWords = text => text.replace(/\b(?:nyx|studyhub|delta\s*math)\b/gi, 'N7X')
+    .replace(/[A-Za-z]/g, ch => String.fromCodePoint((ch <= 'Z' ? 0x1d5a0 : 0x1d5ba) + ch.toLowerCase().charCodeAt(0) - 97));
+  // Keep technical text intact even when it shares a sentence with UI copy.
+  const convert = text => text.split(/(https?:\/\/[^\s<>]+|[\w.+-]+@[\w.-]+\.[a-z]{2,})/gi)
+    .map((part,index) => index % 2 ? part : convertWords(part)).join('');
+  function applyAttributes(element) {
+    // Input placeholders are decoration, unlike editable/submitted values.
+    if (element.closest(attributeExcluded)) return;
+    for (const name of attributes) {
+      if (name === 'label' && !['OPTION', 'OPTGROUP'].includes(element.tagName)) continue;
+      const value = element.getAttribute(name);
+      if (!value) continue;
+      const rendered = convert(value);
+      if (rendered !== value && (!element.hasAttribute('aria-label') || element.getAttribute('aria-label') === accessibleLabels.get(element)) && !element.hasAttribute('aria-labelledby') &&
+          ((name === 'placeholder' && !element.labels?.length) ||
+           (name === 'title' && element.matches('button,a') && !element.textContent.trim()))) {
+        const plain = value.normalize('NFKC');
+        element.setAttribute('aria-label', plain);
+        accessibleLabels.set(element, plain);
+      }
+      if (rendered !== value) element.setAttribute(name, rendered);
+    }
+  }
+  function apply(node) {
+    const parent = node.parentElement;
+    if (!parent || parent.closest(excluded)) return;
+    const text = node.nodeValue || '';
+    if (!/[A-Za-z]/.test(text)) return;
+    if (parent.tagName === 'TITLE') {
+      if (managedTitles.has(parent)) return;
+      const last = titleWrites.get(parent);
+      if (last && text === last.plain) {
+        managedTitles.add(parent);
+        return;
+      }
+    }
+    const previous = originals.get(node);
+    if (previous?.rendered === text) return;
+    const rendered = convert(text);
+    if (rendered === text) return;
+    // An option without a value uses its text as the submitted value.
+    const option = parent.closest('option');
+    if (option && (!option.hasAttribute('value') || option.getAttribute('value') === implicitOptionValues.get(option))) {
+      const value = option.text;
+      option.setAttribute('value', value);
+      implicitOptionValues.set(option, value);
+    }
+    const control = parent.closest('button,a,label,option,h1,h2,h3,h4,h5,h6');
+    if (control && (!control.hasAttribute('aria-label') || control.getAttribute('aria-label') === accessibleLabels.get(control))) {
+      const plain = control.textContent.normalize('NFKC').trim();
+      control.setAttribute('aria-label', plain);
+      accessibleLabels.set(control, plain);
+    }
+    originals.set(node, { plain: text, rendered });
+    if (parent.tagName === 'TITLE') titleWrites.set(parent, { plain: text, rendered });
+    node.nodeValue = rendered;
+  }
+  function scan(root) {
+    if (root.nodeType === Node.TEXT_NODE) { apply(root); return; }
+    if (root.nodeType !== Node.ELEMENT_NODE) return;
+    applyAttributes(root);
+    if (root.closest(excluded)) return;
+    root.querySelectorAll('[title],[placeholder],option[label],optgroup[label]').forEach(applyAttributes);
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) apply(walker.currentNode);
+  }
+  function start() {
+    scan(document.documentElement);
+    new MutationObserver(records => {
+      for (const record of records) {
+        if (record.type === 'attributes') applyAttributes(record.target);
+        else if (record.type === 'characterData') apply(record.target);
+        else for (const node of record.addedNodes) scan(node);
+      }
+    }).observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: attributes });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
+  else start();
+})();

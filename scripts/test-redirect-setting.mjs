@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+const source=readFileSync('script.js','utf8');
+const start=source.indexOf('  function createNavigationIntentPlugin('),end=source.indexOf('  function createScramjetCompatibilityPlugin(',start);
+let enabled=true,blocked=0;
+const hook=()=>({});const frame={go(){},hooks:{init:{pre:hook(),post:hook()},fetch:{intercept:hook(),preresponse:hook()}}};
+const context=vm.createContext({URL,Map,Date,store:{get:()=>enabled},browserShellSourceUrl:v=>v,window:{$scramjet:{Tap:{tap:(hook,fn)=>hook.fn=fn}}}});
+vm.runInContext(source.slice(start,end)+';globalThis.make=createNavigationIntentPlugin;',context);
+context.make(()=>blocked++,()=>false).install(frame);
+frame.hooks.init.pre.fn({isTopLevel:true,client:{url:'https://first.test/'},window:{document:{addEventListener(){}},addEventListener(){}}});
+const request=url=>({parsed:{isIframe:false,destination:'document',url:new URL(url)},request:{mode:'navigate',initialHeaders:new Headers()}});
+let props={};frame.hooks.fetch.intercept.fn(request('https://other.test/ad'),props);assert.equal(props.response.status,204);assert.equal(blocked,1);
+enabled=false;props={};frame.hooks.fetch.intercept.fn(request('https://other.test/ad'),props);assert.equal(props.response,undefined);
+enabled=true;frame.go('https://chosen.test/');props={};frame.hooks.fetch.intercept.fn(request('https://chosen.test/'),props);assert.equal(props.response,undefined);
+console.log('PASS redirects: blocked by default, live setting disables blocking, explicit navigation works');

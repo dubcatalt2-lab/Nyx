@@ -9,9 +9,10 @@ try{
  const page=await browser.newPage();await page.addInitScript(()=>{if(window!==top)return;for(const [k,v] of Object.entries({setupComplete:'true',tosAcceptedVersion:'2026-07-30','releaseNotes.2026-10-02-nyx-1.6.8.seen':'true'}))localStorage.setItem('nyx.'+k,v)});
  await page.goto('http://127.0.0.1:'+server.address().port+'/nyx');
  await page.locator('.n7x-minimal-brand h1').waitFor();await page.waitForFunction(()=>!document.body.matches('.n7x-startup-prep,.n7x-loading-active'));
- const title=page.locator('.n7x-minimal-brand h1');const style=await title.evaluate(n=>{const s=getComputedStyle(n);return {color:s.color,font:s.fontFamily,size:s.fontSize}});assert.equal(style.color,'rgb(53, 185, 122)');assert.match(style.font,/Inter/);assert.equal(style.size,'46px');
+ const title=page.locator('.n7x-minimal-brand h1');const style=await title.evaluate(n=>{const s=getComputedStyle(n);return {color:s.color,font:s.fontFamily,size:s.fontSize}});assert.equal(style.color,'rgb(255, 255, 255)');assert.match(style.font,/Inter/);assert.equal(style.size,'46px');
  const letters=page.locator('.q2c91e70b48a6');assert.equal(await letters.count(),3);
  assert.deepEqual(await letters.evaluateAll(nodes=>nodes.map(n=>{const s=getComputedStyle(n);return [s.animationDuration,s.animationDelay,s.animationTimingFunction]})),[['0.5s','0s','cubic-bezier(0.34, 1.56, 0.64, 1)'],['0.5s','0.05s','cubic-bezier(0.34, 1.56, 0.64, 1)'],['0.5s','0.1s','cubic-bezier(0.34, 1.56, 0.64, 1)']]);
+ assert.equal(await title.innerText(),'nyx');await page.waitForTimeout(1800);const dismiss=page.locator('[data-n7x-release-notes-close]').first();if(await dismiss.isVisible())await dismiss.click();await letters.first().hover();await page.waitForTimeout(180);assert.equal(await letters.first().evaluate(n=>getComputedStyle(n).scale),'1.2');
  await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await letters.first().evaluate(n=>getComputedStyle(n).animationName),'none');
  const button=page.locator('[data-n7x-dock-item="youtube"]');
  for(const [i,action] of ['pointer','Enter','Space'].entries()){

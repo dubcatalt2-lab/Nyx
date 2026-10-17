@@ -1,10 +1,10 @@
 // Browser adaptation of glreno/oneko. See assets/oneko/NOTICE.txt and LICENSE.txt.
 (() => {
-  if (window !== window.top || document.getElementById('n7x-pointer-cat')) return;
+  if (window !== window.top || document.getElementById('q42030cc527a43c03d8')) return;
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   const pointer = matchMedia('(any-pointer: fine)');
   const cat = document.createElement('img');
-  cat.id = 'n7x-pointer-cat';
+  cat.id = 'q42030cc527a43c03d8';
   cat.alt = '';
   cat.setAttribute('aria-hidden', 'true');
   cat.setAttribute('data-n7x-owned-overlay', '');

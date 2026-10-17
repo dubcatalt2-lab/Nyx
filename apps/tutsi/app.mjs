@@ -706,7 +706,7 @@ $("close-browser").onclick = () => {
   if(appPaths[location.hash.slice(1)] || document.body.dataset.view==='browser')closeBrowserTab();
   else removeWebsiteTab(activeTab);
 };
-$("browser-home").onclick=()=>{location.hash="home";};
+$("q4f959b063679fe3afa").onclick=()=>{location.hash="home";};
 addEventListener("keydown", (e) => {
   if (e.defaultPrevented) return;
   if (

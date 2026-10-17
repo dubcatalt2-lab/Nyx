@@ -5,17 +5,17 @@ html body.theme-midnight{
   --theme-strong:#e0f2fe!important;
   color:#e0f2fe!important;
 }
-html body.browser-shell.theme-midnight .browser-mode-menu button:hover{background:#10244e!important;color:#eff6ff!important}
+html body.q6172f40672fb949e9c.theme-midnight .q6a7a0c21fd56bd8b6d button:hover{background:#10244e!important;color:#eff6ff!important}
 
-html body.browser-shell.theme-midnight .n238da90cb7ed.maximized{top:94px!important;height:calc(100dvh - 94px)!important}
-html body.browser-shell.theme-midnight #browserModeMenu,
-html body.browser-shell.theme-midnight.menu-open #browserModeMenu,
-html body.browser-shell.theme-midnight .browser-mode-menu{top:94px!important}
+html body.q6172f40672fb949e9c.theme-midnight .n238da90cb7ed.maximized{top:94px!important;height:calc(100dvh - 94px)!important}
+html body.q6172f40672fb949e9c.theme-midnight #browserModeMenu,
+html body.q6172f40672fb949e9c.theme-midnight.menu-open #browserModeMenu,
+html body.q6172f40672fb949e9c.theme-midnight .q6a7a0c21fd56bd8b6d{top:94px!important}
 
-html body.browser-shell.theme-midnight .n238da90cb7ed.maximized{top:96px!important;height:calc(100dvh - 96px)!important}
-html body.browser-shell.theme-midnight #browserModeMenu,
-  html body.browser-shell.theme-midnight.menu-open #browserModeMenu,
-  html body.browser-shell.theme-midnight .browser-mode-menu{top:96px!important}
+html body.q6172f40672fb949e9c.theme-midnight .n238da90cb7ed.maximized{top:96px!important;height:calc(100dvh - 96px)!important}
+html body.q6172f40672fb949e9c.theme-midnight #browserModeMenu,
+  html body.q6172f40672fb949e9c.theme-midnight.menu-open #browserModeMenu,
+  html body.q6172f40672fb949e9c.theme-midnight .q6a7a0c21fd56bd8b6d{top:96px!important}
 @keyframes midnightShadowTabSelect{
   0%{opacity:.72;transform:scale(.92)}
   68%{opacity:1;transform:scale(1.025)}
@@ -32,52 +32,52 @@ html body.browser-shell.theme-midnight #browserModeMenu,
   100%{opacity:1;transform:translateY(0);scale:1}
 }
 
-html body.browser-shell.theme-midnight .n238da90cb7ed.maximized{
+html body.q6172f40672fb949e9c.theme-midnight .n238da90cb7ed.maximized{
     top:96px!important;
     height:calc(100dvh - 96px)!important;
   }
-html body.browser-shell.theme-midnight #browserModeMenu,
-  html body.browser-shell.theme-midnight.menu-open #browserModeMenu,
-  html body.browser-shell.theme-midnight .browser-mode-menu{
+html body.q6172f40672fb949e9c.theme-midnight #browserModeMenu,
+  html body.q6172f40672fb949e9c.theme-midnight.menu-open #browserModeMenu,
+  html body.q6172f40672fb949e9c.theme-midnight .q6a7a0c21fd56bd8b6d{
     top:96px!important;
   }
-html body.browser-shell.theme-midnight{
+html body.q6172f40672fb949e9c.theme-midnight{
   --n7x-final-shortcut-icon:#60a5fa!important;
   --n7x-shortcut-image-filter:brightness(0) saturate(100%) invert(65%) sepia(60%) saturate(946%) hue-rotate(184deg) brightness(101%) contrast(96%)!important;
 }
 
-html body.browser-shell{
+html body.q6172f40672fb949e9c{
   --n7x-final-shortcut-icon:#a78bfa!important;
   --n7x-shortcut-image-filter:brightness(0) saturate(100%) invert(65%) sepia(45%) saturate(2185%) hue-rotate(218deg) brightness(102%) contrast(96%)!important;
 }
-html body.browser-shell.theme-midnight{
+html body.q6172f40672fb949e9c.theme-midnight{
   --n7x-final-shortcut-icon:#60a5fa!important;
 }
-html body.browser-shell.theme-ruby{
+html body.q6172f40672fb949e9c.theme-ruby{
   --n7x-final-shortcut-icon:#fb7185!important;
 }
-html body.browser-shell.theme-emerald{
+html body.q6172f40672fb949e9c.theme-emerald{
   --n7x-final-shortcut-icon:#34d399!important;
 }
-html body.browser-shell.theme-sakura{
+html body.q6172f40672fb949e9c.theme-sakura{
   --n7x-final-shortcut-icon:#f472b6!important;
 }
-html body.browser-shell.theme-fresh{
+html body.q6172f40672fb949e9c.theme-fresh{
   --n7x-final-shortcut-icon:#0f8fa3!important;
 }
 
-html body.browser-shell.theme-midnight .n238da90cb7ed.n2ac0604c6ebc.maximized,
-html body.browser-shell.theme-midnight .n2ac0604c6ebc.maximized.browser-blank{
+html body.q6172f40672fb949e9c.theme-midnight .n238da90cb7ed.n2ac0604c6ebc.maximized,
+html body.q6172f40672fb949e9c.theme-midnight .n2ac0604c6ebc.maximized.q6139d8ecebcdf8e8c1{
   border-color:rgba(59,130,246,.46)!important;
 }
 
-html body.browser-shell .n238da90cb7ed.maximized{
+html body.q6172f40672fb949e9c .n238da90cb7ed.maximized{
     top:96px!important;
     height:calc(100dvh - 96px)!important;
   }
-html body.browser-shell #browserModeMenu,
-  html body.browser-shell.menu-open #browserModeMenu,
-  html body.browser-shell .browser-mode-menu{top:96px!important}
+html body.q6172f40672fb949e9c #browserModeMenu,
+  html body.q6172f40672fb949e9c.menu-open #browserModeMenu,
+  html body.q6172f40672fb949e9c .q6a7a0c21fd56bd8b6d{top:96px!important}
 
 @keyframes nyxSettingsReveal{
   from{opacity:0;transform:translateY(12px) scale(.985)}
@@ -97,11 +97,11 @@ html body.browser-shell #browserModeMenu,
   62%{opacity:1;translate:0 -2px;filter:blur(0)}
   100%{opacity:1;translate:none;filter:blur(0)}
 }
-html body.n7x-startup-reveal.browser-shell iframe.view.tab-opening{
+html body.n7x-startup-reveal.q6172f40672fb949e9c iframe.view.q198b8c1457f79ba0a5{
   animation:none!important;
 }
 
-html:not([data-n7x-beam-wallpaper]) body:not(.three-d-backgrounds):not(.custom-bg-active):not(.browser-content-active) .n87434a01ebb1{
+html:not([data-n7x-beam-wallpaper]) body:not(.three-d-backgrounds):not(.custom-bg-active):not(.q12346517d2fb00ddb9) .n87434a01ebb1{
   display:block!important;
   opacity:1!important;
   transition:filter .45s ease!important;
@@ -119,10 +119,10 @@ html body.theme-emerald .n87434a01ebb1{filter:hue-rotate(278deg) saturate(1.08) 
 html body.theme-sakura .n87434a01ebb1{filter:hue-rotate(85deg) saturate(1.08) brightness(1.02) contrast(.98)!important}
 html body.theme-fresh .n87434a01ebb1{filter:hue-rotate(318deg) saturate(.72) brightness(1.22) contrast(.90)!important}
 html body.three-d-backgrounds .n87434a01ebb1,
-html body.browser-content-active .n87434a01ebb1,
+html body.q12346517d2fb00ddb9 .n87434a01ebb1,
 html body.custom-bg-active .n87434a01ebb1{display:none!important}
 
-html body.browser-shell .settings-window .settings-card{
+html body.q6172f40672fb949e9c .settings-window .settings-card{
   min-height:0!important;
   padding:16px!important;
   border:1px solid color-mix(in srgb,var(--n7x-chrome-bright,var(--theme-border,#8b5cf6)) 25%,transparent)!important;
@@ -134,13 +134,13 @@ html body.browser-shell .settings-window .settings-card{
   -webkit-backdrop-filter:blur(36px) saturate(1.1)!important;
   transition:border-color 1.1s ease,background-color .45s ease,box-shadow 1.1s ease!important;
 }
-html body.browser-shell .settings-window .settings-card:hover{
+html body.q6172f40672fb949e9c .settings-window .settings-card:hover{
   transform:none!important;
   border-color:color-mix(in srgb,var(--n7x-chrome-bright,var(--theme-border,#8b5cf6)) 88%,transparent)!important;
   background-color:rgba(3,8,20,.52)!important;
   box-shadow:0 0 0 1px color-mix(in srgb,var(--n7x-chrome-bright,var(--theme-border,#8b5cf6)) 14%,transparent),0 0 22px color-mix(in srgb,var(--n7x-chrome-accent,var(--theme-border,#8b5cf6)) 22%,transparent),0 10px 28px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.08)!important;
 }
-html body.browser-shell .settings-window .settings-card > h2{
+html body.q6172f40672fb949e9c .settings-window .settings-card > h2{
   margin:0 0 9px!important;
   font-size:14px!important;
   font-weight:700!important;
@@ -148,14 +148,14 @@ html body.browser-shell .settings-window .settings-card > h2{
   letter-spacing:0!important;
   text-transform:lowercase!important;
 }
-html body.browser-shell .settings-window .settings-card :is(p,label,.settings-row span){
+html body.q6172f40672fb949e9c .settings-window .settings-card :is(p,label,.settings-row span){
   font-size:12px!important;
   font-weight:500!important;
   line-height:1.42!important;
   color:rgba(226,232,240,.74)!important;
   -webkit-text-fill-color:rgba(226,232,240,.74)!important;
 }
-html body.browser-shell .settings-window .settings-card :is(input:not([type="range"]),select,textarea,.settings-input,.settings-select,.panic-key-display){
+html body.q6172f40672fb949e9c .settings-window .settings-card :is(input:not([type="range"]),select,textarea,.settings-input,.settings-select,.panic-key-display){
   min-height:40px!important;
   border:1px solid color-mix(in srgb,var(--n7x-chrome-bright,var(--theme-border,#8b5cf6)) 25%,transparent)!important;
   border-radius:10px!important;
@@ -164,7 +164,7 @@ html body.browser-shell .settings-window .settings-card :is(input:not([type="ran
   padding:0 10px!important;
   font-size:14px!important;
 }
-html body.browser-shell .settings-window .settings-card :is(button,.settings-action){
+html body.q6172f40672fb949e9c .settings-window .settings-card :is(button,.settings-action){
   min-height:37px!important;
   width:auto;
   border:1px solid color-mix(in srgb,var(--n7x-chrome-bright,var(--theme-border,#8b5cf6)) 25%,transparent)!important;
@@ -175,18 +175,18 @@ html body.browser-shell .settings-window .settings-card :is(button,.settings-act
   font-size:13px!important;
   font-weight:600!important;
 }
-html body.browser-shell .settings-window .settings-card :is(button,.settings-action):hover{
+html body.q6172f40672fb949e9c .settings-window .settings-card :is(button,.settings-action):hover{
   transform:translateY(-1px) scale(1.025)!important;
   background:color-mix(in srgb,var(--n7x-chrome-accent,var(--theme-border,#8b5cf6)) 28%,transparent)!important;
 }
-html body.browser-shell .settings-window .settings-card .settings-row{
+html body.q6172f40672fb949e9c .settings-window .settings-card .settings-row{
   min-height:30px!important;
   display:grid!important;
   grid-template-columns:minmax(0,1fr) auto!important;
   align-items:center!important;
   gap:12px!important;
 }
-html body.browser-shell .settings-window .settings-card .settings-actions{
+html body.q6172f40672fb949e9c .settings-window .settings-card .settings-actions{
   display:flex!important;
   flex-wrap:wrap!important;
   gap:10px!important;
@@ -195,12 +195,12 @@ html body.browser-shell .settings-window .settings-card .settings-actions{
 
 
 
-html body .browser-tools.browser-tools button.tool-btn[data-reload]::before{
+html body .q02d92983412a114026.q02d92983412a114026 button.tool-btn[data-reload]::before{
   transform:rotate(var(--n7x-reload-turn,0deg)) scale(.96)!important;
   transform-origin:center!important;
   transition:none!important;
   will-change:transform!important;
 }
-html body .browser-tools.browser-tools button.tool-btn[data-reload]:hover::before{
+html body .q02d92983412a114026.q02d92983412a114026 button.tool-btn[data-reload]:hover::before{
   transform:rotate(var(--n7x-reload-turn,0deg)) scale(1.055)!important;
 }

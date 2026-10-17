@@ -56,12 +56,12 @@ try{
  holdRead=new Promise(resolve=>release=resolve);
  const restoring=page.waitForRequest(r=>new URL(r.url()).pathname==='/api/account/cloud-preferences'&&r.method()==='GET');
  await page.reload();await restoring;
- await page.waitForFunction(()=>document.body?.classList.contains('browser-shell')&&!document.body.classList.contains('n7x-loading-active'));
+ await page.waitForFunction(()=>document.body?.classList.contains('q6172f40672fb949e9c')&&!document.body.classList.contains('n7x-loading-active'));
  await page.locator('[data-n7x-dock-item="settings"]').click();
  assert.equal(await page.locator('[data-n7x-theme-card][aria-pressed="true"]').getAttribute('data-n7x-theme-card'),'custom');
  release();holdRead=null;
  await page.waitForFunction(()=>document.documentElement.dataset.n7xTheme==='halloween');
- assert.equal(await page.locator('.browser-shell-settings-overlay [data-theme-value]').inputValue(),'halloween');
+ assert.equal(await page.locator('.q1b8b57bdd44ab91267 [data-theme-value]').inputValue(),'halloween');
  assert.equal(await page.locator('[data-n7x-theme-card][aria-pressed="true"]').getAttribute('data-n7x-theme-card'),'halloween','open settings follow restored account theme');
  await page.screenshot({path:'.codex-artifacts/wallpaper-account-built.png'});
  assert.deepEqual(errors,[]);

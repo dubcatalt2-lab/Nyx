@@ -3,7 +3,7 @@ import {extractionFailure} from '../lib/nyxtube-streaming.mjs';
 assert.match(extractionFailure('This video is age-restricted').message,/age verification/);
 assert.match(extractionFailure('This video is not available in your country').message,/region/);
 assert.match(extractionFailure('Private video').message,/account or membership/);
-assert.equal(extractionFailure('Sign in to confirm you are not a bot').code,'authentication');
+assert.equal(extractionFailure('Sign in to confirm you are not a bot').code,'challenge');
 import { mkdtemp, writeFile, readFile, access, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';

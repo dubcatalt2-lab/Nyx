@@ -266,28 +266,28 @@ try {
     const redesignedNyxTubeDestination = discoveryPage.locator('[data-n7x-dock-item="video"][data-app-url="/apps/nyxtube/"]');
     await redesignedNyxTubeDestination.waitFor({ state: "attached" });
     await discoveryPage.evaluate(() => {
-      document.body.classList.add("browser-content-active");
+      document.body.classList.add("q12346517d2fb00ddb9");
       document.querySelectorAll("#n7xStudyHubStartup,#n3e8549522c8c,#n79425056e076,.n7x-tos-gate").forEach(element => { element.style.pointerEvents = "none"; });
     });
-    const addressBounds = await discoveryPage.locator('form.browser-mode-address > input.browser-mode-url').boundingBox();
+    const addressBounds = await discoveryPage.locator('form.qc4af721dd1914ea3fa > input.qda21bbca8c9cfc19ff').boundingBox();
     assert(addressBounds?.width > 100, `Browser address field did not have usable geometry: ${JSON.stringify(addressBounds)}`);
-    const addressBorder = discoveryPage.locator('form.browser-mode-address > .browser-mode-url-pointer-border');
+    const addressBorder = discoveryPage.locator('form.qc4af721dd1914ea3fa > .qaece243f7d963c6f85');
     for (let attempt = 0; attempt < 12; attempt += 1) {
       await discoveryPage.evaluate(() => {
-        const field = document.querySelector('form.browser-mode-address > input.browser-mode-url');
+        const field = document.querySelector('form.qc4af721dd1914ea3fa > input.qda21bbca8c9cfc19ff');
         const bounds = field?.getBoundingClientRect();
         field?.focus();
         if (field && bounds) field.dispatchEvent(new PointerEvent("pointermove", { bubbles: true, clientX: bounds.left + Math.min(120, bounds.width / 2), clientY: bounds.top + bounds.height / 2 }));
       });
       await discoveryPage.mouse.move(addressBounds.x + Math.min(120, addressBounds.width / 2), addressBounds.y + addressBounds.height / 2);
       await discoveryPage.waitForTimeout(100);
-      const width = await discoveryPage.evaluate(() => document.querySelector('form.browser-mode-address > .browser-mode-url-pointer-border')?.getBoundingClientRect().width || 0);
+      const width = await discoveryPage.evaluate(() => document.querySelector('form.qc4af721dd1914ea3fa > .qaece243f7d963c6f85')?.getBoundingClientRect().width || 0);
       if (width > 100) break;
     }
     await addressBorder.waitFor({ state: "attached" });
     const addressInteraction = await discoveryPage.evaluate(() => {
-      const field = document.querySelector('form.browser-mode-address > input.browser-mode-url');
-      const border = document.querySelector('form.browser-mode-address > .browser-mode-url-pointer-border');
+      const field = document.querySelector('form.qc4af721dd1914ea3fa > input.qda21bbca8c9cfc19ff');
+      const border = document.querySelector('form.qc4af721dd1914ea3fa > .qaece243f7d963c6f85');
       return {
         fieldShadow: field ? getComputedStyle(field).boxShadow : "missing",
         borderOpacity: border ? Number.parseFloat(getComputedStyle(border).opacity) : -1,

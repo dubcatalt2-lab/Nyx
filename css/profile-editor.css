@@ -76,7 +76,7 @@ html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-rail-header>[data-n7x
   font-size:14px!important;
 }
 
-html[data-n7x-theme] body .n7x-profile-editor-tabs{
+html[data-n7x-theme] body .qb5c9c56b474b373419{
   position:sticky;
   z-index:11;
   top:54px;
@@ -90,7 +90,7 @@ html[data-n7x-theme] body .n7x-profile-editor-tabs{
   backdrop-filter:blur(14px);
 }
 
-html[data-n7x-theme] body .n7x-profile-editor-tabs button{
+html[data-n7x-theme] body .qb5c9c56b474b373419 button{
   min-height:31px;
   padding:0 7px;
   overflow:hidden;
@@ -106,14 +106,14 @@ html[data-n7x-theme] body .n7x-profile-editor-tabs button{
   transition:background-color .18s ease,border-color .18s ease,color .18s ease,transform .18s ease;
 }
 
-html[data-n7x-theme] body .n7x-profile-editor-tabs button:is(:hover,:focus-visible){
+html[data-n7x-theme] body .qb5c9c56b474b373419 button:is(:hover,:focus-visible){
   border-color:#424651;
   background:#202229;
   color:#e5e7ec!important;
   outline:none;
 }
 
-html[data-n7x-theme] body .n7x-profile-editor-tabs button.active{
+html[data-n7x-theme] body .qb5c9c56b474b373419 button.active{
   border-color:color-mix(in srgb,var(--theme-accent,#5865f2) 58%,#50545e);
   background:color-mix(in srgb,var(--theme-accent,#5865f2) 18%,#24262d);
   color:#f5f6f8!important;
@@ -502,7 +502,7 @@ html[data-n7x-theme] body .n7x-profile-drawer .n7x-user-profile-form footer{
 }
 
 @media(prefers-reduced-motion:reduce){
-  html[data-n7x-theme] body .n7x-profile-editor-tabs button,
+  html[data-n7x-theme] body .qb5c9c56b474b373419 button,
   html[data-n7x-theme] body .n7x-profile-palette button,
   html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-field :is(input,select,textarea){transition:none!important}
 }

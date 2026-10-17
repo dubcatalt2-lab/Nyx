@@ -46,10 +46,10 @@ try{for(const brand of ['nyx']){
  if(process.argv.includes('--debug')){page.on('request',r=>{if(/transports|studyjet/.test(r.url()))console.log('REQUEST',r.url())});page.on('framenavigated',f=>console.log('NAV',f.url()));page.on('console',m=>{console.log(m.type(),m.text().slice(0,700),m.location());});}
  await page.goto(base+(brand==='nyx'?'/index.html':'/apps/'+brand+'/'));await page.waitForTimeout(8500);
  const dismiss=page.getByRole('button',{name:'Got it',exact:true});if(await dismiss.isVisible())await dismiss.click();
- const query=page.locator('[data-browser-blank-input]:visible').first();
+ const query=page.locator('[data-q53154c3f0fbe71a11b]:visible').first();
  await query.fill('https://source.test/start');await query.press('Enter');
- const frame=page.frameLocator('.browser-body iframe.view.active');
- const address=page.locator('[data-browser-shell-url]:visible').first();
+ const frame=page.frameLocator('.q6576ed118d3ca9c284 iframe.view.active');
+ const address=page.locator('[data-qdb41a1359ce5a90298]:visible').first();
  const source=()=>frame.locator('body').getAttribute('data-source');
  const requests=()=>page.evaluate(()=>globalThis.__navRequests||[]);
  async function go(url){await address.fill(url);await address.press('Enter');await page.waitForTimeout(1800);await frame.locator('#ready').waitFor();assert.equal(await source(),url);}
@@ -101,9 +101,9 @@ try{for(const brand of ['nyx']){
  assert.equal(await source(),'https://source.test/refreshed');
  await go('https://source.test/history');
  await go('https://destination.test/history');
- await page.locator('[data-browser-shell-back]:visible').click();await page.waitForTimeout(1800);
+ await page.locator('[data-q26048427ccea182348]:visible').click();await page.waitForTimeout(1800);
  assert.equal(await source(),'https://source.test/history');
- await page.locator('[data-browser-shell-forward]:visible').click();await page.waitForTimeout(1800);
+ await page.locator('[data-qaf80561c2b44848484]:visible').click();await page.waitForTimeout(1800);
  assert.equal(await source(),'https://destination.test/history');
  assert.equal(new URL(page.url()).origin,base,'Outer browser stays in Nyx');
  assert.deepEqual(errors,[]);

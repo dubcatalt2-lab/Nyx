@@ -331,7 +331,8 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
     instance=null;
     rendererFailed=true;
     try{failed?.dispose()}catch{}
-    if(canvas) canvas.dataset.renderer='fallback';
+    if(canvas){canvas.dataset.renderer='fallback';canvas.hidden=true;}
+    document.documentElement.classList.add('q861edf5b249c703a16');
     console.warn("N7X Beams renderer unavailable",error);
   }
 
@@ -344,6 +345,7 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
     try{
       instance=new BeamsRenderer(canvas,options);
       canvas.dataset.renderer='react-bits';
+      document.documentElement.classList.remove('q861edf5b249c703a16');
     }catch(error){
       failRenderer(error);
     }
@@ -353,13 +355,14 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
     if(document.documentElement.dataset.n7xBeamWallpaper==='obsidian' || document.documentElement.dataset.n7xBeamWallpaper?.startsWith('photo-')){instance?.stop();if(canvas)canvas.hidden=true;return;}
     if(!canvas) return;
     const body=document.body;
-    const externalContent=body?.classList.contains('browser-content-active') && !body.classList.contains('n7x-built-in-content-active');
+    const externalContent=body?.classList.contains('q12346517d2fb00ddb9') && !body.classList.contains('n7x-built-in-content-active');
     const lineWaves=document.documentElement?.dataset.n7xBeamWallpaper==='lineWaves';
     const hidden=!body || lineWaves || body.classList.contains('custom-bg-active') || body.classList.contains('three-d-backgrounds') || externalContent;
     canvas.hidden=hidden;
     if(hidden){instance?.stop(); return}
     try{
       const renderer=ensureInstance();
+      if(!renderer){if(!rendererFailed)failRenderer(new Error('Wallpaper graphics unavailable'));canvas.hidden=true;return;}
       renderer?.resize();
       renderer?.renderOnce();
       if(shouldAnimate()) renderer?.start();
@@ -371,6 +374,7 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
     options={...defaults,...options,lightColor:presets[selected].lightColor,...nextOptions};
     canvas=document.getElementById('n22e9fbee8c96') || canvas;
     if(canvas){canvas.dataset.preset=selected;canvas.dataset.lightColor=options.lightColor;}
+    document.documentElement.style.setProperty('--q704c6c4f9e',options.lightColor);
     if(instance && name!=='obsidian' && name!=='lineWaves' && !name.startsWith('photo-')){
       try{instance.update(options)}catch(error){failRenderer(error)}
     }
@@ -413,7 +417,7 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
     resizeObserver.observe(canvas);
     document.addEventListener('visibilitychange',()=>document.hidden ? instance?.stop() : syncVisibility());
     reducedMotion.addEventListener?.('change',syncVisibility);
-    canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();instance?.stop()});
+    canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();failRenderer(new Error('Wallpaper graphics context lost'))});
     canvas.addEventListener('webglcontextrestored',()=>{
       try{instance?.dispose()}catch{}
       instance=null;

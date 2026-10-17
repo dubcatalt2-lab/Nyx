@@ -125,7 +125,7 @@ try{
     await page.setViewportSize({width:1280,height:850});
     await page.locator('#n7xAccountButton').click();
     await page.locator('[data-n7x-account-menu-action="switch"]').click();
-    await page.locator('[data-n7x-account-tab="register"]').click();
+    await page.locator('[data-q59c088ac6f81fa75ff="register"]').click();
     await page.setViewportSize({width,height:850});
     assert.ok(cloudReads>0,'Unverified accounts must load cloud preferences');
     assert.match(await page.locator('.n7x-account-footer').innerText(),/Email is optional/);

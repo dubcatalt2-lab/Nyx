@@ -109,9 +109,9 @@ try {
     await page.waitForTimeout(1000);assert(receives>before,'Bridge resumes after enabled reload');
     await page.goto(base+'/nyx');await page.waitForFunction(()=>typeof nyxLaunchGameFrame==='function');
     await page.waitForFunction(()=>!document.querySelector('#n7xStudyHubStartup')&&!document.body.classList.contains('n7x-loading-active'));
-    await page.locator('[data-browser-shell-search]').evaluate(form=>{form.querySelector('[data-browser-shell-url]').value='https://example.com/';form.requestSubmit();});
+    await page.locator('[data-q9d12ba6470d10e32ab]').evaluate(form=>{form.querySelector('[data-qdb41a1359ce5a90298]').value='https://example.com/';form.requestSubmit();});
     await page.frameLocator('iframe.view.active').getByRole('heading',{name:'Example Domain'}).waitFor({timeout:60000});
-    await page.locator('[data-browser-shell-settings]').first().evaluate(el=>el.click());
+    await page.locator('[data-q0882cea5d2bc5ce380]').first().evaluate(el=>el.click());
     await page.locator('[data-settings-category-button="proxy"]').click();
     const toggle=page.locator('[data-switch="nyx.httpBridge"]');
     assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.httpBridge')),null);
@@ -120,13 +120,13 @@ try {
     for (const enabled of [false,true]) {
       await toggle.click();assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('nyx.httpBridge'))),enabled);
       const nyxBefore=receives;
-      await page.locator('[data-browser-shell-tab]').filter({hasText:'example.com'}).first().evaluate(el=>el.click());
-      await page.locator('[data-browser-shell-reload]').evaluate(el=>el.click());
+      await page.locator('[data-qe433f74df8b23c805b]').filter({hasText:'example.com'}).first().evaluate(el=>el.click());
+      await page.locator('[data-q931cb380a2dcf55a88]').evaluate(el=>el.click());
       await page.frameLocator('iframe.view.active').getByRole('heading',{name:'Example Domain'}).waitFor({timeout:60000});
       await page.waitForTimeout(1500);const settled=receives;await page.waitForTimeout(1500);
       if(enabled) assert(receives>nyxBefore,'Nyx existing tab reload applies HTTP transport');
       else assert.equal(receives,settled,'Nyx polling stops after direct reload');
-      await page.locator('[data-browser-shell-settings]').first().evaluate(el=>el.click());
+      await page.locator('[data-q0882cea5d2bc5ce380]').first().evaluate(el=>el.click());
       await page.locator('[data-settings-category-button="proxy"]').click();
     }
     await page.route('**/api/custom-hostnames/config',r=>r.fulfill({json:{enabled:true,targetIps:['15.204.93.166']}}));

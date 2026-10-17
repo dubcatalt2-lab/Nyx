@@ -13,7 +13,7 @@ try{
  await page.addInitScript(()=>{localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');});
  async function ready(){
   await page.goto(base,{waitUntil:'domcontentloaded'});
-  await page.waitForFunction(()=>document.body?.classList.contains('browser-shell')&&!document.body.classList.contains('n7x-loading-active'));
+  await page.waitForFunction(()=>document.body?.classList.contains('q6172f40672fb949e9c')&&!document.body.classList.contains('n7x-loading-active'));
   await page.getByRole('button',{name:'Got it',exact:true}).click({timeout:1800}).catch(()=>{});
   await page.locator('[data-n7x-dock-item="settings"]').click();
   await page.locator('[data-n7x-theme-card="default"]').waitFor();
@@ -23,7 +23,7 @@ try{
   await page.locator(`[data-n7x-theme-card="${theme}"]`).click();
   assert.equal(await page.locator('html').getAttribute('data-n7x-theme'),theme);
   await ready();
-  assert.equal(await page.locator('.browser-shell-settings-overlay [data-theme-value]').inputValue(),theme,'restored select');
+  assert.equal(await page.locator('.q1b8b57bdd44ab91267 [data-theme-value]').inputValue(),theme,'restored select');
   assert.equal(await page.locator('[data-n7x-theme-card][aria-pressed="true"]').getAttribute('data-n7x-theme-card'),theme,'restored card');
   assert.equal(await page.locator('html').getAttribute('data-n7x-theme'),theme,'restored palette');
  }

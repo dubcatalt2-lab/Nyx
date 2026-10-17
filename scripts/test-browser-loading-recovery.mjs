@@ -24,10 +24,10 @@ try{for(const brand of (process.env.NYX_TEST_BRANDS||'tutsi,drop,nyx').split(','
  if(brand!=='nyx')await context.route(url=>url.pathname==='/apps/tutsi/frame-navigation.mjs'||url.pathname===aliases['/apps/tutsi/frame-navigation.mjs'],async r=>{const text=await readFile('apps/tutsi/frame-navigation.mjs','utf8');await r.fulfill({contentType:'text/javascript',body:text.replace('timeoutMs=25000','timeoutMs=2000')});});
  const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.goto(base+(brand==='nyx'?'/index.html':'/apps/'+brand+'/'));await page.waitForTimeout(8500);
- const query=page.locator(brand==='nyx'?'[data-browser-blank-input]:visible':'#query').first();
+ const query=page.locator(brand==='nyx'?'[data-q53154c3f0fbe71a11b]:visible':'#query').first();
  assert.match(await query.getAttribute('placeholder'),/S3ARC4/);
  await query.fill('https://fixture.test/recovered');await query.press('Enter');
- const selector=brand==='nyx'?'.browser-body iframe.view.active':brand==='tutsi'?'#browser-stage iframe:not([hidden])':'#stage iframe:not([hidden])';
+ const selector=brand==='nyx'?'.q6576ed118d3ca9c284 iframe.view.active':brand==='tutsi'?'#browser-stage iframe:not([hidden])':'#stage iframe:not([hidden])';
  const frame=()=>page.frameLocator(selector);
  try{await frame().getByRole('heading',{name:'/recovered',exact:true}).waitFor({timeout:25000});}catch(e){console.log(brand,'errors',errors,'body',(await page.locator('body').innerText()).slice(-600));throw e;}
  if(brand!=='nyx'){
@@ -37,7 +37,7 @@ try{for(const brand of (process.env.NYX_TEST_BRANDS||'tutsi,drop,nyx').split(','
   await page.locator('#reload').click();await frame().getByRole('heading',{name:'/empty',exact:true}).waitFor();
  }
  if(brand==='nyx'){
-  const address=page.locator('[data-browser-shell-url]:visible').first();await address.fill('https://fixture.test/consent');await address.press('Enter');
+  const address=page.locator('[data-qdb41a1359ce5a90298]:visible').first();await address.fill('https://fixture.test/consent');await address.press('Enter');
   const accept=frame().getByRole('button',{name:'Accept cookies'});await accept.waitFor();
   await frame().locator('body').evaluate(body=>body.dataset.instance='preserve');
   await page.waitForTimeout(13000);

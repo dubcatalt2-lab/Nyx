@@ -51,8 +51,8 @@ try {
   });
   for (const side of ['left', 'right']) {
     const geometry = await page.evaluate(side => {
-      let rail = document.querySelector('.n7x-visual-dock');
-      if (!rail) { rail = document.createElement('nav'); rail.className = 'n7x-visual-dock'; document.body.appendChild(rail); rail.appendChild(document.getElementById('anchor')); }
+      let rail = document.querySelector('.q1a2b180d7cc7c3531f');
+      if (!rail) { rail = document.createElement('nav'); rail.className = 'q1a2b180d7cc7c3531f'; document.body.appendChild(rail); rail.appendChild(document.getElementById('anchor')); }
       rail.style.cssText = 'position:fixed;top:0;bottom:0;width:50px;' + side + ':0';
       const anchor = document.getElementById('anchor');
       anchor.style.left = side === 'left' ? '1px' : 'auto'; anchor.style.right = side === 'right' ? '1px' : 'auto';

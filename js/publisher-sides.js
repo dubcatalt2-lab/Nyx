@@ -23,14 +23,14 @@ export function startHomeSponsors() {
     if (deadline && Date.now() >= deadline) expired = true;
     const mode = publisherMode();
     const eligible = !expired && !['off', 'pending'].includes(mode);
-    const homes = [...document.querySelectorAll('.browser-home.n7x-minimal-home')];
+    const homes = [...document.querySelectorAll('.q4f959b063679fe3afa.n7x-minimal-home')];
     for (const home of homes) {
       if (!states.has(home)) states.set(home, {slots: [], attempted: false});
       const state = states.get(home);
       const rect = home.getBoundingClientRect();
       const available = eligible && window.__nyxPublisherHome?.() === home;
       const visible = available && !document.hidden && !home.classList.contains('hidden') &&
-        home.closest('.n2ac0604c6ebc.browser-blank') && rect.width >= 900 && rect.height >= 520 &&
+        home.closest('.n2ac0604c6ebc.q6139d8ecebcdf8e8c1') && rect.width >= 900 && rect.height >= 520 &&
         getComputedStyle(home).visibility !== 'hidden' && !document.body.classList.contains('n7x-loading-active');
       if (!visible) {clear(state);state.attempted = false;continue;}
       for (const slot of state.slots) slot.host.hidden = !visible || slot.failed;

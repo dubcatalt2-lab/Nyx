@@ -14,13 +14,13 @@ for(const channel of ['chrome','msedge']){
   });
   await page.route('**/api/**',r=>r.fulfill({json:{enabled:false,models:[],apps:[],preferences:{}}}));
   await page.goto('http://localhost:8080/');
-  await page.waitForFunction(()=>document.querySelector('.browser-home.n7x-minimal-home')&&document.getElementById('n3e8549522c8c')?.getAttribute('aria-hidden')==='true'&&!document.body.classList.contains('n7x-loading-active'));
+  await page.waitForFunction(()=>document.querySelector('.q4f959b063679fe3afa.n7x-minimal-home')&&document.getElementById('n3e8549522c8c')?.getAttribute('aria-hidden')==='true'&&!document.body.classList.contains('n7x-loading-active'));
   await page.waitForTimeout(1300);
   const close=page.locator('[data-n7x-release-notes-close]').first();if(await close.isVisible())await close.click();
   const responsive=async()=>{const before=await page.evaluate(()=>__beats);await page.waitForTimeout(150);assert.equal(await page.evaluate(()=>__trips),0,'No runaway observer callbacks');assert((await page.evaluate(()=>__beats))>before,'Timers advance after clicks');};
   await page.locator('[data-n7x-dock-item="settings"]').click();await responsive();
   try { await page.locator('[data-settings-category-button]').first().waitFor(); }
-  catch(error){console.log(await page.evaluate(()=>({body:document.body.className,overlay:document.querySelector('.browser-shell-settings-overlay')?.outerHTML.slice(0,1000),trips:window.__trips})),errors);await page.screenshot({path:'.codex-artifacts/settings-test-failure.png'});throw error;}
+  catch(error){console.log(await page.evaluate(()=>({body:document.body.className,overlay:document.querySelector('.q1b8b57bdd44ab91267')?.outerHTML.slice(0,1000),trips:window.__trips})),errors);await page.screenshot({path:'.codex-artifacts/settings-test-failure.png'});throw error;}
   const categories=await page.locator('[data-settings-category-button]').evaluateAll(nodes=>nodes.map(n=>n.dataset.settingsCategoryButton));
   assert(categories.length>=6);
   for(const category of categories){await page.locator(`[data-settings-category-button="${category}"]`).click();await responsive();assert(await page.locator(`[data-settings-category-button="${category}"]`).evaluate(el=>el.classList.contains('active')));}

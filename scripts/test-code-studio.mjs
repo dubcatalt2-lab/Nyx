@@ -201,18 +201,18 @@ try {
   await shellPage.evaluate(() => {
     const box = document.createElement("div");
     box.id = "browserSearchSuggestions";
-    box.className = "browser-search-suggestions show";
-    box.innerHTML = '<button class="browser-search-suggestion active" type="button">example</button><button class="browser-search-suggestion" type="button">reddit</button>';
+    box.className = "qb81555b19158ff443b show";
+    box.innerHTML = '<button class="q5eaaaa328f383a1713 active" type="button">example</button><button class="q5eaaaa328f383a1713" type="button">reddit</button>';
     document.body.appendChild(box);
   });
-  const suggestionBox = shellPage.locator(".browser-search-suggestions.show");
+  const suggestionBox = shellPage.locator(".qb81555b19158ff443b.show");
   await suggestionBox.waitFor();
   const rubySuggestions = await suggestionBox.evaluate(box => ({
     background: getComputedStyle(box).backgroundColor,
     border: getComputedStyle(box).borderTopColor,
-    row: getComputedStyle(box.querySelector(".browser-search-suggestion.active")).backgroundColor,
-    text: getComputedStyle(box.querySelector(".browser-search-suggestion.active")).color,
-    selection: getComputedStyle(document.querySelector("[data-browser-shell-url]"), "::selection").backgroundColor
+    row: getComputedStyle(box.querySelector(".q5eaaaa328f383a1713.active")).backgroundColor,
+    text: getComputedStyle(box.querySelector(".q5eaaaa328f383a1713.active")).color,
+    selection: getComputedStyle(document.querySelector("[data-qdb41a1359ce5a90298]"), "::selection").backgroundColor
   }));
   assert(rubySuggestions.background === "rgba(3, 6, 11, 0.9)" && rubySuggestions.border === "rgba(218, 233, 255, 0.14)" && rubySuggestions.row === "rgba(255, 255, 255, 0.075)" && rubySuggestions.text === "rgb(232, 235, 242)" && rubySuggestions.selection === "rgba(145, 172, 210, 0.34)", `Ruby recolored the browser suggestions (${JSON.stringify(rubySuggestions)})`);
   await shellPage.evaluate(() => {
@@ -223,9 +223,9 @@ try {
   const customSuggestions = await suggestionBox.evaluate(box => ({
     background: getComputedStyle(box).backgroundColor,
     border: getComputedStyle(box).borderTopColor,
-    row: getComputedStyle(box.querySelector(".browser-search-suggestion.active")).backgroundColor,
-    text: getComputedStyle(box.querySelector(".browser-search-suggestion.active")).color,
-    selection: getComputedStyle(document.querySelector("[data-browser-shell-url]"), "::selection").backgroundColor
+    row: getComputedStyle(box.querySelector(".q5eaaaa328f383a1713.active")).backgroundColor,
+    text: getComputedStyle(box.querySelector(".q5eaaaa328f383a1713.active")).color,
+    selection: getComputedStyle(document.querySelector("[data-qdb41a1359ce5a90298]"), "::selection").backgroundColor
   }));
   assert(JSON.stringify(customSuggestions) === JSON.stringify(rubySuggestions), `Custom theme recolored the browser suggestions (${JSON.stringify(customSuggestions)})`);
   await shellPage.evaluate(() => {
@@ -236,8 +236,8 @@ try {
   const shellSelections = await shellPage.evaluate(async () => {
     const themes = ["default", "midnight", "ruby", "emerald", "sakura", "fresh", "custom"];
     const selectors = [
-      "[data-browser-shell-url]",
-      ".n2ac0604c6ebc.browser-home-page [data-browser-blank-input]",
+      "[data-qdb41a1359ce5a90298]",
+      ".n2ac0604c6ebc.q276ba5cc5bedf5dcef [data-q53154c3f0fbe71a11b]",
       ".n7x-minimal-utility-links a",
       "[data-n7x-visual-dock] button"
     ];
@@ -270,7 +270,7 @@ try {
   const discordVisibility = await discordLink.evaluate(link => ({ display: getComputedStyle(link).display, body: document.body.className }));
   assert(discordVisibility.display !== "none", `Homepage Discord link is not visible on the home page (${discordVisibility.display}; ${discordVisibility.body})`);
   assert((await discordLink.locator("svg").evaluate(icon => getComputedStyle(icon).fill)) === "none", "Homepage Discord symbol is not hollow");
-  const dockBox = await shellPage.locator(".n7x-visual-dock").boundingBox();
+  const dockBox = await shellPage.locator(".q1a2b180d7cc7c3531f").boundingBox();
   const discordBox = await discordLink.boundingBox();
   assert(!dockBox || !discordBox || discordBox.x + discordBox.width <= dockBox.x, "Homepage Discord link is covered by the right navigation rail");
   await shellPage.context().route("https://discord.gg/**", route => route.fulfill({ contentType: "text/html", body: "<!doctype html><title>Discord invite test</title>" }));
@@ -293,7 +293,7 @@ try {
   await customHomePage.locator("#n7xStudyHubStartup").waitFor({ state: "hidden" });
   await customHomePage.locator('#n22e9fbee8c96[data-light-color="#76dfb5"]').waitFor();
   assert((await customHomePage.locator("#n22e9fbee8c96").getAttribute("data-light-color")) !== "#a98cff", "Custom theme remained locked to the Violet Beams color");
-  const homeSelection = await customHomePage.locator(".n2ac0604c6ebc.browser-home-page [data-browser-blank-input]").evaluate(input => {
+  const homeSelection = await customHomePage.locator(".n2ac0604c6ebc.q276ba5cc5bedf5dcef [data-q53154c3f0fbe71a11b]").evaluate(input => {
     const style = getComputedStyle(input, "::selection");
     input.focus();
     input.value = "Search DuckDuckGo or type a URL";
@@ -333,12 +333,12 @@ try {
     hoverAccent: getComputedStyle(body).getPropertyValue("--studio-theme-hover-accent").trim()
   }));
   assert(embeddedStudioTheme.background === "rgb(7, 9, 13)" && embeddedStudioTheme.hoverAccent === "#e8a3b4", `Embedded Code Sandbox did not keep neutral surfaces with the Ruby hover color (${JSON.stringify(embeddedStudioTheme)})`);
-  await shellPage.locator("[data-browser-shell-url]").focus();
+  await shellPage.locator("[data-qdb41a1359ce5a90298]").focus();
   await shellPage.evaluate(() => {
     const box = document.createElement("div");
     box.id = "browserSearchSuggestions";
-    box.className = "browser-search-suggestions show";
-    box.innerHTML = '<button class="browser-search-suggestion active" type="button">https://duckduckgo.com/?q=nyx</button>';
+    box.className = "qb81555b19158ff443b show";
+    box.innerHTML = '<button class="q5eaaaa328f383a1713 active" type="button">https://duckduckgo.com/?q=nyx</button>';
     document.body.appendChild(box);
   });
   await shellPage.frameLocator('iframe.view[src*="/apps/code-studio/"]').locator("[data-code-input]").click({ position: { x: 30, y: 30 } });

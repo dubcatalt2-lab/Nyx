@@ -51,7 +51,7 @@ try {
   });
   await page.goto(base);
   if(await page.locator("#customize-dialog").isVisible())await page.locator("#customize-dismiss").click();
-  if(await page.locator("#browser-home").isVisible()) await page.locator("#browser-home").click();
+  if(await page.locator("#q4f959b063679fe3afa").isVisible()) await page.locator("#q4f959b063679fe3afa").click();
   await page.locator("#account-button").click();
   await page.fill("#identifier", "test-user");
   await page.fill("#password", "fixture-password");
@@ -106,7 +106,7 @@ try {
   console.log(
     "Mocked account sign-in, authenticated AI streaming, Tutsi response label and unregistered-frame token rejection passed. No paid generation.",
   );
-  if(await page.locator("#browser-home").isVisible()) await page.locator("#browser-home").click();
+  if(await page.locator("#q4f959b063679fe3afa").isVisible()) await page.locator("#q4f959b063679fe3afa").click();
   await page.locator("#account-button").click();
   await page.locator("#sign-out").click();
   await page.locator("#auth-mode").click();

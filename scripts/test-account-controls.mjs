@@ -211,7 +211,7 @@ try{
   await page.waitForTimeout(500);
 
   const externalPathUrl='https://example.com/pokemon';
-  const homeSearch=page.locator('.n2ac0604c6ebc.browser-home-page [data-browser-blank-input]:visible');
+  const homeSearch=page.locator('.n2ac0604c6ebc.q276ba5cc5bedf5dcef [data-q53154c3f0fbe71a11b]:visible');
   await page.waitForTimeout(4500);
   await homeSearch.fill(externalPathUrl);
   await homeSearch.press('Enter');
@@ -237,7 +237,7 @@ try{
     frame.contentDocument.documentElement.appendChild(link);
     link.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:24,clientY:24}));
   });
-  await page.locator('.n7x-browser-link-menu').waitFor();
+  await page.locator('.qe08c033fce3d8f6a26').waitFor();
   await page.locator('[data-n7x-copy-clean-link]').click();
   assert.equal(await page.evaluate(()=>globalThis.__nyxCopiedLink),'https://cineby.at/','Right-click Copy link exposed a Scramjet URL');
   await page.evaluate(()=>{
@@ -255,13 +255,13 @@ try{
   });
   await page.waitForTimeout(100);
   assert.equal(await page.locator('.n2ac0604c6ebc .urlbar').inputValue(),externalPathUrl,'Proxy path replaced the real legacy address');
-  assert.equal(await page.locator('[data-browser-shell-url]').inputValue(),externalPathUrl,'Proxy path replaced the real shell address');
+  assert.equal(await page.locator('[data-qdb41a1359ce5a90298]').inputValue(),externalPathUrl,'Proxy path replaced the real shell address');
   await page.locator('[data-n7x-dock-item="home"]').click();
   await page.waitForSelector('.n7x-minimal-home');
 
   const containedBrowserFrame=page.locator('.n2ac0604c6ebc iframe.view').first();
   await containedBrowserFrame.evaluate(frame=>{
-    frame.dataset.n7xBrowserContained='true';
+    frame.dataset.q0a6f583a6295dfc3e6='true';
   });
   await page.locator('#n7xAccountButton').click();
   await page.locator('[data-n7x-account-menu-action="owner-dashboard"]').click();
@@ -271,7 +271,7 @@ try{
   await page.locator('[data-owner-close]').click();
   await page.waitForSelector('.n7x-owner-dashboard-overlay',{state:'detached'});
   await containedBrowserFrame.evaluate(frame=>{
-    delete frame.dataset.n7xBrowserContained;
+    delete frame.dataset.q0a6f583a6295dfc3e6;
   });
 
   await page.locator('#n7xAccountButton').click();
@@ -293,20 +293,20 @@ try{
   await page.locator('[data-close-n7x-account]').click();
 
   await page.locator('[data-n7x-dock-item="settings"]').click();
-  await page.waitForSelector('.browser-shell-settings-overlay');
+  await page.waitForSelector('.q1b8b57bdd44ab91267');
   assert.equal(await page.locator('[data-home-design-value],.nyx-home-design-setting,.nyx-tab-design-setting').count(),0,'Retired layout controls remain in Settings');
-  assert.equal(await page.locator('.n7x-minimal-top-actions,.n7x-home-tabs-toggle,.n7x-latency-bubble').count(),0,'Retired toolbar is still created');
+  assert.equal(await page.locator('.n7x-minimal-top-actions,.qbcc199b54fd8cb6e0b,.n7x-latency-bubble').count(),0,'Retired toolbar is still created');
   await page.waitForTimeout(200);
-  assert.equal(await page.locator('.browser-shell-settings-overlay').count(),1,'Homepage Settings was removed after opening');
+  assert.equal(await page.locator('.q1b8b57bdd44ab91267').count(),1,'Homepage Settings was removed after opening');
   await page.locator('[data-n7x-dock-item="links"]').click();
-  await page.waitForSelector('.browser-shell-settings-overlay',{state:'detached'});
-  await page.waitForFunction(()=>document.querySelector('.n7x-browser-tab-row.active strong')?.textContent?.trim()==='Link Generator');
-  assert.equal(await page.locator('.browser-shell-settings-overlay').count(),0,'Settings remained stacked over a newly opened app tab');
+  await page.waitForSelector('.q1b8b57bdd44ab91267',{state:'detached'});
+  await page.waitForFunction(()=>document.querySelector('.qabe30eb136bdd4788a.active strong')?.textContent?.trim()==='Link Generator');
+  assert.equal(await page.locator('.q1b8b57bdd44ab91267').count(),0,'Settings remained stacked over a newly opened app tab');
   await page.locator('[data-n7x-dock-item="home"]').click();
-  await page.locator('[data-browser-shell-settings]').evaluate(button=>button.click());
-  await page.waitForSelector('.browser-shell-settings-overlay');
+  await page.locator('[data-q0882cea5d2bc5ce380]').evaluate(button=>button.click());
+  await page.waitForSelector('.q1b8b57bdd44ab91267');
   await page.waitForTimeout(200);
-  assert.equal(await page.locator('.browser-shell-settings-overlay').count(),1,'Toolbar Settings was removed after opening');
+  assert.equal(await page.locator('.q1b8b57bdd44ab91267').count(),1,'Toolbar Settings was removed after opening');
   await page.locator('[data-settings-category-button="data"]').click();
   await page.waitForSelector('[data-settings-category="data"].active');
   await page.evaluate(()=>{
@@ -343,32 +343,32 @@ try{
   await page.setViewportSize({width:1280,height:800});
   await page.locator('[data-settings-category-button="proxy"]').click();
   await page.waitForSelector('[data-settings-category="proxy"].active');
-  const wispInput=page.locator('[data-browser-wisp-url]');
+  const wispInput=page.locator('[data-qbf7e2f2d88932dfd40]');
   await wispInput.waitFor();
   assert.equal(await wispInput.isVisible(),true,'Wisp URL control was not visible in Proxy settings');
   await wispInput.fill('wss://relay.example.test/custom-wisp');
-  await page.locator('[data-browser-wisp-save]').click();
+  await page.locator('[data-q1123eb0020138b2f49]').click();
   assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.wispUrl')),'wss://relay.example.test/custom-wisp','Custom Wisp URL was not persisted');
-  assert.match(await page.locator('[data-browser-wisp-status]').textContent(),/Custom relay: wss:\/\/relay\.example\.test\/custom-wisp/,'Custom Wisp URL was not selected at runtime');
+  assert.match(await page.locator('[data-q86dde24274e14c31d0]').textContent(),/Custom relay: wss:\/\/relay\.example\.test\/custom-wisp/,'Custom Wisp URL was not selected at runtime');
   await wispInput.fill('https://relay.example.test/wisp');
-  await page.locator('[data-browser-wisp-save]').click();
+  await page.locator('[data-q1123eb0020138b2f49]').click();
   assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.wispUrl')),'wss://relay.example.test/custom-wisp','Invalid Wisp protocol replaced the saved relay');
-  await page.locator('[data-browser-wisp-reset]').click();
+  await page.locator('[data-q8d023add461854c6a8]').click();
   assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.wispUrl')),'','Reset did not restore the default Wisp relay');
-  assert.match(await page.locator('[data-browser-wisp-status]').textContent(),/^Default relay: wss?:\/\//,'Default Wisp relay status was not restored');
-  await page.locator('.brand-mini [data-browser-shell-new-tab]').evaluate(button=>button.click());
-  await page.waitForSelector('.browser-shell-settings-overlay',{state:'detached'});
-  assert.equal(await page.locator('.n7x-browser-tab-row.active strong').textContent(),'New Tab','New tab created from Settings did not become the active blank tab');
-  assert.equal(await page.locator('[data-browser-shell-url]').inputValue(),'','New tab created from Settings inherited its internal URL');
-  assert.equal(await page.locator('.n2ac0604c6ebc.browser-home-page .n7x-minimal-home:visible').count(),1,'New tab created from Settings did not show the Nyx homepage');
+  assert.match(await page.locator('[data-q86dde24274e14c31d0]').textContent(),/^Default relay: wss?:\/\//,'Default Wisp relay status was not restored');
+  await page.locator('.brand-mini [data-q9d19fb46ab08b6ee2e]').evaluate(button=>button.click());
+  await page.waitForSelector('.q1b8b57bdd44ab91267',{state:'detached'});
+  assert.equal(await page.locator('.qabe30eb136bdd4788a.active strong').textContent(),'New Tab','New tab created from Settings did not become the active blank tab');
+  assert.equal(await page.locator('[data-qdb41a1359ce5a90298]').inputValue(),'','New tab created from Settings inherited its internal URL');
+  assert.equal(await page.locator('.n2ac0604c6ebc.q276ba5cc5bedf5dcef .n7x-minimal-home:visible').count(),1,'New tab created from Settings did not show the Nyx homepage');
   await page.locator('[data-n7x-dock-item="home"]').click();
-  const tabLifecycleHomeSearch=page.locator('.n2ac0604c6ebc.browser-home-page [data-browser-blank-input]');
+  const tabLifecycleHomeSearch=page.locator('.n2ac0604c6ebc.q276ba5cc5bedf5dcef [data-q53154c3f0fbe71a11b]');
   await tabLifecycleHomeSearch.fill('stale tab search');
-  await page.locator('.brand-mini [data-browser-shell-new-tab]').evaluate(button=>button.click());
-  assert.equal(await page.locator('.n2ac0604c6ebc.browser-home-page [data-browser-blank-input]').inputValue(),'','A new blank tab inherited the previous tab search text');
-  await page.locator('.n7x-browser-tab-row.active [data-browser-shell-close-tab]').evaluate(button=>button.click());
-  assert.equal(await page.locator('.n2ac0604c6ebc.browser-home-page [data-browser-blank-input]').inputValue(),'','Closing a blank tab restored stale homepage search text');
-  assert.equal(await page.locator('[data-browser-shell-url]').inputValue(),'','Closing a blank tab restored stale address text');
+  await page.locator('.brand-mini [data-q9d19fb46ab08b6ee2e]').evaluate(button=>button.click());
+  assert.equal(await page.locator('.n2ac0604c6ebc.q276ba5cc5bedf5dcef [data-q53154c3f0fbe71a11b]').inputValue(),'','A new blank tab inherited the previous tab search text');
+  await page.locator('.qabe30eb136bdd4788a.active [data-q47005c6be549e6ea19]').evaluate(button=>button.click());
+  assert.equal(await page.locator('.n2ac0604c6ebc.q276ba5cc5bedf5dcef [data-q53154c3f0fbe71a11b]').inputValue(),'','Closing a blank tab restored stale homepage search text');
+  assert.equal(await page.locator('[data-qdb41a1359ce5a90298]').inputValue(),'','Closing a blank tab restored stale address text');
   if(await page.evaluate(()=>document.documentElement.dataset.n7xSidebarWidth!=='expanded')){
     await page.locator('[data-n7x-dock-expand]').click();
   }
@@ -377,13 +377,13 @@ try{
   await page.waitForFunction(()=>Boolean(document.querySelector('[data-n7x-visual-dock]')),{timeout:1_500});
   assert.match(await dockDate.textContent(),/\b20\d{2}\b/,'Expanded rail date did not include the year');
   assert.equal(await dockDate.evaluate(date=>date.scrollWidth<=date.clientWidth),true,'Expanded rail date was clipped');
-  if(!await page.evaluate(()=>document.body.classList.contains('n7x-tab-sidebar-open'))){
-    await page.locator('[data-browser-shell-tabs-toggle]').first().evaluate(button=>button.click());
+  if(!await page.evaluate(()=>document.body.classList.contains('q6e96f5349ef4ff828d'))){
+    await page.locator('[data-qf82a8e00c871cbd8d2]').first().evaluate(button=>button.click());
   }
-  assert.equal(await page.evaluate(()=>document.body.classList.contains('n7x-tab-sidebar-open')),true,'Tab sidebar did not open for close-button regression');
+  assert.equal(await page.evaluate(()=>document.body.classList.contains('q6e96f5349ef4ff828d')),true,'Tab sidebar did not open for close-button regression');
   for(let closeCycle=0;closeCycle<5;closeCycle+=1){
-    await page.locator('#n7xBrowserTabSidebar [data-browser-shell-new-tab]').evaluate(button=>button.click());
-    const activeClose=page.locator('#n7xBrowserTabSidebar .n7x-browser-tab-row.active [data-browser-shell-close-tab]');
+    await page.locator('#q5672b0e51cce534e59 [data-q9d19fb46ab08b6ee2e]').evaluate(button=>button.click());
+    const activeClose=page.locator('#q5672b0e51cce534e59 .qabe30eb136bdd4788a.active [data-q47005c6be549e6ea19]');
     await activeClose.waitFor();
     assert.equal(await activeClose.evaluate(button=>button.tagName),'BUTTON','Tab close control was not a native button');
     await activeClose.evaluate(button=>button.click());
@@ -404,7 +404,7 @@ try{
     assert.equal(railState.connected,true,`Visual tab rail detached after close cycle ${closeCycle+1}: ${JSON.stringify(railState)}`);
     assert.ok(railState.width>200&&railState.height>200&&railState.display!=='none'&&railState.visibility!=='hidden',`Visual tab rail disappeared after close cycle ${closeCycle+1}`);
     assert.equal(await page.evaluate(()=>document.documentElement.dataset.n7xSidebarWidth),'expanded',`Closing a tab collapsed the visual rail on cycle ${closeCycle+1}`);
-    assert.equal(await page.evaluate(()=>document.body.classList.contains('n7x-tab-sidebar-open')),true,`Closing a tab dismissed the tab sidebar on cycle ${closeCycle+1}`);
+    assert.equal(await page.evaluate(()=>document.body.classList.contains('q6e96f5349ef4ff828d')),true,`Closing a tab dismissed the tab sidebar on cycle ${closeCycle+1}`);
   }
 
   await page.locator('[data-n7x-dock-item="chat"]').click();

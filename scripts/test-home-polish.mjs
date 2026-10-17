@@ -10,7 +10,7 @@ for (const channel of ['chrome','msedge']) {
  // Exercise real ad-frame lifecycle without requesting billable test impressions.
  await page.route('https://bicea.org/**',r=>r.fulfill({contentType:'application/javascript',body:`const img=document.createElement('img');img.width=160;img.height=600;img.src='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="600"><rect width="160" height="600" fill="orange"/></svg>');document.body.append(img);`}));
  await page.goto('http://localhost:8080/');
- await page.waitForFunction(()=>document.querySelector('.browser-home.n7x-minimal-home')&&document.getElementById('n3e8549522c8c')?.getAttribute('aria-hidden')==='true'&&!document.body.classList.contains('n7x-loading-active'));
+ await page.waitForFunction(()=>document.querySelector('.q4f959b063679fe3afa.n7x-minimal-home')&&document.getElementById('n3e8549522c8c')?.getAttribute('aria-hidden')==='true'&&!document.body.classList.contains('n7x-loading-active'));
  const close=page.locator('[data-n7x-release-notes-close]').first();if(await close.isVisible())await close.click();
  await page.waitForTimeout(1500);
  assert.equal(await page.locator('#weatherPanel,#weatherRestore,[data-open="weather"]').count(),0);
@@ -36,7 +36,7 @@ for (const channel of ['chrome','msedge']) {
  assert.equal(await page.locator('.n7x-home-sponsor').count(),0,'Home ads removed when settings opens');
  await page.locator('[data-n7x-dock-item="home"]').click();
  await page.context().route('https://asiafilm.org/**',r=>r.fulfill({contentType:'text/html',body:'<p>Local popup fixture</p>'}));
- const home=page.locator('.browser-home.n7x-minimal-home:not(.hidden)');
+ const home=page.locator('.q4f959b063679fe3afa.n7x-minimal-home:not(.hidden)');
  const opened=[];page.context().on('page',p=>opened.push(p));
  await home.evaluate(n=>n.dispatchEvent(new MouseEvent('click',{bubbles:true})));await page.waitForTimeout(100);assert.equal(opened.length,0,'Synthetic clicks cannot open ads');
  for(let i=0;i<2;i++){await home.click({position:{x:250,y:300}});await page.waitForTimeout(1150);assert.equal(opened.length,i+1);await opened[i].close();await page.bringToFront();}

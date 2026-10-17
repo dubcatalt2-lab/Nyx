@@ -20,7 +20,7 @@ try{
      localStorage.setItem('nyx.testSavedState','preserve-this');
     },saved);
     await page.goto(base+'/index.html');
-    await page.waitForFunction(()=>document.body?.classList.contains('browser-shell'));
+    await page.waitForFunction(()=>document.body?.classList.contains('q6172f40672fb949e9c'));
     const expected=saved==='My workspace'?saved:'N7X';
     await page.waitForFunction(expected=>document.title===expected,expected);
     await page.waitForFunction(expected=>localStorage.getItem('nyx.tabTitle')===expected,expected);

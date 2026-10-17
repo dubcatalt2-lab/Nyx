@@ -8,8 +8,8 @@ for (const channel of ['chrome','msedge']) {
   await page.route('**/api/**',r=>r.fulfill({json:{enabled:false,models:[],apps:[],preferences:{}}}));
   await page.route('https://bicea.org/**',r=>r.abort());
   await page.goto('http://localhost:8080');
-  await page.waitForFunction(()=>document.querySelector('.browser-home.n7x-minimal-home')&&!document.body.classList.contains('n7x-loading-active')&&!document.body.classList.contains('n7x-startup-prep'));
-  const cat=page.locator('#n7x-pointer-cat');await cat.waitFor({state:'visible'});
+  await page.waitForFunction(()=>document.querySelector('.q4f959b063679fe3afa.n7x-minimal-home')&&!document.body.classList.contains('n7x-loading-active')&&!document.body.classList.contains('n7x-startup-prep'));
+  const cat=page.locator('#q42030cc527a43c03d8');await cat.waitFor({state:'visible'});
   assert.equal(await cat.count(),1);assert.equal(await cat.evaluate(n=>getComputedStyle(n).pointerEvents),'none');
   const before=await cat.boundingBox();await page.mouse.move(700,400);await page.waitForTimeout(1500);
   const after=await cat.boundingBox();assert(after.x>before.x+50);assert(after.y>before.y);
@@ -21,7 +21,7 @@ for (const channel of ['chrome','msedge']) {
   assert.equal(await toggle.getAttribute('aria-checked'),'true');
   await toggle.click();assert(await cat.isHidden());assert.equal(await toggle.getAttribute('aria-checked'),'false');
   await page.reload();
-  await page.waitForFunction(()=>document.querySelector('.browser-home.n7x-minimal-home')&&!document.body.classList.contains('n7x-loading-active')&&!document.body.classList.contains('n7x-startup-prep'));
+  await page.waitForFunction(()=>document.querySelector('.q4f959b063679fe3afa.n7x-minimal-home')&&!document.body.classList.contains('n7x-loading-active')&&!document.body.classList.contains('n7x-startup-prep'));
   assert(await cat.isHidden());
   await page.locator('[data-n7x-dock-item="settings"]').click();
   await page.locator('[data-settings-category-button="appearance"]').click();

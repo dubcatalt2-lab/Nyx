@@ -50,9 +50,9 @@ try{for(const brand of (process.env.NYX_TEST_BRANDS||'nyx,tutsi,drop').split(','
  if(process.argv.includes('--debug')){page.on('framenavigated',f=>console.log('NAV',f.url()));page.on('console',m=>{if(m.type()==='error')console.log('ERROR',m.text().slice(0,300));});}
  await page.goto(base+(brand==='nyx'?'/index.html':'/apps/'+brand+'/'));await page.waitForTimeout(8500);
  assert.ok(await page.locator('svg rect[x="2"][y="6"][width="20"][height="13"]').count(),brand+' uses the requested rectangular Games controller');
- const query=page.locator(brand==='nyx'?'[data-browser-blank-input]:visible':'#query').first();
+ const query=page.locator(brand==='nyx'?'[data-q53154c3f0fbe71a11b]:visible':'#query').first();
  await query.fill('https://discord.com/app');await query.press('Enter');
- const selector=brand==='nyx'?'.browser-body iframe.view.active':brand==='tutsi'?'#browser-stage iframe:not([hidden])':'#stage iframe:not([hidden])';
+ const selector=brand==='nyx'?'.q6576ed118d3ca9c284 iframe.view.active':brand==='tutsi'?'#browser-stage iframe:not([hidden])':'#stage iframe:not([hidden])';
  const frame=page.frameLocator(selector);
  try{
   await frame.locator('#b').waitFor({timeout:25000});
@@ -62,7 +62,7 @@ try{for(const brand of (process.env.NYX_TEST_BRANDS||'nyx,tutsi,drop').split(','
   await frame.locator('#draft').fill('Keep this draft');
   await frame.locator('#b').click();
   assert.equal(await frame.locator('#channel').innerText(),'B');
-  const address=page.locator(brand==='nyx'?'[data-browser-shell-url]:visible':'#address').first();
+  const address=page.locator(brand==='nyx'?'[data-qdb41a1359ce5a90298]:visible':'#address').first();
   await page.waitForTimeout(1000);
   assert.match(await address.inputValue(),/discord\.com\/channels\/100\/200/,'Shell address must follow the channel without navigation');
   await page.waitForTimeout(13000);

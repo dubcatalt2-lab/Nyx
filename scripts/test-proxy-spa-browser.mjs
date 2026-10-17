@@ -115,11 +115,11 @@ try{
     }
     await page.goto(base+'/'+brand);
     if(brand==='nyx'){
-      await page.locator('[data-browser-shell-url]').waitFor({state:'attached'});
+      await page.locator('[data-qdb41a1359ce5a90298]').waitFor({state:'attached'});
       await page.getByRole('button',{name:'Got it',exact:true}).click();
       await page.locator('#nyxStudyHubStartup').waitFor({state:'detached'});
-      await page.locator('[data-browser-shell-search]').evaluate(form=>{
-        form.querySelector('[data-browser-shell-url]').value='https://discord.com/app';
+      await page.locator('[data-q9d12ba6470d10e32ab]').evaluate(form=>{
+        form.querySelector('[data-qdb41a1359ce5a90298]').value='https://discord.com/app';
         form.requestSubmit();
       });
     }else{

@@ -350,7 +350,7 @@ async function minifyFirstPartyBrowserRuntimes() {
   }
   const reduction = sourceBytes ? Math.round((1 - outputBytes / sourceBytes) * 100) : 0;
   if (transformedFiles !== targets.length) throw new Error(`Obfuscation coverage failed: ${transformedFiles}/${targets.length} runtimes transformed`);
-  console.log(`Production-obfuscated all ${transformedFiles} first-party browser runtime files (${reduction}% smaller; no source maps)`);
+  console.log(`Production-obfuscated all ${transformedFiles} first-party browser runtime files (${Math.abs(reduction)}% ${reduction<0?"larger":"smaller"}; no source maps)`);
 }
 
 function isFirstPartyMarkupOrStyle(relative) {

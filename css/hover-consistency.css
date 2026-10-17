@@ -42,7 +42,7 @@ html body:is(body,#n7x-hover-specificity) .window-controls [data-close]:hover::a
 
 
 
-html body.browser-shell:is(body,#n7x-hover-specificity) .browser-mode-menu button:hover{
+html body.q6172f40672fb949e9c:is(body,#n7x-hover-specificity) .q6a7a0c21fd56bd8b6d button:hover{
   transform:none!important;
   border-color:var(--n7x-hover-border)!important;
   background:var(--n7x-hover-surface)!important;

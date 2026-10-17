@@ -20,27 +20,27 @@ try{
  await page.waitForSelector('[data-n7x-dock-item="settings"]');
  // External services are blocked in this local UI test; release the loading input lock.
  await page.evaluate(()=>{document.body.classList.remove('n7x-loading-active');document.querySelectorAll('[inert]').forEach(e=>e.removeAttribute('inert'));document.querySelector('#n7xStudyHubStartup')?.remove()});
- assert(await page.evaluate(()=>document.body.classList.contains('browser-shell')));
+ assert(await page.evaluate(()=>document.body.classList.contains('q6172f40672fb949e9c')));
  assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.browserShellMode')),null);
  assert.equal(await page.locator('.desktop-shortcuts,.desktop-search,.desktop-app,.dock').count(),0);
  await page.locator('[data-n7x-dock-item="settings"]').click();
- await page.locator('.browser-shell-settings-overlay').waitFor();
+ await page.locator('.q1b8b57bdd44ab91267').waitFor();
  assert.equal(await page.locator('[data-browser-shell-toggle],[data-switch="nyx.browserShellMode"]').count(),0);
- assert(!(await page.locator('.browser-shell-settings-overlay').innerText()).includes('Windows'));
+ assert(!(await page.locator('.q1b8b57bdd44ab91267').innerText()).includes('Windows'));
  await page.locator('[data-settings-category-button="credits"]').click();
  await page.locator('[data-settings-category="credits"]').waitFor({state:'visible'});
  await page.locator('[data-settings-category-button="proxy"]').click();
- await page.locator('[data-browser-wisp-url]').waitFor({state:'visible'});
+ await page.locator('[data-qbf7e2f2d88932dfd40]').waitFor({state:'visible'});
  for(const width of [1280,390]){
   await page.setViewportSize({width,height:900});
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  }
  await page.setViewportSize({width:1280,height:900});
  await page.keyboard.press('Escape');
- await page.locator('.browser-shell-settings-overlay').waitFor({state:'hidden'});
+ await page.locator('.q1b8b57bdd44ab91267').waitFor({state:'hidden'});
  await page.locator('[data-n7x-dock-item="partners"]').click();
  await page.waitForFunction(()=>[...document.querySelectorAll('iframe')].some(f=>{try{return f.contentDocument?.querySelectorAll('[data-n7x-partner-invite]').length===11}catch{return false}}));
- assert(await page.evaluate(()=>document.body.classList.contains('browser-shell')));
+ assert(await page.evaluate(()=>document.body.classList.contains('q6172f40672fb949e9c')));
  assert.deepEqual(errors,[]);
  console.log('PASS: saved Windows mode migrates; desktop controls absent; Settings/Credits/Proxy, Partners navigation, responsive layout and no page errors.');
 }finally{await browser.close();server.close()}

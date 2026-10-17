@@ -7,7 +7,7 @@ if(publisherHostAllowed() && navigator.locks){
  document.addEventListener('click',event=>{
   if(!event.isTrusted || event.button!==0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
   if(event.target.closest('a,button,input,textarea,select,[contenteditable],.n7x-home-sponsor')) return;
-  const home=event.target.closest('.browser-home.n7x-minimal-home:not(.hidden)');
+  const home=event.target.closest('.q4f959b063679fe3afa.n7x-minimal-home:not(.hidden)');
   if(!home || window.__nyxPublisherHome?.()!==home || publisherMode()==='off')return;
   void navigator.locks.request('n7x.publisher.home',{ifAvailable:true},lock=>{
    if(!lock || !navigator.userActivation?.isActive || window.__nyxPublisherHome?.()!==home || publisherMode()==='off')return;

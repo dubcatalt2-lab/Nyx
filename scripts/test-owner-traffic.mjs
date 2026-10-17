@@ -21,7 +21,7 @@ try {
     let trafficCalls=0,failTraffic=false,founder=true,lastQuery='';
     await page.route('http://nyx.test/**',async route=>{
       const url=new URL(route.request().url()),path=url.pathname;
-      if(path==='/')return route.fulfill({contentType:'text/html',body:'<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/css/owner-dashboard-polish.css"></head><body class="browser-shell"><script src="/js/owner-dashboard.js"></script></body></html>'});
+      if(path==='/')return route.fulfill({contentType:'text/html',body:'<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/css/owner-dashboard-polish.css"></head><body class="q6172f40672fb949e9c"><script src="/js/owner-dashboard.js"></script></body></html>'});
       if(!path.startsWith('/api/')) {
         const asset=resolve(root,'.'+path);
         if(!asset.startsWith(root+sep))return route.fulfill({status:404,body:''});

@@ -11,9 +11,9 @@ try{
  const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  const vendor=await readFile(root+'/assets/vendor/three.r134.min.js','utf8');
  await page.route('**/assets/vendor/three.r134.min.js',route=>route.fulfill({contentType:'text/javascript',body:vendor+`;const OriginalRenderer=THREE.WebGLRenderer;THREE.WebGLRenderer=class extends OriginalRenderer{constructor(options){super(options);if(options.canvas.id==='n22e9fbee8c96')this.render=()=>{if(!window.allowWallpaperRender)throw new Error('Simulated wallpaper renderer failure');};}};`}));
- await page.addInitScript(()=>{localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.theme','ruby');localStorage.setItem('nyx.beamWallpaper','rose');localStorage.setItem('nyx.beamTheme','ruby');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');});
+ await page.addInitScript(()=>{if(window!==top)return;localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.theme','ruby');localStorage.setItem('nyx.beamWallpaper','rose');localStorage.setItem('nyx.beamTheme','ruby');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');});
  await page.goto('http://127.0.0.1:'+server.address().port,{waitUntil:'domcontentloaded'});
- await page.waitForFunction(()=>document.body?.classList.contains('browser-shell')&&!document.body.classList.contains('n7x-loading-active'));
+ await page.waitForFunction(()=>document.body?.classList.contains('q6172f40672fb949e9c')&&!document.body.classList.contains('n7x-loading-active'));
  await page.getByRole('button',{name:'Got it',exact:true}).click({timeout:1800}).catch(()=>{});
  const home=page.locator('.n7x-minimal-search').first();
  await home.waitFor({timeout:5000});

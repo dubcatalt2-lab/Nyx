@@ -23,12 +23,14 @@
 <canvas id="gl"></canvas>
 
 <script>
+(()=>{
 const canvas = document.getElementById("gl");
 const gl = canvas.getContext("webgl", { antialias: true });
 
 if (!gl) {
-  document.body.innerHTML = "<p style='color:white;padding:20px'>WebGL is not supported in this browser.</p>";
-  throw new Error("WebGL unavailable");
+  canvas.hidden = true;
+  document.body.style.background = "radial-gradient(ellipse at bottom right,#345b82,#101b32 45%,#02040a)";
+  return;
 }
 
 const vertexSource = `
@@ -206,6 +208,7 @@ function render(now) {
   gl.drawArrays(gl.TRIANGLES, 0, 6);
   requestRender();
 }
+})();
 </script>
 </body>
 </html>

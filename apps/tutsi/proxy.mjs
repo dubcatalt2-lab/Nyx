@@ -199,8 +199,8 @@ export function control(action, element) {
 }
 export function reloadBrowser(element, settings) {
   if(!element)return Promise.resolve();
-  // Native reload cannot recover a frame that has not been created yet. Re-enter
-  // the navigation queue with the source URL so cold-start reloads remain valid.
+                                                                                 
+                                                                                 
   const url=currentWebsiteUrl(element);
   return url?browse(url,settings,element):Promise.resolve();
 }
@@ -222,5 +222,5 @@ export async function testRelay(settings) {
   throw new Error('No configured relay responded from this device.');
 }
 
-// Compile the engine and establish its worker channel before the first submission.
+                                                                                   
 export function warmBrowser(settings){return engine(settings).then(()=>true).catch(()=>false);}

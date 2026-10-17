@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
-<!-- Made by Galaxyking16 --> 
+ 
+
+ 
 
 
 <html lang="en-us">
@@ -88,7 +88,7 @@
             const STORAGE_VALUES_SEPARATOR = '{bridge_values_separator}'
             
             
-            // utils
+                    
             window.unityInstance = null
             let progressBarFillingInterval = null
 
@@ -148,7 +148,7 @@
                 }
             }
 
-            // initialization
+                             
             bridge
                 .initialize(bridgeOptions)
                 .then(() => {
@@ -174,8 +174,8 @@
                                 companyName: 'Mewton Games',
                                 productName: 'Bouncy Motors',
                                 productVersion: '1.12.0',
-                                // matchWebGLToCanvasSize: false, // Uncomment this to separately control WebGL canvas render size and DOM element size.
-                                // devicePixelRatio: 1, // Uncomment this to override low DPI rendering on high DPI displays.
+                                                                                                                                                        
+                                                                                                                             
                             },
                             onUnityLoadingProgressChanged)
                             .then((unityInstance) => {
@@ -192,7 +192,7 @@
                 .catch(error => console.error(error))
             
 
-            // platform
+                       
             window.getPlatformId = function() {
                 return bridge.platform.id
             }
@@ -224,13 +224,13 @@
             }
 
 
-            // device
+                     
             window.getDeviceType = function() {
                 return bridge.device.type
             }
 
 
-            // player
+                     
             window.getIsPlayerAuthorizationSupported = function() {
                 return bridge.player.isAuthorizationSupported.toString()
             }
@@ -278,13 +278,13 @@
             }
 
 
-            // game
+                   
             window.getVisibilityState = function() {
                 return bridge.game.visibilityState
             }
 
 
-            // storage
+                      
             window.getStorageDefaultType = function() {
                 return bridge.storage.defaultType
             }
@@ -362,7 +362,7 @@
             }
 
 
-            // advertisement
+                            
             window.getInterstitialState = function() {
                 if (bridge.advertisement.interstitialState) {
                     return bridge.advertisement.interstitialState
@@ -440,7 +440,7 @@
             }
 
 
-            // social
+                     
             window.getIsShareSupported = function() {
                 return bridge.social.isShareSupported.toString()
             }
@@ -556,7 +556,7 @@
             }
 
 
-            // leaderboard
+                          
             window.getIsLeaderboardSupported = function() {
                 return bridge.leaderboard.isSupported.toString()
             }
@@ -653,6 +653,6 @@
                     })
             }
         </script>
-        <!-- <script type="text/javascript" > (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)}; m[i].l=1*new Date(); for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }} k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)}) (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym"); ym(92579146, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true, trackHash:true }); </script> <noscript><div><img src="https://mc.yandex.ru/watch/92579146" style="position:absolute; left:-9999px;" alt="" /></div></noscript> -->
+        
     </body>
 </html>

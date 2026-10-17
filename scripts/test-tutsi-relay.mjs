@@ -20,7 +20,7 @@ assert(bodies.every(body=>new URL(body.url).pathname==='/'));
 assert.deepEqual(await rankForBlocker(urls,'unknown',{fetcher:async()=>{throw Error('unavailable')}}),urls);
 console.log('Tutsi relay: handshake validation, backup, safe retries, upstream errors, manual mode and filter ranking passed');
 
-// Classification failure or delay must not prevent a working connection.
+                                                                         
 for(const rank of [()=>new Promise(()=>{}),async()=>{throw Error('checker unavailable')}]) {
  const guarded=new RelayTransport({...options,rank,probe:async()=>true,createClient:make});
  const started=Date.now();

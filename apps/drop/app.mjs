@@ -68,7 +68,7 @@ $('connectionMode').value=settings.connection;
 $('connectionMode').onchange=()=>{settings.connection=$('connectionMode').value;configureConnection();saveSettings();$('connectionStatus').textContent='Ready for next navigation';notice('Connection preference saved. Reload an open page to apply it.');};
 $('testConnection').onclick=async()=>{const button=$('testConnection');button.disabled=true;try{await testRelay(settings);}catch(error){$('connectionStatus').textContent='Unavailable';notice(error.message);}finally{button.disabled=false;}};
 addEventListener('tutsi:relay-status',({detail})=>{const bridge=detail.url?.includes('/api/tutsi-relay/socket/');$('connectionStatus').textContent=['connected','available','switched'].includes(detail.state)?(bridge?'HTTP bridge connected':'WebSocket connected'):detail.state==='checking'?'Connecting...':'Unavailable';});
-// SPA navigation updates history without firing an iframe load event.
+                                                                      
 setInterval(()=>{if(document.hidden||view!=='browser'||!active?.frame||active.loading)return;const url=currentWebsiteUrl(active.frame);if(!url||!/^https?:/.test(url))return;let title=active.title;try{title=active.frame.contentDocument?.title||new URL(url).hostname;}catch{}if(url===active.url&&title===active.title)return;active.url=url;active.title=title;if(document.activeElement!==$('address'))$('address').value=url;renderTabs();saveTabs();},500);
 $('engine').value=settings.engine;$('restore').checked=settings.restore;$('popups').checked=settings.popupBlock;$('ads').checked=settings.adBlock;
 $('settingsButton').onclick=()=>$('settings').showModal();document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).close());
@@ -101,7 +101,7 @@ $('bookmarkPage').onclick=()=>{if(!active)return;const i=bookmarks.findIndex(b=>
 $('pinPage').onclick=()=>{if(active)togglePin(active);};
 function renderBookmarks(){const query=$('bookmarkSearch').value.trim().toLowerCase();const matches=bookmarks.filter(b=>(b.title+' '+b.url).toLowerCase().includes(query));$('bookmarkList').replaceChildren(...matches.map(b=>{const row=document.createElement('div');row.className='bookmark-row';const open=document.createElement('button');open.innerHTML=icon('bookmark');const text=document.createElement('span'),title=document.createElement('strong'),url=document.createElement('small');title.textContent=b.title;url.textContent=b.url;text.append(title,url);open.append(text);open.onclick=()=>newTab(b.url);const remove=document.createElement('button');remove.className='icon';remove.innerHTML=icon('close');remove.setAttribute('aria-label','Remove bookmark '+b.title);remove.onclick=()=>{bookmarks=bookmarks.filter(item=>item!==b);persistBookmarks();};row.append(open,remove);return row;}));$('bookmarkEmpty').hidden=matches.length>0;$('bookmarkEmpty').textContent=bookmarks.length?'No matching bookmarks.':'Save a page with the bookmark icon in the address bar.';}
 $('bookmarkSearch').oninput=renderBookmarks;
-// Only the trusted library frame can ask the account frame for game persistence.
+                                                                                 
 addEventListener('message',event=>{if(event.origin!==location.origin)return;const data=event.data;if(event.source===$('gamesFrame').contentWindow&&['nyx:cloud-game-load','nyx:cloud-game-save','nyx:account-token-request'].includes(data?.type)){ensureAi();const send=()=> $('aiFrame').contentWindow.postMessage({type:'drop:game-account',request:data},location.origin);if(aiReady)send();else{const timer=setInterval(()=>{if(aiReady){clearInterval(timer);send();}},100);setTimeout(()=>clearInterval(timer),5000);}}if(event.source===$('aiFrame').contentWindow&&data?.type==='drop:game-result')$('gamesFrame').contentWindow?.postMessage(data.result,location.origin);});
 setView('home');
 
@@ -126,7 +126,7 @@ $('blankCloak').onclick=()=>{
  }catch{popup.close();notice('Could not open the about:blank window. Try again.');}
 };
 
-// First-visit setup follows the study screen and uses the regular settings.
+                                                                            
 function finishSetup(apply){
  if(apply){settings.engine=$('setupEngine').value;settings.closePrevention=$('setupClose').checked;$('engine').value=settings.engine;saveSettings();syncClosePrevention();}
  try{localStorage.setItem('drop.setupComplete','1');}catch{}

@@ -19,7 +19,7 @@ try {
  const frame=page.frames().find(f=>f.parentFrame());await frame.waitForSelector('canvas');await page.waitForTimeout(200);
  const rect=await frame.locator('canvas').boundingBox();assert(rect.width>=1000&&rect.height>=600,'Engine-sized canvas must remain visible');
  assert.equal(await frame.locator('canvas').evaluate(c=>getComputedStyle(c).position),'static','Canvas must stay in normal flow');
- // A collapsed ancestor is repaired without changing the intrinsic pixel size.
+                                                                               
  await frame.evaluate(()=>{const d=document.createElement('div');d.style.height='0px';d.innerHTML='<canvas width="800" height="500"></canvas>';document.body.append(d);});
  await page.waitForTimeout(100);assert(await frame.locator('canvas').last().evaluate(c=>c.parentElement.getBoundingClientRect().height>0));
  const result=await frame.evaluate(async()=>{

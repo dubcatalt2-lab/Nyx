@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 
 <html xmlns='https://www.w3.org/1999/xhtml' lang='' xml:lang=''>
@@ -45,8 +45,8 @@
 		}
 
 
-		/* Status display
-		 * ============== */
+		                 
+                      
 
 		#status {
 			position: absolute;
@@ -57,19 +57,19 @@
 			display: flex;
 			justify-content: center;
 			align-items: center;
-			/* don't consume click events - make children visible explicitly */
+			                                                                   
 			visibility: hidden;
 		}
 
 		#status-progress {
 			width: 366px;
 			height: 20px;
-			/*background-color: #38363A;*/
+			                              
 			background-color: #2f2f2f;
 			border: 1px solid #444246;
 			padding: 1px;
-			/*box-shadow: 0 0 2px 1px #1B1C22;*/
-			/*border-radius: 2px;*/
+			                                    
+			                       
 			visibility: visible;
 		}
 
@@ -85,9 +85,9 @@
 			box-sizing: border-box;
 			transition: width 0.5s linear;
 			background-color: #efefef;
-			/*border: 1px solid #222223;*/
-			/*box-shadow: 0 0 1px 1px #27282E;*/
-			/*border-radius: 3px;*/
+			                              
+			                                    
+			                       
 		}
 
 		#status-indeterminate {
@@ -146,7 +146,7 @@
 			visibility: visible;
 		}
 	</style>
-	<!-- Poki SDK include -->
+	
 	<script src="poki-sdk.js"></script>
 	<script>
 		window.addEventListener('keydown', ev => {
@@ -189,7 +189,7 @@
 
 		<script type='text/javascript' src='index.js'></script>
 		<script type='text/javascript'>
-			//<![CDATA[
+			           
 
 		const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":13430320,"index.wasm":13789463},"focusCanvas":true,"gdnativeLibs":[],"serviceWorker":"index.service.worker.js"};
 		var engine = new Engine(GODOT_CONFIG);
@@ -280,7 +280,7 @@
 							statusProgressInner.style.width = current/total * 100 + '%';
 							setStatusMode('progress');
 							if (current === total) {
-								// wait for progress bar animation
+								                                  
 								setTimeout(() => {
 									setStatusMode('indeterminate');
 								}, 500);
@@ -297,7 +297,7 @@
 			}
 		}
 
-		//Poki SDK Init. 
+		                 
 		PokiSDK.init().then(()=>{
 			startGameLoading()
 		}).catch(()=>{
@@ -308,7 +308,7 @@
 		if(hn == "localhost" || hn == "192.168.1.14"){    
 			PokiSDK.setDebug(true)
 		}
-//]]>
+     
 		</script>
 </body>
 

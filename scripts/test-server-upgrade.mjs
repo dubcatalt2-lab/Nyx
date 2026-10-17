@@ -3,7 +3,7 @@ import { fork } from 'node:child_process';
 import { connect } from 'node:net';
 import { once } from 'node:events';
 
-// Isolated real server, no production credentials or external requests.
+                                                                        
 const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => /^(path|systemroot|windir|temp|tmp)$/i.test(key)));
 const child = fork(new URL('../server.js', import.meta.url), [], {
   env: { ...env, PORT: '0', NYX_PUBLIC_ORIGIN: 'https://nyxlearning.org', NYX_YOUTUBE_NATIVE_ENABLED: '0' }, silent: true

@@ -1,4 +1,4 @@
-// Kept self-contained: the launcher inserts this function into its generated runtime.
+                                                                                      
 export async function requireProviderStep(response, stage) {
   let payload;
   try { payload=await response.json(); } catch {

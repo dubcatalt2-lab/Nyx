@@ -1,26 +1,24 @@
 <Module>
 
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
 
 
 
 
-<?xml version="1.0" encoding="UTF-8" ?>
+
+
 <Module>
 	<ModulePrefs title="google.com" />
 	<Content type="html">
-		<![CDATA[
-
-<!DOCTYPE html>
+		
 <html lang="en-us">
 <head>
     <meta charset="utf-8"/>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/6xgungmaster/google@main/style.css"/>
-    <!-- Yandex Games SDK -->
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         canvas:focus { outline: none; }
@@ -223,9 +221,9 @@
 
         let StartUnityInstance;
         let myGameInstance;
-        let ysdk = null; // Yandex SDK pasif
+        let ysdk = null;                    
 
-        // Varsayılan değerlerle environmentData, cloudSaves, paymentsData ve playerData gibi değişkenlerin tanımlanması
+                                                                                                                        
         let environmentData = {
             language: "en",
             domain: "default_domain",
@@ -255,13 +253,13 @@
         
         let cloudSaves = 'noData';
         let paymentsData = 'none';
-        let playerData = 'noData'; // Varsayılan playerData tanımı
+        let playerData = 'noData';                                
         let player = null;
         let payments = null;
         let initGame = false;
         let nowFullAdOpen = false;
 
-        // Eksik olabilecek tüm SDK işlevlerini varsayılan olarak tanımla
+                                                                         
         function GetPayments() { console.warn("GetPayments is not implemented"); return Promise.resolve("none"); }
         function SaveCloud() { console.warn("SaveCloud is not implemented"); }
         function LoadCloud() { console.warn("LoadCloud is not implemented"); return Promise.resolve("noData"); }
@@ -271,7 +269,7 @@ function FullAdShow() {
     try {
         console.log("Full-screen ad functionality is disabled.");
 
-        // Create a modal for the message
+                                         
         const warningModal = document.createElement('div');
         warningModal.id = "warning-modal";
         warningModal.style.position = "fixed";
@@ -303,13 +301,13 @@ function FullAdShow() {
             </button>
         `;
 
-        // Append the modal to the body
+                                       
         document.body.appendChild(warningModal);
 
-        // Refresh the page on button click
+                                           
         document.getElementById("refresh-btn").onclick = function () {
             console.log("Button clicked. Refreshing the page...");
-            location.reload(); // Refresh the page
+            location.reload();                    
         };
 
     } catch (error) {
@@ -322,7 +320,7 @@ function RewardedShow() {
     try {
         console.log("Rewarded ad functionality is disabled.");
 
-        // Create a modal for the message
+                                         
         const warningModal = document.createElement('div');
         warningModal.id = "warning-modal";
         warningModal.style.position = "fixed";
@@ -347,12 +345,12 @@ function RewardedShow() {
             </button>
         `;
 
-        // Append the modal to the body
+                                       
         document.body.appendChild(warningModal);
 
-        // Refresh the page on button click
+                                           
         document.getElementById("refresh-btn").onclick = function () {
-            location.reload(); // Refresh the page
+            location.reload();                    
         };
     } catch (error) {
         console.error("Error during RewardedShow:", error);
@@ -367,7 +365,7 @@ function RewardedShow() {
         function GetLeaderboardScores() { console.warn("GetLeaderboardScores is not implemented"); }
         function SetLeaderboardScores() { console.warn("SetLeaderboardScores is not implemented"); }
         function ConsumePurchase() { console.warn("ConsumePurchase is not implemented"); }
-        function ConsumePurchases() { console.warn("ConsumePurchases is not implemented"); } // Varsayılan tanım eklendi
+        function ConsumePurchases() { console.warn("ConsumePurchases is not implemented"); }                            
 
 
         function InitGame() {
@@ -382,7 +380,7 @@ function RewardedShow() {
             }
         }
 
-        // Hata oluştuğunda oyuna devam etmek için tüm hataları global olarak yakalayan yapı
+                                                                                            
         window.addEventListener("unhandledrejection", function(event) {
             console.warn("Hata es geçildi:", event.reason);
             event.preventDefault();

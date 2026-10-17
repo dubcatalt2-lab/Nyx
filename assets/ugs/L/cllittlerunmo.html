@@ -1,5 +1,5 @@
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 <!DOCTYPE html>
 <html xmlns='http://www.w3.org/1999/xhtml' lang='' xml:lang=''>
@@ -39,8 +39,8 @@
 		}
 
 
-		/* Status display
-		 * ============== */
+		                 
+                      
 
 		#status {
 			position: absolute;
@@ -51,7 +51,7 @@
 			display: flex;
 			justify-content: center;
 			align-items: center;
-			/* don't consume click events - make children visible explicitly */
+			                                                                   
 			visibility: hidden;
 		}
 
@@ -143,7 +143,7 @@
 	</div>
 
 	<script type='text/javascript' src='Little Runmo - The Game.js'></script>
-	<script type='text/javascript'>//<![CDATA[
+	<script type='text/javascript'>           
 
 		const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"executable":"Little Runmo - The Game","experimentalVK":false,"fileSizes":{"Little Runmo - The Game.pck":116125248,"Little Runmo - The Game.wasm":13788612},"focusCanvas":true,"gdnativeLibs":[]};
 		var engine = new Engine(GODOT_CONFIG);
@@ -234,7 +234,7 @@
 							statusProgressInner.style.width = current/total * 100 + '%';
 							setStatusMode('progress');
 							if (current === total) {
-								// wait for progress bar animation
+								                                  
 								setTimeout(() => {
 									setStatusMode('indeterminate');
 								}, 500);
@@ -249,6 +249,6 @@
 				}, displayFailureNotice);
 			}
 		}
-	//]]></script>
+	     </script>
 </body>
 </html>

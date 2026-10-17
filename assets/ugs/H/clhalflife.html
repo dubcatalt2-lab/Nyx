@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ --> 
+ 
+ 
 
 
 <html lang="en-us">
@@ -295,7 +295,7 @@
 		var mounted = false;
 		var gamedir = 'valve';
 		var moduleCount = 0;
-		//var mem = 150;
+		                
 		var mfs;
 		var zipSize;
 
@@ -334,7 +334,7 @@
 				if (len > 1) {
 					for (var i = 0; i < len; i++)
 						select.options[i] = new Option(pkgMods[i][1], pkgMods[i][0]);
-					//select.style.display = 'block';
+					                                 
 				}
 			} else
 				document.getElementById('rPackage').checked = false;
@@ -380,15 +380,15 @@
 							element.value = element.value.substring(512) + myerrorbuf;
 						else
 							element.value += myerrorbuf;
-						element.scrollTop = element.scrollHeight; // focus on bottom
+						element.scrollTop = element.scrollHeight;                   
 					}
 					myerrorbuf = ''
 				};
 			})(),
 			printErr: function(text) {
 				if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
-				if (0) { // XXX disabled for safety typeof dump == 'function') {
-					dump(text + '\n'); // fast, straight to the real console
+				if (0) {                                                        
+					dump(text + '\n');                                      
 				} else {
 					if (myerrorbuf.length > 2048)
 						myerrorbuf = 'some lines skipped\n' + myerrorbuf.substring(512);
@@ -512,8 +512,8 @@
 			window.addEventListener("beforeunload", function(e) {
 				var confirmationMessage = 'Leave the game?';
 
-				(e || window.event).returnValue = confirmationMessage; //Gecko + IE
-				return confirmationMessage; //Gecko + Webkit, Safari, Chrome etc.
+				(e || window.event).returnValue = confirmationMessage;             
+				return confirmationMessage;                                      
 			});
 		}
 
@@ -549,7 +549,7 @@
 					throw new Error("NetworkError");
 				}
 				xhr.onload = function(event) {
-					if (xhr.status == 200 || xhr.status == 304 || xhr.status == 206 || (xhr.status == 0 && xhr.response)) { // file URLs can return 0
+					if (xhr.status == 200 || xhr.status == 304 || xhr.status == 206 || (xhr.status == 0 && xhr.response)) {                          
 						mountZIP(xhr.response);
 						cb();
 					} else {
@@ -581,7 +581,7 @@
 						throw new Error("NetworkError");
 					}
 					xhr.onload = function(event) {
-						if (xhr.status == 200 || xhr.status == 304 || xhr.status == 206 || (xhr.status == 0 && xhr.response)) { // file URLs can return 0
+						if (xhr.status == 200 || xhr.status == 304 || xhr.status == 206 || (xhr.status == 0 && xhr.response)) {                          
 							finished++;
 							buffers.set(new Uint8Array(xhr.response), cur * size_of_parts);
 							if (finished == parts) {
@@ -663,7 +663,7 @@
 
 		Module.preInit = [skipRun];
 		Module.websocket = [];
-		//Module.websocket.url = 'wsproxy://the-swank.pp.ua:3000/'
+		                                                          
 		Module.websocket.url = 'wsproxy://4.tcp.ngrok.io:10657/';
 		ENV = [];
 	</script>
@@ -692,13 +692,13 @@
 			else document.getElementById('output').style.display = "none";
 		});
 		document.getElementById('label_show_console_log').style.display = "inline-block";
-		/*(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-		(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-		m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-		})(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+		                                                                              
+                                                                                
+                                                                                 
+                                                                                    
 
-		ga('create', 'UA-68666752-4', 'auto');
-		ga('send', 'pageview');*/
+                                        
+                           
 	</script>
 </body>
 

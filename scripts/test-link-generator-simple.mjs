@@ -3,7 +3,7 @@ import { readFile, mkdir } from 'node:fs/promises';
 import { resolve, extname } from 'node:path';
 import { chromium } from 'playwright';
 
-// All API calls are fixtures: this test never creates real links or accounts.
+                                                                              
 const root = resolve(process.env.NYX_TEST_STATIC_ROOT || '.');
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext();
@@ -101,7 +101,7 @@ try {
   await ui.getByRole('button', { name: 'Next', exact: true }).click();
   await ui.locator('[data-access-gate]').waitFor({ state: 'visible' });
   assert.equal(requests.length, 3, 'Signing out must prevent further publishing');
-  // A standalone link has an ordinary sign-in fallback.
+                                                        
   await page.goto('http://localhost/apps/link-generator/');
   await page.locator('[data-access-gate]').waitFor({ state: 'visible' });
   await page.locator('[data-account-email]').fill('fixture@example.test');

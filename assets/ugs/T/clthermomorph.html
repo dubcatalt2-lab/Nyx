@@ -1,6 +1,6 @@
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
-<!--this is a horror game like fnaf. Uses jsdelivr--!>
+ 
+
+
 
 <!doctype html>
 <html lang="en-us">
@@ -11,7 +11,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, minimum-scale=1, maximum-scale=1">
     <title>Thermomorph</title>
 
-    <!-- Load custom style sheet -->
+    
     <style>
       * {
           box-sizing: border-box;
@@ -39,7 +39,7 @@
           width: 100%;
       }
 
-      /* Links */
+                 
       a {
           text-decoration: none;
       }
@@ -53,7 +53,7 @@
           color: rgb( 252, 207, 230 );
       }
 
-      /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
+                                                                                           
       #canvas {
           padding-right: 0;
           display: none;
@@ -85,7 +85,7 @@
       window.onclick = function () { window.focus(); };
 
       window.addEventListener("keydown", function(e) {
-        // space and arrow keys
+                               
         if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
           e.preventDefault();
         }
@@ -98,9 +98,9 @@
         canvas: (function() {
           var canvas = document.getElementById('canvas');
 
-          // As a default initial behavior, pop up an alert when webgl context is lost. To make your
-          // application robust, you may want to override this behavior before shipping!
-          // See http://www.khronos.org/registry/webgl/specs/latest/1.0/#5.15.2
+                                                                                                    
+                                                                                        
+                                                                               
           canvas.addEventListener("webglcontextlost", function(e) { alert('WebGL context lost. You will need to reload the page.'); e.preventDefault(); }, false);
 
           return canvas;
@@ -123,7 +123,7 @@
       };
       Module.setStatus('Downloading...');
       window.onerror = function(event) {
-        // TODO: do not warn on ok events like simulating an infinite loop or exitStatus
+                                                                                        
         Module.setStatus('Exception thrown, see JavaScript console');
         Module.setStatus = function(text) {
           if (text) Module.printErr('[post-exception status] ' + text);

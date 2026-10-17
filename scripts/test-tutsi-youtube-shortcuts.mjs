@@ -9,11 +9,11 @@ try{
  }};});
  await page.goto('http://localhost:9091/tutsi#youtube');const frame=page.frameLocator('#app-host iframe:not([hidden])');await frame.locator('.video-cover').first().click();await frame.locator('[data-watch-gesture]').waitFor();
  const value=key=>frame.locator('body').evaluate((_,key)=>window.fixturePlayer[key],key);
- // The mouse is over an actual iframe: the surrounding gesture surface must receive the hold.
+                                                                                              
  await frame.locator('body').evaluate(()=>window.fixturePlayer.pauseVideo());
  await frame.locator('[data-watch-gesture]').click();assert.equal(await value('state'),1);
  const box=await frame.locator('[data-watch-gesture]').boundingBox();await page.mouse.move(box.x+box.width*.3,box.y+box.height*.5);await page.mouse.down();await page.waitForTimeout(420);assert.equal(await value('rate'),2);await page.mouse.up();assert.equal(await value('rate'),1);assert.equal(await value('state'),1);
- // Outer-page focus should still forward keys to the registered YouTube frame.
+                                                                               
  await page.evaluate(()=>{document.activeElement?.blur();document.body.tabIndex=-1;document.body.focus()});
  await page.keyboard.down('Space');await page.waitForTimeout(420);assert.equal(await value('rate'),2);await page.keyboard.up('Space');assert.equal(await value('rate'),1);
  await page.keyboard.press('ArrowRight');assert.equal(await value('time'),15);await page.keyboard.press('j');assert.equal(await value('time'),5);

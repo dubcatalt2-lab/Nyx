@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 
 <html lang="en-us">
   <base href="https://cdn.jsdelivr.net/gh/bubbls/UGS-Assets@5b629b623e4bda43d0ea9671da8301b2bebfd3d7/golf%20orbit/">
   <head>
     <script>
-      // ts true 💔😭✌
+                      
       window.gnMathIsTheBestGameSiteEver = {
         "ancestorOrigins": {},
         "href": "https://html5.gamedistribution.com/rvvASMiM/02ff01e6e9f7451ba28d889a2a55eec9/index.html?gd_sdk_referrer_url=https%3A%2F%2Fgamedistribution.com%2Fgames%2Fgolf-orbit%2F&gd_zone_config=eyJwYXJlbnRVUkwiOiJodHRwczovL2h0bWw1LmdhbWVkaXN0cmlidXRpb24uY29tLzAyZmYwMWU2ZTlmNzQ1MWJhMjhkODg5YTJhNTVlZWM5Lz9nZF9zZGtfcmVmZXJyZXJfdXJsPWh0dHBzOi8vZ2FtZWRpc3RyaWJ1dGlvbi5jb20vZ2FtZXMvZ29sZi1vcmJpdC8iLCJwYXJlbnREb21haW4iOiJnYW1lZGlzdHJpYnV0aW9uLmNvbSIsInRvcERvbWFpbiI6ImdhbWVkaXN0cmlidXRpb24uY29tIiwiaGFzSW1wcmVzc2lvbiI6ZmFsc2UsImxvYWRlckVuYWJsZWQiOnRydWUsImhvc3QiOiJodG1sNS5nYW1lZGlzdHJpYnV0aW9uLmNvbSIsInZlcnNpb24iOiIxLjUuMTcifQ%253D%253D",
@@ -72,7 +72,7 @@
   </head>
   <body>
     <div id="unity-container" class="unity-desktop">
-      <!-- <button id="unity-fullscreen-button" onclick="toggleFullscreen()"></button> -->
+      
       <canvas id="unity-canvas"></canvas>
       <div id="unity-loading-bar">
         <div id="unity-progress-bar-empty">
@@ -167,24 +167,24 @@
         showBanner: unityShowBanner,
       };
       
-      // By default Unity keeps WebGL canvas render target size matched with
-      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
-      // Set this to false if you want to decouple this synchronization from
-      // happening inside the engine, and you would instead like to size up
-      // the canvas DOM size and WebGL render target sizes yourself.
-      //config.matchWebGLToCanvasSize = false;
+                                                                            
+                                                                               
+                                                                            
+                                                                           
+                                                                    
+                                              
       
       if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // Mobile device style: fill the whole browser client area with the game canvas
+                                                                                       
         var meta = document.createElement('meta');
         meta.name = 'viewport';
         meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
         document.getElementsByTagName('head')[0].appendChild(meta);
         container.className = "unity-mobile";
       
-        // To lower canvas resolution on mobile devices to gain some
-        // performance, uncomment the following line:
-        //config.devicePixelRatio = 1;
+                                                                    
+                                                     
+                                      
       }
       
       loadingBar.style.display = "block";
@@ -197,9 +197,9 @@
         }).then((unityInstance) => {
           loadingBar.style.display = "none";
 
-          // If you want to warn the player before they close the tab,
-          // uncomment the following:
-          //window.onbeforeunload = confirmUnload;
+                                                                      
+                                     
+                                                  
         }).catch((message) => {
           alert(message);
         });

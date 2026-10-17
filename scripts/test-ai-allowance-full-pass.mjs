@@ -16,7 +16,7 @@ for(const premium of [false,true]){
   const initial=await a.usage(actor);assert.equal(initial.resetAt,null);assert.equal(initial.tokens.limit,premium?50000:7000);
   for(let i=0;i<20;i++){
     const s=await a.begin(actor);
-    // Old daily counts and hidden per-account dollars must not block chat.
+                                                                           
     const account=f.db.records.get(s.refs.account.path);account.requests=2000;account.money=150000;
     const r=await a.reserve(s,'shared',f.payload(),price);
     const pending=await a.usage(actor);assert.equal(pending.tokens.used,i*20);assert.equal(pending.tokens.pending,r.tokens);

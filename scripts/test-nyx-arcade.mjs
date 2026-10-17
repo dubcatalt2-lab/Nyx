@@ -23,8 +23,8 @@ try {
   assert.equal(await page.locator('h1').textContent(), 'ARCADE');
   assert.equal(await page.locator('.cove-mark, .subtitle').count(), 0);
   assert.equal(await page.locator('.arcade-feature').count(), 3);
-  // clean-css drops a font shorthand containing clamp(); guard the rendered
-  // production typography so the featured titles cannot fall back to body text.
+                                                                            
+                                                                                
   const featuredType = await page.locator('.arcade-feature-title').nth(1).evaluate(element => {
     const style = getComputedStyle(element);
     return { size: parseFloat(style.fontSize), weight: Number(style.fontWeight), family: style.fontFamily };
@@ -33,7 +33,7 @@ try {
   assert.equal(await page.locator('#emptyState').isVisible(), false);
   assert.equal(await page.locator('#gamePagination').isVisible(), false);
 
-  // Keyboard launch uses the same player and restores focus on close.
+                                                                      
   const spotlight = page.getByRole('button', { name: 'Launch Slope', exact: true });
   await spotlight.focus();
   await page.keyboard.press('Enter');
@@ -71,7 +71,7 @@ try {
   await spotlight.hover();
   assert.equal(await spotlight.evaluate(element => getComputedStyle(element).transform), 'none');
 
-  // These shells share catalog code, but must retain their own presentation.
+                                                                             
   await page.goto(base + '/apps/drop/games.html');
   await page.locator('.game-card').first().waitFor();
   assert.equal(await page.locator('body').evaluate(element => element.classList.contains('n7x-arcade')), false);

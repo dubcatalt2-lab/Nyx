@@ -24,7 +24,7 @@ try{
         let videos=params.q==='cats'?cats:params.q==='slow'?[video('OLD00000001')]:params.topic==='gaming'?[video('GAM00000001',2),video('GAM00000002',2)]:defaults;
         if(params.creators===channels[3])videos=[cats[0],...defaults];
         if(Number(params.page)>1)videos=[];
-        try{await route.fulfill({json:{videos,nextPage:Number(params.page)===1?2:null}});}catch{/* Aborted stale searches are expected. */}
+        try{await route.fulfill({json:{videos,nextPage:Number(params.page)===1?2:null}});}catch{                                          }
         return;
       }
       return route.fulfill({json:path.endsWith('/status')?{configured:true,nativeAvailable:false,invidiousEmbedOrigin:embed}:{videos:[],users:[]}});

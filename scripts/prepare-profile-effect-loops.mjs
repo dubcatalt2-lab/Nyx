@@ -1,6 +1,6 @@
 import {readFile,writeFile} from 'node:fs/promises';
 
-// Keep source artwork intact. Only change APNG playback metadata in runtime copies.
+                                                                                    
 export function loopingApng(original){
   const bytes=Buffer.from(original);
   for(let offset=8;offset+12<=bytes.length;){

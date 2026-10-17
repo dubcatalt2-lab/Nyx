@@ -27,8 +27,8 @@ assert.equal([...records.keys()].filter(key=>key.includes('/wallpaper/')).length
 await store.write('alice',{'nyx.customBgData':''});assert.equal([...records.keys()].filter(key=>key.includes('/wallpaper/')).length,0);
 assert.equal((await store.read('alice')).preferences['nyx.customBgData'],'');
 
-// Exercise the actual browser sync functions with separate browser stores and
-// delayed network replies, without touching any real account or browser session.
+                                                                              
+                                                                                 
 const source=await readFile('script.js','utf8');
 const sync=source.slice(source.indexOf('  const NYX_CLOUD_PREFERENCE_KEYS='),source.indexOf('  async function loadNyxCloudGameSave('));
 function client(uid,initial={}){
@@ -40,7 +40,7 @@ function client(uid,initial={}){
  });vm.runInContext(sync,context);return {context,storage,requests,run:code=>vm.runInContext(code,context)};
 }
 const first=client('alice',{'nyx.customBgData':image,'nyx.beamTheme':'custom-wallpaper'});
-// Simulate the existing account before wallpaper sync was supported.
+                                                                     
 records.delete('nyxCloudSaves/alice');await first.run('loadNyxCloudPreferences()');await first.run('saveNyxCloudPreferences()');
 const other=client('alice');await other.run('loadNyxCloudPreferences()');assert.equal(other.storage.get('nyx.customBgData'),image);
 other.storage.set('nyx.theme','halloween');await other.run('saveNyxCloudPreferences()');

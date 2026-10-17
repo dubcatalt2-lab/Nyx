@@ -13,7 +13,7 @@ const guard=createOpenRouterBalanceGuard(options);
 const claim=amount=>guard.reserve({key:'inference-fixture',amount});
 const denied=p=>assert.rejects(p,e=>e.status===503&&e.message===AI_UNAVAILABLE);
 await denied(claim(0));balance=-.01;await denied(claim(1));
-balance=.11;await denied(claim(10000)); // Reserving ten thousand microdollars would touch the floor.
+balance=.11;await denied(claim(10000));                                                              
 const results=await Promise.allSettled([claim(6000),createOpenRouterBalanceGuard(options).reserve({key:'inference-fixture',amount:6000})]);
 assert.equal(results.filter(r=>r.status==='fulfilled').length,1,'Processes/models must share pending cost reservations');
 await denied(claim(6000));

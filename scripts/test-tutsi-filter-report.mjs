@@ -17,7 +17,7 @@ assert(report.checks.every(check=>check.status==='unavailable'));
 report=await inspectFilters({signatures:[{id,path:'signal.txt',vendor:'fixture'}],fetcher:()=>new Promise(()=>{}),timeoutMs:5,doc:null});
 assert.equal(report.checks[0].status,'timeout');
 assert.deepEqual(report.vendors,[]);
-// Cancelling a response body must not hold a successful scan open indefinitely.
+                                                                                
 report=await Promise.race([inspectFilters({signatures:[{id,path:'signal.txt',vendor:'fixture'}],doc:null,fetcher:async()=>({ok:true,body:{cancel:()=>new Promise(()=>{})}})}),new Promise((_,reject)=>setTimeout(()=>reject(Error('Scan hung')),1000))]);
 assert.deepEqual(report.vendors,['fixture']);
 

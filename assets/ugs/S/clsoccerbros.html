@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 
 
@@ -62,7 +62,7 @@
 	    }
 
 	    .body::-webkit-scrollbar {
-	      /* WebKit */
+	                  
 	      width: 0px;
 	    }
 
@@ -88,7 +88,7 @@
 	  </style>
 
 
-	  <!-- Google tag (gtag.js) -->
+	  
 	  <script async src="https://www.googletagmanager.com/gtag/js?id=G-9SYZ0JXBCT"></script>
 	  <script>
 	    window.dataLayer = window.dataLayer || [];
@@ -104,7 +104,7 @@
 	  </script>
 
 	  <script>
-	    //Interstitial ad available event
+	                                     
 	    document.addEventListener("aip_interstitialadavailable", function(e) {
 	      console.log("An interstitial ad is available");
 	    });
@@ -116,15 +116,15 @@
 	    aiptag.cmd = aiptag.cmd || [];
 	    aiptag.cmd.display = aiptag.cmd.display || [];
 	    aiptag.cmd.player = aiptag.cmd.player || [];
-	    // Settings
-	    //aiptag.consented = false; // GDPR setting, please set this value to false if an EU user has declined or not yet accepted marketing cookies, for users outside the EU please use true and for users accepted the GDPR also use true
-	    //CMP tool settings
+	               
+	                                                                                                                                                                                                                                        
+	                       
 	    aiptag.cmp = {
 	      show: true,
-	      position: "centered", //centered or bottom
+	      position: "centered",                     
 	      button: true,
 	      buttonText: "Privacy settings",
-	      buttonPosition: "bottom-left" //bottom-left, bottom-right, top-left, top-right
+	      buttonPosition: "bottom-left"                                                 
 	    }
 
 
@@ -139,20 +139,20 @@
 	        },
 	        AD_WIDTH: 960,
 	        AD_HEIGHT: 540,
-	        AD_DISPLAY: 'default', //default, fullscreen, center, fill
+	        AD_DISPLAY: 'default',                                    
 	        TRUSTED: true,
 	        LOADING_TEXT: 'loading advertisement',
 	        PREROLL_ELEM: function() {
 	          return document.getElementById('preroll')
 	        },
 	        AIP_COMPLETE: function(state) {
-	          /*******************
-	           ***** WARNING *****
-	          *******************
-	          Please do not remove the PREROLL_ELEM
-	          from the page, it will be hidden automaticly.
-	          If you do want to remove it use the AIP_REMOVE callback.
-	          */
+	                              
+                               
+                              
+                                                
+                                                        
+                                                                   
+             
 	          Main.DoneVideoAd();
 	          window.focus();
 	          window.document.getElementById('openfl-content').focus();
@@ -161,7 +161,7 @@
 	          SendEvent('event', 'donevideo-' + lastUnitPlayed + "-" + state);
 	        },
 	        AIP_REMOVE: function() {
-	          // Here it's safe to remove the PREROLL_ELEM from the page if you want. But it's not recommend.
+	                                                                                                         
 	        }
 	      });
 	    });
@@ -197,7 +197,7 @@
 	    function LoadVideo() {
 	      if (typeof $msstart !== 'undefined') {
 	        $msstart.loadAdsAsync().then(adInstance => {
-	          // Use the adInstance.instanceId to make a call to showAdsAsync
+	                                                                         
 	          msAdID = adInstance.instanceId;
 	        });
 
@@ -221,7 +221,7 @@
 
 	      if (typeof $msstart !== 'undefined' && forceaip == false) {
 	        $msstart.showAdsAsync(msAdID).then(adInstance => {
-	          // Use the adInstance.showAdsCompletedAsync to be notified of the completion of showing the advertisement
+	                                                                                                                   
 	          adInstance.showAdsCompletedAsync.then((val) => {
 	            console.log('MS Video Ad Complete');
 	            Main.DoneVideoAd();
@@ -235,7 +235,7 @@
 	          });
 	        }).catch((err) => {
 	          console.log('Ms Video Ad Error, showing aip');
-	          //Main.DoneVideoAd();
+	                               
 	          window.focus();
 	          window.document.getElementById('openfl-content').focus();
 	          SendEvent('event', 'ms_video_show_error2');
@@ -251,9 +251,9 @@
 	        };
 	        window.CrazyGames.SDK.ad.requestAd("midgame", callbacks);
 
-	        //			window.CrazyGames.SDK.addEventListener("adFinished", Main.DoneVideoAd); // reenable sound, enable ui
-	        //			window.CrazyGames.SDK.addEventListener("adError", Main.DoneVideoAd); // reenable sound, enable ui
-	        //			window.CrazyGames.SDK.requestAd();		
+	                                                                                                                 
+	                                                                                                              
+	                                                 
 	        console.log('CG_AD_REQUESTED');
 	        SendEvent('event', 'cgvideo');
 	        return;
@@ -276,15 +276,15 @@
 	    }
 	  </script>
 
-	  <!-- Firebase App (the core Firebase SDK) -->
+	  
 	  <script src="firebase-app.js"></script>
-	  <!-- Firebase Authentication -->
+	  
 	  <script src="firebase-auth.js"></script>
-	  <!-- Firebase Firestore (Database) -->
+	  
 	  <script src="firebase-firestore.js"></script>
 
 	  <script>
-	    // Your web app's Firebase configuration
+	                                            
 	    const firebaseConfig = {
 	      apiKey: "AIzaSyA4vm8qzAsl93QB7bf-fR28uJ4m2C68Z1I",
 	      authDomain: "soccer-bros-6a027.firebaseapp.com",
@@ -294,7 +294,7 @@
 	      appId: "1:348784683755:web:a8ceb7a303bdd5c2646cae"
 	    };
 
-	    // Initialize Firebase
+	                          
 	    firebase.initializeApp(firebaseConfig);
 	    const auth = firebase.auth();
 	    const db = firebase.firestore();
@@ -305,7 +305,7 @@
 	      auth.signInWithPopup(provider);
 	    }
 
-	    // Save game data function
+	                              
 	    function saveGameData(gameData) {
 	      console.log('saving gamedata:' + gameData);
 	      var userId = auth.currentUser.uid;
@@ -319,7 +319,7 @@
 	      });
 	    }
 
-	    // Load game data function
+	                              
 	    function loadGameData() {
 	      return userData;
 	    }
@@ -329,12 +329,12 @@
 	      db.collection('users').doc(userId).get().then(function(doc) {
 	        if (doc.exists) {
 	          userData = doc.data().gameData;
-	          //Main.LoadGlobals();
+	                               
 	          console.log('Game data:', doc.data().gameData);
 	          if (typeof Main != "undefined") {
 	            Main.LoadDataComplete();
 	          }
-	          // Use the game data in your game
+	                                           
 	        } else {
 	          console.log('No such document!');
 	        }
@@ -343,7 +343,7 @@
 	      });
 	    }
 
-	    // Firebase auth state observer
+	                                   
 	    auth.onAuthStateChanged(function(user) {
 	      if (user) {
 	        loadGameDataAsync();
@@ -372,9 +372,9 @@
 	<body style="overflow:hidden;">
 	  <noscript>Enable JavaScript bro!</noscript>
 	  <script>
-	    //alert("Globals:"+localStorage.getItem("/:Globals").length);
-	    /////////////////////////////////////////////////////////////////////
-	    ////////////////////////////////////////////////////////////////////
+	                                                                 
+	                                                                         
+	                                                                        
 	    var url = window.location.href;
 	    if (url.includes("www.")) {
 	      url = url.replace("www.", "");
@@ -400,8 +400,8 @@
 	      if (aPost.length > aLen) localStorage.setItem("/:Globals", aPost);
 	      if (aPost.length > 0 && aPost.length == aLen) localStorage.setItem("/:Globals", aPost);
 	    }
-	    /////////////////////////////////////////////////////////////////////
-	    ////////////////////////////////////////////////////////////////////
+	                                                                         
+	                                                                        
 	  </script>
 
 	  <div id="loading" style="position: absolute; z-index: 15; top: 60%; left: 50%; transform: translate(-50%, 0); background: black;">
@@ -495,23 +495,11 @@
 	        &nbsp; Would you like to be a partner too? Contact: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f79e999198b7959b8292809e8d968593d994989a">[email&#160;protected]</a>
 	      </div>
 
-	      <!--                <div class="partner defaultshow hidecrazygames">
-                    <a href="https://iogames.space/" target="_blank">More IO Games</a>
-                </div> -->
-	      <!--                <div class="partner  defaultshow hidecrazygames">
-                    <a href="https://silvergames.com/" target="_blank">Silver Games</a>
-                </div> -->
+	      
+	      
 	    </div>
 	  </div>
-	  <!--        <div class="section">
-            <div style="display: flex; flex-direction: row; flex-wrap: wrap; margin: 10px; padding: 2px; justify-content: center;">
-                <div class="partner">
-                   Mirrors/Proxies: <a href="https://soccerbros.io/mirrors.php">SoccerBros Unblocked</a><br/>
-                </div> 
-
-            </div>
-        </div>
-					-->
+	  
 	  </div>
 	  <script data-cfasync="false" src="cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
 	  <script>
@@ -603,9 +591,9 @@
 	        var d = new Date();
 	        var ms = d.getTime();
 	        if (ms - lastRefresh6 > 10000) {
-	          //hndled by the first banner request
-	          //window.CrazyGames.SDK.requestBanner([{containerId: 'soccerbros-gg_300x250',size: '300x250',}]);
-	          //window.CrazyGames.SDK.requestResponsiveBanner(["soccerbros-gg_300x250"]);
+	                                              
+	                                                                                                           
+	                                                                                     
 	          lastRefresh6 = ms;
 	        }
 	      } else if (typeof aipDisplayTag !== 'undefined') {
@@ -645,8 +633,8 @@
 	        var d = new Date();
 	        var ms = d.getTime();
 	        if (ms - lastRefresh2 > 10000) {
-	          //hndled by the first banner request
-	          //window.CrazyGames.SDK.requestBanner([{containerId: 'soccerbros-gg_300x250_2',size: '300x250',}]);
+	                                              
+	                                                                                                             
 	          window.CrazyGames.SDK.banner.requestResponsiveBanner(["soccerbros-gg_300x250", "soccerbros-gg_300x250_2"]);
 
 	          lastRefresh2 = ms;
@@ -714,7 +702,7 @@
 	      }
 	      if (typeof window.CrazyGames !== 'undefined') {
 	        window.CrazyGames.SDK.banner.requestResponsiveBanner(["soccerbros-gg_player_300x600"]);
-	        //window.CrazyGames.SDK.requestBanner([{containerId: 'soccerbros-gg_player_300x600',size: '300x600',}]);
+	                                                                                                                
 	      } else if (typeof aipDisplayTag !== 'undefined') {
 	        aipDisplayTag.refresh('soccerbros-gg_player_300x600');
 	        SendEvent('event', 'aip_banner_requested');
@@ -746,7 +734,7 @@
 	        });
 	      } else if (typeof window.CrazyGames !== 'undefined') {
 	        window.CrazyGames.SDK.banner.requestResponsiveBanner(["soccerbros-gg_player_300x600"]);
-	        //window.CrazyGames.SDK.requestBanner([{containerId: 'soccerbros-gg_player_300x600',size: '300x600',}]);
+	                                                                                                                
 	      } else if (typeof aipDisplayTag !== 'undefined') {
 	        aipDisplayTag.refresh('soccerbros-gg_300x600_m');
 	        SendEvent('event', 'aip_banner_requested');
@@ -842,7 +830,7 @@
 	    }
 
 	    function ShowAdBreak() {
-	      //check if the adslib is loaded correctly or blocked by adblockers etc.
+	                                                                             
 	      if (typeof window.CrazyGames !== 'undefined') {
 	        Main.DoneInterstitialAd(false);
 	        return;
@@ -866,33 +854,33 @@
 	    }
 
 
-	    /*setInterval(function () { 
-	    	var l = window.document.getElementById('preroll');
-	    	if(l != null && typeof l.style !== 'undefined' && l.style.visibility !== 'visible') {
-	    		document.getElementById('openfl-content').focus();
-	    		if(document.activeElement instanceof HTMLIFrameElement)
-	    		{
-	    			//document.activeElement.style.display = "none";
-	    			window.focus();
-	    			window.document.getElementById('openfl-content').focus();
-	    		}
-	    	}
-	    }, 1000);*/
+	                                
+                                                        
+                                                                                           
+                                                         
+                                                              
+        
+                                                        
+                       
+                                                                 
+        
+       
+                
 
 
-	    /*		setInterval(function () { 
-	    			var l = window.document.getElementById('soccerbros-gg_160x600');
-	    			if(l != null && typeof l.style !== 'undefined' && l.style.visibility == 'visible') {
-	    				ShowAd5();
-	    			}
-	    		}, 30000);
+	                                  
+                                                                        
+                                                                                            
+                   
+         
+                 
 
-	    		setInterval(function () { 
-	    			var l = window.document.getElementById('soccerbros-gg_160x600_2');
-	    			if(l != null && typeof l.style !== 'undefined' && l.style.visibility == 'visible') {
-	    				ShowAd1();
-	    			}
-	    		}, 32000);*/
+                                 
+                                                                          
+                                                                                            
+                   
+         
+                   
 
 	    var sid = 'qmosefms8efuh9q5m77ovrv16i'
 
@@ -911,20 +899,20 @@
 	        gtag(theEvent, theAction, theParms);
 	      }
 	      updateStatus(true);
-	      //console.log("Sending event: " + theEvent + "/" + theAction + "/" + theParms);
+	                                                                                     
 	    }
-	    //setInterval(function() { updateStatus, 4*60*1000);			
+	                                                           
 	    setInterval(function() {
 	      window.scrollTo(0, 0);
 	    }, 2000);
 	    updateStatus(true);
 
-	    //setInterval(ClearAds, 2000);		
+	                                    
 
 	    function HideAllAds() {
 	      if (typeof $msstart !== 'undefined') {
 	        $msstart.hideDisplayAdsAsync().then(response => {
-	          // Returns string indicating success if ad was hidden successfully
+	                                                                            
 	        });
 	      }
 	    }
@@ -934,14 +922,14 @@
 	      const iframe = document.createElement("iframe");
 	      iframe.src = "https://bluewizard.com/subscribe-to-bbros/";
 
-	      //			iframe.style.display = "block";
+	                                          
 	      iframe.style.width = "550px";
 	      iframe.style.height = "" + window.innerHeight - 100 + "px";
 	      iframe.style.position = "absolute";
 	      iframe.style.top = "50px";
 	      iframe.style.left = "50%";
 	      iframe.style["margin-left"] = "-225px";
-	      //iframe.style["margin-right"] = "-275px";
+	                                                
 	      iframe.style["max-width"] = "100%";
 	      iframe.setAttribute("id", "signup");
 

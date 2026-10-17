@@ -1,5 +1,5 @@
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 <!DOCTYPE html>
 <html lang="en-us">
@@ -13,7 +13,7 @@
 
   <title>YT Game Wrapper WebGL Template</title>
   <link rel="stylesheet" href="TemplateData/style.css" nonce="lDQfPwLinjmY-iyWE7KvNw">
-  <script src="https://rawcdn.githack.com/bubbls/youtube-playables/main/ytgame.js" nonce="lDQfPwLinjmY-iyWE7KvNw">// Load YT Game API code</script>
+  <script src="https://rawcdn.githack.com/bubbls/youtube-playables/main/ytgame.js" nonce="lDQfPwLinjmY-iyWE7KvNw">                        </script>
   <link rel="shortcut icon" href="icon.png" />
 </head>
 
@@ -29,8 +29,8 @@
     <div id="unity-warning"> </div>
   </div>
 
-  <script src="unarchiver.min.js" nonce="lDQfPwLinjmY-iyWE7KvNw">// used for decompression if zip files are used</script>
-  <script nonce="lDQfPwLinjmY-iyWE7KvNw"> // Logic for Unity contianer
+  <script src="unarchiver.min.js" nonce="lDQfPwLinjmY-iyWE7KvNw">                                               </script>
+  <script nonce="lDQfPwLinjmY-iyWE7KvNw">                             
     var container = document.querySelector("#unity-container");
     var canvas = document.querySelector("#unity-canvas");
     var loadingBar = document.querySelector("#unity-loading-bar");
@@ -40,12 +40,12 @@
     var quitcanvas = document.querySelector("#quit-canvas");
     var warningBanner = document.querySelector("#unity-warning");
 
-    // For YT it is strongly encouraged that all warnings / errors show in
-    // console and banners should be in game as needed to not confuse users.
-    // 
-    // If needed please uncomment section below to show a temporary message 
-    // banner/ribbon for a few seconds, or a permanent error message on top 
-    // of the canvas if type=='error'.
+                                                                          
+                                                                            
+       
+                                                                            
+                                                                            
+                                      
     function unityShowBanner(msg, type) {
     }
 
@@ -62,15 +62,15 @@
       showBanner: unityShowBanner,
     };
 
-    // By default, Unity keeps WebGL canvas render target size matched with
-    // the DOM size of the canvas element (scaled by window.devicePixelRatio)
-    // Set this to false if you want to decouple this synchronization from
-    // happening inside the engine, and you would instead like to size up
-    // the canvas DOM size and WebGL render target sizes yourself.
-    // config.matchWebGLToCanvasSize = false;
+                                                                           
+                                                                             
+                                                                          
+                                                                         
+                                                                  
+                                             
 
     if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-      // Mobile device style: fill the whole browser client area with the game canvas:
+                                                                                      
 
       var meta = document.createElement('meta');
       meta.name = 'viewport';
@@ -79,22 +79,22 @@
       container.className = "unity-mobile";
       canvas.className = "unity-mobile";
 
-      // To lower canvas resolution on mobile devices to gain some
-      // performance, uncomment the following line:
-      // config.devicePixelRatio = 1;
+                                                                  
+                                                   
+                                     
 
     } else {
-      // Desktop style: Render the game canvas in a window that can be maximized to fullscreen:
+                                                                                               
       canvas.style.width = "100%";
       canvas.style.height = "100%";
     }
 
     loadingBar.style.display = "block";
 
-    // loadResources is only used if you need load Zipped files for .wasm, .js, or .data and need 
-    // them to be decompressed. If the file is not zipped we bypass decompression step automatically,
-    // however its best to not trigger this if you dont used compression. 
-    // NOTE: GZip does not work ATM.  If this is needed Unarchiver will need to be updated.
+                                                                                                  
+                                                                                                     
+                                                                          
+                                                                                           
     loadResources = (callback) => {
       const subZipStr = '.zip';
       const subWASMStr = '.wasm';
@@ -103,7 +103,7 @@
       var codeUrl = config.codeUrl;
       var shouldDecompress = true;
 
-      // check if .zip already exists in the URL, if it doesnt check if a .zip file exists
+                                                                                          
       if (!codeUrl.includes(subZipStr)) {
         if (UrlExists(codeUrl + subZipStr)) {
           codeUrl = codeUrl + subZipStr;
@@ -112,10 +112,10 @@
         }
       }
 
-      // decompress if using a zip file, otherwise just load regular wasm file
+                                                                              
       if (shouldDecompress) {
-        // Decompress the file based on the type, WASM, JS, etc.
-        // if you need more types please add a const above and modify the type logic below.
+                                                                
+                                                                                           
         var blobType = 'application/octet-stream';
         if (codeUrl.includes(subWASMStr)){
           blobType = 'application/wasm';
@@ -125,7 +125,7 @@
 
         DecompressFile(codeUrl, blobType, (file) => {
           config.codeUrl = file;
-          //callback();
+                       
         });
 
         codeUrl = config.dataUrl
@@ -141,7 +141,7 @@
       }
     }
 
-    // Fetch/Load a file then call our callback 
+                                                
     loadZipData = (url, callback) => {
       fetch(url)
         .then(response => response.blob())
@@ -150,7 +150,7 @@
         });
     }
 
-    // Check if URL / File exists
+                                 
     function UrlExists(urlToCheck)
     {
         var httpReq = new XMLHttpRequest();
@@ -159,8 +159,8 @@
         return httpReq.status!=404;
     }
 
-    // decompress files and call callback
-    // TODO: test and potentially switch to Compression Streams API
+                                         
+                                                                   
     function DecompressFile(file, blobMimeType, callback) {
       let decompressedFile;
 
@@ -180,7 +180,7 @@
     }
 
     var unityGameInstance = null;
-    // Setup the Unity section once zip file is downloaded and decompressed
+                                                                           
     function InitUnitySection() {
       var script = document.createElement("script");
       script.src = loaderUrl;
@@ -198,16 +198,16 @@
       document.body.appendChild(script);
     }
 
-    // Path 1: Use this path if no decompression of your .wasm, .data, .js files are needed
+                                                                                           
     loadResources(InitUnitySection);
 
-    // Path 2: Use this path to Load resources (.wasm, .data, .js) that are Zipped and need to be decompressed
-    // if you dont use compresseion its best to comment out Path 1 and uncomment Path 2.
-    // loadResources(InitUnitySection);  // Uncomment this line to start Unity by loading zipped files
+                                                                                                              
+                                                                                        
+                                                                                                      
 
-  // window.onfocus = function() {
-  //   unityGameInstance.SendMessage("DeleteData", "SaveData");
-  // };
+                                  
+                                                               
+       
   window.onblur = function() {
     unityGameInstance.SendMessage("DeleteData", "SaveData");
   };

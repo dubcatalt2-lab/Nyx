@@ -54,7 +54,7 @@ export function installStudyReady(app,{owner,db,sameOrigin,verifyDns,targetIps,a
    if(path==='/textbook.pdf')return secure(res).type('application/pdf').sendFile(resolve(pdfPath),{dotfiles:'allow'},error=>{if(error&&!res.headersSent)res.status(404).type('text').send('The PDF is unavailable. Read the book at /textbook.');});
    if(path.startsWith('/learning/')){const name=path.slice('/learning/'.length);const legacy=legacyLearningAsset(name);if(legacy)return res.redirect(307,'/learning/'+legacy+(req.url.includes('?')?req.url.slice(req.url.indexOf('?')):''));const content=await learningAsset(name);if(content===null)return res.status(404).end();return secure(res).type(name.endsWith('.css')?'text/css':'text/javascript').send(content);}
    if(!['/','/robots.txt'].includes(path))return next();
-   // These hosts retain their existing Tutsi shell and crawler policy.
+                                                                       
    if(['tutsi.nyxlearning.org','childsupport.donateyourboat.us','turn.nyxlearning.org'].includes(req.hostname))return next();
    const domain=(await domains()).find(row=>row.hostname===req.hostname.toLowerCase());if(!domain)return next();
    if(path==='/robots.txt')return secure(res).type('text').send('User-agent: *\nAllow: /\n');

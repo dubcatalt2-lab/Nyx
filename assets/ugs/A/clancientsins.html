@@ -1,6 +1,6 @@
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
-<!--this is a horror game where the monster moves when you dont look at him. Uses jsdelivr and raw.githubusercontent--!>
+ 
+
+
 
 <html lang="en-us"><head>
   <meta charset="utf-8">
@@ -26,8 +26,8 @@
   </style>
 
   <script>
-    // Ensure that any query parameters used to load the page aren't available to the game runtime
-    // This is mainly to address the visibility of the access_token for private games
+                                                                                                  
+                                                                                     
     window.history.replaceState(null, null, window.location.pathname);
   </script>
 
@@ -37,7 +37,7 @@
   </script>
 
   <script>
-    // Hacky solution for managing audio volume of the game player dynamically
+                                                                              
     window.audioStream = [];
     window.AudioContextOrigin = window.AudioContext || window.webkitAudioContext;
     window.AudioContext = function () {
@@ -49,11 +49,11 @@
       window.globalGain.gain.value = 1;
       window.globalGain.connect(ac.destination);
       
-      // Intercept connect() so that all nodes go through globalGain at the end
+                                                                               
       const originalConnect = AudioNode.prototype.connect;
       AudioNode.prototype.connect = function (destination, ...args) {
         if (destination === ac.destination) {
-          // Instead of connecting directly to destination, go through globalGain
+                                                                                 
           return originalConnect.call(this, window.globalGain, ...args);
         }
         return originalConnect.call(this, destination, ...args);
@@ -64,7 +64,7 @@
 
   <script>
     function sendParentMessage(event, data) {
-      <!--window.top.postMessage({ event: event, message: data }, 'https://play.unity.com');-->
+                                                                                               
       window.top.postMessage({ event: event, message: data }, '*');
     }
   </script>
@@ -128,14 +128,14 @@
   </script>
 
   <script>
-    // Patch canvas requestPointerLock
+                                      
     canvas._requestPointerLock = canvas.requestPointerLock;
     canvas.requestPointerLock = async () => {
       try {
         return await canvas._requestPointerLock({
           unadjustedMovement: true,
         });
-      } catch (e) { /* swallow pointer lock errors */ }
+      } catch (e) {                                   }
     };
 
     if (navigator && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
@@ -282,7 +282,7 @@
           gameInstance = instance;
           sendParentMessage('progress', { progress: progress });
 
-          // This loader doesn't have an event for completion as far as I can tell, but it does finish the progress load on 0.9
+                                                                                                                               
           if (progress === 0.9) {
             sendParentMessage('ready', {});
           }
@@ -314,8 +314,8 @@
     }
 
     function patchUnityLoader(loaderSource) {
-      // Older versions of the loader will only identify and respect compression if the file ends in .unityweb
-      // Because this format has changed, we need to patch the old loaders to always respect compression
+                                                                                                              
+                                                                                                        
 
       if (loaderSource.indexOf('e.wasmCodeUrl.endsWith(".unityweb")') !== -1) {
         return loaderSource.replace('e.wasmCodeUrl.endsWith(".unityweb")', '(e.wasmCodeUrl.endsWith(".unityweb") || true)');

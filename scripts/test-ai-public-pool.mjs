@@ -36,7 +36,7 @@ db.records.get(key(owner.uid)).ownerClaudePool.used=49900;
 await assert.rejects(call(owner,opus),/50,000-token Claude Opus/);
 for(const model of sols)await call(owner,model,{usage:{input:100000,output:100000}});
 assert.equal(db.records.get(key(owner.uid)).ownerClaudePool.used,49900);
-// Concurrent chat/API reservations cannot exceed the owner Opus cap.
+                                                                     
 db.records.get(key(owner.uid)).ownerClaudePool.used=49800;
 const sessions=[await allowance.begin({...owner,requestedModel:opus}),await allowance.begin({...owner,requestedModel:opus,apiVerified:true})];
 const results=await Promise.allSettled(sessions.map(s=>allowance.reserve(s,'shared',payload(opus))));

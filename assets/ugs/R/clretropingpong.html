@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
-<!-- Made by Weirdnessworld-->
+ 
+
+
 
 
 <html>
@@ -29,12 +29,12 @@
 		let wasMuted = false;
 
 		window["GD_OPTIONS"] = {
-			"gameId": "7a673308bc3b4585b9f70436462c2051", // REPLACE WITH CORRECT ONE!
+			"gameId": "7a673308bc3b4585b9f70436462c2051",                             
 			"onEvent": function (event) {
 				switch (event.name) {
 
 					case "SDK_GAME_START":
-						// advertisement done, resume game logic and unmute audio
+						                                                         
 						console.log("adBreak Complete")
 
 						isAdBreakActive = false;
@@ -46,7 +46,7 @@
 						break;
 
 					case "SDK_GAME_PAUSE":
-						// pause game logic / mute audio
+						                                
 						console.log("AdBreak Started")
 
 						isAdBreakActive = false;

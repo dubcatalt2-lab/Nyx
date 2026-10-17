@@ -121,7 +121,7 @@ try{
   await page.waitForSelector('#n7xAccountButton.n7x-account-button-rich');
   await page.waitForFunction(()=>!document.querySelector('.n7x-preflight,.n7x-tos-gate'));
   for(const [width,email] of [[1280,'optional@example.com'],[390,'']]) {
-    // Open at desktop size, then verify the same form at the target viewport.
+                                                                              
     await page.setViewportSize({width:1280,height:850});
     await page.locator('#n7xAccountButton').click();
     await page.locator('[data-n7x-account-menu-action="switch"]').click();

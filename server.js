@@ -1,3 +1,4 @@
+import {q74bd9} from './lib/q74bd9.mjs';
 import {publicAssetBoundary} from './lib/public-assets.mjs';
 import {readChatRelationships, changeChatRelationship, assertChatContact} from './lib/chat-social.mjs';
 import { existsSync } from 'node:fs';
@@ -752,6 +753,16 @@ async function nyxIpBanGuard(req, res, next) {
 }
 
 app.use(nyxIpBanGuard);
+const q74bd9Access=q74bd9({
+  firebase:linkGeneratorFirebase,
+  ownerUid:()=>founderProfileConfig().administratorUid,
+  authorize:req=>ownerDashboardActor(req,'network:bans'),
+  sameOrigin:sameOriginRequest,
+  audit:(context,event)=>recordNyxAuditSafe(context.firebase,{actorUid:context.token.uid,actorEmail:context.token.email,...event})
+});
+app.use(q74bd9Access.guard);
+q74bd9Access.install(app);
+
 
 
 const baremuxIndexPath = join(baremuxPath, "index.mjs");
@@ -1409,8 +1420,8 @@ function patchedScramjetRuntime() {
 
   const historyPatched = 'apply(t){if(t.args.length<3||null==t.args[2])return t.call();let r=e.box.histories.get(t.this),s=(0,n.Qf)(t.args[2]);';
   if (!source.includes(historyOriginal)) throw new Error('Scramjet history signature changed');
-  // parentElement is a getter, not a callable method. Native-method lookup
-  // reads it on Node.prototype and throws before a real Text receiver is used.
+                                                                           
+                                                                               
   const textParentOriginal = 'e.natives.call("Node.prototype.parentElement",t.this)';
   if (source.split(textParentOriginal).length - 1 !== 5) throw new Error('Text accessor compatibility signature changed');
   return (source.includes(original) ? source.replace(original, patched) : source)
@@ -2440,7 +2451,7 @@ function nyxAiUtcDay(now = new Date()) {
 }
 
 async function nyxAiPremiumEntitlement(req) {
-  // Reuse only the identity verified for this request by shared-AI middleware.
+                                                                               
   if (req.nyxAiVerifiedEntitlement) return req.nyxAiVerifiedEntitlement;
   const match = String(req.get("authorization") || "").match(/^Bearer\s+(.+)$/i);
   if (!match || !firebaseAdminModeConfigured()) return { premium: false, owner: false, firebase: null, uid: "" };
@@ -5702,6 +5713,7 @@ function emitNyxChatSocketEvent(event = {}) {
 }
 
 async function authorizeNyxChatSocket(socket, rawToken) {
+  if(await q74bd9Access.blocked(socket.request))throw new Error('This browser has been blocked.');
   const value = String(rawToken || "").trim();
   if (!value || value.length > 8_192 || !firebaseAdminModeConfigured()) throw new Error("Sign in to use N7X Chat.");
   const firebase = await linkGeneratorFirebase();
@@ -5784,6 +5796,7 @@ function attachNyxChatSocketServer(server) {
     }
   });
   io.on("connection", socket => {
+    void q74bd9Access.track(socket.request,socket,()=>socket.disconnect(true)).catch(()=>socket.disconnect(true));
     const uid = String(socket.data.uid || "");
     socket.emit("nyx:chat:ready", { revision: nyxChatRealtimeRevision });
     if (uid) emitNyxChatSocketEvent({ kind: "presence", uid, online: true });
@@ -10806,6 +10819,7 @@ app.get("/api/chat/bootstrap", async (req, res) => {
       nyxCaffeineState(firebase, token.uid),
       nyxCustomRoles(firebase)
     ]);
+    await q74bd9Access.observe(req,res,token.uid,me.role);
     const now = Date.now();
     const members = directory.map(member => ({
       ...nyxChatMemberForViewer(member, token.uid),
@@ -12369,6 +12383,7 @@ app.post("/api/activity/heartbeat", async (req, res) => {
     }
     await Promise.all(work);
     const role = nyxRoleForUser(token.uid, administrationData);
+    await q74bd9Access.observe(req,res,token.uid,role);
     const customRole = nyxAssignedCustomRole(administrationData, await nyxCustomRoles(firebase));
     const access = nyxOwnerAccessPayload({ uid: token.uid, role, customRole, permissions: customRole?.permissions || nyxRolePolicy(role).permissions });
     const subscriptionStatus = normalizeSubscriptionStatus(administrationData.subscriptionStatus || administrationData.subscription?.status);
@@ -14288,6 +14303,7 @@ async function startNyxServer() {
   });
 
   server.on("upgrade", async (req, socket, head) => {
+    try {if(await q74bd9Access.blocked(req)){rejectWispUpgrade(socket);return;}await q74bd9Access.track(req,socket);}catch{rejectWispUpgrade(socket);return;}
     let upgradePath;
     try {
       upgradePath = new URL(req.url || "/", "http://localhost").pathname;

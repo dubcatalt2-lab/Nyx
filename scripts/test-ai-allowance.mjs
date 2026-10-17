@@ -3,7 +3,7 @@ import {createHash} from 'node:crypto';
 import {createAiAllowance, aiAllowanceConfig} from '../lib/ai-allowance.mjs';
 import {aiBudgetResponse} from '../lib/ai-budget-response.mjs';
 
-// Serialized transactions with staged writes, including Firestore's read-before-write rule.
+                                                                                            
 export function memoryFirestore() {
   const records=new Map();let tail=Promise.resolve();
   const reference=path=>({path,async get(){const value=records.get(path);return {exists:value!==undefined,data:()=>structuredClone(value)};}});
@@ -59,7 +59,7 @@ async function run() {
     const t=await a.begin(f.actor('trusted',{trusted:true}));await a.finish(t);
     f.advance(DAY/16+1);
     await a.finish(await a.begin(f.actor('released')));
-    // Exhaust only the new-account partition; other pools remain usable.
+                                                                         
     const global=f.db.records.get('nyxAiAllowance/global');global.newcomerRequests=16;
     await rejected(a.begin(f.actor('exhausted')),/used for today/);
     await a.finish(await a.begin(f.actor('owner',{owner:true})));
@@ -69,7 +69,7 @@ async function run() {
     const f=fixture({NYX_AI_NEW_DAILY_REQUESTS:'1'}),a=f.allowance;
     for(let n=0;n<3;n++)await a.finish(await a.begin(f.actor(`device${n}`,{device:'same-browser'})),true);
     await a.finish(await a.begin(f.actor('device4',{device:'same-browser'})));
-    await a.finish(await a.begin(f.actor('device0')),true); // Legacy daily message configuration no longer gates chat.
+    await a.finish(await a.begin(f.actor('device0')),true);                                                            
     f.advance(DAY);
     await a.finish(await a.begin(f.actor('device0',{device:'same-browser'})));
     for(let n=0;n<3;n++)await a.register('signup-device','school');

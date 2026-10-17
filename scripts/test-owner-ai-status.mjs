@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 import {parse} from 'acorn';
 
-// Exercise the actual route handler with isolated authorization and status data.
+                                                                                 
 const source=await readFile(new URL('../server.js',import.meta.url),'utf8');
 const route=source.slice(source.indexOf("app.get('/api/owner-dashboard/ai-status'"),source.indexOf('app.get("/api/owner-dashboard",'));
 const ast=parse(source,{ecmaVersion:'latest',sourceType:'module'});const caps=ast.body.find(n=>n.type==='FunctionDeclaration'&&n.id.name==='nyxOwnerUserCapabilities');
@@ -19,7 +19,7 @@ const response=()=>({code:200,headers:{},set(k,v){this.headers[k]=v;return this;
 let res=response();await handler({},res);assert.equal(res.code,403);assert.equal(checks,0);
 role='owner';res=response();await handler({},res);assert.equal(res.code,200);assert.equal(res.body.dailyCapUsd,1);assert.equal(res.headers['Cache-Control'],'no-store');
 
-// Real gifting route rejects non-owner senders before touching recipient records.
+                                                                                  
 const giftNode=ast.body.find(n=>n.type==='ExpressionStatement'&&n.expression.type==='CallExpression'&&n.expression.arguments?.[0]?.value==='/api/chat/caffeine/gifts');
 let giftHandler;vm.runInNewContext(source.slice(giftNode.start,giftNode.end),{app:{post:(_path,fn)=>giftHandler=fn},sameOriginRequest:()=>true,authenticatedNyxChatUser:async()=>({firebase:{},token:{uid:'non-owner'}}),founderProfileConfig:()=>({administratorUid:'founder'})});
 const giftResponse=response();await giftHandler({body:{recipientUid:'recipient'}},giftResponse);assert.equal(giftResponse.code,403);

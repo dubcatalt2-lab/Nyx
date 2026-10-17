@@ -34,8 +34,8 @@ export function rewriteFrontendReferences(source,path,aliases) {
   source=rewriteStorageNames(source);
   const directory=posix.dirname(path);
   for(const [original,renamed] of Object.entries(aliases).sort((a,b)=>b[0].length-a[0].length)) {
-    // Match a complete asset path, not the .js prefix of games.json (or
-    // .js.map, backup files and longer paths). Keep query/fragment URLs valid.
+                                                                        
+                                                                               
     const escaped=original.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
     source=source.replace(new RegExp(escaped+'(?![\\w./%+-])','g'),()=>renamed);
     if(/\.(?:js|mjs)$/.test(path))continue;
@@ -54,7 +54,7 @@ export async function buildFrontendAssets(output,files,lessonHtml) {
   const existing=JSON.parse(await readFile(join(output,'proxy-assets.json'),'utf8')).aliases;
   const candidates=[...new Set(files)].filter(p=>/\.(js|mjs)$/.test(p)&&!p.startsWith('assets/ugs/')&&!p.startsWith('assets/vendor/')&&!existing['/'+p]&&p!=='runtime-config.js');
   const aliases=Object.fromEntries(candidates.map(p=>['/'+p,alias('/'+p)]));
-  // Keep old URLs for open tabs; new documents and module graphs use stable aliases.
+                                                                                     
   for(const path of [...new Set(files)].filter(p=>/\.(html|js|mjs)$/.test(p)&&!p.startsWith('assets/ugs/')&&!p.startsWith('assets/vendor/'))) {
     let source;try{source=await readFile(join(output,path),'utf8');}catch{continue;}
     source=rewriteFrontendReferences(source,'/'+path,aliases);
@@ -66,13 +66,13 @@ export async function buildFrontendAssets(output,files,lessonHtml) {
   for(const path of pages) {
     const original=await readFile(join(output,path),'utf8');
     const loader=posix.join(posix.dirname('/'+path),'@r'+createHash('sha256').update('entry:'+path).digest('hex').slice(0,24)+'!.js');
-    // Decode as UTF-8, preserve the original document URL, script order and handlers.
+                                                                                      
     const payload=Buffer.from(original).toString('base64').match(/.{1,112}/g)||[];
     const migrate=['index.html','apps/tutsi/index.html','apps/drop/index.html'].includes(path)
       ? `await (${migrateStorage.toString()})(JSON.parse(atob(${JSON.stringify(Buffer.from(JSON.stringify(storageNames)).toString('base64'))})));` : '';
     const boot=`(async()=>{${migrate}await new Promise(resolve=>{const settle=()=>setTimeout(resolve,0);if(document.readyState==='complete')settle();else window.addEventListener('load',settle,{once:true});});const html=new TextDecoder().decode(Uint8Array.from(atob(${JSON.stringify(payload)}.join('')),c=>c.charCodeAt(0)));document.open();document.write(html);document.close()})().catch(()=>{const p=document.createElement('p');p.setAttribute('role','alert');p.textContent='Saved browser data could not be updated. Close other site tabs and reload.';document.body.prepend(p)});`;
-    // Compression can fold the chunk array back into one huge literal. Keep
-    // chunks intact while retaining local-name mangling and readable layout.
+                                                                            
+                                                                             
     await writeFile(join(output,loader.slice(1)),(await minify(boot,{mangle:{toplevel:true},compress:false,format:{beautify:false}})).code);
     const shell=!['apps/tutsi/index.html','apps/drop/index.html'].includes(path)
       ? `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>N7X</title><link rel="icon" href="/assets/icons/nyx-cat-moon-small.svg?v=3"></head><body><script src="${loader}"></script></body></html>`

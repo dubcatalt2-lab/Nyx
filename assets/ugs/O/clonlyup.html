@@ -1,5 +1,5 @@
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 <!DOCTYPE html>
 <html lang="en-us">
@@ -82,21 +82,21 @@
             const STORAGE_VALUES_SEPARATOR = '{bridge_values_separator}'
             
             
-            // utils
+                    
             window.unityInstance = null
             let progressBarFillingInterval = null
 			
 			document.addEventListener('pointerlockchange', function() {
 		  
 			if (document.pointerLockElement === canvas) {
-				// Курсор только что был скрыт
-				//console.log('Курсор скрыт');
-				// Здесь можно вызвать функцию или уведомить вашу игру о том, что курсор скрыт
+				                              
+				                              
+				                                                                              
 				   window.unityInstance.SendMessage('Game', 'OnCursorVisibilityChanged', 0);
 			  } else {
-				// Курсор только что стал видимым
-				//console.log('Курсор отображается');
-				// Здесь можно вызвать функцию или уведомить вашу игру о том, что курсор отображается
+				                                 
+				                                     
+				                                                                                     
 				   window.unityInstance.SendMessage('Game', 'OnCursorVisibilityChanged', 1);
 			  }
 			});
@@ -157,7 +157,7 @@
                 }
             }
 
-            // initialization
+                             
             bridge
                 .initialize(bridgeOptions)
                 .then(() => {
@@ -179,8 +179,8 @@
                                 companyName: 'Craft Game World',
                                 productName: 'Only Up! Parkour Running Game',
                                 productVersion: '1.7',
-                                // matchWebGLToCanvasSize: false, // Uncomment this to separately control WebGL canvas render size and DOM element size.
-                                // devicePixelRatio: 1, // Uncomment this to override low DPI rendering on high DPI displays.
+                                                                                                                                                        
+                                                                                                                             
                             },
                             onUnityLoadingProgressChanged)
                             .then((unityInstance) => {
@@ -197,7 +197,7 @@
                 .catch(error => console.error(error))
             
 
-            // platform
+                       
             window.getPlatformId = function() {
                 return bridge.platform.id
             }
@@ -229,13 +229,13 @@
             }
 
 
-            // device
+                     
             window.getDeviceType = function() {
                 return bridge.device.type
             }
 
 
-            // player
+                     
             window.getIsPlayerAuthorizationSupported = function() {
                 return bridge.player.isAuthorizationSupported.toString()
             }
@@ -283,13 +283,13 @@
             }
 
 
-            // game
+                   
             window.getVisibilityState = function() {
                 return bridge.game.visibilityState
             }
 
 
-            // storage
+                      
             window.getStorageDefaultType = function() {
                 return bridge.storage.defaultType
             }
@@ -367,7 +367,7 @@
             }
 
 
-            // advertisement
+                            
             window.getIsBannerSupported = function() {
                 return bridge.advertisement.isBannerSupported.toString()
             }
@@ -423,7 +423,7 @@
             }
 
 
-            // social
+                     
             window.getIsShareSupported = function() {
                 return bridge.social.isShareSupported.toString()
             }
@@ -539,7 +539,7 @@
             }
 
 
-            // leaderboard
+                          
             window.getIsLeaderboardSupported = function() {
                 return bridge.leaderboard.isSupported.toString()
             }

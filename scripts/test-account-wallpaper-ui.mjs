@@ -36,7 +36,7 @@ try{
  await second.page.waitForFunction(()=>[...document.querySelectorAll('iframe')].some(f=>f.src.includes('/apps/nyxtube/')));
  assert.equal(await second.page.locator('[data-n7x-dock-item="youtube"]').getAttribute('aria-label'),'YouTube');
  await page.locator('[data-reset-wallpaper]').click();await page.waitForTimeout(1100);assert.equal(preferences['nyx.customBgData'],'');
- // A tab may close before its debounced save, or while the account API is offline.
+                                                                                   
  preferences={...preferences,'nyx.theme':'halloween','nyx.customThemeColor':'#aa6600'};failWrites=true;
  await page.locator('[data-custom-theme-hex]').fill('#36b6a1');await page.locator('[data-apply-custom-theme]').click();
  assert.equal(await page.evaluate(()=>document.body.classList.contains('theme-default')),false,'custom theme must not activate default selectors');
@@ -45,10 +45,10 @@ try{
  assert.deepEqual(await page.evaluate(()=>({theme:localStorage.getItem('nyx.theme'),color:localStorage.getItem('nyx.customThemeColor'),active:document.documentElement.dataset.n7xTheme,defaultClass:document.body.classList.contains('theme-default')})),{theme:'custom',color:'#36b6a1',active:'custom',defaultClass:false},'reopening must preserve unsynced appearance');
  failWrites=false;await page.reload();await page.waitForFunction(()=>!localStorage.getItem('nyx.cloud.appearance.pending.wallpaper-fixture'));
  assert.equal(preferences['nyx.theme'],'custom');assert.equal(preferences['nyx.customThemeColor'],'#36b6a1');
- // A slow account read must not overwrite a new choice made while it was pending.
+                                                                                  
  let release;holdRead=new Promise(resolve=>release=resolve);const reading=page.waitForRequest(r=>new URL(r.url()).pathname==='/api/account/cloud-preferences'&&r.method()==='GET');
  await page.reload();await reading;
- // Simulate another already-open tab changing shared localStorage during startup.
+                                                                                  
  const savedLate=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/account/cloud-preferences'&&r.request().method()==='PUT'&&r.request().postDataJSON().preferences['nyx.customThemeColor']==='#8844ee');
  await page.evaluate(()=>localStorage.setItem('nyx.customThemeColor','#8844ee'));release();holdRead=null;
  await savedLate;assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.customThemeColor')),'#8844ee');assert.equal(preferences['nyx.customThemeColor'],'#8844ee');

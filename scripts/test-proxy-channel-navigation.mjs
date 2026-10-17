@@ -70,14 +70,14 @@ try{for(const brand of (process.env.NYX_TEST_BRANDS||'nyx,tutsi,drop').split(','
   await frame.locator('#c').click();
   assert.equal(await frame.locator('#channel').innerText(),'C');
   assert.equal(await frame.locator('#draft').inputValue(),'Keep this draft');
-  // A loading channel may temporarily clear its content without replacing the
-  // document. The host must not interpret that as another startup failure.
+                                                                              
+                                                                           
   await frame.locator('body').evaluate(()=>window.fixtureTransition());
   await page.waitForTimeout(7000);
   assert.equal(await frame.locator('body').getAttribute('data-instance'),instance);
   assert.equal(await frame.locator('#draft').inputValue(),'Keep this draft');
   assert.match(await address.inputValue(),/channels\/100\/300\?view=messages#latest/);
-  // A route update must not overwrite a new destination being typed.
+                                                                     
   await address.fill('https://example.com/typing');
   await frame.locator('body').evaluate(()=>history.pushState({},'', '/channels/100/400'));
   await page.waitForTimeout(700);

@@ -141,7 +141,7 @@ try {
     assert.deepEqual(errors, [], 'corrupt/full storage does not crash playback or controls');
     await page.close();
 
-    // A browser-side hung lookup is bounded, rather than spinning forever.
+                                                                           
     const hung = await browser.newPage({ viewport: { width, height: 850 } });
     await hung.clock.install();
     await hung.route('**/api/**', async route => {
@@ -197,7 +197,7 @@ try {
     assert.equal(await offline.locator('audio').getAttribute('src'), null);
     await offline.close();
 
-    // A fresh page rejects a missing match and stops without requesting preview audio.
+                                                                                       
     const failed = await browser.newPage({ viewport: { width, height: 850 } });
     const restrictedErrors = [];
     failed.on('pageerror', e => restrictedErrors.push(e.message));

@@ -18,7 +18,7 @@ try{
  const page=await browser.newPage();await page.route('https://fixture.test/**',r=>r.fulfill({contentType:'text/html',body:'<div id="host"></div>'}));
  await page.goto('https://fixture.test/');await page.clock.install();
  await page.addScriptTag({content:await readFile('apps/nyxtube/invidious-player.js','utf8')});
- // Model media events explicitly: fixture never downloads public media or reports fake playback as live verification.
+                                                                                                                      
  await page.evaluate(()=>{
   window.requests=[];window.events=[];window.loads=0;
   window.fetch=async url=>{requests.push(url);return {ok:true,json:async()=>({id:'d1l3jkw2eMs',type:'video/mp4',url:'https://media.fixture.test/v.mp4'})};};

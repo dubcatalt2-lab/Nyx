@@ -11,8 +11,8 @@ import {chromium} from 'playwright';
 import {proxyAssetNames,rewriteProxyReferences} from './build-proxy-assets.mjs';
 import {rewriteFrontendReferences} from './build-frontend-assets.mjs';
 
-// All upstream content and account APIs are fixtures. A fresh credential-free
-// backend serves real proxy workers, rewriting and the current frontend build.
+                                                                              
+                                                                               
 const temp=await mkdtemp(join(tmpdir(),'nyx-spa-'));
 const staticRoot=join(temp,'site');
 await symlink(resolve('dist'),staticRoot,process.platform==='win32'?'junction':'dir');
@@ -61,8 +61,8 @@ try{
     for(const value of Object.values(node)){if(Array.isArray(value))value.forEach(findStreamMethod);else if(value&&typeof value==='object')findStreamMethod(value);}
   }
   findStreamMethod(parse(curlSource,{ecmaVersion:'latest',sourceType:'module'}));assert(streamMethod);
-  // Inject a single late HTTP/2 stream failure using upstream's actual body
-  // callbacks. The first-party libcurl adapters and proxy engines stay real.
+                                                                            
+                                                                             
   const curlFixture=`class Session { failed=false;${streamMethod}
     create_request(url,data,end){const script=String(url).includes('fixture-app.js');
       const fail=script&&!this.failed;if(fail)this.failed=true;
@@ -71,8 +71,8 @@ try{
       request(url,method,body,headers,signal){return new Promise(resolve=>this.session.stream_response(url,
         stream=>resolve({status:200,statusText:'OK',headers:[['content-type',String(url).includes('fixture-app.js')?'text/javascript':'text/html']],body:stream}),()=>{},signal));}
       connect(){return [()=>{},()=>{}]}}`;
-  // SharedWorker module requests bypass Playwright's page routing. Serve the
-  // upstream stub at HTTP level so bare-mux exercises the same fixture too.
+                                                                             
+                                                                            
   fixtureServer=createServer((req,res)=>{
     const path=new URL(req.url,'http://fixture.test').pathname;
     if(['/libcurl/index.mjs',proxyAssetNames['/libcurl/index.mjs']].flatMap(p=>[p,published(p)]).includes(path)){
@@ -143,12 +143,12 @@ try{
       await page.waitForTimeout(8000);
       assert.equal(await frame.locator('body').getAttribute('data-instance'),instance,'A temporary blank app transition must not reload the frame');
     }
-    // Early route changes can happen while the host's loading animation still
-    // covers the frame. Later changes exercise an actual pointer click.
+                                                                              
+                                                                        
     if(delay) await frame.locator('#channel-b').click();
     else await frame.locator('#channel-b').evaluate(link=>link.click());
     assert.equal(await frame.locator('#channel').innerText(),'B');
-    // Outlast every startup recovery timer, then change channels again.
+                                                                        
     await page.waitForTimeout(12500);
     assert.equal(await frame.locator('body').getAttribute('data-instance'),instance,'Channel navigation must preserve the document');
     assert.equal(await frame.locator('#channel').innerText(),'B');

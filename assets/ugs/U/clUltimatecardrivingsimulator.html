@@ -1,7 +1,7 @@
 
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 
 
@@ -81,9 +81,9 @@
 			else {
 				if (document.exitFullscreen) {
 					document.exitFullscreen();
-				} else if (document.webkitExitFullscreen) { //Chrome, Safari and Opera
+				} else if (document.webkitExitFullscreen) {                           
 					document.webkitExitFullscreen();
-				} else if (document.msExitFullscreen) { //IE/Edge
+				} else if (document.msExitFullscreen) {          
 					document.msExitFullscreen();
 				}
 			}
@@ -111,7 +111,7 @@
 			} catch(e) { supported = false; }
 
 			try {
-				// let is by no means required, but will help us rule out some old browsers/devices with potentially buggy implementations: http://caniuse.com/#feat=let
+				                                                                                                                                                        
 				eval('let foo = 123;');
 			} catch (e) { supported = false; }
 			canvas = undefined;

@@ -58,7 +58,7 @@ try {
   await writeFile(file,'invalid JSON');
   const invalid=createAppTraffic({file,now:()=>now,flushMs:0}); assert.equal(invalid.snapshot().totals.requests,0); await invalid.close();
 
-  // Run the actual endpoint, including owner authorization, without live credentials.
+                                                                                      
   const source=await readFile(new URL('../server.js',import.meta.url),'utf8');
   const ast=parse(source,{ecmaVersion:'latest',sourceType:'module'});
   const presenceFunction=ast.body.find(n=>n.type==='FunctionDeclaration'&&n.id?.name==='onlinePresenceSnapshot');

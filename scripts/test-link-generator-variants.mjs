@@ -7,7 +7,7 @@ import { staticPublisherFixture } from './static-publisher-fixture.mjs';
 const fixture = await staticPublisherFixture();
 const hosts = ['cdn.jsdelivr.net', 'gcore.jsdelivr.net', 'fastly.jsdelivr.net', 'quantil.jsdelivr.net', 'originfastly.jsdelivr.net', 'testingcf.jsdelivr.net', 'jsdelivr.b-cdn.net', 'esm.sh', 'raw.esm.sh'];
 
-// Intercept every request; tests never publish to GitHub.
+                                                          
 const browser = await chromium.launch({ headless: true });
 try {
   const page = await browser.newPage();
@@ -95,7 +95,7 @@ try {
   assert.equal(result.calls[2].body.force, false);
   assert.equal(result.failed, true);
   assert.equal(result.url, 'https://cdn.jsdelivr.net/gh/test/repo@main/one.svg');
-  // Every provider keeps the same published files and supports mobile selection.
+                                                                                 
   for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: 900 });
     await page.evaluate(() => {
@@ -130,7 +130,7 @@ try {
     assert.equal(saved.completed,1);
     assert.deepEqual(batch.links,[`https://${host}/gh/test/repo@main/one.svg`]);
   }
-  // Exercise both actual popup validators without relaxing URL/source checks.
+                                                                              
   const shell = await readFile('script.js','utf8');
   const outerSource = shell.slice(shell.indexOf('function isNyxGeneratedCdnUrl('),shell.indexOf('  function externalHttpUrl(',shell.indexOf('function isNyxGeneratedCdnUrl(')));
   const innerStart = shell.indexOf('const trustedGeneratedPopup = link => {');

@@ -1,4 +1,4 @@
-// Browser adaptation of glreno/oneko. See assets/oneko/NOTICE.txt and LICENSE.txt.
+                                                                                   
 (() => {
   if (window !== window.top || document.getElementById('q42030cc527a43c03d8')) return;
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
@@ -22,7 +22,7 @@
   function step() {
     timer = 0;
     if (!allowed()) return;
-    // Keep startup and native/fullscreen media unobstructed.
+                                                             
     cat.hidden = document.body.classList.contains('n7x-loading-active') || document.body.classList.contains('n7x-startup-prep') || !!document.fullscreenElement;
     if (!cat.hidden) {
       const maxX = Math.max(16, innerWidth - 16), maxY = Math.max(16, innerHeight - 16);

@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 
 
-<!-- Made by Bread for https://gn-math.github.io--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 
 
@@ -66,7 +66,7 @@
         min-height: 100vh;
         min-height: -webkit-fill-available;
         min-height: fill-available;
-        min-height: 100vh; /* Otherwise contents can be covered by an address bar in Safari on iOS 15 */
+        min-height: 100vh;                                                                              
         min-width: 100vw;
         background: radial-gradient(
           56.63% 56.63% at 50% 43.37%,
@@ -94,7 +94,7 @@
 		font-family: "Lucida Console", Monaco, monospace;
       }
 
-      /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
+                                                                                           
       canvas.emscripten {
         display: none;
         background-color: black;
@@ -103,12 +103,12 @@
         -webkit-transition: opacity 5s ease-in;
         opacity: 0;
         filter: blur(0) grayscale(0);
-        image-rendering: optimizeSpeed;             /* Older versions of FF          */
-        image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */
-        image-rendering: -webkit-optimize-contrast; /* Safari                        */
-        image-rendering: -o-crisp-edges;            /* OS X & Windows Opera (12.02+) */
-        image-rendering: pixelated;                 /* Awesome future-browsers       */
-        -ms-interpolation-mode: nearest-neighbor;   /* IE                            */
+        image-rendering: optimizeSpeed;                                                
+        image-rendering: -moz-crisp-edges;                                             
+        image-rendering: -webkit-optimize-contrast;                                    
+        image-rendering: -o-crisp-edges;                                               
+        image-rendering: pixelated;                                                    
+        -ms-interpolation-mode: nearest-neighbor;                                      
       }
 
       canvas.active {
@@ -180,13 +180,13 @@
         padding: 5px;
       }
 
-      /* Determines the style of the background of the progress bar */
+                                                                      
       progress[value]::-webkit-progress-bar {
         background-color: #8492a6;
         height: 10px;
         border-radius: 15px;
       }
-      /* Determines the style of the completed part of the progress bar */
+                                                                          
       progress[value]::-webkit-progress-value {
         background-image: -webkit-linear-gradient(left, #719900, #bdff00);
         height: 10px;

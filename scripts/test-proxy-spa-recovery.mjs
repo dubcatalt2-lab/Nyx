@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import {parse} from 'acorn';
 import {rewriteRuntimeNames} from './build-runtime-names.mjs';
 
-// Exercise the real host watchdog with deterministic load/route timing.
+                                                                        
 const source=readFileSync('script.js','utf8');
 const wanted=new Set(['watchProxyLoad','browserFrameStillAtSource','inspectFrameHealth']);
 const functions=[];
@@ -62,8 +62,8 @@ function fixture(){
   };
 }
 
-// A channel switch updates native history before the shell receives any URL
-// notification. Old startup timers must not send it back to /app.
+                                                                            
+                                                                  
 {
   const f=fixture();f.load();
   f.tab.frame.contentWindow.location.href='https://discord.com/channels/100/200';
@@ -71,15 +71,15 @@ function fixture(){
   f.advance(12000);
   assert.deepEqual(f.calls,[],'Startup recovery must not reload a newer SPA route');
 }
-// Once the document renders successfully, later app content is not a startup
-// failure, even when a router keeps its URL or briefly displays a spinner.
+                                                                             
+                                                                           
 {
   const f=fixture();f.load();f.advance(2000);
   f.body.textContent=f.body.innerText='A chat message says something went wrong';
   f.advance(12000);
   assert.deepEqual(f.calls,[],'A loaded app must leave the startup watchdog');
 }
-// Actual startup error documents must still enter the existing bounded recovery.
+                                                                                 
 {
   const f=fixture();f.body.textContent='Accept cookies; internal service worker error; something went wrong';f.body.innerText='Accept cookies';f.load();f.advance(12000);
   assert.deepEqual(f.calls,[],'Hidden template/script error strings must not reload consent screens');

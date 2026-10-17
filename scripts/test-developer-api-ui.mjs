@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {readFile} from 'node:fs/promises';
 const root=process.env.NYX_TEST_ASSET_ROOT||'.';
-// Exercise the real host bridge, including its source/origin checks.
+                                                                     
 const host=await readFile('script.js','utf8');
 const sourcePredicate=host.match(/const nyxAccountClientSourcePath=([^;]+);/)[1];
 const validPath=new Function('nyxChatSourcePath','return '+sourcePredicate)(()=>false);

@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 
 <base href="https://cdn.jsdelivr.net/gh/bubbls/UGS-Assets@e4eef50361d9e575bc7cd834e14388c6e675a67e/steal%20brainrot/">
@@ -13,7 +13,7 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <link rel="stylesheet" href="./style.css" /> 
-  <!-- Yandex Games SDK -->
+  
   <script src="https://cdn.jsdelivr.net/gh/gn-math/assets@main/yandex-sdk.js?lol"></script>
   <style>
     canvas:focus {
@@ -35,7 +35,7 @@
       height: 100%;
     }
   </style>
-  <!-- Additional head modules -->
+  
 </head>
 
 <body class="dark">
@@ -51,7 +51,7 @@
       <div class="spinner"></div>
     </div>
   </div>
-  <!-- Additional body modules -->
+  
   <script>
             function mergeFiles(fileParts) {
             return new Promise((resolve, reject) => {
@@ -98,7 +98,7 @@
           productName: "BikeOfHell",
           productVersion: "0.1",
         };
-        // Ensure StartUnityInstance is called only after config is set
+                                                                       
         if (IsLocalHost() || syncInit) StartUnityInstance_IfUnloaded();
     });
 
@@ -133,7 +133,7 @@
       container.className = "unity-mobile";
     }
 
-    // The background image when loading the game. When building a build, the code changes depending on the project settings.
+                                                                                                                             
 
     loadingCover.style.display = "";
 
@@ -240,7 +240,7 @@
             ygGameInstance = unityInstance;
             loadingCover.style.background = "";
             loadingCover.style.display = "none";
-            // Fill Background [Build Modify]
+                                             
           })
           .catch((message) => {
             console.error(message);
@@ -248,7 +248,7 @@
       };
 
       InstallBlurFocusBlocker();
-      // Removed duplicate call, now handled after config is set
+                                                                
 
       if (IsLocalHost() || syncInit) StartUnityInstance_IfUnloaded();
     };
@@ -323,17 +323,17 @@
         ysdk.on("game_api_pause", PauseCallback);
         ysdk.on("game_api_resume", ResumeCallback);
 
-        // Additional init0 modules
+                                   
         await RequestingEnvironmentData();
         LogStyledMessage("Init EnvirData ysdk");
 
-        // Additional init1 modules
+                                   
 
-        // Additional init2 modules
+                                   
         await InitPlayer();
         LogStyledMessage("Init Authorization ysdk");
 
-        // Additional init modules
+                                  
         await LoadCloud();
         LogStyledMessage("Init Storage ysdk");
 
@@ -362,10 +362,10 @@
         if (isPausedGame == true) YG2Instance("SetPauseGame", "true");
       }, 100);
 
-      // Additional start modules
+                                 
     }
 
-    // Additional script modules
+                                
     LogStyledMessage("PluginYG2 v2.0041  build: 7");
 
     var cloudSaves = NO_DATA;

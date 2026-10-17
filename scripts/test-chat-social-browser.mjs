@@ -45,7 +45,7 @@ try {
   await page.goto(base + '/apps/chat/');
   await page.locator('.message-author').first().waitFor();
   assert.equal(await page.locator('.message-author').count(), 12);
-  // The author is deliberately absent from the initial member directory.
+                                                                         
   await page.getByRole('button', {name: 'River', exact: true}).first().click();
   const profile = page.locator('[data-member-dialog]');
   await profile.locator('.member-bio').waitFor();
@@ -95,7 +95,7 @@ try {
   await page.screenshot({path: '.codex-artifacts/chat-social/mobile-profile.png'});
   await page.keyboard.press('Escape');
   for (const height of [400, 700]) {await page.setViewportSize({width: 390, height}); const bounds = await page.locator('[data-message-input]').boundingBox(); assert(bounds.y >= 0 && bounds.y + bounds.height <= height);}
-  // Reproduce the original bug: an embedded chat whose parent has no profile handler.
+                                                                                      
   await page.route('**/chat-profile-host', route => route.fulfill({contentType: 'text/html', body: '<iframe title="Chat" src="/apps/chat/" style="width:100%;height:95vh;border:0"></iframe>'}));
   await page.setViewportSize({width: 1440, height: 940});
   await page.goto(base + '/chat-profile-host');

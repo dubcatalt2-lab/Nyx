@@ -1,7 +1,7 @@
 
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 
 
@@ -50,7 +50,7 @@
 
 	<script>
 		var loadtimer = setTimeout(function () {
-                //If onload hasn't been triggered for 10 seconds, force it. Most likely a straggling ad or social button that is sleeping... this behaviour will change for update
+                                                                                                                                                                                  
                 console.log("Forcing window.onload");
                 window.dispatchEvent(new Event("load"));
             }, 10000);
@@ -153,7 +153,7 @@
 
                         function nextLoaderText() {
                             console.log("Loader-timer tick.");
-                            //Check if element still exists (if not, we are done!)
+                                                                                  
                             var tmp_element = document.getElementById("loadingwhat");
                             if (typeof tmp_element != "undefined" && tmp_element !== null) {
                                 tmp_element.className = "animated zoomOut duration-5";
@@ -161,8 +161,8 @@
                                 setTimeout(function () {
                                     tmp_element.innerHTML = loadArr[loadcursor] + dotstr;
                                     if (loadcursor++ >= loadArr.length - 1) {
-                                        //reached the end, way too long to load, manual override required
-                                        //game might not work 100% but atleast the button might
+                                                                                                         
+                                                                                               
                                         var override_button = document.getElementById("start-playing");
                                         override_button.className += " animated fadeInDown duration-5";
                                         override_button.style.marginTop = "75px";
@@ -173,7 +173,7 @@
                                         tmp_element.className = "animated zoomIn duration-5";
                                     } else {
                                         tmp_element.className = "animated zoomIn duration-5";
-                                        //call function again
+                                                             
                                         setTimeout(function () {
                                             nextLoaderText();
                                         }, 3000 + Math.random() * 2500);
@@ -549,7 +549,7 @@
 			#sideadlol {
 				right: 198px;
 				top: 19px;
-				/*max-height: 480px;*/
+				                      
 				width: 120px !important;
 				height: 240px !important;
 			}

@@ -1,7 +1,7 @@
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
-<!--This is a recreation of portal but 2d. Uses statically--!>
-<!--The first level seems to be bugged so you should just skip to level 2--!>
+ 
+
+
+
 
 
 <!DOCTYPE html>
@@ -42,8 +42,8 @@
 		}
 
 
-		/* Status display
-		 * ============== */
+		                 
+                      
 
 		#status {
 			position: absolute;
@@ -54,7 +54,7 @@
 			display: flex;
 			justify-content: center;
 			align-items: center;
-			/* don't consume click events - make children visible explicitly */
+			                                                                   
 			visibility: hidden;
 		}
 
@@ -144,7 +144,7 @@
 	</div>
 
 	<script type='text/javascript' src='index.js'></script>
-	<script type='text/javascript'>//<![CDATA[
+	<script type='text/javascript'>           
 
 		const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":21329120,"index.wasm":25658069},"focusCanvas":true,"gdnativeLibs":[]};
 		var engine = new Engine(GODOT_CONFIG);
@@ -234,7 +234,7 @@
 							statusProgressInner.style.width = current/total * 100 + '%';
 							setStatusMode('progress');
 							if (current === total) {
-								// wait for progress bar animation
+								                                  
 								setTimeout(() => {
 									setStatusMode('indeterminate');
 								}, 500);
@@ -249,7 +249,7 @@
 				}, displayFailureNotice);
 			}
 		})();
-	//]]></script>
+	     </script>
 </body>
 </html>
 

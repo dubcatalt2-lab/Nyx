@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 
 <!DOCTYPE html>
@@ -47,9 +47,9 @@
 
 <body>
   <script>
-    // Issue a warning if trying to preview an exported project on disk.
+                                                                        
     (function() {
-      // Check for running exported on file protocol
+                                                    
       if (window.location.protocol.substr(0, 4) === "file") {
         alert("Exported games won't work until you upload them. (When running on the file:/// protocol, browsers block many features from working for security reasons.)");
       }
@@ -85,7 +85,7 @@
     }
 
     window.C2_RegisterSW = function C2_RegisterSW() {
-      if (!navigator.serviceWorker) return; // no SW support, ignore call
+      if (!navigator.serviceWorker) return;                              
 
       try {
         navigator.serviceWorker

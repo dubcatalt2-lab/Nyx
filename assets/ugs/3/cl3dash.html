@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 
 <html lang="en-us">
@@ -10,19 +10,19 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bubbls/3dash@76613c9a94533ef9e6ba0e266ae18613700e3d02/style.css"/>
-<!-- Yandex Games SDK -->
+
 <script src="https://cdn.jsdelivr.net/gh/bubbls/3dash@76613c9a94533ef9e6ba0e266ae18613700e3d02/v2.02c5b63d689c6bc2f83c.js"></script>
 <style>
-        /* Убираем выделение по нажатию клавиш */
+                                                 
         canvas:focus {
             outline: none;
         }
 
         html, body {
-            /* Убираем отступы */
+                                 
             padding: 0;
             margin: 0;
-            /* Отключаем скролл и лонгтап на IOS */
+                                                   
             overflow: hidden;
             -webkit-touch-callout: none;
             -webkit-user-select: none;
@@ -31,11 +31,11 @@
             -ms-user-select: none;
             user-select: none;
             -webkit-tap-highlight-color: rgba(0,0,0,0);
-            /* Ставим высоту на 100% */
+                                       
             height: 100%;
         }
     </style>
-<!-- Additional head modules -->
+
 </head>
 <body class="dark">
 <div id="unity-container" class="unity-desktop">
@@ -50,7 +50,7 @@
 <div class="spinner"></div>
 </div>
 </div>
-<!-- Additional body modules -->
+
 <script>
         const hideFullScreenButton = "";
         const buildUrl = "";
@@ -92,16 +92,16 @@
             
         }
 
-        // Фоновое изображение при загрузке игры. При сборке билда код меняется взависимости от настроек проекта.
+                                                                                                                 
         
         loadingCover.style.background = "url('https://cdn.jsdelivr.net/gh/bubbls/3dash@76613c9a94533ef9e6ba0e266ae18613700e3d02/logo.png') center / cover";
 
         loadingCover.style.display = "";
 
-        // Выключаем появление меню при правом клике мыши
+                                                         
         document.addEventListener('contextmenu', event => event.preventDefault());
 
-        // Возвращаем фокус, если кликнули по экрану
+                                                    
         function FocusGame() {
             window.focus();
             canvas.focus();
@@ -164,9 +164,9 @@
                 console.log('Init Yandex SDK');
                 ysdk = await YaGames.init();
 
-                FullAdShow(); // First ad true
+                FullAdShow();                 
 
-                // Additional init modules
+                                          
 cloudSaves = await LoadCloud();
 console.log('Init Storage ysdk');
 
@@ -195,7 +195,7 @@ console.log('Init Player ysdk');
                 myGameInstance.SendMessage('YandexGame', 'OpenFullAd');
             }
 
-            // Additional start modules
+                                       
         }
 
         function FullAdShow() {
@@ -316,7 +316,7 @@ console.log('Init Player ysdk');
                     isDefault: false,
                     isInvertSortOrder: false,
                     decimalOffset: 0,
-                    type: '' // , title: ''
+                    type: ''               
                 };
 
                 ysdk.getLeaderboards()
@@ -326,8 +326,8 @@ console.log('Init Player ysdk');
                         jsonEntries.isDefault = res.default;
                         jsonEntries.isInvertSortOrder = res.description.invert_sort_order;
                         jsonEntries.decimalOffset = res.description.score_format.options.decimal_offset;
-                        jsonEntries.type = res.description.type; // Не определяется на момент 18.07.23
-                        //jsonEntries.title = res.title; // Реализуйте по предпочтениям
+                        jsonEntries.type = res.description.type;                                      
+                                                                                       
 
                         return leaderboard.getLeaderboardEntries(nameLB, {
                             quantityTop: quantityTop,
@@ -451,7 +451,7 @@ console.log('Init Player ysdk');
             }
         }
 
-        // Additional script modules:
+                                     
 
 var cloudSaves = 'noData';
 

@@ -18,7 +18,7 @@ try{
  await page.route('**/*',r=>new URL(r.request().url()).origin==='http://localhost:8310'?r.continue():r.abort());
  await page.goto('http://localhost:8310');
  await page.waitForSelector('[data-n7x-dock-item="settings"]');
- // External services are blocked in this local UI test; release the loading input lock.
+                                                                                        
  await page.evaluate(()=>{document.body.classList.remove('n7x-loading-active');document.querySelectorAll('[inert]').forEach(e=>e.removeAttribute('inert'));document.querySelector('#n7xStudyHubStartup')?.remove()});
  assert(await page.evaluate(()=>document.body.classList.contains('q6172f40672fb949e9c')));
  assert.equal(await page.evaluate(()=>localStorage.getItem('nyx.browserShellMode')),null);

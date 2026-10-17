@@ -18,7 +18,7 @@ for (const privilege of [{ premium: true }, { owner: true }, { coOwner: true }])
   await Promise.all([first, second, reserved].map(s => allowance.finish(s)));
   for (let n = 0; n < 4; n++) await allowance.finish(await allowance.begin(priority));
   await assert.rejects(allowance.begin(actor('blocked', { ...privilege, blocked: true })), /restricted/);
-  // Avoid the separate co-owner daily cap while checking the minute cap.
+                                                                         
   for (let n = 5; n < 12; n++) {
     if (privilege.coOwner && n >= 10) break;
     await allowance.finish(await allowance.begin(priority));

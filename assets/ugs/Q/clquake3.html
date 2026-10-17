@@ -1,5 +1,5 @@
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ --> 
+ 
+ 
 
 <!DOCTYPE html>
 <html lang="en">
@@ -66,7 +66,7 @@
             ]).then(([quake3jsmerged]) => {
                 try {
 					document.querySelector("#loading-text").remove();
-                    // LOADING AND RUNNING QUAKE 3
+                                                  
                     var quakeLoader = document.createElement("script");
                     quakeLoader.onload = function () {
                         ioq3.viewport = document.getElementById("viewport-frame");
@@ -110,13 +110,13 @@
             try {
                 CTRLS_IDLE = CTRLS_IDLE + 1;
                 if (CTRLS_IDLE >= 3) {
-                    // HIDES THE DOWNLOAD BUTTON
+                                                
                 }
             } catch (err) {}
         }
-        // --------------------------------------------------------------------------------------------------------
-        // PROFILE MANAGMENT FUNCTIONS
-        // --------------------------------------------------------------------------------------------------------
+                                                                                                                   
+                                      
+                                                                                                                   
         function getProfileData() {
             if (profileData == null) {
                 profileData = "";
@@ -160,35 +160,35 @@
 
         function readFile(files) {
             try {
-                // CHECKING IF THE IS THE QUAKE 3 PROFILE/SAVEGAME FILE
+                                                                       
                 if (files[0].name.toLowerCase() == "q3config.cfg") {
-                    // CREATING THE FILE READER
+                                               
                     var filereader = new FileReader();
-                    // SETTING THE FILENAME
+                                           
                     filereader.file_name = files[0].name;
-                    // SETTING WHAT WILL HAPPEN WHEN THE FILE IS READ
+                                                                     
                     filereader.onload = function () {
-                        // SETTING THE FILE CONTENT
+                                                   
                         profileData = this.result;
-                        // CLEARING THE SELECTED FILE VALUE
-                        // STARTING QUAKE III ARENA
+                                                           
+                                                   
                         runQuake3();
                     };
-                    // READING THE FILE
+                                       
                     filereader.readAsText(files[0]);
                 } else {
-                    // CLEARING THE SELECTED FILE VALUE
-                    // SHOWING A MESSAGE SAYING THAT YOU CAN ONLY SELECT THE QUAKE 3 PROFILE/SAVEGAME FILE
+                                                       
+                                                                                                          
                     alertCustom(STRING_ERROR_TITLE, STRING_ERROR_MESSAGE, STRING_ERROR_OK, function () {});
                 }
             } catch (err) {}
         }
         window.addEventListener("load", function () {
-            // CHECKING IF THE GAME IS NOT RUNNING WITHIN AN IFRAME
+                                                                   
             if (window.top == window.self) {
-                // CLEARING THE SELECTED FILE VALUE
+                                                   
                 runQuake3()
-                // HANDLING THE MOUSE BEHAVIOR
+                                              
                 setInterval(goBackButtonTimerIncrement, 1000);
                 document.addEventListener("click", mouseChecker, false);
                 document.addEventListener("dblclick", mouseChecker, false);

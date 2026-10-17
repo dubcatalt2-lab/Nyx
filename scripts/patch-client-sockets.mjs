@@ -1,6 +1,6 @@
 ﻿import {parse} from 'acorn';
-// Patch the installed client at build time, before bundling/name rewriting.
-// Fail closed when upstream changes: do not silently apply a partial patch.
+                                                                            
+                                                                            
 export function patchClientSockets(source) {
  const edits=[];
  function walk(node) {

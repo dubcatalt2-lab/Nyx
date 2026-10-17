@@ -26,7 +26,7 @@ assert.equal(first.bytes,32*1024*1024);assert(!desktop.destroyed,'Slow uplink mu
 first.onmessage({data:'{"type":"control","active":false}'});assert(desktop.destroyed);assert.equal(intervals.length,1,'Drain timer must be cleared on disconnect');
 first.onerror({error:{message:'Network error',cause:{code:'ECONNRESET',message:'secret'}}});first.close(1006);await flush();assert.equal(scheduled[0].delay,1000);assert(writes.get('fixture/status.txt').includes('code 1006'));assert(writes.get('fixture/status.txt').includes('ECONNRESET'));assert(!writes.get('fixture/bridge-log.txt').includes('secret'));
 scheduled.shift().fn();let second=sockets[1];second.readyState=1;second.onopen();second.onmessage({data:'{"type":"ready"}'});
-// A stale close callback must not kill a replacement connection.
+                                                                 
 first.onclose({code:1006});assert.equal(scheduled.length,0);
 clock+=61000;intervals[0]();await flush();assert.equal(second.readyState,3);assert(writes.get('fixture/bridge-log.txt').includes('heartbeat timed out'));
 scheduled.shift().fn();let third=sockets[2];third.close(4003);await flush();assert.equal(scheduled.length,0);assert(writes.get('fixture/status.txt').includes('Pairing rejected'));

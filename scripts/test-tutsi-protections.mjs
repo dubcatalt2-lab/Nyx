@@ -22,7 +22,7 @@ try {
  await page.locator('#close-prevention').uncheck();await page.selectOption('#blocker','');await page.selectOption('#transport','epoxy');
  for(const id of ['ad-block','popup-block','download-block'])assert(await page.locator('#'+id).isChecked());
  await page.locator('#ad-block').uncheck();await page.reload();assert(!(await page.locator('#ad-block').isChecked()));await page.locator('#ad-block').check();
- // Actual controller/rewriter with harmless upstream responses; no live ads or files.
+                                                                                      
  const html=`<!doctype html><html><head><title>Protection fixture</title></head><body><h1>Fixture</h1><div class="ad-banner">Advertisement</div><p id="normal">Normal content</p><script src="https://doubleclick.net/ad.js"></script><button id="popup" onclick="window.open('https://example.com/')">Popup</button><a id="download" href="https://fixture.test/installer.exe" download="installer.exe">Download</a></body></html>`;
  const client=`export default class {ready=false;async init(){this.ready=true}async request(url){const ad=url.hostname==='doubleclick.net';return {status:200,statusText:'OK',headers:[['content-type',ad?'text/javascript':'text/html']],body:new Response(ad?'document.documentElement.dataset.fixtureAd="loaded"':${JSON.stringify(html)}).body}}connect(){return [()=>{},()=>{}]}}`;
  await page.route(url=>[ '/assets/transports/epoxy-scramjet.mjs',aliases['/assets/transports/epoxy-scramjet.mjs'] ].includes(url.pathname),r=>r.fulfill({contentType:'text/javascript',body:client}));
@@ -32,19 +32,19 @@ try {
  assert(await frame.locator('body').evaluate(el=>{const ad=el.querySelector('.ad-banner');return !ad||getComputedStyle(ad).display==='none'}));
  assert.equal(await frame.locator('html').getAttribute('data-fixture-ad'),null);
  await frame.locator('#popup').click();await frame.locator('#download').click();await page.waitForTimeout(150);assert.equal(popups,0);assert.equal(downloads,0);
- // Disabling the ad toggle reloads the current page and restores its resources.
+                                                                                
  await page.goto(base+'/tutsi#settings');await page.locator('#ad-block').uncheck();
  await page.goto(base+'/tutsi#browser');
  await frame.locator('.ad-banner').waitFor({state:'visible'});
  await page.waitForTimeout(500);assert.equal(await frame.locator('html').getAttribute('data-fixture-ad'),'loaded');
  await page.goto(base+'/tutsi#settings');await page.locator('#popup-block').uncheck();await page.locator('#download-block').uncheck();await page.reload();
  assert(!(await page.locator('#popup-block').isChecked()));assert(!(await page.locator('#download-block').isChecked()));
- // Independent page guard checks: native calls continue when toggles are off.
+                                                                              
  const fixture=await browser.newPage();await fixture.setContent('<a id="file" download="installer.exe" href="data:text/plain,test">File</a>');
  await fixture.evaluate(()=>{window.opens=0;window.open=()=>{window.opens++;return null}});
  await fixture.addScriptTag({content:protectionSource({adBlock:false,popupBlock:false,downloadBlock:false})});
  await fixture.evaluate(()=>window.open('https://example.com'));assert.equal(await fixture.evaluate(()=>window.opens),1);
- // The static preview serves files before VPS middleware; test crawler routes on a backend origin only.
+                                                                                                        
  if(process.env.TUTSI_TEST_CRAWLERS==='1'){
  for(const agent of ['Googlebot','GPTBot','ClaudeBot','bingbot'])assert.equal((await fetch(base+'/tutsi',{headers:{'User-Agent':agent}})).status,403);
  assert.equal((await fetch(base+'/tutsi/resource-index')).status,404);

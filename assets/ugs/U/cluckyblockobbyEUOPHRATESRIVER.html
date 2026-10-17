@@ -2,8 +2,8 @@
 <!DOCTYPE html>
 
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 
 <html lang="en-us">
@@ -13,21 +13,21 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <link rel="stylesheet" href="./style.css" />
-  <!-- Additional head modules -->
-  <!-- Yandex Games SDK -->
+  
+  
   <script src="/sdk.js"></script>
   <style>
-    /* Убираем выделение по нажатию клавиш */
+                                             
     canvas:focus {
       outline: none;
     }
 
     html,
     body {
-      /* Убираем отступы */
+                           
       padding: 0;
       margin: 0;
-      /* Отключаем скролл и лонгтап на IOS */
+                                             
       overflow: hidden;
       -webkit-touch-callout: none;
       -webkit-user-select: none;
@@ -36,14 +36,14 @@
       -ms-user-select: none;
       user-select: none;
       -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-      /* Ставим высоту на 100% */
+                                 
       height: 100%;
     }
   </style>
 </head>
 
 <body class="dark">
-  <!-- Additional body modules -->
+  
   <div id="unity-container" class="unity-desktop">
     <canvas id="unity-canvas" tabindex="-1"></canvas>
   </div>
@@ -96,16 +96,16 @@
 
     }
 
-    // Фоновое изображение при загрузке игры. При сборке билда код меняется взависимости от настроек проекта.
+                                                                                                             
 
 
 
     loadingCover.style.display = "";
 
-    // Выключаем появление меню при правом клике мыши
+                                                     
     document.addEventListener('contextmenu', event => event.preventDefault());
 
-    // Возвращаем фокус, если кликнули по экрану
+                                                
     function FocusGame() {
       window.focus();
       canvas.focus();
@@ -168,9 +168,9 @@
         console.log('Init Yandex SDK');
         ysdk = await YaGames.init();
 
-        FullAdShow(); // First ad true
+        FullAdShow();                 
 
-        // Additional init modules
+                                  
         cloudSaves = await LoadCloud();
         console.log('Init Storage ysdk');
 
@@ -435,7 +435,7 @@
           isDefault: false,
           isInvertSortOrder: false,
           decimalOffset: 0,
-          type: '' // , title: ''
+          type: ''               
         };
 
         ysdk.getLeaderboards()
@@ -445,8 +445,8 @@
             jsonEntries.isDefault = res.default;
             jsonEntries.isInvertSortOrder = res.description.invert_sort_order;
             jsonEntries.decimalOffset = res.description.score_format.options.decimal_offset;
-            jsonEntries.type = res.description.type; // Не определяется на момент 18.07.23
-            //jsonEntries.title = res.title; // Реализуйте по предпочтениям
+            jsonEntries.type = res.description.type;                                      
+                                                                           
 
             return leaderboard.getLeaderboardEntries(nameLB, {
               quantityTop: quantityTop,
@@ -584,7 +584,7 @@
 
     function StaticRBTDeactivate() {}
 
-    // Additional script modules:
+                                 
 
     var cloudSaves = 'noData';
 

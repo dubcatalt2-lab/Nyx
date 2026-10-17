@@ -4,13 +4,13 @@ import net from 'node:net';
 import {spawn} from 'node:child_process';
 import {resolve} from 'node:path';
 
-// Local frontend, production services. Secrets remain on the VPS.
+                                                                  
 const port=Number(process.env.PREVIEW_PORT || 9091);
 const tunnelPort=Number(process.env.PREVIEW_TUNNEL_PORT || 19080);
 const upstreamHost='tutsi.nyxlearning.org';
 const tunnel=spawn('ssh',['-N','-T','-o','BatchMode=yes','-o','ExitOnForwardFailure=yes','-o','ServerAliveInterval=20','-o','ServerAliveCountMax=3','-L',`127.0.0.1:${tunnelPort}:127.0.0.1:8080`,process.env.PREVIEW_SSH_HOST || 'ubuntu@15.204.93.166'],{stdio:['ignore','ignore','pipe'],windowsHide:true});
 const app=express();
-// Do not accept LAN traffic or other sites' requests to this localhost bridge.
+                                                                               
 app.use((req,res,next)=>{
  if(!['localhost','127.0.0.1'].includes(req.hostname)) return res.sendStatus(403);
  const sandboxGameAsset=req.headers.origin==='null'&&['GET','HEAD','OPTIONS'].includes(req.method)&&/^\/(?:gn-math-(?:fetch|asset|proxy)|gms-games-(?:fetch|proxy)|assets\/games\/(?:game-health|game-ad-protection|game-runtime-compat)\.js)$/.test(req.path);
@@ -22,7 +22,7 @@ app.get(['/tutsi','/tutsi/'],(req,res)=>res.sendFile(resolve(root,'apps/tutsi/in
 app.use(express.static(root,{dotfiles:'allow',setHeaders:res=>res.setHeader('Cache-Control','no-store')}));
 function headers(req){
  const result={...req.headers,host:upstreamHost};
- // The tunnel terminates at the existing app, behind its normal public HTTPS host.
+                                                                                   
  result['x-forwarded-proto']='https';
  if(result.origin && result.origin!=='null') result.origin=`https://${upstreamHost}`;
  if(result.referer) result.referer=`https://${upstreamHost}/`;
@@ -54,4 +54,4 @@ tunnel.on('exit',code=>{if(!stopping){console.error(`VPS tunnel closed (${code})
 tunnel.stderr.on('data',()=>{});
 server.on('error',error=>{console.error(`Preview could not start: ${error.code}`);stop(1);});
 process.on('SIGINT',()=>stop());process.on('SIGTERM',()=>stop());
-server.listen(port,'127.0.0.1',()=>console.log(`Local preview: http://localhost:${port}/tutsi — uses live VPS services and real account data.`));
+server.listen(port,'127.0.0.1',()=>console.log(`Local preview: http://localhost:${port}/tutsi ï¿½ uses live VPS services and real account data.`));

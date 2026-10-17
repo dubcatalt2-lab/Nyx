@@ -36,13 +36,13 @@ async function main(){
  const now=uptime();
  const eligible=unit.ActiveState==='active'&&unit.SubState==='running'&&now-Number(unit.ActiveEnterTimestampMonotonic)/1e6>=60;
  const result=assessHealth({unit,previous,now,healthy:eligible?await probeHealth():false});
- // Persist the cooldown before requesting recovery so an interrupted checker
- // cannot repeatedly restart the application. systemd serializes this unit.
+                                                                             
+                                                                            
  const temp=stateFile+'.'+process.pid;
  await writeFile(temp,JSON.stringify(result.state),{mode:0o600});await rename(temp,stateFile);
  if(['failed-check','cooldown','restart'].includes(result.action))console.log(JSON.stringify({event:'nyx-health-check',action:result.action,failures:result.state.failures}));
  if(result.action==='restart'){
-  // Unlike restart, try-restart leaves a deliberately stopped service stopped.
+                                                                               
   await execute('/usr/bin/systemctl',['try-restart','--no-block','nyx.service'],{timeout:5000,maxBuffer:16384});
  }
 }

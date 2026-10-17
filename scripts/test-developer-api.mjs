@@ -96,7 +96,7 @@ try {
   assert.equal((await request('/api/v1/ai',issued.key,prompt)).status,401);
 }finally{server.closeAllConnections();await new Promise(r=>server.close(r));}
 
-// Public Gemini is available to new chat accounts; API grants keep their own limits.
+                                                                                     
 const allowance=createAiAllowance({db:memoryFirestore(),config:aiAllowanceConfig({NYX_AI_DAILY_BUDGET_USD:'1',NYX_AI_MODEL_PRICES_JSON:JSON.stringify({['shared:'+GEMINI]:{inputPerMillion:.1,outputPerMillion:.4}})})});
 const actor={uid:'new',createdAt:Date.now(),device:'device',network:'school'};
 await allowance.finish(await allowance.begin({...actor,requestedModel:GEMINI}));
@@ -106,7 +106,7 @@ assert.ok(reservation.reserved>0);assert.equal(session.tier,'newcomer');
 await allowance.settle(reservation,null,true);await allowance.finish(session);
 console.log('PASS: email-free API access, per-user key limits, non-renewing grants, owner password, model/usage limits, reservations and shared budget integration');
 
-// Free grants are bounded atomically across new accounts, not by school IP.
+                                                                            
 const abuseDb=memoryFirestore();let grantTime=Date.now();const grants=createKeyStore(abuseDb,()=>grantTime);
 const burst=await Promise.allSettled(Array.from({length:8},(_,i)=>grants.issue('burst'+i,'same-browser','Test')));
 assert.equal(burst.filter(r=>r.status==='fulfilled').length,3);

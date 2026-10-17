@@ -74,7 +74,7 @@
 	</style>
 </head>
 <body>
-    <!-- Create the canvas that the C++ code will draw into -->
+    
     <canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
 	<div class="info-overlay" id="loading">
 		<div id="spinner"></div>
@@ -87,16 +87,16 @@
 		<a href="#" id="load">Load</a><br/>
 		~6mb
 	</div>
-    <!-- Allow the C++ to access the canvas element -->
+    
     <script type='text/javascript'>
 		var loadScript = (ev, src) => {
 			ev.preventDefault();
 
-			// Hide select-version, show loader
+			                                   
 			document.getElementById('select-version').style.display = 'none';
 			document.getElementById('loading').style.display = 'block';
 
-			// Load the requested script
+			                            
 			var s = document.createElement('script');
 			s.setAttribute('src', src);
 			document.head.appendChild(s);
@@ -127,7 +127,7 @@
 				var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
 				var now = Date.now();
 				if (m && now - Module.setStatus.last.time < 30) {
-					return; // if this is a progress update, skip it if too soon
+					return;                                                     
 				}
 				Module.setStatus.last.time = now;
 				Module.setStatus.last.text = text;

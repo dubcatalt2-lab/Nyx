@@ -56,7 +56,7 @@ try{for(const brand of ['nyx']){
  try{await frame.locator('#ready').waitFor({timeout:30000});}catch(e){console.log('INITIAL FAILURE',[...loadedTransports],errors,await requests(),await page.locator('body').innerText());throw e;}
  await frame.locator('#draft').fill('Keep me');
  const instance=await frame.locator('body').getAttribute('data-instance');
- // Script-initiated cross-site navigation must never reach the transport.
+                                                                          
  await frame.locator('body').evaluate(()=>{setTimeout(()=>window.redirectTo('https://unwanted.test/ad'),50)});
  await page.waitForTimeout(1800);
  if(process.argv.includes('--debug'))console.log('STATE',await requests(),errors,await frame.locator('body').innerText());
@@ -64,19 +64,19 @@ try{for(const brand of ['nyx']){
  assert.equal(await frame.locator('#draft').inputValue(),'Keep me');
  assert.ok(!(await requests()).some(url=>url.includes('unwanted.test')));
  assert.equal(await address.inputValue(),'https://source.test/start');
- // Meta refresh follows the same policy.
+                                         
  await frame.locator('body').evaluate(()=>{window.metaTo('https://unwanted.test/meta')});
  await page.waitForTimeout(1800);
  if(process.argv.includes('--debug'))console.log('STATE',await requests(),errors,await frame.locator('body').innerText());
  assert.equal(await frame.locator('body').getAttribute('data-instance'),instance);
  assert.ok(!(await requests()).some(url=>url.includes('unwanted.test')));
- // Synthetic clicks do not mint navigation permission.
+                                                       
  await frame.locator('#external').evaluate(link=>link.click());await page.waitForTimeout(1000);
  assert.equal(await frame.locator('body').getAttribute('data-instance'),instance);
- // An automatic same-origin request must not authorize its cross-site 302.
+                                                                           
  await frame.locator('body').evaluate(()=>window.redirectTo('/automatic-hop'));await page.waitForTimeout(1500);
  assert.equal(await frame.locator('body').getAttribute('data-instance'),instance);
- // Explicit user links and their HTTP redirect chains work.
+                                                            
  await frame.locator('#external').click();await page.waitForTimeout(1800);
  assert.equal(await source(),'https://destination.test/page');
  await go('https://source.test/start');
@@ -85,13 +85,13 @@ try{for(const brand of ['nyx']){
  await go('https://source.test/start');
  await frame.locator('#submit').click();await page.waitForTimeout(1800);
  assert.equal(await source(),'https://destination.test/results?q=fixture');
- // Authentication initiated by a real click can return after verification.
+                                                                           
  await go('https://source.test/start');
  await frame.locator('#jslogin').click();await page.waitForTimeout(1800);
  assert.equal(await source(),'https://accounts.test/login');
  await frame.locator('body').evaluate(()=>{window.redirectTo('https://source.test/callback')});await page.waitForTimeout(1800);
  assert.equal(await source(),'https://source.test/callback');
- // Same-origin application navigation and assets remain available.
+                                                                   
  await frame.locator('body').evaluate(()=>{window.redirectTo('/next')});await page.waitForTimeout(1800);
  assert.equal(await source(),'https://source.test/next');
  await go('https://source.test/static-refresh');await page.waitForTimeout(1000);

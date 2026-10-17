@@ -6,8 +6,8 @@ import {parse} from 'acorn';
 const {preserveTransferErrors,requestWithTransferRetry,bufferLimit}=await import(process.argv.includes('--built')
   ? '../dist/assets/transports/libcurl-response.mjs' : '../assets/transports/libcurl-response.mjs');
 
-// Use the installed upstream stream implementation, including its late-error
-// behavior, rather than reproducing that behavior in a mock implementation.
+                                                                             
+                                                                            
 const require=createRequire(import.meta.url);
 const source=readFileSync(require.resolve('@mercuryworkshop/libcurl-transport'),'utf8');
 let method;
@@ -73,8 +73,8 @@ for(const method of ['POST','PUT','PATCH','DELETE']){
     {method:'GET',body:null,budget:{bytes:0}}),/code 60/);
   assert.equal(calls,1,'Certificate failures are not replayed');
 }
-// Buffer exhaustion retains every byte in order and releases retained prefixes
-// when consumed or cancelled. It is not a response-size limit.
+                                                                               
+                                                               
 for(const cancel of [false,true]){
   const budget={bytes:bufferLimit-2};
   const response=await requestWithTransferRetry(()=>Promise.resolve({headers:[['content-type','application/json']],body:new ReadableStream({

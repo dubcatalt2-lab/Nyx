@@ -51,7 +51,7 @@ export class RelayTransport {
     let remembered='';try{remembered=this.storage?.getItem('tutsi.workingRelay:'+this.urls.join('|'))||''}catch{}
     const order=[...new Set([this.url,remembered,...this.urls])].filter(url=>this.urls.includes(url)&&url!==failed);
     this.switching=(async()=>{
-      // Classification is advisory. A slow checker must not hold up connection startup.
+                                                                                        
       let rankTimer;
       const ranked=await Promise.race([
         Promise.resolve().then(()=>this.rank(order)).catch(()=>order),
@@ -82,8 +82,8 @@ export class RelayTransport {
     if(this.switching){await this.switching;return this.client!==failedClient;}
     if(!force&&await this.probe(this.url))return false;
     if(this.client!==failedClient)return true;
-    // A fresh probe cannot establish that the existing multiplexed client works.
-    // Rebuild that client after a transport failure, even on a reachable relay.
+                                                                                 
+                                                                                
     await this.select(reconnect?'':this.url);
     return this.client!==failedClient;
   }
@@ -93,7 +93,7 @@ export class RelayTransport {
     let timer,expired=false,finished=false;
     const signal=caller?AbortSignal.any([caller,abort.signal]):abort.signal;
     const request=Promise.resolve().then(()=>client.request(...args.slice(0,4),signal));
-    // Some SDKs ignore AbortSignal. Discard late bodies and release the caller anyway.
+                                                                                       
     request.then(response=>{if(finished&&signal.aborted)void response?.body?.cancel?.().catch(()=>{});},()=>{});
     const cancelled=new Promise((_,reject)=>{
       const onAbort=()=>reject(expired?Object.assign(new Error('Relay request timed out'),{name:'TimeoutError'}):signal.reason);
@@ -112,7 +112,7 @@ export class RelayTransport {
       if(args[4]?.aborted||error?.name==='AbortError')throw error;
       const connectionFailed=error?.name==='TimeoutError'||/timed?\s*out|timeout|ETIMEDOUT|ECONNRESET|network|socket|wisp|hyper.*(?:error|client)|muxtaskended|connection.*(?:closed|reset|lost|failed)|unexpected.*(?:eof|cutoff)|transport.*(?:closed|failed)/i.test(String(error?.message||error||''));
       let changed=false;try{changed=await this.recover(client,connectionFailed,connectionFailed)}catch{}
-      // Only idempotent reads may be replayed, once. Never replay a form submission.
+                                                                                     
       if(changed&&/^(GET|HEAD)$/i.test(String(args[1]||'GET'))&&!args[4]?.aborted&&!this.closed&&this.online())return this.attempt(this.client,args);
       throw error;
     }
@@ -145,8 +145,8 @@ export async function rankForBlocker(urls, vendor, {fetcher=fetch,onHint=()=>{}}
     let blocked=null;
     const abort=new AbortController();const timer=setTimeout(()=>abort.abort(),4000);
     try{
-      // The checker accepts HTTPS domains, not WebSocket URLs. Never send relay
-      // tokens, query strings or paths to the classification provider.
+                                                                                
+                                                                       
       const response=await fetcher('/api/link-checker/check',{method:'POST',signal:abort.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({url:'https://'+host+'/',vendor})});
       if(response.ok){const data=await response.json();const value=data?.vendors?.[vendor];if(!value?.error&&typeof value?.blocked==='boolean')blocked=value.blocked;}
     }catch{}finally{clearTimeout(timer)}
@@ -155,6 +155,6 @@ export async function rankForBlocker(urls, vendor, {fetcher=fetch,onHint=()=>{}}
     return {url,blocked};
   }));
   onHint({vendor,results});
-  // Reports only change preference. A real Wisp handshake remains authoritative.
+                                                                                 
   return results.sort((a,b)=>Number(a.blocked===true)-Number(b.blocked===true)).map(item=>item.url);
 }

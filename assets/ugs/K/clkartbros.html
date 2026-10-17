@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 
 
@@ -22,7 +22,7 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://kartbros.io">
 
-  <!-- Twitter Card meta tags -->
+  
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:site" content="@BlueWizardGames">
   <meta name="twitter:creator" content="@BlueWizardGames">
@@ -36,13 +36,7 @@
                      user-scalable=no,
                      viewport-fit=cover">
 
-  <!-- <script>
-      // window.addEventListener("touchmove", function (event) { event.preventDefault(); }, { capture: false, passive: false });
-      if (typeof window.devicePixelRatio != 'undefined' && window.devicePixelRatio > 2) {
-        var meta = document.getElementById("viewport");
-        meta.setAttribute('content', 'width=device-width, initial-scale=' + (2 / window.devicePixelRatio) + ', user-scalable=no');
-      }
-    </script> -->
+  
 
   <script type="application/ld+json">
     {
@@ -72,20 +66,20 @@
       document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
     }
 
-    // 1st run
+              
     fit();
 
-    // instant reaction to orientation / classic resizes
+                                                        
     addEventListener('resize', fit, {
       passive: true
     });
 
-    // extra pass once the URL bar has fully hidden (iOS/Chrome-Android quirk)
+                                                                              
     addEventListener('orientationchange', () => {
-      setTimeout(fit, 450); // tweak if you still see a gap
+      setTimeout(fit, 450);                                
     });
 
-    // visual-viewport change (iOS 15+ / Chrome 108+)
+                                                     
     if (window.visualViewport) {
       visualViewport.addEventListener('resize', fit, {
         passive: true
@@ -94,7 +88,7 @@
   </script>
 
   <style>
-    /* Basic styling */
+                       
     html,
     body {
       margin: 0;
@@ -107,30 +101,30 @@
     }
 
     .body::-webkit-scrollbar {
-      /* WebKit */
+                  
       width: 0px;
     }
 
-    /* Layout structure - main wrapper */
-    /* .page-wrapper {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    } */
+                                         
+                      
+                    
+                             
+                        
+        
 
-    /* Fix for scrolling when mouse is over canvas - removed pointer-events: none */
-    /* Game section - made to respect pointer events */
+                                                                                    
+                                                       
     .game-section {
       width: 100%;
       height: 100%;
-      /* aspect-ratio: 16 / 9; */
+                                 
       background: #000;
       position: relative;
       align-items: center;
       justify-content: center;
     }
 
-    /* Loading screen */
+                        
     #unity-loading-bar {
       background: #000;
       position: absolute;
@@ -140,7 +134,7 @@
       z-index: 15;
     }
 
-    /* Info section */
+                      
     .info-section {
       width: 100%;
       height: 100%;
@@ -153,9 +147,9 @@
       background: #000;
       width: calc(100%);
       float: left;
-      /* display: block; */
-      /* Add object-fit-like behavior for canvas */
-      /* position: relative; */
+                           
+                                                   
+                               
     }
 
 
@@ -175,14 +169,14 @@
     body,
     .game-section,
     #unity-canvas {
-      /* width: 100vw; */
+                         
       height: calc(var(--vh, 1vh)*100);
-      /* replaces 100 vh */
+                           
       overscroll-behavior: none;
-      /* avoids rubber-band scroll */
+                                     
     }
 
-    /* Container for game info */
+                                 
     .container {
       width: calc(100% - 420px);
       margin: 20px auto;
@@ -192,7 +186,7 @@
       border-radius: 10px;
     }
 
-    /* Content styling */
+                         
     p {
       font-size: 1.2rem;
       line-height: 1.6;
@@ -231,7 +225,7 @@
       margin-top: 20px;
     }
 
-    /* Social links */
+                      
     .social-links {
       margin-top: 40px;
       text-align: center;
@@ -253,9 +247,9 @@
 
     #adContainerMainMenu {
       position: absolute;
-      /* no longer fixed */
+                           
       top: 50%;
-      /* center vertically in game-section */
+                                             
       left: 50%;
       transform: translate(-50%, -50%);
       pointer-events: none;
@@ -266,11 +260,11 @@
       pointer-events: auto;
     }
 
-    /* Individual ad elements should receive clicks */
+                                                      
     #kartbros-io_300x250,
     #kartbros-io_300x250_2 {
       pointer-events: auto;
-      /* Only the actual ad elements get clicks */
+                                                  
     }
 
     #adContainerBottom {
@@ -281,7 +275,7 @@
       z-index: 1000;
       text-align: center;
       display: none;
-      /* Initially hidden like other ad containers */
+                                                     
       pointer-events: none;
     }
 
@@ -292,12 +286,12 @@
     #adContainerTop {
       position: absolute;
       top: 10px;
-      /* center vertically in game-section */
+                                             
       left: 50%;
       transform: translateX(-50%);
       z-index: 1000;
       display: none;
-      /* Initially hidden like main menu ads */
+                                               
       pointer-events: none;
     }
 
@@ -305,12 +299,12 @@
       pointer-events: auto;
     }
 
-    /* Individual ad elements should receive clicks */
+                                                      
     #kartbros-io_728x90 {
       pointer-events: auto;
     }
 
-    /* Pillar ad containers for character/track select screens */
+                                                                 
     #adContainerPillars {
       position: fixed;
       top: 0;
@@ -320,14 +314,14 @@
       z-index: 1000;
       pointer-events: none;
       display: none;
-      /* Initially hidden */
+                            
     }
 
     #adContainerPillars>div {
       pointer-events: auto;
     }
 
-    /* Individual pillar ad elements */
+                                       
     #kartbros-io_160x600 {
       position: absolute;
       left: 10px;
@@ -350,7 +344,7 @@
       z-index: 1001;
     }
 
-    /* Video ad overlay */
+                          
     #videoAdOverlay {
       position: fixed;
       top: 0;
@@ -370,7 +364,7 @@
       background: #000;
     }
 
-    /* Spinning wheel animation */
+                                  
     @keyframes spin {
       0% {
         transform: rotate(0deg);
@@ -388,7 +382,7 @@
     }
   </style>
 
-  <!-- AdinPlay Ads Snippet Integration -->
+  
   <script>
     window.aiptag = window.aiptag || {
       cmd: []
@@ -396,7 +390,7 @@
     aiptag.cmd.display = aiptag.cmd.display || [];
     aiptag.cmd.player = aiptag.cmd.player || [];
 
-    // CMP tool settings
+                        
     aiptag.cmp = {
       show: true,
       button: true,
@@ -404,12 +398,12 @@
       buttonPosition: "bottom-left"
     };
 
-    // Initialize the video ad player
+                                     
     aiptag.cmd.player.push(function() {
       aiptag.adplayer = new aipPlayer({
         AD_WIDTH: 960,
         AD_HEIGHT: 540,
-        AD_DISPLAY: 'default', // default, fullscreen, fill, center, modal-center
+        AD_DISPLAY: 'default',                                                   
         LOADING_TEXT: 'loading advertisement',
         PREROLL_ELEM: function() {
           return document.getElementById('videoad');
@@ -420,19 +414,19 @@
       });
     });
 
-    // function show_videoad() {
-    //   if (typeof aiptag.adplayer !== 'undefined') {
-    //     aiptag.cmd.player.push(function () { aiptag.adplayer.startVideoAd(); });
-    //   } else {
-    //     console.log("Ad could not be loaded, load your content here");
-    //     if (aiptag.adplayer && aiptag.adplayer.aipConfig && typeof aiptag.adplayer.aipConfig.AIP_COMPLETE === "function")
-    //       aiptag.adplayer.aipConfig.AIP_COMPLETE();
-    //   }
-    // }
+                                
+                                                      
+                                                                                   
+                 
+                                                                         
+                                                                                                                            
+                                                      
+          
+        
   </script>
   <script async src="//api.adinplay.com/libs/aiptag/pub/SSK/kartbros.io/tag.min.js"></script>
-  <!-- End AdinPlay Snippet -->
-  <!-- Google tag (gtag.js) -->
+  
+  
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-1BSXC3Y865"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -447,9 +441,9 @@
     });
   </script>
 
-  <!-- Analytics Functions -->
+  
   <script>
-    // Generate unique session ID
+                                 
     function generateSessionId() {
       const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
       let result = '';
@@ -459,10 +453,10 @@
       return result;
     }
 
-    // Session ID for tracking
+                              
     var sid = generateSessionId();
 
-    // Status update function that records session activity
+                                                           
     function updateStatus(fromEvent = false) {
       const req = new XMLHttpRequest();
       var aStr = "recordsession.php?s=" + sid;
@@ -481,7 +475,7 @@
     }
 
     function GA4_SendEvent(eventName, paramsJson) {
-      // Parse parameters if provided
+                                     
       var parsedParams;
       if (paramsJson && paramsJson.length > 0) {
         try {
@@ -491,7 +485,7 @@
         }
       }
 
-      // Call SendEvent function
+                                
       if (parsedParams === undefined) {
         SendEvent('event', eventName);
       } else {
@@ -509,18 +503,13 @@
       Enable JavaScript bro!
     </div>
   </noscript>
-  <!-- Add a scroll helper that sits behind the game but allows scrolling -->
-  <!-- <div class="page-wrapper"> -->
-  <!-- Game section (full height of viewport) -->
+  
+  
+  
   <div class="game-section">
     <canvas id="unity-canvas" tabindex="-1" onblur="window.focus(); window.scrollTo(0, 0);"></canvas>
 
-    <!-- <div id="unity-loading-bar">
-        <div id="loading-text">YOUR BROS GAME IS LOADING</div>
-        <div id="unity-progress-bar-empty">
-          <div id="unity-progress-bar-full"></div>
-        </div>
-      </div> -->
+    
 
     <div id="unity-loading-bar">
       <center>
@@ -554,16 +543,16 @@
       <div id="kartbros-io_970x250"></div>
     </div>
 
-    <!-- Pillar ads for character/track select screens -->
+    
     <div id="adContainerPillars">
       <div id="kartbros-io_160x600"></div>
       <div id="kartbros-io_160x600_2"></div>
     </div>
   </div>
 
-  <!-- Information section (scrolls below game) -->
+  
   <div class="info-section">
-    <!-- Main content container -->
+    
 
 
       <div class="social">
@@ -575,7 +564,7 @@
       </div>
     </div>
 
-    <!-- Social links -->
+    
     <div class="social-links">
       <a href="https://discord.com/invite/bluewizard"><img src="https://zuckvmusk.com/img/discord.png" alt="Discord"></a>
       <a href="https://www.facebook.com/bluewizarddigital"><img src="https://zuckvmusk.com/img/facebook.png" alt="Facebook"></a>
@@ -586,23 +575,23 @@
       <a href="/cdn-cgi/l/email-protection#a7cec9c1c8e7c5cbd2c2d0ceddc6d5c389c4c8ca"><img src="https://zuckvmusk.com/img/email.png" alt="Email"></a>
     </div>
 
-    <!-- Ad containers moved out of info-section to be in global scope -->
+    
   </div>
-  <!-- </div> -->
+  
 
-  <!-- Video ad overlay -->
+  
   <div id="videoAdOverlay">
     <div id="videoad">
-      <!-- The AdinPlay video ad will be injected here -->
+      
     </div>
   </div>
 
-  <!-- Scripts -->
+  
   <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
   <script src="TemplateData/pleaserotate.min.js"></script>
 
   <script>
-    // Toggle pointer events for scrolling
+                                          
     document.addEventListener('wheel', onScroll, false);
     document.addEventListener('mousemove', onMouse, false);
 
@@ -618,14 +607,14 @@
       if (gameSection) {
         gameSection.style['pointer-events'] = 'none';
 
-        // Re-enable pointer events after a short delay to allow for smooth scrolling
+                                                                                     
         setTimeout(function() {
           gameSection.style['pointer-events'] = 'auto';
         }, 500);
       }
     }
 
-    // Force exit out off fullscreen mode when the device is rotated to portrait
+                                                                                
     window.addEventListener('orientationchange', () => {
       if (window.screen.orientation && window.screen.orientation.type.startsWith('portrait')) {
         if (document.fullscreenElement) {
@@ -678,7 +667,7 @@
     script.src = loaderUrl;
     script.onload = () => {
       createUnityInstance(canvas, config, (progress) => {
-        //document.getElementById("unity-progress-bar-full").style.width = (100 * progress) + "%";
+                                                                                                  
       }).then((unityInstance) => {
         window.unityInstance = unityInstance;
         document.getElementById("unity-loading-bar").style.display = "none";

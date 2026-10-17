@@ -1,7 +1,7 @@
 import {sourceWebsiteUrl} from "./navigation.mjs";
 import {browserAdSource} from "./browser-ad-runtime.mjs";
 import {gameAdSource} from "./game-ad-runtime.mjs";
-﻿// Small, explicit host list. Match domain boundaries, never words in a query string.
+﻿                                                                                     
 export const adHosts = ['adtrafficquality.google','r9x.in','clickadu.com','hilltopads.net','html5.api.gamedistribution.com','gamemonetize.com','imasdk.googleapis.com','mgid.com','onclickads.net','openx.net','playwire.com','sdk.poki.com','trafficjunky.com','venatusmedia.com','doubleclick.net','googlesyndication.com','googleadservices.com','adnxs.com','adsrvr.org','adinplay.com','adsterra.com','popads.net','popcash.net','propellerads.com','monetag.com','exoclick.com','trafficjunky.net','taboola.com','outbrain.com','criteo.com','pubmatic.com','rubiconproject.com','amazon-adsystem.com','ads.emulatorjs.org'];
 export const riskyExtension = /\.(?:exe|msi|msp|scr|com|bat|cmd|ps1|vbs|vbe|wsf|wsh|jse|hta|jar|apk|appx|msix|dmg|pkg|deb|rpm|sh|crx|iso)(?:$|[?#])/i;
 export const protectionDefaults={adBlock:true,popupBlock:true,downloadBlock:true};
@@ -11,7 +11,7 @@ export function isAdUrl(value) {
 }
 export function riskyFile(value) {
   let path=String(value);
-  // Domain suffixes and search terms are not downloadable file extensions.
+                                                                           
   try{if(/^https?:\/\//i.test(path))path=new URL(path).pathname;}catch{}
   try{return riskyExtension.test(decodeURIComponent(path))}catch{return riskyExtension.test(path)}
 }
@@ -47,7 +47,7 @@ export function protectTransport(transport,getPolicy,{checkDownload=async url=>{
   return transport;
 }
 
-// Injected before page scripts. All configuration is serialized, not interpolated code.
+                                                                                        
 export function pageProtection(policy, riskySource) {
   if(window.__tutsiProtection){Object.assign(window.__tutsiProtection,policy);window.__tutsiRefreshPopup?.();return;}
   window.__tutsiProtection=policy;
@@ -96,7 +96,7 @@ export function pageProtection(policy, riskySource) {
   HTMLAnchorElement.prototype.click=function(){if(!denyLink(this))return Reflect.apply(click,this,arguments)};
   for(const type of ['click','auxclick'])document.addEventListener(type,event=>{
     const link=event.target?.closest?.('a[href],area[href]');
-    // Deliberate search results stay in this frame; unsolicited popups stay blocked.
+                                                                                     
     if(link&&event.isTrusted&&type==='click'&&event.button===0&&!event.ctrlKey&&!event.metaKey&&!event.shiftKey&&!event.altKey&&!link.hasAttribute('download')&&!downloadRisk(link)){
       let source=new URL(location.href);
       const envelope=source.pathname.match(/^\/~\/tm\/[^/]+\/[^/]+\/(.+)$/);
@@ -135,7 +135,7 @@ export function protectionSandbox(settings){
   return 'allow-scripts allow-same-origin allow-forms allow-downloads allow-modals allow-pointer-lock allow-presentation'+(settings.popupBlock===false?' allow-popups':'');
 }
 
-// Share Nyx's game hook and protect descendants of registered built-in app frames.
+                                                                                   
 export function installGameProtectionHost(getSettings, getAppFrames) {
   window.__tutsiGameHost = true;
   const watched = new WeakSet(), documents = new WeakSet();
@@ -163,7 +163,7 @@ export function installGameProtectionHost(getSettings, getAppFrames) {
             if (!timer) timer = setTimeout(() => {timer=0;scan()}, 50);
           }).observe(doc.documentElement,{childList:true,subtree:true});
         }
-      } catch {} // Cross-origin providers cannot be modified by the host.
+      } catch {}                                                          
     };
     if (!watched.has(frame)) {
       watched.add(frame);
@@ -176,7 +176,7 @@ export function installGameProtectionHost(getSettings, getAppFrames) {
   return install;
 }
 
-// Install after the engine has attached too: its window hooks can replace early guards.
+                                                                                        
 export function installPageProtection(frame,settings){
   try{
     const win=frame.contentWindow;
@@ -186,7 +186,7 @@ export function installPageProtection(frame,settings){
       return response.json();
     };
     win.eval(protectionSource(settings));
-  }catch{} // Cross-origin content is constrained by the frame sandbox instead.
+  }catch{}                                                                     
 }
 
 export function installShellPopupProtection(getSettings,isBrowsing){

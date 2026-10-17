@@ -6,8 +6,8 @@ import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { chromium } from 'playwright';
 
-// A fresh credential-free backend, serving the actual production build. The
-// junction avoids Express's intentional rejection of dot-directory file paths.
+                                                                            
+                                                                               
 const temp = await mkdtemp(join(tmpdir(), 'nyx-ai-picker-'));
 const staticRoot = join(temp, 'site');
 await symlink(resolve('dist'), staticRoot, process.platform === 'win32' ? 'junction' : 'dir');

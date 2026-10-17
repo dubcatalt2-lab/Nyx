@@ -26,7 +26,7 @@ assert.equal((await get(a, b)).friend, 'outgoing'); assert.equal((await get(b, a
 await assert.rejects(change(a, b, 'accept'), {status: 409});
 await change(b, a, 'accept'); assert.equal((await get(a, b)).friend, 'accepted'); assert.equal((await get(b, a)).friend, 'accepted');
 await change(a, b, 'ignore'); assert.equal((await get(a, b)).ignored, true); assert.equal((await get(b, a)).ignored, false);
-await db.runTransaction(tx => assertChatContact(db, tx, b, a)); // Ignore doesn't prohibit contact.
+await db.runTransaction(tx => assertChatContact(db, tx, b, a));                                    
 await change(a, b, 'block');
 assert.equal((await get(a, b)).friend, ''); assert.equal((await get(b, a)).friend, '');
 assert.equal((await get(b, a)).blocked, false); assert.equal((await get(b, a)).canMessage, false);
@@ -51,7 +51,7 @@ assert(!records.has('messages/new'));
 for (let i = 0; i < 30; i++) await change('rate-user', 'peer-' + String(i).padStart(4, '0'), 'ignore');
 await assert.rejects(change('rate-user', 'peer-9999', 'ignore'), {status: 429});
 
-// Exercise real HTTP handlers: authentication, CSRF, persistence and UID spoofing.
+                                                                                   
 const source = readFileSync('server.js', 'utf8');
 const app = express(); app.use(express.json());
 const context = vm.createContext({app, readChatRelationships, changeChatRelationship,

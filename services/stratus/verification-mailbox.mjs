@@ -1,4 +1,4 @@
-// Self-contained for injection into the pinned provider runtime. Never logs inbox contents.
+                                                                                            
 export async function pollVerificationMailbox(mailJwt, request, options = {}) {
   const now=options.now || Date.now;
   const sleep=options.sleep || (ms=>new Promise(resolve=>setTimeout(resolve,ms)));

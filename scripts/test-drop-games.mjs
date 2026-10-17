@@ -7,8 +7,8 @@ try{
  const page=await browser.newPage({viewport:{width:1440,height:900}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.addInitScript(()=>localStorage.setItem('drop.setupComplete','1'));
  if(process.env.DROP_TEST_DIST)await page.route('http://localhost:6767/**',async route=>{const path=new URL(route.request().url()).pathname;try{const file=resolve('dist','.'+decodeURIComponent(path)+(path.endsWith('/')?'index.html':''));if(!file.startsWith(resolve('dist')+'\\'))throw Error('Invalid path');await route.fulfill({body:await readFile(file),contentType:({'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.woff2':'font/woff2'})[extname(file)]||'application/octet-stream'});}catch{await route.continue();}});
- // Keep actual bundled catalog and player scripts. Exclude remote collections so
- // this test does not depend on third-party availability.
+                                                                                 
+                                                          
  await page.route('**/assets/games/games.json',async r=>{const manifest=process.env.DROP_TEST_DIST?JSON.parse(await readFile('dist/assets/games/games.json','utf8')):await(await r.fetch()).json();manifest.catalogs=manifest.catalogs.filter(c=>c.id==='local');await r.fulfill({json:manifest});});
  await page.route('**/api/founder-profile/auth-config',r=>r.fulfill({json:{enabled:false}}));
  await page.goto('http://localhost:6767/apps/drop/');await page.locator('#gamesNav').click();const games=page.frameLocator('#gamesFrame');await games.locator('.game-card').first().waitFor({timeout:30000}).catch(async e=>{console.log(await games.locator('body').innerText(),errors);throw e;});

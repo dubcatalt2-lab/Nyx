@@ -1,5 +1,5 @@
-// libcurl.js resolves fetch on the first chunk, but closes the body even when
-// the transfer later fails. Preserve that result for consumers and rewriters.
+                                                                              
+                                                                              
 export function preserveTransferErrors(session){
   const original=session.stream_response;
   session.stream_response=function(url,onHeaders,onEnd,signal){
@@ -43,8 +43,8 @@ async function validatedBody(body,budget){
         return result;
       }
       if(size+item.value.byteLength>responseLimit || budget.bytes+item.value.byteLength>bufferLimit){
-        // Above the buffering bounds, preserve streaming without a body retry:
-        // replaying after exposing the prefix would duplicate bytes.
+                                                                               
+                                                                     
         let pending=item.value;
         return new ReadableStream({
           async pull(controller){

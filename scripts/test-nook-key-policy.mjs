@@ -23,7 +23,7 @@ const fixture={id:'vendor/new',pricing:{prompt:'0.000001',completion:'0.000001'}
 let providerCalls=0;
 const nook=createNookDeveloper({allowance:()=>allowance,catalog:async()=>[fixture],send:async()=>{providerCalls++;return new Response('{}');},configured:()=>true});
 db.records.set('nyxUserAdministration/member',{aiModelRules:[{model:'vendor/new',access:'deny'}]});
-// Use the real policy schema for an explicit denial.
+                                                     
 const {aiModelRule}=await import('../lib/ai-model-policy.mjs');
 const rules=[{model:'vendor/new',access:'deny'}];assert.equal(aiModelRule({modelRules:rules},'vendor/new')?.access,'deny');
 await assert.rejects(nook.send({body:{model:'vendor/new',messages:[{role:'user',content:'Hi'}]}},{},{uid:'member',firebase:{firestore:db},key:{device:'browser-original'}}),/available to your Nook account/);

@@ -46,7 +46,7 @@ try{
  assert.equal((await req('/vms','GET','anon')).status,401);
  assert.equal((await req('/vms','GET','expired')).status,401);
  assert.equal((await req('/create','POST','alice','https://evil.example')).status,403);
- // HTTPS at the public proxy, HTTP at Express: host must match, protocol can differ.
+                                                                                     
  assert.equal((await req('/create','POST','alice',base.replace('http:','https:'))).status,200);
  assert.deepEqual((await json('/vms')).vms,[]);
  assert.equal((await json('/vms','GET','owner')).vms[0].id,'legacy');
@@ -72,7 +72,7 @@ try{
  await json('/cancel','POST','carol');assert(calls.some(x=>x.includes('/api/queue_cancel?token=')));
  mode='busy';await json('/create','POST','dave');tick();assert.equal((await json('/queue','GET','dave')).status,'queued');
  mode='ready';tick();assert.equal((await json('/queue','GET','dave')).status,'ready');
- // Forgotten waiters leave the line; a managed disconnected desktop expires.
+                                                                             
  await json('/create','POST','abandoned');clock+=301000;tick();await json('/vms','GET','owner');
  assert.equal((await json('/queue','GET','abandoned')).status,'idle');
  assert.equal(vms.length,1);assert.equal(vms[0].id,'legacy','never auto-delete original owner desktop');

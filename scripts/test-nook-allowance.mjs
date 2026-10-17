@@ -26,7 +26,7 @@ await use('paid-alt2',500,'paid-browser',cheap);
 const refundSession=await a.begin(actor('refund','refund-device'));
 const refund=await a.reserve(refundSession,'shared',payload(),cheap);await a.settle(refund,null,true);await a.settle(refund,null,true);await a.finish(refundSession);
 const retry=await use('refund-alt',100,'refund-device');assert(retry.tokens>2200);
-// Two accounts reserve concurrently against the same expensive budget.
+                                                                       
 const s1=await a.begin(actor('race1','race')),s2=await a.begin(actor('race2','race'));
 const racing=await Promise.allSettled([a.reserve(s1,'shared',payload('provider/paid'),expensive),a.reserve(s2,'shared',payload('provider/paid'),expensive)]);
 assert.equal(racing.filter(r=>r.status==='fulfilled').length,1);await a.finish(s1);await a.finish(s2);

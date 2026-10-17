@@ -2,8 +2,8 @@
 import {readFile,mkdir} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {chromium} from 'playwright';
-// Local source/build overrides at live origins: real game assets, isolated storage,
-// no production account mutations and no publishing of files.
+                                                                                    
+                                                              
 const root=resolve(process.env.NYX_TEST_STATIC_ROOT||'.');
 const browser=await chromium.launch({channel:'msedge',headless:true});
 await mkdir('.codex-artifacts',{recursive:true});

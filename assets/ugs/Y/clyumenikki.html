@@ -1,5 +1,5 @@
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 <!doctype html>
 <html lang="en">
@@ -169,35 +169,35 @@
         const canvas = document.getElementById('canvas');
         let easyrpgPlayer;
         let lastTouchedId;
-        // Launch the Player and configure it
+                                             
         window.addEventListener('load', (event) => {
             createEasyRpgPlayer({
                 game: undefined,
                 saveFs: undefined
             }).then(function (Module) {
-                // Module is ready
+                                  
                 easyrpgPlayer = Module;
                 easyrpgPlayer.initApi();
                 canvas.focus();
-                // Custom code here
+                                   
             });
         });
-        // Make EasyRPG player embeddable
+                                         
         canvas.addEventListener('mouseenter', () => canvas.focus());
         canvas.addEventListener('click', () => canvas.focus());
-        // Handle clicking on the fullscreen button
+                                                   
         document.querySelector('#controls-fullscreen').addEventListener('click', () => {
             const viewport = document.getElementById('viewport');
             if (viewport.requestFullscreen) {
                 viewport.requestFullscreen();
             }
         });
-        /**
-         * Simulate a keyboard event on the emscripten canvas
-         *
-         * @param {string} eventType Type of the keyboard event
-         * @param {string} key Key to simulate
-         */
+           
+                                                             
+          
+                                                               
+                                              
+           
         function simulateKeyboardEvent(eventType, key) {
             const event = new Event(eventType, {
                 bubbles: true
@@ -205,23 +205,23 @@
             event.code = key;
             canvas.dispatchEvent(event);
         }
-        /**
-         * Simulate a keyboard input from `keydown` to `keyup`
-         *
-         * @param {string} key Key to simulate
-         */
+           
+                                                              
+          
+                                              
+           
         function simulateKeyboardInput(key) {
             simulateKeyboardEvent('keydown', key);
             window.setTimeout(() => {
                 simulateKeyboardEvent('keyup', key);
             }, 100);
         }
-        /**
-         * Bind a node by a specific key to simulate on touch
-         *
-         * @param {*} node The node to bind a key to
-         * @param {string} key Key to simulate
-         */
+           
+                                                             
+          
+                                                    
+                                              
+           
         function bindKey(node, key) {
             keys.set(node.id, key);
             node.addEventListener('touchstart', event => {
@@ -243,7 +243,7 @@
                     document.getElementById(lastTouchedId).classList.remove('active');
                 }
             });
-            // Inspired by https://github.com/pulsejet/mkxp-web/blob/262a2254b684567311c9f0e135ee29f6e8c3613e/extra/js/dpad.js
+                                                                                                                              
             node.addEventListener('touchmove', event => {
                 const {
                     target,
@@ -268,7 +268,7 @@
                 }
             })
         }
-        /** @type {{[key: number]: Gamepad}} */
+                                               
         let gamepads = {};
         const haveEvents = 'ongamepadconnected' in window;
 
@@ -287,7 +287,7 @@
             delete gamepads[gamepad.index];
             updateTouchControlsVisibility();
         }
-        /** @returns {Gamepad[]} */
+                                   
         function getGamepads() {
             var pads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : []);
             return pads;
@@ -321,21 +321,21 @@
                     elem.style.display = '';
                 }
             } else {
-                // If we don't have a touch screen, OR any gamepads are connected...
+                                                                                    
                 for (const elem of document.querySelectorAll('#dpad, #apad')) {
-                    // Hide the touch controls
+                                              
                     elem.style.display = 'none';
                 }
             }
         }
-        // Bind all elements providing a `data-key` attribute with the
-        // given key on touch-based devices
+                                                                      
+                                           
         if (hasTouchscreen) {
             for (const button of document.querySelectorAll('[data-key]')) {
                 bindKey(button, button.dataset.key);
             }
         } else {
-            // Prevent scrolling when pressing specific keys
+                                                            
             window.addEventListener('keydown', event => {
                 if (preventNativeKeys.includes(event.key)) {
                     event.preventDefault();
@@ -343,11 +343,11 @@
             });
             canvas.addEventListener('contextmenu', event => {
                 event.preventDefault();
-                // simulateKeyboardInput('Escape', 27);
+                                                       
             });
-            // canvas.addEventListener('click', () => {
-            //   simulateKeyboardInput('Enter', 13);
-            // });
+                                                       
+                                                    
+                  
         }
         updateTouchControlsVisibility();
 

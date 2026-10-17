@@ -49,7 +49,7 @@ for(let seq=0;seq<10;seq++)for(let i=0;i<7;i++)exchangeVoiceAudio(room,String(i)
 assert.equal(room.get('7').audioRelay.queue.length,64,'slow receiver queue remains bounded');
 console.log('PASS relay validation, session/channel isolation, duplicate/expired frame removal, rate and capacity bounds.');
 
-// Actual HTTP route and socket listener, with isolated account/authorization dependencies.
+                                                                                           
 const source = readFileSync('server.js','utf8'), app = express(), server = createServer(app);
 app.use(express.json({limit:'32kb'}));
 const io = new Server(server), liveSessions = new Map(), counters={http:0,socket:0};

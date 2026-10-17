@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 
 <html xmlns='https://www.w3.org/1999/xhtml' lang='' xml:lang=''>
@@ -42,8 +42,8 @@
     }
 
 
-    /* Status display
-		 * ============== */
+                     
+                      
 
     #status {
       position: absolute;
@@ -55,7 +55,7 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      /* don't consume click events - make children visible explicitly */
+                                                                         
       visibility: hidden;
     }
 
@@ -65,7 +65,7 @@
       background-color: #38363A;
       border: 1px solid #444246;
       padding: 1px;
-      /*box-shadow: 0 0 2px 1px #1B1C22;*/
+                                          
       border-radius: 2px;
       visibility: visible;
     }
@@ -149,7 +149,7 @@
       visibility: visible;
     }
   </style>
-  <!-- Poki SDK include -->
+  
   <script src="poki-sdk.js"></script>
   <script>
     window.addEventListener('keydown', ev => {
@@ -166,7 +166,7 @@
   <link rel='apple-touch-icon' href='index.apple-touch-icon.png' />
 
   <script>
-    //place sitelock code here.
+                               
   </script>
 
 </head>
@@ -196,7 +196,7 @@
 
   <script type='text/javascript' src='index.js'></script>
   <script type='text/javascript'>
-    //<![CDATA[
+               
 
     const GODOT_CONFIG = {
       "args": [],
@@ -301,7 +301,7 @@
               statusProgressInner.style.width = current / total * 100 + '%';
               setStatusMode('progress');
               if (current === total) {
-                // wait for progress bar animation
+                                                  
                 setTimeout(() => {
                   setStatusMode('indeterminate');
                 }, 500);
@@ -318,7 +318,7 @@
       }
     }
 
-    //Poki SDK Init.
+                    
     PokiSDK.init().then(() => {
       startGameLoading()
     }).catch(() => {
@@ -329,7 +329,7 @@
     if (hn == "localhost" || hn == "127.0.0.1") {
       PokiSDK.setDebug(true)
     }
-    //]]>
+         
   </script>
 </body>
 

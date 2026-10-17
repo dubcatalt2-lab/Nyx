@@ -1,12 +1,12 @@
 ﻿(() => {
-  // Presentation only: API names, form values, stored records and external pages
-  // keep their original text. Accessible names remain readable plain text.
+                                                                                 
+                                                                           
   if (globalThis.__interfaceTextReady) return;
   globalThis.__interfaceTextReady = true;
   const excluded = 'script,style,textarea,input,code,pre,kbd,samp,[contenteditable],[data-no-interface-text],[data-user-content],.chat-messages,.ai-messages,.lyrics,.captions,.ai-message,.message-content,[data-chat-history],[data-chat-messages]';
   const originals = new WeakMap();
-  // document.title replaces its text node. Track the title element so a tab
-  // manager restoring its chosen title cannot trigger an endless rewrite loop.
+                                                                            
+                                                                               
   const titleWrites = new WeakMap();
   const managedTitles = new WeakSet();
   const implicitOptionValues = new WeakMap();
@@ -15,11 +15,11 @@
   const accessibleLabels = new WeakMap();
   const convertWords = text => text.replace(/\b(?:nyx|studyhub|delta\s*math)\b/gi, 'N7X')
     .replace(/[A-Za-z]/g, ch => String.fromCodePoint((ch <= 'Z' ? 0x1d5a0 : 0x1d5ba) + ch.toLowerCase().charCodeAt(0) - 97));
-  // Keep technical text intact even when it shares a sentence with UI copy.
+                                                                            
   const convert = text => text.split(/(https?:\/\/[^\s<>]+|[\w.+-]+@[\w.-]+\.[a-z]{2,})/gi)
     .map((part,index) => index % 2 ? part : convertWords(part)).join('');
   function applyAttributes(element) {
-    // Input placeholders are decoration, unlike editable/submitted values.
+                                                                           
     if (element.closest(attributeExcluded)) return;
     for (const name of attributes) {
       if (name === 'label' && !['OPTION', 'OPTGROUP'].includes(element.tagName)) continue;
@@ -53,7 +53,7 @@
     if (previous?.rendered === text) return;
     const rendered = convert(text);
     if (rendered === text) return;
-    // An option without a value uses its text as the submitted value.
+                                                                      
     const option = parent.closest('option');
     if (option && (!option.hasAttribute('value') || option.getAttribute('value') === implicitOptionValues.get(option))) {
       const value = option.text;

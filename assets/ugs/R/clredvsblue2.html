@@ -1,7 +1,7 @@
 
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 
 
@@ -55,9 +55,9 @@ u.push(n));p.e=u.join(",");n=k?k:document.location.protocol;n=e[n];window.jstimi
 {};q.a?(d(function(){b("prt")}),window.onbeforeunload=function(){c()}):d(function(){b("ol");b("prt");c()});return{reset_:function(){l=!1},mockHref_:function(h){g=h},mockProtocol_:function(h){k=h},report_:c,tickPrtAndReport:function(){b("prt");c()},tickDl:function(){b("dl")}}}();
 	</script>
 	<script>
-		/* mp-start */
+		              
 window['___jsl']=window['___jsl']||{};
-/* mp-end */
+            
 	</script>
 	<script>
 		window['__isgadget']=true;
@@ -794,7 +794,7 @@ gadgets.config.init({"core.io":{"jsonProxyUrl":"//%host%/gadgets/makeRequest","p
 	</script>
 	<link href="https://cdn.jsdelivr.net/gh/meymenet645x/g@main/style.css" rel="stylesheet">
 	<style>
-		/* Disable focus outline for canvas */
+		                                      
 		canvas:focus {
 			outline: none;
 		}
@@ -818,19 +818,19 @@ gadgets.config.init({"core.io":{"jsonProxyUrl":"//%host%/gadgets/makeRequest","p
 	<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
 	<meta content="width=device-width, initial-scale=1.0, user-scalable=no" name="viewport">
 
-	<!-- Yandex Games SDK -->
+	
 
 
-	<!-- Additional head modules -->
+	
 	<script>
-		/* mp-start */
+		              
 
 var _params = gadgets.util.getUrlParameters();
 if (_params['exp_rpc_js'] != 1) {
   var url = _params['parent'] + '/ig/ifpc_relay';
   gadgets.rpc.setRelayUrl('..', url, true);
 }
-/* mp-end */
+            
 	</script>
 	<style type="text/css" id="operaUserStyle"></style>
 	<style type="text/css">
@@ -866,7 +866,7 @@ if (_params['exp_rpc_js'] != 1) {
         productVersion: "1.0"
     };
 
-    // Patch UnityLoader to support multiple data files
+                                                       
     const originalUnityLoaderFetch = fetch;
     fetch = async function (url, ...args) {
         if (url.endsWith("/Final.data.unityweb")) {
@@ -956,10 +956,10 @@ if (_params['exp_rpc_js'] != 1) {
         loadingCover.style.background = "url('https://cdn.jsdelivr.net/gh/meymenet645x/g@main/background.png') center / cover";
         loadingCover.style.display = "";
 
-        // Выключаем появление меню при правом клике мыши
+                                                         
         document.addEventListener('contextmenu', event => event.preventDefault());
 
-        // Возвращаем фокус, если кликнули по экрану
+                                                    
         function FocusGame() {
             window.focus();
             canvas.focus();
@@ -996,7 +996,7 @@ if (_params['exp_rpc_js'] != 1) {
                     console.error(message);
                 });
             };
-            if (LocalHost()) // Delete when setting up: Load Game Run
+            if (LocalHost())                                         
                 StartUnityInstance_IfUnloaded();
         };
 
@@ -1022,9 +1022,9 @@ if (_params['exp_rpc_js'] != 1) {
                 console.log('Init Yandex SDK');
                 ysdk = await YaGames.init();
 
-                FullAdShow(); // First ad true
+                FullAdShow();                 
 
-                // Additional init modules
+                                          
 
             } catch (e) {
                 console.error('CRASH Initialization SDK: ', e);
@@ -1041,7 +1041,7 @@ if (_params['exp_rpc_js'] != 1) {
                 myGameInstance.SendMessage('YandexGame', 'OpenFullAd');
             }
 
-            // Additional start modules
+                                       
         }
 
         function FullAdShow() {
@@ -1162,7 +1162,7 @@ if (_params['exp_rpc_js'] != 1) {
                     isDefault: false,
                     isInvertSortOrder: false,
                     decimalOffset: 0,
-                    type: '' // , title: ''
+                    type: ''               
                 };
 
                 ysdk.getLeaderboards()
@@ -1172,8 +1172,8 @@ if (_params['exp_rpc_js'] != 1) {
                         jsonEntries.isDefault = res.default;
                         jsonEntries.isInvertSortOrder = res.description.invert_sort_order;
                         jsonEntries.decimalOffset = res.description.score_format.options.decimal_offset;
-                        jsonEntries.type = res.description.type; // Не определяется на момент 18.07.23
-                        //jsonEntries.title = res.title; // Реализуйте по предпочтениям
+                        jsonEntries.type = res.description.type;                                      
+                                                                                       
 
                         return leaderboard.getLeaderboardEntries(nameLB, {
                             quantityTop: quantityTop,
@@ -1297,7 +1297,7 @@ if (_params['exp_rpc_js'] != 1) {
             }
         }
 
-        // Additional script modules:
+                                     
 
         document.body.appendChild(script);
 	</script>

@@ -1,6 +1,6 @@
 ﻿export const storageNames={'$scramjet':'@d7a6431b92e','__scramjet_controller':'@d941bc65af3'};
 export function rewriteStorageNames(source){for(const [name,alias] of Object.entries(storageNames))for(const quote of ['"',"'",'`'])source=source.split(quote+name+quote).join(quote+alias+quote);return source;}
-// This function is serialized into the entry loader; keep it self-contained.
+                                                                             
 export async function migrateStorage(names) {
   if(!globalThis.indexedDB?.databases)return;
   const migrate=async()=>{

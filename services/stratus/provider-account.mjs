@@ -1,4 +1,4 @@
-// Logs into an existing provider account; never registers accounts or requests email codes.
+                                                                                            
 export async function loginProviderAccount({email, password, sn}, request) {
   if(!email || !password || !sn)throw new Error('Cloud Gaming needs a configured provider account. Ask the owner to finish setup.');
   const response=await request('/users/emailLogin',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({email,password,sn,model:'Chrome/147.0.0.0',version_code:'1',version_name:'1.0.0',device_name:'Cloud Gaming',os:'web'})});
@@ -10,8 +10,8 @@ export async function loginProviderAccount({email, password, sn}, request) {
   return {sn,token};
 }
 
-// checkCost is a preflight, not a payment. Never request a game server after it
-// rejects the account, and never pass raw provider/account details to a client.
+                                                                                
+                                                                                
 export async function requireGameAccess(response) {
   let payload;
   try { payload = await response.json(); }

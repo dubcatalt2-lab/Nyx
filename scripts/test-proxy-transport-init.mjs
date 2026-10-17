@@ -30,8 +30,8 @@ function state(){
   const value={created:0,entered,gate,started,resolve,reject};globalThis.__nyxTransportInitTest=value;return value;
 }
 try{
-  // No stored choice and older Auto preferences must select the libcurl
-  // adapter even when a launcher calls the transport before normal tab setup.
+                                                                        
+                                                                              
   for(const configured of [undefined,'auto','libcurl','libcurlRaw']){
     const createDefault=make(async()=>{},normalizeName,{text:(_,fallback)=>configured??fallback},()=> 'wss://fixture.test/wisp/',()=>0);
     const current=state(),request=createDefault();current.resolve();

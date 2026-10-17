@@ -4,8 +4,8 @@ import {readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 
-// Separate ngrok entry point. Authentication and all desktop authorization stay
-// in the existing relay; no desktop credential or Firebase admin key lives here.
+                                                                                
+                                                                                 
 export function createRemoteEntry({upstreamPort=8080,root=resolve('apps/remote-entry')}={}){
  const entry=new Map([['/',['index.html','text/html']],['/entry.js',['entry.js','text/javascript']],['/entry.css',['entry.css','text/css']]]);
  const allowed=path=>path==='/healthz'||path==='/api/founder-profile/auth-config'||/^\/api\/private-remote\/(?:access|session|renew|devices|connect|host\.zip|pair\/(?:start|poll|approve)|devices\/[a-f0-9]{32}(?:\/code)?)$/.test(path)||/^\/apps\/remote\/(?:index\.html|app\.js|desktop-controls\.js|style\.css)?$/.test(path)||/^\/assets\/vendor\/novnc\/[a-zA-Z0-9_/-]+\.js$/.test(path)||path==='/apps/agents/fonts/Quicksand-Variable.ttf';

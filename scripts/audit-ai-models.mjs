@@ -1,4 +1,4 @@
-// Read-only provider/capability audit. This does not generate billable content.
+                                                                                
 import {mkdir,writeFile} from 'node:fs/promises';
 import {imagePlan,videoPlan} from '../lib/ai-media.mjs';
 import {supportsConversationVoice} from '../apps/agents/voice-capabilities.js';

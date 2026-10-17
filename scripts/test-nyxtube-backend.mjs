@@ -38,7 +38,7 @@ try {
   for (const duration of ['4','120.5']) assert.equal(mediaChoices({...info,duration}).length,1,'Numeric durations accepted by the catalog must work in playback');
   for (const live_status of ['is_live','is_upcoming','post_live']) assert.throws(()=>mediaChoices({...info,live_status}),/Live and upcoming/);
   for (const duration of [3600, 3601, 7200, 86400]) assert.equal(mediaChoices({...info,duration}).length,1);
-  // Long metadata exercises the full preparation path using the small real media fixture.
+                                                                                          
   info.duration=7200;
   assert.deepEqual(await backend.formats(id),[{height:720}]);
   const preparing=await backend.prepare(id,720);assert.equal(preparing.state,'preparing');

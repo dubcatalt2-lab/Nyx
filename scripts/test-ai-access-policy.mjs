@@ -47,7 +47,7 @@ const denied=p=>assert.rejects(p,e=>e.code==='ai_allowance');
     await a.settle(r,{input:600,output:400});await a.finish(s,true);f.advance();
   }
   assert.equal(f.db.records.get(key('member')).requests,5);
-  // Daily statistics cannot override the current four-day allowance.
+                                                                     
   f.db.records.get(key('member')).tokens=10000;
   await f.create().finish(await f.create().begin(f.actor));
 }

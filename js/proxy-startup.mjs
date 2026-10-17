@@ -1,8 +1,8 @@
 const pending = new Map();
 const controllers = new Set();
 
-// Register before constructing controllers: their revive listener opens a new
-// message port using serviceWorkerController, which can still be a retired worker.
+                                                                              
+                                                                                   
 if (typeof navigator !== 'undefined' && navigator.serviceWorker) {
   navigator.serviceWorker.addEventListener('message', event => {
     if (!event.data?.$controller$swrevive || !event.source?.scriptURL) return;
@@ -28,8 +28,8 @@ export function trackProxyController(instance) {
   return () => controllers.delete(instance);
 }
 
-// A failed script element must not turn every subsequent navigation into a
-// promise waiting for a load event that has already happened.
+                                                                           
+                                                              
 export function loadProxyScript(src, ready, { timeoutMs = 20000 } = {}) {
   if (ready()) return Promise.resolve();
   const url = new URL(src, location.href).href;
@@ -50,7 +50,7 @@ export function loadProxyScript(src, ready, { timeoutMs = 20000 } = {}) {
   });
   const task = attempt().catch(error => {
     if (!error.retryable) throw error;
-    return attempt(); // One retry for a failed static GET, shared by waiting tabs.
+    return attempt();                                                              
   }).finally(() => { if (pending.get(url) === task) pending.delete(url); });
   pending.set(url, task);
   return task;

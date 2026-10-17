@@ -89,8 +89,8 @@ assert.equal((await preparationWorker.run()).completed, 1, 'Preparation polling 
 assert.equal(preparationPolls, 9);
 console.log('100,000-link mocked job: batching, stable retry IDs, pause, account binding, cooldown, capacity and replay checks passed.');
 
-// Exercise the actual server publisher with a lost response AFTER the branch
-// update. The next call must discover the atomic batch, not write another one.
+                                                                             
+                                                                               
 const server = readFileSync('server.js', 'utf8');
 const publisherSource = server.slice(server.indexOf('async function publishNyxJsdelivrLinks('), server.indexOf('async function nyxifyOctaveProviderSearch('));
 let serverTime = 100000, writes = 0, committed = false, entries = [];

@@ -1,8 +1,8 @@
 <Module>
 
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 
 <!DOCTYPE html>
@@ -14,16 +14,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/pegege-classroom/swwq@main/style.css"/>
 <style>
-        /* Убираем выделение по нажатию клавиш */
+                                                 
         canvas:focus {
             outline: none;
         }
 
         html, body {
-            /* Убираем отступы */
+                                 
             padding: 0;
             margin: 0;
-            /* Отключаем скролл и лонгтап на IOS */
+                                                   
             overflow: hidden;
             -webkit-touch-callout: none;
             -webkit-user-select: none;
@@ -32,11 +32,11 @@
             -ms-user-select: none;
             user-select: none;
             -webkit-tap-highlight-color: rgba(0,0,0,0);
-            /* Ставим высоту на 100% */
+                                       
             height: 100%;
         }
     </style>
-<!-- Additional head modules -->
+
 </head>
 <body class="dark">
 <div id="unity-container" class="unity-desktop">
@@ -51,7 +51,7 @@
 <div class="spinner"></div>
 </div>
 </div>
-<!-- Additional body modules -->
+
 <script>
         const hideFullScreenButton = "";
         const buildUrl = "https://cdn.jsdelivr.net/gh/pegege-classroom/swwq@main/Build";
@@ -93,7 +93,7 @@
 
         let StartUnityInstance;
         let myGameInstance;
-        let ysdk = null; // Yandex SDK pasif
+        let ysdk = null;                    
 
         let environmentData = {
             language: "en",
@@ -124,7 +124,7 @@
         
         let cloudSaves = 'noData';
         let paymentsData = 'none';
-        let playerData = 'noData'; // 
+        let playerData = 'noData';    
         let player = null;
         let payments = null;
         let initGame = false;
@@ -143,7 +143,7 @@
         function GetLeaderboardScores() { console.warn("GetLeaderboardScores is not implemented"); }
         function SetLeaderboardScores() { console.warn("SetLeaderboardScores is not implemented"); }
         function ConsumePurchase() { console.warn("ConsumePurchase is not implemented"); }
-        function ConsumePurchases() { console.warn("ConsumePurchases is not implemented"); } // 
+        function ConsumePurchases() { console.warn("ConsumePurchases is not implemented"); }    
 
         try {
             const script = document.createElement("script");

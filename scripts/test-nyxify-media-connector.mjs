@@ -11,7 +11,7 @@ const connector = createMediaConnector({
     assert.equal(options.rejectUnauthorized, true);
     const s = new EventEmitter(); s.destroy = () => { s.destroyed = true; };
     s.setTimeout = () => {}; sockets.push(s); seen.push(options.host);
-    // First address connects TCP but never completes TLS; second succeeds.
+                                                                           
     if (options.host.endsWith('.2')) setTimeout(() => s.emit('secureConnect'), 5);
     return s;
   }, staggerMs: 10, attemptMs: 100, deadlineMs: 200

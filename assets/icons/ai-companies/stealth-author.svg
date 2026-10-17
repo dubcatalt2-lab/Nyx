@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+
 <svg viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -7,10 +7,10 @@
     </linearGradient>
   </defs>
 
-  <!-- Background circle -->
+  
   <circle cx="120" cy="120" r="110" fill="url(#bg-gradient)" />
 
-  <!-- B-2 Spirit stealth bomber - top view -->
+  
   <path d="
     M 120,70
     L 70,130
@@ -24,7 +24,7 @@
     fill="currentColor" stroke="currentColor"
   />
 
-  <!-- Engine section -->
+  
   <path d="
     M 100,130
     L 120,150

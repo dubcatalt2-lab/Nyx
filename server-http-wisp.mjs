@@ -2,7 +2,7 @@
 import express from 'express';
 import WebSocket from 'ws';
 
-// Carries Wisp frames to a fixed server-owned relay. Clients cannot choose a target.
+                                                                                     
 export function installHttpWisp(app, {upstream, allowed, clientIp, banned = async () => false}) {
   const sessions = new Map();
   const attempts = new Map();
@@ -55,8 +55,8 @@ export function installHttpWisp(app, {upstream, allowed, clientIp, banned = asyn
         if (!binary || s.bytes + data.length + 4 > maxQueue) return dispose(s);
         const size = Buffer.alloc(4); size.writeUInt32LE(data.length);
         s.frames.push(size, data); s.bytes += 4 + data.length;
-        // Image grids can arrive faster than the next HTTP poll. Apply backpressure
-        // before the bounded queue fills instead of disconnecting healthy streams.
+                                                                                    
+                                                                                   
         if(s.bytes>=maxQueue/2&&!s.poll)s.ws.pause();
         flush(s);
       });
@@ -89,7 +89,7 @@ export function installHttpWisp(app, {upstream, allowed, clientIp, banned = asyn
     const s=req.relaySession,body=req.body;
     if(!Buffer.isBuffer(body)||Number(req.headers['x-tutsi-sequence'])!==s.sequence||s.ws.readyState!==WebSocket.OPEN)return res.sendStatus(409);
     const frames=[];let offset=0,bytes=0;
-    // Validate the complete envelope before forwarding any frame or consuming sequence numbers.
+                                                                                                
     while(offset<body.length){
       if(body.length-offset<4||frames.length>=64)return res.sendStatus(400);
       const length=body.readUInt32LE(offset);offset+=4;

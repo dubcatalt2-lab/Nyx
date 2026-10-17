@@ -17,8 +17,8 @@ import {aiAllowanceConfig,createAiAllowance,premiumModelLimits} from '../lib/ai-
 import {aiBudgetResponse} from '../lib/ai-budget-response.mjs';
 import {createOpenRouterBalanceGuard,AI_UNAVAILABLE} from '../lib/openrouter-balance.mjs';
 
-// Run the actual server middleware and paid fetch functions against isolated auth,
-// transactional storage, and provider fixtures. Never contact Firebase or a paid API.
+                                                                                   
+                                                                                      
 const source=await readFile(new URL('../server.js',import.meta.url),'utf8');
 const ast=parse(source,{ecmaVersion:'latest',sourceType:'module'});
 const declaration=name=>{const node=ast.body.find(n=>n.type==='FunctionDeclaration'&&n.id.name===name);assert.ok(node,name);return source.slice(node.start,node.end);};

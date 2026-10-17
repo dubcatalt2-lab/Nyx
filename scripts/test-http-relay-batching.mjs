@@ -37,7 +37,7 @@ try{
  assert.equal((await call(pack([[90],[91]]))).status,204,'Rejected envelopes do not consume the sequence');
  assert.deepEqual(received.slice(40),[[90],[91]]);
  socket.close();
- // Split large bursts at both envelope limits and drain frames arriving during a request.
+                                                                                          
  received.length=0;requests=0;
  socket=new HttpRelaySocket('ws://fixture.test/');socket.binaryType='arraybuffer';
  await new Promise((resolve,reject)=>{socket.onmessage=resolve;socket.onerror=()=>reject(new Error('Handshake failed'));});
@@ -53,7 +53,7 @@ try{
  assert.equal(socket.bufferedAmount,0);assert.equal(requests,2,'Length headers count toward the 1 MiB envelope limit');
  assert.deepEqual(received.map(frame=>[frame.length,frame[0],frame.at(-1)]),Array.from({length:4},(_,i)=>[262144,i,i]));
  socket.close();
- // New browser code must still work against a server that has not advertised batching.
+                                                                                       
  globalThis.fetch=async(url,options={})=>{const response=await nativeFetch(new URL(url,`http://127.0.0.1:${port}`),{...options,headers:{...options.headers,Origin:'https://fixture.test'}});if(String(url).endsWith('/sessions')){const data=await response.json();return Response.json({token:data.token});}return response;};
  received.length=0;requests=0;
  socket=new HttpRelaySocket('ws://fixture.test/');socket.binaryType='arraybuffer';
@@ -61,7 +61,7 @@ try{
  for(let i=0;i<4;i++)socket.send(Uint8Array.of(i));
  const legacyUntil=Date.now()+2000;while(socket.bufferedAmount&&Date.now()<legacyUntil)await new Promise(resolve=>setTimeout(resolve,10));
  assert.deepEqual(received,[[0],[1],[2],[3]]);assert.equal(requests,4);
- // Closing while writes are queued must drop pending frames without negative accounting.
+                                                                                         
  socket.send(Uint8Array.of(88));socket.send(Uint8Array.of(89));socket.close();
  await new Promise(resolve=>setTimeout(resolve,100));assert.equal(socket.bufferedAmount,0);assert.equal(socket.queue.length,0);assert.equal(received.length,4);
  console.log('PASS batch validation, replay/sequence safety, legacy server compatibility and cancellation.');

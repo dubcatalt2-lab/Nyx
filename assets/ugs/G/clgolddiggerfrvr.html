@@ -1,8 +1,8 @@
 <Module>
 
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 
 <html lang="en"><head>
@@ -183,7 +183,7 @@
 				margin-left: -190px;
 		}
 
-		/* Google+ share button */
+		                          
 		#overlay.cn div#___plusone_0 {
 			width: 68px !important;
 		}
@@ -193,12 +193,12 @@
 			top: -4px !important;
 		}
 
-		/* Sina Weibo share button */
+		                             
 		#overlay wb\:share-button iframe {
 			width: 105px !important;
 		}
 
-		/* QZone share button */
+		                        
 		#overlay iframe[version="1.0"] {
 			position: relative !important;
 			top: -2px;
@@ -418,7 +418,7 @@
 
 	<body>
 
-	<!-- TODO debugcode, move me to provider -->
+	
 	<div id="debug" style="position:absolute; color:red; left:40px; z-index: 9999999"></div>
 
     <script>
@@ -438,12 +438,12 @@
 
 			window.extsize = 1811152;
 
-		//In seperate code block to load first & not trigger when JS is disabled
+		                                                                        
 		var preloader = document.createElement('preloader');document.body.appendChild(preloader);
 
 		</script>
 		<script>
-			//ie9 polyfill
+			              
 			if(!(window.console && console.log)) {
 				var fn = function(){};
 				console={log:fn,debug:fn,info:fn,warn:fn,error:fn};
@@ -546,8 +546,8 @@ scope._jsonData['track-gma'] = {"url":"","currencies":"coin","itemtypes":"unknow
 								res = 
 									  charIndex[cords[cordOffset++]]
 									+ charIndex[cords[cordOffset++]] * 74
-									+ charIndex[cords[cordOffset++]] * 5476 // (74 * 74)
-									+ charIndex[cords[cordOffset++]] * 405224; // (74 * 74 * 74)
+									+ charIndex[cords[cordOffset++]] * 5476             
+									+ charIndex[cords[cordOffset++]] * 405224;                  
 								res = (res / 100) - 149932;
 								break;
 							default:
@@ -558,7 +558,7 @@ scope._jsonData['track-gma'] = {"url":"","currencies":"coin","itemtypes":"unknow
 									res =
 										  charIndex[first]
 										+ charIndex[cords[cordOffset++]] * 74
-										+ charIndex[cords[cordOffset++]] * 5476; // (74 * 74)
+										+ charIndex[cords[cordOffset++]] * 5476;             
 									res = (res / 100) - 2026;
 								}
 						}
@@ -627,7 +627,7 @@ scope._jsonData['track-gma'] = {"url":"","currencies":"coin","itemtypes":"unknow
 						} catch(err) {
 							window.onerror && window.onerror('Draw failure in > ' + path + ' ' + err.message, err.sourceURL, err.line);
 						}
-						// Reset JSG drawing
+						                    
 						cordOffset = 0;
 						getCord();
 						getCord();
@@ -638,7 +638,7 @@ scope._jsonData['track-gma'] = {"url":"","currencies":"coin","itemtypes":"unknow
 						config = config || {};
 						var scale = config.scale || 1;
 						var forceCanvas = config.forceCanvas || false;
-						//var instantDraw = config.instantDraw || false; // Check if we need this
+						                                                                         
 						var jsgImage;
 						function handleCallback() {
 							jsgImage.onload = null;
@@ -652,7 +652,7 @@ scope._jsonData['track-gma'] = {"url":"","currencies":"coin","itemtypes":"unknow
 								jsgImage.onload = handleCallback;
 								jsgImage.onerror = handleCallback;
 							}
-							jsgImage.src = jsgCanvas.toDataURL(); // TODO: Investigate performance impact here
+							jsgImage.src = jsgCanvas.toDataURL();                                             
 							releaseCanvas(jsgCanvas);
 						}
 						if(Host.dataUrlsSupported && !forceCanvas) {
@@ -747,21 +747,21 @@ scope._jsonData['track-gma'] = {"url":"","currencies":"coin","itemtypes":"unknow
 							FBInstant.logEvent&&FBInstant.logEvent('NLPstartGameAsync');
 							var locale = false;
 
-							// If it's one of the supported languages then load it
+							                                                      
 							if(locale && locale != 'en-US' && Host.Localize.languages.indexOf(locale) > -1) {
 								Host.Localize.Load(locale, function(language, success) {
 									console.log('Localization loaded: ', language, success);
 									Host.emit('FBInstantPreloadComplete');
 								});
 							} else {
-								// Do english
+								             
 								Host.emit('FBInstantPreloadComplete');
 							}
 						}
 						function handleError(err) {
-							//<debug>
+							         
 							console.error('Instant Error:', err);
-							//</debug>
+							          
 							window.onerror && window.onerror('handleFacebookLoaded > startGameAsync (' + FBInstant.getSDKVersion() + ') > ' + (err.message || err.toString()), err);
 							FBInstant.logEvent('startGameAsyncError', 1, err);
 							Host.emit('FBInstantPreloadComplete');
@@ -779,28 +779,28 @@ scope._jsonData['track-gma'] = {"url":"","currencies":"coin","itemtypes":"unknow
 					}
 					gameIsLoaded = true;
 
-					// Stop the progress bar timer
+					                              
 					clearInterval(timer)
 
-					// Remove the preloader
+					                       
 					if(preloader){
 						preloader.parentNode&&preloader.parentNode.removeChild(preloader)
 					}
 
-					// Dealloc the canvas
+					                     
 					if(canvas){
 						canvas.width = canvas.height = 1
 					}
 
-					// Garbage collection
+					                     
 					loadbar = progressbar = canvas = preloader = null;
 
 					handleFacebookLoaded()
 				}
 
-				// Embed general data - this is used by builder.rb's embed_data_content
-				//   files: Array of filenames
-				//   data : Array of data that mapes to filenames
+				                                                                       
+				                              
+				                                                 
 				scope.embeddedFiles = {};
 				scope.embedFiles = function(files,data) { 
 					for( var a=0;a<files.length;a++){
@@ -809,7 +809,7 @@ scope._jsonData['track-gma'] = {"url":"","currencies":"coin","itemtypes":"unknow
 					}
 				}
 
-				// Embed image data
+				                   
 				scope.embeddedAssets = {};
 
 				scope.embedLoad = function(path,file){
@@ -831,7 +831,7 @@ scope._jsonData['track-gma'] = {"url":"","currencies":"coin","itemtypes":"unknow
 				var req = new XMLHttpRequest();
 				req.addEventListener('load', function(event){
 					var s = document.createElement("script");
-					//s.text rather than innerHTML for ie9
+					                                      
 					s.text = event.target.responseText;
 					document.documentElement.appendChild(s);
 				})
@@ -866,7 +866,7 @@ scope._jsonData['track-gma'] = {"url":"","currencies":"coin","itemtypes":"unknow
 					})
 					.catch(function(err) {
 						window.onerror && window.onerror('Failure in promise initializeAsync > ' + err.message, err);
-						//We fire this no matter what, we always whant to show the game regardless of the users crashy devices.
+						                                                                                                       
 						facebookAPIInited = true
 						handleFacebookLoaded()
 					});
@@ -891,7 +891,7 @@ scope._jsonData['track-gma'] = {"url":"","currencies":"coin","itemtypes":"unknow
 		    </div>
 
 			<metadata>
-				<!--<img itemprop="image" src="" data-original="./v/1576154523809/i/web/icon196x196.png"/>-->
+				
 				<meta itemprop="playMode" content="SinglePlayer">
     		<p>Genre: <span itemprop="genre"></span></p>
 				<div itemscope="" itemtype="" itemprop="aggregateRating">
@@ -939,10 +939,10 @@ Start mining and fill your bag with gold and diamonds in the best free digging g
 
 			function parseStack(err) {
 				var stack = [];
-				var lines = (err && err.stack || '').split('\n'); // split stack trace into lines
-				lines.shift(); // remove first line, the error message
+				var lines = (err && err.stack || '').split('\n');                                
+				lines.shift();                                        
 				for(var i = 0; i < lines.length; i++) {
-					// simplyfy and shorten details
+					                               
 					stack.push(lines[i]
 						.replace(/^\s*at\s+/g, '')
 						.replace(/(https?:\/\/[^\/]+)?/g, '')
@@ -957,7 +957,7 @@ Start mining and fill your bag with gold and diamonds in the best free digging g
 			}
 			function createErrorHandler(errorType) {
 				return function(errorMsg, sourceURL, line, column, err) {
-					if(sourceURL instanceof Error) { // Enable optional parameters
+					if(sourceURL instanceof Error) {                              
 						err = sourceURL;
 						sourceURL = undefined;
 					}
@@ -1005,16 +1005,16 @@ Start mining and fill your bag with gold and diamonds in the best free digging g
 				appVersion: '1.2.4',
 			};
 			window.initGoogle = function(){
-				// ga('set', window.gaAppInfo);
-				// ga('create', 'UA-54081731-1', 'auto', window.gaAppInfo);
+				                               
+				                                                           
 
-				// ga('create', 'UA-54081731-48', 'auto', 'game', window.gaAppInfo);
+				                                                                    
 
-				// gax('require', 'displayfeatures');
-				// gax('send', 'pageview', gaPath + location.search);
-				// // Record native-ish "Promise" support
-				// var eventCategory = 'golddigger 1.2.4 26 Promise Support';
-				// gax('send', 'event', eventCategory, (typeof Promise === 'function') ? 'supported' : 'unsupported');
+				                                     
+				                                                     
+				                                         
+				                                                             
+				                                                                                                      
 			}
 		</script>
 
@@ -1034,10 +1034,10 @@ Start mining and fill your bag with gold and diamonds in the best free digging g
 			});
 
 		window.gax=function() { 
-			// ga.apply(this,arguments)
+			                           
 
-			// a = arguments; a[0] = "game."+a[0]  
-			// ga.apply(this,a);
+			                                       
+			                    
 
 		}
 		</script>
@@ -1085,8 +1085,8 @@ Start mining and fill your bag with gold and diamonds in the best free digging g
 				}
 				var _jsonData = window._jsonData || {};
 				if(_jsonData.scitylana) {
-					// ga('provide', 'scitylana', Scitylana);
-					// ga('require', 'scitylana', _jsonData.scitylana);
+					                                         
+					                                                   
 				}
 			})();
 		</script>

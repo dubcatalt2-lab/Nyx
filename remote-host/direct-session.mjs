@@ -29,7 +29,7 @@ export async function createDirectSession({verify=verifyOwner,authConfig,port=0,
  app.get('/api/founder-profile/auth-config',async(_req,res)=>{
   try{if(authConfig)return res.json(authConfig);const response=await fetch(accountOrigin+'/api/founder-profile/auth-config',{signal:AbortSignal.timeout(10000)});if(!response.ok)throw Error();res.json(await response.json());}catch{res.status(503).json({error:'Account service unavailable.'});}
  });
- // This session exposes only this local desktop, never a pairing/admin API.
+                                                                            
  app.use('/api/private-remote',(req,res,next)=>{
   if(!['/access','/session','/devices','/connect'].includes(req.path))return res.status(404).end();next();
  },remote.router);

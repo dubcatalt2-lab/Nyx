@@ -2,8 +2,8 @@ import {spawn} from 'node:child_process';
 import {appendFileSync} from 'node:fs';
 import {join} from 'node:path';
 
-// The dedicated SSH identity can only listen on the VPS loopback VM port.
-// No remote shell, desktop-input injection, ngrok, or public VNC listener.
+                                                                          
+                                                                           
 export function startCloudTunnel(root,config){
   let child,timer,stopped=false,attempt=0;
   const log=text=>appendFileSync(join(root,'cloud-tunnel.log'),new Date().toISOString()+' '+text+'\n');

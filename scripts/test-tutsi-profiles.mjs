@@ -181,7 +181,7 @@ try {
   await page.locator('#account-close').click();
   for (const [route, requestType, responseType] of [['ai','nyx:ai-profile-request','nyx:ai-profile'],['youtube','nyx:nyxtube-profile-request','nyx:nyxtube-profile']]) {
     await page.evaluate(route=>location.hash=route,route);
-    // Locate the registered frame by its source, without making a real AI request.
+                                                                                   
     await page.waitForFunction(route=>[...document.querySelectorAll('iframe')].some(f=>!f.hidden && f.src.includes(route==='ai'?'/ai':'/nyxtube')),route);
     const handle=await page.locator('iframe').first().evaluateHandle((_,route)=>[...document.querySelectorAll('iframe')].find(f=>!f.hidden && f.src.includes(route==='ai'?'/ai':'/nyxtube')),route);
     const target=await handle.asElement().contentFrame();

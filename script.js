@@ -5345,8 +5345,8 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       categories.forEach(section=>{
         let matches=0;
         section.querySelectorAll('.settings-block').forEach(block=>{
-          // Extensions such as the install card are mounted after this index
-          // is created. Search their current copy without assuming an index.
+                                                                             
+                                                                             
           const searchable=block.dataset.settingsSearch ?? block.textContent;
           const visible=String(searchable || '').normalize('NFKC').toLowerCase().includes(query.normalize('NFKC'));
           block.hidden=!visible;
@@ -8202,8 +8202,8 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     installScramjetRuntimeGuards(root,source,key);
   }
   function createNavigationIntentPlugin(onBlocked,isAuthentication){
-    // Per-tab navigation permissions. Resource requests and nested frames are
-    // deliberately outside this policy; the iframe sandbox protects the shell.
+                                                                              
+                                                                               
     let committed='', intent=null, authReturn=null, authGestureUntil=0;
     const approved=new Map();
     const clean=value=>{try{const u=new URL(browserShellSourceUrl(String(value)) || String(value));u.hash='';return u;}catch{return null;}};
@@ -8240,8 +8240,8 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
             const href=link.getAttribute('href');
             try{grant(new URL(href,context.client.url).href);}catch{}
           }
-          // JS-driven sign-in buttons have no href. Give that gesture one
-          // short-lived authorization, restricted to an authentication URL.
+                                                                          
+                                                                            
           const label=(target.textContent || target.getAttribute('aria-label') || target.value || '').normalize('NFKC');
           if(/\b(sign[ -]?in|log[ -]?in|continue with|sign[ -]?up)\b/i.test(label))authGestureUntil=Date.now()+2000;
         },true);
@@ -8253,9 +8253,9 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       },plugin);
       Tap.tap(frame.hooks.init.post,context=>{
         if(!context.isTopLevel)return;
-        // The engine handles static refresh tags, but its DOM layer does not
-        // rewrite HTMLMetaElement.content. Route dynamic refresh through the
-        // same document request policy before the browser schedules it.
+                                                                             
+                                                                             
+                                                                        
         const realm=context.window, metaProto=realm.HTMLMetaElement.prototype;
         const content=Object.getOwnPropertyDescriptor(metaProto,'content');
         const equiv=Object.getOwnPropertyDescriptor(metaProto,'httpEquiv');
@@ -8296,14 +8296,14 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         const returning=authReturn && now<authReturn.until && isAuthentication(committed) && sameSite(destination,authReturn.url);
         if(!current || sameSite(current,destination) || explicit || authentication || returning){
           if(authentication){authGestureUntil=0;authReturn={url:current,until:now+180000};}
-          // GET forms first pass through the engine's canonical-URL redirect.
-          // Carry their one navigation permission to that normalized request.
+                                                                              
+                                                                              
           if(explicit)intent=context.parsed.hadExtraParams ? {url:destination,form:false,until:now+15000} : null;
           if(approved.size>64)approved.clear();
           approved.set(url.href,!!(explicit || authentication || returning));
           return;
         }
-        // 204 cancels the navigation without replacing the current document.
+                                                                             
         props.response={status:204,statusText:'No Content',body:null,headers:new context.request.initialHeaders.constructor()};
         onBlocked?.(committed,url.href);
       },plugin);
@@ -8454,7 +8454,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
   function retireAlternateEngine(){
     if(retiredEngineCleanup) return retiredEngineCleanup;
     retiredEngineCleanup=(async()=>{
-      // Saved preferences/addresses are migration data, not a retained engine.
+                                                                               
       const saved=store.text('nyx.browserMode',DEFAULT_BROWSER_MODE);
       if(/^(?:ultraviolet|uv|ultra|stem-?connect)$/i.test(saved.replaceAll('"',''))){
         store.setText('nyx.browserMode','scramjet');

@@ -1,4 +1,4 @@
-// Keep standalone apps and embedded apps on the same saved palette.
+                                                                    
 (() => {
   const root = document.documentElement;
   let parentRoot;

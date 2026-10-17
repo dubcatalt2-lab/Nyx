@@ -23,7 +23,7 @@ try {
   const videoIndex=await localIndex('video'), audioIndex=await localIndex('audio');
   const parts=segmentTrack(videoIndex);
   assert.equal(parts.length,20);assert.match(audioIndex.codec,/^mp4a/);
-  // A >3 GiB source is eligible: only the MP4 index is read, not the skipped mdat/free payload.
+                                                                                                
   const giant=Buffer.alloc(8);giant.writeUInt32BE(0xc0000000);giant.write('free',4);
   const moovEnd=bytes.audio.indexOf(Buffer.from('moov'))-4;
   let indexBytes=0;
@@ -72,7 +72,7 @@ try {
 
   expiredOnce=true;const beforeRefresh=refreshes;const refreshed=await backend.segment(token,'video',14,new AbortController().signal);refreshed.release();assert.equal(refreshes,beforeRefresh+1,'Expired media URL forces one metadata refresh');
 
-  // All consumers leaving aborts a shared job; one leaving does not cancel another.
+                                                                                    
   hold=true;
   const a=new AbortController(),b=new AbortController();
   const first=backend.segment(token,'audio',1,a.signal).catch(e=>e),second=backend.segment(token,'audio',1,b.signal).catch(e=>e);
@@ -125,7 +125,7 @@ try {
   assert.deepEqual(errors,[]);
   console.log('PASS: range-only indexing (>3 GiB source), fragment decoding, shared downloads, arbitrary seek, cancellation, concurrency, route checks, browser HLS playback and controls.');
 
-  // Keep browser prefetch and warmed fragments out of the expiry fixture.
+                                                                          
   await page.goto('about:blank');
   await backend.close();
   options.env.NYX_YOUTUBE_CACHE_DIR=join(root,'expiry-cache');
@@ -138,7 +138,7 @@ try {
   const pressureAgain=await backend.segment(token,'video',12,new AbortController().signal);pressureAgain.release();
   await assert.rejects(readFile(pinned.path),e=>e.code==='ENOENT','An idle expired file is removed after its reader releases it');
 
-  // Restart uses disk fragments; old idle entries expire, while a recently used fragment survives.
+                                                                                                   
   const cached=await backend.segment(token,'video',0,new AbortController().signal);cached.release();
   const freshName=cached.path;await backend.close();
   clock+=121*60000;
@@ -150,7 +150,7 @@ try {
   rangeCalls=[];const reused=await backend.segment(token,'video',0,new AbortController().signal);reused.release();assert.equal(rangeCalls.length,0);
   console.log('PASS: two-hour idle cleanup and restart cache reuse.');
 
-  // Adaptive YouTube files use a global sidx and pre-fragmented media, unlike a regular MP4.
+                                                                                             
   await backend.close();
   for(const kind of ['video','audio']) {
     const input=join(root,kind==='video'?'video.mp4':'audio.m4a'),output=join(root,`${kind}-dash.mp4`);
@@ -181,8 +181,8 @@ try {
   const fragment=await backend.segment(adaptiveToken,'video',0,new AbortController().signal);
   const indexed=await localIndex('video'),s=indexed.segments[0];
   assert.deepEqual(await readFile(fragment.path),bytes.video.subarray(s.offset,s.offset+s.length),'Existing source fragment is copied without conversion');fragment.release();
-  // An idle session can expire while the player remains open. Seeking renews it once
-  // and keeps playback at the selected position instead of falling back to YouTube.
+                                                                                     
+                                                                                    
   await page.evaluate(()=>{window.player.pauseVideo();const hls=window.player.hls,destroy=hls.destroy.bind(hls);hls.destroy=()=>{window.loadingAtRenewal=Boolean(window.player.buffering);return destroy();};});clock+=121*60000;
   await page.evaluate(()=>{window.player.seekTo(48);window.player.playVideo();});
   await page.waitForFunction(()=>window.player.renewedAt&&window.player.video.currentTime>49&&window.player.video.readyState>=2,{},{timeout:30000});

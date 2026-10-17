@@ -1,17 +1,15 @@
 <Module>
 
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
 
 
 
-<?xml version="1.0" encoding="UTF-8" ?>
+
+
 <Module>
 <ModulePrefs title="Google.com" />
-<Content type="html"><![CDATA[
-
-<!DOCTYPE html>
+<Content type="html">
 
 <html lang="en-us">
 <head>
@@ -572,7 +570,7 @@
 function RequestingEnvironmentData() {
     try {
         let jsonEnvir = {
-            "language": "en", // Set default language to English
+            "language": "en",                                   
             "domain": ysdk.environment.i18n.tld,
             "deviceType": ysdk.deviceInfo.type,
             "isMobile": ysdk.deviceInfo.isMobile(),
@@ -580,7 +578,7 @@ function RequestingEnvironmentData() {
             "isTablet": ysdk.deviceInfo.isTablet(),
             "isTV": ysdk.deviceInfo.isTV(),
             "appID": ysdk.environment.app.id,
-            "browserLang": "en", // Set browser language to English
+            "browserLang": "en",                                   
             "payload": ysdk.environment.payload,
             "promptCanShow": promptCanShow,
             "reviewCanShow": reviewCanShow

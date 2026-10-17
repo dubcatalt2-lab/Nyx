@@ -37,8 +37,8 @@ if (-not [string]::IsNullOrWhiteSpace([string]$config.tmdbToken)) {
   $env:TMDB_TOKEN = [string]$config.tmdbToken
 }
 
-# Local previews must use the deployed queue's allocation ledger and limits.
-# This setting is an origin, not a provider credential; explicit environment wins.
+                                                                            
+                                                                                  
 if ([string]::IsNullOrWhiteSpace($env:NYXCLOUD_COORDINATOR_ORIGIN) -and
     -not [string]::IsNullOrWhiteSpace([string]$config.desktopCoordinatorOrigin)) {
   $env:NYXCLOUD_COORDINATOR_ORIGIN = [string]$config.desktopCoordinatorOrigin
@@ -54,8 +54,8 @@ if (-not [string]::IsNullOrWhiteSpace($env:NYXCLOUD_COORDINATOR_ORIGIN)) {
   Write-Host 'Shared desktop backend configured.' -ForegroundColor Green
 }
 
-# Enable local public-video playback when its tools are already installed.
-# An explicit operator setting (including 0) takes precedence.
+                                                                          
+                                                              
 if ([string]::IsNullOrWhiteSpace($env:NYX_YOUTUBE_NATIVE_ENABLED)) {
   $extractorCommand = if ($env:NYX_YTDLP_BIN) { $env:NYX_YTDLP_BIN } else { 'yt-dlp' }
   $encoderCommand = if ($env:NYX_FFMPEG_BIN) { $env:NYX_FFMPEG_BIN } else { 'ffmpeg' }

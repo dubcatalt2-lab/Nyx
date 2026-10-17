@@ -1,5 +1,5 @@
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 <!DOCTYPE html>
 <html lang="en-us">
@@ -10,7 +10,7 @@
     <title>Unity WebGL Player | Granny 3</title>
     <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/ranny31ranny/5471@main/TemplateData/favicon.ico" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/ranny31ranny/5471@main/TemplateData/style.css" />
-    <!-- Yandex Games SDK -->
+    
     <script src="https://cdn.jsdelivr.net/gh/ranny31ranny/5471@main/v2.79e5f6f6325b0faa1b66.js"></script>
 </head>
 
@@ -123,7 +123,7 @@
                 canvas.style.height = "100%";
             }
             loadingBar.style.display = "block";
-            // myGameInstance global olarak tanımlanıyor
+                                                        
             window.myGameInstance = null;
             var script = document.createElement("script");
             script.src = loaderUrl;
@@ -131,7 +131,7 @@
                 createUnityInstance(canvas, config, (progress) => {
                     progressBarFull.style.width = 100 * progress + "%";
                 }).then((unityInstance) => {
-                    window.myGameInstance = unityInstance; // Global hale getirildi
+                    window.myGameInstance = unityInstance;                         
                     loadingBar.style.display = "none";
                 }).catch((message) => {
                     console.error("Unity yükleme hatası:", message);

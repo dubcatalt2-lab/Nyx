@@ -2,8 +2,8 @@
 <!DOCTYPE html>
 
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 
 <base href="https://rawcdn.githack.com/bubbls/UGS-Assets/15b57a94f55c6524909afa0dc0e84b621303c7a1/flight%20sim/">
@@ -158,7 +158,7 @@
 		}
 		else{
 			window.rewardedCount = window.rewardedCount + 1;
-			//setTimeout(function(){ window.gameInstance.SendMessage('FreezeNovaAPI', 'RewardedReady'); }, 30000);
+			                                                                                                      
 			window.gameInstance.SendMessage('FreezeNovaAPI', 'RewardedReady');
 		}
 		
@@ -168,14 +168,14 @@
 	{
 		console.log("RewardedSuccess");
 		gameInstance.SendMessage('FreezeNovaAPI', 'AdMessage', 'RewardedOnRewarded');
-		//gameInstance.SendMessage('FreezeNovaAPI', 'AdMessage', 'onClose');
+		                                                                    
 	}
 	
 	function RewardedFail()
 	{
 		console.log("RewardedFail");
 		gameInstance.SendMessage('FreezeNovaAPI', 'AdMessage', 'RewardedOnFail');
-		//gameInstance.SendMessage('FreezeNovaAPI', 'AdMessage', 'onClose');
+		                                                                    
 	}
 	
 	function RewardedClose()

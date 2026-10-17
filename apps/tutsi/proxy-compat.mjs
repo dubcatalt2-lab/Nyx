@@ -1,5 +1,5 @@
 import {protectionSource} from "./protections.mjs";
-// Keep the Google compatibility guard aligned with Nyx script.js.
+                                                                  
 export const minimalGuardSource = `(() => {
     if (typeof window === "undefined" || window.__nyxScramjetMinimalGuards) return;
     window.__nyxScramjetMinimalGuards = true;

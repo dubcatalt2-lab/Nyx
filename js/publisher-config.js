@@ -1,4 +1,4 @@
-// Existing home placements, enabled only in the owner's loopback preview.
+                                                                          
 export const publisherConfig = Object.freeze({
   homeBanners: [
     {path: '/apps/sponsor/side.html', width: 160, height: 600},

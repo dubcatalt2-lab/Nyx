@@ -1,4 +1,4 @@
-// <data:text/javascript;base64,CmV4cG9ydCBmdW5jdGlvbiB3c19wcm90b2Nv...>
+                                                                        
 function ws_protocol() {
   return ("10000000-1000-4000-8000" + -1e11).replace(
     /[018]/g,
@@ -51,7 +51,7 @@ function from_entries(entries) {
   return ret;
 }
 
-// node_modules/.pnpm/@mercuryworkshop+epoxy-tls@2.1.18-1/node_modules/@mercuryworkshop/epoxy-tls/full/epoxy-bundled.js
+                                                                                                                       
 var wasm;
 function isLikeNone(x) {
   return x === void 0 || x === null;
@@ -310,22 +310,22 @@ var EpoxyClient = class {
     const ptr = this.__destroy_into_raw();
     wasm.__wbg_epoxyclient_free(ptr, 0);
   }
-  /**
-   * @returns {number}
-   */
+     
+                      
+     
   get redirect_limit() {
     const ret = wasm.__wbg_get_epoxyclient_redirect_limit(this.__wbg_ptr);
     return ret >>> 0;
   }
-  /**
-   * @param {number} arg0
-   */
+     
+                         
+     
   set redirect_limit(arg0) {
     wasm.__wbg_set_epoxyclient_redirect_limit(this.__wbg_ptr, arg0);
   }
-  /**
-   * @returns {string}
-   */
+     
+                      
+     
   get user_agent() {
     let deferred1_0;
     let deferred1_1;
@@ -338,31 +338,31 @@ var EpoxyClient = class {
       wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
     }
   }
-  /**
-   * @param {string} arg0
-   */
+     
+                         
+     
   set user_agent(arg0) {
     const ptr0 = passStringToWasm0(arg0, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
     const len0 = WASM_VECTOR_LEN;
     wasm.__wbg_set_epoxyclient_user_agent(this.__wbg_ptr, ptr0, len0);
   }
-  /**
-   * @returns {number}
-   */
+     
+                      
+     
   get buffer_size() {
     const ret = wasm.__wbg_get_epoxyclient_buffer_size(this.__wbg_ptr);
     return ret >>> 0;
   }
-  /**
-   * @param {number} arg0
-   */
+     
+                         
+     
   set buffer_size(arg0) {
     wasm.__wbg_set_epoxyclient_buffer_size(this.__wbg_ptr, arg0);
   }
-  /**
-   * @param {EpoxyWispTransport} transport
-   * @param {EpoxyClientOptions} options
-   */
+     
+                                          
+                                        
+     
   constructor(transport, options) {
     _assertClass(options, EpoxyClientOptions);
     var ptr0 = options.__destroy_into_raw();
@@ -374,20 +374,20 @@ var EpoxyClient = class {
     EpoxyClientFinalization.register(this, this.__wbg_ptr, this);
     return this;
   }
-  /**
-   * @returns {Promise<void>}
-   */
+     
+                             
+     
   replace_stream_provider() {
     const ret = wasm.epoxyclient_replace_stream_provider(this.__wbg_ptr);
     return ret;
   }
-  /**
-   * @param {EpoxyHandlers} handlers
-   * @param {EpoxyUrlInput} url
-   * @param {string[]} protocols
-   * @param {EpoxyWebSocketHeadersInput} headers
-   * @returns {Promise<EpoxyWebSocket>}
-   */
+     
+                                    
+                               
+                                
+                                                
+                                       
+     
   connect_websocket(handlers, url, protocols, headers) {
     _assertClass(handlers, EpoxyHandlers);
     var ptr0 = handlers.__destroy_into_raw();
@@ -396,35 +396,35 @@ var EpoxyClient = class {
     const ret = wasm.epoxyclient_connect_websocket(this.__wbg_ptr, ptr0, url, ptr1, len1, headers);
     return ret;
   }
-  /**
-   * @param {EpoxyUrlInput} url
-   * @returns {Promise<EpoxyIoStream>}
-   */
+     
+                               
+                                      
+     
   connect_tcp(url) {
     const ret = wasm.epoxyclient_connect_tcp(this.__wbg_ptr, url);
     return ret;
   }
-  /**
-   * @param {EpoxyUrlInput} url
-   * @returns {Promise<EpoxyIoStream>}
-   */
+     
+                               
+                                      
+     
   connect_tls(url) {
     const ret = wasm.epoxyclient_connect_tls(this.__wbg_ptr, url);
     return ret;
   }
-  /**
-   * @param {EpoxyUrlInput} url
-   * @returns {Promise<EpoxyIoStream>}
-   */
+     
+                               
+                                      
+     
   connect_udp(url) {
     const ret = wasm.epoxyclient_connect_udp(this.__wbg_ptr, url);
     return ret;
   }
-  /**
-   * @param {EpoxyUrlInput} url
-   * @param {object} options
-   * @returns {Promise<Response>}
-   */
+     
+                               
+                            
+                                 
+     
   fetch(url, options) {
     const ret = wasm.epoxyclient_fetch(this.__wbg_ptr, url, options);
     return ret;
@@ -444,104 +444,104 @@ var EpoxyClientOptions = class {
     const ptr = this.__destroy_into_raw();
     wasm.__wbg_epoxyclientoptions_free(ptr, 0);
   }
-  /**
-   * @returns {boolean}
-   */
+     
+                       
+     
   get wisp_v2() {
     const ret = wasm.__wbg_get_epoxyclientoptions_wisp_v2(this.__wbg_ptr);
     return ret !== 0;
   }
-  /**
-   * @param {boolean} arg0
-   */
+     
+                          
+     
   set wisp_v2(arg0) {
     wasm.__wbg_set_epoxyclientoptions_wisp_v2(this.__wbg_ptr, arg0);
   }
-  /**
-   * @returns {boolean}
-   */
+     
+                       
+     
   get udp_extension_required() {
     const ret = wasm.__wbg_get_epoxyclientoptions_udp_extension_required(this.__wbg_ptr);
     return ret !== 0;
   }
-  /**
-   * @param {boolean} arg0
-   */
+     
+                          
+     
   set udp_extension_required(arg0) {
     wasm.__wbg_set_epoxyclientoptions_udp_extension_required(this.__wbg_ptr, arg0);
   }
-  /**
-   * @returns {boolean}
-   */
+     
+                       
+     
   get title_case_headers() {
     const ret = wasm.__wbg_get_epoxyclientoptions_title_case_headers(this.__wbg_ptr);
     return ret !== 0;
   }
-  /**
-   * @param {boolean} arg0
-   */
+     
+                          
+     
   set title_case_headers(arg0) {
     wasm.__wbg_set_epoxyclientoptions_title_case_headers(this.__wbg_ptr, arg0);
   }
-  /**
-   * @returns {boolean}
-   */
+     
+                       
+     
   get ws_title_case_headers() {
     const ret = wasm.__wbg_get_epoxyclientoptions_ws_title_case_headers(this.__wbg_ptr);
     return ret !== 0;
   }
-  /**
-   * @param {boolean} arg0
-   */
+     
+                          
+     
   set ws_title_case_headers(arg0) {
     wasm.__wbg_set_epoxyclientoptions_ws_title_case_headers(this.__wbg_ptr, arg0);
   }
-  /**
-   * @returns {string[]}
-   */
+     
+                        
+     
   get websocket_protocols() {
     const ret = wasm.__wbg_get_epoxyclientoptions_websocket_protocols(this.__wbg_ptr);
     var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
     wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
     return v1;
   }
-  /**
-   * @param {string[]} arg0
-   */
+     
+                           
+     
   set websocket_protocols(arg0) {
     const ptr0 = passArrayJsValueToWasm0(arg0, wasm.__wbindgen_malloc);
     const len0 = WASM_VECTOR_LEN;
     wasm.__wbg_set_epoxyclientoptions_websocket_protocols(this.__wbg_ptr, ptr0, len0);
   }
-  /**
-   * @returns {number}
-   */
+     
+                      
+     
   get redirect_limit() {
     const ret = wasm.__wbg_get_epoxyclientoptions_redirect_limit(this.__wbg_ptr);
     return ret >>> 0;
   }
-  /**
-   * @param {number} arg0
-   */
+     
+                         
+     
   set redirect_limit(arg0) {
     wasm.__wbg_set_epoxyclientoptions_redirect_limit(this.__wbg_ptr, arg0);
   }
-  /**
-   * @returns {number}
-   */
+     
+                      
+     
   get header_limit() {
     const ret = wasm.__wbg_get_epoxyclientoptions_header_limit(this.__wbg_ptr);
     return ret >>> 0;
   }
-  /**
-   * @param {number} arg0
-   */
+     
+                         
+     
   set header_limit(arg0) {
     wasm.__wbg_set_epoxyclientoptions_header_limit(this.__wbg_ptr, arg0);
   }
-  /**
-   * @returns {string}
-   */
+     
+                      
+     
   get user_agent() {
     let deferred1_0;
     let deferred1_1;
@@ -554,54 +554,54 @@ var EpoxyClientOptions = class {
       wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
     }
   }
-  /**
-   * @param {string} arg0
-   */
+     
+                         
+     
   set user_agent(arg0) {
     const ptr0 = passStringToWasm0(arg0, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
     const len0 = WASM_VECTOR_LEN;
     wasm.__wbg_set_epoxyclientoptions_user_agent(this.__wbg_ptr, ptr0, len0);
   }
-  /**
-   * @returns {string[]}
-   */
+     
+                        
+     
   get pem_files() {
     const ret = wasm.__wbg_get_epoxyclientoptions_pem_files(this.__wbg_ptr);
     var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
     wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
     return v1;
   }
-  /**
-   * @param {string[]} arg0
-   */
+     
+                           
+     
   set pem_files(arg0) {
     const ptr0 = passArrayJsValueToWasm0(arg0, wasm.__wbindgen_malloc);
     const len0 = WASM_VECTOR_LEN;
     wasm.__wbg_set_epoxyclientoptions_pem_files(this.__wbg_ptr, ptr0, len0);
   }
-  /**
-   * @returns {boolean}
-   */
+     
+                       
+     
   get disable_certificate_validation() {
     const ret = wasm.__wbg_get_epoxyclientoptions_disable_certificate_validation(this.__wbg_ptr);
     return ret !== 0;
   }
-  /**
-   * @param {boolean} arg0
-   */
+     
+                          
+     
   set disable_certificate_validation(arg0) {
     wasm.__wbg_set_epoxyclientoptions_disable_certificate_validation(this.__wbg_ptr, arg0);
   }
-  /**
-   * @returns {number}
-   */
+     
+                      
+     
   get buffer_size() {
     const ret = wasm.__wbg_get_epoxyclientoptions_buffer_size(this.__wbg_ptr);
     return ret >>> 0;
   }
-  /**
-   * @param {number} arg0
-   */
+     
+                         
+     
   set buffer_size(arg0) {
     wasm.__wbg_set_epoxyclientoptions_buffer_size(this.__wbg_ptr, arg0);
   }
@@ -626,64 +626,64 @@ var EpoxyHandlers = class {
     const ptr = this.__destroy_into_raw();
     wasm.__wbg_epoxyhandlers_free(ptr, 0);
   }
-  /**
-   * @returns {Function}
-   */
+     
+                        
+     
   get onopen() {
     const ret = wasm.__wbg_get_epoxyhandlers_onopen(this.__wbg_ptr);
     return ret;
   }
-  /**
-   * @param {Function} arg0
-   */
+     
+                           
+     
   set onopen(arg0) {
     wasm.__wbg_set_epoxyhandlers_onopen(this.__wbg_ptr, arg0);
   }
-  /**
-   * @returns {Function}
-   */
+     
+                        
+     
   get onclose() {
     const ret = wasm.__wbg_get_epoxyhandlers_onclose(this.__wbg_ptr);
     return ret;
   }
-  /**
-   * @param {Function} arg0
-   */
+     
+                           
+     
   set onclose(arg0) {
     wasm.__wbg_set_epoxyhandlers_onclose(this.__wbg_ptr, arg0);
   }
-  /**
-   * @returns {Function}
-   */
+     
+                        
+     
   get onerror() {
     const ret = wasm.__wbg_get_epoxyhandlers_onerror(this.__wbg_ptr);
     return ret;
   }
-  /**
-   * @param {Function} arg0
-   */
+     
+                           
+     
   set onerror(arg0) {
     wasm.__wbg_set_epoxyhandlers_onerror(this.__wbg_ptr, arg0);
   }
-  /**
-   * @returns {Function}
-   */
+     
+                        
+     
   get onmessage() {
     const ret = wasm.__wbg_get_epoxyhandlers_onmessage(this.__wbg_ptr);
     return ret;
   }
-  /**
-   * @param {Function} arg0
-   */
+     
+                           
+     
   set onmessage(arg0) {
     wasm.__wbg_set_epoxyhandlers_onmessage(this.__wbg_ptr, arg0);
   }
-  /**
-   * @param {Function} onopen
-   * @param {Function} onclose
-   * @param {Function} onerror
-   * @param {Function} onmessage
-   */
+     
+                             
+                              
+                              
+                                
+     
   constructor(onopen, onclose, onerror, onmessage) {
     const ret = wasm.epoxyhandlers_new(onopen, onclose, onerror, onmessage);
     this.__wbg_ptr = ret >>> 0;
@@ -712,19 +712,19 @@ var EpoxyWebSocket = class _EpoxyWebSocket {
     const ptr = this.__destroy_into_raw();
     wasm.__wbg_epoxywebsocket_free(ptr, 0);
   }
-  /**
-   * @param {EpoxyWebSocketInput} payload
-   * @returns {Promise<void>}
-   */
+     
+                                         
+                             
+     
   send(payload) {
     const ret = wasm.epoxywebsocket_send(this.__wbg_ptr, payload);
     return ret;
   }
-  /**
-   * @param {number} code
-   * @param {string} reason
-   * @returns {Promise<void>}
-   */
+     
+                         
+                           
+                             
+     
   close(code, reason) {
     const ptr0 = passStringToWasm0(reason, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
     const len0 = WASM_VECTOR_LEN;
@@ -756,26 +756,26 @@ var IntoUnderlyingSink = class _IntoUnderlyingSink {
     const ptr = this.__destroy_into_raw();
     wasm.__wbg_intounderlyingsink_free(ptr, 0);
   }
-  /**
-   * @param {any} chunk
-   * @returns {Promise<any>}
-   */
+     
+                       
+                            
+     
   write(chunk) {
     const ret = wasm.intounderlyingsink_write(this.__wbg_ptr, chunk);
     return ret;
   }
-  /**
-   * @returns {Promise<any>}
-   */
+     
+                            
+     
   close() {
     const ptr = this.__destroy_into_raw();
     const ret = wasm.intounderlyingsink_close(ptr);
     return ret;
   }
-  /**
-   * @param {any} reason
-   * @returns {Promise<any>}
-   */
+     
+                        
+                            
+     
   abort(reason) {
     const ptr = this.__destroy_into_raw();
     const ret = wasm.intounderlyingsink_abort(ptr, reason);
@@ -803,10 +803,10 @@ var IntoUnderlyingSource = class _IntoUnderlyingSource {
     const ptr = this.__destroy_into_raw();
     wasm.__wbg_intounderlyingsource_free(ptr, 0);
   }
-  /**
-   * @param {ReadableStreamDefaultController} controller
-   * @returns {Promise<any>}
-   */
+     
+                                                        
+                            
+     
   pull(controller) {
     const ret = wasm.intounderlyingsource_pull(this.__wbg_ptr, controller);
     return ret;
@@ -1457,7 +1457,7 @@ async function __wbg_init(module_or_path) {
 var epoxy_bundled_default = __wbg_init;
 var info = { version: "2.1.18-1", minimal: false, release: true, commit: "e2d1d4e50a97be4a1a242eea6b212cfb77b78426" };
 
-// src/main.ts
+              
 var opts = [
   "wisp_v2",
   "udp_extension_required",

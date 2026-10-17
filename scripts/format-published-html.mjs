@@ -5,8 +5,8 @@ export function formatPublishedJs(source) {
     preserve_newlines:true,max_preserve_newlines:1,end_with_newline:true,eol:'\n'});
 }
 
-// Layout only: keep whitespace-sensitive content and already-built scripts
-// intact. Variable mangling remains the responsibility of the build compiler.
+                                                                           
+                                                                              
 export function formatPublishedHtml(source) {
   return beautify.html(source, {
     indent_size: 2,

@@ -26,18 +26,18 @@ try{
  await page.locator('#q4f959b063679fe3afa').click();assert.equal(await page.locator('#query').inputValue(),'');
  await search('https://example.com/?second=2#part');await site().getByRole('heading',{name:'Example Domain'}).waitFor({timeout:30000});
  assert.equal(await page.locator('#ne4236faa3775 [role=tab]').count(),2);assert.match(await page.locator('#address').inputValue(),/second=2#part/);
- // Address-bar navigation reuses the current tab; home searches preserve it.
+                                                                             
  await page.fill('#address','https://example.com/?third=3');await page.locator('#address').press('Enter');
  await page.waitForFunction(()=>document.querySelector('#browser-stage iframe:not([hidden])')?.contentWindow.location.href.includes('third%3D3'));
  assert.equal(await page.locator('#ne4236faa3775 [role=tab]').count(),2);
  await page.locator('#q4f959b063679fe3afa').click();assert.equal(await page.locator('#browser-bar-drawer').count(),0);await page.locator('.browser-bar').waitFor({state:'hidden'});
  await page.keyboard.press('Alt+1');assert.equal(await site().locator('body').getAttribute('data-preserved'),'yes');
- // While a navigation is starting, switching tabs must not navigate the other one.
+                                                                                   
  await page.fill('#address','https://example.com/?pending=1');await page.locator('#address').press('Enter');
  await page.locator('#ne4236faa3775 [role=tab]').nth(1).click();assert.match(await page.locator('#address').inputValue(),/third=3/);
  await page.locator('#q4f959b063679fe3afa').click();await search('javascript:alert(1)');assert.equal(await page.locator('#query').inputValue(),'javascript:alert(1)');
  assert.equal(await page.locator('#ne4236faa3775 [role=tab]').count(),2);
- // No floating controls on home/settings; browser controls remain available in tabs.
+                                                                                     
  await page.evaluate(()=>location.hash='settings');await page.waitForURL('**#settings');
  assert.equal(await page.locator('.browser-bar').isVisible(),false);
  await page.setViewportSize({width:390,height:844});await page.keyboard.press('Alt+1');

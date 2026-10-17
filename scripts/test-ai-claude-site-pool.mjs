@@ -40,7 +40,7 @@ const before=db.records.get(next.refs.claude.path).used;
 await a.settle(freshReservation,null,true);assert.equal(db.records.get(next.refs.claude.path).used,before,'Late refund preserves new window');
 await a.settle(nextReservation,null);assert.equal(db.records.get(next.refs.claude.path).used,before,'Unknown cost retains reservation');await a.finish(next);
 const owner=await session('nyx',{uid:fullCatalogUid});await a.reserve(owner,'shared',payload(),price);assert(!db.records.has(owner.refs.claude.path));await a.finish(owner);
-// Different API/chat account ledgers still reserve the same per-site money pool.
+                                                                                 
 const chat=await session('tutsi',{uid:'parallel'}),api=await session('tutsi',{uid:'parallel',apiVerified:true});
 const results=await Promise.all([a.reserve(chat,'shared',payload(),price),a.reserve(api,'shared',payload(),price)]);
 assert.equal(chat.refs.claude.path,api.refs.claude.path);

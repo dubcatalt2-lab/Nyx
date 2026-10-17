@@ -25,7 +25,7 @@ server.on('upgrade',(req,socket,head)=>{
 });
 echo.on('connection',ws=>{clients.add(ws);ws.on('message',(data,binary)=>ws.send(data,{binary}));});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const port=server.address().port;
-// Loopback-only protocol fixture. It can dial this test server and nothing else.
+                                                                                 
 relay.on('connection',ws=>{
  clients.add(ws);const streams=new Map();
  const send=(type,id,data)=>{if(ws.readyState!==WebSocket.OPEN)return;const b=Buffer.alloc(5+data.length);b[0]=type;b.writeUInt32LE(id,1);data.copy(b,5);ws.send(b);};

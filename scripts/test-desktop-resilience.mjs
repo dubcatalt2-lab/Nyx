@@ -8,7 +8,7 @@ import {desktopFlow} from '../lib/desktop-flow.mjs';
 import {createNyxCloudDesktop} from '../lib/nyxcloud-desktop.mjs';
 import {createRemoteDesktop,remoteOwnerUid} from '../lib/remote-desktop.mjs';
 
-// Slow writes must pause the producer and preserve every byte, not close at 4 MB.
+                                                                                  
 {
   let paused=false,pauses=0,resumes=0;const queued=[],received=[];
   const source={pause(){paused=true;pauses++;},resume(){paused=false;resumes++;}};

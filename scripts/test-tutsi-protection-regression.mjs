@@ -17,7 +17,7 @@ try{
  await page.evaluate(()=>{window.openCalls=0;window.open=()=>{window.openCalls++};});
  await page.addScriptTag({content:protectionSource({})});
  await page.evaluate(()=>window.open('https://popup.test'));assert.equal(await page.evaluate(()=>window.openCalls),0);
- // Engine scripts may replace early hooks; the post-load guard must restore them.
+                                                                                  
  await page.evaluate(()=>window.open=()=>{window.openCalls++});
  await page.addScriptTag({content:protectionSource({})});
  await page.evaluate(()=>window.open('https://popup.test'));assert.equal(await page.evaluate(()=>window.openCalls),0);
@@ -26,7 +26,7 @@ try{
  await page.evaluate(()=>{window.checks=[];window.__tutsiCheckDownload=async(url,filename)=>{checks.push({url,filename});return {verdict:'blocked'}};document.body.innerHTML='<a id="file" download="report.zip" href="https://fixture.test/report.zip">Download</a>';});
  let downloads=0;page.on('download',()=>downloads++);await page.locator('#file').click();
  await page.waitForTimeout(100);assert.equal(downloads,0);assert.equal(await page.evaluate(()=>checks.length),1);
- // Nyx cosmetic rules apply to late-inserted advertisements too.
+                                                                 
  await page.evaluate(()=>{const div=document.createElement('div');div.className='advertisement';div.textContent='Ad';document.body.append(div)});
  await page.waitForTimeout(100);assert.equal(await page.locator('.advertisement').count(),0);
  console.log('PASS restored popup hooks, live toggle, blocked archive reputation check, and shared Nyx dynamic ad rules.');

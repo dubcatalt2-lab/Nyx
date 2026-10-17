@@ -111,7 +111,7 @@ function nyxTurnIceServer(sessionId) {
   output = replaceOnce(output, "const MAX_SESSION_SECONDS = 19 * 60;", `const MAX_SESSION_SECONDS = ${config.maxSessionSeconds};`, "session cap");
   output = replaceOnce(output, "const POOL_TARGET = 5;", `const POOL_TARGET = ${config.poolTarget};`, "idle account pool");
 
-  // Remove the rejected disposable-mailbox flow from the generated runtime.
+                                                                            
   const accountStart = output.indexOf("async function getVerificationCode(");
   const accountEnd = output.indexOf("function gameHeaders(token)", accountStart);
   if (accountStart < 0 || accountEnd < 0) throw new Error("Pinned provider account section not found.");
@@ -621,7 +621,7 @@ async function prepareRuntime() {
     publicOrigin: origin,
     sourceUrl: httpsSourceUrl(),
     port: boundedInteger("STRATUS_PORT", 3001, 1024, 65_535),
-    maxConcurrentSessions: 1, // One configured provider account cannot run concurrent games.
+    maxConcurrentSessions: 1,                                                                
     maxSessionSeconds: boundedInteger("STRATUS_MAX_SESSION_SECONDS", 1_140, 60, 1_140),
     createTimeoutMs: boundedInteger("STRATUS_CREATE_TIMEOUT_MS", 180_000, 60_000, 300_000),
     poolTarget: 0,

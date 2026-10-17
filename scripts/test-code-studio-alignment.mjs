@@ -34,7 +34,7 @@ try {
     });
     assert.equal(geometry.renderedFont, geometry.inputFont, 'Visible code and caret must share their font');
     assert.ok(Math.abs(geometry.x - geometry.expected) < 1, 'Line 76 rendered end agrees with the editable text width');
-    // Keyboard navigation also works when line 76 extends beyond a narrow viewport.
+                                                                                    
     await input.press('Control+End');
     for (let i = 0; i < 4; i++) await input.press('Backspace');
     assert.equal(await input.inputValue(), prefix + line.slice(0, -4), 'Four trailing spaces delete without touching code');

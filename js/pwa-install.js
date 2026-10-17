@@ -168,8 +168,8 @@
     requestInstall();
   }, true);
 
-  // Refresh when UI is mounted, not when a formatter changes text in existing
-  // controls. Watching our own label writes creates a feedback loop.
+                                                                              
+                                                                     
   const installUi = '.browser-only-settings,.settings-panel,[data-n7x-install-card],[data-install-n7x],[data-install-n7x-status]';
   const observer = new MutationObserver(records => {
     if (records.some(record => [...record.addedNodes].some(node =>

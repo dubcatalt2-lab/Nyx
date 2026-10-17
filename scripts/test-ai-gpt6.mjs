@@ -9,7 +9,7 @@ for(const extra of [{},{premium:true},{coOwner:true},{trusted:true},{apiVerified
   const actor={uid:'denied',createdAt:AI_JOIN_CUTOFF-1,...extra};
   assert.equal(aiModelAllowed(sol,actor),false);
   await assert.rejects(allowance.begin({...actor,requestedModel:sol}),/not enabled/);
-  // Forged model changes must also fail at reservation, before provider use.
+                                                                             
   const session=await allowance.begin({...actor,uid:'denied-'+JSON.stringify(extra)});
   try {await assert.rejects(allowance.reserve(session,'shared',{model:sol,messages:[{role:'user',content:'test'}],max_tokens:20}),/not enabled/);}
   finally {await allowance.finish(session,false);}

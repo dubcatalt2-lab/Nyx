@@ -40,7 +40,7 @@ try {
         this.current = 18;
         this.total = 212;
         this.muted = false;
-        this.mute=undefined; // YouTube adds API methods only when ready.
+        this.mute=undefined;                                             
         this.node.innerHTML = '<div data-mock-youtube-player style="width:100%;height:100%;background:linear-gradient(135deg,#121217,#23232a)"></div>';
         setTimeout(() => {
           if (Array.isArray(window.__nyxTubeMockBlockedIds) && window.__nyxTubeMockBlockedIds.includes(options.videoId)) {

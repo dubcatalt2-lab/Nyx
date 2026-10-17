@@ -4,7 +4,7 @@ import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { createTubeCatalog } from '../lib/nyxtube-catalog.mjs';
 
-// A parent-process deadline also catches synchronous event-loop hangs.
+                                                                       
 if (!process.argv.includes('--worker')) {
   const result = await promisify(execFile)(process.execPath, [fileURLToPath(import.meta.url), '--worker'], {
     timeout: 20000, maxBuffer: 1024 * 1024

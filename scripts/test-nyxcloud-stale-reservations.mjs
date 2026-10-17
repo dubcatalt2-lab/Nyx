@@ -35,11 +35,11 @@ try{
  clock+=5100;assert.equal((await request('uncertain-0')).status,'recovering');
  await request('uncertain-0','/create','POST');assert.equal(creates,1,'never retry an uncertain account');
  assert.equal((await request('uncertain-0','/cancel','POST')).http,409);
- // Late provider completions still consume the real inventory slots.
+                                                                     
  vms.push(item(200),item(201),item(202));
  state.entries.push({uid:'overflow',status:'queued',joinedAt:clock,lastSeen:clock});clock+=5100;
  assert.equal((await request('overflow')).status,'queued');assert.equal(creates,1);
- // A conflict mapped to an inventoried desktop is already counted once.
+                                                                        
  vms.pop();state.entries.push({uid:'conflict',status:'conflict',vm:vms[0],lastSeen:clock});clock+=5100;
  assert.equal((await request('overflow')).status,'ready');assert.equal(creates,2);
  console.log('PASS stale slot recovery, legacy grace, fresh inventory requirement, uncertain ownership, late completion capacity and conflict accounting');

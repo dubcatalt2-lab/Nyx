@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 
 
@@ -50,7 +50,7 @@
       }
 
       var buildUrl = "https://cdn.jsdelivr.net/gh/bubbls/cheesechomp@7adf6b379977b88fe2becd36070c546d462f1eec/Build";
-      const totalParts = 13; // 10 data + 3 wasm
+      const totalParts = 13;                    
       let partsLoaded = 0;
 
       async function fetchAndCombineParts(partUrls, fileName) {
@@ -63,8 +63,8 @@
             const buffer = await response.arrayBuffer();
             buffers.push(buffer);
             partsLoaded++;
-            // Update progress bar based on parts loaded
-            const partProgress = (partsLoaded / totalParts) * 0.5; // Parts loading is 50% of total progress
+                                                        
+            const partProgress = (partsLoaded / totalParts) * 0.5;                                          
             progressBarFull.style.width = (partProgress * 100) + "%";
           }
           const combined = new Blob(buffers, { type: 'application/octet-stream' });
@@ -100,7 +100,7 @@
           script.src = `${buildUrl}/CheeseChompers3dWebUpdate.loader.js`;
           script.onload = () => {
             createUnityInstance(canvas, config, (progress) => {
-              // Unity loading is the second 50% of total progress
+                                                                  
               const unityProgress = 0.5 + (progress * 0.5);
               const progressPercent = Math.min(Math.max(unityProgress, 0), 1) * 100;
               progressBarFull.style.width = progressPercent + "%";

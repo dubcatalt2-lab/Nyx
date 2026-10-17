@@ -18,7 +18,7 @@ function aiLabels(scope) {
 }
 export function decorateEmbedded(doc, app) {
   doc.documentElement.dataset.tutsiApp = app;
-  // Rebrand application chrome only, never conversations, profile fields or media titles.
+                                                                                          
   const brandSelectors = 'header,.brand,.brand-copy,.ai-brand-copy,.ai-sidebar-brand,.ai-disclaimer,.chat-brand,.catalog-head,.hero,.utility-intro,.nyx-user-profile-tabs,.nyx-profile-rail-title,.nyx-user-profile-section-title,.n7x-founder-about strong,.nyx-user-profile-meta-label,.n7x-profile-directory-empty,.n7x-founder-editor-error,.nyx-profile-member-since,.nyx-user-profile-section strong,#profile-status';
   const rebrand = () => {
     for (const root of doc.querySelectorAll(brandSelectors)) {
@@ -127,7 +127,7 @@ export function decorateEmbedded(doc, app) {
     const conversation = doc.getElementById("conversation");
     if (conversation && !observed.has(conversation)) {
       observed.add(conversation);
-      // Update app-owned labels only; never rewrite a conversation's text.
+                                                                           
       const observer = new MutationObserver((records) => {
         if (
           records.some((record) =>

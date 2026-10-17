@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ --> 
+ 
+ 
 
 
 
@@ -99,7 +99,7 @@
       };
       document.body.appendChild(script);
 	  
-	  // Focus
+	          
   	  function setFocus() {
   	    container.focus();
   		window.focus();
@@ -160,7 +160,7 @@
 	    _interstitialAdInstance = null;
 		
 		$msstart.loadAdsAsync().then(adInstance => {
-		  // Use the adInstance.instanceId to make a call to showAdsAsync
+		                                                                 
 		  _interstitialAdInstance = adInstance;
 		  console.log("Interstitial ad successfully loaded!");
 	    }).catch(e => {
@@ -173,7 +173,7 @@
 	    _rewardedAdInstance = null;
 		
 		$msstart.loadAdsAsync(true).then(adInstance => {
-		  // Pass in boolean true for the optional parameter isRewardedAd, to fetch Rewarded ads
+		                                                                                        
 		  _rewardedAdInstance = adInstance;
 		  console.log("Rewarded ad successfully loaded!");
 	    }).catch(e => {

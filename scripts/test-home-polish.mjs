@@ -7,7 +7,7 @@ for (const channel of ['chrome','msedge']) {
  page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(/open-meteo|weather/i.test(r.url()))weather.push(r.url());});
  await page.addInitScript(()=>{if(window!==window.top)return;localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('nyx.releaseNotes.2026-10-02-nyx-1.6.8.seen','2026-10-02-nyx-1.6.8');});
  await page.route('**/api/**',r=>r.fulfill({json:{enabled:false,models:[],apps:[],preferences:{}}}));
- // Exercise real ad-frame lifecycle without requesting billable test impressions.
+                                                                                  
  await page.route('https://bicea.org/**',r=>r.fulfill({contentType:'application/javascript',body:`const img=document.createElement('img');img.width=160;img.height=600;img.src='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="160" height="600"><rect width="160" height="600" fill="orange"/></svg>');document.body.append(img);`}));
  await page.goto('http://localhost:8080/');
  await page.waitForFunction(()=>document.querySelector('.q4f959b063679fe3afa.n7x-minimal-home')&&document.getElementById('n3e8549522c8c')?.getAttribute('aria-hidden')==='true'&&!document.body.classList.contains('n7x-loading-active'));

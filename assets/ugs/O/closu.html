@@ -1,12 +1,12 @@
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
-<!-- Made by genizy -->
+ 
+
+
 
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
-  <!-- Google tag (gtag.js) -->
+  
    <base href="https://rawcdn.githack.com/genizy/osu/aabb0e62f0ebfbf4f472c9e86be0b3e7cf4540bc/">
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-GZ2M72GJ5S"></script>
   <script>
@@ -24,7 +24,7 @@
   <link rel="canonical" href="http://webosu-2.github.io/" />
   <link rel="stylesheet" href="style/picnic.min.css" />
   <link rel="stylesheet" type="text/css" href="style/main.css" />
-  <!-- <link href="//fonts.googleapis.com/css?family=Exo+2:400,600italic" rel="stylesheet" type="text/css"> -->
+  
   <link rel="stylesheet" type="text/css" href="style/font.css" />
   <link rel="icon" href="favicon.png" />
 
@@ -88,7 +88,7 @@
   <script>
 function indexHtml() {
     document.getElementById("main-page").innerHTML = `<div class="column left"> </div> <div class="main-content column"> <div class="announcement"> Announcement: This site is still under development. If you encounter any issues, read <a onclick="faqHtml()">the FAQ</a>. Now ad-free again! </div> <br /> <div class="index-area"> <a onclick="genRandomList()" class="more" style="cursor:pointer;">Get new random Beatmaps</a> <h2>Random Beatmaps<h2> <hr /> <div class="beatmap-list" id="beatmap-list-random"> </div> </div> <div class="index-area"> <h2>Latest Beatmaps</h2> <a class="more" onclick="latestHtml()">View more latest beatmaps</a> <hr /> <div class="beatmap-list" id="beatmap-list-new"> </div> </div> <div class="index-area"> <h2>Favourited Beatmaps</h2> <a class="more" onclick="favouritesHtml()">View more favourited beatmaps</a> <hr /> <div class="beatmap-list" id="beatmap-list-liked"> </div> </div> <div class="index-area"> <h2>Popular Beatmaps</h2> <a class="more" onclick="popularHtml()">View more popular beatmaps</a> <hr /> <div class="beatmap-list" id="beatmap-list-hot"> </div> </div> <footer id="footer"> <div style="text-align: center;"> <h3 class="text">Supports touchscreen devices.</h3> <h3 class="text"> Version 0.4.0, see our <a href="https://github.com/WebOsu-2/webosu-2.github.io">Github page.</a> </h3> <h3 class="text"> Our beatmap provider is SayoBot </h3> </div> </footer> </div> <div class="column right"> </div> <div class="statuslines" id="statuslines"> <div class="progress" id="script-progress"> Scripts <div class="lds-dual-ring"></div> </div> <div class="progress" id="skin-progress"> Skin <div class="lds-dual-ring"></div> </div> <div class="progress" id="sound-progress"> Hitsounds <div class="lds-dual-ring"></div> </div> </div>`
-    // recently played
+                      
     if (window.localforage) {
         let listhistory = document.getElementById("beatmap-list-history");
         localforage.getItem("playhistory1000", function (err, item) {
@@ -102,22 +102,22 @@ function indexHtml() {
                 for (let i = 0; i < item.length; ++i) {
                     if (item[i].sid) sid.push(item[i].sid);
                 }
-                sid = [...new Set(sid)]; // uniq
+                sid = [...new Set(sid)];        
                 for (let i = 0; i < 4 && i < sid.length; ++i) addBeatmapSid(sid[i], listhistory)
             } else {
                 listhistory.innerText = "Play any beatmap to add them here.";
             }
         })
     }
-    // new
+          
     addBeatmapList("https://api.sayobot.cn/beatmaplist?0=20&1=0&2=2&5=1", document.getElementById("beatmap-list-new"), function (t) {
         return (t.modes & 1) != 0;
     }, 4);
-    // random
+             
     function genRandomList() {
-        // clear list
+                     
         let list = document.getElementById("beatmap-list-random");
-        // fill list
+                    
         let randstart = Math.floor(Math.random() * 20000);
         addBeatmapList("https://api.sayobot.cn/beatmaplist?0=10&1=" + randstart + "&2=1&5=1", list, function (t) {
             while (list.firstChild) list.removeChild(list.firstChild);
@@ -125,9 +125,9 @@ function indexHtml() {
         }, 4);
     }
     genRandomList();
-    // hot
+          
     addBeatmapList("https://api.sayobot.cn/beatmaplist?0=4&1=0&2=1&5=1", document.getElementById("beatmap-list-hot"));
-    // liked
+            
     if (window.localforage) {
         window.localforage.getItem("likedsidset", function (err, val) {
             if (err) {
@@ -172,7 +172,7 @@ function genresHtml() {
   document.getElementById("main-page").innerHTML = `<div class="main-content"> <div class="sort-nav"> <div class="title">Genre</div> <div class="selitem" genre="1">All</div> <div class="selitem" genre="4">Games</div> <div class="selitem" genre="8">Animation</div> <div class="selitem" genre="16">Rock</div> <div class="selitem" genre="32">Popular</div> <div class="selitem" genre="128">Novelty</div> <div class="selitem" genre="1024">Electronic</div> <div class="selitem" genre="2+64+256">Others</div> </div> <div class="sort-nav"> <div class="title">Language</div> <div class="selitem" lang="1">All</div> <div class="selitem" lang="32">Instrumental</div> <div class="selitem" lang="4">English</div> <div class="selitem" lang="8">Japanese</div> <div class="selitem" lang="64">Korean</div> <div class="selitem" lang="16">Chinese</div> <div class="selitem" lang="128">French</div> <div class="selitem" lang="256">German</div> <div class="selitem" lang="2+1024">Others</div> </div> <hr /> <div class="beatmap-list" id="beatmap-list"> </div> <div class="button" style="width: 100%; margin-bottom: 10px" id="btnmore"> Load more </div> <footer id="footer"> <div style="text-align: center;"> <h3 class="text">Supports touchscreen devices.</h3> <h3 class="text"> Version 0.4.0, see our <a href="https://github.com/WebOsu-2/webosu-2.github.io">Github page.</a> </h3> <h3 class="text"> Our beatmap provider is SayoBot </h3> </div> </footer> </div> <div class="statuslines" id="statuslines"> <div class="progress" id="script-progress"> Scripts <div class="lds-dual-ring"></div> </div> <div class="progress" id="skin-progress"> Skin <div class="lds-dual-ring"></div> </div> <div class="progress" id="sound-progress"> Hitsounds <div class="lds-dual-ring"></div> </div> </div>`;
   let btns = document.getElementsByClassName("selitem");
     function search(genre, lang) {
-      // clear list
+                   
       list = document.getElementById("beatmap-list");
       while (list.firstChild) {
         list.removeChild(list.firstChild);
@@ -195,7 +195,7 @@ function genresHtml() {
         );
         cur += 20;
       };
-      // update buttons state
+                             
       for (let i = 0; i < btns.length; ++i) {
         let g = eval(btns[i].getAttribute("genre"));
         let l = eval(btns[i].getAttribute("lang"));
@@ -284,6 +284,5 @@ indexHtml();
 
 </html>
 
-<!-- attribution -->
-<!-- play icon made by https://www.flaticon.com/authors/those-icons -->
-<!-- search icon made by https://www.flaticon.com/authors/good-ware -->
+
+

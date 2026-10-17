@@ -9,7 +9,7 @@ def generate_valid_js_identifier():
 
 
 def identical_aggressive_obfuscate(root_dir="."):
-    # add .html here also fi some of your proxy workers and scripts are inlined into the html also
+                                                                                                  
     allowed_extensions = {".js", ".mjs", ".cjs"}
 
     
@@ -32,7 +32,7 @@ def identical_aggressive_obfuscate(root_dir="."):
         r"[a-zA-Z0-9_\$]*?(" + keyword_or_clause + r")[a-zA-Z0-9_\$]*?",
         re.IGNORECASE,
     )
- # change the path to wherever your proxy scripts and such are in
+                                                                 
     target_folders = ["scram", "public", "baremux"]
     file_count = 0
 

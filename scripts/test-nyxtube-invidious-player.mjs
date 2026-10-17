@@ -26,7 +26,7 @@ try {
    return route.fulfill({json});
   }
   if(path.endsWith('/'))path+='index.html';
-  if(path.endsWith('/invidious-player.js'))return route.fulfill({contentType:'text/javascript',body:''}); // Explicit legacy/adaptive fallback coverage.
+  if(path.endsWith('/invidious-player.js'))return route.fulfill({contentType:'text/javascript',body:''});                                               
   const file=resolve(root,'.'+decodeURIComponent(path));
   try{if(!file.startsWith(root+sep))throw Error('path');await route.fulfill({body:await readFile(file),contentType:({'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.svg':'image/svg+xml','.woff2':'font/woff2','.ttf':'font/ttf','.json':'application/json'})[extname(file)]||'application/octet-stream'});}catch{await route.fulfill({status:404,body:'Not found'});}
  });

@@ -6,8 +6,8 @@ import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { chromium } from 'playwright';
 
-// A fresh credential-free backend, serving the actual production build. The
-// junction avoids Express's intentional rejection of dot-directory file paths.
+                                                                            
+                                                                               
 const temp = await mkdtemp(join(tmpdir(), 'nyx-wispurr-browser-'));
 const staticRoot = join(temp, 'site');
 await symlink(resolve('dist'), staticRoot, process.platform === 'win32' ? 'junction' : 'dir');
@@ -81,8 +81,8 @@ try {
       } finally { await context.close(); }
     }
   }
-  // Exercise the visible Tutsi switch on an existing website tab, then reload
-  // with the new connection method. No production accounts or DNS are touched.
+                                                                              
+                                                                               
   const context = await browser.newContext();
   try {
     await context.addInitScript(()=>{

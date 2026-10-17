@@ -153,8 +153,8 @@ async function waitForLocalServer(child) {
 }
 
 async function writePatchedRuntimes(wispUrl) {
-  // Runtime generation needs Express routes, not a second relay worker.
-  // Bind only to loopback and keep an existing development server running.
+                                                                        
+                                                                           
   const runtimeServer = `
     import { createServer } from "node:http";
     import { app } from ${JSON.stringify(pathToFileURL(join(root, "server.js")).href)};
@@ -374,8 +374,8 @@ async function minifyFirstPartyMarkupAndStyles() {
     sourceBytes += Buffer.byteLength(source);
     let transformed;
     if (relative.endsWith(".css")) {
-      // CleanCSS treats a UTF-8 BOM before @import as part of a selector and
-      // silently discards both the import and the first rule after it.
+                                                                             
+                                                                       
       const result = new CleanCSS({ inline: ["none"], level: 2, rebase: false }).minify(source.replace(/^\uFEFF/, ""));
       if (result.errors.length) throw new Error(`Could not minify ${relative}: ${result.errors.join("; ")}`);
       transformed = result.styles;
@@ -386,8 +386,8 @@ async function minifyFirstPartyMarkupAndStyles() {
         minifyCSS: { level: 2 },
         minifyJS: {
           compress: runtimeCompressOptions(),
-          // Inline handlers can reference globals across script tags. Rename
-          // local bindings only; retain public names and property contracts.
+                                                                             
+                                                                             
           mangle: { toplevel: false, eval: false, properties: false },
           keep_fnames: true,
           keep_classnames: true,

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 
 <html lang="en-us">
@@ -12,16 +12,16 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bubbls/phasm@05f8ff06cbaa5768e8bcffec0ecfead7f2c7349e/style.css"/>
 
 <style>
-        /* Убираем выделение по нажатию клавиш */
+                                                 
         canvas:focus {
             outline: none;
         }
 
         html, body {
-            /* Убираем отступы */
+                                 
             padding: 0;
             margin: 0;
-            /* Отключаем скролл и лонгтап на IOS */
+                                                   
             overflow: hidden;
             -webkit-touch-callout: none;
             -webkit-user-select: none;
@@ -30,11 +30,11 @@
             -ms-user-select: none;
             user-select: none;
             -webkit-tap-highlight-color: rgba(0,0,0,0);
-            /* Ставим высоту на 100% */
+                                       
             height: 100%;
         }
     </style>
-<!-- Additional head modules -->
+
 </head>
 <body class="dark">
 <div id="unity-container" class="unity-desktop">
@@ -49,7 +49,7 @@
 <div class="spinner"></div>
 </div>
 </div>
-<!-- Additional body modules -->
+
 <script>
         const hideFullScreenButton = "";
         const buildUrl = "";
@@ -91,7 +91,7 @@
             
         }
 
-        // Фоновое изображение при загрузке игры. При сборке билда код меняется взависимости от настроек проекта.
+                                                                                                                 
         
         loadingCover.style.background = "url('https://cdn.jsdelivr.net/gh/block-blast-fastx/2595@main/background.jpg') center / cover";
 
@@ -109,9 +109,9 @@
 
         let StartUnityInstance;
         let myGameInstance;
-        let ysdk = null; // Yandex SDK pasif
+        let ysdk = null;                    
 
-        // 
+           
         let environmentData = {
             language: "en",
             domain: "default_domain",
@@ -141,13 +141,13 @@
         
         let cloudSaves = 'noData';
         let paymentsData = 'none';
-        let playerData = 'noData'; // Varsayılan playerData tanımı
+        let playerData = 'noData';                                
         let player = null;
         let payments = null;
         let initGame = false;
         let nowFullAdOpen = false;
 
-        // 
+           
         function GetPayments() { console.warn("GetPayments is not implemented"); return Promise.resolve("none"); }
         function SaveCloud() { console.warn("SaveCloud is not implemented"); }
         function LoadCloud() { console.warn("LoadCloud is not implemented"); return Promise.resolve("noData"); }
@@ -161,9 +161,9 @@
         function GetLeaderboardScores() { console.warn("GetLeaderboardScores is not implemented"); }
         function SetLeaderboardScores() { console.warn("SetLeaderboardScores is not implemented"); }
         function ConsumePurchase() { console.warn("ConsumePurchase is not implemented"); }
-        function ConsumePurchases() { console.warn("ConsumePurchases is not implemented"); } // 
+        function ConsumePurchases() { console.warn("ConsumePurchases is not implemented"); }    
 
-        // 
+           
         try {
             const script = document.createElement("script");
             script.src = loaderUrl;
@@ -199,7 +199,7 @@
             }
         }
 
-        // 
+           
         window.addEventListener("unhandledrejection", function(event) {
             console.warn("Hata es geçildi:", event.reason);
             event.preventDefault();

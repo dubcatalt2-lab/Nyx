@@ -1,7 +1,7 @@
-﻿// Only the reserved relay URL uses HTTP. All other WebSockets retain native behavior.
+﻿                                                                                      
 export const httpRelayUrl = (page=location) => `${page.protocol === 'https:' ? 'wss:' : 'ws:'}//${page.host}/api/tutsi-relay/socket/`;
-// Decode complete Wisp frames as HTTP bytes arrive, rather than waiting for a
-// whole (up to 20 MiB) response. Keep partial headers/frames bounded and ordered.
+                                                                              
+                                                                                  
 export async function readRelayFrames(body, emit, progress=()=>{}) {
   const reader=body.getReader(),header=new Uint8Array(4);
   let headerBytes=0,frame=null,frameBytes=0,total=0;
@@ -78,7 +78,7 @@ export class HttpRelaySocket extends EventTarget {
   flush() {
     if(this.sending||this.readyState!==1||!this.queue.length)return;
     this.sending=true;
-    // Coalesce already queued frames without a timer or an extra network delay.
+                                                                                
     void Promise.resolve().then(async()=>{
       while(this.readyState===1&&this.queue.length){
         const frames=[],parts=[];let bytes=0,wireBytes=0;

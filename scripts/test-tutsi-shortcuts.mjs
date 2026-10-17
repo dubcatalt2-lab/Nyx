@@ -12,7 +12,7 @@ try{
  await key('Alt+l');assert(await page.locator('#query').evaluate(el=>el===document.activeElement));
  await page.fill('#query','https://example.com');await page.locator('#search button').click();
  const site=()=>page.frameLocator('#browser-stage iframe:not([hidden])');await site().getByRole('heading',{name:'Example Domain'}).waitFor({timeout:30000});
- // The + button must keep the browser visible and preserve the previous document.
+                                                                                  
  await site().locator('body').evaluate(e=>e.dataset.tabPreserved='yes');
  await page.getByRole('button',{name:'New tab (Alt+T)',exact:true}).click();
  assert.equal(new URL(page.url()).hash,'#browser');
@@ -20,7 +20,7 @@ try{
  assert(await page.locator('#new-tab-query').evaluate(e=>e===document.activeElement));
  await page.locator('#reload').click();await page.locator('#close-browser').click();
  assert.equal(await site().locator('body').getAttribute('data-tab-preserved'),'yes','Blank-tab reload/close must not touch the previous page');
- // Focus inside the website: the iframe bridge must still receive shortcuts.
+                                                                             
  await site().getByRole('heading',{name:'Example Domain'}).click();await key('Alt+t');await page.waitForURL('**#browser');await page.locator('#browser-new-tab').waitFor();
  assert.equal(await page.locator('#ne4236faa3775 [role=tab]').count(),2);
  await key('Alt+w');await page.waitForURL('**#browser');assert.equal(await page.locator('#ne4236faa3775 [role=tab]').count(),1,'Blank tab is removed');

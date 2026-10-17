@@ -74,7 +74,7 @@ try {
    for(let i=0;i<25;i++)assert.equal((await send(uid,'repeat staff','exempt-'+uid+'-'+i,i%2?{channel:undefined,conversationId:'private'}:{})).status,201);
    assert.equal(burstChecks.length,checks,'Staff bypass the legacy burst limiter too');
  }
- // A stale cached identity cannot bypass a fresh server-side demotion.
+                                                                       
  records.set('nyxUserAdministration/mod',{role:'member'});
  assert.equal((await send('mod','demoted','demoted',{role:'owner',canModerate:true})).status,429);
  assert.equal(burstChecks.at(-1),'mod');

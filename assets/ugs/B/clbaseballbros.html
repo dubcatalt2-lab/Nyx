@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 
 
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 
 	<html lang="en">
@@ -62,7 +62,7 @@
 	    }
 
 	    .body::-webkit-scrollbar {
-	      /* WebKit */
+	                  
 	      width: 0px;
 	    }
 
@@ -89,7 +89,7 @@
 
 
 
-	    /* Main content styling */
+	                              
 	    #more {
 	      display: flex;
 	      justify-content: space-between;
@@ -111,7 +111,7 @@
 	    h3 {
 	      font-size: 24px;
 	      color: #ffa500;
-	      /* Baseball-themed color */
+	                                 
 	      margin-bottom: 15px;
 	    }
 
@@ -127,26 +127,26 @@
 
 	    b {
 	      color: #ffd700;
-	      /* Highlighted question color */
+	                                      
 	    }
 
 
-	    /* unvisited link */
+	                        
 	    a:link {
 	      color: #ffd700;
 	    }
 
-	    /* visited link */
+	                      
 	    a:visited {
 	      color: #ffd700;
 	    }
 
-	    /* mouse over link */
+	                         
 	    a:hover {
 	      color: #ffd700;
 	    }
 
-	    /* selected link */
+	                       
 	    a:active {
 	      color: #ffd700;
 	    }
@@ -161,7 +161,7 @@
 	      clip-path: polygon(100% 0, 0 100%, 100% 100%);
 	    }
 
-	    /* Footer styling */
+	                        
 	    footer {
 	      background-color: #000;
 	      padding: 20px 0;
@@ -205,9 +205,9 @@
 	      font-family: 'Courier New', Courier, monospace;
 	      border: 3px solid #000000;
 	      background-color: #000000;
-	      /* Black background */
+	                            
 	      color: #FFFFFF;
-	      /* White text */
+	                      
 	      resize: none;
 	      box-sizing: border-box;
 	    }
@@ -216,7 +216,7 @@
 	      width: 100%;
 	      padding: 12px;
 	      background-color: #FFD700;
-	      /* Yellowish background */
+	                                
 	      color: #000000;
 	      border: 3px solid #FF0000;
 	      border-radius: 0;
@@ -228,12 +228,12 @@
 
 	    .feedback-form button:hover {
 	      background-color: #FFB800;
-	      /* Slightly darker yellow on hover */
+	                                           
 	      color: #FFFFFF;
 	    }
 	  </style>
 
-	  <!-- Google tag (gtag.js) -->
+	  
 	  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D67EBFNGR6"></script>
 
 	  <script>
@@ -250,7 +250,7 @@
 	  </script>
 
 	  <script>
-	    //Interstitial ad available event
+	                                     
 	    document.addEventListener("aip_interstitialadavailable", function(e) {
 	      console.log("An interstitial ad is available");
 	    });
@@ -263,8 +263,8 @@
 	    aiptag.cmd.display = aiptag.cmd.display || [];
 	    aiptag.cmd.player = aiptag.cmd.player || [];
 
-	    //CMP tool settings
-	    aiptag.consented = false; // GDPR setting, please set this value to false if an EU user has declined or not yet accepted marketing cookies, for users outside the EU please use true and for users accepted the GDPR also use true
+	                       
+	    aiptag.consented = false;                                                                                                                                                                                                         
 	    aiptag.cmp = {
 	      show: true,
 	      position: "centered",
@@ -306,7 +306,7 @@
 	    function LoadVideo() {
 	      if (typeof $msstart !== 'undefined') {
 	        $msstart.loadAdsAsync().then(adInstance => {
-	          // Use the adInstance.instanceId to make a call to showAdsAsync
+	                                                                         
 	          msAdID = adInstance.instanceId;
 	        });
 
@@ -316,13 +316,13 @@
 
 	    function ShowVideo(theUnitName = null) {
 	      Main.DoneVideoAd(true);
-	      return; //! when aip is live, remove this
+	      return;                                  
 
 	      console.log('SHOW_VIDEO:' + theUnitName);
 	      var aUnitName = "";
 	      if (typeof $msstart !== 'undefined') {
 	        $msstart.showAdsAsync(msAdID).then(adInstance => {
-	          // Use the adInstance.showAdsCompletedAsync to be notified of the completion of showing the advertisement
+	                                                                                                                   
 	          adInstance.showAdsCompletedAsync.then((val) => {
 	            console.log('MS Video Ad Complete');
 	            Main.DoneVideoAd();
@@ -338,8 +338,8 @@
 	          });
 	        });
 	      } else if (typeof gCrazySDK !== 'undefined') {
-	        gCrazySDK.addEventListener("adFinished", Main.DoneVideoAd); // reenable sound, enable ui
-	        gCrazySDK.addEventListener("adError", Main.DoneVideoAd); // reenable sound, enable ui
+	        gCrazySDK.addEventListener("adFinished", Main.DoneVideoAd);                             
+	        gCrazySDK.addEventListener("adError", Main.DoneVideoAd);                             
 	        gCrazySDK.requestAd();
 	        console.log('CG_AD_REQUESTED');
 	        SendEvent('event', 'cgvideo');
@@ -351,7 +351,7 @@
 
 	      } else {
 	        var aStr = 'preroll';
-	        //if(theUnitName != null) aStr = theUnitName;
+	                                                     
 	        lastUnitPlayed = aStr;
 	        SendEvent('event', 'startvideo-' + aStr);
 
@@ -362,15 +362,15 @@
 	    }
 	  </script>
 
-	  <!-- Firebase App (the core Firebase SDK) -->
+	  
 	  <script src="firebase-app.js"></script>
-	  <!-- Firebase Authentication -->
+	  
 	  <script src="firebase-auth.js"></script>
-	  <!-- Firebase Firestore (Database) -->
+	  
 	  <script src="firebase-firestore.js"></script>
 
 	  <script>
-	    // Your web app's Firebase configuration
+	                                            
 	    const firebaseConfig = {
 	      apiKey: "AIzaSyBuzj8XEP7-5kOFFhyuxylQ6P0B2G_ogsM",
 	      authDomain: "baseball-bros-8dd7f.firebaseapp.com",
@@ -381,7 +381,7 @@
 	    };
 
 
-	    // Initialize Firebase
+	                          
 	    firebase.initializeApp(firebaseConfig);
 	    const auth = firebase.auth();
 	    const db = firebase.firestore();
@@ -392,7 +392,7 @@
 	      auth.signInWithPopup(provider);
 	    }
 
-	    // Save game data function
+	                              
 	    function saveGameData(gameData) {
 	      console.log('saving gamedata:' + gameData);
 	      var userId = auth.currentUser.uid;
@@ -406,7 +406,7 @@
 	      });
 	    }
 
-	    // Load game data function
+	                              
 	    function loadGameData() {
 	      return userData;
 	    }
@@ -416,12 +416,12 @@
 	      db.collection('users').doc(userId).get().then(function(doc) {
 	        if (doc.exists) {
 	          userData = doc.data().gameData;
-	          //Main.LoadGlobals();
+	                               
 	          console.log('Game data:', doc.data().gameData);
 	          if (typeof Main != "undefined") {
 	            Main.LoadDataComplete();
 	          }
-	          // Use the game data in your game
+	                                           
 	        } else {
 	          console.log('No such document!');
 	        }
@@ -430,7 +430,7 @@
 	      });
 	    }
 
-	    // Firebase auth state observer
+	                                   
 	    auth.onAuthStateChanged(function(user) {
 	      if (user) {
 	        loadGameDataAsync();
@@ -459,9 +459,9 @@
 	<body style="overflow:hidden;">
 	  <noscript>Enable JavaScript bro!</noscript>
 	  <script>
-	    //alert("Globals:"+localStorage.getItem("/:Globals").length);
-	    /////////////////////////////////////////////////////////////////////
-	    ////////////////////////////////////////////////////////////////////
+	                                                                 
+	                                                                         
+	                                                                        
 	    var url = window.location.href;
 	    if (url.includes("www.")) {
 	      url = url.replace("www.", "");
@@ -487,8 +487,8 @@
 	      if (aPost.length > aLen) localStorage.setItem("/:Globals", aPost);
 	      if (aPost.length > 0 && aPost.length == aLen) localStorage.setItem("/:Globals", aPost);
 	    }
-	    /////////////////////////////////////////////////////////////////////
-	    ////////////////////////////////////////////////////////////////////
+	                                                                         
+	                                                                        
 	  </script>
 
 	  <div id="loading" style="position: absolute; z-index: 15; top: 60%; left: 50%; transform: translate(-50%, 0); background: black;">
@@ -554,12 +554,12 @@
 	      <p id="responseMsg"></p>
 	    </div>
 	    <script>
-	      //                                                                                                                          var doFeedback = true;
+	                                                                                                                                                        
 	      function getOSFromUserAgent() {
 	        const userAgent = navigator.userAgent;
 	        const platform = navigator.platform;
 
-	        // Check for common platforms and OS
+	                                            
 	        if (/Windows NT/i.test(userAgent)) return 'Windows';
 	        if (/Mac OS X/i.test(userAgent)) return 'macOS';
 	        if (/Linux/i.test(userAgent)) return 'Linux';
@@ -567,7 +567,7 @@
 	        if (/iPhone|iPad|iPod/i.test(userAgent)) return 'iOS';
 	        if (/CrOS/i.test(userAgent)) return 'Chrome OS';
 
-	        // Default to the platform if no match
+	                                              
 	        return platform || 'Unknown';
 	      }
 	      async function sendFeedback() {
@@ -585,8 +585,8 @@
 	          const debugInfo = gl?.getExtension('WEBGL_debug_renderer_info');
 	          const gpuInfo = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : 'Unknown';
 
-	          // Cleanup
-	          canvas.remove(); // Remove the canvas from the DOM (if it was added)
+	                    
+	          canvas.remove();                                                    
 	          return gpuInfo;
 	        })();
 
@@ -624,14 +624,14 @@
 	          const result = await response.json();
 
 	          if (result.status === "success") {
-	            document.getElementById("feedbackForm").style.display = "none"; // Close the feedback form
-	            alert(result.message); // Show success message
+	            document.getElementById("feedbackForm").style.display = "none";                           
+	            alert(result.message);                        
 	          } else {
-	            document.getElementById("feedbackForm").style.display = "none"; // Close the feedback form
-	            alert(result.message); // Show error message
+	            document.getElementById("feedbackForm").style.display = "none";                           
+	            alert(result.message);                      
 	          }
 	        } catch (error) {
-	          document.getElementById("feedbackForm").style.display = "none"; // Close the feedback form
+	          document.getElementById("feedbackForm").style.display = "none";                           
 	          alert("Error submitting feedback. Please try again.");
 	        }
 
@@ -789,8 +789,8 @@
 	        var d = new Date();
 	        var ms = d.getTime();
 	        if (ms - lastRefresh2 > 10000) {
-	          //hndled by the first banner request
-	          //gCrazySDK.requestBanner([{containerId: 'baseballbros-io_300x250_2',size: '300x250',}]);
+	                                              
+	                                                                                                   
 	          gCrazySDK.requestResponsiveBanner(["baseballbros-io_300x250", "baseballbros-io_300x250_2"]);
 
 	          lastRefresh2 = ms;
@@ -951,7 +951,7 @@
 	    }
 
 	    function ShowAdBreak() {
-	      //check if the adslib is loaded correctly or blocked by adblockers etc.
+	                                                                             
 	      if (typeof gCrazySDK !== 'undefined') {
 	        Main.DoneInterstitialAd(false);
 	        return;
@@ -980,42 +980,42 @@
 
 
 	    setInterval(function() {
-	      //console.log("active element:" + document.activeElement);
+	                                                                
 	      if (document.activeElement.tagName == "IFRAME") {
 	        document.activeElement.blur();
 	        document.getElementById('openfl-content').focus();
-	        //console.log('refocusing');
+	                                    
 	      }
 	    }, 30);
 
 
-	    /*setInterval(function () { 
-	    	var l = window.document.getElementById('preroll');
-	    	if(l != null && typeof l.style !== 'undefined' && l.style.visibility !== 'visible') {
-	    		document.getElementById('openfl-content').focus();
-	    		if(document.activeElement instanceof HTMLIFrameElement)
-	    		{
-	    			//document.activeElement.style.display = "none";
-	    			window.focus();
-	    			window.document.getElementById('openfl-content').focus();
-	    		}
-	    	}
-	    }, 1000);*/
+	                                
+                                                        
+                                                                                           
+                                                         
+                                                              
+        
+                                                        
+                       
+                                                                 
+        
+       
+                
 
 
-	    /*		setInterval(function () { 
-	    			var l = window.document.getElementById('baseballbros-io_160x600');
-	    			if(l != null && typeof l.style !== 'undefined' && l.style.visibility == 'visible') {
-	    				ShowAd5();
-	    			}
-	    		}, 30000);
+	                                  
+                                                                          
+                                                                                            
+                   
+         
+                 
 
-	    		setInterval(function () { 
-	    			var l = window.document.getElementById('baseballbros-io_160x600_2');
-	    			if(l != null && typeof l.style !== 'undefined' && l.style.visibility == 'visible') {
-	    				ShowAd1();
-	    			}
-	    		}, 32000);*/
+                                 
+                                                                            
+                                                                                            
+                   
+         
+                   
 
 	    var sid = '02k06etmp6fnad6qk2e82s1dfi'
 
@@ -1034,28 +1034,28 @@
 	        gtag(theEvent, theAction, theParms);
 	      }
 	      updateStatus(true);
-	      //console.log("Sending event: " + theEvent + "/" + theAction + "/" + theParms);
+	                                                                                     
 	    }
-	    //setInterval(function() { updateStatus, 4*60*1000);			
-	    //setInterval( function() { 
-	    //	window.scrollTo(0, 0); 
-	    //}, 2000 );					
+	                                                           
+	                                
+	                              
+	                     
 	    updateStatus(true);
 
-	    //setInterval(ClearAds, 2000);		
+	                                    
 
 	    function EmailSignup() {
 	      if (document.getElementById("signup") || document.getElementById("deleteme")) return;
 	      const iframe = document.createElement("iframe");
 
-	      //			iframe.style.display = "block";
+	                                          
 	      iframe.style.width = "550px";
 	      iframe.style.height = "" + window.innerHeight - 100 + "px";
 	      iframe.style.position = "absolute";
 	      iframe.style.top = "50px";
 	      iframe.style.left = "50%";
 	      iframe.style["margin-left"] = "-225px";
-	      //iframe.style["margin-right"] = "-275px";
+	                                                
 	      iframe.style["max-width"] = "100%";
 	      iframe.setAttribute("id", "signup");
 
@@ -1086,11 +1086,11 @@
 	    var scrollerMessage = " WELCOME TO BASEBALL BROS! ARE YOU READY TO HIT SOME NUKES? WE'RE STILL MAKING ADJUSTMENTS- YOU CAN CHECK THE BOTTOM OF THE PAGE FOR THE LATEST CHANGES! IF YOU HAVE A GLITCH OR FEEDBACK, YOU CAN EMAIL INFO@BLUEWIZARD.COM!!! ";
 
 	    const element = document.getElementById('openfl-content');
-	    // Function to keep the element focused
+	                                           
 	    function keepFocus() {
 	      element.focus();
 	    }
-	    // Event listeners to restore focus when lost
+	                                                 
 	    element.addEventListener('blur', keepFocus);
 	    element.addEventListener('focusout', keepFocus);
 	  </script>

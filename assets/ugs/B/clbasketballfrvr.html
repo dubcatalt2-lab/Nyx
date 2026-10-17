@@ -1,5 +1,5 @@
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 <!DOCTYPE html><html lang="en"><head>
     <base href="https://rawcdn.githack.com/bubbls/youtube-playables/main/basketball-frvr/">
@@ -144,7 +144,7 @@ preloader loadbar div{
     margin-left: -190px;
 }
 
-/* Google+ share button */
+                          
 #overlay.cn div#___plusone_0 {
     width: 68px !important;
 }
@@ -154,12 +154,12 @@ preloader loadbar div{
     top: -4px !important;
 }
 
-/* Sina Weibo share button */
+                             
 #overlay wb\:share-button iframe {
     width: 105px !important;
 }
 
-/* QZone share button */
+                        
 #overlay iframe[version="1.0"] {
     position: relative !important;
     top: -2px;
@@ -503,7 +503,7 @@ preloader loadbar div{
 </head>
   <body>
 
-    <!-- TODO debugcode, move me to provider -->
+    
     <div id="debug" style="position:absolute; color:red; left:40px; z-index: 9999999"></div>
 
       <script nonce="-sOJ1RQ8_ggBND0jamQKHQ">
@@ -764,7 +764,7 @@ preloader loadbar div{
     }
 
     var platformIs = window.__FRVR.platformIs;
-    // If there are multiple instances of truthy values, the final one will be used as the channel in the order of map
+                                                                                                                      
     for (var key in map) if (platformIs[key]) channel = map[key];
 
     if (window.__FRVR.getGoogleAdSenseGameChannelId) {
@@ -774,12 +774,12 @@ preloader loadbar div{
       }
     }
 
-    // this prevents use cases where url is/can be trimmed and end up with different values for the same session
+                                                                                                                
     resolvedChannel = channel;
     return channel;
   }
 
-  //Local cache to preserve querystrings
+                                        
   var base_url = window.location.href;
   window.__FRVR.getQueryString = function(name){
       var url = base_url;
@@ -794,293 +794,293 @@ preloader loadbar div{
   window.__FRVR.platformIs = new (function(w,n,u,l) {
     var that = this;
 
-    // adding build platform variable e.g. XS.is['jio-stb']
+                                                           
     that[window.__FRVR.buildTimePlatform] = true
 
-    /**
-     * True if we're in an Android browser or app
-     * @memberof XS.is
-     */
+       
+                                                 
+                      
+       
     that.android = /(android)/i.test(u) && !/(Windows)/i.test(u);
-    /**
-     * Returns android version of browser view as float. E.g. 4.2 if we are running "4.2.1"
-     * Hack? Should we move this to a more sensiable location?
-     * @memberof XS.is
-     */
+       
+                                                                                           
+                                                              
+                      
+       
     that.androidVersion = (function() {
       var match = navigator.userAgent.toLowerCase().match(/android\s([0-9\.]*)/);
       return parseFloat(match ? match[1] : 0);
     })();
-    /**
-     * True if we're in an Android Automotive OS context
-     * @memberof XS.is
-     */
+       
+                                                        
+                      
+       
     that.aaos = window.__FRVR.getQueryString("aaos") == "car";
-    /**
-     * True if we're in an automated/ci build
-     * @memberof XS.is
-     */
+       
+                                             
+                      
+       
     that.ci = window.__FRVR.getQueryString("ci_run") == "1";
-    /**
-     * True if we're in Firefox Mobile
-     * @memberof XS.is
-     */
+       
+                                      
+                      
+       
     that.firefoxMobile = /(Mobile)/i.test(u) && /(Firefox)/i.test(u);
-    /**
-     * True if we're in an old Android Device
-     * @memberof XS.is
-     */
+       
+                                             
+                      
+       
     that.slow = that.android && that.androidVersion < 6
-    /**
-     * True if we're in an iOS browser or app
-     * @memberof XS.is
-     */
-    that.iOS = /(ipod|iphone|ipad)/i.test(u) || (/(Macintosh)/i.test(u) && 'ontouchend' in document); // iPadOS uses the same browser that macOS
-    /**
-     * True if we're in Windows Mobile
-     * @memberof XS.is
-     */
+       
+                                             
+                      
+       
+    that.iOS = /(ipod|iphone|ipad)/i.test(u) || (/(Macintosh)/i.test(u) && 'ontouchend' in document);                                           
+       
+                                      
+                      
+       
     that.windowsMobile = /(IEMobile)/i.test(u);
-    /**
-     * True if we're in the silk browser
-     * @memberof XS.is
-     */
+       
+                                        
+                      
+       
     that.silk = /(silk)/i.test(u);
-    /**
-     * True if we're in the Clay app context
-     * @memberof XS.is
-     */
+       
+                                            
+                      
+       
     that.clay = /(clay\.io)/i.test(l);
-    /**
-     * True if we're a Facebook Canvas app
-     * @memberof XS.is
-     */
+       
+                                          
+                      
+       
     that.facebookApp = /(fb_canvas)/i.test(l);
-    /**
-     * True if we're a Facebook Canvas Web app
-     * @memberof XS.is
-     */
+       
+                                              
+                      
+       
     that.facebookAppWeb = /(fb_canvas_web)/i.test(l);
-    /**
-     * True if we're running in an iframe
-     * @memberof XS.is
-     */
+       
+                                         
+                      
+       
     that.iframed = w.top !== w.self;
-    /**
-     * True if we're running in iOS Safari standalone mode
-     * @memberof XS.is
-     */
+       
+                                                          
+                      
+       
     that.standalone = 'standalone' in n && n.standalone;
-    /**
-     * True if we're running on an iPhone or iPod
-     * @memberof XS.is
-     */
+       
+                                                 
+                      
+       
     that.mobileiOSDevice = u.match(/iPhone/i) || u.match(/iPod/i);
-    /**
-     * True if we're running on Kongregate
-     * @memberof XS.is
-     */
+       
+                                          
+                      
+       
     that.kongregate = /(kongregateiframe)/i.test(l);
-    /**
-     * True if we're running in the KIK messenger
-     * @memberof XS.is
-     */
+       
+                                                 
+                      
+       
     that.kik = /(kik_canvas)/i.test(l);
-    /**
-     * True if we're running in a Twitter web view
-     * @memberof XS.is
-     */
+       
+                                                  
+                      
+       
     that.twitter = /(twitter)/gi.test(u);
-    /**
-     * True if we're running in Chrome
-     * @memberof XS.is
-     */
+       
+                                      
+                      
+       
     that.chrome = /Chrome\//.test(u);
-    /**
-     * True if we're running in Safari
-     * @memberof XS.is
-     */
+       
+                                      
+                      
+       
     that.safari = !!navigator.userAgent.match(/Version\/[\d\.]+.*Safari/)
-    /**
-    * True if we're running on latest safari (as of 16/09/2022). This matters because this version has issues with webGL and ATL images. Delete this and it's usages if no longer the case.
-    * @memberof XS.is
-    */
+       
+                                                                                                                                                                                           
+                     
+      
     that.badWebkit = /AppleWebKit\/605\.1\.15/i.test(u) && /iPhone OS 15_[0|1|2]/i.test(u)
-    /**
-     * True if we're running from HTTPS
-     * @memberof XS.is
-     */
+       
+                                       
+                      
+       
     that.secureConnection = window.location.protocol.indexOf('https') == 0
-    /**
-     * True if we're running as a Facebook Instant app
-     * @memberof XS.is
-     */
+       
+                                                      
+                      
+       
     that.facebookInstant = !!window.FBInstant;
-    /**
-     * True if we're running as a Facebook Rooms app
-     * @memberof XS.is
-     */
+       
+                                                    
+                      
+       
     that.facebookRooms = window.isFacebookRooms;
-    /**
-     * True if we're running as a Facebook Rooms app
-     * @memberof XS.is
-     */
+       
+                                                    
+                      
+       
     that.youtube = window.__FRVR.buildTimePlatform === 'youtube';
-    /**
-     * True if we're running inside the Spil Games wrapper
-     * @memberof XS.is
-     */
+       
+                                                          
+                      
+       
     that.spilGamesWrapper = /(spilgames)/i.test(l);
-    /**
-     * True if query string parameter 'social' is set to 'on'
-     * @memberof XS.is
-     */
+       
+                                                             
+                      
+       
     that.social = window.__FRVR.getQueryString("social") == "on";
-    /**
-     * True if query string parameter 'ads' is set to 'off'
-     * @memberof XS.is
-     */
+       
+                                                           
+                      
+       
     that.advertisementIsDisabled = window.__FRVR.getQueryString("ads") == "off"
-    /**
-     * True if query string parameter 'int' is set to 'off' window.__FRVR.getQueryString("partnerid")
-     * @memberof XS.is
-     */
+       
+                                                                                                     
+                      
+       
     that.advertisementInterstitialDisabled = window.__FRVR.getQueryString("int") == "off"
-    /**
-     * True if the advertisement overlay is enabled (if we're not iframed, or inside a partner wrapper)
-     * @memberof XS.is
-     */
+       
+                                                                                                       
+                      
+       
     that.advertisementOverlayEnabled = (!that.iframed)||that.spilGamesWrapper||window.__FRVR.getQueryString("partnerid");
 
-    /**
-     * True if nosoc flag is turned on, and social links and buttons should be supressed
-     * @memberof XS.is
-     */
+       
+                                                                                        
+                      
+       
     that.nosoc = window.__FRVR.getQueryString('nosoc')=="1"
 
-    /**
-     * True if development flag is turned on, and development execution should be tracked
-     * @memberof XS.is
-     */
+       
+                                                                                         
+                      
+       
     that.development = window.__FRVR.getQueryString('development') != null ? window.__FRVR.getQueryString('development') == "true" : null;
 
-    /**
-     * True if the url contains ?fb
-     * @memberof XS.is
-     */
+       
+                                   
+                      
+       
     that.facebookAd = /(\/\?fb)/i.test(l)
 
-    /**
-     * True if we're on any of the mobile platform contexts (android, ios, windows mobile, etc)
-     * @memberof XS.is
-     */
+       
+                                                                                               
+                      
+       
     that.mobile = that.android || that.windowsMobile || that.iOS || that.silk || that.firefoxMobile;
 
-    /** 
-     * True if we're inside the FRVR mobile App wrapper
-     * @memberof XS.is 
-     */
+        
+                                                       
+                       
+       
     that.mobileWrapper = w.iOSWrapper || w.androidWrapper || false
 
-    /**
-     * True if we're inside the FRVR iOS App wrapper
-     * @memberof XS.is
-     */
+       
+                                                    
+                      
+       
     that.iOSWrapper = w.iOSWrapper || false;
-    /**
-     * True if wrapper is running on iPhoneX or later (and hence has a notch) - NB: ONLY WORKS IN WRAPPER SO FAR
-     * @memberof XS.is
-     */
+       
+                                                                                                                
+                      
+       
     that.iPhoneXOrLater = window.__FRVR.getQueryString('iPhoneXOrLater')=="true"
-    /**
-     * True if wrapper is running in iMessage context on iOS
-     * @memberof XS.is
-     */
+       
+                                                            
+                      
+       
     that.iMessageContext = window.__FRVR.getQueryString('iMessage')=="true"
-    /**
-     * True if we're inside the FRVR Android App wrapper
-     * @memberof XS.is
-     */
+       
+                                                        
+                      
+       
     that.androidWrapper = w.androidWrapper || false;
-    /**
-     * True if we're inside the FRVR Chrome App wrapper
-     * @memberof XS.is
-     */
+       
+                                                       
+                      
+       
     that.chromeWrapper = w.isChromeWrapper || false;
-    /**
-     * True if we are a samsung app store app.
-     * @memberof XS.is
-     */
+       
+                                              
+                      
+       
     that.samsungAppStore = window.__FRVR.getQueryString("androidStore") == "samsung";
-    /**
-     * True if we're inside the FRVR Android or iOS App wrapper
-     * @memberof XS.is
-     */
+       
+                                                               
+                      
+       
      that.appWrapper = w.iOSWrapper || w.androidWrapper || that.samsungAppStore;
-    /**
-     * True if we are using a WebGL Renderer, initialized when XS.renderer is initialized
-     * @memberof XS.is
-     */
+       
+                                                                                         
+                      
+       
     that.usingWebGLRenderer = false;
-    /**
-     * True if we are using a Canvas Renderer, initialized when XS.renderer is initialized
-     * @memberof XS.is
-     */
+       
+                                                                                          
+                      
+       
     that.usingCanvasRenderer = false;
-    /**
-     * Is a Jio device STB device. NOTE: this is still required because its being used in games, remove it when we introduce capabilities API.
-     * @memberof XS.is
-     */
+       
+                                                                                                                                              
+                      
+       
     that.jioStb = !!that['jio-stb']
-    /**
-     * Is a MyJio device
-     * @memberof XS.is
-     */
+       
+                        
+                      
+       
     that.myJio = !!that['myjio']
-    /**
-     * Is a MyJio device
-     * @memberof XS.is
-     */
+       
+                        
+                      
+       
      that.jioGameslite = !!that['jio-gameslite']
-    /**
-     * Is a Jio device
-     * @memberof XS.is
-     */
+       
+                      
+                      
+       
     that.jio = that.jioStb || that.myJio || that.jioGameslite
-    /**
-     * Twitch extension iframe client
-     * @memberof XS.is
-     */
+       
+                                     
+                      
+       
     that.twitch = window.__FRVR.getQueryString("twitch") == "";
-    /**
-     * VK.RU iframe client
-     * @memberof XS.is
-     */
+       
+                          
+                      
+       
     that.vkru = window.__FRVR.getQueryString("vkru") == "";
-    /**
-     * OK.RU iframe client
-     * @memberof XS.is
-     */
+       
+                          
+                      
+       
     that.okru = window.__FRVR.getQueryString("okru") == "";
-    /**
-     * t-mobile iframe client
-     * @memberof XS.is
-     */
+       
+                             
+                      
+       
     that.tMobile = window.__FRVR.getQueryString("tmobile") == "";
-    /**
-     * Progressive Web App
-     * @memberof XS.is
-     */
+       
+                          
+                      
+       
     that.pwa = window.__FRVR.getQueryString("pwa") == "";
-    /**
-     * Windows App
-     * @memberof XS.is
-     */
+       
+                  
+                      
+       
     that.windowsApp = window.__FRVR.getQueryString("windowsapp") == "";
-    /**
-     * Microsoft PWA
-     * @memberof XS.is
-     */
+       
+                    
+                      
+       
     that.microsoftPwa = (
         window.document &&
         window.document.referrer &&
@@ -1088,200 +1088,200 @@ preloader loadbar div{
       ) ||
       window.__FRVR.getQueryString("mspwa") == "" ||
       window.__FRVR.getQueryString("msstart_sdk_init");
-    /**
-     * enableAppStoreLinks - refers to disabling third party app store links in UI
-     * @memberof XS.is
-     */
+       
+                                                                                  
+                      
+       
     that.enableAppStoreLinks = true;
-    /**
-     * Samsung GalaxyStore PWA website client
-     * @memberof XS.is
-     */
+       
+                                             
+                      
+       
     that.samsungGalaxyStorePWA = window.__FRVR.getQueryString("samsung") == "" && window.__FRVR.getQueryString("source") == "galaxystore";
-    /**
-     * Samsung GameLauncher PWA website client
-     * @memberof XS.is
-     */
+       
+                                              
+                      
+       
     that.samsungGameLauncherPWA = ( window.__FRVR.getQueryString("pwa") == "" || window.__FRVR.getQueryString("samsung") == "") && window.__FRVR.getQueryString("source") == "gamelauncher";
-    /**
-     * Samsung GameLauncher PWA website client
-     * @memberof XS.is
-     */
+       
+                                              
+                      
+       
     that.samsungGameLauncher = window.FRVRInstant?true:false ||
       window.__FRVR.getQueryString("gamelauncher") == "" ||
       window.__FRVR.getQueryString("source") == "gamelauncher"
-    /**
-     * Samsung Bixby website client
-     * @memberof XS.is
-     */
+       
+                                   
+                      
+       
     that.samsungBixby = window.__FRVR.getQueryString("samsung") == "" && !that.samsungGalaxyStorePWA;
-    /**
-     * Samsung browser website uk client
-     * @memberof XS.is
-     */
+       
+                                        
+                      
+       
     that.samsungBrowserUK = window.__FRVR.getQueryString("samsungbuk") == "";
-    /**
-     * Samsung browser website us client
-     * @memberof XS.is
-     */
+       
+                                        
+                      
+       
     that.samsungBrowserUS = window.__FRVR.getQueryString("samsungbus") == "";
-    /**
-     * Samsung browser website SEA client
-     * @memberof XS.is
-     */
+       
+                                         
+                      
+       
     that.samsungBrowserSEA = window.__FRVR.getQueryString("samsungbsea") == "";
-    /**
-     * Samsung browser website client
-     * @memberof XS.is
-     */
+       
+                                     
+                      
+       
     that.samsungBrowser = window.__FRVR.getQueryString("samsungbrowser") == "";
-    /**
-     * GL_Fallback
-     * @memberof XS.is
-     */
+       
+                  
+                      
+       
     that.samsungGLFallback = window.__FRVR.getQueryString("gl_fallback") == "";
-    /**
-     * Samsung Instant Play
-     * @memberof XS.is
-     */
+       
+                           
+                      
+       
     that.samsungInstantPlay = !!window.GSInstant;
-    /**
-     * Any Samsung
-     * @memberof XS.is
-     */
+       
+                  
+                      
+       
     that.samsung = that.samsungGalaxyStorePWA||that.samsungGameLauncherPWA||that.samsungGameLauncher||that.samsungBixby||that.samsungBrowserUK||that.samsungBrowserUK||that.samsungBrowserUS||that.samsungBrowserSEA||that.samsungBrowser||that.samsungGLFallback||that.samsungInstantPlay
-    /**
-     * RCS
-     * @memberof XS.is
-     */
+       
+          
+                      
+       
     that.rcs = window.__FRVR.getQueryString("rcsid");
-    /**
-		 * Snapchat
-		 * @memberof XS.is
-		 */
+       
+             
+                    
+     
 		that.snapchat = !!window.sc
-    /**
-     * RCS
-     * @memberof XS.is
-     */
+       
+          
+                      
+       
     that.rcsKr = window.__FRVR.getQueryString("rcskr") == "";
-    /**
-     * Huawei Quick App
-     * @memberof XS.is
-     */
+       
+                       
+                      
+       
     that.huaweiquickapp = window.__FRVR.getQueryString("huaweiquickapp") == "";
-    /**
-     * Huawei Any
-     * @memberof XS.is
-     */
+       
+                 
+                      
+       
     that.huawei = window.__FRVR.getQueryString("huawei") == "" || that.huaweiquickapp;
-    /**
-     * Mozilla
-     * @memberof XS.is
-     */
+       
+              
+                      
+       
     that.mozilla = window.__FRVR.getQueryString("mozilla") == "";
-    /**
-     * miniclip
-     * @memberof XS.is
-     */
+       
+               
+                      
+       
     that.miniclip = window.__FRVR.getQueryString("miniclip") == "";
-    /**
-     * Chrome OS Device
-     * @memberof XS.is
-     */
+       
+                       
+                      
+       
     that.chromeOSDevice = window.__FRVR.getQueryString("isChromeOSDevice") == "true";
-    /**
-     * True if we're running in Opera or Opera Mini
-     * @memberof XS.is
-     */
+       
+                                                   
+                      
+       
     that.opera = (!!w.opr && !!w.opr.addons) || !!w.opera || u.indexOf(' OPR/') >= 0;
-    /**
-     * True if we're running in Yandex
-     * @memberof XS.is
-     */
+       
+                                      
+                      
+       
     that.yandex = !!window.YaGames
-    /**
-     * True if we're running in Firefox
-     * @memberof XS.is
-     */
+       
+                                       
+                      
+       
     that.firefox = w.InstallTrigger !== undefined;
-    /**
-     * True if we're running in edge 20+
-     * @memberof XS.is
-     */
+       
+                                        
+                      
+       
     that.edge = /(edge|edgios|edga)\/((\d+)?[\w\.]+)/i.test(u);
-    /**
-     * True for OPPO's Global H5 Platform
-     * @memberof XS.is
-     */
+       
+                                         
+                      
+       
     that.oppoGlobal = window.__FRVR.getQueryString("oppo") == "";
-    /**
-     * True for LG TV platform
-     * @memberof XS.is
-     */
+       
+                              
+                      
+       
     that.lgtv = window.__FRVR.getQueryString("lgtv") == "";
-    /**
-     * True if running in Crazy Games
-     * @memberof XS.is
-     */
+       
+                                     
+                      
+       
     that.crazyGames = window.__FRVR.getQueryString("partnerid") == "8289067739";
-    /**
-     * True if running in Mynet
-     * @memberof XS.is
-     */
+       
+                               
+                      
+       
     that.mynet = window.__FRVR.getQueryString("mynet") == "";
-    /**
-     * True if running in ufone
-     * @memberof XS.is
-    */
+       
+                               
+                      
+      
     that.ufone = window.__FRVR.getQueryString("partnerid") == "8416254215";
-    /**
-     * True if running in game8 
-     * partner id 3566756403
-     * @memberof XS.is
-    */
+       
+                                
+                            
+                      
+      
      that.game8 = window.__FRVR.getQueryString("game8") == "";
-     /**
-     * True if running in MailOnline 
-     * partner id 6794212012
-     * @memberof XS.is
-    */
+        
+                                     
+                            
+                      
+      
       that.mailonline = window.__FRVR.getQueryString("partnerid") == "6794212012";
-    /**
-     * True if true the native brige will not be load
-     * @memberof XS.is
-    */
+       
+                                                     
+                      
+      
     that.disableNativeBridge = window.__FRVR.getQueryString("disableNativeBridge") == "";
-    /**
-     * True if we're inside the a Partner Android or iOS App wrapper
-     * @memberof XS.is
-    */
+       
+                                                                    
+                      
+      
     that.partnerWrapper = !that.disableNativeBridge && (that.mynet || that.tMobile || that.ufone || that.mailonline) && (that.iOS || that.android)
-    /**
-     * True if we're running in Rocket Chat (should be running alongside nosoc=1 query param)
-     * @memberof XS.is
-     */
+       
+                                                                                             
+                      
+       
     that.rocketChat = window.__FRVR.getQueryString("rocketchat") == "";
-    /**
-     * True if we're running in Discord .
-     * This is not needed as we can just depend on buildTimePlatform but kept it here to be clearer; can remove in future
-     * @memberof XS.is
-     */
+       
+                                         
+                                                                                                                         
+                      
+       
     that.discord = window.__FRVR.buildTimePlatform === "discord";
-    /**
-     * True if we're running in Harman
-     * @memberof XS.is
-     */
+       
+                                      
+                      
+       
     that.harman = window.__FRVR.getQueryString("harman") == "";
-    /**
-     * is progressive web app enabled
-     * @memberof XS.is
-     */
+       
+                                     
+                      
+       
     that.progressiveWebAppEnabled = !that.chromeOSDevice && !that.iframed && !that.appWrapper && !that.twitch && !that.vkru && !that.okru && !that.facebookInstant && !that.partnerWrapper
-    /**
-     * True if platform has a TV UI interface
-     * @memberof XS.is
-     */
+       
+                                             
+                      
+       
     that.tv = that.jioStb || that.lgTV;
    })(window, navigator, navigator.userAgent, document.location);
 
@@ -1302,21 +1302,21 @@ preloader loadbar div{
     window.__FRVR.cohort = function() {return chosenJs;}
   }
 
-  // Choose cohort at run-time
+                              
   var cohortElems = document.getElementsByClassName('cohort');
   if (cohortElems.length === 1) return selectCohort(cohortElems[0], 'single');
 
-  // We got more than one, it's more complicated
+                                                
   var totalScore = 0;
   var urlParams = URLSearchParams &&
       new URLSearchParams(window.location.search);
   var forceCohort = urlParams && urlParams.get('force-cohort');
   for (var i = 0; i < cohortElems.length; i++) {
-    // Count this cohort's weight.
+                                  
     var weight = cohortElems[i].getAttribute('data-weight');
     cohortElems[i].__weight = (weight && parseInt(weight)) || 100;
 
-    // Consult the force-cohort URL param.
+                                          
     var name = cohortElems[i].getAttribute('data-cohort-name');
     if (forceCohort && name === forceCohort) {
       window.__FRVR.keepurl = true;
@@ -1327,7 +1327,7 @@ preloader loadbar div{
   }
 
   function djb2(str) {
-    // simple hash function:  google "djb2 hash"
+                                                
     for (var i = str.length-1, count = 5381; i; i--)
       count = str.charCodeAt(i) + (count << 5) + count;
     return count;
@@ -1345,7 +1345,7 @@ preloader loadbar div{
 })()
 ;
 
-       ;// Stub file for non-analytics enabled platforms
+       ;                                                
 (function (consentService) {
   exports = window.__FRVR.analytics = {};
 
@@ -1364,7 +1364,7 @@ preloader loadbar div{
 })();
 ;
 
-       // Deprecated direct accessors, avoid if possible
+                                                        
        window.version             = window.__FRVR.cohort().version;
        window.gameid              = window.__FRVR.cohort().name;
        window.gaPath              = window.__FRVR.cohort().gaPath;
@@ -1376,10 +1376,10 @@ preloader loadbar div{
 
        window.initTime            = window.__FRVR.startTime;
 
-       //In seperate code block to load first & not trigger when JS is disabled
+                                                                               
        var preloader = document.createElement('preloader');document.body.appendChild(preloader);
 
-       ;//ie9 polyfill
+       ;              
 if(!(window.console && console.log)) {
   var fn = function(){};
   console={log:fn,debug:fn,info:fn,warn:fn,error:fn};
@@ -1396,15 +1396,15 @@ if(!(window.console && console.log)) {
     return c.toDataURL&&(c.toDataURL("image/png").indexOf("data:image/png") == 0);
   })()
 };
-// Local Variables:
-// mode: js
-// End:
+                   
+           
+       
 ;
 
        ;(function () {
-  // Embed general data - this is used by builder.rb's embed_data_content
-  //   files: Array of filenames
-  //   data : Array of data that mapes to filenames
+                                                                         
+                                
+                                                   
   window.embeddedFiles = {};
   window.embedFiles = function(files,data) {
     for( var a=0;a<files.length;a++){
@@ -1413,13 +1413,13 @@ if(!(window.console && console.log)) {
     }
   }
 
-  // Embed image data.  A mapping of
-  // {string} logical asset path => {string} png-base64-data |
-  //                                {array[2]} svg-commands-and-data
+                                    
+                                                              
+                                                                    
   window.embeddedAssets = {};
 
-  // Only legacy builder.rb uses this.  The new build system builds
-  // embeddedAssets directly.
+                                                                   
+                             
   window.loadAssets = function(files, svgCommands, data){
     for( var a=0;a<files.length;a++){
       var path = files[a]
@@ -1436,13 +1436,13 @@ if(!(window.console && console.log)) {
 ;
 
        ;(function () {
-  // implicit exports here:
-  //
-  //  window.htmlclean
-  //  window.htmlprogress,
-  //  window.__FRVR.platformSpecificProgress
-  //  window.__FRVR.platformSpecificCleanup
-  //
+                           
+    
+                      
+                          
+                                            
+                                           
+    
   var completed = 0;
 
   window.htmlprogress = function(total, left){
@@ -1463,12 +1463,12 @@ if(!(window.console && console.log)) {
   window.htmlclean = function() {
     window.__FRVR.gameIsLoaded = true;
 
-    // Remove the preloader
+                           
     if(preloader){
       preloader.parentNode&&preloader.parentNode.removeChild(preloader)
     }
 
-    // Stop the progress bar timer
+                                  
     clearInterval(timer)
 
     window.__FRVR.platformSpecificCleanup &&
@@ -1479,8 +1479,8 @@ if(!(window.console && console.log)) {
 
          ;(function () {
 	"use strict"
-  // A lot of cruft to show the FRFR splash screen on web.
-  //
+                                                          
+    
   function logoDraw(actions, cords) {
 		function buildCharIndex(chars) {
 			var index = {};
@@ -1491,7 +1491,7 @@ if(!(window.console && console.log)) {
 		var charIndex = buildCharIndex(chars);
 		var intChars = "()<=>?[]^`{|}";
 		var intCharIndex = buildCharIndex(intChars);
-		var cordOffset = 0; // "cord" (sic)
+		var cordOffset = 0;                
     function getCord() {
       var first = cords[cordOffset++];
       var res, intChar;
@@ -1504,8 +1504,8 @@ if(!(window.console && console.log)) {
         res =
           charIndex[cords[cordOffset++]]
           + charIndex[cords[cordOffset++]] * 74
-          + charIndex[cords[cordOffset++]] * 5476 // (74 * 74)
-          + charIndex[cords[cordOffset++]] * 405224; // (74 * 74 * 74)
+          + charIndex[cords[cordOffset++]] * 5476             
+          + charIndex[cords[cordOffset++]] * 405224;                  
         res = (res / 100) - 149932;
         break;
       default:
@@ -1516,7 +1516,7 @@ if(!(window.console && console.log)) {
           res =
             charIndex[first]
             + charIndex[cords[cordOffset++]] * 74
-            + charIndex[cords[cordOffset++]] * 5476; // (74 * 74)
+            + charIndex[cords[cordOffset++]] * 5476;             
           res = (res / 100) - 2026;
         }
       }
@@ -1583,7 +1583,7 @@ if(!(window.console && console.log)) {
       default: console.error('unhandled', actions[a]);
       }
     }
-    // Reset JSG drawing
+                        
     cordOffset = 0;
     getCord();
     getCord();
@@ -1616,9 +1616,9 @@ if(!(window.console && console.log)) {
   var ow = 0
   var oh = 0
   function handleResize(){
-    // FIXME: A noop on FBInstant and GSInstant, so we should
-    // rework this so we just don't call it just don't call it
-    // in those scenarios
+                                                             
+                                                              
+                         
     if(!!!window.FBInstant && !window.GSInstant){
       var w = document.documentElement.clientWidth;
       var h = Math.min(window.innerHeight,document.documentElement.clientHeight);
@@ -1645,12 +1645,12 @@ if(!(window.console && console.log)) {
   }
 
   window.__FRVR.platformSpecificCleanup = function () {
-    // Dealloc the canvas
+                         
     if(canvas){
       canvas.width = canvas.height = 1
     }
 
-    // Garbage collection
+                         
     loadbar = progressbar = canvas = preloader = null;
   }
 })();;
@@ -1669,10 +1669,10 @@ if(!(window.console && console.log)) {
        ;(function () {
   function parseStack(err) {
     var stack = [];
-    var lines = (err && err.stack || '').split('\n'); // split stack trace into lines
-    lines.shift(); // remove first line, the error message
+    var lines = (err && err.stack || '').split('\n');                                
+    lines.shift();                                        
     for(var i = 0; i < lines.length; i++) {
-      // simplyfy and shorten details
+                                     
       stack.push(lines[i]
                  .replace(/^\s*at\s+/g, '')
                  .replace(/(https?:\/\/[^\/]+)?/g, '')
@@ -1687,7 +1687,7 @@ if(!(window.console && console.log)) {
   }
   function catchAndSnitch(errorType) {
     return function(errorMsg, sourceURL, line, column, err) {
-      if(sourceURL instanceof Error) { // Enable optional parameters
+      if(sourceURL instanceof Error) {                              
         err = sourceURL;
         sourceURL = undefined;
       }
@@ -1714,16 +1714,16 @@ if(!(window.console && console.log)) {
         gax('send', 'event', eventCategory, errorMsg, errSrc, errTime);
         gax('send', 'exception', {exDescription: eventCategory + ': ' + errorMsg + ': ' + errSrc});
       }
- /*     if(typeof FBInstant !== 'undefined' && typeof FBInstant.logEvent === 'function') {
-        FBInstant.logEvent('onerror', errTime, {
-          appName: configJs['id'],
-          appVersion: configJs['version'],
-          appBuild: configJs['build'],
-          category: eventCategory,
-          message: errorMsg,
-          stack: errSrc
-        });
-      }*/
+                                                                                          
+                                                
+                                  
+                                          
+                                      
+                                  
+                            
+                       
+           
+         
     };
   }
   window.onerror = catchAndSnitch('JavaScript');
@@ -1739,15 +1739,15 @@ if(!(window.console && console.log)) {
        ;(function () {
   var configJs = window.__FRVR.cohort().configJs;
 
-  // Stub these two early, since they will be called even in systems
-  // without regular Google Analytics support such as Android.
-  // However window.ga will have to be unstubbed just in time before
-  // the regular Google Analytics snippet.
+                                                                    
+                                                              
+                                                                    
+                                          
   window.ga = function() {
-    // console.warn('Stubbed ga() being called:', arguments)
+                                                            
   };
   window.gax = function() {
-    // console.warn('Stubbed gax() being called;', arguments)
+                                                             
   };
 
   window.gaAppInfo = {
@@ -1788,8 +1788,4 @@ if(!(window.console && console.log)) {
   
 
 
-<script id="main-mashup" src="assets/index.1e7064c0.js" nonce="-sOJ1RQ8_ggBND0jamQKHQ"></script></body></html><!--
-     Local Variables:
-     mode: web
-     End:
--->
+<script id="main-mashup" src="assets/index.1e7064c0.js" nonce="-sOJ1RQ8_ggBND0jamQKHQ"></script></body></html>

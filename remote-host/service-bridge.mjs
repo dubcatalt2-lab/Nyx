@@ -59,8 +59,8 @@ function connect(){
    tcp.on('data',chunk=>{
     if(current!==socket||current.readyState!==1){tcp.destroy();return;}
     current.send(chunk);
-    // A detailed frame can exceed the uplink speed. Pause capture instead of
-    // discarding the RFB stream and disconnecting at the old 4 MB threshold.
+                                                                             
+                                                                             
     if(current.bufferedAmount>=256*1024&&!draining){
      tcp.pause();pausedAt=Date.now();
      draining=setInterval(()=>{
@@ -85,7 +85,7 @@ function connect(){
  };current.onclose=event=>finish(event.code);
 }
 if(!config.id){
- // The elevated installer leaves a code for the owner. It contains no secrets.
+                                                                               
  const pair=await post('/pair/start',{credential:config.credential,name:config.name,mode:'vnc'});
  await writeFile(join(directory,'pairing.txt'),pair.code.match(/.{1,4}/g).join('-'));
  for(let i=0;i<100;i++){await new Promise(resolve=>setTimeout(resolve,3000));const result=await post('/pair/poll',{poll:pair.poll});if(result.deviceId){config.id=result.deviceId;await writeFile(configPath,await encode(JSON.stringify(config)));await writeFile(join(directory,'pairing.txt'),'Paired');break;}}

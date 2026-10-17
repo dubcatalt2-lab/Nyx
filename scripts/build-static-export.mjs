@@ -31,7 +31,7 @@ const boot=await minify(`globalThis.__NYX_STATIC_CONFIG__=${JSON.stringify({base
 await writeFile(path.join(output,bootName),rewriteRuntimeNames(boot.code));
 const injected=`<script src="${base+bootName}"></script>`;
 const currentAssets=new Set(Object.values(proxyAssetNames).map(value=>publicName(value).slice(1)));
-// Nyx imports these shared transports even when the Tutsi app is omitted.
+                                                                          
 const sharedTransports=new Set(['/apps/tutsi/relay.mjs','/apps/tutsi/http-relay.mjs'].map(name=>publicName(proxyAssetNames[name]).slice(1)));
 const deferredBackgrounds=new Set();
 if(mini)for(const file of await readdir(path.join(dist,'assets/backgrounds')))if((await stat(path.join(dist,'assets/backgrounds',file))).size>600000)deferredBackgrounds.add(file);
@@ -87,9 +87,9 @@ if(base!=='/'){
   await writeFile(path.join(output,'hosting.json'),JSON.stringify({base,configured:false}));
 }
 await writeFile(path.join(output,'runtime-config.js'),`globalThis.english_RUNTIME_CONFIG=Object.freeze(${JSON.stringify({wispUrl:wisp,wispUrls:[wisp],presenceUrl:'',publicOrigin:''})});`);
-// The CDN caches branch URLs for a week in browsers. Version Arcade resources
-// with their built content so existing packages cannot reuse a stale catalog or
-// renderer after a package update.
+                                                                              
+                                                                                
+                                   
 const arcadeRevision=createHash('sha256').update(await readFile(path.join(output,'assets/games/games.js'))).update(await readFile(path.join(output,'assets/games/games.json'))).digest('hex').slice(0,20);
 const compatibility={};
 for(const [from,to] of Object.entries(moduleAliases)){try{await stat(path.join(output,to.slice(1)));compatibility[from.slice(1)]=to.slice(1);}catch{}}

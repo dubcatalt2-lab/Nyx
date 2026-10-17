@@ -1,4 +1,4 @@
-// One-time, structural removal of the retired desktop weather feature.
+                                                                       
 import fs from 'node:fs';
 import {parse as parseHtml} from 'parse5';
 import postcss from 'postcss';

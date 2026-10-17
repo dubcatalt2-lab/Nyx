@@ -50,7 +50,7 @@ try {
     assert.equal(denied[0], 4); assert([0xc0, 0xc2].includes(denied[5])); raw.terminate();
   }
   console.log('Direct worker access rejects missing and incorrect internal credentials.');
-  // Public endpoints must work without a site login, credential or password.
+                                                                             
   for (const path of ['/wisp/', '/resources/live/']) {
     for (const v2 of [false, true]) {
       const { ws, frames } = connection(base + path, v2 ? 'wisp-v2' : undefined);

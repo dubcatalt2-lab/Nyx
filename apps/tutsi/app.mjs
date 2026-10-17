@@ -31,7 +31,7 @@ try {
   saved = JSON.parse(localStorage.getItem("tutsi.settings.v1") || "{}");
 } catch {}
 let settings = { ...defaults, ...saved };
-// Accept preferences saved by earlier releases, including restored cloud data.
+                                                                               
 settings.transport = String(settings.transport).replace(atob('bGliY3VybA=='), 'libcurl').replace('textlib', 'libcurl').replace(atob('ZXBveHk='), 'epoxy').replace('atlas', 'epoxy');
 const palettes = {
   mocha: {
@@ -426,7 +426,7 @@ const appPaths = {
 };
 installShellPopupProtection(()=>settings,()=>document.body.dataset.view==='browser'||['#games','#movies'].includes(location.hash));
 const protectEmbeddedFrame=installGameProtectionHost(()=>settings,()=>[...frames.values()]);
-// Remote game runners and Movies use the same transport/settings as browser tabs.
+                                                                                  
 window.nyxLaunchGameFrame=async(frame,url,{signal}={})=>{
   const target=new URL(url);
   if(!['http:','https:'].includes(target.protocol)||target.username||target.password||!protectEmbeddedFrame(frame))throw Error('Invalid game frame.');
@@ -471,8 +471,8 @@ function appFrame(name) {
   frame.addEventListener("load", () => {styleApp(frame);protectAppContents(frame);try{installShortcuts(frame.contentDocument,shortcutActions)}catch{}});
   frames.set(name, frame);
   $("app-host").append(frame);
-  // Apply the sibling theme once its DOM is ready, without waiting for every
-  // catalog thumbnail or remote font to finish loading.
+                                                                             
+                                                        
   let attempts = 0;
   const readyTimer = setInterval(() => {
     attempts++;
@@ -552,7 +552,7 @@ function selectBrowserTab(tab){
   browserTabs.forEach(item=>{if(item.element)item.element.hidden=item!==tab;});
   $('address').value=tab.url;location.hash='browser';route();renderBrowserTabs();syncBrowserTabView();
 }
-// SPA history changes do not fire iframe load events (for example Spotify).
+                                                                            
 setInterval(()=>{
   if(document.hidden||!activeTab?.element||activeTab.loading)return;
   const url=currentWebsiteUrl(activeTab.element);
@@ -572,8 +572,8 @@ function closeBrowserTab(){
     const app=frames.get(routeName);
     frames.delete(routeName);
     app?.remove();
-    // Chat also supplies background mentions. Replace its closed UI with a
-    // fresh hidden receiver so any old media/voice session is disposed.
+                                                                           
+                                                                        
     if(routeName==='chat' && accountUser)appFrame('chat').hidden=true;
     location.hash='home';return;
   }
@@ -621,7 +621,7 @@ async function navigate(value, {newTab=false, input=null} = {}) {
   if((!activeTab || (newTab && activeTab.url))&&!newBrowserTab())return;
   if(input)input.value="";
   const targetTab=activeTab;targetTab.url=url;renderBrowserTabs();
-  // The old document remains accessible until the next navigation commits.
+                                                                           
   try{targetTab.previousDocument=targetTab.element?.contentDocument}catch{targetTab.previousDocument=null;}
   const request = ++targetTab.navigation;
   targetTab.stopNavigationWatch?.();
@@ -645,7 +645,7 @@ async function navigate(value, {newTab=false, input=null} = {}) {
     proxyElement.addEventListener("load",()=>{
       if(!browserTabs.includes(targetTab))return;
       try{if(targetTab.loading&&targetTab.element.contentDocument===targetTab.previousDocument)return;installShortcuts(targetTab.element.contentDocument,shortcutActions)}catch{}
-      // Ignore initial about:blank events while the engine is starting.
+                                                                        
       if(!targetTab.element.getAttribute('src')?.includes('/~/tm/'))return;
       if(!targetTab.loading){const latest=currentWebsiteUrl(targetTab.element);if(latest){targetTab.url=latest;renderBrowserTabs();}}
 
@@ -785,7 +785,7 @@ async function refreshAccountProfile() {
     if (accountProfile.avatarUrl?.startsWith("blob:")) URL.revokeObjectURL(accountProfile.avatarUrl);
     accountProfile = profile;
     renderAccountProfile();
-  } catch { /* Keep the last loaded profile when offline. */ }
+  } catch {                                                  }
 }
 let authPromise;
 async function account() {
@@ -1068,7 +1068,7 @@ addEventListener("message", async (event) => {
     profileRequestIds.set(frame,data.requestId);
     reply({type:"nyx:nyxtube-profile",requestId:data.requestId,profile:profilePayload()});
   } else if (data.type === "nyx:close-tab") {
-    // A hidden app cannot close the user's current tab.
+                                                        
     if(location.hash.slice(1)===name)closeBrowserTab();
   } else if (
     name === "games" &&
@@ -1313,7 +1313,7 @@ $('use-address-filter').onclick=()=>{
   $('filter-address-result').textContent=`${label} saved. Used when the next browser connection starts.`;
 };
 
-// Keep player shortcuts working when focus remains in the enclosing Tutsi page.
+                                                                                
 for(const type of ['keydown','keyup'])addEventListener(type,event=>{
   if(location.hash!=='#youtube'||event.target.closest?.('input,textarea,select,button,a,[contenteditable]'))return;
   const frame=document.querySelector('#app-host iframe:not([hidden])');
@@ -1421,7 +1421,7 @@ $('customize-next').onclick=()=>{
 await window.tutsiStartupReady;
 try{if(localStorage.getItem('tutsi.customize.pending')||((!saved||Object.keys(saved).length===0)&&!localStorage.getItem('tutsi.customize.seen')&&(!location.hash||location.hash==='#home')))openCustomize();}catch{}
 
-// Scroll highlighting never changes the hash or adds browser-history entries.
+                                                                              
 function updateSettingsSection(){
  if(document.body.dataset.view!=='settings')return;
  const links=[...document.querySelectorAll('.settings-nav > a')].filter(link=>document.querySelector('.settings-content '+link.getAttribute('href')));

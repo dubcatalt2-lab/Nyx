@@ -8,8 +8,8 @@ if (process.platform !== 'win32') {
   console.log('SKIP Windows local launcher test on this platform.');
   process.exit(0);
 }
-// Run the actual launcher with fake account settings and a stub npm command.
-// No server, provider credential, account token, or live allocation is used.
+                                                                             
+                                                                             
 const root = mkdtempSync(join(tmpdir(), 'nyx-launcher-test-'));
 mkdirSync(join(root, 'scripts'));
 copyFileSync(new URL('./start-local-accounts.ps1', import.meta.url), join(root, 'scripts/start-local-accounts.ps1'));

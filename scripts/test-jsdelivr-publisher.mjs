@@ -149,7 +149,7 @@ try {
   assert.match(await handoffPage.locator('[data-result-url]').inputValue(), /p2p-test\.svg$/, 'P2P did not render the returned Nyx link');
   assert.equal(await handoffPage.locator('#token').count(), 0, 'P2P exposed the personal-token publisher form');
   assert.deepEqual(handoffErrors, [], `Direct P2P Link Generator browser errors: ${handoffErrors.join(' | ')}`);
-  // A stale server returning an empty authorized response must not redirect to a token form.
+                                                                                             
   await handoffPage.route('**/api/link-generator',route=>json(route,{authorized:true,provider:'jsdelivr',requested:1,links:[]}));
   await handoffPage.reload({waitUntil:'domcontentloaded'});
   await handoffPage.locator('[data-access-code]').fill('test-premium-code');

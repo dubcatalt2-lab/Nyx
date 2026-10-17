@@ -5,7 +5,7 @@ import { extname, join } from 'node:path';
 import { chromium } from 'playwright';
 import { prepareStaticPackage, staticLauncher } from '../apps/jsdelivr-publisher/static-publish.js';
 
-// Materialize the exact Git objects the publisher sends, with no GitHub writes.
+                                                                                
 const root = process.env.NYX_TEST_PACKAGE_ROOT || 'dist/apps/jsdelivr-publisher/static-package';
 const manifest = JSON.parse(await readFile(join(root, 'manifest.json'), 'utf8'));
 assert(!manifest.files.some(file=>file.path.endsWith('.mjs')),'Public package must not include .mjs assets');
@@ -61,7 +61,7 @@ try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 960 } });
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  // Keep real HTTP caching enabled; block upstream traffic through CDP instead.
+                                                                                
   const cdp=await page.context().newCDPSession(page);
   await cdp.send('Network.enable');
   await cdp.send('Network.setBlockedURLs',{urls:['https://*']});
@@ -78,7 +78,7 @@ try {
   assert.equal(await page.evaluate(async url=>(await fetch(url).then(r=>r.text())).includes('includeUnillustrated'),origin+gameScriptUrl),false);
   legacyCatalog=false;
   assert.equal(await page.evaluate(async url=>(await fetch(url).then(r=>r.text())).includes('includeUnillustrated'),origin+gameScriptUrl),false);
-  // The unversioned URL is still stale in this existing browser profile.
+                                                                         
   assert.equal(await page.evaluate(async url=>(await fetch(url).then(r=>r.json())).includeUnillustrated,origin+base+'assets/games/games.json'),undefined);
   await page.goto(origin + base + 'Nyx.svg', { waitUntil: 'domcontentloaded' });
   await page.waitForURL(origin + base + 'index.html').catch(async error=>{console.error(JSON.stringify({url:page.url(),body:await page.locator('body').innerText().catch(()=>''),errors,failures},null,2));throw error;});

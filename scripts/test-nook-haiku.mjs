@@ -32,7 +32,7 @@ const upgraded=await a.begin(actor('premium',false));const unknown=await a.reser
 assert((await a.nookUsage(actor('premium',false))).haiku.usedUsd>0,'Unknown usage retains its reservation');
 const owner=await a.begin(actor(fullCatalogUid));await a.reserve(owner,'shared',payload(),price);await a.finish(owner);
 assert.equal((await a.nookUsage(actor(fullCatalogUid))).haiku.limitUsd,null);assert(!db.records.has(owner.refs.haiku.path));
-// Existing token limits still apply alongside the new money pool.
+                                                                  
 const limited=await a.begin(actor('limited'));db.records.set(limited.refs.device.path,{pool:{start:now,resetAt:now+86400000,used:7000,expensiveUsed:0}});
 await assert.rejects(a.reserve(limited,'shared',payload(),price),/7,000-token/);await a.finish(limited);
 console.log('PASS Nook Haiku access, $0.05/$0.50 caps, account/device isolation, fitting, costs, refunds, reset, owner and existing token caps');

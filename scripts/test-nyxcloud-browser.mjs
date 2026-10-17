@@ -9,7 +9,7 @@ import {chromium} from 'playwright';
 import {createNyxCloudDesktop} from '../lib/nyxcloud-desktop.mjs';
 import {nyxCloudOwnerUid} from '../lib/nyxcloud-access.mjs';
 import assert from 'node:assert/strict';
-// Explicit local live-VM smoke test. Never sends desktop keyboard/mouse input.
+                                                                               
 const file=process.env.NYXCLOUD_LOCAL_CONFIG;if(!file)throw Error('Set NYXCLOUD_LOCAL_CONFIG to the private local VM configuration.');
 const {password}=JSON.parse(await readFile(file,'utf8'));
 const app=express(),cloud=createNyxCloudDesktop({port:5990,password,firebase:async()=>({auth:{verifyIdToken:async token=>{if(token!=='local-test')throw Error();return {uid:nyxCloudOwnerUid};}}})});
@@ -36,8 +36,8 @@ try{
  const navigation=await page.goto(origin+'/apps/nyxcloud/');assert.equal(navigation.status(),200,'Browser owner page status');
  try{await page.waitForFunction(()=>document.getElementById('status')?.textContent==='Connected',{timeout:15000});}catch(error){console.log({status:await page.locator('body').textContent({timeout:1000}),errors});throw error;}
  const display=await page.locator('#screen canvas').evaluate(canvas=>({width:canvas.width,height:canvas.height}));assert(display.width>=1280&&display.height>=720,JSON.stringify(display));
- // An idle guest can legitimately show a black screensaver. Require a decoded
- // opaque framebuffer; optionally require wallpaper colors for an awake guest.
+                                                                              
+                                                                               
  await page.waitForFunction(()=>{const c=document.querySelector('#screen canvas');return c?.getContext('2d').getImageData(50,50,1,1).data[3]===255;});
  if(process.env.NYXCLOUD_EXPECT_WALLPAPER==='1')await page.waitForFunction(()=>{const c=document.querySelector('#screen canvas');if(!c)return false;const ctx=c.getContext('2d'),colors=new Set();for(let y=50;y<c.height;y+=80)for(let x=50;x<c.width;x+=80)colors.add([...ctx.getImageData(x,y,1,1).data].join(','));return colors.size>20;},{timeout:30000});
  assert.deepEqual(errors,[]);await page.screenshot({path:process.env.NYXCLOUD_SCREENSHOT||'C:/Users/dubca/AppData/Local/NyxCloud/website-preview.png'});

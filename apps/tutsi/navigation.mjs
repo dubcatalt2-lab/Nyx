@@ -1,4 +1,4 @@
-// Decode only this origin's controller envelope; never decode a destination twice.
+                                                                                   
 export function sourceWebsiteUrl(raw, origin) {
   try {
     const parsed = new URL(raw, origin);
@@ -6,8 +6,8 @@ export function sourceWebsiteUrl(raw, origin) {
       const match = parsed.pathname.match(/^\/~\/tm\/[^/]+\/[^/]+\/(.+)$/);
       if (!match) return '';
       const target = new URL(decodeURIComponent(match[1]));
-      // Controller metadata lives outside the encoded destination URL. It must
-      // never replace the destination's search terms when displaying/reloading it.
+                                                                               
+                                                                                   
       const metadata = new Set(['$rfp','$rfs','$module','$tf','$pf','$iframe','$mode','$cred','$dest','$io','$fs','$csr','$fakedataurl']);
       const query = new URLSearchParams(parsed.search);
       for (const key of metadata) query.delete(key);

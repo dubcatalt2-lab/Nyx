@@ -1,6 +1,6 @@
-// Resource-probe approach adapted from Hugh Parry's chrome-extension-identifier.
-// MIT attribution: licenses/extension-identifier.txt. Historical resource references
-// and verification limits are documented in docs/TUTSI_FILTER_DETECTION.md.
+                                                                                 
+                                                                                     
+                                                                            
 export const filterSignatures = [
   {
     "vendor": "securly",
@@ -123,8 +123,8 @@ export const filterSignatures = [
     "path": "block.html"
   }
 ];
-// Current Securly ID has no assumed public path. Only probe paths actually
-// exposed by the installed extension in this page, never guessed private files.
+                                                                           
+                                                                                
 const additionalIdentities = [{vendor:'securly',label:'Securly',id:'ckecmkbnoanpgplccmnoikfmpcdladkc'}];
 export function exposedSignatures(doc=globalThis.document, signatures=filterSignatures) {
   if (!doc?.querySelectorAll) return [];
@@ -141,8 +141,8 @@ export function exposedSignatures(doc=globalThis.document, signatures=filterSign
   }
   return found;
 }
-// A loaded image/stylesheet remains evidence even when a later fetch is denied.
-// A URL in markup alone is only a hint: failed resources can also leave nodes.
+                                                                                
+                                                                               
 export function loadedFilterResources(doc=globalThis.document, signatures=filterSignatures) {
   const vendors=new Set();
   for(const node of doc?.querySelectorAll?.('img[src],link[href]') || []) {
@@ -172,7 +172,7 @@ export async function inspectFilters({signatures=filterSignatures, fetcher=globa
         fetcher(`chrome-extension://${signature.id}/${signature.path}`, {cache:'no-store', signal:abort.signal}),
         new Promise(resolve => {timer=setTimeout(()=>{result.status='timeout';abort.abort();resolve(null)},timeoutMs)}),
       ]);
-      // Do not execute scripts or read contents. Failed/hidden resources mean unknown.
+                                                                                       
       if (response?.ok) { try {void response.body?.cancel()?.catch(()=>{})} catch {} result.status='detected'; }
     } catch {} finally {clearTimeout(timer);abort.abort()}
     return result;
@@ -201,8 +201,8 @@ export async function effectiveFilter(selection) {
   return vendors.length===1?vendors[0]:'';
 }
 
-// Read only the supplied address. Never request it, retain its query, or treat
-// names in the blocked destination/query as evidence of the filtering vendor.
+                                                                               
+                                                                              
 export function identifyFilterAddress(value) {
   const input=String(value||'').trim();
   if(!input || input.length>8192)return null;
@@ -215,8 +215,8 @@ export function identifyFilterAddress(value) {
     return match?{vendor:match.vendor,label:match.label,source:'extension address'}:null;
   }
   if(!['https:','http:'].includes(url.protocol))return null;
-  // Vendor domains identify the owner of the pasted address, not whether an
-  // extension is installed. Using this evidence remains an explicit choice.
+                                                                            
+                                                                            
   const domains=[['goguardian.com','goguardian','GoGuardian'],['securly.com','securly','Securly'],['block.opendns.com','cisco','Cisco Umbrella']];
   const match=domains.find(([domain])=>host===domain || host.endsWith('.'+domain));
   return match?{vendor:match[1],label:match[2],source:'vendor address'}:null;

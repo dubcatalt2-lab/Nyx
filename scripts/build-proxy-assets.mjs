@@ -7,7 +7,7 @@ import {join, posix} from 'node:path';
 import {randomBytes} from 'node:crypto';
 import {minify} from 'terser';
 
-// Generated once and committed: stable opaque URLs keep old tabs working.
+                                                                          
 export const legacyProxyAssetNames=JSON.parse(await readFile(new URL('./proxy-asset-names.json',import.meta.url),'utf8'));
 const previousProxyAssetNames=Object.fromEntries(Object.entries(legacyProxyAssetNames).map(([original,alias])=>[original,alias.replace(/r([0-9a-f]{24})(\.(?:js|mjs|wasm))$/, '@r$1!$2')]));
 export const proxyAssetNames=Object.fromEntries(Object.entries(legacyProxyAssetNames).map(([original,alias])=>[original,posix.join(renameRuntimeText(posix.dirname(alias)), '@r'+createHash('sha256').update('education-v1:'+original).digest('hex').slice(0,24)+'!'+posix.extname(alias))]));
@@ -20,7 +20,7 @@ for(const [original,alias] of entries){
 export function rewriteProxyReferences(source,path,mappings=entries){
   source=rewriteStorageNames(source);
   for(const [original,alias] of [...mappings].sort((a,b)=>b[0].length-a[0].length)) source=source.split(original).join(alias);
-  // Resolve relative imports from the renamed module directory.
+                                                                
   const directory=posix.dirname(path);
   const destinationDirectory=posix.dirname(mappings.find(([original])=>original===path)?.[1] || path);
   for(const [original,alias] of mappings){
@@ -33,14 +33,14 @@ export function rewriteProxyReferences(source,path,mappings=entries){
   return source;
 }
 export async function scrambleProxyCode(source,{module=false}={}){
-  // Terser quotes Unicode private-method declarations; use ASCII for those runtimes.
+                                                                                     
   const prefix=/#[\p{ID_Start}$_]/u.test(source)?'_':'\u03bb';
   const names=new Map();
   const identifiers=zakaEnabled?zakaIdentifiers(source):null;
   const result=await minify(source,{
     module,compress:{passes:4,unsafe:false,keep_fargs:true},
-    // Public properties, exports, function/class names, eval bindings and WASM
-    // interfaces are contracts, not safe targets for arbitrary replacement.
+                                                                               
+                                                                            
     keep_fnames:true,keep_classnames:true,
     mangle:{toplevel:module,eval:false,properties:false,nth_identifier:{get(n){if(zakaEnabled){if(!names.has(n))names.set(n,identifiers.get(n));return names.get(n);}if(!names.has(n))names.set(n,prefix+randomBytes(6).toString('hex'));return names.get(n);}}},
     format:{comments:/@license|@preserve|^!/,ascii_only:false,beautify:false,indent_level:2}
@@ -75,7 +75,7 @@ export async function buildProxyAssets(output){
     const transformed=await scrambleProxyCode(rewriteRuntimeNames(rewriteProxyReferences(bytes.toString('utf8'),original)),{module:original.endsWith('.mjs')});
     renamed+=transformed.renamed;
     await writeFile(join(output,alias.slice(1)),transformed.code);
-    // Compatibility filenames also receive mangled code, but keep their URLs.
+                                                                              
     const legacy=await scrambleProxyCode(bytes.toString('utf8'),{module:original.endsWith('.mjs')});
     await writeFile(join(output,original.slice(1)),legacy.code);
     await writeFile(join(output,legacyProxyAssetNames[original].slice(1)),legacy.code);

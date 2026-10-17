@@ -11,7 +11,7 @@ try{for(const role of ['admin','owner']){
  for(const [file,module] of [['firebase-app.js','firebaseAppModule'],['firebase-auth.js','firebaseAuthModule']])await page.route('https://www.gstatic.com/firebasejs/11.10.0/'+file,r=>r.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:moduleText(module)}));
  await page.route('**/api/**',r=>{const path=new URL(r.request().url()).pathname;
  if(path==='/api/founder-profile/auth-config')return r.fulfill({json:{enabled:true,projectId:'nyx-test',apiKey:'test',ownerConfigured:true}});
- // A stale dashboard grant must not expose the menu to a non-founder.
+                                                                      
  if(path==='/api/founder-profile/owner')return r.fulfill({json:{founder,dashboard:true,role,permissions:['dashboard:view']}});
  if(path==='/api/account/me')return r.fulfill({json:{email:'account-test@example.com',founder,dashboard:true,role,subscriptionStatus:'free'}});
  if(path==='/api/profiles/me')return r.fulfill({json:{uid:'test-user-1234',profile:{displayName:'Account Test',handle:'@account-test',avatarUrl:'',bannerUrl:''},createdAt:'2026-01-01'}});

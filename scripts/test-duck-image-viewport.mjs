@@ -68,7 +68,7 @@ try {
     const ready=new Promise(resolve=>frame.onload=resolve);document.body.append(frame);await ready;
     window.lazyFixtureTab={frame,sourceUrl:'https://duckduckgo.com/?q=fixture&ia=images'};
     window.NyxDuckImageViewport(window.lazyFixtureTab,()=> '');
-    // Late data-src arrival after the first layout pass, without a scroll event.
+                                                                                 
     setTimeout(()=>{frame.contentDocument.querySelector('#near').innerHTML=Array.from({length:6},(_,i)=>`<img loading="lazy" data-src="/lazy-thumbnail-fixture/${i}.svg">`).join('')+'<img id="native" loading="lazy" src="/lazy-thumbnail-fixture/native.svg" data-original="/lazy-thumbnail-fixture/wrong.svg" style="position:absolute;top:1200px">'},150);
   });
   const lazy=p.frameLocator('#lazy-fixture');

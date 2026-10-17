@@ -1,5 +1,5 @@
-<!-- Ultimate Game Stash file--> 
-<!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
+ 
+
 
 <!DOCTYPE html>
 <html lang="en-us">
@@ -24,9 +24,9 @@
     </div>
     <div id="unity-warning"> </div>
   </div>
-  <script src="unarchiver.min.js" nonce="CRrAvEtnTYz2xyLLghZb0w">// used for decompression if zip files are used</script>
+  <script src="unarchiver.min.js" nonce="CRrAvEtnTYz2xyLLghZb0w">                                               </script>
   <script nonce="CRrAvEtnTYz2xyLLghZb0w">
-      /*custom unity script*/
+                             
       var canvas = document.querySelector("#unity-canvas");
       var gameInstance = null; 
       var defaultRemoteData = "Total Hoops In Endless:::0|||white state:::1|||wingRed state:::1|||hoopYellowBack state:::1|||buoy state:::0|||purple state:::1|||baseball state:::1|||black state:::1|||hoopPurpleBack state:::1|||christmashat state:::1|||wingOrange state:::1|||hoopPinkBack state:::1|||moon state:::1|||earth state:::1|||RedFever state:::1|||wingRainbow state:::1|||normal state:::4|||bowling state:::1|||green state:::1|||brain state:::0|||cd state:::1|||BlueFever state:::1|||hypnotic state:::1|||tennis state:::1|||GreenFever state:::1|||hoopCheeseBack state:::1|||wingBlue state:::1|||pizza state:::0|||blue state:::1|||yinyang state:::1|||hoopWhiteBack state:::1|||hoopBack state:::4|||hoopSmileBack state:::1|||football state:::1|||wingGreen state:::1|||YellowFever state:::1|||pink state:::1|||beachball state:::1|||red state:::1|||PinkFever state:::1|||hoopRainbowBack state:::1|||wingBlack state:::1|||wingPink state:::1|||poker state:::1|||wingYellow state:::1|||hoopOrangeBack state:::1|||wing state:::4|||rainbow state:::1|||eye state:::1|||poolball state:::1|||watermelon state:::1|||hoopBlackBack state:::1|||PurpleFever state:::1|||yellow state:::1|||volley state:::1|||wingPurple state:::1|||smiley state:::1|||NormalFever state:::4|||hoopBlueBack state:::1|||wingSmile state:::1|||hoopGreenBack state:::1|||fdban state:::1|||wingInfinity state:::1|||analyticsSession:::Active Users (1.6.4)|||Audio On:::1";
@@ -118,7 +118,7 @@
         });
       }
 
-      /* load zipped wasm & data files*/
+                                        
       async function loadAllResources() {
         config.codeUrl = await unCompress(config.codeUrl, true, "wasm");
         config.dataUrl = await unCompress(config.dataUrl, true, "raw");

@@ -10,7 +10,7 @@ assert.equal(reservation.price.outputRate,30);assert.ok(reservation.reserved>=66
 const response=aiBudgetResponse(Response.json({choices:[{message:{images:[{image_url:{url:'x'.repeat(3*1024*1024)}}]}}],usage:{prompt_tokens:100,completion_tokens:1290,cost:.03873}}),async(usage,success)=>{assert.equal(success,true);assert.equal(usage.output,1290);await a.settle(reservation,usage);},8*1024*1024);
 await response.json();assert.equal(db.records.get('nyxAiAllowance/global').reserveMoney,38730);await a.finish(session,true);
 let completed;const oversized=aiBudgetResponse(new Response('x'.repeat(8*1024*1024+1)),(usage,success)=>{completed={usage,success};},8*1024*1024);await assert.rejects(oversized.text(),/size limit/);assert.deepEqual(completed,{usage:null,success:false});
-// Existing dollar caps still apply to newcomers and do not silently expand for images.
+                                                                                       
 const newcomer=await a.begin({uid:'new-image',device:'new',network:'fixture',createdAt:Date.parse('2026-08-01')});await assert.rejects(a.reserve(newcomer,'shared',structuredClone(payload)),e=>e.code==='ai_allowance');await a.finish(newcomer);
 console.log('PASS image allowance: conservative image pricing, actual usage/cost settlement, bounded large response, preserved account spending limits');
 

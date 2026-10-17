@@ -1,4 +1,4 @@
-// A frame load event alone is not evidence that a usable website rendered.
+                                                                           
 export function watchWebsiteFrame(frame,{previousDocument=null,onReady,onError,reload,maxRetries=2,timeoutMs=25000,intervalMs=400}={}){
  let stopped=false,timer,recovering=false,attempts=0,started=Date.now();
  const stop=()=>{stopped=true;clearTimeout(timer);};

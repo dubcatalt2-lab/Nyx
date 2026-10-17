@@ -16,7 +16,7 @@ for(const channel of ['chrome','msedge']){
    cb(records,o);
   });observers.push(this)}};
  });
- // Keep account data private and avoid opening remote sessions during startup checks.
+                                                                                      
  await page.route('**/api/**',r=>r.fulfill({json:{enabled:false,models:[],apps:[],preferences:{}}}));
  for(let visit=0;visit<2;visit++){
   if(visit)await page.reload();else await page.goto(base+'/');

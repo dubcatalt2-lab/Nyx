@@ -18,7 +18,7 @@ await assert.rejects(requireGameAccess(new Response(JSON.stringify({status:403,m
 await assert.rejects(requireGameAccess(new Response('<html>Failure</html>')),/unreadable game-access check/);
 console.log('Provider credit rejection and malformed/denied entitlement responses fail safely.');
 
-// Exercise the patched runtime's real game initialization, never the live provider.
+                                                                                    
 const launcher=await readFile(new URL('../services/stratus/launcher.mjs',import.meta.url),'utf8');
 const launcherAst=parse(launcher,{ecmaVersion:'latest',sourceType:'module'});
 const functions=['replaceOnce','buildRuntimeSource'].map(name=>launcherAst.body.find(node=>node.type==='FunctionDeclaration'&&node.id.name===name)).map(node=>launcher.slice(node.start,node.end)).join('\n');

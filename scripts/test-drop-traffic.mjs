@@ -6,7 +6,7 @@ const transport=measureTransport({async request(url,method,body){sent=body;retur
 const result=await transport.request('https://fixture.test','POST',new Uint8Array(1000000));assert.equal(sent.byteLength,1000000);assert.equal((await new Response(result.body).arrayBuffer()).byteLength,1000000);time=1000;assert.equal(meter.sample().mbps,16);time=2000;assert.equal(meter.sample().mbps,0);
 transport.connect('wss://fixture.test',[],{},()=>{},()=>{})[0](new Uint8Array(30));assert.deepEqual(events.slice(-2),[['down',25],['up',30]]);time=3000;assert.equal(meter.sample().mbps,.00044);
 console.log('PASS actual stream bytes, duplex bytes, Mbps conversion and idle decay');
-// Request activity includes stream lifetime, failures and cancellation.
+                                                                        
 let clock=0;const activity=trafficMeter({now:()=>clock});
 let release;
 const pending=measureTransport({async request(){await new Promise(r=>release=r);return {body:'abc'};}},(kind,bytes)=>activity.add(kind,bytes));

@@ -28,10 +28,10 @@ assert.equal(db.records.get(path(member)).pool.resetAt,firstReset,'Changing tier
 time=firstReset-1;const s=await a.begin(member);await assert.rejects(a.reserve(s,'shared',payload(gemini)),/account's (7,000|50,000)-token allowance/);await a.finish(s);
 time=firstReset;await call(member,gemini);assert.equal(db.records.get(path(member)).pool.used,100);assert.equal(db.records.get(path(member)).pool.resetAt,firstReset+4*86400000);
 time=premiumReset;await call(premium,luna);assert.equal(db.records.get(path(premium)).pool.used,100,'Premium resets after 4 days');
-// Reservations and settlement remain correct across calendar boundaries within a four-days.
+                                                                                            
 const crossing={...member,uid:'crossing'};time=Date.parse('2026-10-31T23:59:59Z');const pending=await a.begin(crossing),r=await a.reserve(pending,'shared',payload(deepseek));await a.finish(pending);
 time=Date.parse('2026-11-01T00:00:01Z');await call(crossing,gemini);await a.settle(r,null,true);await a.settle(r,null,true);assert.equal(db.records.get(path(crossing)).pool.used,100,'Cross-month refunds apply once to same four-days');
-// An old response cannot debit the next four-days.
+                                                   
 time=db.records.get(path(crossing)).pool.resetAt-1000;const old=await a.begin(crossing),oldR=await a.reserve(old,'shared',payload(gemini));await a.finish(old);
 time+=2000;await call(crossing,gemini);await a.settle(oldR,null,true);assert.equal(db.records.get(path(crossing)).pool.used,100);
 const migration={...premium,uid:'migration'};db.records.set(path(migration,'premium'),{month:'2026-11',tokens:4000,legacyTokens:0,modelTokens:{luna:2000,gemini:2000}});db.records.set(path(migration),{month:'2026-11',tokens:{[deepseek]:1000}});

@@ -5,7 +5,7 @@
 
   // Copyright (c) 2026 David Haz. See THIRD_PARTY_NOTICES.md.
   const presets=Object.freeze({
-    obsidian:{label:'Obsidian',summary:'Quiet dark fabric',lightColor:'#718478'},
+    obsidian:{label:'Obsidian',summary:'Monochrome leaf photograph',lightColor:'#718478'},
     frost:{label:'Frost',summary:'Soft white light',lightColor:'#ffffff'},
     arctic:{label:'Arctic',summary:'Cool blue beams',lightColor:'#73c9ff'},
     violet:{label:'Violet',summary:'Muted violet light',lightColor:'#a98cff'},
@@ -381,7 +381,7 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
     syncVisibility();
   }
   function renderPreview(target,name){
-    if(name==='obsidian'){const ctx=target?.getContext('2d');if(ctx){ctx.fillStyle='#0b100d';ctx.fillRect(0,0,target.width,target.height);const image=new Image();image.onload=()=>ctx.drawImage(image,0,0,target.width,target.height);image.src='/assets/backgrounds/obsidian-fabric.svg'}return;}
+    if(name==='obsidian'){const ctx=target?.getContext('2d');if(ctx){ctx.fillStyle='#0b100d';ctx.fillRect(0,0,target.width,target.height);const image=new Image();image.onload=()=>ctx.drawImage(image,0,0,target.width,target.height);image.src='/assets/backgrounds/@r61db98a407ce!.jpg'}return;}
     if(!target || !window.THREE) return;
     const preset=presets[name] || presets.frost;
     const offscreen=document.createElement('canvas');

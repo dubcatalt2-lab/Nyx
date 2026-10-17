@@ -603,7 +603,7 @@ html body #n79425056e076[data-preview-theme="fresh"] :is(
 .ndec54d35b6f7,.n0d83fa1c601c{position:relative;display:block;overflow:hidden;isolation:isolate;border:1px solid var(--n7x-surface-line);border-radius:10px;background:var(--n7x-surface-bg);color:var(--n7x-surface-text);--mini-rail:32px;--mini-icon:12px;--mini-logo:36px;--mini-search:28px;--mini-font:9px}
 .ndec54d35b6f7{--mini-rail:15px;--mini-icon:6px;--mini-logo:18px;--mini-search:13px;--mini-font:4px}
 .n0d83fa1c601c{min-height:245px}
-.ndec54d35b6f7::before,.n0d83fa1c601c::before{content:"";position:absolute;z-index:-1;inset:-15%;background:var(--n7x-surface-bg) url('../assets/backgrounds/obsidian-fabric.svg') bottom right/cover no-repeat;filter:blur(12px);opacity:.7}
+.ndec54d35b6f7::before,.n0d83fa1c601c::before{content:"";position:absolute;z-index:-1;inset:-15%;background:var(--n7x-surface-bg) url('../assets/backgrounds/@r61db98a407ce!.jpg') bottom right/cover no-repeat;filter:blur(12px);opacity:.7}
 .n840e25430999{position:absolute;inset:0 auto 0 0;width:var(--mini-rail);display:flex;flex-direction:column;align-items:center;gap:calc(var(--mini-icon)*.8);padding:calc(var(--mini-icon)*.7) 0;background:color-mix(in srgb,var(--n7x-surface-bg) 48%,transparent);border-right:1px solid var(--n7x-surface-line);backdrop-filter:blur(16px)}
 .n840e25430999 svg{width:var(--mini-icon);height:var(--mini-icon);fill:none;stroke:currentColor;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round;flex:none;opacity:.75}
 .n840e25430999 svg:last-child{margin-top:auto}

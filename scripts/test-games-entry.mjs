@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {mkdtemp,mkdir,writeFile,readFile,rm} from 'node:fs/promises';
+import {mkdtemp,mkdir,writeFile,readFile,rm,copyFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import express from 'express';
@@ -9,6 +9,7 @@ const root=await mkdtemp(join(tmpdir(),'nyx-entry-'));
 let server,browser;
 try{
  await mkdir(join(root,'assets/games'),{recursive:true});
+ for(const name of ['@r7e41c902d6a8!.webp','@r2c98b170f4e3!.webp'])await copyFile(new URL('../assets/games/'+name,import.meta.url),join(root,'assets/games',name));
  await writeFile(join(root,'proxy-assets.json'),JSON.stringify({aliases:{}}));
  await writeFile(join(root,'assets/games/index.html'),'<!doctype html><title>Games</title><main id="catalog">Game catalog</main><script type="module" src="/assets/games/games.js"></script>');
  await writeFile(join(root,'assets/games/games.js'),'document.body.dataset.ready="yes";');
@@ -19,10 +20,13 @@ try{
  assert((await unpackPublishedDocument(root,pages['assets/games/index.html'])).includes(aliases['/assets/games/games.js']));
  const app=express();app.use(express.static(root));server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base='http://127.0.0.1:'+server.address().port;
  browser=await chromium.launch({channel:'chrome'});
- for(const path of ['/assets/games/',renamed]){
-  const page=await browser.newPage();const errors=[],requests=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>requests.push(r.url()));
-  await page.clock.install();await page.goto(base+path+'?collection=all#saved',{waitUntil:'load'});
+ for(const [path,width] of [['/assets/games/',1280],[renamed,390]]){
+  const page=await browser.newPage({viewport:{width,height:900}});const errors=[],requests=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>requests.push(r.url()));
+  await page.clock.install();await page.clock.pauseAt(new Date());await page.goto(base+path+'?collection=all#saved',{waitUntil:'load'});
   await page.getByRole('heading',{name:'Learning Library'}).waitFor();assert.equal(await page.locator('#catalog').count(),0);
+  assert(await page.locator('img').evaluateAll(images=>images.length===2&&images.every(img=>img.complete&&img.naturalWidth>0)));
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await page.screenshot({path:'.codex-artifacts/cover-'+width+'.png',fullPage:true});
   await page.clock.runFor(950);assert.equal(await page.locator('#catalog').count(),0);assert(!requests.some(u=>u.includes(aliases['/assets/games/games.js'])));
   await page.clock.runFor(150);await page.locator('body[data-ready=yes]').waitFor();assert.equal(await page.title(),'Games');
   assert.equal(new URL(page.url()).pathname,renamed);assert.equal(new URL(page.url()).search,'?collection=all');assert.equal(new URL(page.url()).hash,'#saved');assert.deepEqual(errors,[]);await page.close();

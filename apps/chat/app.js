@@ -961,9 +961,9 @@
     }
   }
   const CHAT_LITERAL_URL = /(?:https?:\/\/|www\.|(?:[a-z0-9-]+\.)+[a-z]{2,}(?=[/?#]))[^\s<>"']*/gi;
-  function appendMinecraftFormatted(target, value, { fallback = "", mentionMembers = null } = {}) {
+  function appendMinecraftFormatted(target, value, { fallback = "", mentionMembers = null, effects = true } = {}) {
     const source = String(value || fallback);
-    const formatted = /&[0-9a-fklmnor]/i.test(source.replace(CHAT_LITERAL_URL, ""));
+    const formatted = effects && /&[0-9a-fklmnor]/i.test(source.replace(CHAT_LITERAL_URL, ""));
     const pattern = new RegExp(
       "(" + CHAT_LITERAL_URL.source + ")|&([0-9a-fklmnor])|(@[A-Za-z0-9_.-]+)",
       "gi",
@@ -990,7 +990,7 @@
       }
       node = node || document.createElement("span");
       node.textContent = text;
-      applyMinecraftStyle(node, style, segmentIndex++);
+      if (effects) applyMinecraftStyle(node, style, segmentIndex++);
       target.append(node);
     };
     while ((match = pattern.exec(source))) {
@@ -1001,6 +1001,10 @@
         continue;
       }
       if (match[2]) {
+        if (!effects) {
+          append(match[0]);
+          continue;
+        }
         const code = match[2].toLowerCase();
         if (MINECRAFT_COLORS[code]) style = { color: MINECRAFT_COLORS[code] };
         else if (code === "l") style.bold = true;
@@ -3225,7 +3229,10 @@
     const handles = new Map(
       state.members.map((member) => [String(member.handle || "").toLowerCase(), member]),
     );
-    appendMinecraftFormatted(root, value, { mentionMembers: handles });
+    appendMinecraftFormatted(root, value, {
+      mentionMembers: handles,
+      effects: !(state.active.type === "channel" && state.active.id === "general"),
+    });
     if (root.classList.contains("minecraft-formatted"))
       root.classList.add("minecraft-formatted-text");
     if (

@@ -1,0 +1,21 @@
+[Unit]
+Description=Secure hostname entry
+After=network.target
+
+[Service]
+Type=simple
+User=nyx
+Group=nyx
+WorkingDirectory=/opt/nyx-q83entry
+ExecStart=/usr/bin/node /opt/nyx-q83entry/server.mjs
+Environment=Q83_CONFIG=/etc/nyx/q83entry.json
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+UMask=0077
+MemoryMax=160M
+
+[Install]
+WantedBy=multi-user.target

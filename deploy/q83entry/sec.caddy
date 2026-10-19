@@ -1,0 +1,29 @@
+sec.ridgewoodstem.org {
+    bind 127.0.0.1
+    import nyx_access_log
+    route {
+        handle /_q83entry/* {
+            reverse_proxy 127.0.0.1:8193 {
+                header_up X-Real-IP {client_ip}
+            }
+        }
+        forward_auth 127.0.0.1:8193 {
+            uri /verify
+        }
+        @stratus_public path /cloud/v1/embed /cloud/v1/embed-data /cloud/v1/signal/* /cloud/v1/healthz /cloud/v1/source
+        handle @stratus_public {
+            reverse_proxy 127.0.0.1:3001 {
+                header_up X-Caddy-Real-IP-Is-Here1357908642 {client_ip}
+                header_up X-Forwarded-Proto {scheme}
+                header_up X-Forwarded-Host {host}
+            }
+        }
+        @stratus_private path /cloud/v1/*
+        handle @stratus_private {
+            respond 404
+        }
+        handle {
+            import nyx_proxy
+        }
+    }
+}

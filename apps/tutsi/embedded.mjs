@@ -4,9 +4,7 @@ function text(doc, selector, value) {
   if (node && node.textContent !== value) node.textContent = value;
 }
 function aiLabels(scope) {
-  for (const node of scope.querySelectorAll(
-    ".ai-message-assistant .ai-message-meta > strong",
-  )) {
+  for (const node of scope.querySelectorAll(".ai-message-assistant .ai-message-meta > strong")) {
     if (node.textContent === "N7X AI") node.textContent = "Tutsi AI";
   }
   const welcome = scope.querySelector("[data-ai-welcome]");
@@ -18,25 +16,39 @@ function aiLabels(scope) {
 }
 export function decorateEmbedded(doc, app) {
   doc.documentElement.dataset.tutsiApp = app;
-                                                                                          
-  const brandSelectors = 'header,.brand,.brand-copy,.ai-brand-copy,.ai-sidebar-brand,.ai-disclaimer,.chat-brand,.catalog-head,.hero,.utility-intro,.nyx-user-profile-tabs,.nyx-profile-rail-title,.nyx-user-profile-section-title,.n7x-founder-about strong,.nyx-user-profile-meta-label,.n7x-profile-directory-empty,.n7x-founder-editor-error,.nyx-profile-member-since,.nyx-user-profile-section strong,#profile-status';
+
+  const brandSelectors =
+    "header,.brand,.brand-copy,.ai-brand-copy,.ai-sidebar-brand,.ai-disclaimer,.chat-brand,.catalog-head,.hero,.utility-intro,.nyx-user-profile-tabs,.nyx-profile-rail-title,.nyx-user-profile-section-title,.n7x-founder-about strong,.nyx-user-profile-meta-label,.n7x-profile-directory-empty,.n7x-founder-editor-error,.nyx-profile-member-since,.nyx-user-profile-section strong,#profile-status";
   const rebrand = () => {
     for (const root of doc.querySelectorAll(brandSelectors)) {
       const walker = doc.createTreeWalker(root, 4);
       while (walker.nextNode()) {
         const node = walker.currentNode;
-        if (node.parentElement.closest('input,textarea,script,style,[contenteditable],.ai-message,.chat-message,.n7x-founder-bio,.n7x-user-profile-heading')) continue;
-        const value = node.nodeValue.replace(/\bNyxTube\b/gi,'YouTube').replace(/\bNyxify\b/gi,'Music').replace(/\bNyx\b/gi,'Tutsi');
+        if (
+          node.parentElement.closest(
+            "input,textarea,script,style,[contenteditable],.ai-message,.chat-message,.n7x-founder-bio,.n7x-user-profile-heading",
+          )
+        )
+          continue;
+        const value = node.nodeValue
+          .replace(/\bNyxTube\b/gi, "YouTube")
+          .replace(/\bNyxify\b/gi, "Music")
+          .replace(/\bNyx\b/gi, "Tutsi");
         if (value !== node.nodeValue) node.nodeValue = value;
       }
-      for (const node of [root,...root.querySelectorAll('[aria-label],[title],[alt]')]) for(const attr of ['aria-label','title','alt']) {
-        const value=node.getAttribute(attr);
-        if(value && /\bnyx\b/i.test(value)) node.setAttribute(attr,value.replace(/\bnyx\b/gi,'Tutsi'));
-      }
+      for (const node of [root, ...root.querySelectorAll("[aria-label],[title],[alt]")])
+        for (const attr of ["aria-label", "title", "alt"]) {
+          const value = node.getAttribute(attr);
+          if (value && /\bnyx\b/i.test(value))
+            node.setAttribute(attr, value.replace(/\bnyx\b/gi, "Tutsi"));
+        }
     }
   };
   rebrand();
-  if(!observed.has(doc)) { observed.add(doc); new MutationObserver(rebrand).observe(doc.body,{childList:true,subtree:true}); }
+  if (!observed.has(doc)) {
+    observed.add(doc);
+    new MutationObserver(rebrand).observe(doc.body, { childList: true, subtree: true });
+  }
 
   if (!doc.getElementById("tutsi-embedded-style")) {
     const link = doc.createElement("link");
@@ -63,17 +75,11 @@ export function decorateEmbedded(doc, app) {
     api: "API",
     movies: "Movies",
   };
-  for (const node of doc.querySelectorAll(
-    ".brand-copy strong,.lc-brand strong,.chat-brand strong",
-  ))
+  for (const node of doc.querySelectorAll(".brand-copy strong,.lc-brand strong,.chat-brand strong"))
     node.textContent = app === "checker" ? "Link Checker" : "Tutsi Math";
   text(doc, ".assistant-brand small", "Tutsi workspace");
   text(doc, ".assistant-welcome .eyebrow", "Tutsi AI");
-  text(
-    doc,
-    ".utility-intro p",
-    app === "publisher" ? "SVG batch publishing" : "Links",
-  );
+  text(doc, ".utility-intro p", app === "publisher" ? "SVG batch publishing" : "Links");
   if (app === "api") {
     text(doc, ".hero h1", "API");
     text(doc, ".hero p", "Tutsi Math");
@@ -82,7 +88,9 @@ export function decorateEmbedded(doc, app) {
     ".brand-logo,.brand-mark img,.watch-brand img,.chat-brand img",
   ))
     img.src = "/apps/tutsi/icon.png?v=2";
-  for (const link of doc.querySelectorAll(".brand-lockup[href],.brand-mark[href],.utility-nav a[href],.home-link[href],.chat-brand[href],.hero > a[href]")) {
+  for (const link of doc.querySelectorAll(
+    ".brand-lockup[href],.brand-mark[href],.utility-nav a[href],.home-link[href],.chat-brand[href],.hero > a[href]",
+  )) {
     const url = new URL(link.getAttribute("href"), doc.location.href);
     const routes = {
       "/": "home",
@@ -95,21 +103,32 @@ export function decorateEmbedded(doc, app) {
       link.target = "_top";
       if (url.pathname === "/") {
         link.setAttribute("aria-label", "Back to Tutsi");
-        if (link.textContent.trim() && !link.classList.contains("icon-control")) link.textContent = "Back to Tutsi";
+        if (link.textContent.trim() && !link.classList.contains("icon-control"))
+          link.textContent = "Back to Tutsi";
       }
     }
   }
-  if(app === "cloud"){
-    text(doc,'.hero h1','Cloud Gaming');text(doc,'.hero .intro','Choose a game to start a session.');
-    text(doc,'.brand small','Tutsi Math');
-    if(!doc.getElementById('tutsi-local-games')){const link=doc.createElement('a');link.id='tutsi-local-games';link.href='/tutsi#games';link.textContent='Browser games';link.addEventListener('click',event=>{event.preventDefault();location.hash='games';});doc.querySelector('.catalog-heading')?.append(link);}
+  if (app === "cloud") {
+    text(doc, ".hero h1", "Cloud Gaming");
+    text(doc, ".hero .intro", "Choose a game to start a session.");
+    text(doc, ".brand small", "Tutsi Math");
+    if (!doc.getElementById("tutsi-local-games")) {
+      const link = doc.createElement("a");
+      link.id = "tutsi-local-games";
+      link.href = "/tutsi#games";
+      link.textContent = "Browser games";
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        location.hash = "games";
+      });
+      doc.querySelector(".catalog-heading")?.append(link);
+    }
   }
   if (app === "movies") {
     text(doc, ".movie-brand span", "Movies");
     const watch = doc.querySelector(".watch-brand");
     if (watch)
-      for (const node of watch.childNodes)
-        if (node.nodeType === 3) node.textContent = "Movies";
+      for (const node of watch.childNodes) if (node.nodeType === 3) node.textContent = "Movies";
   }
   if (labels[app]) doc.title = "Tutsi Math - " + labels[app];
   if (app === "ai") {
@@ -118,16 +137,12 @@ export function decorateEmbedded(doc, app) {
     text(doc, ".ai-brand-copy h1", "AI");
     text(doc, ".ai-sidebar-brand strong", "Tutsi AI");
     text(doc, ".ai-sidebar-brand small", "Chats");
-    text(
-      doc,
-      ".ai-disclaimer",
-      "AI can make mistakes. Check important information.",
-    );
+    text(doc, ".ai-disclaimer", "AI can make mistakes. Check important information.");
     aiLabels(doc);
     const conversation = doc.getElementById("conversation");
     if (conversation && !observed.has(conversation)) {
       observed.add(conversation);
-                                                                           
+
       const observer = new MutationObserver((records) => {
         if (
           records.some((record) =>

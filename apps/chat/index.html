@@ -13,7 +13,8 @@
 <link rel="stylesheet" href="/css/profile-effects.css?v=20260916-effects-hover-v4">
 <style>.voice-transport{display:grid;gap:6px;margin:8px 12px;color:inherit;font-size:12px}.voice-transport select{width:100%;min-width:0;border:1px solid #ffffff26;border-radius:10px;padding:8px;background:var(--panel,#24242c);color:inherit;font:inherit}.voice-transport small{font-size:11px;line-height:1.4;opacity:.75}</style>
 <link rel="stylesheet" href="/apps/obsidian.css?v=20260927-composers">
-  <link rel="stylesheet" href="./polish.css?v=20261004-chat-social">
+  <link rel="stylesheet" href="./polish.css?v=20261018-q49e2">
+<script src="/js/app-colors.js" defer></script><link rel="stylesheet" href="/apps/q73e8.css">
 </head>
 <body>
   <svg class="chat-icon-sprite" aria-hidden="true">
@@ -45,18 +46,6 @@
   </svg>
 
   <div class="chat-app" data-chat-app>
-    <header class="chat-topbar">
-      <a class="chat-brand" href="/" data-back-to-n7x>
-        <span class="chat-brand-mark"><svg><use href="#icon-chat"/></svg></span>
-        <strong>N7X</strong><span>Chat</span>
-      </a>
-      <div class="chat-topbar-actions">
-        <span class="chat-online-count" data-online-count><i></i><b>0</b> online</span>
-        <button class="caffeine-button" type="button" data-caffeine-button aria-label="Open Caffeine"><svg><use href="#icon-coffee"/></svg><span>Caffeine</span></button>
-        <button class="icon-button mobile-only" type="button" data-members-toggle aria-label="Show members"><svg><use href="#icon-users"/></svg></button>
-        <button class="back-button" type="button" data-back-to-n7x><svg><use href="#icon-arrow-left"/></svg><span>Back to home</span></button>
-      </div>
-    </header>
 
     <div class="chat-layout">
       <aside class="channel-sidebar" data-channel-sidebar>
@@ -73,7 +62,7 @@
           </div>
           <nav class="channel-list" data-channel-list aria-label="Chat channels"></nav>
           <div class="sidebar-heading voice-heading"><span>Voice Channels</span></div>
-          <label class="voice-transport">Voice connection<select data-voice-transport aria-label="Voice connection"><option value="auto">Automatic</option><option value="relay">Compatibility</option><option value="http">HTTP only</option></select><small>Compatibility helps when WebRTC is blocked. HTTP also works without WebSockets. Screen sharing requires WebRTC.</small></label>
+          <details class="q63e8"><summary>Voice settings</summary><label class="voice-transport">Voice connection<select data-voice-transport aria-label="Voice connection"><option value="auto">Automatic</option><option value="relay">Compatibility</option><option value="http">HTTP only</option></select><small>Compatibility helps when WebRTC is blocked. HTTP also works without WebSockets. Screen sharing requires WebRTC.</small></label></details>
           <nav class="voice-channel-list" data-voice-channel-list aria-label="Voice channels"></nav>
           <section class="voice-panel" data-voice-panel hidden>
             <div class="voice-panel-copy"><strong data-voice-status>Voice connected</strong><span data-voice-room></span></div>
@@ -97,6 +86,10 @@
             <button class="chat-guidelines-dismiss" type="button" data-chat-guidelines-dismiss aria-label="Dismiss safety reminder" title="Dismiss"><svg><use href="#icon-close"/></svg></button>
           </div>
         </div>
+        <div class="q49e2">
+          <span class="chat-online-count" data-online-count><i></i><b>0</b> online</span>
+          <button class="caffeine-button" type="button" data-caffeine-button aria-label="Open Caffeine" title="Caffeine"><svg><use href="#icon-coffee"/></svg><span>Caffeine</span></button>
+        </div>
         <div class="current-user" data-current-user hidden></div>
       </aside>
 
@@ -106,7 +99,10 @@
           <span class="channel-symbol" data-conversation-symbol><svg><use href="#icon-hash"/></svg></span>
           <div><h1 data-channel-title>General</h1><p data-channel-description>The main N7X community chat.</p></div>
           <button class="icon-button" type="button" data-deleted-messages aria-label="Deleted messages" title="Deleted messages" hidden><svg><use href="#icon-trash"/></svg></button>
-          <span class="connection-state" data-connection-state><i></i><span>Connecting</span></span>
+          <div class="q82f6">
+            <button class="icon-button" type="button" data-members-toggle aria-label="Show members" title="Members"><svg><use href="#icon-users"/></svg></button>
+          </div>
+          <span class="connection-state" data-connection-state hidden><i></i><span>Connecting</span></span>
         </header>
 
         <section class="conversation-body" data-conversation-body>

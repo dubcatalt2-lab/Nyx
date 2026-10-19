@@ -6,8 +6,10 @@
   const SINGLE_FILE_RELEASE = "2026.09.18.1";
 
   function isInstalled() {
-    return window.matchMedia?.("(display-mode: standalone)")?.matches
-      || window.navigator.standalone === true;
+    return (
+      window.matchMedia?.("(display-mode: standalone)")?.matches ||
+      window.navigator.standalone === true
+    );
   }
 
   function platformHelp() {
@@ -35,9 +37,10 @@
       <button class="${kind === "legacy" ? "" : "settings-action"}" data-install-n7x type="button">Install N7X</button>
       <button class="${kind === "legacy" ? "" : "settings-action"}" data-download-n7x-singlefile type="button">Download Single File</button>
     </div>`;
-    card.innerHTML = kind === "dashboard"
-      ? `<div class="n7x-settings-copy">${copy}</div><div class="n7x-settings-control">${control}</div>`
-      : `${copy}${control}`;
+    card.innerHTML =
+      kind === "dashboard"
+        ? `<div class="n7x-settings-copy">${copy}</div><div class="n7x-settings-control">${control}</div>`
+        : `${copy}${control}`;
     return card;
   }
 
@@ -48,15 +51,18 @@
       if (group) group.prepend(installCard("dashboard"));
     });
 
-    document.querySelectorAll(".browser-only-settings .settings-section.active").forEach((section) => {
-      if (section.querySelector("[data-n7x-install-card]")) return;
-      const card = installCard("browser");
-      const displayHeading = [...section.querySelectorAll("h2")]
-        .find((heading) => heading.textContent.trim() === "Display Mode");
-      const displayCard = displayHeading?.closest(".settings-block");
-      if (displayCard) displayCard.after(card);
-      else section.append(card);
-    });
+    document
+      .querySelectorAll(".browser-only-settings .settings-section.active")
+      .forEach((section) => {
+        if (section.querySelector("[data-n7x-install-card]")) return;
+        const card = installCard("browser");
+        const displayHeading = [...section.querySelectorAll("h2")].find(
+          (heading) => heading.textContent.trim() === "Display Mode",
+        );
+        const displayCard = displayHeading?.closest(".settings-block");
+        if (displayCard) displayCard.after(card);
+        else section.append(card);
+      });
 
     document.querySelectorAll(".settings-panel").forEach((panel) => {
       if (panel.querySelector("[data-n7x-install-card]")) return;
@@ -74,15 +80,16 @@
       button.disabled = installed;
       button.setAttribute("aria-disabled", String(installed));
       const label = installed ? "N7X is Installed" : "Install N7X";
-      if (button.textContent.normalize('NFKC') !== label) button.textContent = label;
+      if (button.textContent.normalize("NFKC") !== label) button.textContent = label;
     });
     document.querySelectorAll("[data-install-n7x-status]").forEach((status) => {
       const text = installed
         ? "N7X is installed on this device and opens in its own app window."
-        : message || (installPrompt
-          ? "Ready to install on this device."
-          : "Installs N7X as an app with its own window and desktop icon.");
-      if (status.textContent.normalize('NFKC') !== text) status.textContent = text;
+        : message ||
+          (installPrompt
+            ? "Ready to install on this device."
+            : "Installs N7X as an app with its own window and desktop icon.");
+      if (status.textContent.normalize("NFKC") !== text) status.textContent = text;
     });
     document.querySelectorAll("[data-download-n7x-singlefile]").forEach((button) => {
       if (button.dataset.n7xSingleFileBound === "true") return;
@@ -108,9 +115,11 @@
     installPrompt = null;
     try {
       const result = await prompt.prompt();
-      updateControls(result?.outcome === "accepted"
-        ? "Finishing the N7X installation..."
-        : "Installation was cancelled. You can try again anytime.");
+      updateControls(
+        result?.outcome === "accepted"
+          ? "Finishing the N7X installation..."
+          : "Installation was cancelled. You can try again anytime.",
+      );
     } catch {
       updateControls(platformHelp());
     }
@@ -125,23 +134,34 @@
       button.disabled = true;
       button.textContent = "Downloading…";
     }
-    const status = button?.closest("[data-n7x-install-card]")?.querySelector("[data-install-n7x-status]");
+    const status = button
+      ?.closest("[data-n7x-install-card]")
+      ?.querySelector("[data-install-n7x-status]");
     try {
       const response = await fetch(source, { cache: "no-store", credentials: "same-origin" });
       if (!response.ok) throw new Error("The N7X file is unavailable.");
       const markup = await response.text();
-      if (!markup.trim().toLowerCase().startsWith("<!doctype html")) throw new Error("The N7X file was incomplete.");
-      const objectUrl = URL.createObjectURL(new Blob([markup], { type: "text/html;charset=utf-8" }));
+      if (!markup.trim().toLowerCase().startsWith("<!doctype html"))
+        throw new Error("The N7X file was incomplete.");
+      const objectUrl = URL.createObjectURL(
+        new Blob([markup], { type: "text/html;charset=utf-8" }),
+      );
       const link = document.createElement("a");
       link.href = objectUrl;
       link.download = "N7X-Download.html";
       link.hidden = true;
       document.body.appendChild(link);
       link.click();
-      window.setTimeout(() => { link.remove(); URL.revokeObjectURL(objectUrl); }, 60_000);
-      if (status) status.textContent = "N7X-Download.html was saved. Open it from your Downloads folder.";
+      window.setTimeout(() => {
+        link.remove();
+        URL.revokeObjectURL(objectUrl);
+      }, 60_000);
+      if (status)
+        status.textContent = "N7X-Download.html was saved. Open it from your Downloads folder.";
     } catch {
-      if (status) status.textContent = "N7X could not create the download. Check your connection and try again.";
+      if (status)
+        status.textContent =
+          "N7X could not create the download. Check your connection and try again.";
     } finally {
       if (button) {
         button.disabled = false;
@@ -161,21 +181,30 @@
     updateControls();
   });
 
-  document.addEventListener("click", (event) => {
-    const button = event.target.closest?.("[data-install-n7x]");
-    if (!button) return;
-    event.preventDefault();
-    requestInstall();
-  }, true);
+  document.addEventListener(
+    "click",
+    (event) => {
+      const button = event.target.closest?.("[data-install-n7x]");
+      if (!button) return;
+      event.preventDefault();
+      requestInstall();
+    },
+    true,
+  );
 
-                                                                              
-                                                                     
-  const installUi = '.browser-only-settings,.settings-panel,[data-n7x-install-card],[data-install-n7x],[data-install-n7x-status]';
-  const observer = new MutationObserver(records => {
-    if (records.some(record => [...record.addedNodes].some(node =>
-      node.nodeType === Node.ELEMENT_NODE &&
-      (node.matches(installUi) || node.querySelector(installUi))
-    ))) updateControls();
+  const installUi =
+    ".browser-only-settings,.settings-panel,[data-n7x-install-card],[data-install-n7x],[data-install-n7x-status]";
+  const observer = new MutationObserver((records) => {
+    if (
+      records.some((record) =>
+        [...record.addedNodes].some(
+          (node) =>
+            node.nodeType === Node.ELEMENT_NODE &&
+            (node.matches(installUi) || node.querySelector(installUi)),
+        ),
+      )
+    )
+      updateControls();
   });
   function start() {
     updateControls();
@@ -196,6 +225,6 @@
     },
     get installed() {
       return isInstalled();
-    }
+    },
   };
 })();

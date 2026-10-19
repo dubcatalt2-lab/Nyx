@@ -46,5 +46,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .n7x-discord-link { transition: none; }
+  .n7x-discord-link {
+    transition: none;
+  }
 }

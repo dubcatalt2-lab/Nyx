@@ -31,41 +31,41 @@ try {
   });
   assert(featuredType.size >= 25 && featuredType.weight >= 700 && featuredType.family.includes('ArcadeDisplay'), JSON.stringify(featuredType));
   assert.equal(await page.locator('#emptyState').isVisible(), false);
-  assert.equal(await page.locator('#gamePagination').isVisible(), false);
+  assert.equal(await page.locator('#q01d9d441eece').isVisible(), false);
 
                                                                       
   const spotlight = page.getByRole('button', { name: 'Launch Slope', exact: true });
   await spotlight.focus();
   await page.keyboard.press('Enter');
-  await page.locator('#gamePlayer').waitFor();
-  assert.equal(await page.locator('#playerTitle').textContent(), 'Slope');
-  assert.match(await page.locator('#gameFrame').getAttribute('src'), /game=0.html/);
-  await page.locator('#closePlayer').click();
+  await page.locator('#qb12206a9731b').waitFor();
+  assert.equal(await page.locator('#q46bf26c70a26').textContent(), 'Slope');
+  assert.match(await page.locator('#qcb196f617df1').getAttribute('src'), /game=0.html/);
+  await page.locator('#qd322f3d74d9d').click();
   assert.equal(await spotlight.evaluate(element => element === document.activeElement), true);
 
-  await page.locator('#gameSearch').fill('Retro');
+  await page.locator('#q768acae37c5a').fill('Retro');
   assert.equal(await page.locator('.arcade-featured').isVisible(), false);
-  assert.equal(await page.locator('.game-card').count(), 1);
+  assert.equal(await page.locator('.q482f08e91ee0').count(), 1);
   await page.getByRole('button', { name: 'Random game', exact: true }).click();
-  assert.equal(await page.locator('#playerTitle').textContent(), 'Retro Bowl');
-  await page.locator('#closePlayer').click();
-  await page.locator('#gameSearch').fill('no matching games');
+  assert.equal(await page.locator('#q46bf26c70a26').textContent(), 'Retro Bowl');
+  await page.locator('#qd322f3d74d9d').click();
+  await page.locator('#q768acae37c5a').fill('no matching games');
   assert.equal(await page.locator('#emptyState').isVisible(), true);
   assert.equal(await page.locator('.arcade-random').isDisabled(), true);
-  await page.locator('#gameSearch').fill('');
+  await page.locator('#q768acae37c5a').fill('');
   await page.locator('[data-library="gn"]').click();
   assert.equal(await page.locator('.arcade-featured').isVisible(), false);
   await page.locator('[data-library="all"]').click();
   assert.equal(await page.locator('.arcade-featured').isVisible(), true);
-  await page.locator('[data-game-view="cloud"]').click();
-  assert.equal(await page.locator('#localGamesView').isVisible(), false);
+  await page.locator('[data-q81d4="cloud"]').click();
+  assert.equal(await page.locator('#q92df914ad808').isVisible(), false);
   assert.equal(await page.locator('#cloudGamingFrame').isVisible(), true);
-  await page.locator('[data-game-view="all"]').click();
+  await page.locator('[data-q81d4="all"]').click();
 
   for (const width of [1440, 800, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `Overflow at ${width}px`);
-    assert.equal(await page.locator('#gameSearch').isVisible(), true);
+    assert.equal(await page.locator('#q768acae37c5a').isVisible(), true);
   }
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await spotlight.hover();
@@ -73,13 +73,13 @@ try {
 
                                                                              
   await page.goto(base + '/apps/drop/games.html');
-  await page.locator('.game-card').first().waitFor();
+  await page.locator('.q482f08e91ee0').first().waitFor();
   assert.equal(await page.locator('body').evaluate(element => element.classList.contains('n7x-arcade')), false);
   assert.equal(await page.locator('.arcade-featured').count(), 0);
   await page.route('**/arcade-test/tutsi', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><html data-app-shell="tutsi"><iframe data-app-shell="tutsi" src="/assets/games/"></iframe></html>' }));
   await page.goto(base + '/arcade-test/tutsi');
   const tutsi = page.frameLocator('iframe');
-  await tutsi.locator('.game-card').first().waitFor();
+  await tutsi.locator('.q482f08e91ee0').first().waitFor();
   assert.equal(await tutsi.locator('body').evaluate(element => element.classList.contains('n7x-arcade')), false);
   assert.equal(await tutsi.locator('.arcade-featured').count(), 0);
   assert.equal(await tutsi.locator('h1').textContent(), 'GAMES');

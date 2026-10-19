@@ -1,3 +1,4 @@
+import {qEnqueue,qCustom} from '../lib/discord-bridge.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
@@ -31,11 +32,11 @@ const burstChecks=[];
 for(const [uid,role] of Object.entries(roles))records.set('nyxUserAdministration/'+uid,{role});
 records.set('nyxChatChannels/general',{name:'General',minimumRole:'member'});
 const app=express();app.use(express.json());let broadcasts=0;
-const context=vm.createContext({app,assertChatContact,Date:class extends Date{static now(){return time;}},createHash,chatSendDecision,nyxEmojiMartData,
+const context=vm.createContext({app,process:{env:{}},qEnqueue,qCustom,assertChatContact,Date:class extends Date{static now(){return time;}},createHash,chatSendDecision,nyxEmojiMartData,
  sameOriginRequest:req=>req.get('sec-fetch-site')!=='cross-site',authenticatedNyxChatUser:async req=>{const uid=req.get('authorization');if(!roles[uid])throw Object.assign(Error('Sign in'),{status:401});return {firebase:{firestore:db},token:{uid}};},
  nyxRoleForUser:(_uid,admin)=>admin.role||'member',nyxChatCanModerate:role=>ranks[role]>=50,
  nyxChatIdentity:async(_firebase,token)=>({uid:token.uid,role:roles[token.uid],canModerate:ranks[roles[token.uid]]>=50,displayName:token.uid,handle:token.uid,avatarUrl:'',avatarDecoration:'none',profileEffect:'none',customRole:null,caffeine:false}),assertNyxChatCanSend:async()=>{},
- nyxChatScope:async(_firebase,_uid,input,role)=>{if(input.channel==='restricted'&&ranks[role]<80)throw Object.assign(Error('Restricted'),{status:403});if(input.channel&&!['general','restricted'].includes(input.channel))throw Object.assign(Error('Missing channel'),{status:404});const privateScope=!input.channel&&!input.scope,id=input.channel||input.scope||input.conversationId;if(!id)throw Object.assign(Error('No channel'),{status:400});const r=ref((privateScope?'nyxChatConversations/':'nyxChatChannels/')+id);return {id,type:privateScope?'conversation':'channel',private:privateScope,ref:r,messages:r.collection('messages'),participants:[]};},
+ nyxChatScope:async(_firebase,_uid,input,role)=>{if(input.channel==='restricted'&&ranks[role]<80)throw Object.assign(Error('Restricted'),{status:403});if(input.channel&&!['general','restricted','announcements'].includes(input.channel))throw Object.assign(Error('Missing channel'),{status:404});const privateScope=!input.channel&&!input.scope,id=input.channel||input.scope||input.conversationId;if(!id)throw Object.assign(Error('No channel'),{status:400});const r=ref((privateScope?'nyxChatConversations/':'nyxChatChannels/')+id);return {id,q76a3:id==='announcements',type:privateScope?'conversation':'channel',private:privateScope,ref:r,messages:r.collection('messages'),participants:[]};},
  nyxChatText:value=>String(value||'').trim(),nyxChatMessageLimit:1000,nyxChatMessageIdPattern:/^[a-f0-9]{40}$/,nyxChatAttachmentIdPattern:/^[a-f0-9]{40}$/,nyxChatAttachmentCountLimit:4,nyxChatAttachmentMessageLimit:8000000,nyxChatMentionHandles:text=>[...text.matchAll(/@([a-z]+)/g)].map(m=>m[1]),nyxChatConsumeSendAttempt:uid=>burstChecks.push(uid),nyxChatMessagePayload:doc=>({id:doc.id,...doc.data()}),nyxChatReplyPayload:v=>v,nyxChatAttachmentMetadata:v=>v,
  nyxClientIp:()=> 'shared-school-ip',recordNyxAuditSafe:async()=>{},recordNyxChatRealtimeEvent:()=>1,emitNyxChatSocketEvent:()=>broadcasts++,nyxChatChannelActivityCache:{value:new Map()}
 });
@@ -48,6 +49,8 @@ const request=(uid,path,body,headers={})=>fetch(base+path,{method:'POST',headers
 const lock=(uid,locked,extra={})=>request(uid,'/api/chat/channels/lock',{channel:'general',locked,...extra});
 const send=(uid,text,id,extra={})=>request(uid,'/api/chat/messages',{channel:'general',text,requestId:'fixture-request-'+id,...extra});
 try {
+ assert.equal((await send('member','announcement','announcement-member',{channel:'announcements'})).status,403);
+ assert.equal((await send('mod','announcement','announcement-mod',{channel:'announcements'})).status,201);
  assert.equal((await lock('member',true,{role:'owner'})).status,403);
  assert.equal((await lock('support',true)).status,403);
  assert.equal((await request('mod','/api/chat/channels/lock',{channel:'general',locked:true},{'sec-fetch-site':'cross-site'})).status,403);

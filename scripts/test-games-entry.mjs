@@ -18,7 +18,7 @@ try{
  const renamed=aliases['/assets/games/index.html'];assert.match(renamed,/\/@r[a-f0-9]+!\.html$/);
  const pages=JSON.parse(await readFile(join(root,'published-pages.json'),'utf8')).pages;
  assert((await unpackPublishedDocument(root,pages['assets/games/index.html'])).includes(aliases['/assets/games/games.js']));
- const app=express();app.use(express.static(root));server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base='http://127.0.0.1:'+server.address().port;
+ const app=express();app.get('/missing-harness',(_req,res)=>res.type('html').send('<!doctype html><body></body>'));app.use(express.static(root));server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));const base='http://127.0.0.1:'+server.address().port;
  browser=await chromium.launch({channel:'chrome'});
  for(const [path,width] of [['/assets/games/',1280],[renamed,390]]){
   const page=await browser.newPage({viewport:{width,height:900}});const errors=[],requests=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>requests.push(r.url()));
@@ -31,5 +31,14 @@ try{
   await page.clock.runFor(150);await page.locator('body[data-ready=yes]').waitFor();assert.equal(await page.title(),'Games');
   assert.equal(new URL(page.url()).pathname,renamed);assert.equal(new URL(page.url()).search,'?collection=all');assert.equal(new URL(page.url()).hash,'#saved');assert.deepEqual(errors,[]);await page.close();
  }
+ const hidden=await browser.newPage();await hidden.goto(base+'/missing-harness');
+ await hidden.setContent('<iframe style="display:none" src="'+base+'/assets/games/"></iframe>');
+ const frame=hidden.frameLocator('iframe');await hidden.waitForTimeout(1400);
+ assert.equal(await frame.locator('#catalog').count(),0);
+ await hidden.locator('iframe').evaluate(el=>el.style.display='block');
+ await frame.getByRole('heading',{name:'Learning Library'}).waitFor();
+ await hidden.waitForTimeout(700);assert.equal(await frame.locator('#catalog').count(),0);
+ await frame.locator('#catalog').waitFor();await hidden.close();
+ console.log('PASS hidden/preloaded frame retains cover until one visible second');
  console.log('PASS educational cover, delayed catalog/runtime, renamed entry, legacy URL, preserved query/hash and encoded payload');
 }finally{await browser?.close();server?.closeAllConnections();if(server)await new Promise(r=>server.close(r));await rm(root,{recursive:true,force:true});}

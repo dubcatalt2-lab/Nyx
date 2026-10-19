@@ -1,67 +1,128 @@
-import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath} from './game-cdn.js';
+import { gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath } from "./game-cdn.js";
 
-    export function prepareGameDocument(html,path,sourceUrl){
-      html=String(html).replaceAll('unityGameInstance.SendMessage(', 'unityGameInstance?.SendMessage(');
-      if(path==='C/clcolormatch.html'||path==='31.html')html=html.replace('loadResources(InitUnitySection);','InitUnitySection();');
+export function prepareGameDocument(html, path, sourceUrl) {
+  html = String(html).replaceAll(
+    "unityGameInstance.SendMessage(",
+    "unityGameInstance?.SendMessage(",
+  );
+  if (path === "C/clcolormatch.html" || path === "31.html")
+    html = html.replace("loadResources(InitUnitySection);", "InitUnitySection();");
 
+  if (["338.html", "G/clgetawayshootout.html"].includes(path))
+    html = String(html)
+      .replace(/(#sidebarad1,\s*#sidebarad2\s*\{[\s\S]*?<\/style>)/, "<style>$1")
+      .replace(
+        /<script>\s*(?:gadgets\.util\.runOnLoadHandlers\(\)|window\.google\.csi\.tickDl\(\));?\s*<\/script>/g,
+        "",
+      );
+  if (path === "116.html") html = String(html).replaceAll("/bike.loader.js", "/bike1.loader.js");
+  if (path === "823-fix2.html")
+    html = String(html)
+      .replaceAll(".rrayBuffer()", ".arrayBuffer()")
+      .replace('EJS_color = "#0064ff";a', 'EJS_color = "#0064ff";');
+  if (path === "273.html")
+    html = String(html).replaceAll(
+      "https://rawcdn.githack.com/genizy/assets/main/blockpost/",
+      "https://cdn.jsdelivr.net/gh/taskmaster773/google-class@c7a14eb2fe78c6a9cbe495d84aa3768fa9a38005/blockpost/",
+    );
 
-      if(['338.html','G/clgetawayshootout.html'].includes(path))html=String(html)
-        .replace(/(#sidebarad1,\s*#sidebarad2\s*\{[\s\S]*?<\/style>)/, '<style>$1')
-        .replace(/<script>\s*(?:gadgets\.util\.runOnLoadHandlers\(\)|window\.google\.csi\.tickDl\(\));?\s*<\/script>/g,'');
-      if(path==='116.html')html=String(html).replaceAll('/bike.loader.js','/bike1.loader.js');
-      if(path==='823-fix2.html')html=String(html).replaceAll('.rrayBuffer()', '.arrayBuffer()').replace('EJS_color = "#0064ff";a','EJS_color = "#0064ff";');
-      if(path==='273.html')html=String(html).replaceAll('https://rawcdn.githack.com/genizy/assets/main/blockpost/', 'https://cdn.jsdelivr.net/gh/taskmaster773/google-class@c7a14eb2fe78c6a9cbe495d84aa3768fa9a38005/blockpost/');
+  if (path === "D/cldoom3pack.html")
+    html = String(html).replace(
+      'src="idc about this one"',
+      'src="https://cdn.jsdelivr.net/gh/Stinkalistic/UGS@main/SWFs/470460_DoomGame.swf"',
+    );
 
-      if(path==='D/cldoom3pack.html')html=String(html).replace('src="idc about this one"', 'src="https://cdn.jsdelivr.net/gh/Stinkalistic/UGS@main/SWFs/470460_DoomGame.swf"');
+  if (/type=["'][a-f0-9]+-(?:module|text\/javascript)["']/i.test(html))
+    html = String(html)
+      .replace(/(type=["'])[a-f0-9]+-(module|text\/javascript)(["'])/gi, "$1$2$3")
+      .replace(/<script\b[^>]*src=["'][^"']*\/rocket-loader\.min\.js["'][^>]*>\s*<\/script>/gi, "");
+  const rawBase = sourceUrl || `https://raw.githubusercontent.com/freebuisness/html/main/${path}`;
+  const baseUrl = rawBase.slice(0, rawBase.lastIndexOf("/") + 1);
+  const repoRoot =
+    sourceUrl && new URL(sourceUrl).origin === location.origin
+      ? location.origin + "/"
+      : "https://raw.githubusercontent.com/freebuisness/html/main/";
+  const proxyUrl = (url) => gameResourceUrl(url, undefined, location.origin);
+  const adProtection = `<script src="${location.origin}/assets/vendor/game-storage.js"><\/script><script src="${location.origin}/assets/games/game-runtime-compat.js"><\/script><script src="${location.origin}/assets/games/game-health.js"><\/script><script src="${location.origin}/assets/games/game-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;
+  const sourceHtml = String(html || "")
+    .replace(/<script\b[^>]*src=["']\/assets\/js\.js["'][^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<link\b[^>]*href=["']\/assets\/css\.css["'][^>]*>/gi, "")
+    .replace(
+      /<link\b[^>]*href=["']https:\/\/cdn\.jsdelivr\.net\/gh\/AndreajnRcm4\/b398dl2h74v@[^"']+\/style\.css["'][^>]*>/gi,
+      "",
+    )
+    .replace(
+      /https?:\/\/cdn\.jsdelivr\.net\/gh\/genizy\/fnaf@[^/"'<>\s]+/gi,
+      "https://cdn.jsdelivr.net/gh/bubblfan/fnaf@latest",
+    )
 
-      if(/type=["'][a-f0-9]+-(?:module|text\/javascript)["']/i.test(html))html=String(html)
-        .replace(/(type=["'])[a-f0-9]+-(module|text\/javascript)(["'])/gi,'$1$2$3')
-        .replace(/<script\b[^>]*src=["'][^"']*\/rocket-loader\.min\.js["'][^>]*>\s*<\/script>/gi,'');
-      const rawBase=sourceUrl || `https://raw.githubusercontent.com/freebuisness/html/main/${path}`;
-      const baseUrl=rawBase.slice(0,rawBase.lastIndexOf('/') + 1);
-      const repoRoot=sourceUrl && new URL(sourceUrl).origin===location.origin ? location.origin+'/' : 'https://raw.githubusercontent.com/freebuisness/html/main/';
-      const proxyUrl=url=>gameResourceUrl(url, undefined, location.origin);
-      const adProtection=`<script src="${location.origin}/assets/vendor/game-storage.js"><\/script><script src="${location.origin}/assets/games/game-runtime-compat.js"><\/script><script src="${location.origin}/assets/games/game-health.js"><\/script><script src="${location.origin}/assets/games/game-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;
-      const sourceHtml=String(html || '')
-        .replace(/<script\b[^>]*src=["']\/assets\/js\.js["'][^>]*>[\s\S]*?<\/script>/gi,'')
-        .replace(/<link\b[^>]*href=["']\/assets\/css\.css["'][^>]*>/gi,'')
-        .replace(/<link\b[^>]*href=["']https:\/\/cdn\.jsdelivr\.net\/gh\/AndreajnRcm4\/b398dl2h74v@[^"']+\/style\.css["'][^>]*>/gi,'')
-        .replace(
-        /https?:\/\/cdn\.jsdelivr\.net\/gh\/genizy\/fnaf@[^/"'<>\s]+/gi,
-        'https://cdn.jsdelivr.net/gh/bubblfan/fnaf@latest'
+    .replace(
+      /\/axo323lotl-bit\/elitecomposite@main\/2048-merge-run\//g,
+      "/axo323lotl-bit/elitecomposite@dee1ce45905c0d8f3524c4468074671762e48e9c/2048-merge-run/",
+    )
+    .replace(
+      /\/giorgirick2-gif\/game-webports-onawebsite@master\/yandere-simulator\//g,
+      "/giorgirick2-gif/game-webports-onawebsite@main/yandere-simulator/",
+    )
+    .replace(
+      /((?:wasmCodeUrl|wasmFrameworkUrl)\s*:\s*["'])(YandereSim\.wasm\.(?:code|framework)\.unityweb)/g,
+      "$1Build/$2",
+    )
+
+    .replace(
+      /<script\b[^>]*src=["'][^"']*(?:(?:\.\.\/)+storage\/js\/cloak(?:i)?\.js|(?:raw\.githubusercontent\.com|cdn\.jsdelivr\.net\/gh)\/gn-math\/storage[^"']*cloak(?:i)?\.js)[^"']*["'][^>]*>\s*<\/script>/gi,
+      "",
+    );
+  const originalBase = (
+    sourceHtml.match(/<base\b[^>]*href\s*=\s*["']([^"']+)/i)?.[1] || baseUrl
+  ).trim();
+  const baseHref = normalizeGameCdnUrl(originalBase)?.href || originalBase;
+  const toProxy = (raw, base = baseHref) => {
+    try {
+      const value = String(raw || "").trim();
+      const url = value.startsWith("//")
+        ? new URL("https:" + value)
+        : new URL(
+            value.startsWith("/") ? value.slice(1) : value,
+            value.startsWith("/") ? repoRoot : base,
+          );
+      if (
+        ![
+          "cdn.jsdelivr.net",
+          "raw.githubusercontent.com",
+          "rawcdn.githack.com",
+          "raw.githack.com",
+        ].includes(url.hostname)
       )
-
-        .replace(/\/axo323lotl-bit\/elitecomposite@main\/2048-merge-run\//g,'/axo323lotl-bit/elitecomposite@dee1ce45905c0d8f3524c4468074671762e48e9c/2048-merge-run/')
-        .replace(/\/giorgirick2-gif\/game-webports-onawebsite@master\/yandere-simulator\//g,'/giorgirick2-gif/game-webports-onawebsite@main/yandere-simulator/')
-        .replace(/((?:wasmCodeUrl|wasmFrameworkUrl)\s*:\s*["'])(YandereSim\.wasm\.(?:code|framework)\.unityweb)/g,'$1Build/$2')
-
-
-
-        .replace(
-          /<script\b[^>]*src=["'][^"']*(?:(?:\.\.\/)+storage\/js\/cloak(?:i)?\.js|(?:raw\.githubusercontent\.com|cdn\.jsdelivr\.net\/gh)\/gn-math\/storage[^"']*cloak(?:i)?\.js)[^"']*["'][^>]*>\s*<\/script>/gi,
-          ''
-        );
-      const originalBase=(sourceHtml.match(/<base\b[^>]*href\s*=\s*["']([^"']+)/i)?.[1] || baseUrl).trim();
-      const baseHref=normalizeGameCdnUrl(originalBase)?.href || originalBase;
-      const toProxy=(raw,base=baseHref)=>{
-        try{
-          const value=String(raw || '').trim();
-          const url=value.startsWith('//')?new URL('https:'+value):new URL(value.startsWith('/') ? value.slice(1) : value,value.startsWith('/') ? repoRoot : base);
-          if(!['cdn.jsdelivr.net','raw.githubusercontent.com','rawcdn.githack.com','raw.githack.com'].includes(url.hostname)) return raw;
-          if(/adinplay|googletagmanager|google-analytics|googlesyndication|doubleclick|facebook|recaptcha|pagead|cdn\.r9x\.in/i.test(url.href)) return raw;
-          return proxyUrl(url.href);
-        }catch{
-          return raw;
-        }
-      };
-      const proxiedHtml=sourceHtml
-        .replace(/<script\b[^>]*src=["'][^"']*\/ytgame\.js[^"']*["'][^>]*>[\s\S]*?<\/script>/gi,'')
-        .replace(/<script\b[^>]*src=["']\/js\/(?:main|lib|all(?:\.min)?)\.js["'][^>]*>\s*<\/script>/gi,'')
-        .replace(/<base\b[^>]*>/gi,'')
-        .replace(/((?:src|href)=["'])(?![a-z][a-z0-9+.-]*:|\/\/|#|data:|blob:)([^"']+)/gi,(_match,prefix,raw)=>`${prefix}${toProxy(raw)}`)
-        .replace(/((?:dataUrl|codeUrl|wasmCodeUrl|wasmFrameworkUrl|asmUrl|memUrl|frameworkUrl|loaderUrl|streamingAssetsUrl)\s*[:=]\s*["'])(?![a-z][a-z0-9+.-]*:|\/\/|#|data:|blob:)([^"']+)/gi,(_match,prefix,raw)=>`${prefix}${toProxy(raw)}`)
-        .replace(/https?:\/\/[^\s"'<>\\)]+/gi,raw=>toProxy(raw));
-      const safeFetchGuard=`<script>(()=>{
+        return raw;
+      if (
+        /adinplay|googletagmanager|google-analytics|googlesyndication|doubleclick|facebook|recaptcha|pagead|cdn\.r9x\.in/i.test(
+          url.href,
+        )
+      )
+        return raw;
+      return proxyUrl(url.href);
+    } catch {
+      return raw;
+    }
+  };
+  const proxiedHtml = sourceHtml
+    .replace(/<script\b[^>]*src=["'][^"']*\/ytgame\.js[^"']*["'][^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(
+      /<script\b[^>]*src=["']\/js\/(?:main|lib|all(?:\.min)?)\.js["'][^>]*>\s*<\/script>/gi,
+      "",
+    )
+    .replace(/<base\b[^>]*>/gi, "")
+    .replace(
+      /((?:src|href)=["'])(?![a-z][a-z0-9+.-]*:|\/\/|#|data:|blob:)([^"']+)/gi,
+      (_match, prefix, raw) => `${prefix}${toProxy(raw)}`,
+    )
+    .replace(
+      /((?:dataUrl|codeUrl|wasmCodeUrl|wasmFrameworkUrl|asmUrl|memUrl|frameworkUrl|loaderUrl|streamingAssetsUrl)\s*[:=]\s*["'])(?![a-z][a-z0-9+.-]*:|\/\/|#|data:|blob:)([^"']+)/gi,
+      (_match, prefix, raw) => `${prefix}${toProxy(raw)}`,
+    )
+    .replace(/https?:\/\/[^\s"'<>\\)]+/gi, (raw) => toProxy(raw));
+  const safeFetchGuard = `<script>(()=>{
         const memoryStorage=()=>{
           const values=new Map();
           const api={
@@ -124,7 +185,7 @@ import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath} from './ga
           }
         }catch{}
       })()<\/script>`;
-      const guard=`<script>
+  const guard = `<script>
         (() => {
           const ready=()=>parent.postMessage({type:'gn-math:ready'},'*');
           const fail=(message,url='')=>parent.postMessage({type:'gn-math:error',message,url},'*');
@@ -220,21 +281,32 @@ import {gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath} from './ga
           },true);
         })();
       <\/script>`;
-      let output=proxiedHtml
-        .replace(/<script\b[^>]*src=["']\/js\/(?:main|lib|all(?:\.min)?)\.js["'][^>]*>\s*<\/script>/gi,'')
-        .replace(/<script\b[^>]*googletagmanager[^>]*>[\s\S]*?<\/script>/gi,'')
-        .replace(/<script\b[^>]*google-analytics[^>]*>[\s\S]*?<\/script>/gi,'')
-        .replace(/<script\b[^>]*(?:adinplay|imasdk|pagead2|googlesyndication|doubleclick|connect\.facebook|cdn\.r9x\.in|(?:\/|["'])ads?\.js(?:[?"']|$)|jump[_-]gamemonetize|poki-(?:master-loader|sdk)|html5\.api\.gamedistribution\.com)[^>]*>[\s\S]*?<\/script>/gi,'')
-        .replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi,(tag,attrs,code)=>! /\bsrc\s*=/i.test(attrs) && /^\s*(?:window\.)?dataLayer\s*=/.test(code)?'':tag);
-      if(!/<base\b/i.test(output)){
-        output=/<head([^>]*)>/i.test(output)
-          ? output.replace(/<head([^>]*)>/i,`<head$1><base href="${proxyUrl(baseHref)}">`)
-          : `<base href="${proxyUrl(baseHref)}">${output}`;
-      }
-      return /<head([^>]*)>/i.test(output)
-        ? output.replace(/<head([^>]*)>/i,`<head$1>${adProtection}${safeFitScript()}${safeFetchGuard}${guard}`)
-        : `${adProtection}${safeFitScript()}${safeFetchGuard}${guard}${output}`;
-    }
-    function safeFitScript(){
-      return `<script src="${location.origin}/assets/games/game-viewport.js"><\/script>`;
-    }
+  let output = proxiedHtml
+    .replace(
+      /<script\b[^>]*src=["']\/js\/(?:main|lib|all(?:\.min)?)\.js["'][^>]*>\s*<\/script>/gi,
+      "",
+    )
+    .replace(/<script\b[^>]*googletagmanager[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<script\b[^>]*google-analytics[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(
+      /<script\b[^>]*(?:adinplay|imasdk|pagead2|googlesyndication|doubleclick|connect\.facebook|cdn\.r9x\.in|(?:\/|["'])ads?\.js(?:[?"']|$)|jump[_-]gamemonetize|poki-(?:master-loader|sdk)|html5\.api\.gamedistribution\.com)[^>]*>[\s\S]*?<\/script>/gi,
+      "",
+    )
+    .replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi, (tag, attrs, code) =>
+      !/\bsrc\s*=/i.test(attrs) && /^\s*(?:window\.)?dataLayer\s*=/.test(code) ? "" : tag,
+    );
+  if (!/<base\b/i.test(output)) {
+    output = /<head([^>]*)>/i.test(output)
+      ? output.replace(/<head([^>]*)>/i, `<head$1><base href="${proxyUrl(baseHref)}">`)
+      : `<base href="${proxyUrl(baseHref)}">${output}`;
+  }
+  return /<head([^>]*)>/i.test(output)
+    ? output.replace(
+        /<head([^>]*)>/i,
+        `<head$1>${adProtection}${safeFitScript()}${safeFetchGuard}${guard}`,
+      )
+    : `${adProtection}${safeFitScript()}${safeFetchGuard}${guard}${output}`;
+}
+function safeFitScript() {
+  return `<script src="${location.origin}/assets/games/game-viewport.js"><\/script>`;
+}

@@ -4,10 +4,16 @@ const CHUNK_SIZE = 10_000;
 
 export function prepareAliasBase(origin, namespace) {
   let url;
-  try { url = new URL(String(origin || "").trim()); } catch { throw new Error("N7X could not determine the address for these links."); }
-  if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) throw new Error("N7X links require a public http:// or https:// address.");
+  try {
+    url = new URL(String(origin || "").trim());
+  } catch {
+    throw new Error("N7X could not determine the address for these links.");
+  }
+  if (!["http:", "https:"].includes(url.protocol) || url.username || url.password)
+    throw new Error("N7X links require a public http:// or https:// address.");
   const group = String(namespace || "").trim();
-  if (!/^[A-Za-z0-9_-]{8,24}$/.test(group)) throw new Error("N7X could not create a safe link group.");
+  if (!/^[A-Za-z0-9_-]{8,24}$/.test(group))
+    throw new Error("N7X could not create a safe link group.");
   url.pathname = "/l/";
   url.search = "";
   url.hash = "";
@@ -29,9 +35,11 @@ function sequentialDigitTotal(count) {
 
 export function estimatedLinkBytes(plan, count, mode = "sequential") {
   const amount = Number(count);
-  if (!Number.isSafeInteger(amount) || amount < 1 || amount > MAX_LINKS) throw new Error(`Choose between 1 and ${MAX_LINKS.toLocaleString()} links.`);
+  if (!Number.isSafeInteger(amount) || amount < 1 || amount > MAX_LINKS)
+    throw new Error(`Choose between 1 and ${MAX_LINKS.toLocaleString()} links.`);
   const fixed = new TextEncoder().encode(`${plan.prefix}${plan.suffix}\n`).length;
-  const valueBytes = mode === "uuid" ? 36 * amount : mode === "random" ? 16 * amount : sequentialDigitTotal(amount);
+  const valueBytes =
+    mode === "uuid" ? 36 * amount : mode === "random" ? 16 * amount : sequentialDigitTotal(amount);
   return fixed * amount + valueBytes;
 }
 
@@ -45,7 +53,10 @@ function randomCode(length = 16) {
 }
 
 function linkValue(mode, index) {
-  if (mode === "uuid") return typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `${randomCode(16)}-${randomCode(16)}`;
+  if (mode === "uuid")
+    return typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${randomCode(16)}-${randomCode(16)}`;
   if (mode === "random") return randomCode();
   return String(index);
 }
@@ -54,7 +65,10 @@ function formatBytes(bytes) {
   const units = ["B", "KB", "MB", "GB"];
   let value = Math.max(0, Number(bytes) || 0);
   let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) { value /= 1024; unit += 1; }
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
   return `${value >= 100 || unit === 0 ? Math.round(value) : value.toFixed(1)} ${units[unit]}`;
 }
 
@@ -67,7 +81,10 @@ function downloadBlob(parts, name) {
   link.hidden = true;
   document.body.append(link);
   link.click();
-  setTimeout(() => { URL.revokeObjectURL(url); link.remove(); }, 60_000);
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+    link.remove();
+  }, 60_000);
 }
 
 function initBulkLinks() {
@@ -97,14 +114,19 @@ function initBulkLinks() {
   const estimatePlan = () => prepareAliasBase(location.origin, "NyxLinkGroup");
   const updateEstimate = () => {
     aliasExample.textContent = `${location.origin}/l/NyxLinkGroup-...`;
-    try { estimate.textContent = `Estimated download: ${formatBytes(estimatedLinkBytes(estimatePlan(), Number(count.value), mode.value))}`; }
-    catch (error) { estimate.textContent = error.message; }
+    try {
+      estimate.textContent = `Estimated download: ${formatBytes(estimatedLinkBytes(estimatePlan(), Number(count.value), mode.value))}`;
+    } catch (error) {
+      estimate.textContent = error.message;
+    }
   };
-  [count, mode].forEach(control => control.addEventListener("input", updateEstimate));
+  [count, mode].forEach((control) => control.addEventListener("input", updateEstimate));
   mode.addEventListener("change", updateEstimate);
-  cancel.addEventListener("click", () => { if (activeJob) activeJob.cancelled = true; });
+  cancel.addEventListener("click", () => {
+    if (activeJob) activeJob.cancelled = true;
+  });
 
-  form.addEventListener("submit", async event => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (activeJob) return;
     let plan;
@@ -114,7 +136,9 @@ function initBulkLinks() {
       amount = Number(count.value);
       estimatedLinkBytes(plan, amount, mode.value);
       if (amount > MEMORY_DOWNLOAD_LIMIT && typeof window.showSaveFilePicker !== "function") {
-        throw new Error(`This browser can safely download up to ${MEMORY_DOWNLOAD_LIMIT.toLocaleString()} links at once. Use Chrome or Edge for larger streamed files.`);
+        throw new Error(
+          `This browser can safely download up to ${MEMORY_DOWNLOAD_LIMIT.toLocaleString()} links at once. Use Chrome or Edge for larger streamed files.`,
+        );
       }
     } catch (error) {
       showProgress(error.message, 0, "error");
@@ -136,7 +160,10 @@ function initBulkLinks() {
     const name = `nyx-path-links-${amount}.txt`;
     try {
       if (amount > MEMORY_DOWNLOAD_LIMIT) {
-        const handle = await window.showSaveFilePicker({ suggestedName: name, types: [{ description: "Text file", accept: { "text/plain": [".txt"] } }] });
+        const handle = await window.showSaveFilePicker({
+          suggestedName: name,
+          types: [{ description: "Text file", accept: { "text/plain": [".txt"] } }],
+        });
         writable = await handle.createWritable();
       }
       for (let start = 1; start <= amount && !job.cancelled; start += CHUNK_SIZE) {
@@ -153,25 +180,45 @@ function initBulkLinks() {
         if (writable) await writable.write(text);
         else memoryParts.push(text);
         completed = end;
-        const seconds = Math.max(.01, (performance.now() - started) / 1000);
-        showProgress(`Generated ${completed.toLocaleString()} of ${amount.toLocaleString()} · ${Math.round(completed / seconds).toLocaleString()} links/sec`, completed / amount);
-        await new Promise(resolve => setTimeout(resolve, 0));
+        const seconds = Math.max(0.01, (performance.now() - started) / 1000);
+        showProgress(
+          `Generated ${completed.toLocaleString()} of ${amount.toLocaleString()} · ${Math.round(completed / seconds).toLocaleString()} links/sec`,
+          completed / amount,
+        );
+        await new Promise((resolve) => setTimeout(resolve, 0));
       }
       if (job.cancelled) {
         if (writable) await writable.abort();
-        showProgress("Generation cancelled. No completed file was saved.", completed / amount, "error");
+        showProgress(
+          "Generation cancelled. No completed file was saved.",
+          completed / amount,
+          "error",
+        );
         return;
       }
       if (writable) await writable.close();
       else downloadBlob(memoryParts, name);
-      const previewValues = completed > 10 ? [...first, "…", ...last] : [...first, ...last.slice(Math.max(0, first.length - 5))];
+      const previewValues =
+        completed > 10
+          ? [...first, "…", ...last]
+          : [...first, ...last.slice(Math.max(0, first.length - 5))];
       previewLines.textContent = [...new Set(previewValues)].join("\n");
       previewCount.textContent = `${completed.toLocaleString()} links`;
       preview.hidden = false;
-      showProgress(`${completed.toLocaleString()} different N7X links saved to ${name}.`, 1, "complete");
+      showProgress(
+        `${completed.toLocaleString()} different N7X links saved to ${name}.`,
+        1,
+        "complete",
+      );
     } catch (error) {
       if (writable) await writable.abort().catch(() => {});
-      showProgress(error?.name === "AbortError" ? "Save cancelled." : (error?.message || "The link list could not be created."), completed / amount, "error");
+      showProgress(
+        error?.name === "AbortError"
+          ? "Save cancelled."
+          : error?.message || "The link list could not be created.",
+        completed / amount,
+        "error",
+      );
     } finally {
       activeJob = null;
       generate.disabled = false;

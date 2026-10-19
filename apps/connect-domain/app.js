@@ -25,13 +25,17 @@
 
   async function loadConfig() {
     try {
-      const response = await fetch("/api/custom-hostnames/config", { credentials: "same-origin", cache: "no-store" });
+      const response = await fetch("/api/custom-hostnames/config", {
+        credentials: "same-origin",
+        cache: "no-store",
+      });
       const data = await readJson(response);
       targetIp = String(data.targetIps?.[0] || "");
       target.textContent = targetIp || "Not configured";
       copy.disabled = !targetIp;
       submit.disabled = !data.enabled;
-      if (!data.enabled) showStatus(`Custom-domain connection is not enabled on this ${brand} server yet.`, "error");
+      if (!data.enabled)
+        showStatus(`Custom-domain connection is not enabled on this ${brand} server yet.`, "error");
     } catch (error) {
       target.textContent = "Unavailable";
       copy.disabled = true;
@@ -45,13 +49,15 @@
     try {
       await navigator.clipboard.writeText(targetIp);
       copy.textContent = "Copied";
-      setTimeout(() => { copy.textContent = "Copy"; }, 1400);
+      setTimeout(() => {
+        copy.textContent = "Copy";
+      }, 1400);
     } catch {
       showStatus(`Copy this address: ${targetIp}`);
     }
   });
 
-  form.addEventListener("submit", async event => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
     submit.disabled = true;
     const originalLabel = submit.textContent;
@@ -62,10 +68,11 @@
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ hostname: form.elements.hostname.value, site })
+        body: JSON.stringify({ hostname: form.elements.hostname.value, site }),
       });
       const data = await readJson(response);
-      if (!response.ok) throw new Error(data.error || `Domain verification failed (${response.status}).`);
+      if (!response.ok)
+        throw new Error(data.error || `Domain verification failed (${response.status}).`);
       status.hidden = false;
       status.className = "status success";
       status.replaceChildren(document.createTextNode(`${data.message} `));

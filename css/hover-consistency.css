@@ -1,66 +1,50 @@
-html body{
-  --n7x-hover-surface:color-mix(in srgb,var(--n7x-home-wordmark,var(--theme-strong,#a9bddf)) 11%,transparent);
-  --n7x-hover-border:color-mix(in srgb,var(--n7x-home-wordmark,var(--theme-strong,#a9bddf)) 34%,transparent);
+html body {
+  --n7x-hover-surface: color-mix(in srgb, var(--n7x-home-wordmark, var(--theme-strong, #a9bddf)) 11%, transparent);
+  --n7x-hover-border: color-mix(in srgb, var(--n7x-home-wordmark, var(--theme-strong, #a9bddf)) 34%, transparent);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-html body:is(body,#n7x-hover-specificity) .menu-btn:hover::before{
-  transform:translate(-50%,-50%)!important;
-}
-html body:is(body,#n7x-hover-specificity) .tool-btn[data-reload]:hover::before{
-  transform:translate(-50%,-50%)!important;
-}
-html body:is(body,#n7x-hover-specificity) .menu-btn:hover{
-  transform:translateY(-50%)!important;
-}
-html body:is(body,#n7x-hover-specificity) .home-shortcut-add:hover b{
-  transform:rotate(0deg)!important;
-}
-html body:is(body,#n7x-hover-specificity) .window-controls [data-close]:hover::before{
-  transform:translate(-50%,-50%) rotate(45deg)!important;
-}
-html body:is(body,#n7x-hover-specificity) .window-controls [data-close]:hover::after{
-  transform:translate(-50%,-50%) rotate(-45deg)!important;
+html body:is(body, #n7x-hover-specificity) .menu-btn:hover::before {
+  transform: translate(-50%, -50%) !important;
 }
 
-
-
-
-
-
-
-
-
-
-html body.q6172f40672fb949e9c:is(body,#n7x-hover-specificity) .q6a7a0c21fd56bd8b6d button:hover{
-  transform:none!important;
-  border-color:var(--n7x-hover-border)!important;
-  background:var(--n7x-hover-surface)!important;
-  background-image:none!important;
-  box-shadow:none!important;
-  filter:none!important;
-  backdrop-filter:blur(18px) saturate(1.08)!important;
-  -webkit-backdrop-filter:blur(18px) saturate(1.08)!important;
+html body:is(body, #n7x-hover-specificity) .tool-btn[data-reload]:hover::before {
+  transform: translate(-50%, -50%) !important;
 }
 
+html body:is(body, #n7x-hover-specificity) .menu-btn:hover {
+  transform: translateY(-50%) !important;
+}
 
+html body:is(body, #n7x-hover-specificity) .home-shortcut-add:hover b {
+  transform: rotate(0deg) !important;
+}
 
-html body:is(body,#n7x-hover-specificity) .settings-window .settings-card,html body:is(body,#n7x-hover-specificity) .settings-window .settings-card:hover{
-  transform:none!important;
-  animation:none!important;
-  filter:none!important;
-  box-shadow:none!important;
-  background:color-mix(in srgb,#18283e 68%,transparent)!important;
-  backdrop-filter:blur(16px) saturate(1.08)!important;
-  -webkit-backdrop-filter:blur(16px) saturate(1.08)!important;
+html body:is(body, #n7x-hover-specificity) .window-controls [data-close]:hover::before {
+  transform: translate(-50%, -50%) rotate(45deg) !important;
+}
+
+html body:is(body, #n7x-hover-specificity) .window-controls [data-close]:hover::after {
+  transform: translate(-50%, -50%) rotate(-45deg) !important;
+}
+
+html body.q6172f40672fb949e9c:is(body, #n7x-hover-specificity) .q6a7a0c21fd56bd8b6d button:hover {
+  transform: none !important;
+  border-color: var(--n7x-hover-border) !important;
+  background: var(--n7x-hover-surface) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+  backdrop-filter: blur(18px) saturate(1.08) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.08) !important;
+}
+
+html body:is(body, #n7x-hover-specificity) .settings-window .settings-card,
+html body:is(body, #n7x-hover-specificity) .settings-window .settings-card:hover {
+  transform: none !important;
+  animation: none !important;
+  filter: none !important;
+  box-shadow: none !important;
+  background: color-mix(in srgb, #18283e 68%, transparent) !important;
+  backdrop-filter: blur(16px) saturate(1.08) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.08) !important;
 }

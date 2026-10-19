@@ -1,10 +1,12 @@
-import {zakaEnabled,zakaIdentifiers} from './zaka-identifiers.mjs';
-import {patchClientSockets} from './patch-client-sockets.mjs';
-import {buildInterfaceText} from './build-interface-text.mjs';
-import {buildGameStorage} from './build-game-storage.mjs';
-import {buildPublicModules} from './build-public-modules.mjs';
-import {buildFrontendAssets} from './build-frontend-assets.mjs';
-import {buildPublisherPackage} from './build-publisher-package.mjs';
+import { formatJavaScript, formatCss } from "./format-browser-code.mjs";
+import { zakaEnabled, zakaIdentifiers } from "./zaka-identifiers.mjs";
+import { encodeLiterals } from "./build-string-literals.mjs";
+import { patchClientSockets } from "./patch-client-sockets.mjs";
+import { buildInterfaceText } from "./build-interface-text.mjs";
+import { buildGameStorage } from "./build-game-storage.mjs";
+import { buildPublicModules } from "./build-public-modules.mjs";
+import { buildFrontendAssets } from "./build-frontend-assets.mjs";
+import { buildPublisherPackage } from "./build-publisher-package.mjs";
 import { spawn, spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { createHash, randomBytes } from "node:crypto";
@@ -16,13 +18,14 @@ import { parse } from "acorn";
 import CleanCSS from "clean-css";
 import { minify as minifyHtml } from "html-minifier-terser";
 import { minify } from "terser";
-import {learningPage} from '../services/domain-pages/pages.mjs';
+import { learningPage } from "../services/domain-pages/pages.mjs";
 import { buildProxyAssets } from "./build-proxy-assets.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, "..");
 const output = resolve(root, process.env.NYX_BUILD_OUTPUT || "dist");
-if(output!==join(root,"dist")&&!output.startsWith(join(root,".codex-artifacts")+sep))throw Error("Build output must stay in dist or .codex-artifacts");
+if (output !== join(root, "dist") && !output.startsWith(join(root, ".codex-artifacts") + sep))
+  throw Error("Build output must stay in dist or .codex-artifacts");
 const require = createRequire(import.meta.url);
 const rootFiles = new Set([
   "index.html",
@@ -38,7 +41,7 @@ const rootFiles = new Set([
   "student-resources.html",
   "styles.css",
   "scramjet.sw.js",
-  "scramjet-v1.sw.js"
+  "scramjet-v1.sw.js",
 ]);
 const staticPrefixes = ["apps/", "assets/", "css/", "js/"];
 const blockedExtensions = /\.(?:7z|avi|mkv|mov|mp4|rar|webm|zip)$/i;
@@ -47,7 +50,7 @@ const remotelyHostedUgsGames = new Set([
   "minecraft/EaglercraftL_1.9_v0_7_0_Offline_Signed.html",
   "minecraft/EaglercraftX 1.8.8(u29).html",
   "minecraft/EaglercraftZ_1.11.2.html",
-  "minecraft/eaglercraft.1.5.2.html"
+  "minecraft/eaglercraft.1.5.2.html",
 ]);
 
 function normalizeWispUrl(value) {
@@ -56,7 +59,8 @@ function normalizeWispUrl(value) {
   const url = new URL(raw);
   if (url.protocol === "https:") url.protocol = "wss:";
   if (url.protocol === "http:") url.protocol = "ws:";
-  if (!new Set(["ws:", "wss:"]).has(url.protocol)) throw new Error("WISP_URL must use ws:// or wss://");
+  if (!new Set(["ws:", "wss:"]).has(url.protocol))
+    throw new Error("WISP_URL must use ws:// or wss://");
   if (!url.pathname || url.pathname === "/") url.pathname = "/wisp/";
   if (!url.pathname.endsWith("/")) url.pathname += "/";
   url.username = "";
@@ -66,18 +70,28 @@ function normalizeWispUrl(value) {
 }
 
 function repositoryFiles() {
-  const result = spawnSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], {
-    cwd: root,
-    encoding: "buffer"
-  });
-  if (result.status !== 0) throw new Error(`Unable to list repository files: ${result.stderr?.toString() || "git failed"}`);
-  return result.stdout.toString("utf8").split("\0").filter(Boolean)
-    .map(path => path.replaceAll("\\", "/"))
-    .filter(path => existsSync(join(root, path)));
+  const result = spawnSync(
+    "git",
+    ["ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+    {
+      cwd: root,
+      encoding: "buffer",
+    },
+  );
+  if (result.status !== 0)
+    throw new Error(
+      `Unable to list repository files: ${result.stderr?.toString() || "git failed"}`,
+    );
+  return result.stdout
+    .toString("utf8")
+    .split("\0")
+    .filter(Boolean)
+    .map((path) => path.replaceAll("\\", "/"))
+    .filter((path) => existsSync(join(root, path)));
 }
 
 function isStaticSource(path) {
-  return rootFiles.has(path) || staticPrefixes.some(prefix => path.startsWith(prefix));
+  return rootFiles.has(path) || staticPrefixes.some((prefix) => path.startsWith(prefix));
 }
 
 async function copyRepositoryStaticFiles() {
@@ -98,7 +112,6 @@ async function copyRepositoryStaticFiles() {
 }
 
 async function copyProxyRuntimes() {
-
   const { baremuxPath } = require("@mercuryworkshop/bare-mux/node");
   const { scramjetPath } = require("@mercuryworkshop/scramjet/path");
   const { scramjetPath: scramjetV1Path } = require("@mercuryworkshop/scramjet-v1/path");
@@ -111,13 +124,14 @@ async function copyProxyRuntimes() {
     [scramjetV1Path, "scramjet-v1"],
     [controller, "controller"],
     [epoxy, "epoxy"],
-    [libcurl, "libcurl"]
+    [libcurl, "libcurl"],
   ]) {
     await cp(source, join(output, destination), { recursive: true, force: true });
-    if(destination === 'libcurl') {
-      for(const name of ['index.mjs','index.js']) {
-        const file=join(output,destination,name);
-        if(existsSync(file))await writeFile(file,patchClientSockets(await readFile(file,'utf8')));
+    if (destination === "libcurl") {
+      for (const name of ["index.mjs", "index.js"]) {
+        const file = join(output, destination, name);
+        if (existsSync(file))
+          await writeFile(file, patchClientSockets(await readFile(file, "utf8")));
       }
     }
   }
@@ -128,24 +142,35 @@ async function copyEruda() {
   const destination = join(output, "assets", "vendor", "eruda.min.js");
   await mkdir(dirname(destination), { recursive: true });
   await cp(source, destination, { force: true });
-  await cp(require.resolve("hls.js/dist/hls.min.js"), join(output, "assets", "vendor", "hls.min.js"));
-  await cp(join(dirname(require.resolve("hls.js/package.json")), "LICENSE"), join(output, "assets", "vendor", "hls.LICENSE.txt"));
+  await cp(
+    require.resolve("hls.js/dist/hls.min.js"),
+    join(output, "assets", "vendor", "hls.min.js"),
+  );
+  await cp(
+    join(dirname(require.resolve("hls.js/package.json")), "LICENSE"),
+    join(output, "assets", "vendor", "hls.LICENSE.txt"),
+  );
 }
 
 async function waitForLocalServer(child) {
   return new Promise((resolveReady, reject) => {
     let log = "";
-    const timer = setTimeout(() => reject(new Error(`Timed out starting the build server.\n${log}`)), 20_000);
-    child.on("message", message => {
+    const timer = setTimeout(
+      () => reject(new Error(`Timed out starting the build server.\n${log}`)),
+      20_000,
+    );
+    child.on("message", (message) => {
       if (message?.type !== "nyx:listening" || !Number.isInteger(message.port)) return;
       clearTimeout(timer);
       resolveReady(message.port);
     });
-    child.stdout.on("data", chunk => {
+    child.stdout.on("data", (chunk) => {
       log += chunk.toString();
     });
-    child.stderr.on("data", chunk => { log += chunk.toString(); });
-    child.once("exit", code => {
+    child.stderr.on("data", (chunk) => {
+      log += chunk.toString();
+    });
+    child.once("exit", (code) => {
       clearTimeout(timer);
       reject(new Error(`Build server exited with code ${code}.\n${log}`));
     });
@@ -153,8 +178,6 @@ async function waitForLocalServer(child) {
 }
 
 async function writePatchedRuntimes(wispUrl) {
-                                                                        
-                                                                           
   const runtimeServer = `
     import { createServer } from "node:http";
     import { app } from ${JSON.stringify(pathToFileURL(join(root, "server.js")).href)};
@@ -172,7 +195,7 @@ async function writePatchedRuntimes(wispUrl) {
   const child = spawn(process.execPath, ["--input-type=module", "--eval", runtimeServer], {
     cwd: root,
     env: { ...process.env, PORT: "0", WISP_URL: wispUrl },
-    stdio: ["ignore", "pipe", "pipe", "ipc"]
+    stdio: ["ignore", "pipe", "pipe", "ipc"],
   });
   try {
     const port = await waitForLocalServer(child);
@@ -183,10 +206,12 @@ async function writePatchedRuntimes(wispUrl) {
       ["/controller/controller.api.js", "controller/controller.api.js"],
       ["/controller/controller.inject.js", "controller/controller.inject.js"],
       ["/controller/controller.sw.js", "controller/controller.sw.js"],
-      ["/nyx-scramjet-runtime-guard.js", "nyx-scramjet-runtime-guard.js"]
+      ["/nyx-scramjet-runtime-guard.js", "nyx-scramjet-runtime-guard.js"],
     ]);
     for (const [route, destination] of routes) {
-      const response = await fetch(`http://127.0.0.1:${port}${route}`, { signal: AbortSignal.timeout(15_000) });
+      const response = await fetch(`http://127.0.0.1:${port}${route}`, {
+        signal: AbortSignal.timeout(15_000),
+      });
       if (!response.ok) throw new Error(`${route} returned ${response.status}`);
       const target = join(output, ...destination.split("/"));
       await mkdir(dirname(target), { recursive: true });
@@ -196,8 +221,6 @@ async function writePatchedRuntimes(wispUrl) {
     child.kill("SIGTERM");
   }
 }
-
-
 
 async function removeUnavailableUgsEntries() {
   const catalogPath = join(output, "assets", "ugs", "games.json");
@@ -232,10 +255,11 @@ async function copyKatex() {
 }
 
 async function copyRemoteViewer() {
-  const source=dirname(dirname(require.resolve('@novnc/novnc')));
-  const destination=join(output,'assets','vendor','novnc');
-  await mkdir(destination,{recursive:true});
-  for(const name of ['core','vendor','docs','AUTHORS'])await cp(join(source,name),join(destination,name),{recursive:true});
+  const source = dirname(dirname(require.resolve("@novnc/novnc")));
+  const destination = join(output, "assets", "vendor", "novnc");
+  await mkdir(destination, { recursive: true });
+  for (const name of ["core", "vendor", "docs", "AUTHORS"])
+    await cp(join(source, name), join(destination, name), { recursive: true });
 }
 
 const buildNameSeed = randomBytes(16).toString("hex");
@@ -243,7 +267,19 @@ function runtimeMangleOptions(topLevel, source) {
   return {
     toplevel: topLevel,
     safari10: true,
-    nth_identifier: zakaEnabled ? zakaIdentifiers(source) : { get(n) { return "_" + createHash("sha256").update(buildNameSeed + ":" + n).digest("hex").slice(0,12); } }
+    nth_identifier: zakaEnabled
+      ? zakaIdentifiers(source)
+      : {
+          get(n) {
+            return (
+              "_" +
+              createHash("sha256")
+                .update(buildNameSeed + ":" + n)
+                .digest("hex")
+                .slice(0, 12)
+            );
+          },
+        },
   };
 }
 
@@ -252,17 +288,17 @@ function runtimeCompressOptions() {
     passes: 4,
     drop_debugger: true,
     keep_fargs: true,
-    unsafe: false
+    unsafe: false,
   };
 }
 
 function runtimeFormatOptions() {
   return {
     ascii_only: true,
-    beautify: false,
+    beautify: true,
     indent_level: 2,
     comments: /@license|@preserve|copyright|^!/i,
-    semicolons: true
+    semicolons: true,
   };
 }
 
@@ -270,11 +306,11 @@ async function minifyEmbeddedScramjetGuards(source, nameCache) {
   const names = new Set([
     "scramjetSpotifyChromeOsGuardSource",
     "scramjetMinimalRuntimeGuardSource",
-    "scramjetHelperRuntimeGuardSource"
+    "scramjetHelperRuntimeGuardSource",
   ]);
   const program = parse(source, { ecmaVersion: "latest", sourceType: "script" });
   const replacements = [];
-  const visit = async node => {
+  const visit = async (node) => {
     if (!node || typeof node !== "object") return;
     if (
       node.type === "VariableDeclarator" &&
@@ -286,10 +322,14 @@ async function minifyEmbeddedScramjetGuards(source, nameCache) {
         compress: runtimeCompressOptions(),
         mangle: runtimeMangleOptions(false, source),
         format: runtimeFormatOptions(),
-        nameCache
+        nameCache,
       });
       if (!result.code) throw new Error(`Could not minify embedded guard ${node.id.name}`);
-      replacements.push({ start: node.init.start, end: node.init.end, code: JSON.stringify(result.code) });
+      replacements.push({
+        start: node.init.start,
+        end: node.init.end,
+        code: JSON.stringify(result.code),
+      });
       names.delete(node.id.name);
       return;
     }
@@ -302,25 +342,29 @@ async function minifyEmbeddedScramjetGuards(source, nameCache) {
     }
   };
   await visit(program);
-  if (names.size) throw new Error(`Could not locate embedded Scramjet guards: ${[...names].join(", ")}`);
+  if (names.size)
+    throw new Error(`Could not locate embedded Scramjet guards: ${[...names].join(", ")}`);
   let transformed = source;
-  replacements.sort((a, b) => b.start - a.start).forEach(replacement => {
-    transformed = `${transformed.slice(0, replacement.start)}${replacement.code}${transformed.slice(replacement.end)}`;
-  });
+  replacements
+    .sort((a, b) => b.start - a.start)
+    .forEach((replacement) => {
+      transformed = `${transformed.slice(0, replacement.start)}${replacement.code}${transformed.slice(replacement.end)}`;
+    });
   return transformed;
 }
 
 async function minifyFirstPartyBrowserRuntimes() {
   const generatedRuntimes = ["runtime-config.js", "nyx-scramjet-runtime-guard.js"];
-  const trackedRuntimes = repositoryFiles().filter(relative => (
-    /\.(js|mjs)$/.test(relative) &&
-    isStaticSource(relative) &&
-    !relative.startsWith("assets/ugs/") &&
-    !relative.startsWith("assets/vendor/")
-  ));
+  const trackedRuntimes = repositoryFiles().filter(
+    (relative) =>
+      /\.(js|mjs)$/.test(relative) &&
+      isStaticSource(relative) &&
+      !relative.startsWith("assets/ugs/") &&
+      !relative.startsWith("assets/vendor/"),
+  );
   const targets = [...new Set([...trackedRuntimes, ...generatedRuntimes])]
     .sort()
-    .map(path => ({ path, topLevel: true }));
+    .map((path) => ({ path, topLevel: true }));
   const nameCache = {};
   let sourceBytes = 0;
   let outputBytes = 0;
@@ -340,21 +384,32 @@ async function minifyFirstPartyBrowserRuntimes() {
       compress: runtimeCompressOptions(),
       mangle: runtimeMangleOptions(target.topLevel, source),
       format: runtimeFormatOptions(),
-      nameCache
+      nameCache,
     });
     if (!result.code) throw new Error(`Could not minify ${target.path}`);
-    if (/sourceMappingURL/i.test(result.code)) throw new Error(`Source map reference survived in ${target.path}`);
+    if (/sourceMappingURL/i.test(result.code))
+      throw new Error(`Source map reference survived in ${target.path}`);
     await writeFile(path, `${result.code}\n`);
     outputBytes += Buffer.byteLength(result.code) + 1;
     transformedFiles += 1;
   }
   const reduction = sourceBytes ? Math.round((1 - outputBytes / sourceBytes) * 100) : 0;
-  if (transformedFiles !== targets.length) throw new Error(`Obfuscation coverage failed: ${transformedFiles}/${targets.length} runtimes transformed`);
-  console.log(`Production-obfuscated all ${transformedFiles} first-party browser runtime files (${Math.abs(reduction)}% ${reduction<0?"larger":"smaller"}; no source maps)`);
+  if (transformedFiles !== targets.length)
+    throw new Error(
+      `Obfuscation coverage failed: ${transformedFiles}/${targets.length} runtimes transformed`,
+    );
+  console.log(
+    `Production-obfuscated all ${transformedFiles} first-party browser runtime files (${Math.abs(reduction)}% ${reduction < 0 ? "larger" : "smaller"}; no source maps)`,
+  );
 }
 
 function isFirstPartyMarkupOrStyle(relative) {
-  if (!isStaticSource(relative) || relative.startsWith("assets/ugs/") || relative.startsWith("assets/vendor/")) return false;
+  if (
+    !isStaticSource(relative) ||
+    relative.startsWith("assets/ugs/") ||
+    relative.startsWith("assets/vendor/")
+  )
+    return false;
   return /\.(?:html|css)$/i.test(relative);
 }
 
@@ -369,16 +424,19 @@ async function minifyFirstPartyMarkupAndStyles() {
     try {
       source = await readFile(path, "utf8");
     } catch {
-      throw new Error(`First-party HTML/CSS asset is missing from the production build: ${relative}`);
+      throw new Error(
+        `First-party HTML/CSS asset is missing from the production build: ${relative}`,
+      );
     }
     sourceBytes += Buffer.byteLength(source);
     let transformed;
     if (relative.endsWith(".css")) {
-                                                                             
-                                                                       
-      const result = new CleanCSS({ inline: ["none"], level: 2, rebase: false }).minify(source.replace(/^\uFEFF/, ""));
-      if (result.errors.length) throw new Error(`Could not minify ${relative}: ${result.errors.join("; ")}`);
-      transformed = result.styles;
+      const result = new CleanCSS({ inline: ["none"], level: 2, rebase: false }).minify(
+        source.replace(/^\uFEFF/, ""),
+      );
+      if (result.errors.length)
+        throw new Error(`Could not minify ${relative}: ${result.errors.join("; ")}`);
+      transformed = formatCss(result.styles);
     } else {
       transformed = await minifyHtml(source, {
         collapseWhitespace: true,
@@ -386,18 +444,17 @@ async function minifyFirstPartyMarkupAndStyles() {
         minifyCSS: { level: 2 },
         minifyJS: {
           compress: runtimeCompressOptions(),
-                                                                             
-                                                                             
+
           mangle: { toplevel: false, eval: false, properties: false },
           keep_fnames: true,
           keep_classnames: true,
-          format: runtimeFormatOptions()
+          format: runtimeFormatOptions(),
         },
         removeComments: true,
         removeRedundantAttributes: true,
         removeScriptTypeAttributes: true,
         removeStyleLinkTypeAttributes: true,
-        useShortDoctype: true
+        useShortDoctype: true,
       });
     }
     await writeFile(path, `${transformed}\n`);
@@ -405,31 +462,42 @@ async function minifyFirstPartyMarkupAndStyles() {
     transformedFiles += 1;
   }
   const reduction = sourceBytes ? Math.round((1 - outputBytes / sourceBytes) * 100) : 0;
-  console.log(`Production-minified ${transformedFiles} first-party HTML/CSS files (${reduction}% smaller; comments removed)`);
+  console.log(
+    `Production-minified ${transformedFiles} first-party HTML/CSS files (${reduction}% smaller; comments removed)`,
+  );
 }
 
 async function writeNotFoundPage() {
-  await writeFile(join(output, "404.html"), "<!doctype html><meta charset=\"utf-8\"><title>Not found</title><p>Not found</p>\n");
+  await writeFile(
+    join(output, "404.html"),
+    '<!doctype html><meta charset="utf-8"><title>Not found</title><p>Not found</p>\n',
+  );
 }
 
 async function versionStylesheets() {
   const files = repositoryFiles().filter(isStaticSource).sort();
   const hash = createHash("sha256");
-  for (const path of files.filter(path => path.endsWith(".css"))) {
+  for (const path of files.filter((path) => path.endsWith(".css"))) {
     hash.update(path).update(await readFile(join(root, path)));
   }
   const revision = hash.digest("hex").slice(0, 16);
-  for (const path of files.filter(path => /\.(?:html|css)$/.test(path))) {
+  for (const path of files.filter((path) => /\.(?:html|css)$/.test(path))) {
     const target = join(output, path);
     if (!existsSync(target)) continue;
     const source = await readFile(target, "utf8");
-    const updated = source.replace(/(["'])([^"'\s<>]+\.css(?:\?[^"'\s<>]*)?)\1/g, (match, quote, url) => {
-      if (/^(?:[a-z]+:|\/\/)/i.test(url)) return match;
-      const pathname = url.split("?")[0];
-      const local = resolve(url.startsWith("/") ? output : dirname(target), url.startsWith("/") ? "." + pathname : pathname);
-      if (!local.startsWith(output) || !existsSync(local)) return match;
-      return quote + pathname + "?rev=" + revision + quote;
-    });
+    const updated = source.replace(
+      /(["'])([^"'\s<>]+\.css(?:\?[^"'\s<>]*)?)\1/g,
+      (match, quote, url) => {
+        if (/^(?:[a-z]+:|\/\/)/i.test(url)) return match;
+        const pathname = url.split("?")[0];
+        const local = resolve(
+          url.startsWith("/") ? output : dirname(target),
+          url.startsWith("/") ? "." + pathname : pathname,
+        );
+        if (!local.startsWith(output) || !existsSync(local)) return match;
+        return quote + pathname + "?rev=" + revision + quote;
+      },
+    );
     if (updated !== source) await writeFile(target, updated);
   }
   console.log(`Stylesheet cache revision: ${revision}`);
@@ -441,30 +509,74 @@ async function main() {
   await mkdir(output, { recursive: true });
   await copyRepositoryStaticFiles();
 
-  const studyDir=join(output,'apps/tutsi/studyready');
-  await mkdir(studyDir,{recursive:true});
-  await writeFile(join(studyDir,'index.html'),learningPage().replaceAll('/learning/','/apps/tutsi/studyready/'));
-  for(const name of ['learning.css','learning.mjs','curriculum.mjs','secondary.mjs'])
-    await cp(join(root,'services/domain-pages',name),join(studyDir,name));
+  const studyDir = join(output, "apps/tutsi/studyready");
+  await mkdir(studyDir, { recursive: true });
+  await writeFile(
+    join(studyDir, "index.html"),
+    learningPage().replaceAll("/learning/", "/apps/tutsi/studyready/"),
+  );
+  for (const name of ["learning.css", "learning.mjs", "curriculum.mjs", "secondary.mjs"])
+    await cp(join(root, "services/domain-pages", name), join(studyDir, name));
   await copyEruda();
-  await cp(join(root,'THIRD_PARTY_NOTICES.md'),join(output,'assets/vendor/nyx-third-party-notices.txt'));
-  await buildGameStorage(root,output);
+  await cp(
+    join(root, "THIRD_PARTY_NOTICES.md"),
+    join(output, "assets/vendor/nyx-third-party-notices.txt"),
+  );
+  await buildGameStorage(root, output);
   await copyKatex();
   await copyRemoteViewer();
   await copyProxyRuntimes();
   await writePatchedRuntimes(wispUrl);
   await removeUnavailableUgsEntries();
-  const thumbs = await readdir(join(output,"assets/ugs/thumbs"),{withFileTypes:true}).catch(error => { if(error.code === "ENOENT") return []; throw error; });
-  await mkdir(join(output,"assets/ugs"),{recursive:true});
-  await writeFile(join(output,"assets/ugs/thumbs.json"),JSON.stringify(thumbs.filter(entry=>entry.isFile() && /\.(?:png|jpe?g|webp|gif)$/i.test(entry.name)).map(entry=>entry.name).sort()));
+  const thumbs = await readdir(join(output, "assets/ugs/thumbs"), { withFileTypes: true }).catch(
+    (error) => {
+      if (error.code === "ENOENT") return [];
+      throw error;
+    },
+  );
+  await mkdir(join(output, "assets/ugs"), { recursive: true });
+  await writeFile(
+    join(output, "assets/ugs/thumbs.json"),
+    JSON.stringify(
+      thumbs
+        .filter((entry) => entry.isFile() && /\.(?:png|jpe?g|webp|gif)$/i.test(entry.name))
+        .map((entry) => entry.name)
+        .sort(),
+    ),
+  );
   await buildInterfaceText(output);
   await minifyFirstPartyBrowserRuntimes();
   await versionStylesheets();
   await minifyFirstPartyMarkupAndStyles();
   await buildProxyAssets(output);
   const modules = await buildPublicModules(output);
-  await buildFrontendAssets(output,repositoryFiles().filter(isStaticSource).map(file => (modules['/'+file] || '/'+file).slice(1)),learningPage());
+  await buildFrontendAssets(
+    output,
+    repositoryFiles()
+      .filter(isStaticSource)
+      .map((file) => (modules["/" + file] || "/" + file).slice(1)),
+    learningPage(),
+  );
   await writeNotFoundPage();
+  const frontend = JSON.parse(await readFile(join(output, "frontend-assets.json"), "utf8"));
+  const literals = new Set([
+    ...Object.keys(frontend.aliases),
+    ...Object.values(frontend.aliases),
+    "/runtime-config.js",
+  ]);
+  let encodedCount = 0;
+  for (const path of literals) {
+    if (!/\.(?:js|mjs)$/.test(path) || !existsSync(join(output, path.slice(1)))) continue;
+    const target = join(output, path.slice(1));
+    await writeFile(
+      target,
+      encodeLiterals(await formatJavaScript(await readFile(target, "utf8")), true),
+    );
+    encodedCount++;
+  }
+  console.log(
+    `Encoded string literals in ${encodedCount} browser assets after path and storage renaming.`,
+  );
   await buildPublisherPackage(root, output);
   console.log(`VPS build ready in ${output}`);
   console.log(`Wisp endpoint: ${wispUrl}`);

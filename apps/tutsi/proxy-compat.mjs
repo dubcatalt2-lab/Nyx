@@ -1,5 +1,5 @@
-import {protectionSource} from "./protections.mjs";
-                                                                  
+import { protectionSource } from "./protections.mjs";
+
 export const minimalGuardSource = `(() => {
     if (typeof window === "undefined" || window.__nyxScramjetMinimalGuards) return;
     window.__nyxScramjetMinimalGuards = true;
@@ -95,12 +95,7 @@ export function compatibilityPlugin(getPolicy = () => ({})) {
             const target = find(root, "head") || find(root, "html") || root;
             if (!target) return;
             const nodes = children(target);
-            if (
-              nodes.some(
-                (n) =>
-                  n?.attribs?.["data-n7x-runtime-guard"] === "minimal-guard",
-              )
-            )
+            if (nodes.some((n) => n?.attribs?.["data-n7x-runtime-guard"] === "minimal-guard"))
               return;
             const script = {
               type: "script",
@@ -114,7 +109,8 @@ export function compatibilityPlugin(getPolicy = () => ({})) {
             script.children.push({
               type: "text",
               data:
-                protectionSource(getPolicy()) + "if (/(^|\\.)(google\\.com|gstatic\\.com|recaptcha\\.net|google-analytics\\.com|googletagmanager\\.com)$/.test(location.hostname)) {" +
+                protectionSource(getPolicy()) +
+                "if (/(^|\\.)(google\\.com|gstatic\\.com|recaptcha\\.net|google-analytics\\.com|googletagmanager\\.com)$/.test(location.hostname)) {" +
                 minimalGuardSource +
                 "}",
               parent: script,
@@ -136,10 +132,7 @@ export function compatibilityPlugin(getPolicy = () => ({})) {
             if (link)
               headers.set(
                 "link",
-                link.replace(
-                  /;\s*integrity\s*=\s*(?:"[^"]*"|'[^']*'|[^,;]*)/gi,
-                  "",
-                ),
+                link.replace(/;\s*integrity\s*=\s*(?:"[^"]*"|'[^']*'|[^,;]*)/gi, ""),
               );
           },
           plugin,

@@ -1,16 +1,24 @@
-﻿import EpoxyTransport from '/epoxy/index.mjs';
-import { headerEntries, headerRecord } from './header-utils.mjs';
+﻿import EpoxyTransport from "/epoxy/index.mjs";
+import { headerEntries, headerRecord } from "./header-utils.mjs";
 
 export default class nyxScramjetEpoxyTransport extends EpoxyTransport {
-  async request(remote, method, body, headers, signal){
-    const response=await super.request(remote,method,body,headerRecord(headers),signal);
+  async request(remote, method, body, headers, signal) {
+    const response = await super.request(remote, method, body, headerRecord(headers), signal);
     return {
       ...response,
-      headers:headerEntries(response.headers)
+      headers: headerEntries(response.headers),
     };
   }
 
-  connect(url, protocols, requestHeaders, onopen, onmessage, onclose, onerror){
-    return super.connect(url,protocols,headerRecord(requestHeaders),onopen,onmessage,onclose,onerror);
+  connect(url, protocols, requestHeaders, onopen, onmessage, onclose, onerror) {
+    return super.connect(
+      url,
+      protocols,
+      headerRecord(requestHeaders),
+      onopen,
+      onmessage,
+      onclose,
+      onerror,
+    );
   }
 }

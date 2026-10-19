@@ -12,10 +12,10 @@ for(const uid of ['other','3158eOj4ATMzkoC1PAm8H7TXc2R2']){
   assert.equal(text.includes('>VMs<'),true);
 }
 const app=express();app.use('/app',express.static(process.env.NYX_TEST_STATIC_ROOT||'.'));
-app.get('/',(_req,res)=>res.send(`<div id="status"></div><main id="screen"></main><script type="module">
+app.get('/',(_req,res)=>res.send(`<button id="display" hidden>Open display in new tab</button><div id="status"></div><main id="screen" style="position:relative;height:600px"></main><script type="module">
 import {loremDesktop} from '/app/apps/nyxcloud/lorem.js';
 const scenario=new URLSearchParams(location.search).get('case');
-window.calls=[];window.dispose=loremDesktop({screen:document.querySelector('#screen'),status:t=>document.querySelector('#status').textContent=t,connected:()=>{},api:async(path,method)=>{
+window.calls=[];window.dispose=loremDesktop({displayButton:document.querySelector('#display'),screen:document.querySelector('#screen'),status:t=>document.querySelector('#status').textContent=t,connected:()=>{},api:async(path,method)=>{
  calls.push({path,method});
  if(path.startsWith('/lorem/start/')&&scenario==='new-stopped')await new Promise(r=>setTimeout(r,700));
  if(path==='/lorem/vms'){
@@ -28,7 +28,7 @@ window.calls=[];window.dispose=loremDesktop({screen:document.querySelector('#scr
      if(scenario==='outage'&&path==='/lorem/queue'&&!window.retried){window.retried=true;throw Object.assign(Error('Temporary outage'),{status:503});}
      return {status:'queued',position:3,reason:scenario==='service-error'&&!window.serviceRecovered?'service_unavailable':'capacity'};
    }
-   if(scenario==='recovering')return {status:'recovering',message:'Provider confirmation pending.'};
+   if(scenario==='recovering'&&!window.confirmed)return {status:'recovering',message:'Provider confirmation pending.'};
    return {status:'ready',vm:{id:'one',state:scenario==='new-stopped'?'exited':'running',url:'https://loremgroup.org/vm/fixture/'}};
  }
  return {};
@@ -39,7 +39,7 @@ const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listeni
 const browser=await chromium.launch({channel:'msedge',headless:true});
 try{
   const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.route('https://loremgroup.org/**',r=>r.fulfill({contentType:'text/html',body:'<h1>Fixture desktop</h1>'}));
+  await page.context().route('https://loremgroup.org/**',r=>r.fulfill({contentType:'text/html',body:'<h1>Fixture desktop</h1>'}));
   for(const scenario of ['new','new-stopped','existing','stopped','queued','disposed']){
     await page.goto('http://127.0.0.1:'+server.address().port+'/?case='+scenario);
     if(scenario==='disposed'){
@@ -72,6 +72,14 @@ try{
     assert.equal((await page.evaluate(()=>window.calls)).filter(c=>c.path==='/lorem/cancel').length,1);
     await page.evaluate(()=>dispose());
   }
+  await page.goto('http://127.0.0.1:'+server.address().port+'/?case=recovering');
+  await page.getByRole('heading',{name:'Checking your desktop request'}).waitFor();
+  await page.evaluate(()=>{window.confirmed=true});
+  await page.locator('iframe').waitFor({timeout:10000});
+  const popupPromise=page.context().waitForEvent('page');
+  await page.locator('#display').click();
+  const popup=await popupPromise;await popup.waitForLoadState();assert.equal(popup.url(),'https://loremgroup.org/vm/fixture/');await popup.close();
+  await page.evaluate(()=>dispose());assert.equal(await page.locator('#display').isVisible(),false);
   await page.clock.install();
   await page.goto('http://127.0.0.1:'+server.address().port+'/?case=timed');
   await page.locator('iframe').waitFor();

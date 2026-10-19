@@ -1,508 +1,538 @@
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-user-profile-dialog{
-  width:min(1180px,calc(100vw - 32px))!important;
-  height:min(860px,calc(100dvh - 32px))!important;
-  border:1px solid #343640!important;
-  border-radius:18px!important;
-  box-shadow:0 28px 82px rgba(0,0,0,.58)!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-user-profile-dialog {
+  width: min(1180px, calc(100vw - 32px)) !important;
+  height: min(860px, calc(100dvh - 32px)) !important;
+  border: 1px solid #343640 !important;
+  border-radius: 18px !important;
+  box-shadow: 0 28px 82px rgba(0, 0, 0, .58) !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-profile-main{
-  display:flex!important;
-  height:100%!important;
-  min-height:0!important;
-  flex-direction:column!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-profile-main {
+  display: flex !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  flex-direction: column !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-profile-scroll{
-  display:flex!important;
-  height:100%!important;
-  min-height:0!important;
-  flex-direction:column!important;
-  overflow:hidden!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-profile-scroll {
+  display: flex !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-profile-header{
-  display:flex!important;
-  align-items:baseline!important;
-  gap:12px!important;
-  flex:0 0 auto!important;
-  margin:0!important;
-  padding:20px 26px 16px!important;
-  border-bottom:1px solid #2d3038!important;
-  background:linear-gradient(90deg,#17191f 0%,#121318 72%)!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-profile-header {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 12px !important;
+  flex: 0 0 auto !important;
+  margin: 0 !important;
+  padding: 20px 26px 16px !important;
+  border-bottom: 1px solid #2d3038 !important;
+  background: linear-gradient(90deg, #17191f 0%, #121318 72%) !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-profile-header h2{
-  margin:0!important;
-  color:#f5f6fa!important;
-  font-size:20px!important;
-  letter-spacing:-.02em!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-profile-header h2 {
+  margin: 0 !important;
+  color: #f5f6fa !important;
+  font-size: 20px !important;
+  letter-spacing: -.02em !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-profile-header p{
-  margin:0!important;
-  color:#969aa6!important;
-  font-size:12px!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-profile-header p {
+  margin: 0 !important;
+  color: #969aa6 !important;
+  font-size: 12px !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-profile-layout{
-  flex:1 1 auto!important;
-  width:100%!important;
-  height:auto!important;
-  min-height:0!important;
-  grid-template-columns:minmax(410px,460px) minmax(0,1fr)!important;
-  background:#101116!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-profile-layout {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  grid-template-columns: minmax(410px, 460px) minmax(0, 1fr) !important;
+  background: #101116 !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-user-profile-form{
-  height:auto!important;
-  padding:0 22px 104px!important;
-  background:#15161c!important;
-  scrollbar-width:thin!important;
-  scrollbar-color:#3b3e49 transparent!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-user-profile-form {
+  height: auto !important;
+  padding: 0 22px 104px !important;
+  background: #15161c !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: #3b3e49 transparent !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-rail-header{
-  min-height:54px!important;
-  height:54px!important;
-  margin:0 -22px!important;
-  padding:0 22px!important;
-  border-bottom:1px solid #292c34!important;
-  background:#15161c!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-rail-header {
+  min-height: 54px !important;
+  height: 54px !important;
+  margin: 0 -22px !important;
+  padding: 0 22px !important;
+  border-bottom: 1px solid #292c34 !important;
+  background: #15161c !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-rail-header>[data-n7x-profile-switch-toggle]{
-  color:#f3f4f7!important;
-  font-size:14px!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-rail-header>[data-n7x-profile-switch-toggle] {
+  color: #f3f4f7 !important;
+  font-size: 14px !important;
 }
 
-html[data-n7x-theme] body .qb5c9c56b474b373419{
-  position:sticky;
-  z-index:11;
-  top:54px;
-  display:grid;
-  grid-template-columns:repeat(4,minmax(0,1fr));
-  gap:5px;
-  margin:0 -22px;
-  padding:12px 22px;
-  border-bottom:1px solid #292c34;
-  background:rgba(21,22,28,.96);
-  backdrop-filter:blur(14px);
+html[data-n7x-theme] body .qb5c9c56b474b373419 {
+  position: sticky;
+  z-index: 11;
+  top: 54px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 5px;
+  margin: 0 -22px;
+  padding: 12px 22px;
+  border-bottom: 1px solid #292c34;
+  background: rgba(21, 22, 28, .96);
+  backdrop-filter: blur(14px);
 }
 
-html[data-n7x-theme] body .qb5c9c56b474b373419 button{
-  min-height:31px;
-  padding:0 7px;
-  overflow:hidden;
-  border:1px solid transparent;
-  border-radius:7px;
-  background:transparent;
-  color:#969aa6!important;
-  font:650 10px/1 "Outfit","Segoe UI",sans-serif;
-  letter-spacing:.02em;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-  cursor:pointer;
-  transition:background-color .18s ease,border-color .18s ease,color .18s ease,transform .18s ease;
+html[data-n7x-theme] body .qb5c9c56b474b373419 button {
+  min-height: 31px;
+  padding: 0 7px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: #969aa6 !important;
+  font: 650 10px/1 "Outfit", "Segoe UI", sans-serif;
+  letter-spacing: .02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
 }
 
-html[data-n7x-theme] body .qb5c9c56b474b373419 button:is(:hover,:focus-visible){
-  border-color:#424651;
-  background:#202229;
-  color:#e5e7ec!important;
-  outline:none;
+html[data-n7x-theme] body .qb5c9c56b474b373419 button:is(:hover, :focus-visible) {
+  border-color: #424651;
+  background: #202229;
+  color: #e5e7ec !important;
+  outline: none;
 }
 
-html[data-n7x-theme] body .qb5c9c56b474b373419 button.active{
-  border-color:color-mix(in srgb,var(--theme-accent,#5865f2) 58%,#50545e);
-  background:color-mix(in srgb,var(--theme-accent,#5865f2) 18%,#24262d);
-  color:#f5f6f8!important;
-  box-shadow:inset 0 1px color-mix(in srgb,var(--theme-accent,#5865f2) 38%,rgba(255,255,255,.18));
+html[data-n7x-theme] body .qb5c9c56b474b373419 button.active {
+  border-color: color-mix(in srgb, var(--theme-accent, #5865f2) 58%, #50545e);
+  background: color-mix(in srgb, var(--theme-accent, #5865f2) 18%, #24262d);
+  color: #f5f6f8 !important;
+  box-shadow: inset 0 1px color-mix(in srgb, var(--theme-accent, #5865f2) 38%, rgba(255, 255, 255, .18));
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-editor-section{
-  gap:16px!important;
-  margin:0!important;
-  padding:21px 0!important;
-  border:0!important;
-  background:transparent!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-editor-section {
+  gap: 16px !important;
+  margin: 0 !important;
+  padding: 21px 0 !important;
+  border: 0 !important;
+  background: transparent !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-editor-section[hidden]{display:none!important}
-
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-editor-section h4{
-  color:#f0f1f5!important;
-  font-size:13px!important;
-  font-weight:750!important;
-  letter-spacing:.01em!important;
-  text-transform:none!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-editor-section[hidden] {
+  display: none !important
 }
 
-html[data-n7x-theme] body .n7x-profile-panel-heading p{
-  margin:4px 0 0!important;
-  color:#9095a2!important;
-  font-size:11px!important;
-  line-height:1.4!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-editor-section h4 {
+  color: #f0f1f5 !important;
+  font-size: 13px !important;
+  font-weight: 750 !important;
+  letter-spacing: .01em !important;
+  text-transform: none !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-field-grid{
-  grid-template-columns:repeat(2,minmax(0,1fr))!important;
-  gap:12px!important;
+html[data-n7x-theme] body .n7x-profile-panel-heading p {
+  margin: 4px 0 0 !important;
+  color: #9095a2 !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-field{
-  gap:6px!important;
-  color:#bcc0ca!important;
-  font-size:11px!important;
-  font-weight:650!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-field-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-field :is(input:not([type="color"]),select,textarea){
-  min-height:40px!important;
-  border-color:#383b45!important;
-  border-radius:8px!important;
-  background:#202229!important;
-  color:#f1f2f5!important;
-  transition:border-color .18s ease,box-shadow .18s ease,background-color .18s ease!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-field {
+  gap: 6px !important;
+  color: #bcc0ca !important;
+  font-size: 11px !important;
+  font-weight: 650 !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-field :is(input:not([type="color"]),select,textarea):is(:hover,:focus){
-  border-color:color-mix(in srgb,var(--theme-accent,#5865f2) 58%,#555965)!important;
-  background:#24262e!important;
-  box-shadow:0 0 0 3px color-mix(in srgb,var(--theme-accent,#5865f2) 16%,transparent)!important;
-  outline:none!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-field :is(input:not([type="color"]), select, textarea) {
+  min-height: 40px !important;
+  border-color: #383b45 !important;
+  border-radius: 8px !important;
+  background: #202229 !important;
+  color: #f1f2f5 !important;
+  transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-field textarea{min-height:108px!important}
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-account-email-field{grid-column:1/-1!important}
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-field :is(input:not([type="color"]), select, textarea):is(:hover, :focus) {
+  border-color: color-mix(in srgb, var(--theme-accent, #5865f2) 58%, #555965) !important;
+  background: #24262e !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-accent, #5865f2) 16%, transparent) !important;
+  outline: none !important;
+}
+
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-field textarea {
+  min-height: 108px !important
+}
+
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-account-email-field {
+  grid-column: 1/-1 !important
+}
 
 html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-nameplate-preview,
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-display-section .n7x-display-name-style-launcher{
-  border-color:#393d47!important;
-  border-radius:11px!important;
-  background:linear-gradient(135deg,#22242c,#1c1e25)!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-display-section .n7x-display-name-style-launcher {
+  border-color: #393d47 !important;
+  border-radius: 11px !important;
+  background: linear-gradient(135deg, #22242c, #1c1e25) !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-list{
-  grid-template-columns:1fr!important;
-  gap:12px!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-list {
+  grid-template-columns: 1fr !important;
+  gap: 12px !important;
 }
 
 html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-control,
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-control:nth-child(2){
-  display:grid!important;
-  min-height:0!important;
-  grid-template-columns:minmax(0,1fr) auto!important;
-  align-items:center!important;
-  gap:12px!important;
-  padding:14px!important;
-  border:1px solid #393d47!important;
-  border-radius:11px!important;
-  background:linear-gradient(135deg,#22242c,#1b1d24)!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-control:nth-child(2) {
+  display: grid !important;
+  min-height: 0 !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 14px !important;
+  border: 1px solid #393d47 !important;
+  border-radius: 11px !important;
+  background: linear-gradient(135deg, #22242c, #1b1d24) !important;
 }
 
 html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-control>div:first-child,
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-control>.n7x-profile-file-name{display:block!important}
-
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-actions{
-  display:flex!important;
-  align-items:center!important;
-  justify-content:flex-end!important;
-  gap:7px!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-control>.n7x-profile-file-name {
+  display: block !important
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-actions .n7x-profile-file-button{
-  display:flex!important;
-  min-height:34px!important;
-  align-items:center!important;
-  gap:7px!important;
-  padding:0 10px!important;
-  border-radius:7px!important;
-  background:color-mix(in srgb,var(--theme-accent,#5865f2) 76%,#30333d)!important;
-  color:#fff!important;
-  font-size:11px!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-actions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 7px !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-rail-avatar{
-  width:27px!important;
-  height:27px!important;
-  border-width:2px!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-actions .n7x-profile-file-button {
+  display: flex !important;
+  min-height: 34px !important;
+  align-items: center !important;
+  gap: 7px !important;
+  padding: 0 10px !important;
+  border-radius: 7px !important;
+  background: color-mix(in srgb, var(--theme-accent, #5865f2) 76%, #30333d) !important;
+  color: #fff !important;
+  font-size: 11px !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-actions .n7x-profile-clear-button{
-  min-height:32px!important;
-  padding:0 7px!important;
-  border-radius:6px!important;
-  color:#aeb3c0!important;
-  font-size:10px!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-rail-avatar {
+  width: 27px !important;
+  height: 27px !important;
+  border-width: 2px !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-visual-color-grid{
-  grid-template-columns:repeat(3,minmax(0,1fr))!important;
-  gap:9px!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-image-actions .n7x-profile-clear-button {
+  min-height: 32px !important;
+  padding: 0 7px !important;
+  border-radius: 6px !important;
+  color: #aeb3c0 !important;
+  font-size: 10px !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-color-field{
-  display:grid!important;
-  grid-template-rows:auto 54px auto!important;
-  gap:5px!important;
-  min-width:0!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-visual-color-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 9px !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-color-field>input[type="color"]{
-  width:100%!important;
-  height:54px!important;
-  padding:4px!important;
-  border:1px solid #454955!important;
-  border-radius:9px!important;
-  background:#202229!important;
-  cursor:pointer;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-color-field {
+  display: grid !important;
+  grid-template-rows: auto 54px auto !important;
+  gap: 5px !important;
+  min-width: 0 !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-palette{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:8px;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-color-field>input[type="color"] {
+  width: 100% !important;
+  height: 54px !important;
+  padding: 4px !important;
+  border: 1px solid #454955 !important;
+  border-radius: 9px !important;
+  background: #202229 !important;
+  cursor: pointer;
 }
 
-html[data-n7x-theme] body .n7x-profile-palette button{
-  display:grid;
-  grid-template-columns:20px 1fr;
-  align-items:center;
-  gap:7px;
-  min-height:38px;
-  padding:5px 7px;
-  border:1px solid #393d47;
-  border-radius:8px;
-  background:#202229;
-  color:#c7cad2!important;
-  font:650 10px/1 "Outfit","Segoe UI",sans-serif;
-  text-align:left;
-  cursor:pointer;
-  transition:border-color .18s ease,background-color .18s ease,transform .18s ease;
+html[data-n7x-theme] body .n7x-profile-palette {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
 }
 
-html[data-n7x-theme] body .n7x-profile-palette button i{
-  width:20px;
-  height:20px;
-  border-radius:7px;
-  background:linear-gradient(135deg,var(--n7x-palette-primary),var(--n7x-palette-secondary) 55%,var(--n7x-palette-banner));
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.22);
+html[data-n7x-theme] body .n7x-profile-palette button {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 5px 7px;
+  border: 1px solid #393d47;
+  border-radius: 8px;
+  background: #202229;
+  color: #c7cad2 !important;
+  font: 650 10px/1 "Outfit", "Segoe UI", sans-serif;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .18s ease, background-color .18s ease, transform .18s ease;
 }
 
-html[data-n7x-theme] body .n7x-profile-palette button:is(:hover,:focus-visible),html[data-n7x-theme] body .n7x-profile-palette button.active{
-  border-color:color-mix(in srgb,var(--n7x-palette-primary) 64%,#8f94a1);
-  background:#272a33;
-  color:#fff!important;
-  outline:none;
-  transform:translateY(-1px);
+html[data-n7x-theme] body .n7x-profile-palette button i {
+  width: 20px;
+  height: 20px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, var(--n7x-palette-primary), var(--n7x-palette-secondary) 55%, var(--n7x-palette-banner));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .22);
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-effect-stack{
-  display:grid!important;
-  gap:12px!important;
+html[data-n7x-theme] body .n7x-profile-palette button:is(:hover, :focus-visible),
+html[data-n7x-theme] body .n7x-profile-palette button.active {
+  border-color: color-mix(in srgb, var(--n7x-palette-primary) 64%, #8f94a1);
+  background: #272a33;
+  color: #fff !important;
+  outline: none;
+  transform: translateY(-1px);
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-effect-stack>.n7x-profile-field{
-  padding:13px!important;
-  border:1px solid #393d47!important;
-  border-radius:10px!important;
-  background:#202229!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-effect-stack {
+  display: grid !important;
+  gap: 12px !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-decoration-field{
-  display:grid!important;
-  min-height:0!important;
-  grid-template-columns:76px minmax(0,1fr)!important;
-  align-items:center!important;
-  gap:8px 14px!important;
-  padding:14px!important;
-  border:1px solid #393d47!important;
-  border-radius:11px!important;
-  background:linear-gradient(135deg,#22242c,#1c1e25)!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-effect-stack>.n7x-profile-field {
+  padding: 13px !important;
+  border: 1px solid #393d47 !important;
+  border-radius: 10px !important;
+  background: #202229 !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-decoration-preview{
-  grid-row:1/4;
-  width:64px!important;
-  height:64px!important;
-  margin:0!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-decoration-field {
+  display: grid !important;
+  min-height: 0 !important;
+  grid-template-columns: 76px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 8px 14px !important;
+  padding: 14px !important;
+  border: 1px solid #393d47 !important;
+  border-radius: 11px !important;
+  background: linear-gradient(135deg, #22242c, #1c1e25) !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-decoration-avatar{width:58px!important;height:58px!important}
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-decoration-field small{display:block!important}
-
-html[data-n7x-theme] body .n7x-profile-earned-badges{
-  display:flex;
-  align-items:center;
-  gap:11px;
-  padding:13px;
-  border:1px dashed #444854;
-  border-radius:10px;
-  background:#1d1f26;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-decoration-preview {
+  grid-row: 1/4;
+  width: 64px !important;
+  height: 64px !important;
+  margin: 0 !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-earned-badges>span{
-  display:grid;
-  width:32px;
-  height:32px;
-  place-items:center;
-  border-radius:9px;
-  background:color-mix(in srgb,var(--theme-accent,#5865f2) 20%,#262936);
-  color:color-mix(in srgb,var(--theme-accent,#5865f2) 68%,#fff);
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-decoration-avatar {
+  width: 58px !important;
+  height: 58px !important
+}
+
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-decoration-field small {
+  display: block !important
+}
+
+html[data-n7x-theme] body .n7x-profile-earned-badges {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px;
+  border: 1px dashed #444854;
+  border-radius: 10px;
+  background: #1d1f26;
+}
+
+html[data-n7x-theme] body .n7x-profile-earned-badges>span {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--theme-accent, #5865f2) 20%, #262936);
+  color: color-mix(in srgb, var(--theme-accent, #5865f2) 68%, #fff);
 }
 
 html[data-n7x-theme] body .n7x-profile-earned-badges strong,
-html[data-n7x-theme] body .n7x-profile-earned-badges small{display:block!important}
-html[data-n7x-theme] body .n7x-profile-earned-badges strong{color:#e9ebef!important;font-size:11px!important}
-html[data-n7x-theme] body .n7x-profile-earned-badges small{margin-top:3px!important;color:#9297a4!important;font-size:10px!important;line-height:1.35!important}
+html[data-n7x-theme] body .n7x-profile-earned-badges small {
+  display: block !important
+}
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-preview-pane{
-  position:relative!important;
-  display:grid!important;
-  height:100%!important;
-  min-height:0!important;
-  align-content:center!important;
-  justify-items:center!important;
-  padding:34px 48px!important;
-  overflow:auto!important;
+html[data-n7x-theme] body .n7x-profile-earned-badges strong {
+  color: #e9ebef !important;
+  font-size: 11px !important
+}
+
+html[data-n7x-theme] body .n7x-profile-earned-badges small {
+  margin-top: 3px !important;
+  color: #9297a4 !important;
+  font-size: 10px !important;
+  line-height: 1.35 !important
+}
+
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-preview-pane {
+  position: relative !important;
+  display: grid !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  align-content: center !important;
+  justify-items: center !important;
+  padding: 34px 48px !important;
+  overflow: auto !important;
   background:
-    radial-gradient(circle at 55% 20%,color-mix(in srgb,var(--theme-accent,#5865f2) 12%,transparent),transparent 34%),
-    linear-gradient(145deg,#101116,#151720)!important;
+    radial-gradient(circle at 55% 20%, color-mix(in srgb, var(--theme-accent, #5865f2) 12%, transparent), transparent 34%),
+    linear-gradient(145deg, #101116, #151720) !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-preview-pane::before{
-  content:"Live preview";
-  position:absolute;
-  top:19px;
-  left:24px;
-  color:#8f94a0;
-  font:750 10px/1 "Outfit","Segoe UI",sans-serif;
-  letter-spacing:.1em;
-  text-transform:uppercase;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-preview-pane::before {
+  content: "Live preview";
+  position: absolute;
+  top: 19px;
+  left: 24px;
+  color: #8f94a0;
+  font: 750 10px/1 "Outfit", "Segoe UI", sans-serif;
+  letter-spacing: .1em;
+  text-transform: uppercase;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-preview-pane .n7x-user-profile-view{
-  position:relative!important;
-  top:auto!important;
-  width:min(480px,100%)!important;
-  margin:auto!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-preview-pane .n7x-user-profile-view {
+  position: relative !important;
+  top: auto !important;
+  width: min(480px, 100%) !important;
+  margin: auto !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-preview-pane .n7x-user-profile-card{
-  width:100%!important;
-  max-width:480px!important;
-  height:auto!important;
-  min-height:0!important;
-  max-height:none!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-preview-pane .n7x-user-profile-card {
+  width: 100% !important;
+  max-width: 480px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
 }
 
-
-
-
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-preview-pane .n7x-editor-menu-preview{
-  position:relative!important;
-  inset:auto!important;
-  z-index:0!important;
-  width:min(320px,100%)!important;
-  max-height:none!important;
-  margin:0!important;
-  opacity:1!important;
-  transform:none!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-discord-preview-pane .n7x-editor-menu-preview {
+  position: relative !important;
+  inset: auto !important;
+  z-index: 0 !important;
+  width: min(320px, 100%) !important;
+  max-height: none !important;
+  margin: 0 !important;
+  opacity: 1 !important;
+  transform: none !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-banner{
-  height:106px!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-banner {
+  height: 106px !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-profile{
-  min-height:0!important;
-  padding:56px 4px 14px!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-profile {
+  min-height: 0 !important;
+  padding: 56px 4px 14px !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-avatar{
-  top:-40px!important;
-  width:80px!important;
-  height:80px!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-avatar {
+  top: -40px !important;
+  width: 80px !important;
+  height: 80px !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-avatar>.n7x-avatar-decoration{
-  inset:-11px!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-avatar>.n7x-avatar-decoration {
+  inset: -11px !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-avatar[data-n7x-direct-edit]::after{
-  position:absolute;
-  z-index:9;
-  right:-4px;
-  bottom:5px;
-  display:grid;
-  width:28px;
-  height:28px;
-  place-items:center;
-  border:2px solid #0e0f10;
-  border-radius:50%;
-  background:#2b2d31;
-  color:#f2f3f5;
-  content:"✎";
-  font:700 15px/1 "Segoe UI Symbol",sans-serif;
-  opacity:1;
-  pointer-events:none;
-  transition:opacity .16s ease,background-color .16s ease;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-avatar[data-n7x-direct-edit]::after {
+  position: absolute;
+  z-index: 9;
+  right: -4px;
+  bottom: 5px;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 2px solid #0e0f10;
+  border-radius: 50%;
+  background: #2b2d31;
+  color: #f2f3f5;
+  content: "✎";
+  font: 700 15px/1 "Segoe UI Symbol", sans-serif;
+  opacity: 1;
+  pointer-events: none;
+  transition: opacity .16s ease, background-color .16s ease;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-status{
-  top:-7px!important;
-  left:90px!important;
-  max-width:calc(100% - 94px)!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-status {
+  top: -7px !important;
+  left: 90px !important;
+  max-width: calc(100% - 94px) !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-group{
-  margin-top:8px!important;
-  padding:6px!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-group {
+  margin-top: 8px !important;
+  padding: 6px !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-group button{
-  min-height:40px!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-group button {
+  min-height: 40px !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-profile-media-edit-avatar{
-  top:auto!important;
-  right:-4px!important;
-  bottom:7px!important;
-  left:auto!important;
-  opacity:0!important;
-  pointer-events:none!important;
-  transform:none!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-profile-media-edit-avatar {
+  top: auto !important;
+  right: -4px !important;
+  bottom: 7px !important;
+  left: auto !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: none !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-profile-media-edit-banner{
-  opacity:0!important;
-  pointer-events:none!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-profile-media-edit-banner {
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview-actions{
-  pointer-events:none!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview-actions {
+  pointer-events: none !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-avatar:is(:hover,:focus-within) .n7x-profile-media-edit-avatar,html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-banner:is(:hover,:focus-within) .n7x-profile-media-edit-banner,html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-profile-media-edit:is(:hover,:focus-visible){
-  opacity:1!important;
-  pointer-events:auto!important;
-  transform:none!important;
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-avatar:is(:hover, :focus-within) .n7x-profile-media-edit-avatar,
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-account-menu-banner:is(:hover, :focus-within) .n7x-profile-media-edit-banner,
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-editor-menu-preview .n7x-profile-media-edit:is(:hover, :focus-visible) {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: none !important;
 }
 
-html[data-n7x-theme] body .n7x-profile-drawer .n7x-user-profile-form footer{
-  position:sticky!important;
-  bottom:0!important;
-  z-index:10!important;
-  margin:0 -22px!important;
-  padding:13px 22px!important;
-  border-top:1px solid #333640!important;
-  background:rgba(21,22,28,.95)!important;
-  backdrop-filter:blur(14px);
+html[data-n7x-theme] body .n7x-profile-drawer .n7x-user-profile-form footer {
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 10 !important;
+  margin: 0 -22px !important;
+  padding: 13px 22px !important;
+  border-top: 1px solid #333640 !important;
+  background: rgba(21, 22, 28, .95) !important;
+  backdrop-filter: blur(14px);
 }
 
-@media(prefers-reduced-motion:reduce){
+@media(prefers-reduced-motion:reduce) {
+
   html[data-n7x-theme] body .qb5c9c56b474b373419 button,
   html[data-n7x-theme] body .n7x-profile-palette button,
-  html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-field :is(input,select,textarea){transition:none!important}
+  html[data-n7x-theme] body .n7x-profile-drawer .n7x-profile-field :is(input, select, textarea) {
+    transition: none !important
+  }
 }

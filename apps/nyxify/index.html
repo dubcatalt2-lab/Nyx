@@ -10,8 +10,11 @@
   <link rel="stylesheet" href="/apps/nyxify/icons.css?v=20260825-nyx-v2">
   <link rel="stylesheet" href="/apps/nyxify/app.css?v=20260924-audio-search-v1">
 <link rel="stylesheet" href="/apps/obsidian.css?v=20260926-2">
+  <link rel="stylesheet" href="/apps/nyxify/q91d3.css">
+<link rel="stylesheet" href="/apps/q73e8.css">
 </head>
-<body>
+<body class="q91d3" data-no-interface-text>
+  <div class="q48e2" aria-hidden="true"></div>
   <header>
     <div class="n7xify-brand" aria-label="N7X1FY/built in music">
       <img src="/assets/icons/nyx-cat-moon-small.svg?v=3" alt="">
@@ -77,6 +80,12 @@
           <button type="button" class="now-playing-link" id="nowPlayingArtist"></button>
           <button type="button" class="now-playing-link now-playing-album" id="nowPlayingAlbum"></button>
           <p id="musicPlaybackStatus" role="status" aria-live="polite"></p>
+          <details class="q71f6" id="q71f6" open>
+            <summary>Lyrics</summary>
+            <p id="q29c3" role="status">Choose a track to see lyrics.</p>
+            <div id="q38d4" class="q38d4" aria-label="Track lyrics"></div>
+            <a href="https://lrclib.net" target="_blank" rel="noopener noreferrer">Lyrics by LRCLIB</a>
+          </details>
           <div class="now-playing-playlists" id="nowPlayingPlaylists"></div>
           <div class="now-playing-next" id="nowPlayingNext"></div>
         </div>
@@ -97,6 +106,10 @@
     </aside>
   </div>
 
+  <dialog id="q82f1" class="q82f1" aria-labelledby="q42a8">
+    <div class="q82f1-head"><h2 id="q42a8">Lyrics</h2><button type="button" id="q52e9" aria-label="Close lyrics">Close</button></div>
+    <div id="q65c7"></div>
+  </dialog>
   <section class="full-track-stage" id="fullTrackStage" aria-label="Full track player" hidden>
     <div class="full-track-head">
       <div><strong id="fullTrackTitle">Full track</strong><span id="fullTrackStatus">Finding the full song…</span></div>
@@ -132,13 +145,15 @@
           <span class="p-artist" id="pArtist">&nbsp;</span>
           <span class="p-title" id="pTitle">&nbsp;</span>
         </div>
+
+      </div>
+
         <div class="p-actions">
+          <button type="button" class="ibtn q76a2" id="q76a2" aria-label="Open lyrics" aria-haspopup="dialog" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v11H9l-4 4V5Z"/><path d="M9 9h6M9 12h4"/></svg><span>Lyrics</span></button>
           <button type="button" class="ibtn" id="pPlaylist" title="add to playlist" aria-label="add to playlist"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v8M8 12h8"></path></svg></button>
           <button type="button" class="like-btn" id="pLike" title="like" aria-label="like" aria-pressed="false"><i class="ic-heart"></i></button>
           <a class="ibtn hide-sm" id="dlBtn" title="download song" aria-label="download song"><i class="material-symbols--download-rounded"></i></a>
         </div>
-      </div>
-
       <button type="button" class="ibtn queue-toggle" id="queueToggle" title="next up" aria-label="next up" aria-expanded="false" aria-controls="queuePanel">
         <i class="ic-queue"></i>
         <span class="q-badge" id="qBadge" hidden></span>

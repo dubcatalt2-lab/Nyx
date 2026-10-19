@@ -26,7 +26,7 @@ try {
     if (path === '/api/founder-profile/auth-config') payload = {enabled: true, projectId: 'fixture', apiKey: 'test'};
     if (path === '/api/chat/bootstrap') payload = {me, members: [me], channels: [{id: 'rules', name: 'rules'}, {id: 'announcements', name: 'announcements'}, {id: 'general', name: 'general', description: 'Community chat'}], conversations: [], voice: {channels: [], participants: []}};
     if (path === '/api/chat/messages') payload = {messages: Array.from({length: 12}, (_, i) => ({id: String(i).padStart(40, 'a'), author: i % 3 ? peer : me, text: ['Anyone playing tonight?', 'I will be around after six.', 'See you there.'][i % 3], createdAtMs: Date.now() - (12 - i) * 360000}))};
-    if (path === '/api/profiles/' + peer.uid) payload = {uid: peer.uid, profile: {...peer, bio: 'Design, music, and late nights.\n<script>Text stays text.</script>', bannerUrl: new URL('/assets/backgrounds/1014077.jpg', base).href}, online: true, role: 'owner', roleLabel: 'Owner', createdAt: '2026-01-01T00:00:00.000Z'};
+    if (path === '/api/profiles/' + peer.uid) payload = {uid: peer.uid, profile: {...peer, profileEffect:'fx-radiant-orbit', bio: 'Design, music, and late nights.\n<script>Text stays text.</script>', bannerUrl: new URL('/assets/backgrounds/1014077.jpg', base).href}, online: true, role: 'owner', roleLabel: 'Owner', createdAt: '2026-01-01T00:00:00.000Z'};
     if (path === '/api/chat/relationships') payload = {relationships: relations};
     if (path.startsWith('/api/chat/relationships/')) {
       const action = route.request().postDataJSON().action; actions.push(action);
@@ -49,6 +49,7 @@ try {
   await page.getByRole('button', {name: 'River', exact: true}).first().click();
   const profile = page.locator('[data-member-dialog]');
   await profile.locator('.member-bio').waitFor();
+  assert.equal(await profile.locator('.n7x-user-profile-effect').evaluate(n=>getComputedStyle(n).backgroundSize),'100% 100%');
   assert.match(await profile.innerText(), /Design, music/);
   await profile.locator('.member-banner-image').evaluate(image => image.decode());
   assert(await profile.locator('.member-banner-image').evaluate(image => image.naturalWidth > 0));
@@ -96,13 +97,18 @@ try {
   await page.keyboard.press('Escape');
   for (const height of [400, 700]) {await page.setViewportSize({width: 390, height}); const bounds = await page.locator('[data-message-input]').boundingBox(); assert(bounds.y >= 0 && bounds.y + bounds.height <= height);}
                                                                                       
-  await page.route('**/chat-profile-host', route => route.fulfill({contentType: 'text/html', body: '<iframe title="Chat" src="/apps/chat/" style="width:100%;height:95vh;border:0"></iframe>'}));
+  await page.route('**/chat-profile-host', route => route.fulfill({contentType: 'text/html', body: '<style>body::before{content:"";background-image:url("/assets/backgrounds/rain.jpg")}</style><iframe title="Chat" src="/apps/chat/" style="width:100%;height:95vh;border:0"></iframe>'}));
   await page.setViewportSize({width: 1440, height: 940});
   await page.goto(base + '/chat-profile-host');
   const frame = page.frameLocator('iframe');
   await frame.getByRole('button', {name: 'River', exact: true}).first().click();
   await frame.locator('[data-member-dialog] .member-bio').waitFor();
   assert(await frame.locator('[data-member-dialog]').isVisible());
+  assert((await frame.locator('.chat-app').evaluate(n=>getComputedStyle(n,'::before').backgroundImage)).includes('/assets/backgrounds/rain.jpg'));
+  assert((await frame.locator('.chat-app').evaluate(n=>getComputedStyle(n,'::before').filter)).includes('blur(18px)'));
+  await page.evaluate(()=>{document.body.style.setProperty('--bg-render','url("/assets/backgrounds/leaves.jpg")');document.documentElement.style.setProperty('--bg-render','url("/assets/backgrounds/leaves.jpg")');document.body.classList.add('custom-bg-active')});
+  await page.waitForTimeout(50);assert((await frame.locator('.chat-app').evaluate(n=>getComputedStyle(n,'::before').backgroundImage)).includes('/assets/backgrounds/leaves.jpg'));
+
   assert.deepEqual(errors, []);
   console.log('PASS out-of-directory author profiles, keyboard entry, safe bio, friendship requests/acceptance, block and ignore persistence, DM button, mobile card/composer bounds');
 } finally {await browser.close(); await new Promise(resolve => server.close(resolve));}

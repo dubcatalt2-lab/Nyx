@@ -1,25 +1,30 @@
-(function(){
-  'use strict';
-
-
+(function () {
+  "use strict";
 
   // Copyright (c) 2026 David Haz. See THIRD_PARTY_NOTICES.md.
-  const presets=Object.freeze({
-    obsidian:{label:'Obsidian',summary:'Monochrome leaf photograph',lightColor:'#718478'},
-    frost:{label:'Frost',summary:'Soft white light',lightColor:'#ffffff'},
-    arctic:{label:'Arctic',summary:'Cool blue beams',lightColor:'#73c9ff'},
-    violet:{label:'Violet',summary:'Muted violet light',lightColor:'#a98cff'},
-    mint:{label:'Mint',summary:'Quiet green light',lightColor:'#75e7be'},
-    rose:{label:'Rose',summary:'Soft rose light',lightColor:'#f5a0c8'},
-    ember:{label:'Ember',summary:'Warm amber light',lightColor:'#ffad73'},
-    lineWaves:{label:'Waves',summary:'Flowing contour lines',lightColor:'#9ec8ff'}
+  const presets = Object.freeze({
+    obsidian: { label: "Obsidian", summary: "Monochrome leaf photograph", lightColor: "#718478" },
+    frost: { label: "Frost", summary: "Soft white light", lightColor: "#ffffff" },
+    arctic: { label: "Arctic", summary: "Cool blue beams", lightColor: "#73c9ff" },
+    violet: { label: "Violet", summary: "Muted violet light", lightColor: "#a98cff" },
+    mint: { label: "Mint", summary: "Quiet green light", lightColor: "#75e7be" },
+    rose: { label: "Rose", summary: "Soft rose light", lightColor: "#f5a0c8" },
+    ember: { label: "Ember", summary: "Warm amber light", lightColor: "#ffad73" },
+    lineWaves: { label: "Waves", summary: "Flowing contour lines", lightColor: "#9ec8ff" },
   });
 
+  const defaults = Object.freeze({
+    beamWidth: 3,
+    beamHeight: 30,
+    beamNumber: 20,
+    lightColor: "#ffffff",
+    speed: 2,
+    noiseIntensity: 1.75,
+    scale: 0.2,
+    rotation: 30,
+  });
 
-
-  const defaults=Object.freeze({beamWidth:3,beamHeight:30,beamNumber:20,lightColor:'#ffffff',speed:2,noiseIntensity:1.75,scale:.2,rotation:30});
-
-  const coherentNoise=`
+  const coherentNoise = `
 float random (in vec2 st) {
   return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
 }
@@ -91,69 +96,89 @@ float cnoise(vec3 P){
   return 2.2 * n_xyz;
 }`;
 
-  function extendMaterial(THREE,BaseMaterial,config){
-    const physical=THREE.ShaderLib.physical;
-    const uniforms=THREE.UniformsUtils.clone(physical.uniforms);
-    const materialDefaults=new BaseMaterial(config.material || {});
-    if(materialDefaults.color) uniforms.diffuse.value=materialDefaults.color;
-    if('roughness' in materialDefaults) uniforms.roughness.value=materialDefaults.roughness;
-    if('metalness' in materialDefaults) uniforms.metalness.value=materialDefaults.metalness;
-    if('envMap' in materialDefaults) uniforms.envMap.value=materialDefaults.envMap;
-    if('envMapIntensity' in materialDefaults) uniforms.envMapIntensity.value=materialDefaults.envMapIntensity;
-    Object.entries(config.uniforms || {}).forEach(([key,uniform])=>{
-      uniforms[key]=uniform && typeof uniform==='object' && 'value' in uniform ? uniform : {value:uniform};
+  function extendMaterial(THREE, BaseMaterial, config) {
+    const physical = THREE.ShaderLib.physical;
+    const uniforms = THREE.UniformsUtils.clone(physical.uniforms);
+    const materialDefaults = new BaseMaterial(config.material || {});
+    if (materialDefaults.color) uniforms.diffuse.value = materialDefaults.color;
+    if ("roughness" in materialDefaults) uniforms.roughness.value = materialDefaults.roughness;
+    if ("metalness" in materialDefaults) uniforms.metalness.value = materialDefaults.metalness;
+    if ("envMap" in materialDefaults) uniforms.envMap.value = materialDefaults.envMap;
+    if ("envMapIntensity" in materialDefaults)
+      uniforms.envMapIntensity.value = materialDefaults.envMapIntensity;
+    Object.entries(config.uniforms || {}).forEach(([key, uniform]) => {
+      uniforms[key] =
+        uniform && typeof uniform === "object" && "value" in uniform ? uniform : { value: uniform };
     });
-    let vertexShader=`${config.header}\n${config.vertexHeader || ''}\n${physical.vertexShader}`;
-    let fragmentShader=`${config.header}\n${config.fragmentHeader || ''}\n${physical.fragmentShader}`;
-    Object.entries(config.vertex || {}).forEach(([include,code])=>{vertexShader=vertexShader.replace(include,`${include}\n${code}`)});
-    Object.entries(config.fragment || {}).forEach(([include,code])=>{fragmentShader=fragmentShader.replace(include,`${include}\n${code}`)});
+    let vertexShader = `${config.header}\n${config.vertexHeader || ""}\n${physical.vertexShader}`;
+    let fragmentShader = `${config.header}\n${config.fragmentHeader || ""}\n${physical.fragmentShader}`;
+    Object.entries(config.vertex || {}).forEach(([include, code]) => {
+      vertexShader = vertexShader.replace(include, `${include}\n${code}`);
+    });
+    Object.entries(config.fragment || {}).forEach(([include, code]) => {
+      fragmentShader = fragmentShader.replace(include, `${include}\n${code}`);
+    });
     materialDefaults.dispose();
-    return new THREE.ShaderMaterial({defines:{...(physical.defines || {})},uniforms,vertexShader,fragmentShader,lights:true,fog:Boolean(config.material?.fog)});
+    return new THREE.ShaderMaterial({
+      defines: { ...(physical.defines || {}) },
+      uniforms,
+      vertexShader,
+      fragmentShader,
+      lights: true,
+      fog: Boolean(config.material?.fog),
+    });
   }
 
-  function createStackedPlanesGeometry(THREE,count,width,height,spacing=0,heightSegments=100){
-    const geometry=new THREE.BufferGeometry();
-    const numVertices=count*(heightSegments+1)*2;
-    const numFaces=count*heightSegments*2;
-    const positions=new Float32Array(numVertices*3);
-    const indices=new Uint32Array(numFaces*3);
-    const uvs=new Float32Array(numVertices*2);
-    let vertexOffset=0;
-    let indexOffset=0;
-    let uvOffset=0;
-    const totalWidth=count*width+(count-1)*spacing;
-    const xOffsetBase=-totalWidth/2;
-    for(let index=0;index<count;index++){
-      const xOffset=xOffsetBase+index*(width+spacing);
-      const uvXOffset=Math.random()*300;
-      const uvYOffset=Math.random()*300;
-      for(let segment=0;segment<=heightSegments;segment++){
-        const y=height*(segment/heightSegments-.5);
-        positions.set([xOffset,y,0,xOffset+width,y,0],vertexOffset*3);
-        const uvY=segment/heightSegments;
-        uvs.set([uvXOffset,uvY+uvYOffset,uvXOffset+1,uvY+uvYOffset],uvOffset);
-        if(segment<heightSegments){
-          const a=vertexOffset;
-          const b=vertexOffset+1;
-          const c=vertexOffset+2;
-          const d=vertexOffset+3;
-          indices.set([a,b,c,c,b,d],indexOffset);
-          indexOffset+=6;
+  function createStackedPlanesGeometry(
+    THREE,
+    count,
+    width,
+    height,
+    spacing = 0,
+    heightSegments = 100,
+  ) {
+    const geometry = new THREE.BufferGeometry();
+    const numVertices = count * (heightSegments + 1) * 2;
+    const numFaces = count * heightSegments * 2;
+    const positions = new Float32Array(numVertices * 3);
+    const indices = new Uint32Array(numFaces * 3);
+    const uvs = new Float32Array(numVertices * 2);
+    let vertexOffset = 0;
+    let indexOffset = 0;
+    let uvOffset = 0;
+    const totalWidth = count * width + (count - 1) * spacing;
+    const xOffsetBase = -totalWidth / 2;
+    for (let index = 0; index < count; index++) {
+      const xOffset = xOffsetBase + index * (width + spacing);
+      const uvXOffset = Math.random() * 300;
+      const uvYOffset = Math.random() * 300;
+      for (let segment = 0; segment <= heightSegments; segment++) {
+        const y = height * (segment / heightSegments - 0.5);
+        positions.set([xOffset, y, 0, xOffset + width, y, 0], vertexOffset * 3);
+        const uvY = segment / heightSegments;
+        uvs.set([uvXOffset, uvY + uvYOffset, uvXOffset + 1, uvY + uvYOffset], uvOffset);
+        if (segment < heightSegments) {
+          const a = vertexOffset;
+          const b = vertexOffset + 1;
+          const c = vertexOffset + 2;
+          const d = vertexOffset + 3;
+          indices.set([a, b, c, c, b, d], indexOffset);
+          indexOffset += 6;
         }
-        vertexOffset+=2;
-        uvOffset+=4;
+        vertexOffset += 2;
+        uvOffset += 4;
       }
     }
-    geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));
-    geometry.setAttribute('uv',new THREE.BufferAttribute(uvs,2));
-    geometry.setIndex(new THREE.BufferAttribute(indices,1));
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute("uv", new THREE.BufferAttribute(uvs, 2));
+    geometry.setIndex(new THREE.BufferAttribute(indices, 1));
     geometry.computeVertexNormals();
     return geometry;
   }
 
-  function createBeamMaterial(THREE,options){
-    return extendMaterial(THREE,THREE.MeshStandardMaterial,{
-      header:`
+  function createBeamMaterial(THREE, options) {
+    return extendMaterial(THREE, THREE.MeshStandardMaterial, {
+      header: `
 varying vec3 vEye;
 varying float vNoise;
 varying vec2 vUv;
@@ -163,7 +188,7 @@ uniform float uSpeed;
 uniform float uNoiseIntensity;
 uniform float uScale;
 ${coherentNoise}`,
-      vertexHeader:`
+      vertexHeader: `
 float getPos(vec3 pos) {
   vec3 noisePos = vec3(pos.x * 0., pos.y - uv.y, pos.z + time * uSpeed * 3.) * uScale;
   return cnoise(noisePos);
@@ -181,137 +206,144 @@ vec3 getNormal(vec3 pos) {
   vec3 tangentZ = normalize(nextposZ - curpos);
   return normalize(cross(tangentZ, tangentX));
 }`,
-      vertex:{
-        '#include <begin_vertex>':'transformed.z += getPos(transformed.xyz);',
-        '#include <beginnormal_vertex>':'objectNormal = getNormal(position.xyz);'
+      vertex: {
+        "#include <begin_vertex>": "transformed.z += getPos(transformed.xyz);",
+        "#include <beginnormal_vertex>": "objectNormal = getNormal(position.xyz);",
       },
-      fragment:{
-        '#include <dithering_fragment>':`float randomNoise = noise(gl_FragCoord.xy);
-gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
+      fragment: {
+        "#include <dithering_fragment>": `float randomNoise = noise(gl_FragCoord.xy);
+gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`,
       },
-      material:{fog:true},
-      uniforms:{
-        diffuse:new THREE.Color(0,0,0),
-        time:{value:0},
-        roughness:.3,
-        metalness:.3,
-        uSpeed:{value:options.speed},
-        envMapIntensity:10,
-        uNoiseIntensity:options.noiseIntensity,
-        uScale:options.scale
-      }
+      material: { fog: true },
+      uniforms: {
+        diffuse: new THREE.Color(0, 0, 0),
+        time: { value: 0 },
+        roughness: 0.3,
+        metalness: 0.3,
+        uSpeed: { value: options.speed },
+        envMapIntensity: 10,
+        uNoiseIntensity: options.noiseIntensity,
+        uScale: options.scale,
+      },
     });
   }
 
-  class BeamsRenderer{
-    constructor(canvas,options={},preview=false){
-      if(!window.THREE) throw new Error('Three.js is unavailable');
-      this.THREE=window.THREE;
-      this.canvas=canvas;
-      this.preview=preview;
-      this.options={...defaults,...options};
-      this.time=0;
-      this.lastFrame=0;
-      this.frame=0;
-      this.running=false;
+  class BeamsRenderer {
+    constructor(canvas, options = {}, preview = false) {
+      if (!window.THREE) throw new Error("Three.js is unavailable");
+      this.THREE = window.THREE;
+      this.canvas = canvas;
+      this.preview = preview;
+      this.options = { ...defaults, ...options };
+      this.time = 0;
+      this.lastFrame = 0;
+      this.frame = 0;
+      this.running = false;
 
+      this.renderer = new this.THREE.WebGLRenderer({
+        canvas,
+        antialias: preview,
+        alpha: false,
+        powerPreference: "high-performance",
+        preserveDrawingBuffer: preview,
+      });
+      this.renderer.setClearColor(0x000000, 1);
+      this.renderer.outputEncoding = this.THREE.sRGBEncoding;
+      this.renderer.toneMapping = this.THREE.ACESFilmicToneMapping;
+      this.renderer.toneMappingExposure = 1;
+      this.scene = new this.THREE.Scene();
+      this.scene.background = new this.THREE.Color(0x000000);
 
-      this.renderer=new this.THREE.WebGLRenderer({canvas,antialias:preview,alpha:false,powerPreference:'high-performance',preserveDrawingBuffer:preview});
-      this.renderer.setClearColor(0x000000,1);
-      this.renderer.outputEncoding=this.THREE.sRGBEncoding;
-      this.renderer.toneMapping=this.THREE.ACESFilmicToneMapping;
-      this.renderer.toneMappingExposure=1;
-      this.scene=new this.THREE.Scene();
-      this.scene.background=new this.THREE.Color(0x000000);
-
-
-
-      this.camera=new this.THREE.OrthographicCamera(-1,1,1,-1,.1,1000);
-      this.camera.position.set(0,0,20);
-      this.group=new this.THREE.Group();
+      this.camera = new this.THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
+      this.camera.position.set(0, 0, 20);
+      this.group = new this.THREE.Group();
       this.scene.add(this.group);
-      this.ambient=new this.THREE.AmbientLight(0xffffff,1);
+      this.ambient = new this.THREE.AmbientLight(0xffffff, 1);
       this.scene.add(this.ambient);
-      this.directional=new this.THREE.DirectionalLight(this.options.lightColor,1);
-      this.directional.position.set(0,3,10);
+      this.directional = new this.THREE.DirectionalLight(this.options.lightColor, 1);
+      this.directional.position.set(0, 3, 10);
       this.scene.add(this.directional);
       this.rebuildMesh();
       this.resize();
     }
-    rebuildMesh(){
-      if(this.mesh){
+    rebuildMesh() {
+      if (this.mesh) {
         this.group.remove(this.mesh);
         this.mesh.geometry.dispose();
         this.mesh.material.dispose();
       }
-      const options=this.options;
-      const geometry=createStackedPlanesGeometry(this.THREE,options.beamNumber,options.beamWidth,options.beamHeight,0,100);
-      const material=createBeamMaterial(this.THREE,options);
-      this.mesh=new this.THREE.Mesh(geometry,material);
-      this.mesh.frustumCulled=false;
-      this.group.rotation.set(0,0,this.THREE.MathUtils.degToRad(options.rotation));
+      const options = this.options;
+      const geometry = createStackedPlanesGeometry(
+        this.THREE,
+        options.beamNumber,
+        options.beamWidth,
+        options.beamHeight,
+        0,
+        100,
+      );
+      const material = createBeamMaterial(this.THREE, options);
+      this.mesh = new this.THREE.Mesh(geometry, material);
+      this.mesh.frustumCulled = false;
+      this.group.rotation.set(0, 0, this.THREE.MathUtils.degToRad(options.rotation));
       this.group.add(this.mesh);
       this.directional.color.set(options.lightColor);
     }
-    resize(){
-      const rect=this.canvas.getBoundingClientRect();
-      const width=Math.max(1,Math.round(rect.width || this.canvas.width || 1));
-      const height=Math.max(1,Math.round(rect.height || this.canvas.height || 1));
+    resize() {
+      const rect = this.canvas.getBoundingClientRect();
+      const width = Math.max(1, Math.round(rect.width || this.canvas.width || 1));
+      const height = Math.max(1, Math.round(rect.height || this.canvas.height || 1));
 
-
-
-
-      const pixelBudget=1400000;
-      const renderScale=Math.max(.58,Math.min(1,Math.sqrt(pixelBudget/(width*height))));
-      this.renderScale=renderScale;
-      this.canvas.dataset.renderScale=renderScale.toFixed(3);
+      const pixelBudget = 1400000;
+      const renderScale = Math.max(0.58, Math.min(1, Math.sqrt(pixelBudget / (width * height))));
+      this.renderScale = renderScale;
+      this.canvas.dataset.renderScale = renderScale.toFixed(3);
       this.renderer.setPixelRatio(renderScale);
-      this.renderer.setSize(width,height,false);
-      const aspect=width/height;
-      const viewHeight=2*20*Math.tan(this.THREE.MathUtils.degToRad(15));
-      const viewWidth=viewHeight*aspect;
-      this.camera.left=-viewWidth/2;
-      this.camera.right=viewWidth/2;
-      this.camera.top=viewHeight/2;
-      this.camera.bottom=-viewHeight/2;
+      this.renderer.setSize(width, height, false);
+      const aspect = width / height;
+      const viewHeight = 2 * 20 * Math.tan(this.THREE.MathUtils.degToRad(15));
+      const viewWidth = viewHeight * aspect;
+      this.camera.left = -viewWidth / 2;
+      this.camera.right = viewWidth / 2;
+      this.camera.top = viewHeight / 2;
+      this.camera.bottom = -viewHeight / 2;
       this.camera.updateProjectionMatrix();
     }
-    update(options){
-      this.options={...this.options,...options};
+    update(options) {
+      this.options = { ...this.options, ...options };
       this.rebuildMesh();
       this.renderOnce();
     }
-    renderOnce(time=this.time){
-      if(this.mesh?.material?.uniforms?.time) this.mesh.material.uniforms.time.value=time;
-      this.renderer.render(this.scene,this.camera);
+    renderOnce(time = this.time) {
+      if (this.mesh?.material?.uniforms?.time) this.mesh.material.uniforms.time.value = time;
+      this.renderer.render(this.scene, this.camera);
     }
-    tick=timestamp=>{
-      this.frame=0;
-      if(!this.running) return;
-      const delta=this.lastFrame ? Math.min(.1,(timestamp-this.lastFrame)/1000) : 0;
-      this.lastFrame=timestamp;
-      this.time+=.1*delta;
-      try{
+    tick = (timestamp) => {
+      this.frame = 0;
+      if (!this.running) return;
+      const delta = this.lastFrame ? Math.min(0.1, (timestamp - this.lastFrame) / 1000) : 0;
+      this.lastFrame = timestamp;
+      this.time += 0.1 * delta;
+      try {
         this.renderOnce();
-        this.frame=requestAnimationFrame(this.tick);
-      }catch(error){
+        this.frame = requestAnimationFrame(this.tick);
+      } catch (error) {
         this.stop();
         failRenderer(error);
       }
     };
-    start(){
-      if(this.running) return;
-      this.running=true;
-      this.lastFrame=0;
-      this.frame=requestAnimationFrame(this.tick);
+    start() {
+      if (this.running) return;
+      this.running = true;
+      this.lastFrame = 0;
+      this.frame = requestAnimationFrame(this.tick);
     }
-    stop(){
-      this.running=false;
-      if(this.frame) cancelAnimationFrame(this.frame);
-      this.frame=0;
-      this.lastFrame=0;
+    stop() {
+      this.running = false;
+      if (this.frame) cancelAnimationFrame(this.frame);
+      this.frame = 0;
+      this.lastFrame = 0;
     }
-    dispose(){
+    dispose() {
       this.stop();
       this.mesh?.geometry?.dispose();
       this.mesh?.material?.dispose();
@@ -319,114 +351,190 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`
     }
   }
 
-  let canvas=null;
-  let instance=null;
-  let rendererFailed=false;
-  let selected='frost';
-  let options={...defaults};
-  const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)');
+  let canvas = null;
+  let instance = null;
+  let rendererFailed = false;
+  let selected = "frost";
+  let options = { ...defaults };
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 
-  function failRenderer(error){
-    const failed=instance;
-    instance=null;
-    rendererFailed=true;
-    try{failed?.dispose()}catch{}
-    if(canvas){canvas.dataset.renderer='fallback';canvas.hidden=true;}
-    document.documentElement.classList.add('q861edf5b249c703a16');
-    console.warn("N7X Beams renderer unavailable",error);
+  function failRenderer(error) {
+    const failed = instance;
+    instance = null;
+    rendererFailed = true;
+    try {
+      failed?.dispose();
+    } catch {}
+    if (canvas) {
+      canvas.dataset.renderer = "fallback";
+      canvas.hidden = true;
+    }
+    document.documentElement.classList.add("q861edf5b249c703a16");
+    console.warn("N7X Beams renderer unavailable", error);
   }
 
-  function shouldAnimate(){
-    if(!instance || !canvas || canvas.hidden || document.hidden || reducedMotion.matches) return false;
-    return !document.body?.classList.contains('lag-reducer');
+  function shouldAnimate() {
+    if (!instance || !canvas || canvas.hidden || document.hidden || reducedMotion.matches)
+      return false;
+    return !document.body?.classList.contains("lag-reducer");
   }
-  function ensureInstance(){
-    if(instance || rendererFailed || !canvas || !window.THREE) return instance;
-    try{
-      instance=new BeamsRenderer(canvas,options);
-      canvas.dataset.renderer='react-bits';
-      document.documentElement.classList.remove('q861edf5b249c703a16');
-    }catch(error){
+  function ensureInstance() {
+    if (instance || rendererFailed || !canvas || !window.THREE) return instance;
+    try {
+      instance = new BeamsRenderer(canvas, options);
+      canvas.dataset.renderer = "react-bits";
+      document.documentElement.classList.remove("q861edf5b249c703a16");
+    } catch (error) {
       failRenderer(error);
     }
     return instance;
   }
-  function syncVisibility(){
-    if(document.documentElement.dataset.n7xBeamWallpaper==='obsidian' || document.documentElement.dataset.n7xBeamWallpaper?.startsWith('photo-')){instance?.stop();if(canvas)canvas.hidden=true;return;}
-    if(!canvas) return;
-    const body=document.body;
-    const externalContent=body?.classList.contains('q12346517d2fb00ddb9') && !body.classList.contains('n7x-built-in-content-active');
-    const lineWaves=document.documentElement?.dataset.n7xBeamWallpaper==='lineWaves';
-    const hidden=!body || lineWaves || body.classList.contains('custom-bg-active') || body.classList.contains('three-d-backgrounds') || externalContent;
-    canvas.hidden=hidden;
-    if(hidden){instance?.stop(); return}
-    try{
-      const renderer=ensureInstance();
-      if(!renderer){if(!rendererFailed)failRenderer(new Error('Wallpaper graphics unavailable'));canvas.hidden=true;return;}
+  function syncVisibility() {
+    if (
+      document.documentElement.dataset.n7xBeamWallpaper === "obsidian" ||
+      document.documentElement.dataset.n7xBeamWallpaper?.startsWith("photo-")
+    ) {
+      instance?.stop();
+      if (canvas) canvas.hidden = true;
+      return;
+    }
+    if (!canvas) return;
+    const body = document.body;
+    const externalContent =
+      body?.classList.contains("q12346517d2fb00ddb9") &&
+      !body.classList.contains("n7x-built-in-content-active");
+    const lineWaves = document.documentElement?.dataset.n7xBeamWallpaper === "lineWaves";
+    const hidden =
+      !body ||
+      lineWaves ||
+      body.classList.contains("custom-bg-active") ||
+      body.classList.contains("three-d-backgrounds") ||
+      externalContent;
+    canvas.hidden = hidden;
+    if (hidden) {
+      instance?.stop();
+      return;
+    }
+    try {
+      const renderer = ensureInstance();
+      if (!renderer) {
+        if (!rendererFailed) failRenderer(new Error("Wallpaper graphics unavailable"));
+        canvas.hidden = true;
+        return;
+      }
       renderer?.resize();
       renderer?.renderOnce();
-      if(shouldAnimate()) renderer?.start();
+      if (shouldAnimate()) renderer?.start();
       else renderer?.stop();
-    }catch(error){failRenderer(error)}
+    } catch (error) {
+      failRenderer(error);
+    }
   }
-  function apply(name='frost',nextOptions={}){
-    selected=presets[name] ? name : 'frost';
-    options={...defaults,...options,lightColor:presets[selected].lightColor,...nextOptions};
-    canvas=document.getElementById('n22e9fbee8c96') || canvas;
-    if(canvas){canvas.dataset.preset=selected;canvas.dataset.lightColor=options.lightColor;}
-    document.documentElement.style.setProperty('--q704c6c4f9e',options.lightColor);
-    if(instance && name!=='obsidian' && name!=='lineWaves' && !name.startsWith('photo-')){
-      try{instance.update(options)}catch(error){failRenderer(error)}
+  function apply(name = "frost", nextOptions = {}) {
+    selected = presets[name] ? name : "frost";
+    options = { ...defaults, ...options, lightColor: presets[selected].lightColor, ...nextOptions };
+    canvas = document.getElementById("n22e9fbee8c96") || canvas;
+    if (canvas) {
+      canvas.dataset.preset = selected;
+      canvas.dataset.lightColor = options.lightColor;
+    }
+    document.documentElement.style.setProperty("--q704c6c4f9e", options.lightColor);
+    if (instance && name !== "obsidian" && name !== "lineWaves" && !name.startsWith("photo-")) {
+      try {
+        instance.update(options);
+      } catch (error) {
+        failRenderer(error);
+      }
     }
     syncVisibility();
   }
-  function renderPreview(target,name){
-    if(name==='obsidian'){const ctx=target?.getContext('2d');if(ctx){ctx.fillStyle='#0b100d';ctx.fillRect(0,0,target.width,target.height);const image=new Image();image.onload=()=>ctx.drawImage(image,0,0,target.width,target.height);image.src='/assets/backgrounds/@r61db98a407ce!.jpg'}return;}
-    if(!target || !window.THREE) return;
-    const preset=presets[name] || presets.frost;
-    const offscreen=document.createElement('canvas');
-    offscreen.style.width='240px';
-    offscreen.style.height='135px';
-    offscreen.width=240;
-    offscreen.height=135;
+  function renderPreview(target, name) {
+    if (name === "obsidian") {
+      const ctx = target?.getContext("2d");
+      if (ctx) {
+        ctx.fillStyle = "#0b100d";
+        ctx.fillRect(0, 0, target.width, target.height);
+        const image = new Image();
+        image.onload = () => ctx.drawImage(image, 0, 0, target.width, target.height);
+        image.src = "/assets/backgrounds/@r61db98a407ce!.jpg";
+      }
+      return;
+    }
+    if (!target || !window.THREE) return;
+    const preset = presets[name] || presets.frost;
+    const offscreen = document.createElement("canvas");
+    offscreen.style.width = "240px";
+    offscreen.style.height = "135px";
+    offscreen.width = 240;
+    offscreen.height = 135;
     let preview;
-    try{
-      preview=new BeamsRenderer(offscreen,{...defaults,lightColor:preset.lightColor,speed:0},true);
-      preview.time=.56;
+    try {
+      preview = new BeamsRenderer(
+        offscreen,
+        { ...defaults, lightColor: preset.lightColor, speed: 0 },
+        true,
+      );
+      preview.time = 0.56;
       preview.renderOnce();
-      const image=new Image();
-      image.onload=()=>target.getContext('2d')?.drawImage(image,0,0,target.width,target.height);
-      image.src=offscreen.toDataURL('image/png');
-    }catch(error){
-      const context=target.getContext('2d');
-      if(context){context.fillStyle='#000';context.fillRect(0,0,target.width,target.height)}
-    }finally{
+      const image = new Image();
+      image.onload = () =>
+        target.getContext("2d")?.drawImage(image, 0, 0, target.width, target.height);
+      image.src = offscreen.toDataURL("image/png");
+    } catch (error) {
+      const context = target.getContext("2d");
+      if (context) {
+        context.fillStyle = "#000";
+        context.fillRect(0, 0, target.width, target.height);
+      }
+    } finally {
       preview?.dispose();
     }
   }
-  function init(){
-    canvas=document.getElementById('n22e9fbee8c96');
-    if(!canvas) return;
-    apply(localStorage.getItem('nyx.beamWallpaper') || 'frost');
-    new MutationObserver(syncVisibility).observe(document.body,{attributes:true,attributeFilter:['class']});
-    const resizeObserver=new ResizeObserver(()=>{
-      if(!canvas.hidden){
-        try{instance?.resize();instance?.renderOnce()}catch(error){failRenderer(error)}
+  function init() {
+    canvas = document.getElementById("n22e9fbee8c96");
+    if (!canvas) return;
+    apply(localStorage.getItem("nyx.beamWallpaper") || "frost");
+    new MutationObserver(syncVisibility).observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    const resizeObserver = new ResizeObserver(() => {
+      if (!canvas.hidden) {
+        try {
+          instance?.resize();
+          instance?.renderOnce();
+        } catch (error) {
+          failRenderer(error);
+        }
       }
     });
     resizeObserver.observe(canvas);
-    document.addEventListener('visibilitychange',()=>document.hidden ? instance?.stop() : syncVisibility());
-    reducedMotion.addEventListener?.('change',syncVisibility);
-    canvas.addEventListener('webglcontextlost',event=>{event.preventDefault();failRenderer(new Error('Wallpaper graphics context lost'))});
-    canvas.addEventListener('webglcontextrestored',()=>{
-      try{instance?.dispose()}catch{}
-      instance=null;
-      rendererFailed=false;
+    document.addEventListener("visibilitychange", () =>
+      document.hidden ? instance?.stop() : syncVisibility(),
+    );
+    reducedMotion.addEventListener?.("change", syncVisibility);
+    canvas.addEventListener("webglcontextlost", (event) => {
+      event.preventDefault();
+      failRenderer(new Error("Wallpaper graphics context lost"));
+    });
+    canvas.addEventListener("webglcontextrestored", () => {
+      try {
+        instance?.dispose();
+      } catch {}
+      instance = null;
+      rendererFailed = false;
       syncVisibility();
     });
   }
 
-  window.NyxBeamsWallpaper=Object.freeze({presets,apply,renderPreview,syncVisibility,source:'React Bits Beams'});
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init,{once:true});
+  window.NyxBeamsWallpaper = Object.freeze({
+    presets,
+    apply,
+    renderPreview,
+    syncVisibility,
+    source: "React Bits Beams",
+  });
+  if (document.readyState === "loading")
+    document.addEventListener("DOMContentLoaded", init, { once: true });
   else init();
 })();

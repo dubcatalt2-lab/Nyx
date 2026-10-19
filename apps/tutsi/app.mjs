@@ -1,13 +1,25 @@
-import {warmBrowser} from './proxy.mjs';
-import {watchWebsiteFrame} from './frame-navigation.mjs';
-import {websiteAddress} from "./navigation.mjs";
-import {installShortcuts} from "./shortcuts.mjs";
-import {protectionSandbox, installGameProtectionHost, installShellPopupProtection} from "./protections.mjs";
+import { warmBrowser } from "./proxy.mjs";
+import { watchWebsiteFrame } from "./frame-navigation.mjs";
+import { websiteAddress } from "./navigation.mjs";
+import { installShortcuts } from "./shortcuts.mjs";
+import {
+  protectionSandbox,
+  installGameProtectionHost,
+  installShellPopupProtection,
+} from "./protections.mjs";
 import { scanFilters, filterSignatures, identifyFilterAddress } from "./filter-detection.mjs";
 import { decorateEmbedded } from "./embedded.mjs";
 import { startClock } from "./clock.mjs";
 import { icons as nyxIcons } from "./icons.mjs";
-import { browse, control, reloadBrowser, closeBrowser, testRelay, updateProtectionPolicy, currentWebsiteUrl } from "./proxy.mjs";
+import {
+  browse,
+  control,
+  reloadBrowser,
+  closeBrowser,
+  testRelay,
+  updateProtectionPolicy,
+  currentWebsiteUrl,
+} from "./proxy.mjs";
 const $ = (id) => document.getElementById(id),
   root = document.documentElement;
 const defaults = {
@@ -19,7 +31,9 @@ const defaults = {
   relay: "",
   autoRelay: true,
   httpBridge: true,
-  adBlock: true, popupBlock: true, downloadBlock: true,
+  adBlock: true,
+  popupBlock: true,
+  downloadBlock: true,
   blocker: "auto",
   tabPreset: "tutsi",
   tabTitle: "",
@@ -31,8 +45,12 @@ try {
   saved = JSON.parse(localStorage.getItem("tutsi.settings.v1") || "{}");
 } catch {}
 let settings = { ...defaults, ...saved };
-                                                                               
-settings.transport = String(settings.transport).replace(atob('bGliY3VybA=='), 'libcurl').replace('textlib', 'libcurl').replace(atob('ZXBveHk='), 'epoxy').replace('atlas', 'epoxy');
+
+settings.transport = String(settings.transport)
+  .replace(atob("bGliY3VybA=="), "libcurl")
+  .replace("textlib", "libcurl")
+  .replace(atob("ZXBveHk="), "epoxy")
+  .replace("atlas", "epoxy");
 const palettes = {
   mocha: {
     base: "#1e1e2e",
@@ -111,11 +129,7 @@ function themePalette(preferences = settings) {
     min = Math.min(r, g, b),
     delta = max - min;
   let hue = delta
-    ? (max === r
-        ? (g - b) / delta
-        : max === g
-          ? (b - r) / delta + 2
-          : (r - g) / delta + 4) * 60
+    ? (max === r ? (g - b) / delta : max === g ? (b - r) / delta + 2 : (r - g) / delta + 4) * 60
     : 0;
   hue = (hue + 360) % 360;
   for (const name of ["base", "mantle", "surface", "line", "text", "muted"]) {
@@ -125,8 +139,7 @@ function themePalette(preferences = settings) {
       .map((hex) => parseInt(hex, 16) / 255);
     const lightness = (Math.max(...channels) + Math.min(...channels)) * 50;
     const saturation = ["text", "muted"].includes(name) ? 18 : 24;
-    palette[name] =
-      `hsl(${hue.toFixed(1)} ${saturation}% ${lightness.toFixed(1)}%)`;
+    palette[name] = `hsl(${hue.toFixed(1)} ${saturation}% ${lightness.toFixed(1)}%)`;
   }
   return palette;
 }
@@ -143,10 +156,8 @@ const paths = {
   film: "M3 4h18v16H3zM7 4v16M17 4v16M3 9h4m-4 6h4m10-6h4m-4 6h4",
   music: "M9 18V5l12-3v14M9 18a3 3 0 1 1-3-3h3m12 1a3 3 0 1 1-3-3h3",
   game: "M7 7h10l4 11-2 2-5-4h-4l-5 4-2-2zM7 10v4m-2-2h4m7-1h.01m2 3h.01",
-  palette:
-    "M21 12a9 9 0 1 0-9 9c4 0 1-4 3-5s6 0 6-4M7 9h.01m4-3h.01m5 2h.01M6 14h.01",
-  globe:
-    "M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0M3 12h18M12 3c-5 5-5 13 0 18 5-5 5-13 0-18",
+  palette: "M21 12a9 9 0 1 0-9 9c4 0 1-4 3-5s6 0 6-4M7 9h.01m4-3h.01m5 2h.01M6 14h.01",
+  globe: "M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0M3 12h18M12 3c-5 5-5 13 0 18 5-5 5-13 0-18",
   shield: "m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6z",
 };
 document.querySelectorAll("[data-icon]").forEach((node) => {
@@ -160,8 +171,7 @@ document.querySelectorAll("[data-icon]").forEach((node) => {
     film: "movies",
     sparkles: "sparkle",
   };
-  if (nyxIcons[alias[name] || name])
-    svg.innerHTML = nyxIcons[alias[name] || name];
+  if (nyxIcons[alias[name] || name]) svg.innerHTML = nyxIcons[alias[name] || name];
   else {
     const path = document.createElementNS(svg.namespaceURI, "path");
     path.setAttribute("d", paths[name] || paths.search);
@@ -180,38 +190,32 @@ const frames = new Map();
 function tabAppearance(preferences = settings) {
   const presets = {
     tutsi: ["Tutsi Math", "/apps/tutsi/icon.png?v=2"],
-    classroom: ["Google Classroom", 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"%3E%3Crect width="64" height="64" rx="8" fill="%23fbbc04"/%3E%3Crect x="8" y="10" width="48" height="40" rx="3" fill="%2334a853"/%3E%3Ccircle cx="32" cy="25" r="6" fill="white"/%3E%3Cpath d="M18 42c4-9 20-9 24 0" fill="white"/%3E%3C/svg%3E'],
+    classroom: [
+      "Google Classroom",
+      'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"%3E%3Crect width="64" height="64" rx="8" fill="%23fbbc04"/%3E%3Crect x="8" y="10" width="48" height="40" rx="3" fill="%2334a853"/%3E%3Ccircle cx="32" cy="25" r="6" fill="white"/%3E%3Cpath d="M18 42c4-9 20-9 24 0" fill="white"/%3E%3C/svg%3E',
+    ],
     classlink: ["ClassLink", "/assets/icons/classlink-logo.png"],
     drive: ["My Drive - Google Drive", "/assets/icons/googledrive-logo.png"],
     google: ["Google", "/assets/icons/google-logo.png"],
-    custom: [
-      preferences.tabTitle.trim() || "Tutsi Math",
-      "/apps/tutsi/icon.png?v=2",
-    ],
+    custom: [preferences.tabTitle.trim() || "Tutsi Math", "/apps/tutsi/icon.png?v=2"],
   };
   const [title, icon] = presets[preferences.tabPreset] || presets.tutsi;
   document.title = title;
   document.querySelector("link[rel=icon]").href = icon;
-  $("tab-preset-icon").src=icon;
-  $("tab-preset-preview").textContent=title;
+  $("tab-preset-icon").src = icon;
+  $("tab-preset-preview").textContent = title;
   $("tab-title").disabled = settings.tabPreset !== "custom";
 }
 const themedCloudFrames = new WeakSet();
 function styleApp(frame, gamesFrame = null) {
   try {
     const doc = frame.contentDocument;
-    if (
-      !doc ||
-      new URL(frame.contentWindow.location.href).origin !== location.origin
-    )
-      return;
-    const nestedCloud = gamesFrame === frames.get("games") && gamesFrame?.contentDocument?.getElementById("cloudGamingFrame") === frame;
+    if (!doc || new URL(frame.contentWindow.location.href).origin !== location.origin) return;
+    const nestedCloud =
+      gamesFrame === frames.get("games") &&
+      gamesFrame?.contentDocument?.getElementById("cloudGamingFrame") === frame;
     const appKey = nestedCloud ? "cloud" : [...frames].find(([, item]) => item === frame)?.[0];
-    if (
-      !appKey ||
-      new URL(frame.contentWindow.location.href).pathname !== appPaths[appKey]
-    )
-      return;
+    if (!appKey || new URL(frame.contentWindow.location.href).pathname !== appPaths[appKey]) return;
     let style = doc.getElementById("tutsi-theme");
     if (!style) {
       style = doc.createElement("style");
@@ -241,13 +245,19 @@ function styleApp(frame, gamesFrame = null) {
     if (nestedCloud && !doc.documentElement.dataset.tutsiCloudSized) {
       doc.documentElement.dataset.tutsiCloudSized = "true";
       const resize = () => {
-        if (!frame.isConnected || doc !== frame.contentDocument || doc.documentElement.classList.contains("cloud-session-active")) return;
-        frame.style.height = Math.ceil(doc.querySelector("main").getBoundingClientRect().height) + "px";
+        if (
+          !frame.isConnected ||
+          doc !== frame.contentDocument ||
+          doc.documentElement.classList.contains("cloud-session-active")
+        )
+          return;
+        frame.style.height =
+          Math.ceil(doc.querySelector("main").getBoundingClientRect().height) + "px";
       };
       new ResizeObserver(resize).observe(doc.querySelector("main"));
       resize();
     }
-    installShortcuts(doc,shortcutActions);
+    installShortcuts(doc, shortcutActions);
     frame.contentWindow.postMessage(
       {
         type: "tutsi:theme-sync",
@@ -290,8 +300,7 @@ function decorateApp(doc) {
 }
 function applySettings() {
   const p = themePalette();
-  for (const [key, value] of Object.entries(p))
-    root.style.setProperty(`--${key}`, value);
+  for (const [key, value] of Object.entries(p)) root.style.setProperty(`--${key}`, value);
   root.style.setProperty("--accent", p[settings.accent] || p.mauve);
   root.style.colorScheme = settings.theme === "latte" ? "light" : "dark";
   root.dataset.motion = settings.motion ? "reduce" : "normal";
@@ -310,13 +319,17 @@ function applySettings() {
   $("relay").value = settings.relay;
   $("auto-relay").checked = settings.autoRelay;
   $("http-bridge").checked = settings.httpBridge !== false;
-  for(const [id,key] of [['ad-block','adBlock'],['popup-block','popupBlock'],['download-block','downloadBlock']])$(id).checked=settings[key]!==false;
+  for (const [id, key] of [
+    ["ad-block", "adBlock"],
+    ["popup-block", "popupBlock"],
+    ["download-block", "downloadBlock"],
+  ])
+    $(id).checked = settings[key] !== false;
   updateProtectionPolicy(settings);
   $("blocker").value = settings.blocker;
   $("tab-preset").value = settings.tabPreset;
   $("tab-title").value = settings.tabTitle;
-  $("connection-shortcut").firstChild.textContent =
-    "Browser settings ";
+  $("connection-shortcut").firstChild.textContent = "Browser settings ";
   tabAppearance();
   frames.forEach(styleApp);
   try {
@@ -335,7 +348,9 @@ for (const [id, key] of Object.entries({
   "close-prevention": "closePrevention",
   "auto-relay": "autoRelay",
   "http-bridge": "httpBridge",
-  "ad-block": "adBlock", "popup-block": "popupBlock", "download-block": "downloadBlock",
+  "ad-block": "adBlock",
+  "popup-block": "popupBlock",
+  "download-block": "downloadBlock",
   blocker: "blocker",
   wallpaper: "wallpaper",
   accent: "accent",
@@ -348,10 +363,17 @@ for (const [id, key] of Object.entries({
   $(id).addEventListener("change", () => {
     settings[key] = $(id).type === "checkbox" ? $(id).checked : $(id).value;
     applySettings();
-    if(key==='httpBridge')toast('Connection setting saved. Reload website tabs to apply.');
-    if(['adBlock','popupBlock','downloadBlock'].includes(key)){
-      for(const [name,frame] of frames){if(['games','movies'].includes(name))frame.src=frame.src;else protectAppContents(frame);}
-      for(const tab of browserTabs)if(tab.element){tab.element.setAttribute('sandbox',protectionSandbox(settings));control('reload',tab.element);}
+    if (key === "httpBridge") toast("Connection setting saved. Reload website tabs to apply.");
+    if (["adBlock", "popupBlock", "downloadBlock"].includes(key)) {
+      for (const [name, frame] of frames) {
+        if (["games", "movies"].includes(name)) frame.src = frame.src;
+        else protectAppContents(frame);
+      }
+      for (const tab of browserTabs)
+        if (tab.element) {
+          tab.element.setAttribute("sandbox", protectionSandbox(settings));
+          control("reload", tab.element);
+        }
     }
   });
 document.querySelectorAll("[name=theme]").forEach((el) =>
@@ -360,15 +382,15 @@ document.querySelectorAll("[name=theme]").forEach((el) =>
     applySettings();
   }),
 );
-function applyTabFields(){
- settings.tabPreset=$('tab-preset').value;
- settings.tabTitle=$('tab-title').value;
- applySettings();
- $('tab-preset-status').textContent='Applied to this browser tab.';
+function applyTabFields() {
+  settings.tabPreset = $("tab-preset").value;
+  settings.tabTitle = $("tab-title").value;
+  applySettings();
+  $("tab-preset-status").textContent = "Applied to this browser tab.";
 }
-$('tab-title').addEventListener('input',applyTabFields);
-$('tab-preset').addEventListener('input',applyTabFields);
-$('apply-tab-preset').onclick=applyTabFields;
+$("tab-title").addEventListener("input", applyTabFields);
+$("tab-preset").addEventListener("input", applyTabFields);
+$("apply-tab-preset").onclick = applyTabFields;
 $("relay").addEventListener("change", () => {
   const value = $("relay").value.trim();
   try {
@@ -391,10 +413,14 @@ $("relay").addEventListener("change", () => {
   }
 });
 $("reset-settings").onclick = () => {
-  if(!confirm("Reset Tutsi settings? Your account, chats and game saves will stay."))return;
+  if (!confirm("Reset Tutsi settings? Your account, chats and game saves will stay.")) return;
   settings = { ...defaults };
   applySettings();
-  for(const tab of browserTabs)if(tab.element){tab.element.setAttribute("sandbox",protectionSandbox(settings));control("reload",tab.element);}
+  for (const tab of browserTabs)
+    if (tab.element) {
+      tab.element.setAttribute("sandbox", protectionSandbox(settings));
+      control("reload", tab.element);
+    }
   toast("Tutsi settings restored.");
 };
 $("test-connection").onclick = async () => {
@@ -424,25 +450,59 @@ const appPaths = {
   publisher: "/apps/jsdelivr-publisher/",
   api: "/apps/api-keys/",
 };
-installShellPopupProtection(()=>settings,()=>document.body.dataset.view==='browser'||['#games','#movies'].includes(location.hash));
-const protectEmbeddedFrame=installGameProtectionHost(()=>settings,()=>[...frames.values()]);
-                                                                                  
-window.nyxLaunchGameFrame=async(frame,url,{signal}={})=>{
-  const target=new URL(url);
-  if(!['http:','https:'].includes(target.protocol)||target.username||target.password||!protectEmbeddedFrame(frame))throw Error('Invalid game frame.');
-  if(signal?.aborted||!frame.isConnected)return;
-  const cancel=()=>closeBrowser(frame);
-  signal?.addEventListener('abort',cancel,{once:true});
-  try { await browse(target.href,settings,frame); if(signal?.aborted){closeBrowser(frame);return;} return {managed:true,engine:'scramjet',url:target.href}; }
-  catch(error){signal?.removeEventListener('abort',cancel);cancel();throw error;}
+installShellPopupProtection(
+  () => settings,
+  () => document.body.dataset.view === "browser" || ["#games", "#movies"].includes(location.hash),
+);
+const protectEmbeddedFrame = installGameProtectionHost(
+  () => settings,
+  () => [...frames.values()],
+);
+
+window.nyxLaunchGameFrame = async (frame, url, { signal } = {}) => {
+  const target = new URL(url);
+  if (
+    !["http:", "https:"].includes(target.protocol) ||
+    target.username ||
+    target.password ||
+    !protectEmbeddedFrame(frame)
+  )
+    throw Error("Invalid game frame.");
+  if (signal?.aborted || !frame.isConnected) return;
+  const cancel = () => closeBrowser(frame);
+  signal?.addEventListener("abort", cancel, { once: true });
+  try {
+    await browse(target.href, settings, frame);
+    if (signal?.aborted) {
+      closeBrowser(frame);
+      return;
+    }
+    return { managed: true, engine: "scramjet", url: target.href };
+  } catch (error) {
+    signal?.removeEventListener("abort", cancel);
+    cancel();
+    throw error;
+  }
 };
-const protectedAppDocs=new WeakSet();
-function protectAppContents(frame){
-  try{
-    const doc=frame.contentDocument;if(!doc?.documentElement)return;
-    const scan=()=>doc.querySelectorAll('iframe').forEach(protectEmbeddedFrame);scan();
-    if(!protectedAppDocs.has(doc)){protectedAppDocs.add(doc);let timer;new MutationObserver(()=>{if(!timer)timer=setTimeout(()=>{timer=0;scan()},50)}).observe(doc.documentElement,{childList:true,subtree:true});}
-  }catch{}
+const protectedAppDocs = new WeakSet();
+function protectAppContents(frame) {
+  try {
+    const doc = frame.contentDocument;
+    if (!doc?.documentElement) return;
+    const scan = () => doc.querySelectorAll("iframe").forEach(protectEmbeddedFrame);
+    scan();
+    if (!protectedAppDocs.has(doc)) {
+      protectedAppDocs.add(doc);
+      let timer;
+      new MutationObserver(() => {
+        if (!timer)
+          timer = setTimeout(() => {
+            timer = 0;
+            scan();
+          }, 50);
+      }).observe(doc.documentElement, { childList: true, subtree: true });
+    }
+  } catch {}
 }
 function appFrame(name) {
   if (frames.has(name)) return frames.get(name);
@@ -468,19 +528,21 @@ function appFrame(name) {
   frame.addEventListener("nyx:app-dom-ready", () => styleApp(frame));
   frame.dataset.appShell = "tutsi";
   frame.src = appPaths[name];
-  frame.addEventListener("load", () => {styleApp(frame);protectAppContents(frame);try{installShortcuts(frame.contentDocument,shortcutActions)}catch{}});
+  frame.addEventListener("load", () => {
+    styleApp(frame);
+    protectAppContents(frame);
+    try {
+      installShortcuts(frame.contentDocument, shortcutActions);
+    } catch {}
+  });
   frames.set(name, frame);
   $("app-host").append(frame);
-                                                                             
-                                                        
+
   let attempts = 0;
   const readyTimer = setInterval(() => {
     attempts++;
     try {
-      if (
-        frame.contentDocument?.body &&
-        frame.contentDocument.readyState !== "loading"
-      ) {
+      if (frame.contentDocument?.body && frame.contentDocument.readyState !== "loading") {
         styleApp(frame);
         clearInterval(readyTimer);
       }
@@ -492,24 +554,34 @@ function appFrame(name) {
   });
   return frame;
 }
-$('address').addEventListener('blur',()=>{$('address').scrollLeft=0;});
+$("address").addEventListener("blur", () => {
+  $("address").scrollLeft = 0;
+});
 function route() {
   const name = location.hash.slice(1) || "home";
-  if(name==='movies'){void navigate('https://cinejoy.to/');return;}
+  if (name === "movies") {
+    void navigate("https://cinejoy.to/");
+    return;
+  }
   const section = appPaths[name]
     ? "app-view"
-    : ["appearance", "connection", "protections", "shortcuts", "privacy", "tab-appearance"].includes(name)
+    : [
+          "appearance",
+          "connection",
+          "protections",
+          "shortcuts",
+          "privacy",
+          "tab-appearance",
+        ].includes(name)
       ? "settings"
       : ["home", "apps", "browser", "settings", "terms"].includes(name)
         ? name
         : "home";
-  document
-    .querySelectorAll("main>.view")
-    .forEach((el) => (el.hidden = el.id !== section));
+  document.querySelectorAll("main>.view").forEach((el) => (el.hidden = el.id !== section));
   $("footer").hidden = ["browser", "app-view"].includes(section);
   document.body.dataset.view = section;
-  if(appPaths[name]) $("address").value="tutsi://"+name;
-  else $("address").value=activeTab?.url||"";
+  if (appPaths[name]) $("address").value = "tutsi://" + name;
+  else $("address").value = activeTab?.url || "";
   document
     .querySelectorAll("[data-route]")
     .forEach((el) => el.classList.toggle("active", el.dataset.route === name));
@@ -517,7 +589,11 @@ function route() {
     appFrame(name);
     frames.forEach((frame, key) => (frame.hidden = key !== name));
   }
-  if (["appearance", "connection", "protections", "shortcuts", "privacy", "tab-appearance"].includes(name))
+  if (
+    ["appearance", "connection", "protections", "shortcuts", "privacy", "tab-appearance"].includes(
+      name,
+    )
+  )
     requestAnimationFrame(() => $(name).scrollIntoView());
   else window.scrollTo(0, 0);
   tabAppearance();
@@ -525,91 +601,191 @@ function route() {
 }
 addEventListener("hashchange", route);
 let proxyElement;
-const browserTabs=[],closedWebsites=[];
-let activeTab=null;
-function renderBrowserTabs(){
-  const strip=$('ne4236faa3775');strip.replaceChildren();
-  browserTabs.forEach((tab,index)=>{
-    const button=document.createElement('button');button.type='button';button.setAttribute('role','tab');button.setAttribute('aria-selected',String(tab===activeTab));
-    let label='New tab';try{label=new URL(tab.url).hostname}catch{}
-    button.textContent=label;button.title=`Alt+${index+1}: ${label}`;button.onclick=()=>selectBrowserTab(tab);
-    const item=document.createElement('div');item.className='n523f56a4d19c';item.setAttribute('role','presentation');item.dataset.active=String(tab===activeTab);
-    const close=document.createElement('button');close.type='button';close.className='n8cefcf66a491';close.textContent=String.fromCharCode(215);close.setAttribute('aria-label',`Close ${label}`);close.title='Close tab';
-    close.onclick=()=>{removeWebsiteTab(tab);$('ne4236faa3775').querySelector('[aria-selected="true"]')?.focus();};
-    item.append(button,close);strip.append(item);
+const browserTabs = [],
+  closedWebsites = [];
+let activeTab = null;
+function renderBrowserTabs() {
+  const strip = $("ne4236faa3775");
+  strip.replaceChildren();
+  browserTabs.forEach((tab, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.setAttribute("role", "tab");
+    button.setAttribute("aria-selected", String(tab === activeTab));
+    let label = "New tab";
+    try {
+      label = new URL(tab.url).hostname;
+    } catch {}
+    button.textContent = label;
+    button.title = `Alt+${index + 1}: ${label}`;
+    button.onclick = () => selectBrowserTab(tab);
+    const item = document.createElement("div");
+    item.className = "n523f56a4d19c";
+    item.setAttribute("role", "presentation");
+    item.dataset.active = String(tab === activeTab);
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "n8cefcf66a491";
+    close.textContent = String.fromCharCode(215);
+    close.setAttribute("aria-label", `Close ${label}`);
+    close.title = "Close tab";
+    close.onclick = () => {
+      removeWebsiteTab(tab);
+      $("ne4236faa3775").querySelector('[aria-selected="true"]')?.focus();
+    };
+    item.append(button, close);
+    strip.append(item);
   });
-  const add=document.createElement('button');add.textContent='+';add.type='button';add.setAttribute('aria-label','New tab (Alt+T)');add.onclick=()=>newBrowserTab();strip.append(add);
+  const add = document.createElement("button");
+  add.textContent = "+";
+  add.type = "button";
+  add.setAttribute("aria-label", "New tab (Alt+T)");
+  add.onclick = () => newBrowserTab();
+  strip.append(add);
 }
-function syncBrowserTabView(){
-  $('browser-new-tab').hidden=!!activeTab?.url;
-  for(const tab of browserTabs){
-    if(tab.element)tab.element.hidden=tab!==activeTab;
-    if(tab.status)tab.status.hidden=tab!==activeTab||!tab.loading;
+function syncBrowserTabView() {
+  $("browser-new-tab").hidden = !!activeTab?.url;
+  for (const tab of browserTabs) {
+    if (tab.element) tab.element.hidden = tab !== activeTab;
+    if (tab.status) tab.status.hidden = tab !== activeTab || !tab.loading;
   }
 }
-function selectBrowserTab(tab){
-  if(!browserTabs.includes(tab))return;activeTab=tab;proxyElement=tab.element;
-  browserTabs.forEach(item=>{if(item.element)item.element.hidden=item!==tab;});
-  $('address').value=tab.url;location.hash='browser';route();renderBrowserTabs();syncBrowserTabView();
+function selectBrowserTab(tab) {
+  if (!browserTabs.includes(tab)) return;
+  activeTab = tab;
+  proxyElement = tab.element;
+  browserTabs.forEach((item) => {
+    if (item.element) item.element.hidden = item !== tab;
+  });
+  $("address").value = tab.url;
+  location.hash = "browser";
+  route();
+  renderBrowserTabs();
+  syncBrowserTabView();
 }
-                                                                            
-setInterval(()=>{
-  if(document.hidden||!activeTab?.element||activeTab.loading)return;
-  const url=currentWebsiteUrl(activeTab.element);
-  if(!url||url===activeTab.url)return;
-  activeTab.url=url;renderBrowserTabs();
-  if(document.activeElement!==$('address') && !appPaths[location.hash.slice(1)])$('address').value=url;
-},750);
-function newBrowserTab(url=''){
-  if(browserTabs.length>=8){toast('You can open up to 8 website tabs. Close one first.');return false;}
-  const tab={url:'',element:null,status:null,navigation:0};browserTabs.push(tab);selectBrowserTab(tab);
-  if(url)void navigate(url);else {$('new-tab-query').value='';$('new-tab-query').focus();}
+
+setInterval(() => {
+  if (document.hidden || !activeTab?.element || activeTab.loading) return;
+  const url = currentWebsiteUrl(activeTab.element);
+  if (!url || url === activeTab.url) return;
+  activeTab.url = url;
+  renderBrowserTabs();
+  if (document.activeElement !== $("address") && !appPaths[location.hash.slice(1)])
+    $("address").value = url;
+}, 750);
+function newBrowserTab(url = "") {
+  if (browserTabs.length >= 8) {
+    toast("You can open up to 8 website tabs. Close one first.");
+    return false;
+  }
+  const tab = { url: "", element: null, status: null, navigation: 0 };
+  browserTabs.push(tab);
+  selectBrowserTab(tab);
+  if (url) void navigate(url);
+  else {
+    $("new-tab-query").value = "";
+    $("new-tab-query").focus();
+  }
   return true;
 }
-function closeBrowserTab(){
-  const routeName=location.hash.slice(1)||'home';
-  if(appPaths[routeName]){
-    const app=frames.get(routeName);
+function closeBrowserTab() {
+  const routeName = location.hash.slice(1) || "home";
+  if (appPaths[routeName]) {
+    const app = frames.get(routeName);
     frames.delete(routeName);
     app?.remove();
-                                                                           
-                                                                        
-    if(routeName==='chat' && accountUser)appFrame('chat').hidden=true;
-    location.hash='home';return;
+
+    if (routeName === "chat" && accountUser) appFrame("chat").hidden = true;
+    location.hash = "home";
+    return;
   }
-  const blankTab=routeName==='home' && activeTab && !activeTab.url;
-  if(routeName!=='browser' && !blankTab){
-    if($('customize-dialog')?.open)dismissCustomize();
-    document.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());
-    location.hash='home';return;
+  const blankTab = routeName === "home" && activeTab && !activeTab.url;
+  if (routeName !== "browser" && !blankTab) {
+    if ($("customize-dialog")?.open) dismissCustomize();
+    document.querySelectorAll("dialog[open]").forEach((dialog) => dialog.close());
+    location.hash = "home";
+    return;
   }
   removeWebsiteTab(activeTab);
 }
-function removeWebsiteTab(tab){
-  const index=browserTabs.indexOf(tab);if(index<0)return;
-  const wasActive=tab===activeTab,url=currentWebsiteUrl(tab.element)||tab.url;
-  if(/^https?:\/\//i.test(url)){closedWebsites.push(url);if(closedWebsites.length>10)closedWebsites.shift();}
-  tab.navigation++;tab.stopNavigationWatch?.();tab.status?.remove();closeBrowser(tab.element);tab.element?.remove();browserTabs.splice(index,1);
-  if(!wasActive){renderBrowserTabs();syncBrowserTabView();return;}
-  activeTab=null;proxyElement=null;
-  if(browserTabs.length)selectBrowserTab(browserTabs[Math.max(0,index-1)]);else {location.hash='home';renderBrowserTabs();}
+function removeWebsiteTab(tab) {
+  const index = browserTabs.indexOf(tab);
+  if (index < 0) return;
+  const wasActive = tab === activeTab,
+    url = currentWebsiteUrl(tab.element) || tab.url;
+  if (/^https?:\/\//i.test(url)) {
+    closedWebsites.push(url);
+    if (closedWebsites.length > 10) closedWebsites.shift();
+  }
+  tab.navigation++;
+  tab.stopNavigationWatch?.();
+  tab.status?.remove();
+  closeBrowser(tab.element);
+  tab.element?.remove();
+  browserTabs.splice(index, 1);
+  if (!wasActive) {
+    renderBrowserTabs();
+    syncBrowserTabView();
+    return;
+  }
+  activeTab = null;
+  proxyElement = null;
+  if (browserTabs.length) selectBrowserTab(browserTabs[Math.max(0, index - 1)]);
+  else {
+    location.hash = "home";
+    renderBrowserTabs();
+  }
 }
 
-function restoreBrowserTab(){const url=closedWebsites.at(-1);if(url&&newBrowserTab(url))closedWebsites.pop();else if(!url)toast('No closed website to reopen.');}
-const shortcutActions={
-  home(){location.hash="home";},
-  address(){const input=['browser','app-view'].includes(document.body.dataset.view)?$('address'):$('query');if(input.id==='query'){location.hash='home';route();}input.focus();input.select();},
-  newTab:newBrowserTab,close:closeBrowserTab,restore:restoreBrowserTab,
-  reload(){browserControl('reload')},back(){browserControl('back')},forward(){browserControl('forward')},
-  select(index){selectBrowserTab(browserTabs[index])},notice:toast
+function restoreBrowserTab() {
+  const url = closedWebsites.at(-1);
+  if (url && newBrowserTab(url)) closedWebsites.pop();
+  else if (!url) toast("No closed website to reopen.");
+}
+const shortcutActions = {
+  home() {
+    location.hash = "home";
+  },
+  address() {
+    const input = ["browser", "app-view"].includes(document.body.dataset.view)
+      ? $("address")
+      : $("query");
+    if (input.id === "query") {
+      location.hash = "home";
+      route();
+    }
+    input.focus();
+    input.select();
+  },
+  newTab: newBrowserTab,
+  close: closeBrowserTab,
+  restore: restoreBrowserTab,
+  reload() {
+    browserControl("reload");
+  },
+  back() {
+    browserControl("back");
+  },
+  forward() {
+    browserControl("forward");
+  },
+  select(index) {
+    selectBrowserTab(browserTabs[index]);
+  },
+  notice: toast,
 };
-installShortcuts(document,shortcutActions);
+installShortcuts(document, shortcutActions);
 
-async function navigate(value, {newTab=false, input=null} = {}) {
-  if(/^tutsi:\/\//i.test(value.trim())){
-    const name=value.trim().slice(8).replace(/\/$/, "").toLowerCase();
-    if(appPaths[name]||["home","apps","settings"].includes(name)){if(input)input.value="";location.hash=name;return;}
-    toast("That Tutsi page does not exist.");return;
+async function navigate(value, { newTab = false, input = null } = {}) {
+  if (/^tutsi:\/\//i.test(value.trim())) {
+    const name = value.trim().slice(8).replace(/\/$/, "").toLowerCase();
+    if (appPaths[name] || ["home", "apps", "settings"].includes(name)) {
+      if (input) input.value = "";
+      location.hash = name;
+      return;
+    }
+    toast("That Tutsi page does not exist.");
+    return;
   }
   let url;
   try {
@@ -618,11 +794,17 @@ async function navigate(value, {newTab=false, input=null} = {}) {
     toast(e.message);
     return;
   }
-  if((!activeTab || (newTab && activeTab.url))&&!newBrowserTab())return;
-  if(input)input.value="";
-  const targetTab=activeTab;targetTab.url=url;renderBrowserTabs();
-                                                                           
-  try{targetTab.previousDocument=targetTab.element?.contentDocument}catch{targetTab.previousDocument=null;}
+  if ((!activeTab || (newTab && activeTab.url)) && !newBrowserTab()) return;
+  if (input) input.value = "";
+  const targetTab = activeTab;
+  targetTab.url = url;
+  renderBrowserTabs();
+
+  try {
+    targetTab.previousDocument = targetTab.element?.contentDocument;
+  } catch {
+    targetTab.previousDocument = null;
+  }
   const request = ++targetTab.navigation;
   targetTab.stopNavigationWatch?.();
   location.hash = "browser";
@@ -641,72 +823,92 @@ async function navigate(value, {newTab=false, input=null} = {}) {
   if (!targetTab.element) {
     proxyElement = document.createElement("iframe");
     proxyElement.title = "Website";
-    targetTab.element=proxyElement;
-    proxyElement.addEventListener("load",()=>{
-      if(!browserTabs.includes(targetTab))return;
-      try{if(targetTab.loading&&targetTab.element.contentDocument===targetTab.previousDocument)return;installShortcuts(targetTab.element.contentDocument,shortcutActions)}catch{}
-                                                                        
-      if(!targetTab.element.getAttribute('src')?.includes('/~/tm/'))return;
-      if(!targetTab.loading){const latest=currentWebsiteUrl(targetTab.element);if(latest){targetTab.url=latest;renderBrowserTabs();}}
+    targetTab.element = proxyElement;
+    proxyElement.addEventListener("load", () => {
+      if (!browserTabs.includes(targetTab)) return;
+      try {
+        if (targetTab.loading && targetTab.element.contentDocument === targetTab.previousDocument)
+          return;
+        installShortcuts(targetTab.element.contentDocument, shortcutActions);
+      } catch {}
 
+      if (!targetTab.element.getAttribute("src")?.includes("/~/tm/")) return;
+      if (!targetTab.loading) {
+        const latest = currentWebsiteUrl(targetTab.element);
+        if (latest) {
+          targetTab.url = latest;
+          renderBrowserTabs();
+        }
+      }
     });
-    proxyElement.setAttribute(
-      "sandbox",
-      protectionSandbox(settings),
-    );
-    proxyElement.allow =
-      "fullscreen; autoplay; encrypted-media; picture-in-picture";
+    proxyElement.setAttribute("sandbox", protectionSandbox(settings));
+    proxyElement.allow = "fullscreen; autoplay; encrypted-media; picture-in-picture";
     $("browser-stage").prepend(proxyElement);
   }
-  proxyElement=targetTab.element;
+  proxyElement = targetTab.element;
   syncBrowserTabView();
-  const fail=message=>{
-    if(request!==targetTab.navigation||!browserTabs.includes(targetTab))return;
+  const fail = (message) => {
+    if (request !== targetTab.navigation || !browserTabs.includes(targetTab)) return;
     targetTab.stopNavigationWatch?.();
-    targetTab.loading=false;syncBrowserTabView();
-    if(activeTab===targetTab)toast('This website is not responding. You can open another address.');
+    targetTab.loading = false;
+    syncBrowserTabView();
+    if (activeTab === targetTab)
+      toast("This website is not responding. You can open another address.");
   };
-  targetTab.stopNavigationWatch=watchWebsiteFrame(targetTab.element,{
-    previousDocument:targetTab.previousDocument,
-    onError:fail,
-    reload:()=>browse(url,{...settings},targetTab.element,{reconnect:true}),
-    onReady:()=>{
-      if(request!==targetTab.navigation||!browserTabs.includes(targetTab))return;
-      targetTab.loading=false;targetTab.previousDocument=null;
-      targetTab.url=currentWebsiteUrl(targetTab.element)||url;
-      if(activeTab===targetTab&&document.activeElement!==$('address'))$('address').value=targetTab.url;
-      syncBrowserTabView();renderBrowserTabs();
-    }
+  targetTab.stopNavigationWatch = watchWebsiteFrame(targetTab.element, {
+    previousDocument: targetTab.previousDocument,
+    onError: fail,
+    reload: () => browse(url, { ...settings }, targetTab.element, { reconnect: true }),
+    onReady: () => {
+      if (request !== targetTab.navigation || !browserTabs.includes(targetTab)) return;
+      targetTab.loading = false;
+      targetTab.previousDocument = null;
+      targetTab.url = currentWebsiteUrl(targetTab.element) || url;
+      if (activeTab === targetTab && document.activeElement !== $("address"))
+        $("address").value = targetTab.url;
+      syncBrowserTabView();
+      renderBrowserTabs();
+    },
   });
   try {
     await browse(url, { ...settings }, targetTab.element);
-    if(request!==targetTab.navigation||!browserTabs.includes(targetTab))return;
+    if (request !== targetTab.navigation || !browserTabs.includes(targetTab)) return;
     syncBrowserTabView();
-  }catch(error){if(request===targetTab.navigation)void targetTab.stopNavigationWatch.failed(error.message||'Could not open this page.');}
-
+  } catch (error) {
+    if (request === targetTab.navigation)
+      void targetTab.stopNavigationWatch.failed(error.message || "Could not open this page.");
+  }
 }
 $("search").onsubmit = (e) => {
   e.preventDefault();
-  void navigate($("query").value, {newTab:true, input:$("query")});
+  void navigate($("query").value, { newTab: true, input: $("query") });
 };
 $("address-form").onsubmit = (e) => {
   e.preventDefault();
   navigate($("address").value);
 };
-$('new-tab-search').onsubmit = event => {event.preventDefault();void navigate($('new-tab-query').value, {input:$('new-tab-query')});};
-function browserControl(action){
-  if(document.body.dataset.view==="app-view"){
-    if(action==="reload") frames.get(location.hash.slice(1))?.contentWindow.location.reload();
+$("new-tab-search").onsubmit = (event) => {
+  event.preventDefault();
+  void navigate($("new-tab-query").value, { input: $("new-tab-query") });
+};
+function browserControl(action) {
+  if (document.body.dataset.view === "app-view") {
+    if (action === "reload") frames.get(location.hash.slice(1))?.contentWindow.location.reload();
     else history[action]();
-  }else if(action==='reload'&&activeTab)void navigate(currentWebsiteUrl(proxyElement)||activeTab.url);
-  else control(action,proxyElement);
+  } else if (action === "reload" && activeTab)
+    void navigate(currentWebsiteUrl(proxyElement) || activeTab.url);
+  else control(action, proxyElement);
 }
-for (const action of ["back", "forward", "reload"]) $(action).onclick=()=>browserControl(action);
+for (const action of ["back", "forward", "reload"])
+  $(action).onclick = () => browserControl(action);
 $("close-browser").onclick = () => {
-  if(appPaths[location.hash.slice(1)] || document.body.dataset.view==='browser')closeBrowserTab();
+  if (appPaths[location.hash.slice(1)] || document.body.dataset.view === "browser")
+    closeBrowserTab();
   else removeWebsiteTab(activeTab);
 };
-$("q4f959b063679fe3afa").onclick=()=>{location.hash="home";};
+$("q4f959b063679fe3afa").onclick = () => {
+  location.hash = "home";
+};
 addEventListener("keydown", (e) => {
   if (e.defaultPrevented) return;
   if (
@@ -721,13 +923,19 @@ addEventListener("keydown", (e) => {
     $("query").focus();
   }
 });
-let accountUser = null, accountProfile = {}, profileRevision = 0;
+let accountUser = null,
+  accountProfile = {},
+  profileRevision = 0;
 const profileRequestIds = new WeakMap();
 const defaultAccountIcon = $("account-button").innerHTML;
 function profilePayload() {
-  return { ...accountProfile, uid: accountUser?.uid || "", signedIn: !!accountUser,
+  return {
+    ...accountProfile,
+    uid: accountUser?.uid || "",
+    signedIn: !!accountUser,
     displayName: accountProfile.displayName || accountUser?.displayName || "Guest",
-    handle: accountProfile.handle || (accountUser ? "Your profile" : "Sign in to use A1") };
+    handle: accountProfile.handle || (accountUser ? "Your profile" : "Sign in to use A1"),
+  };
 }
 function renderAccountProfile() {
   const profile = profilePayload();
@@ -740,52 +948,74 @@ function renderAccountProfile() {
   for (const host of [$("account-button"), $("account-avatar")]) {
     host.innerHTML = defaultAccountIcon;
     if (profile.avatarUrl) {
-      const image = document.createElement("img"); image.alt = ""; image.src = profile.avatarUrl;
-      image.onerror = () => { host.innerHTML = defaultAccountIcon; };
+      const image = document.createElement("img");
+      image.alt = "";
+      image.src = profile.avatarUrl;
+      image.onerror = () => {
+        host.innerHTML = defaultAccountIcon;
+      };
       host.replaceChildren(image);
     }
   }
   for (const [name, frame] of frames) {
-    if (name === "ai" || name === "youtube") frame.contentWindow?.postMessage({
-      type: name === "ai" ? "nyx:ai-profile" : "nyx:nyxtube-profile", requestId:profileRequestIds.get(frame), profile
-    }, location.origin);
+    if (name === "ai" || name === "youtube")
+      frame.contentWindow?.postMessage(
+        {
+          type: name === "ai" ? "nyx:ai-profile" : "nyx:nyxtube-profile",
+          requestId: profileRequestIds.get(frame),
+          profile,
+        },
+        location.origin,
+      );
   }
 }
 async function resolveAccountAvatar(value) {
   const source = String(value || "");
   if (/^\/api\/profile-media\/[A-Za-z0-9_-]{8,128}\/avatar\/[A-Za-z0-9_-]{12,80}$/.test(source)) {
-    const response = await fetch(source + "/manifest", {cache:"force-cache"});
+    const response = await fetch(source + "/manifest", { cache: "force-cache" });
     const manifest = await response.json();
-    if (!response.ok || !/^image\/(png|jpeg|webp|gif)$/.test(manifest.mime) || !Number.isInteger(manifest.totalChunks) || manifest.totalChunks < 1 || manifest.totalChunks > 32) return "";
+    if (
+      !response.ok ||
+      !/^image\/(png|jpeg|webp|gif)$/.test(manifest.mime) ||
+      !Number.isInteger(manifest.totalChunks) ||
+      manifest.totalChunks < 1 ||
+      manifest.totalChunks > 32
+    )
+      return "";
     const parts = [];
-    for (let i=0;i<manifest.totalChunks;i++) {
-      const chunk = await fetch(source + "/chunks/" + i, {cache:"force-cache"});
+    for (let i = 0; i < manifest.totalChunks; i++) {
+      const chunk = await fetch(source + "/chunks/" + i, { cache: "force-cache" });
       if (!chunk.ok) return "";
-      parts.push(Uint8Array.from(atob((await chunk.text()).trim()), c=>c.charCodeAt(0)));
+      parts.push(Uint8Array.from(atob((await chunk.text()).trim()), (c) => c.charCodeAt(0)));
     }
-    const blob = new Blob(parts,{type:manifest.mime});
+    const blob = new Blob(parts, { type: manifest.mime });
     if (manifest.byteLength && blob.size !== manifest.byteLength) return "";
     return URL.createObjectURL(blob);
   }
   return /^(https:\/\/|data:image\/(png|jpeg|webp|gif);base64,)/i.test(source) ? source : "";
 }
 async function refreshAccountProfile() {
-  const user = accountUser, revision = ++profileRevision;
+  const user = accountUser,
+    revision = ++profileRevision;
   if (!user) return;
   try {
-    const response = await fetch("/api/profiles/me", {headers:{Authorization:"Bearer " + await user.getIdToken()},cache:"no-store"});
+    const response = await fetch("/api/profiles/me", {
+      headers: { Authorization: "Bearer " + (await user.getIdToken()) },
+      cache: "no-store",
+    });
     if (!response.ok) return;
     const data = await response.json();
-    const profile = {...data.profile};
-    profile.avatarUrl = await resolveAccountAvatar(profile.avatarUrl).catch(()=>"");
+    const profile = { ...data.profile };
+    profile.avatarUrl = await resolveAccountAvatar(profile.avatarUrl).catch(() => "");
     if (revision !== profileRevision || accountUser !== user) {
       if (profile.avatarUrl.startsWith("blob:")) URL.revokeObjectURL(profile.avatarUrl);
       return;
     }
-    if (accountProfile.avatarUrl?.startsWith("blob:")) URL.revokeObjectURL(accountProfile.avatarUrl);
+    if (accountProfile.avatarUrl?.startsWith("blob:"))
+      URL.revokeObjectURL(accountProfile.avatarUrl);
     accountProfile = profile;
     renderAccountProfile();
-  } catch {                                                  }
+  } catch {}
 }
 let authPromise;
 async function account() {
@@ -813,13 +1043,9 @@ async function account() {
     await sdk.setPersistence(auth, sdk.browserLocalPersistence);
     await auth.authStateReady?.();
     sdk.onAuthStateChanged(auth, (user) => {
-      const name =
-        user?.displayName || user?.email?.split("@")[0] || "Your account";
+      const name = user?.displayName || user?.email?.split("@")[0] || "Your account";
       $("account-button").title = user ? name : "Sign in";
-      $("account-button").setAttribute(
-        "aria-label",
-        user ? "Your account" : "Sign in",
-      );
+      $("account-button").setAttribute("aria-label", user ? "Your account" : "Sign in");
       $("sign-in").hidden = !!user;
       $("auth-mode").hidden = !!user;
       $("signed-in").hidden = !user;
@@ -833,7 +1059,8 @@ async function account() {
       }
       accountUser = user;
       profileRevision++;
-      if (accountProfile.avatarUrl?.startsWith("blob:")) URL.revokeObjectURL(accountProfile.avatarUrl);
+      if (accountProfile.avatarUrl?.startsWith("blob:"))
+        URL.revokeObjectURL(accountProfile.avatarUrl);
       accountProfile = {};
       renderAccountProfile();
       void refreshAccountProfile();
@@ -866,8 +1093,7 @@ async function openProfile(mode = "view", uid = "") {
     return;
   }
   pendingProfile = { mode, uid: uid || auth.currentUser.uid };
-  if (location.hash !== "#profiles")
-    profileReturn = location.hash.slice(1) || "home";
+  if (location.hash !== "#profiles") profileReturn = location.hash.slice(1) || "home";
   $("account-dialog").close();
   location.hash = "profiles";
   const frame = appFrame("profiles");
@@ -880,21 +1106,16 @@ $("view-profile").onclick = () => openProfile("view");
 $("edit-profile").onclick = () => openProfile("edit");
 const mentionIds = new Set();
 function mentionNotification(data) {
-  if (data.kind !== "mention" || typeof data.notificationId !== "string")
-    return;
+  if (data.kind !== "mention" || typeof data.notificationId !== "string") return;
   const id = data.notificationId.slice(0, 180);
   if (mentionIds.has(id)) return;
   mentionIds.add(id);
-  if (mentionIds.size > 200)
-    mentionIds.delete(mentionIds.values().next().value);
+  if (mentionIds.size > 200) mentionIds.delete(mentionIds.values().next().value);
   const host = $("mention-toast");
   const sender = String(data.sender || "Someone").slice(0, 80);
   host.querySelector("strong").textContent = sender;
   $("mention-avatar").textContent = Array.from(sender.trim())[0]?.toUpperCase() || "@";
-  host.querySelector("p").textContent = String(data.preview || "").slice(
-    0,
-    240,
-  );
+  host.querySelector("p").textContent = String(data.preview || "").slice(0, 240);
   host.hidden = false;
   clearTimeout(host.dismissTimer);
   host.dismissTimer = setTimeout(() => {
@@ -905,10 +1126,14 @@ $("mention-open").onclick = () => {
   location.hash = "chat";
   $("mention-toast").hidden = true;
 };
-$("mention-toast").addEventListener("pointerenter",()=>clearTimeout($("mention-toast").dismissTimer));
-$("mention-toast").addEventListener("focusin",()=>clearTimeout($("mention-toast").dismissTimer));
-$("mention-toast").addEventListener("pointerleave",()=>{
-  const host=$("mention-toast");if(!host.contains(document.activeElement))host.dismissTimer=setTimeout(()=>host.hidden=true,5000);
+$("mention-toast").addEventListener("pointerenter", () =>
+  clearTimeout($("mention-toast").dismissTimer),
+);
+$("mention-toast").addEventListener("focusin", () => clearTimeout($("mention-toast").dismissTimer));
+$("mention-toast").addEventListener("pointerleave", () => {
+  const host = $("mention-toast");
+  if (!host.contains(document.activeElement))
+    host.dismissTimer = setTimeout(() => (host.hidden = true), 5000);
 });
 $("mention-dismiss").onclick = () => {
   $("mention-toast").hidden = true;
@@ -918,16 +1143,10 @@ $("account-close").onclick = () => $("account-dialog").close();
 let registering = false;
 $("auth-mode").onclick = () => {
   registering = !registering;
-  $("account-heading").textContent = registering
-    ? "Create an account"
-    : "Sign in";
-  $("identifier-label").textContent = registering
-    ? "Username"
-    : "Username or email";
+  $("account-heading").textContent = registering ? "Create an account" : "Sign in";
+  $("identifier-label").textContent = registering ? "Username" : "Username or email";
   $("register-fields").hidden = !registering;
-  $("password").autocomplete = registering
-    ? "new-password"
-    : "current-password";
+  $("password").autocomplete = registering ? "new-password" : "current-password";
   $("password").minLength = registering ? 8 : 6;
   $("password").value = "";
   $("auth-submit").textContent = registering ? "Create account" : "Sign in";
@@ -944,28 +1163,22 @@ $("sign-in").onsubmit = async (e) => {
   $("auth-error").textContent = "Signing in…";
   try {
     const { auth, sdk } = await account();
-    const response = await fetch(
-      registering ? "/api/account/register" : "/api/account/sign-in",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...(registering
-            ? {
-                username: $("identifier").value.trim(),
-                email: $("register-email").value.trim(),
-              }
-            : { identifier: $("identifier").value.trim() }),
-          password: $("password").value,
-        }),
-      },
-    );
+    const response = await fetch(registering ? "/api/account/register" : "/api/account/sign-in", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...(registering
+          ? {
+              username: $("identifier").value.trim(),
+              email: $("register-email").value.trim(),
+            }
+          : { identifier: $("identifier").value.trim() }),
+        password: $("password").value,
+      }),
+    });
     const data = await response.json();
     if (!response.ok || !data.customToken)
-      throw Error(
-        data.error ||
-          (registering ? "Account creation failed." : "Sign-in failed."),
-      );
+      throw Error(data.error || (registering ? "Account creation failed." : "Sign-in failed."));
     await sdk.signInWithCustomToken(auth, data.customToken);
     $("password").value = "";
     $("auth-error").textContent = "";
@@ -995,9 +1208,7 @@ $("sign-out").onclick = async () => {
 };
 addEventListener("message", async (event) => {
   if (event.origin !== location.origin) return;
-  const entry = [...frames].find(
-    ([, frame]) => frame.contentWindow === event.source,
-  );
+  const entry = [...frames].find(([, frame]) => frame.contentWindow === event.source);
   if (!entry) return;
   const [name, frame] = entry;
   try {
@@ -1011,8 +1222,7 @@ addEventListener("message", async (event) => {
   }
   const data = event.data;
   if (!data || typeof data !== "object") return;
-  const reply = (payload) =>
-    event.source?.postMessage(payload, location.origin);
+  const reply = (payload) => event.source?.postMessage(payload, location.origin);
   if (name === "profiles" && data.type === "tutsi:profile-ready") {
     reply({ type: "tutsi:profile-open", ...pendingProfile });
   } else if (name === "profiles" && data.type === "tutsi:profile-signin") {
@@ -1023,26 +1233,18 @@ addEventListener("message", async (event) => {
     await refreshAccountProfile();
     for (const [key, other] of frames) {
       if (key !== "profiles")
-        other.contentWindow?.postMessage(
-          { type: "nyx:account-changed" },
-          location.origin,
-        );
+        other.contentWindow?.postMessage({ type: "nyx:account-changed" }, location.origin);
     }
     const chat = frames.get("chat");
-    if (chat)
-      chat.contentWindow?.postMessage(
-        { type: "nyx:profile-updated" },
-        location.origin,
-      );
+    if (chat) chat.contentWindow?.postMessage({ type: "nyx:profile-updated" }, location.origin);
     toast("Profile saved.");
   } else if (name === "chat" && data.type === "nyx:chat-open-profile") {
-    if (/^[A-Za-z0-9_-]{8,128}$/.test(String(data.uid || "")))
-      void openProfile("view", data.uid);
+    if (/^[A-Za-z0-9_-]{8,128}$/.test(String(data.uid || ""))) void openProfile("view", data.uid);
   } else if (name === "chat" && data.type === "nyx:chat-notification") {
     mentionNotification(data);
   } else if (name === "chat" && data.type === "nyx:account-open-signin") {
     openAccount();
-  } else if (["chat","cloud"].includes(name) && data.type === "nyx:go-home") {
+  } else if (["chat", "cloud"].includes(name) && data.type === "nyx:go-home") {
     location.hash = "home";
   } else if (
     data.type === "nyx:account-token-request" &&
@@ -1054,22 +1256,18 @@ addEventListener("message", async (event) => {
       token: await token(),
     });
   } else if (data.type === "nyx:ai-profile-request" && name === "ai") {
-    await account().catch(()=>{});
-    reply({type:"nyx:ai-profile", profile:profilePayload()});
+    await account().catch(() => {});
+    reply({ type: "nyx:ai-profile", profile: profilePayload() });
   } else if (data.type === "nyx:ai-open-profile" && name === "ai") {
     void openProfile();
   } else if (data.type === "nyx:nyxtube-open-profile" && name === "youtube") {
     void openProfile();
-  } else if (
-    data.type === "nyx:nyxtube-profile-request" &&
-    name === "youtube"
-  ) {
-    await account().catch(()=>{});
-    profileRequestIds.set(frame,data.requestId);
-    reply({type:"nyx:nyxtube-profile",requestId:data.requestId,profile:profilePayload()});
+  } else if (data.type === "nyx:nyxtube-profile-request" && name === "youtube") {
+    await account().catch(() => {});
+    profileRequestIds.set(frame, data.requestId);
+    reply({ type: "nyx:nyxtube-profile", requestId: data.requestId, profile: profilePayload() });
   } else if (data.type === "nyx:close-tab") {
-                                                        
-    if(location.hash.slice(1)===name)closeBrowserTab();
+    if (location.hash.slice(1) === name) closeBrowserTab();
   } else if (
     name === "games" &&
     ["nyx:cloud-game-load", "nyx:cloud-game-save"].includes(data.type)
@@ -1121,11 +1319,22 @@ addEventListener("message", async (event) => {
 });
 
 const appIcons = {
-  'link-checker':'checker','link-generator':'link','jsdelivr-publisher':'publisher',
-  'api-keys':'key','code-studio':'code','youtube.com':'youtube',games:'games',
-  'nyx-chat':'chat',n7xify:'music','duck.ai':'sparkle','nyx-ai':'ai',
-  'nyx-movies':'movies','fmhy.net':'movies','tiktok.com':'music','animex.one':'media',
-  'cloud-gaming':'cloud'
+  "link-checker": "checker",
+  "link-generator": "link",
+  "jsdelivr-publisher": "publisher",
+  "api-keys": "key",
+  "code-studio": "code",
+  "youtube.com": "youtube",
+  games: "games",
+  "nyx-chat": "chat",
+  n7xify: "music",
+  "duck.ai": "sparkle",
+  "nyx-ai": "ai",
+  "nyx-movies": "movies",
+  "fmhy.net": "movies",
+  "tiktok.com": "music",
+  "animex.one": "media",
+  "cloud-gaming": "cloud",
 };
 const fallbackApps = [
   ["nyx-ai", "nyx-ai", "A1", "nyx://ai"],
@@ -1138,30 +1347,23 @@ const fallbackApps = [
   ["code-studio", "code-studio", "Code Sandbox", appPaths.code],
   ["link-checker", "link-checker", "Link Checker", appPaths.checker],
   ["link-generator", "link-generator", "Link Generator", appPaths.links],
-  [
-    "jsdelivr-publisher",
-    "jsdelivr-publisher",
-    "JSDelivr Publisher",
-    appPaths.publisher,
-  ],
+  ["jsdelivr-publisher", "jsdelivr-publisher", "JSDelivr Publisher", appPaths.publisher],
   ["n7x-api-keys", "api-keys", "API Keys", appPaths.api],
   ["duck-ai", "duck.ai", "Duck A1", "https://duck.ai/"],
-  [
-    "more-movie-sites",
-    "fmhy.net",
-    "More Movie Sites",
-    "https://fmhy.net/video#p-stream-forks",
-  ],
+  ["more-movie-sites", "fmhy.net", "More Movie Sites", "https://fmhy.net/video#p-stream-forks"],
   ["tiktok", "tiktok.com", "TikTok", "https://www.tiktok.com/"],
   ["animex", "animex.one", "Animex", "https://animex.one/"],
 ].map(([id, icon, name, url]) => ({ id, icon, name, url }));
 function renderApps(apps) {
-  if(!apps.some(app=>app.url===appPaths.cloud))apps=[...apps,{id:"cloud-gaming",icon:"cloud-gaming",name:"Cloud Gaming",url:appPaths.cloud}];
+  if (!apps.some((app) => app.url === appPaths.cloud))
+    apps = [
+      ...apps,
+      { id: "cloud-gaming", icon: "cloud-gaming", name: "Cloud Gaming", url: appPaths.cloud },
+    ];
   $("all-apps").replaceChildren();
 
   for (const app of apps) {
-    if (!app || typeof app.url !== "string" || typeof app.name !== "string")
-      continue;
+    if (!app || typeof app.url !== "string" || typeof app.name !== "string") continue;
     const internal =
       app.url === "nyx://ai"
         ? "ai"
@@ -1174,18 +1376,24 @@ function renderApps(apps) {
         "nyx-chat": "Chat",
         "pirate-cove": "Games",
         "n7x-api-keys": "API Keys",
-      }[app.id] || app.name.replace(/NyxTube/gi,"YouTube").replace(/Nyx/gi,"Tutsi");
+      }[app.id] || app.name.replace(/NyxTube/gi, "YouTube").replace(/Nyx/gi, "Tutsi");
     for (const host of [$("all-apps")]) {
       const button = document.createElement("button");
       button.type = "button";
       button.title = name;
       button.setAttribute("aria-label", name);
       if (internal) button.dataset.route = internal;
-      const image = document.createElementNS('http://www.w3.org/2000/svg','svg');
-      const icon = appIcons[app.icon] || ({cloud:'cloud',links:'link',api:'key'}[internal]) || internal || 'apps';
-      image.setAttribute('viewBox','0 0 24 24');image.setAttribute('aria-hidden','true');
-      image.classList.add('app-symbol');image.dataset.icon=icon;
-      image.innerHTML=nyxIcons[icon] || nyxIcons.apps;
+      const image = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      const icon =
+        appIcons[app.icon] ||
+        { cloud: "cloud", links: "link", api: "key" }[internal] ||
+        internal ||
+        "apps";
+      image.setAttribute("viewBox", "0 0 24 24");
+      image.setAttribute("aria-hidden", "true");
+      image.classList.add("app-symbol");
+      image.dataset.icon = icon;
+      image.innerHTML = nyxIcons[icon] || nyxIcons.apps;
       const label = document.createElement("span");
       label.textContent = name;
       button.append(image, label);
@@ -1196,7 +1404,7 @@ function renderApps(apps) {
       host.append(button);
     }
   }
-  if(!document.body.dataset.view)route();
+  if (!document.body.dataset.view) route();
 }
 function renderDock() {
   for (const [key, label, icon] of [
@@ -1244,220 +1452,488 @@ fetch("/api/apps")
   })
   .catch(() => {});
 
-addEventListener('tutsi:relay-status',({detail})=>{
-  const labels={checking:'Checking relay',connected:'Connected',switched:'Switched to backup',available:'Available',unavailable:'No reachable relay'};
-  $('connection-result').textContent=(labels[detail.state]||'Relay');
-  if(detail.state==='switched')toast('Connection restored.');
+addEventListener("tutsi:relay-status", ({ detail }) => {
+  const labels = {
+    checking: "Checking relay",
+    connected: "Connected",
+    switched: "Switched to backup",
+    available: "Available",
+    unavailable: "No reachable relay",
+  };
+  $("connection-result").textContent = labels[detail.state] || "Relay";
+  if (detail.state === "switched") toast("Connection restored.");
 });
 
-fetch('/api/link-checker/vendors').then(r=>r.ok?r.json():Promise.reject()).then(data=>{
- const vendors=Array.isArray(data)?data:data.vendors;
- if(!Array.isArray(vendors))return;
- for(const vendor of vendors){
-   if(typeof vendor!=='string'||!/^[a-z0-9_-]{1,64}$/.test(vendor)||[...$('blocker').options].some(o=>o.value===vendor))continue;
-   $('blocker').add(new Option(vendor.replace(/[_-]/g,' '),vendor));
- }
- $('blocker').value=settings.blocker;
-}).catch(()=>{});
-addEventListener('tutsi:filter-hint',({detail})=>{
- const blocked=detail.results.filter(r=>r.blocked===true).length;
- const known=detail.results.some(r=>r.blocked!==null);
- $('blocker-result').textContent=known?`${detail.vendor}: ${blocked} relay domain(s) reported blocked. Testing reachable alternatives.`:'Filter results are unavailable. Using connection checks.';
+fetch("/api/link-checker/vendors")
+  .then((r) => (r.ok ? r.json() : Promise.reject()))
+  .then((data) => {
+    const vendors = Array.isArray(data) ? data : data.vendors;
+    if (!Array.isArray(vendors)) return;
+    for (const vendor of vendors) {
+      if (
+        typeof vendor !== "string" ||
+        !/^[a-z0-9_-]{1,64}$/.test(vendor) ||
+        [...$("blocker").options].some((o) => o.value === vendor)
+      )
+        continue;
+      $("blocker").add(new Option(vendor.replace(/[_-]/g, " "), vendor));
+    }
+    $("blocker").value = settings.blocker;
+  })
+  .catch(() => {});
+addEventListener("tutsi:filter-hint", ({ detail }) => {
+  const blocked = detail.results.filter((r) => r.blocked === true).length;
+  const known = detail.results.some((r) => r.blocked !== null);
+  $("blocker-result").textContent = known
+    ? `${detail.vendor}: ${blocked} relay domain(s) reported blocked. Testing reachable alternatives.`
+    : "Filter results are unavailable. Using connection checks.";
 });
 
-for(const {vendor,label} of filterSignatures){
-  if(![...$('blocker').options].some(option=>option.value===vendor))$('blocker').add(new Option(label,vendor));
+for (const { vendor, label } of filterSignatures) {
+  if (![...$("blocker").options].some((option) => option.value === vendor))
+    $("blocker").add(new Option(label, vendor));
 }
-$('blocker').value=settings.blocker;
-const filterLabel=vendor=>filterSignatures.find(item=>item.vendor===vendor)?.label||vendor;
-addEventListener('tutsi:filter-detected',({detail:{vendors,observed=[],checks=[],loaded=[]}})=>{
-  $('filter-detection-result').textContent=vendors.length
-    ? `Extension detected: ${vendors.map(filterLabel).join(', ')}. This does not prove it blocked a connection.${vendors.length>1?' Choose a filter below, or keep using connection checks.':''}`
-    : observed.length
-      ? `Possible filter: ${observed.map(filterLabel).join(', ')}. Its address appears in this page, but the resource could not be verified. Select it above if it matches your device.`
-      : 'Unknown: this page cannot identify your filter. Hidden extensions and filters on the Wi-Fi may not be visible to websites. Select your filter above, or identify a block-page address below.';
-  const list=$('filter-check-details');list.replaceChildren();
-  const families=[...new Set([...checks.map(item=>item.vendor),...loaded,...observed])];
-  for(const vendor of families){
-    const row=document.createElement('li');
-    const attempts=checks.filter(item=>item.vendor===vendor);
-    const status=loaded.includes(vendor)?'Loaded extension resource':attempts.some(item=>item.status==='detected')?'Public resource responded':observed.includes(vendor)?'Address visible; not verified':attempts.some(item=>item.status==='timeout')?'Check timed out':'Not visible (absent or inaccessible)';
-    row.textContent=`${filterLabel(vendor)}: ${status}`;list.append(row);
+$("blocker").value = settings.blocker;
+const filterLabel = (vendor) =>
+  filterSignatures.find((item) => item.vendor === vendor)?.label || vendor;
+addEventListener(
+  "tutsi:filter-detected",
+  ({ detail: { vendors, observed = [], checks = [], loaded = [] } }) => {
+    $("filter-detection-result").textContent = vendors.length
+      ? `Extension detected: ${vendors.map(filterLabel).join(", ")}. This does not prove it blocked a connection.${vendors.length > 1 ? " Choose a filter below, or keep using connection checks." : ""}`
+      : observed.length
+        ? `Possible filter: ${observed.map(filterLabel).join(", ")}. Its address appears in this page, but the resource could not be verified. Select it above if it matches your device.`
+        : "Unknown: this page cannot identify your filter. Hidden extensions and filters on the Wi-Fi may not be visible to websites. Select your filter above, or identify a block-page address below.";
+    const list = $("filter-check-details");
+    list.replaceChildren();
+    const families = [...new Set([...checks.map((item) => item.vendor), ...loaded, ...observed])];
+    for (const vendor of families) {
+      const row = document.createElement("li");
+      const attempts = checks.filter((item) => item.vendor === vendor);
+      const status = loaded.includes(vendor)
+        ? "Loaded extension resource"
+        : attempts.some((item) => item.status === "detected")
+          ? "Public resource responded"
+          : observed.includes(vendor)
+            ? "Address visible; not verified"
+            : attempts.some((item) => item.status === "timeout")
+              ? "Check timed out"
+              : "Not visible (absent or inaccessible)";
+      row.textContent = `${filterLabel(vendor)}: ${status}`;
+      list.append(row);
+    }
+    if (!vendors.length) $("filter-address-help").open = true;
+  },
+);
+$("detect-filter").addEventListener("click", async () => {
+  const button = $("detect-filter");
+  button.disabled = true;
+  $("filter-detection-result").textContent = "Checking this browser...";
+  try {
+    await scanFilters({ refresh: true });
+  } catch {
+    $("filter-detection-result").textContent =
+      "The check could not finish. Try again or use a block-page address.";
+  } finally {
+    button.disabled = false;
   }
-  if(!vendors.length)$('filter-address-help').open=true;
 });
-$('detect-filter').addEventListener('click',async()=>{
-  const button=$('detect-filter');button.disabled=true;
-  $('filter-detection-result').textContent='Checking this browser...';
-  try{await scanFilters({refresh:true})}catch{$('filter-detection-result').textContent='The check could not finish. Try again or use a block-page address.'}finally{button.disabled=false}
+$("blocker").addEventListener("change", () => {
+  if (settings.blocker === "auto") void scanFilters();
 });
-$('blocker').addEventListener('change',()=>{if(settings.blocker==='auto')void scanFilters()});
-if(settings.blocker==='auto')void scanFilters();
-let addressFilter=null;
-function inspectFilterAddress(){
-  addressFilter=identifyFilterAddress($('filter-address').value);
-  $('use-address-filter').hidden=!addressFilter;
-  $('filter-address-result').textContent=addressFilter
+if (settings.blocker === "auto") void scanFilters();
+let addressFilter = null;
+function inspectFilterAddress() {
+  addressFilter = identifyFilterAddress($("filter-address").value);
+  $("use-address-filter").hidden = !addressFilter;
+  $("filter-address-result").textContent = addressFilter
     ? `${addressFilter.label}: recognized ${addressFilter.source}. Select Use this filter to save it.`
-    : 'No recognizable vendor in this address. If it is still the original website address, select the filter named on the block page above.';
+    : "No recognizable vendor in this address. If it is still the original website address, select the filter named on the block page above.";
 }
-$('identify-filter-address').onclick=inspectFilterAddress;
-$('filter-address').addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();inspectFilterAddress();}});
-$('filter-address').addEventListener('input',()=>{addressFilter=null;$('use-address-filter').hidden=true;$('filter-address-result').textContent='';});
-$('use-address-filter').onclick=()=>{
-  if(!addressFilter)return;
-  const {vendor,label}=addressFilter;
-  if(![...$('blocker').options].some(option=>option.value===vendor))$('blocker').add(new Option(label,vendor));
-  $('blocker').value=vendor;$('blocker').dispatchEvent(new Event('change'));
-  $('filter-address').value='';addressFilter=null;$('use-address-filter').hidden=true;
-  $('filter-address-result').textContent=`${label} saved. Used when the next browser connection starts.`;
+$("identify-filter-address").onclick = inspectFilterAddress;
+$("filter-address").addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    inspectFilterAddress();
+  }
+});
+$("filter-address").addEventListener("input", () => {
+  addressFilter = null;
+  $("use-address-filter").hidden = true;
+  $("filter-address-result").textContent = "";
+});
+$("use-address-filter").onclick = () => {
+  if (!addressFilter) return;
+  const { vendor, label } = addressFilter;
+  if (![...$("blocker").options].some((option) => option.value === vendor))
+    $("blocker").add(new Option(label, vendor));
+  $("blocker").value = vendor;
+  $("blocker").dispatchEvent(new Event("change"));
+  $("filter-address").value = "";
+  addressFilter = null;
+  $("use-address-filter").hidden = true;
+  $("filter-address-result").textContent =
+    `${label} saved. Used when the next browser connection starts.`;
 };
 
-                                                                                
-for(const type of ['keydown','keyup'])addEventListener(type,event=>{
-  if(location.hash!=='#youtube'||event.target.closest?.('input,textarea,select,button,a,[contenteditable]'))return;
-  const frame=document.querySelector('#app-host iframe:not([hidden])');
-  try{
-    if(!frame||new URL(frame.src,location.href).origin!==location.origin||new URL(frame.src,location.href).pathname!=='/apps/nyxtube/')return;
-    const win=frame.contentWindow,doc=frame.contentDocument;
-    const forwarded=new win.KeyboardEvent(type,{key:event.key,code:event.code,repeat:event.repeat,shiftKey:event.shiftKey,ctrlKey:event.ctrlKey,altKey:event.altKey,metaKey:event.metaKey,bubbles:true,cancelable:true});
-    const target=doc.activeElement?.closest('dialog[open]')?doc.activeElement:doc.body;
-    if(!target.dispatchEvent(forwarded))event.preventDefault();
-  }catch{}
-},true);
+for (const type of ["keydown", "keyup"])
+  addEventListener(
+    type,
+    (event) => {
+      if (
+        location.hash !== "#youtube" ||
+        event.target.closest?.("input,textarea,select,button,a,[contenteditable]")
+      )
+        return;
+      const frame = document.querySelector("#app-host iframe:not([hidden])");
+      try {
+        if (
+          !frame ||
+          new URL(frame.src, location.href).origin !== location.origin ||
+          new URL(frame.src, location.href).pathname !== "/apps/nyxtube/"
+        )
+          return;
+        const win = frame.contentWindow,
+          doc = frame.contentDocument;
+        const forwarded = new win.KeyboardEvent(type, {
+          key: event.key,
+          code: event.code,
+          repeat: event.repeat,
+          shiftKey: event.shiftKey,
+          ctrlKey: event.ctrlKey,
+          altKey: event.altKey,
+          metaKey: event.metaKey,
+          bubbles: true,
+          cancelable: true,
+        });
+        const target = doc.activeElement?.closest("dialog[open]") ? doc.activeElement : doc.body;
+        if (!target.dispatchEvent(forwarded)) event.preventDefault();
+      } catch {}
+    },
+    true,
+  );
 
-let protectionToastAt=0;
-function protectionNotice(kind){
-  if(!['popup','download'].includes(kind)||Date.now()-protectionToastAt<2000)return;
-  protectionToastAt=Date.now();toast(kind==='popup'?'Popup blocked. You can change this in Settings.':'Risky download blocked. You can change this in Settings.');
+let protectionToastAt = 0;
+function protectionNotice(kind) {
+  if (!["popup", "download"].includes(kind) || Date.now() - protectionToastAt < 2000) return;
+  protectionToastAt = Date.now();
+  toast(
+    kind === "popup"
+      ? "Popup blocked. You can change this in Settings."
+      : "Risky download blocked. You can change this in Settings.",
+  );
 }
-addEventListener('tutsi:protection',event=>protectionNotice(event.detail?.kind));
-addEventListener('message',event=>{
-  if(event.origin===location.origin&&proxyElement&&event.source===proxyElement.contentWindow&&event.data?.type==='tutsi:protection')protectionNotice(event.data.kind);
+addEventListener("tutsi:protection", (event) => protectionNotice(event.detail?.kind));
+addEventListener("message", (event) => {
+  if (
+    event.origin === location.origin &&
+    proxyElement &&
+    event.source === proxyElement.contentWindow &&
+    event.data?.type === "tutsi:protection"
+  )
+    protectionNotice(event.data.kind);
 });
 
-const customize=$('customize-dialog');
-let customizeStep=0, customizeDraft, customizeTransition=0, customizeBusy=false;
-const customizeKeys={theme:'theme',accent:'accent',wallpaper:'wallpaper',tabPreset:'tab-preset',tabTitle:'tab-title',engine:'search-engine',motion:'motion',closePrevention:'close-prevention',blocker:'blocker'};
-for(const [key,id] of Object.entries(customizeKeys)){
- const control=$('customize-'+key),original=$(id);
- if(control.tagName==='SELECT'&&original)control.replaceChildren(...[...original.options].map(option=>option.cloneNode(true)));
- control.addEventListener('input',()=>{customizeDraft[key]=control.type==='checkbox'?control.checked:control.value;customizePreview();});
+const customize = $("customize-dialog");
+let customizeStep = 0,
+  customizeDraft,
+  customizeTransition = 0,
+  customizeBusy = false;
+const customizeKeys = {
+  theme: "theme",
+  accent: "accent",
+  wallpaper: "wallpaper",
+  tabPreset: "tab-preset",
+  tabTitle: "tab-title",
+  engine: "search-engine",
+  motion: "motion",
+  closePrevention: "close-prevention",
+  blocker: "blocker",
+};
+for (const [key, id] of Object.entries(customizeKeys)) {
+  const control = $("customize-" + key),
+    original = $(id);
+  if (control.tagName === "SELECT" && original)
+    control.replaceChildren(...[...original.options].map((option) => option.cloneNode(true)));
+  control.addEventListener("input", () => {
+    customizeDraft[key] = control.type === "checkbox" ? control.checked : control.value;
+    customizePreview();
+  });
 }
-const customizeStepCount=customize.querySelectorAll('[data-customize-step]').length;
-const customizeChoices=['theme','accent','wallpaper','engine','blocker'];
-function renderCustomizeChoices(){
- for(const key of customizeChoices){
-  const select=$('customize-'+key);
-  let group=select.nextElementSibling;
-  if(!group?.classList.contains('customize-choices')){group=document.createElement('div');group.className='customize-choices';group.setAttribute('role','group');group.setAttribute('aria-label',select.closest('section').querySelector('h3').textContent);select.after(group);select.hidden=true;}
-  group.replaceChildren(...[...select.options].filter(option=>key!=='blocker'||option.value&&option.value!=='auto').map(option=>{
-   const button=document.createElement('button');button.type='button';button.dataset.value=option.value;button.textContent=option.textContent;button.setAttribute('aria-pressed',String(select.value===option.value));
-   if(key==='accent'||key==='theme'){const swatch=document.createElement('span');swatch.className='customize-swatch';swatch.style.background=key==='accent'?themePalette(customizeDraft)[option.value]:themePalette({...customizeDraft,theme:option.value}).base;swatch.setAttribute('aria-hidden','true');button.prepend(swatch);}
-   button.onclick=()=>{select.value=option.value;select.dispatchEvent(new Event('input'));[...group.children].find(item=>item.dataset.value===option.value)?.focus({preventScroll:true});};return button;
-  }));
- }
+const customizeStepCount = customize.querySelectorAll("[data-customize-step]").length;
+const customizeChoices = ["theme", "accent", "wallpaper", "engine", "blocker"];
+function renderCustomizeChoices() {
+  for (const key of customizeChoices) {
+    const select = $("customize-" + key);
+    let group = select.nextElementSibling;
+    if (!group?.classList.contains("customize-choices")) {
+      group = document.createElement("div");
+      group.className = "customize-choices";
+      group.setAttribute("role", "group");
+      group.setAttribute("aria-label", select.closest("section").querySelector("h3").textContent);
+      select.after(group);
+      select.hidden = true;
+    }
+    group.replaceChildren(
+      ...[...select.options]
+        .filter((option) => key !== "blocker" || (option.value && option.value !== "auto"))
+        .map((option) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.dataset.value = option.value;
+          button.textContent = option.textContent;
+          button.setAttribute("aria-pressed", String(select.value === option.value));
+          if (key === "accent" || key === "theme") {
+            const swatch = document.createElement("span");
+            swatch.className = "customize-swatch";
+            swatch.style.background =
+              key === "accent"
+                ? themePalette(customizeDraft)[option.value]
+                : themePalette({ ...customizeDraft, theme: option.value }).base;
+            swatch.setAttribute("aria-hidden", "true");
+            button.prepend(swatch);
+          }
+          button.onclick = () => {
+            select.value = option.value;
+            select.dispatchEvent(new Event("input"));
+            [...group.children]
+              .find((item) => item.dataset.value === option.value)
+              ?.focus({ preventScroll: true });
+          };
+          return button;
+        }),
+    );
+  }
 }
-function customizePreview(){
- renderCustomizeChoices();
- $('customize-next').disabled=customizeStep===customizeStepCount-1&&(!customizeDraft.blocker||customizeDraft.blocker==='auto');
- tabAppearance(customizeDraft);
- const p=themePalette(customizeDraft),preview=$('customize-preview');
- for(const [key,value] of Object.entries(p))preview.style.setProperty('--'+key,value);
- preview.style.setProperty('--accent',p[customizeDraft.accent]||p.mauve);
- preview.dataset.wallpaper=customizeDraft.wallpaper;
- $('customize-tab-label').textContent=customizeDraft.tabPreset==='custom'?(customizeDraft.tabTitle.trim()||'Tutsi Math'):$('customize-tabPreset').selectedOptions[0].textContent;
- $('customize-tabTitle').disabled=customizeDraft.tabPreset!=='custom';
- $('customize-summary').textContent=`${customizeDraft.theme[0].toUpperCase()+customizeDraft.theme.slice(1)} / ${$('customize-accent').selectedOptions[0].textContent} / ${$('customize-engine').selectedOptions[0].textContent}`;
+function customizePreview() {
+  renderCustomizeChoices();
+  $("customize-next").disabled =
+    customizeStep === customizeStepCount - 1 &&
+    (!customizeDraft.blocker || customizeDraft.blocker === "auto");
+  tabAppearance(customizeDraft);
+  const p = themePalette(customizeDraft),
+    preview = $("customize-preview");
+  for (const [key, value] of Object.entries(p)) preview.style.setProperty("--" + key, value);
+  preview.style.setProperty("--accent", p[customizeDraft.accent] || p.mauve);
+  preview.dataset.wallpaper = customizeDraft.wallpaper;
+  $("customize-tab-label").textContent =
+    customizeDraft.tabPreset === "custom"
+      ? customizeDraft.tabTitle.trim() || "Tutsi Math"
+      : $("customize-tabPreset").selectedOptions[0].textContent;
+  $("customize-tabTitle").disabled = customizeDraft.tabPreset !== "custom";
+  $("customize-summary").textContent =
+    `${customizeDraft.theme[0].toUpperCase() + customizeDraft.theme.slice(1)} / ${$("customize-accent").selectedOptions[0].textContent} / ${$("customize-engine").selectedOptions[0].textContent}`;
 }
-function showCustomizeStep(animate=false){
- customize.querySelectorAll('[data-customize-step]').forEach(el=>el.hidden=Number(el.dataset.customizeStep)!==customizeStep);
- customize.querySelectorAll('[data-step-marker]').forEach((el,i)=>{if(i===customizeStep)el.setAttribute('aria-current','step');else el.removeAttribute('aria-current');});
- $('customize-progress').textContent=`Step ${customizeStep+1} of ${customizeStepCount}`;
- $('customize-back').hidden=customizeStep===0;
- $('customize-next').textContent=customizeStep===customizeStepCount-1?'Save changes':'Next';
- $('customize-next').disabled=customizeStep===customizeStepCount-1&&(!customizeDraft.blocker||customizeDraft.blocker==='auto');
- const heading=customize.querySelector('[data-customize-step]:not([hidden]) h3');heading.focus({preventScroll:true});
- if(animate&&!settings.motion&&!matchMedia('(prefers-reduced-motion: reduce)').matches)heading.parentElement.animate([{opacity:0},{opacity:1}],{duration:240,easing:'ease-out'});
+function showCustomizeStep(animate = false) {
+  customize
+    .querySelectorAll("[data-customize-step]")
+    .forEach((el) => (el.hidden = Number(el.dataset.customizeStep) !== customizeStep));
+  customize.querySelectorAll("[data-step-marker]").forEach((el, i) => {
+    if (i === customizeStep) el.setAttribute("aria-current", "step");
+    else el.removeAttribute("aria-current");
+  });
+  $("customize-progress").textContent = `Step ${customizeStep + 1} of ${customizeStepCount}`;
+  $("customize-back").hidden = customizeStep === 0;
+  $("customize-next").textContent =
+    customizeStep === customizeStepCount - 1 ? "Save changes" : "Next";
+  $("customize-next").disabled =
+    customizeStep === customizeStepCount - 1 &&
+    (!customizeDraft.blocker || customizeDraft.blocker === "auto");
+  const heading = customize.querySelector("[data-customize-step]:not([hidden]) h3");
+  heading.focus({ preventScroll: true });
+  if (animate && !settings.motion && !matchMedia("(prefers-reduced-motion: reduce)").matches)
+    heading.parentElement.animate([{ opacity: 0 }, { opacity: 1 }], {
+      duration: 240,
+      easing: "ease-out",
+    });
 }
-async function changeCustomizeStep(delta){
- if(customizeBusy)return;customizeBusy=true;
- const token=++customizeTransition;
- $('customize-back').disabled=true;$('customize-next').disabled=true;
- const panel=customize.querySelector('[data-customize-step]:not([hidden])');
- if(!settings.motion&&!matchMedia('(prefers-reduced-motion: reduce)').matches){
-   try{await panel.animate([{opacity:1},{opacity:0}],{duration:120,easing:'ease-in'}).finished;}catch{}
- }
- if(token!==customizeTransition||!customize.open)return;
- customizeStep+=delta;showCustomizeStep(true);
- customizeBusy=false;$('customize-back').disabled=false;$('customize-next').disabled=customizeStep===customizeStepCount-1&&(!customizeDraft.blocker||customizeDraft.blocker==='auto');
+async function changeCustomizeStep(delta) {
+  if (customizeBusy) return;
+  customizeBusy = true;
+  const token = ++customizeTransition;
+  $("customize-back").disabled = true;
+  $("customize-next").disabled = true;
+  const panel = customize.querySelector("[data-customize-step]:not([hidden])");
+  if (!settings.motion && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    try {
+      await panel.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 120, easing: "ease-in" })
+        .finished;
+    } catch {}
+  }
+  if (token !== customizeTransition || !customize.open) return;
+  customizeStep += delta;
+  showCustomizeStep(true);
+  customizeBusy = false;
+  $("customize-back").disabled = false;
+  $("customize-next").disabled =
+    customizeStep === customizeStepCount - 1 &&
+    (!customizeDraft.blocker || customizeDraft.blocker === "auto");
 }
-function openCustomize(){
- customizeTransition++;customizeBusy=false;
- $('customize-back').disabled=false;$('customize-next').disabled=false;
- customizeDraft={...settings};customizeStep=0;
- $('customize-dismiss').hidden=!hasChosenBlocker(settings.blocker);
- if(!hasChosenBlocker(settings.blocker))try{localStorage.setItem('tutsi.customize.pending','1')}catch{}
- for(const key of Object.keys(customizeKeys)){const el=$('customize-'+key);if(el.type==='checkbox')el.checked=customizeDraft[key];else el.value=customizeDraft[key];}
- customizePreview();customize.showModal();showCustomizeStep();
+function openCustomize() {
+  customizeTransition++;
+  customizeBusy = false;
+  $("customize-back").disabled = false;
+  $("customize-next").disabled = false;
+  customizeDraft = { ...settings };
+  customizeStep = 0;
+  $("customize-dismiss").hidden = !hasChosenBlocker(settings.blocker);
+  if (!hasChosenBlocker(settings.blocker))
+    try {
+      localStorage.setItem("tutsi.customize.pending", "1");
+    } catch {}
+  for (const key of Object.keys(customizeKeys)) {
+    const el = $("customize-" + key);
+    if (el.type === "checkbox") el.checked = customizeDraft[key];
+    else el.value = customizeDraft[key];
+  }
+  customizePreview();
+  customize.showModal();
+  showCustomizeStep();
 }
-function dismissCustomize(){customizeTransition++;customizeBusy=false;try{localStorage.setItem('tutsi.customize.seen','1');localStorage.removeItem('tutsi.customize.pending')}catch{}customize.close();tabAppearance();}
-$('open-customize').onclick=openCustomize;
-function hasChosenBlocker(value){return !!value&&value!=='auto'&&[...$('customize-blocker').options].some(option=>option.value===value);}
-function requireCustomizeBlocker(){customizeTransition++;customizeBusy=false;customizeStep=customizeStepCount-1;showCustomizeStep();}
-function skipCustomize(){if(!hasChosenBlocker(settings.blocker)){requireCustomizeBlocker();return;}dismissCustomize();}
-$('customize-dismiss').onclick=skipCustomize;
-customize.addEventListener('cancel',event=>{event.preventDefault();skipCustomize();});
-$('customize-back').onclick=()=>{void changeCustomizeStep(-1);};
-function saveCustomize(){
- if(!hasChosenBlocker(customizeDraft.blocker)){requireCustomizeBlocker();return;}
- for(const key of Object.keys(customizeKeys))settings[key]=customizeDraft[key];
- applySettings();syncClosePrevention();dismissCustomize();toast('Your changes are saved.');
+function dismissCustomize() {
+  customizeTransition++;
+  customizeBusy = false;
+  try {
+    localStorage.setItem("tutsi.customize.seen", "1");
+    localStorage.removeItem("tutsi.customize.pending");
+  } catch {}
+  customize.close();
+  tabAppearance();
 }
-$('customize-next').onclick=()=>{
- if(customizeStep<customizeStepCount-1){void changeCustomizeStep(1);return;}
- saveCustomize();
+$("open-customize").onclick = openCustomize;
+function hasChosenBlocker(value) {
+  return (
+    !!value &&
+    value !== "auto" &&
+    [...$("customize-blocker").options].some((option) => option.value === value)
+  );
+}
+function requireCustomizeBlocker() {
+  customizeTransition++;
+  customizeBusy = false;
+  customizeStep = customizeStepCount - 1;
+  showCustomizeStep();
+}
+function skipCustomize() {
+  if (!hasChosenBlocker(settings.blocker)) {
+    requireCustomizeBlocker();
+    return;
+  }
+  dismissCustomize();
+}
+$("customize-dismiss").onclick = skipCustomize;
+customize.addEventListener("cancel", (event) => {
+  event.preventDefault();
+  skipCustomize();
+});
+$("customize-back").onclick = () => {
+  void changeCustomizeStep(-1);
+};
+function saveCustomize() {
+  if (!hasChosenBlocker(customizeDraft.blocker)) {
+    requireCustomizeBlocker();
+    return;
+  }
+  for (const key of Object.keys(customizeKeys)) settings[key] = customizeDraft[key];
+  applySettings();
+  syncClosePrevention();
+  dismissCustomize();
+  toast("Your changes are saved.");
+}
+$("customize-next").onclick = () => {
+  if (customizeStep < customizeStepCount - 1) {
+    void changeCustomizeStep(1);
+    return;
+  }
+  saveCustomize();
 };
 await window.tutsiStartupReady;
-try{if(localStorage.getItem('tutsi.customize.pending')||((!saved||Object.keys(saved).length===0)&&!localStorage.getItem('tutsi.customize.seen')&&(!location.hash||location.hash==='#home')))openCustomize();}catch{}
+try {
+  if (
+    localStorage.getItem("tutsi.customize.pending") ||
+    ((!saved || Object.keys(saved).length === 0) &&
+      !localStorage.getItem("tutsi.customize.seen") &&
+      (!location.hash || location.hash === "#home"))
+  )
+    openCustomize();
+} catch {}
 
-                                                                              
-function updateSettingsSection(){
- if(document.body.dataset.view!=='settings')return;
- const links=[...document.querySelectorAll('.settings-nav > a')].filter(link=>document.querySelector('.settings-content '+link.getAttribute('href')));
- const sections=links.map(link=>({link,rect:document.querySelector('.settings-content '+link.getAttribute('href')).getBoundingClientRect()})).sort((a,b)=>a.rect.top-b.rect.top);
- if(!sections.length)return;
- const threshold=Math.min(180,innerHeight*.25);
- let active=sections[0];
- for(const section of sections)if(section.rect.top<=threshold)active=section;
- if(scrollY+innerHeight>=document.documentElement.scrollHeight-4)active=sections.at(-1);
- const nav=active.link.parentElement;
- nav.style.setProperty('--section-x',active.link.offsetLeft+'px');nav.style.setProperty('--section-y',active.link.offsetTop+'px');nav.style.setProperty('--section-width',active.link.offsetWidth+'px');nav.style.setProperty('--section-height',active.link.offsetHeight+'px');
- for(const section of sections){if(section===active)section.link.setAttribute('aria-current','location');else section.link.removeAttribute('aria-current');}
+function updateSettingsSection() {
+  if (document.body.dataset.view !== "settings") return;
+  const links = [...document.querySelectorAll(".settings-nav > a")].filter((link) =>
+    document.querySelector(".settings-content " + link.getAttribute("href")),
+  );
+  const sections = links
+    .map((link) => ({
+      link,
+      rect: document
+        .querySelector(".settings-content " + link.getAttribute("href"))
+        .getBoundingClientRect(),
+    }))
+    .sort((a, b) => a.rect.top - b.rect.top);
+  if (!sections.length) return;
+  const threshold = Math.min(180, innerHeight * 0.25);
+  let active = sections[0];
+  for (const section of sections) if (section.rect.top <= threshold) active = section;
+  if (scrollY + innerHeight >= document.documentElement.scrollHeight - 4) active = sections.at(-1);
+  const nav = active.link.parentElement;
+  nav.style.setProperty("--section-x", active.link.offsetLeft + "px");
+  nav.style.setProperty("--section-y", active.link.offsetTop + "px");
+  nav.style.setProperty("--section-width", active.link.offsetWidth + "px");
+  nav.style.setProperty("--section-height", active.link.offsetHeight + "px");
+  for (const section of sections) {
+    if (section === active) section.link.setAttribute("aria-current", "location");
+    else section.link.removeAttribute("aria-current");
+  }
 }
-let settingsScrollFrame=0;
-function scheduleSettingsHighlight(){if(settingsScrollFrame)return;settingsScrollFrame=requestAnimationFrame(()=>{settingsScrollFrame=0;updateSettingsSection();});}
-addEventListener('scroll',scheduleSettingsHighlight,{passive:true});
-addEventListener('resize',scheduleSettingsHighlight,{passive:true});
+let settingsScrollFrame = 0;
+function scheduleSettingsHighlight() {
+  if (settingsScrollFrame) return;
+  settingsScrollFrame = requestAnimationFrame(() => {
+    settingsScrollFrame = 0;
+    updateSettingsSection();
+  });
+}
+addEventListener("scroll", scheduleSettingsHighlight, { passive: true });
+addEventListener("resize", scheduleSettingsHighlight, { passive: true });
 scheduleSettingsHighlight();
 
-$('clear-cache').onclick=async()=>{
- const button=$('clear-cache');button.disabled=true;$('storage-status').textContent='Clearing cache...';
- try{
-   if('caches' in window){for(const name of await caches.keys()){
-     const cache=await caches.open(name);
-     for(const request of await cache.keys()){
-       const url=new URL(request.url);
-       if(url.origin===location.origin&&/^\/(?:apps\/tutsi(?:\/|$)|tutsi(?:\/|$)|~\/tm\/)/.test(url.pathname))await cache.delete(request);
-     }
-   }}
-   $('storage-status').textContent='Tutsi cache cleared. Your account and saved data are unchanged.';
- }catch{$('storage-status').textContent='Cache could not be cleared. Try your browser settings.';}
- finally{button.disabled=false;}
+$("clear-cache").onclick = async () => {
+  const button = $("clear-cache");
+  button.disabled = true;
+  $("storage-status").textContent = "Clearing cache...";
+  try {
+    if ("caches" in window) {
+      for (const name of await caches.keys()) {
+        const cache = await caches.open(name);
+        for (const request of await cache.keys()) {
+          const url = new URL(request.url);
+          if (
+            url.origin === location.origin &&
+            /^\/(?:apps\/tutsi(?:\/|$)|tutsi(?:\/|$)|~\/tm\/)/.test(url.pathname)
+          )
+            await cache.delete(request);
+        }
+      }
+    }
+    $("storage-status").textContent =
+      "Tutsi cache cleared. Your account and saved data are unchanged.";
+  } catch {
+    $("storage-status").textContent = "Cache could not be cleared. Try your browser settings.";
+  } finally {
+    button.disabled = false;
+  }
 };
 
 let warmingBrowser;
-const prepareBrowser=()=>{if(document.hidden||warmingBrowser)return;warmingBrowser=warmBrowser(settings).finally(()=>{warmingBrowser=null;});};
-$('query').addEventListener('focus',prepareBrowser);
-$('query').addEventListener('pointerdown',prepareBrowser,{passive:true});
-if(typeof requestIdleCallback==='function')requestIdleCallback(prepareBrowser,{timeout:1000});else setTimeout(prepareBrowser,700);
+const prepareBrowser = () => {
+  if (document.hidden || warmingBrowser) return;
+  warmingBrowser = warmBrowser(settings).finally(() => {
+    warmingBrowser = null;
+  });
+};
+$("query").addEventListener("focus", prepareBrowser);
+$("query").addEventListener("pointerdown", prepareBrowser, { passive: true });
+if (typeof requestIdleCallback === "function")
+  requestIdleCallback(prepareBrowser, { timeout: 1000 });
+else setTimeout(prepareBrowser, 700);

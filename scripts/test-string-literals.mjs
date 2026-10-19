@@ -1,0 +1,10 @@
+﻿import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {parse} from 'acorn';
+import {encodeLiterals} from './build-string-literals.mjs';
+const code=String.raw`'use strict'; globalThis.result=['hello',"a\nb",'\uD83D\uDE00','/api/music?q=hello',{'key':'value'}, String.raw\`keep\nraw\`];`;
+const actual=code.replaceAll('\\`','`');
+const a={},b={};vm.runInNewContext(actual,a);const encoded=encodeLiterals(actual);vm.runInNewContext(encoded,b);assert.equal(JSON.stringify(a.result),JSON.stringify(b.result));assert(encoded.includes("'use strict'"));assert(!encoded.includes('hello'));
+const moduleCode='import {a} from "./dependency.mjs"; export const name="example";';
+assert.doesNotThrow(()=>parse(encodeLiterals(moduleCode,true),{ecmaVersion:'latest',sourceType:'module'}));
+console.log('PASS literal values, Unicode, escaped text, directives, raw templates and module syntax');

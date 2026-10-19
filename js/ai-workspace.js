@@ -1,635 +1,1053 @@
-(function(){
-  'use strict';
+(function () {
+  "use strict";
 
-  const MESSAGE_KEY='nyx.aiMessages';
-  const THREADS_KEY='nyx.aiThreads.v1';
-  const ACTIVE_THREAD_KEY='nyx.aiActiveThread';
-  const MODEL_KEY='nyx.aiModel';
-  const PROVIDER_KEY='nyx.aiSharedProvider';
-  const RESPONSE_DEPTH_KEY='nyx.aiResponseDepth';
-  const USAGE_KEY='nyx.aiUsage.v1';
-  const DEFAULT_MODEL='' ;
-  const MESSAGE_PAGE_SIZE=40;
-  const MODEL_CONTEXT_MESSAGES=20;
-  let loadingEarlier=false;
-  const MAX_INPUT_HEIGHT=190;
-  const MAX_IMAGE_BYTES=8*1024*1024;
-  const MAX_PREPARED_IMAGE_CHARS=1200000;
-  const MAX_PREPARED_IMAGE_EDGE=1600;
-  const MAX_TEXT_ATTACHMENT_CHARS=18000;
-  const SUPPORTED_IMAGE_TYPES=new Set(['image/png','image/jpeg','image/webp','image/gif']);
-  const KNOWN_VISION_MODELS=new Set();
+  const MESSAGE_KEY = "nyx.aiMessages";
+  const THREADS_KEY = "nyx.aiThreads.v1";
+  const ACTIVE_THREAD_KEY = "nyx.aiActiveThread";
+  const MODEL_KEY = "nyx.aiModel";
+  const PROVIDER_KEY = "nyx.aiSharedProvider";
+  const RESPONSE_DEPTH_KEY = "nyx.aiResponseDepth";
+  const USAGE_KEY = "nyx.aiUsage.v1";
+  const DEFAULT_MODEL = "";
+  const MESSAGE_PAGE_SIZE = 40;
+  const MODEL_CONTEXT_MESSAGES = 20;
+  let loadingEarlier = false;
+  const MAX_INPUT_HEIGHT = 190;
+  const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+  const MAX_PREPARED_IMAGE_CHARS = 1200000;
+  const MAX_PREPARED_IMAGE_EDGE = 1600;
+  const MAX_TEXT_ATTACHMENT_CHARS = 18000;
+  const SUPPORTED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
+  const KNOWN_VISION_MODELS = new Set();
 
-  const app=document.querySelector('[data-ai-app]');
-  const feed=document.getElementById('feed');
-  const conversation=document.getElementById('conversation');
-  const form=document.getElementById('form');
-  const input=document.getElementById('input');
-  const send=document.getElementById('send');
-  const model=document.getElementById('model');
-  const providerSelect=document.getElementById('providerSelect');
-  const providerState=document.getElementById('providerState');
-  const modelPicker=document.getElementById('modelPicker');
-  const modelTrigger=document.getElementById('modelTrigger');
-  const modelSelected=document.getElementById('modelSelected');
-  const modelMenu=document.getElementById('modelMenu');
-  const modelOptionsHost=document.getElementById('modelOptions');
-  const clear=document.getElementById('clear');
-  const threadTitle=document.getElementById('threadTitle');
-  const characterCount=document.getElementById('characterCount');
-  const sidebar=document.getElementById('aiSidebar');
-  const sidebarToggle=document.getElementById('sidebarToggle');
-  const sidebarClose=document.getElementById('sidebarClose');
-  const sidebarScrim=document.getElementById('sidebarScrim');
-  const newChat=document.getElementById('newChat');
-  const temporaryChat=document.getElementById('temporaryChat');
-  const threadList=document.getElementById('threadList');
-  const threadCount=document.getElementById('threadCount');
-  const historyEmpty=document.getElementById('historyEmpty');
-  const threadSearch=document.getElementById('threadSearch');
-  const depthButtons=[...document.querySelectorAll('[data-response-depth]')];
-  const sidebarModelName=document.getElementById('sidebarModelName');
-  const usageWeek=document.getElementById('usageWeek');
-  const usageAll=document.getElementById('usageAll');
-  const usageRequests=document.getElementById('usageRequests');
-  const profileButton=document.getElementById('aiProfile');
-  const profileAvatar=document.getElementById('profileAvatar');
-  const profileInitial=document.getElementById('profileInitial');
-  const profileName=document.getElementById('profileName');
-  const profileHandle=document.getElementById('profileHandle');
-  const imageInput=document.getElementById('imageInput');
-  const attachImage=document.getElementById('attachImage');
-  const attachmentPreview=document.getElementById('attachmentPreview');
-  const attachmentThumbnail=document.getElementById('attachmentThumbnail');
-  const attachmentName=document.getElementById('attachmentName');
-  const attachmentStatus=document.getElementById('attachmentStatus');
-  const removeAttachment=document.getElementById('removeAttachment');
-  const screenPreview=document.getElementById('screenPreview');
-  const screenVideo=document.getElementById('screenVideo');
-  const screenStatus=document.getElementById('screenStatus');
-  const shareScreen=document.getElementById('shareScreen');
-  const stopScreenShare=document.getElementById('stopScreenShare');
-  if(!app||!feed||!conversation||!form||!input||!send||!model||!providerSelect||!modelPicker||!modelTrigger||!modelSelected||!modelMenu||!modelOptionsHost||!clear||!threadTitle||!sidebar||!sidebarToggle||!sidebarClose||!sidebarScrim||!newChat||!temporaryChat||!threadList||!threadCount||!historyEmpty||!threadSearch||depthButtons.length!==3||!sidebarModelName||!usageWeek||!usageAll||!usageRequests||!profileButton||!profileAvatar||!profileInitial||!profileName||!profileHandle||!imageInput||!attachImage||!attachmentPreview||!attachmentThumbnail||!attachmentName||!attachmentStatus||!removeAttachment||!screenPreview||!screenVideo||!screenStatus||!shareScreen||!stopScreenShare) return;
+  const app = document.querySelector("[data-ai-app]");
+  const feed = document.getElementById("feed");
+  const conversation = document.getElementById("conversation");
+  const form = document.getElementById("form");
+  const input = document.getElementById("input");
+  const send = document.getElementById("send");
+  const model = document.getElementById("model");
+  const providerSelect = document.getElementById("providerSelect");
+  const providerState = document.getElementById("providerState");
+  const modelPicker = document.getElementById("modelPicker");
+  const modelTrigger = document.getElementById("modelTrigger");
+  const modelSelected = document.getElementById("modelSelected");
+  const modelMenu = document.getElementById("modelMenu");
+  const modelOptionsHost = document.getElementById("modelOptions");
+  const clear = document.getElementById("clear");
+  const threadTitle = document.getElementById("threadTitle");
+  const characterCount = document.getElementById("characterCount");
+  const sidebar = document.getElementById("aiSidebar");
+  const sidebarToggle = document.getElementById("sidebarToggle");
+  const sidebarClose = document.getElementById("sidebarClose");
+  const sidebarScrim = document.getElementById("sidebarScrim");
+  const newChat = document.getElementById("newChat");
+  const temporaryChat = document.getElementById("temporaryChat");
+  const threadList = document.getElementById("threadList");
+  const threadCount = document.getElementById("threadCount");
+  const historyEmpty = document.getElementById("historyEmpty");
+  const threadSearch = document.getElementById("threadSearch");
+  const depthButtons = [...document.querySelectorAll("[data-response-depth]")];
+  const sidebarModelName = document.getElementById("sidebarModelName");
+  const usageWeek = document.getElementById("usageWeek");
+  const usageAll = document.getElementById("usageAll");
+  const usageRequests = document.getElementById("usageRequests");
+  const profileButton = document.getElementById("aiProfile");
+  const profileAvatar = document.getElementById("profileAvatar");
+  const profileInitial = document.getElementById("profileInitial");
+  const profileName = document.getElementById("profileName");
+  const profileHandle = document.getElementById("profileHandle");
+  const imageInput = document.getElementById("imageInput");
+  const attachImage = document.getElementById("attachImage");
+  const attachmentPreview = document.getElementById("attachmentPreview");
+  const attachmentThumbnail = document.getElementById("attachmentThumbnail");
+  const attachmentName = document.getElementById("attachmentName");
+  const attachmentStatus = document.getElementById("attachmentStatus");
+  const removeAttachment = document.getElementById("removeAttachment");
+  const screenPreview = document.getElementById("screenPreview");
+  const screenVideo = document.getElementById("screenVideo");
+  const screenStatus = document.getElementById("screenStatus");
+  const shareScreen = document.getElementById("shareScreen");
+  const stopScreenShare = document.getElementById("stopScreenShare");
+  if (
+    !app ||
+    !feed ||
+    !conversation ||
+    !form ||
+    !input ||
+    !send ||
+    !model ||
+    !providerSelect ||
+    !modelPicker ||
+    !modelTrigger ||
+    !modelSelected ||
+    !modelMenu ||
+    !modelOptionsHost ||
+    !clear ||
+    !threadTitle ||
+    !sidebar ||
+    !sidebarToggle ||
+    !sidebarClose ||
+    !sidebarScrim ||
+    !newChat ||
+    !temporaryChat ||
+    !threadList ||
+    !threadCount ||
+    !historyEmpty ||
+    !threadSearch ||
+    depthButtons.length !== 3 ||
+    !sidebarModelName ||
+    !usageWeek ||
+    !usageAll ||
+    !usageRequests ||
+    !profileButton ||
+    !profileAvatar ||
+    !profileInitial ||
+    !profileName ||
+    !profileHandle ||
+    !imageInput ||
+    !attachImage ||
+    !attachmentPreview ||
+    !attachmentThumbnail ||
+    !attachmentName ||
+    !attachmentStatus ||
+    !removeAttachment ||
+    !screenPreview ||
+    !screenVideo ||
+    !screenStatus ||
+    !shareScreen ||
+    !stopScreenShare
+  )
+    return;
 
-  let activeController=null;
-  let sendCooldownUntil=0,sendCooldownTimer;
-  const cooldownLine=document.createElement('div');
-  cooldownLine.className='ai-send-cooldown';cooldownLine.hidden=true;
-  cooldownLine.setAttribute('role','status');cooldownLine.style.cssText='font-size:12px;text-align:center;padding:4px;';
+  let activeController = null;
+  let sendCooldownUntil = 0,
+    sendCooldownTimer;
+  const cooldownLine = document.createElement("div");
+  cooldownLine.className = "ai-send-cooldown";
+  cooldownLine.hidden = true;
+  cooldownLine.setAttribute("role", "status");
+  cooldownLine.style.cssText = "font-size:12px;text-align:center;padding:4px;";
   form.before(cooldownLine);
-  function showSendCooldown(response){
-    const seconds=Number(response.headers.get('retry-after'));
-    if(response.status!==429||!Number.isFinite(seconds)||seconds<1||seconds>60)return;
-    sendCooldownUntil=Date.now()+seconds*1000;clearInterval(sendCooldownTimer);
-    const update=()=>{
-      const remaining=Math.max(0,Math.ceil((sendCooldownUntil-Date.now())/1000));
-      cooldownLine.hidden=!remaining;cooldownLine.textContent=remaining?`You can send another message in ${remaining}s.`:'';
-      send.disabled=!!remaining||form.classList.contains('is-busy');
-      if(!remaining)clearInterval(sendCooldownTimer);
+  function showSendCooldown(response) {
+    const seconds = Number(response.headers.get("retry-after"));
+    if (response.status !== 429 || !Number.isFinite(seconds) || seconds < 1 || seconds > 60) return;
+    sendCooldownUntil = Date.now() + seconds * 1000;
+    clearInterval(sendCooldownTimer);
+    const update = () => {
+      const remaining = Math.max(0, Math.ceil((sendCooldownUntil - Date.now()) / 1000));
+      cooldownLine.hidden = !remaining;
+      cooldownLine.textContent = remaining ? `You can send another message in ${remaining}s.` : "";
+      send.disabled = !!remaining || form.classList.contains("is-busy");
+      if (!remaining) clearInterval(sendCooldownTimer);
     };
-    update();sendCooldownTimer=setInterval(update,250);
+    update();
+    sendCooldownTimer = setInterval(update, 250);
   }
-  let followStream=true;
-  let modelCatalog=[];
-  let ownerMediaAccess=false;
-  let threads=[];
-  let activeThreadId='';
-  let temporaryMode=false;
-  let temporaryMessages=[];
-  let attachedImage=null;
-  let attachedText=null;
-  let screenStream=null;
+  let followStream = true;
+  let modelCatalog = [];
+  let ownerMediaAccess = false;
+  let threads = [];
+  let activeThreadId = "";
+  let temporaryMode = false;
+  let temporaryMessages = [];
+  let attachedImage = null;
+  let attachedText = null;
+  let screenStream = null;
 
-  let nyxAiAccountAuthPromise=null;
-  let globalProviders=[];
+  let nyxAiAccountAuthPromise = null;
+  let globalProviders = [];
 
-  async function nyxAiParentToken(){
-    if(parent===window) return '';
-    const requestId=`ai-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    return new Promise(resolve=>{
-      let settled=false;
-      const finish=value=>{if(settled)return;settled=true;clearTimeout(timeout);removeEventListener('message',receive);resolve(String(value||''));};
-      const receive=event=>{if(event.source===parent&&event.origin===location.origin&&event.data?.type==='nyx:account-token-response'&&event.data.requestId===requestId)finish(event.data.token);};
-      const timeout=setTimeout(()=>finish(''),2500);
-      addEventListener('message',receive);
-      parent.postMessage({type:'nyx:account-token-request',requestId},location.origin);
+  async function nyxAiParentToken() {
+    if (parent === window) return "";
+    const requestId = `ai-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (value) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        removeEventListener("message", receive);
+        resolve(String(value || ""));
+      };
+      const receive = (event) => {
+        if (
+          event.source === parent &&
+          event.origin === location.origin &&
+          event.data?.type === "nyx:account-token-response" &&
+          event.data.requestId === requestId
+        )
+          finish(event.data.token);
+      };
+      const timeout = setTimeout(() => finish(""), 2500);
+      addEventListener("message", receive);
+      parent.postMessage({ type: "nyx:account-token-request", requestId }, location.origin);
     });
   }
 
-  async function nyxAiAccountToken(){
-    const parentToken=await nyxAiParentToken();
-    if(parentToken) return parentToken;
-    if(!nyxAiAccountAuthPromise){
-      nyxAiAccountAuthPromise=(async()=>{
-        try{
-          const configResponse=await fetch('/api/founder-profile/auth-config',{cache:'no-store'});
-          const config=await configResponse.json();
-          if(!config?.enabled||!config?.apiKey||!config?.projectId)return null;
-          const [{initializeApp,getApps},{getAuth,setPersistence,browserLocalPersistence,onAuthStateChanged}]=await Promise.all([
-            import('https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js'),
-            import('https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js')
+  async function nyxAiAccountToken() {
+    const parentToken = await nyxAiParentToken();
+    if (parentToken) return parentToken;
+    if (!nyxAiAccountAuthPromise) {
+      nyxAiAccountAuthPromise = (async () => {
+        try {
+          const configResponse = await fetch("/api/founder-profile/auth-config", {
+            cache: "no-store",
+          });
+          const config = await configResponse.json();
+          if (!config?.enabled || !config?.apiKey || !config?.projectId) return null;
+          const [
+            { initializeApp, getApps },
+            { getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged },
+          ] = await Promise.all([
+            import("https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js"),
+            import("https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js"),
           ]);
-          const firebaseApp=getApps().find(item=>item.name==='nyx-founder-owner')||initializeApp({apiKey:config.apiKey,authDomain:`${config.projectId}.firebaseapp.com`,projectId:config.projectId},'nyx-founder-owner');
-          const auth=getAuth(firebaseApp);
-          try{await setPersistence(auth,browserLocalPersistence)}catch{}
-          if(typeof auth.authStateReady==='function')await auth.authStateReady();
-          if(typeof onAuthStateChanged==='function')onAuthStateChanged(auth,()=>{void renderUsage();});
+          const firebaseApp =
+            getApps().find((item) => item.name === "nyx-founder-owner") ||
+            initializeApp(
+              {
+                apiKey: config.apiKey,
+                authDomain: `${config.projectId}.firebaseapp.com`,
+                projectId: config.projectId,
+              },
+              "nyx-founder-owner",
+            );
+          const auth = getAuth(firebaseApp);
+          try {
+            await setPersistence(auth, browserLocalPersistence);
+          } catch {}
+          if (typeof auth.authStateReady === "function") await auth.authStateReady();
+          if (typeof onAuthStateChanged === "function")
+            onAuthStateChanged(auth, () => {
+              void renderUsage();
+            });
           return auth;
-        }catch{return null}
+        } catch {
+          return null;
+        }
       })();
     }
-    const auth=await nyxAiAccountAuthPromise;
-    try{return auth?.currentUser?await auth.currentUser.getIdToken():''}catch{return ''}
+    const auth = await nyxAiAccountAuthPromise;
+    try {
+      return auth?.currentUser ? await auth.currentUser.getIdToken() : "";
+    } catch {
+      return "";
+    }
   }
 
-  async function aiHeaders(headers={}){
-    const token=await nyxAiAccountToken();
-    return {...headers,'x-nyx-ai-provider':'shared',...(token?{Authorization:`Bearer ${token}`}:{})};
+  async function aiHeaders(headers = {}) {
+    const token = await nyxAiAccountToken();
+    return {
+      ...headers,
+      "x-nyx-ai-provider": "shared",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
   }
-  let customKey='';
-  const customKind=()=>customKey.startsWith('n_api_')?'nyx':'openrouter';
-  const keyDialog=document.getElementById('customKeyDialog');
-  keyDialog?.addEventListener('close',()=>{document.getElementById('customKeyInput').value='';});
-  document.getElementById('customKeyButton')?.addEventListener('click',()=>keyDialog.showModal());
-  document.getElementById('customKeyClose')?.addEventListener('click',()=>keyDialog.close());
-  document.getElementById('customKeyRemove')?.addEventListener('click',()=>{customKey='';document.getElementById('customKeyInput').value='';keyDialog.close();renderProviders();void loadModels();void renderUsage();});
-  document.getElementById('customKeyForm')?.addEventListener('submit',event=>{event.preventDefault();const field=document.getElementById('customKeyInput'),value=field.value.trim();if(!/^n_api_[A-Za-z0-9_-]{43}$/.test(value)&&!/^sk-or-[A-Za-z0-9_-]{20,}$/.test(value)){document.getElementById('customKeyError').textContent="Enter a valid N7X or OpenRouter API key.";return;}customKey=value;field.value='';document.getElementById('customKeyError').textContent='';keyDialog.close();renderProviders();void loadModels();void renderUsage();});
-  function selectedProvider(){return 'shared'}
-  function syncProviderControl(){providerSelect.disabled=true;providerSelect.title=customKey?(customKind()==='nyx'?"N7X custom key":'OpenRouter custom key'):"N7X shared";if(customKey)providerSelect.options[0].textContent=providerSelect.title;if(providerState)providerState.hidden=true;}
+  let customKey = "";
+  const customKind = () => (customKey.startsWith("n_api_") ? "nyx" : "openrouter");
+  const keyDialog = document.getElementById("customKeyDialog");
+  keyDialog?.addEventListener("close", () => {
+    document.getElementById("customKeyInput").value = "";
+  });
+  document
+    .getElementById("customKeyButton")
+    ?.addEventListener("click", () => keyDialog.showModal());
+  document.getElementById("customKeyClose")?.addEventListener("click", () => keyDialog.close());
+  document.getElementById("customKeyRemove")?.addEventListener("click", () => {
+    customKey = "";
+    document.getElementById("customKeyInput").value = "";
+    keyDialog.close();
+    renderProviders();
+    void loadModels();
+    void renderUsage();
+  });
+  document.getElementById("customKeyForm")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const field = document.getElementById("customKeyInput"),
+      value = field.value.trim();
+    if (!/^n_api_[A-Za-z0-9_-]{43}$/.test(value) && !/^sk-or-[A-Za-z0-9_-]{20,}$/.test(value)) {
+      document.getElementById("customKeyError").textContent =
+        "Enter a valid N7X or OpenRouter API key.";
+      return;
+    }
+    customKey = value;
+    field.value = "";
+    document.getElementById("customKeyError").textContent = "";
+    keyDialog.close();
+    renderProviders();
+    void loadModels();
+    void renderUsage();
+  });
+  function selectedProvider() {
+    return "shared";
+  }
+  function syncProviderControl() {
+    providerSelect.disabled = true;
+    providerSelect.title = customKey
+      ? customKind() === "nyx"
+        ? "N7X custom key"
+        : "OpenRouter custom key"
+      : "N7X shared";
+    if (customKey) providerSelect.options[0].textContent = providerSelect.title;
+    if (providerState) providerState.hidden = true;
+  }
 
-  function renderProviders(){
-    const selected=selectedProvider();
-    providerSelect.innerHTML=globalProviders.map(provider=>`<option value="${escapeHtml(provider.id)}">${escapeHtml(provider.label)}</option>`).join('')||'<option value="shared">OpenRouter</option>';
-    providerSelect.value=selected;
+  function renderProviders() {
+    const selected = selectedProvider();
+    providerSelect.innerHTML =
+      globalProviders
+        .map(
+          (provider) =>
+            `<option value="${escapeHtml(provider.id)}">${escapeHtml(provider.label)}</option>`,
+        )
+        .join("") || '<option value="shared">OpenRouter</option>';
+    providerSelect.value = selected;
     syncProviderControl();
   }
 
-  async function loadProviders(){
-    try{
-      const response=await fetch('/api/nyx-ai/providers',{headers:await aiHeaders({accept:'application/json'})});
-      const data=await response.json();
-      if(!response.ok) throw new Error(data?.error||'Shared providers are unavailable.');
-      globalProviders=Array.isArray(data?.providers)?data.providers.flatMap(item=>{
-        const id=String(item?.id||'').trim();
-        const label=String(item?.label||id).trim();
-        return id==='shared'?[{id,label:'OpenRouter'}]:[];
-      }):[];
-    }catch{globalProviders=[]}
+  async function loadProviders() {
+    try {
+      const response = await fetch("/api/nyx-ai/providers", {
+        headers: await aiHeaders({ accept: "application/json" }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || "Shared providers are unavailable.");
+      globalProviders = Array.isArray(data?.providers)
+        ? data.providers.flatMap((item) => {
+            const id = String(item?.id || "").trim();
+            const label = String(item?.label || id).trim();
+            return id === "shared" ? [{ id, label: "OpenRouter" }] : [];
+          })
+        : [];
+    } catch {
+      globalProviders = [];
+    }
     renderProviders();
   }
 
-  function responseDepth(){
-    const value=localStorage.getItem(RESPONSE_DEPTH_KEY)||'normal';
-    return ['off','normal','extended'].includes(value)?value:'normal';
+  function responseDepth() {
+    const value = localStorage.getItem(RESPONSE_DEPTH_KEY) || "normal";
+    return ["off", "normal", "extended"].includes(value) ? value : "normal";
   }
 
-  function syncResponseDepth(){
-    const current=responseDepth();
-    depthButtons.forEach(button=>{
-      const selected=button.dataset.responseDepth===current;
-      button.classList.toggle('is-active',selected);
-      button.setAttribute('aria-pressed',String(selected));
+  function syncResponseDepth() {
+    const current = responseDepth();
+    depthButtons.forEach((button) => {
+      const selected = button.dataset.responseDepth === current;
+      button.classList.toggle("is-active", selected);
+      button.setAttribute("aria-pressed", String(selected));
     });
   }
 
-  function storedUsage(){
-    try{
-      const items=JSON.parse(localStorage.getItem(USAGE_KEY)||'[]');
-      return Array.isArray(items)?items.filter(item=>Number.isFinite(item?.at)&&Number.isFinite(item?.tokens)&&item.tokens>0).slice(-1000):[];
-    }catch{return[]}
+  function storedUsage() {
+    try {
+      const items = JSON.parse(localStorage.getItem(USAGE_KEY) || "[]");
+      return Array.isArray(items)
+        ? items
+            .filter(
+              (item) =>
+                Number.isFinite(item?.at) && Number.isFinite(item?.tokens) && item.tokens > 0,
+            )
+            .slice(-1000)
+        : [];
+    } catch {
+      return [];
+    }
   }
 
-  let usageVersion=0,usageController;
-  const usageStatus=document.createElement('p');
-  usageStatus.id='usageStatus';usageStatus.setAttribute('role','status');
-  usageStatus.style.cssText='font-size:12px;line-height:1.5;color:var(--ai-muted);margin:10px 0 0;overflow-wrap:anywhere';
-  usageWeek.closest('section').append(usageStatus);
-  async function renderUsage(){
-    const version=++usageVersion;
-    usageController?.abort();usageController=new AbortController();
-    const signal=usageController.signal;
-    const values=[usageWeek,usageAll,usageRequests];
-    ['Remaining','Used','Pending'].forEach((label,i)=>values[i].parentElement.querySelector('small').textContent=label);
-    values.forEach(node=>node.textContent='\u2014');
-    if(customKey){usageStatus.textContent=customKind()==='nyx'?'Custom key balance is available in your API account.':'Usage is billed to your own OpenRouter key.';return;}
-    usageStatus.textContent='Checking allowance...';
-    try{
-      const headers=await aiHeaders({accept:'application/json'});
-      if(version!==usageVersion)return;
-      const response=await fetch(tutsiModelPicker()?'/api/tutsi-ai/usage':'/api/nyx-ai/usage',{headers,signal,cache:'no-store'});
-      const data=await response.json();
-      if(version!==usageVersion)return;
-      if(!response.ok)throw new Error(response.status===401?'Sign in to see your allowance.':data.error||'Allowance unavailable.');
-      const tokens=data.tokens;
-      if(!tokens||!Number.isFinite(tokens.used)||!Number.isFinite(tokens.pending))throw new Error('Allowance unavailable.');
-      const format=n=>new Intl.NumberFormat().format(n);
-      usageWeek.textContent=data.unlimited?'Unlimited':format(tokens.remaining);
-      usageAll.textContent=format(tokens.used);usageRequests.textContent=format(tokens.pending);
-      const scope=data.scope==='browser'?'Shared browser':data.scope==='expensive-models'?'Expensive models':'Account';
-      const reset=data.resetAt?` Resets ${new Date(data.resetAt).toLocaleString()}.`:' Starts with your first request.';
-      usageStatus.textContent=data.unlimited?'Owner - no account token limit.':`${scope} - ${format(tokens.limit)} tokens / 4 days.${reset}`;
-      if(tokens.pending)usageStatus.textContent+=' Pending tokens are reserved for requests awaiting final usage.';
-      if(data.pendingCostsUsd>0)usageStatus.textContent+=` Provider costs awaiting confirmation: $${data.pendingCostsUsd.toFixed(4)}.`;
-      const cap=model.value==='anthropic/claude-haiku-4.5'?data.modelCaps?.haiku:/^~?anthropic\/claude-(opus|fable)/.test(model.value)?data.modelCaps?.claude:null;
-      if(cap&&cap.limit!==null)usageStatus.textContent+=` Claude: $${cap.remaining.toFixed(4)} of $${cap.limit.toFixed(2)} remaining.`;
-      if(!data.unlimited&&model.value==='anthropic/claude-opus-5.5'&&data.modelCaps?.opus55)usageStatus.textContent+=` Opus: ${format(data.modelCaps.opus55.remaining)} tokens remaining.`;
-      if(!data.unlimited&&model.value==='google/gemini-2.5-flash-image'&&data.modelCaps?.images)usageStatus.textContent+=` Images: ${data.modelCaps.images.remaining} remaining.`;
-      usageStatus.textContent+=' Counts input, conversation history and output tokens.';
-    }catch(error){if(version===usageVersion&&error.name!=='AbortError')usageStatus.textContent=error.message||'Allowance unavailable. Try again shortly.';}
+  let usageVersion = 0,
+    usageController;
+  const usageStatus = document.createElement("p");
+  usageStatus.id = "usageStatus";
+  usageStatus.setAttribute("role", "status");
+  usageStatus.style.cssText =
+    "font-size:12px;line-height:1.5;color:var(--ai-muted);margin:10px 0 0;overflow-wrap:anywhere";
+  usageWeek.closest("section").append(usageStatus);
+  async function renderUsage() {
+    const version = ++usageVersion;
+    usageController?.abort();
+    usageController = new AbortController();
+    const signal = usageController.signal;
+    const values = [usageWeek, usageAll, usageRequests];
+    ["Remaining", "Used", "Pending"].forEach(
+      (label, i) => (values[i].parentElement.querySelector("small").textContent = label),
+    );
+    values.forEach((node) => (node.textContent = "\u2014"));
+    if (customKey) {
+      usageStatus.textContent =
+        customKind() === "nyx"
+          ? "Custom key balance is available in your API account."
+          : "Usage is billed to your own OpenRouter key.";
+      return;
+    }
+    usageStatus.textContent = "Checking allowance...";
+    try {
+      const headers = await aiHeaders({ accept: "application/json" });
+      if (version !== usageVersion) return;
+      const response = await fetch(
+        tutsiModelPicker() ? "/api/tutsi-ai/usage" : "/api/nyx-ai/usage",
+        { headers, signal, cache: "no-store" },
+      );
+      const data = await response.json();
+      if (version !== usageVersion) return;
+      if (!response.ok)
+        throw new Error(
+          response.status === 401
+            ? "Sign in to see your allowance."
+            : data.error || "Allowance unavailable.",
+        );
+      const tokens = data.tokens;
+      if (!tokens || !Number.isFinite(tokens.used) || !Number.isFinite(tokens.pending))
+        throw new Error("Allowance unavailable.");
+      const format = (n) => new Intl.NumberFormat().format(n);
+      usageWeek.textContent = data.unlimited ? "Unlimited" : format(tokens.remaining);
+      usageAll.textContent = format(tokens.used);
+      usageRequests.textContent = format(tokens.pending);
+      const scope =
+        data.scope === "browser"
+          ? "Shared browser"
+          : data.scope === "expensive-models"
+            ? "Expensive models"
+            : "Account";
+      const reset = data.resetAt
+        ? ` Resets ${new Date(data.resetAt).toLocaleString()}.`
+        : " Starts with your first request.";
+      usageStatus.textContent = data.unlimited
+        ? "Owner - no account token limit."
+        : `${scope} - ${format(tokens.limit)} tokens / 4 days.${reset}`;
+      if (tokens.pending)
+        usageStatus.textContent +=
+          " Pending tokens are reserved for requests awaiting final usage.";
+      if (data.pendingCostsUsd > 0)
+        usageStatus.textContent += ` Provider costs awaiting confirmation: $${data.pendingCostsUsd.toFixed(4)}.`;
+      const cap =
+        model.value === "anthropic/claude-haiku-4.5"
+          ? data.modelCaps?.haiku
+          : /^~?anthropic\/claude-(opus|fable)/.test(model.value)
+            ? data.modelCaps?.claude
+            : null;
+      if (cap && cap.limit !== null)
+        usageStatus.textContent += ` Claude: $${cap.remaining.toFixed(4)} of $${cap.limit.toFixed(2)} remaining.`;
+      if (!data.unlimited && model.value === "anthropic/claude-opus-5.5" && data.modelCaps?.opus55)
+        usageStatus.textContent += ` Opus: ${format(data.modelCaps.opus55.remaining)} tokens remaining.`;
+      if (
+        !data.unlimited &&
+        model.value === "google/gemini-2.5-flash-image" &&
+        data.modelCaps?.images
+      )
+        usageStatus.textContent += ` Images: ${data.modelCaps.images.remaining} remaining.`;
+      usageStatus.textContent += " Counts input, conversation history and output tokens.";
+    } catch (error) {
+      if (version === usageVersion && error.name !== "AbortError")
+        usageStatus.textContent = error.message || "Allowance unavailable. Try again shortly.";
+    }
   }
 
-  function recordUsage(prompt,answer){
-    const items=storedUsage();
-    items.push({at:Date.now(),tokens:Math.max(1,Math.ceil((String(prompt||'').length+String(answer||'').length)/4))});
-    try{localStorage.setItem(USAGE_KEY,JSON.stringify(items.slice(-1000)))}catch{}
+  function recordUsage(prompt, answer) {
+    const items = storedUsage();
+    items.push({
+      at: Date.now(),
+      tokens: Math.max(
+        1,
+        Math.ceil((String(prompt || "").length + String(answer || "").length) / 4),
+      ),
+    });
+    try {
+      localStorage.setItem(USAGE_KEY, JSON.stringify(items.slice(-1000)));
+    } catch {}
   }
 
-  function applyWorkspaceTheme(theme=localStorage.getItem('nyx.theme')||'default'){
-    if(document.documentElement.dataset.appShell==='tutsi')return;
-    const clean=String(theme||'default').trim().toLowerCase()||'default';
-    const root=document.documentElement;
-    const values={
-      '--ai-bg':'#000000',
-      '--ai-bg-deep':'#000000',
-      '--ai-surface':'#080808',
-      '--ai-surface-raised':'#0e0e0e',
-      '--ai-surface-hover':'#141414',
-      '--ai-border':'rgba(255,255,255,.10)',
-      '--ai-border-strong':'rgba(255,255,255,.18)',
-      '--ai-text':'#f7f7f8',
-      '--ai-text-soft':'#d7d7db',
-      '--ai-muted':'#929299',
-      '--ai-muted-dark':'#68686f',
-      '--ai-accent':'#d7d7dc',
-      '--ai-accent-bright':'#f7f7f8',
-      '--ai-accent-soft':'rgba(255,255,255,.07)',
-      '--ai-accent-border':'rgba(255,255,255,.18)',
-      '--ai-accent-foreground':'#050505',
-      '--ai-accent-glow':'rgba(255,255,255,.08)',
-      '--ai-theme-hover-border':'#8aaee2'
+  function applyWorkspaceTheme(theme = localStorage.getItem("nyx.theme") || "default") {
+    if (document.documentElement.dataset.appShell === "tutsi") return;
+    const clean =
+      String(theme || "default")
+        .trim()
+        .toLowerCase() || "default";
+    const root = document.documentElement;
+    const values = {
+      "--ai-bg": "#000000",
+      "--ai-bg-deep": "#000000",
+      "--ai-surface": "#080808",
+      "--ai-surface-raised": "#0e0e0e",
+      "--ai-surface-hover": "#141414",
+      "--ai-border": "rgba(255,255,255,.10)",
+      "--ai-border-strong": "rgba(255,255,255,.18)",
+      "--ai-text": "#f7f7f8",
+      "--ai-text-soft": "#d7d7db",
+      "--ai-muted": "#929299",
+      "--ai-muted-dark": "#68686f",
+      "--ai-accent": "#d7d7dc",
+      "--ai-accent-bright": "#f7f7f8",
+      "--ai-accent-soft": "rgba(255,255,255,.07)",
+      "--ai-accent-border": "rgba(255,255,255,.18)",
+      "--ai-accent-foreground": "#050505",
+      "--ai-accent-glow": "rgba(255,255,255,.08)",
+      "--ai-theme-hover-border": "#8aaee2",
     };
-    Object.entries(values).forEach(([name,value])=>root.style.setProperty(name,value));
-    root.dataset.n7xTheme=clean;
-    document.body.dataset.n7xTheme=clean;
-    document.body.className=document.body.className.replace(/\btheme-[\w-]+\b/g,'').trim();
+    Object.entries(values).forEach(([name, value]) => root.style.setProperty(name, value));
+    root.dataset.n7xTheme = clean;
+    document.body.dataset.n7xTheme = clean;
+    document.body.className = document.body.className.replace(/\btheme-[\w-]+\b/g, "").trim();
     document.body.classList.add(`theme-${clean}`);
     applyLogoTheme(clean);
   }
 
-  function escapeHtml(value){
-    return String(value??'').replace(/[&<>"']/g,character=>({
-      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-    })[character]);
+  function escapeHtml(value) {
+    return String(value ?? "").replace(
+      /[&<>"']/g,
+      (character) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[character],
+    );
   }
 
-  function normalizedTextAttachment(value){
-    const content=String(value?.content||'');
-    if(!content||content.length>MAX_TEXT_ATTACHMENT_CHARS) return null;
-    const name=String(value?.name||'pasted-text.txt').replace(/[\\/:*?"<>|\x00-\x1f]/g,'-').slice(0,100)||'pasted-text.txt';
-    return {name:name.toLowerCase().endsWith('.txt')?name:`${name}.txt`,content,size:Number(value?.size)||new Blob([content],{type:'text/plain'}).size};
+  function normalizedTextAttachment(value) {
+    const content = String(value?.content || "");
+    if (!content || content.length > MAX_TEXT_ATTACHMENT_CHARS) return null;
+    const name =
+      String(value?.name || "pasted-text.txt")
+        .replace(/[\\/:*?"<>|\x00-\x1f]/g, "-")
+        .slice(0, 100) || "pasted-text.txt";
+    return {
+      name: name.toLowerCase().endsWith(".txt") ? name : `${name}.txt`,
+      content,
+      size: Number(value?.size) || new Blob([content], { type: "text/plain" }).size,
+    };
   }
 
-  const generatedImageMemory=new Map();
-  function generatedImageDatabase(){
-    return new Promise((resolve,reject)=>{
-      const request=indexedDB.open('nyx-ai-images',1);
-      request.onupgradeneeded=()=>request.result.createObjectStore('images',{keyPath:'id'});
-      request.onsuccess=()=>resolve(request.result);
-      request.onerror=()=>reject(request.error);
+  const generatedImageMemory = new Map();
+  function generatedImageDatabase() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open("nyx-ai-images", 1);
+      request.onupgradeneeded = () => request.result.createObjectStore("images", { keyPath: "id" });
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
     });
   }
-  async function saveGeneratedImage(dataUrl){
-    if(typeof dataUrl!=='string'||dataUrl.length>6*1024*1024||!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(dataUrl))throw new Error('The model returned an unsupported or oversized image.');
+  async function saveGeneratedImage(dataUrl) {
+    if (
+      typeof dataUrl !== "string" ||
+      dataUrl.length > 6 * 1024 * 1024 ||
+      !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(dataUrl)
+    )
+      throw new Error("The model returned an unsupported or oversized image.");
 
-    const probe=new Image();probe.src=dataUrl;
-    await probe.decode().catch(()=>{throw new Error('The model returned invalid image data.');});
-    if(probe.naturalWidth*probe.naturalHeight>20000000)throw new Error('The generated image dimensions are too large.');
-    const record={id:crypto.randomUUID(),dataUrl,createdAt:Date.now(),saved:false};
-    generatedImageMemory.set(record.id,record);
-    while(generatedImageMemory.size>20)generatedImageMemory.delete(generatedImageMemory.keys().next().value);
-    if(!temporaryMode){
+    const probe = new Image();
+    probe.src = dataUrl;
+    await probe.decode().catch(() => {
+      throw new Error("The model returned invalid image data.");
+    });
+    if (probe.naturalWidth * probe.naturalHeight > 20000000)
+      throw new Error("The generated image dimensions are too large.");
+    const record = { id: crypto.randomUUID(), dataUrl, createdAt: Date.now(), saved: false };
+    generatedImageMemory.set(record.id, record);
+    while (generatedImageMemory.size > 20)
+      generatedImageMemory.delete(generatedImageMemory.keys().next().value);
+    if (!temporaryMode) {
       let db;
-      try{
-        db=await generatedImageDatabase();
-        await new Promise((resolve,reject)=>{
-          const tx=db.transaction('images','readwrite'),store=tx.objectStore('images');
-          const request=store.getAll();
-          request.onsuccess=()=>{
-            const old=request.result.sort((a,b)=>a.createdAt-b.createdAt);
-            while(old.length>=20)store.delete(old.shift().id);
-            store.put({...record,saved:true});
+      try {
+        db = await generatedImageDatabase();
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction("images", "readwrite"),
+            store = tx.objectStore("images");
+          const request = store.getAll();
+          request.onsuccess = () => {
+            const old = request.result.sort((a, b) => a.createdAt - b.createdAt);
+            while (old.length >= 20) store.delete(old.shift().id);
+            store.put({ ...record, saved: true });
           };
-          tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
+          tx.oncomplete = resolve;
+          tx.onerror = () => reject(tx.error);
+          tx.onabort = () => reject(tx.error);
         });
-        record.saved=true;
-      }catch{}finally{db?.close();}
+        record.saved = true;
+      } catch {
+      } finally {
+        db?.close();
+      }
     }
     return record.id;
   }
-  async function showGeneratedImage(message,id){
-    let record=generatedImageMemory.get(id),db;
-    if(!record){
-      try{
-        db=await generatedImageDatabase();
-        record=await new Promise((resolve,reject)=>{const request=db.transaction('images').objectStore('images').get(id);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});
-      }catch{}finally{db?.close();}
+  async function showGeneratedImage(message, id) {
+    let record = generatedImageMemory.get(id),
+      db;
+    if (!record) {
+      try {
+        db = await generatedImageDatabase();
+        record = await new Promise((resolve, reject) => {
+          const request = db.transaction("images").objectStore("images").get(id);
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+      } catch {
+      } finally {
+        db?.close();
+      }
     }
-    const figure=document.createElement('figure');figure.className='ai-message-attachment ai-generated-image';
-    if(record&&/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(record.dataUrl)&&record.dataUrl.length<=6*1024*1024){
-      const image=document.createElement('img');image.src=record.dataUrl;image.alt='AI-generated image';image.loading='lazy';
-      const caption=document.createElement('figcaption'),download=document.createElement('a');
-      download.href=record.dataUrl;download.download=`nyx-image.${record.dataUrl.startsWith('data:image/jpeg')?'jpg':record.dataUrl.startsWith('data:image/webp')?'webp':'png'}`;download.textContent='Download image';
-      caption.append(download,document.createTextNode(record.saved?' ? Last 20 images saved on this device.':' ? Download to keep this image; it is only available in this session.'));
-      figure.append(image,caption);
-    }else figure.textContent='This image is no longer stored on this device.';
-    message.querySelector('.ai-message-content')?.after(figure);
+    const figure = document.createElement("figure");
+    figure.className = "ai-message-attachment ai-generated-image";
+    if (
+      record &&
+      /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(record.dataUrl) &&
+      record.dataUrl.length <= 6 * 1024 * 1024
+    ) {
+      const image = document.createElement("img");
+      image.src = record.dataUrl;
+      image.alt = "AI-generated image";
+      image.loading = "lazy";
+      const caption = document.createElement("figcaption"),
+        download = document.createElement("a");
+      download.href = record.dataUrl;
+      download.download = `nyx-image.${record.dataUrl.startsWith("data:image/jpeg") ? "jpg" : record.dataUrl.startsWith("data:image/webp") ? "webp" : "png"}`;
+      download.textContent = "Download image";
+      caption.append(
+        download,
+        document.createTextNode(
+          record.saved
+            ? " ? Last 20 images saved on this device."
+            : " ? Download to keep this image; it is only available in this session.",
+        ),
+      );
+      figure.append(image, caption);
+    } else figure.textContent = "This image is no longer stored on this device.";
+    message.querySelector(".ai-message-content")?.after(figure);
     scrollToBottom();
   }
 
-  const videoBlobs=new Map();
-  new MutationObserver(()=>{for(const [figure,url] of videoBlobs)if(!figure.isConnected){URL.revokeObjectURL(url);videoBlobs.delete(figure);}}).observe(document.body,{childList:true,subtree:true});
-  async function showMediaJob(message,id){
-    const figure=document.createElement('figure');figure.className='ai-message-attachment ai-generated-video';
-    const state=document.createElement('p'),check=document.createElement('button');check.type='button';check.textContent='Check progress';
-    figure.append(state,check);message.querySelector('.ai-message-content')?.after(figure);
-    let timer=null,busy=false,attempts=0;
-    const update=async()=>{
-      clearTimeout(timer);if(!figure.isConnected||busy)return;busy=true;check.disabled=true;
-      try{
-        const response=await fetch('/api/nyx-ai/media/'+id,{headers:await aiHeaders({accept:'application/json'})});
-        const data=await response.json();if(!response.ok)throw new Error(data.error||'Could not check this generation.');
-        const kind=data.kind==='image'?'image':'video';
-        if(data.status==='completed'){
-          state.textContent=kind==='image'?'Image ready':'Video ready';check.textContent=kind==='image'?'Load image':'Load video';
-          check.onclick=async()=>{
-            check.disabled=true;state.textContent='Loading '+kind+'...';
-            try{
-              const media=await fetch('/api/nyx-ai/media/'+id+'/content',{headers:await aiHeaders({})});
-              if(!media.ok)throw new Error('This '+kind+' is unavailable or has expired.');
-              if(kind==='image'){
-                const result=await media.json();
-                const imageId=await saveGeneratedImage(result.images?.[0]?.dataUrl);
-                if(!figure.isConnected)return;
-                await showGeneratedImage(message,imageId);figure.remove();
-                saveMessages(savedMessages().map(item=>item.mediaJobId===id?{...item,mediaJobId:undefined,imageId,content:'Generated image.'}:item));
-                setMessageContent(message,'Generated image.');
+  const videoBlobs = new Map();
+  new MutationObserver(() => {
+    for (const [figure, url] of videoBlobs)
+      if (!figure.isConnected) {
+        URL.revokeObjectURL(url);
+        videoBlobs.delete(figure);
+      }
+  }).observe(document.body, { childList: true, subtree: true });
+  async function showMediaJob(message, id) {
+    const figure = document.createElement("figure");
+    figure.className = "ai-message-attachment ai-generated-video";
+    const state = document.createElement("p"),
+      check = document.createElement("button");
+    check.type = "button";
+    check.textContent = "Check progress";
+    figure.append(state, check);
+    message.querySelector(".ai-message-content")?.after(figure);
+    let timer = null,
+      busy = false,
+      attempts = 0;
+    const update = async () => {
+      clearTimeout(timer);
+      if (!figure.isConnected || busy) return;
+      busy = true;
+      check.disabled = true;
+      try {
+        const response = await fetch("/api/nyx-ai/media/" + id, {
+          headers: await aiHeaders({ accept: "application/json" }),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Could not check this generation.");
+        const kind = data.kind === "image" ? "image" : "video";
+        if (data.status === "completed") {
+          state.textContent = kind === "image" ? "Image ready" : "Video ready";
+          check.textContent = kind === "image" ? "Load image" : "Load video";
+          check.onclick = async () => {
+            check.disabled = true;
+            state.textContent = "Loading " + kind + "...";
+            try {
+              const media = await fetch("/api/nyx-ai/media/" + id + "/content", {
+                headers: await aiHeaders({}),
+              });
+              if (!media.ok) throw new Error("This " + kind + " is unavailable or has expired.");
+              if (kind === "image") {
+                const result = await media.json();
+                const imageId = await saveGeneratedImage(result.images?.[0]?.dataUrl);
+                if (!figure.isConnected) return;
+                await showGeneratedImage(message, imageId);
+                figure.remove();
+                saveMessages(
+                  savedMessages().map((item) =>
+                    item.mediaJobId === id
+                      ? { ...item, mediaJobId: undefined, imageId, content: "Generated image." }
+                      : item,
+                  ),
+                );
+                setMessageContent(message, "Generated image.");
                 return;
               }
-              const blob=await media.blob();if(blob.size>100*1024*1024)throw new Error('This video is too large.');
-              const url=URL.createObjectURL(blob);if(!figure.isConnected){URL.revokeObjectURL(url);return;}videoBlobs.set(figure,url);
-              const video=document.createElement('video');video.controls=true;video.playsInline=true;video.src=url;video.style.cssText='max-width:100%;max-height:480px;border-radius:12px';
-              const download=document.createElement('a');download.href=url;download.download='nyx-video.mp4';download.textContent='Download video';figure.replaceChildren(video,download);
-            }catch(error){state.textContent=error.message;check.disabled=false;}
+              const blob = await media.blob();
+              if (blob.size > 100 * 1024 * 1024) throw new Error("This video is too large.");
+              const url = URL.createObjectURL(blob);
+              if (!figure.isConnected) {
+                URL.revokeObjectURL(url);
+                return;
+              }
+              videoBlobs.set(figure, url);
+              const video = document.createElement("video");
+              video.controls = true;
+              video.playsInline = true;
+              video.src = url;
+              video.style.cssText = "max-width:100%;max-height:480px;border-radius:12px";
+              const download = document.createElement("a");
+              download.href = url;
+              download.download = "nyx-video.mp4";
+              download.textContent = "Download video";
+              figure.replaceChildren(video, download);
+            } catch (error) {
+              state.textContent = error.message;
+              check.disabled = false;
+            }
           };
-          if(kind==='image')await check.onclick();
-        }else if(['failed','cancelled','expired'].includes(data.status)){state.textContent='Generation '+data.status+'. Try a different prompt or model.';check.hidden=true;}
-        else{state.textContent='Rendering '+kind+'... You can keep chatting.';if(++attempts<60)timer=setTimeout(update,kind==='image'?5000:30000);else state.textContent='This is taking longer than usual. Check again when ready.';}
-      }catch(error){state.textContent=error.message;}
-      finally{busy=false;check.disabled=false;}
+          if (kind === "image") await check.onclick();
+        } else if (["failed", "cancelled", "expired"].includes(data.status)) {
+          state.textContent = "Generation " + data.status + ". Try a different prompt or model.";
+          check.hidden = true;
+        } else {
+          state.textContent = "Rendering " + kind + "... You can keep chatting.";
+          if (++attempts < 60) timer = setTimeout(update, kind === "image" ? 5000 : 30000);
+          else state.textContent = "This is taking longer than usual. Check again when ready.";
+        }
+      } catch (error) {
+        state.textContent = error.message;
+      } finally {
+        busy = false;
+        check.disabled = false;
+      }
     };
-    check.onclick=update;await update();
+    check.onclick = update;
+    await update();
   }
 
-  function normalizedMessages(value){
+  function normalizedMessages(value) {
     return Array.isArray(value)
-      ? value.map(item=>{
-          if(!item||!['user','assistant'].includes(item.role)) return null;
-          const content=item.role==='assistant'?responseParts(item.content).answer.trim():String(item.content||'').trim();
-          if(!content) return null;
-          const message={role:item.role,content,...(item.finishReason==='length'?{finishReason:'length'}:{})};
-          if(item.role==='assistant'&&item.metadata)message.metadata=normalizeMetadata(item.metadata);
-          if(item.role==='assistant'&&typeof item.modelId==='string'){message.modelId=item.modelId.slice(0,200);message.modelName=String(item.modelName||'').slice(0,200);}
-          if(item.role==='assistant'&&item.timing)message.timing=normalizeTiming(item.timing);
-          if(item.role==='assistant'&&/^[a-f0-9-]{36}$/.test(item.imageId||''))message.imageId=item.imageId;
-          if(item.role==='assistant'&&/^[a-f0-9-]{36}$/.test(item.mediaJobId||''))message.mediaJobId=item.mediaJobId;
-          const textAttachment=item.role==='user'?normalizedTextAttachment(item.textAttachment):null;
-          if(textAttachment) message.textAttachment=textAttachment;
-          return message;
-        }).filter(Boolean)
+      ? value
+          .map((item) => {
+            if (!item || !["user", "assistant"].includes(item.role)) return null;
+            const content =
+              item.role === "assistant"
+                ? responseParts(item.content).answer.trim()
+                : String(item.content || "").trim();
+            if (!content) return null;
+            const message = {
+              role: item.role,
+              content,
+              ...(item.finishReason === "length" ? { finishReason: "length" } : {}),
+            };
+            if (item.role === "assistant" && item.metadata)
+              message.metadata = normalizeMetadata(item.metadata);
+            if (item.role === "assistant" && typeof item.modelId === "string") {
+              message.modelId = item.modelId.slice(0, 200);
+              message.modelName = String(item.modelName || "").slice(0, 200);
+            }
+            if (item.role === "assistant" && item.timing)
+              message.timing = normalizeTiming(item.timing);
+            if (item.role === "assistant" && /^[a-f0-9-]{36}$/.test(item.imageId || ""))
+              message.imageId = item.imageId;
+            if (item.role === "assistant" && /^[a-f0-9-]{36}$/.test(item.mediaJobId || ""))
+              message.mediaJobId = item.mediaJobId;
+            const textAttachment =
+              item.role === "user" ? normalizedTextAttachment(item.textAttachment) : null;
+            if (textAttachment) message.textAttachment = textAttachment;
+            return message;
+          })
+          .filter(Boolean)
       : [];
   }
 
-  function chatTitle(messages){
-    const first=normalizedMessages(messages).find(item=>item.role==='user')?.content.trim()||'New conversation';
-    return first.length>46?`${first.slice(0,46)}…`:first;
+  function chatTitle(messages) {
+    const first =
+      normalizedMessages(messages)
+        .find((item) => item.role === "user")
+        ?.content.trim() || "New conversation";
+    return first.length > 46 ? `${first.slice(0, 46)}…` : first;
   }
 
-  function normalizedThread(value){
-    const messages=normalizedMessages(value?.messages);
-    const createdAt=Number(value?.createdAt)||Date.now();
+  function normalizedThread(value) {
+    const messages = normalizedMessages(value?.messages);
+    const createdAt = Number(value?.createdAt) || Date.now();
     return {
-      id:String(value?.id||''),
-      title:String(value?.title||chatTitle(messages)).trim().slice(0,64)||'New conversation',
+      id: String(value?.id || ""),
+      title:
+        String(value?.title || chatTitle(messages))
+          .trim()
+          .slice(0, 64) || "New conversation",
       messages,
-      model:String(value?.model||DEFAULT_MODEL),
+      model: String(value?.model || DEFAULT_MODEL),
       createdAt,
-      updatedAt:Number(value?.updatedAt)||createdAt
+      updatedAt: Number(value?.updatedAt) || createdAt,
     };
   }
 
-  function storedThreads(){
-    try{
-      const value=JSON.parse(localStorage.getItem(THREADS_KEY)||'[]');
+  function storedThreads() {
+    try {
+      const value = JSON.parse(localStorage.getItem(THREADS_KEY) || "[]");
       return Array.isArray(value)
-        ? value.map(normalizedThread).filter(thread=>thread.id&&thread.messages.length).sort((left,right)=>right.updatedAt-left.updatedAt)
+        ? value
+            .map(normalizedThread)
+            .filter((thread) => thread.id && thread.messages.length)
+            .sort((left, right) => right.updatedAt - left.updatedAt)
         : [];
-    }catch{return[]}
-  }
-
-  function legacyMessages(){
-    try{return normalizedMessages(JSON.parse(localStorage.getItem(MESSAGE_KEY)||'[]'))}catch{return[]}
-  }
-
-  function persistThreads(){
-    threads=threads.filter(thread=>thread.id&&thread.messages.length).sort((left,right)=>right.updatedAt-left.updatedAt);
-    try{
-      localStorage.setItem(THREADS_KEY,JSON.stringify(threads));
-      document.getElementById('ai-save-warning')?.remove();
-    }catch{
-      if(document.getElementById('ai-save-warning'))return;
-      const warning=document.createElement('div');
-      warning.id='ai-save-warning';warning.className='ai-save-warning';warning.setAttribute('role','alert');
-      warning.append("N7X could not save your chat on this device. Download your chats before reloading. ");
-      const button=document.createElement('button');button.type='button';button.textContent='Download chats';
-      button.addEventListener('click',()=>{
-        const url=URL.createObjectURL(new Blob([JSON.stringify({version:1,threads},null,2)],{type:'application/json'}));
-        const link=document.createElement('a');link.href=url;link.download='nyx-ai-chats.json';document.body.append(link);link.click();link.remove();
-        setTimeout(()=>URL.revokeObjectURL(url),1000);
-      });
-      warning.append(button);form.before(warning);
+    } catch {
+      return [];
     }
   }
 
-  function syncLegacyMessages(messages){
-    try{
-      if(messages.length) localStorage.setItem(MESSAGE_KEY,JSON.stringify(messages.slice(-MESSAGE_PAGE_SIZE)));
-      else localStorage.removeItem(MESSAGE_KEY);
-    }catch{}
+  function legacyMessages() {
+    try {
+      return normalizedMessages(JSON.parse(localStorage.getItem(MESSAGE_KEY) || "[]"));
+    } catch {
+      return [];
+    }
   }
 
-  function activeThread(){return threads.find(thread=>thread.id===activeThreadId)||null}
+  function persistThreads() {
+    threads = threads
+      .filter((thread) => thread.id && thread.messages.length)
+      .sort((left, right) => right.updatedAt - left.updatedAt);
+    try {
+      localStorage.setItem(THREADS_KEY, JSON.stringify(threads));
+      document.getElementById("ai-save-warning")?.remove();
+    } catch {
+      if (document.getElementById("ai-save-warning")) return;
+      const warning = document.createElement("div");
+      warning.id = "ai-save-warning";
+      warning.className = "ai-save-warning";
+      warning.setAttribute("role", "alert");
+      warning.append(
+        "N7X could not save your chat on this device. Download your chats before reloading. ",
+      );
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = "Download chats";
+      button.addEventListener("click", () => {
+        const url = URL.createObjectURL(
+          new Blob([JSON.stringify({ version: 1, threads }, null, 2)], {
+            type: "application/json",
+          }),
+        );
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "nyx-ai-chats.json";
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      });
+      warning.append(button);
+      form.before(warning);
+    }
+  }
 
-  function initializeThreads(){
-    threads=storedThreads();
-    if(!threads.length){
-      const legacy=legacyMessages();
-      if(legacy.length){
-        const now=Date.now();
-        const thread=normalizedThread({id:`chat-${now.toString(36)}`,messages:legacy,model:localStorage.getItem(MODEL_KEY)||DEFAULT_MODEL,createdAt:now,updatedAt:now});
-        threads=[thread];
-        activeThreadId=thread.id;
+  function syncLegacyMessages(messages) {
+    try {
+      if (messages.length)
+        localStorage.setItem(MESSAGE_KEY, JSON.stringify(messages.slice(-MESSAGE_PAGE_SIZE)));
+      else localStorage.removeItem(MESSAGE_KEY);
+    } catch {}
+  }
+
+  function activeThread() {
+    return threads.find((thread) => thread.id === activeThreadId) || null;
+  }
+
+  function initializeThreads() {
+    threads = storedThreads();
+    if (!threads.length) {
+      const legacy = legacyMessages();
+      if (legacy.length) {
+        const now = Date.now();
+        const thread = normalizedThread({
+          id: `chat-${now.toString(36)}`,
+          messages: legacy,
+          model: localStorage.getItem(MODEL_KEY) || DEFAULT_MODEL,
+          createdAt: now,
+          updatedAt: now,
+        });
+        threads = [thread];
+        activeThreadId = thread.id;
         persistThreads();
       }
     }
-    if(!activeThreadId){
-      const stored=localStorage.getItem(ACTIVE_THREAD_KEY)||'';
-      activeThreadId=threads.some(thread=>thread.id===stored)?stored:(threads[0]?.id||'');
+    if (!activeThreadId) {
+      const stored = localStorage.getItem(ACTIVE_THREAD_KEY) || "";
+      activeThreadId = threads.some((thread) => thread.id === stored)
+        ? stored
+        : threads[0]?.id || "";
     }
-    if(activeThreadId){
-      try{localStorage.setItem(ACTIVE_THREAD_KEY,activeThreadId)}catch{}
-      syncLegacyMessages(activeThread()?.messages||[]);
+    if (activeThreadId) {
+      try {
+        localStorage.setItem(ACTIVE_THREAD_KEY, activeThreadId);
+      } catch {}
+      syncLegacyMessages(activeThread()?.messages || []);
     }
   }
 
-  function savedMessages(){
-    return temporaryMode?normalizedMessages(temporaryMessages):normalizedMessages(activeThread()?.messages||[]);
+  function savedMessages() {
+    return temporaryMode
+      ? normalizedMessages(temporaryMessages)
+      : normalizedMessages(activeThread()?.messages || []);
   }
 
-  function saveMessages(value){
-    const messages=normalizedMessages(value);
-    if(temporaryMode){
-      temporaryMessages=messages;
+  function saveMessages(value) {
+    const messages = normalizedMessages(value);
+    if (temporaryMode) {
+      temporaryMessages = messages;
       return;
     }
-    const now=Date.now();
-    let thread=activeThread();
-    if(!thread&&messages.length){
-      thread=normalizedThread({id:`chat-${now.toString(36)}-${Math.random().toString(36).slice(2,7)}`,messages,model:model.value||DEFAULT_MODEL,createdAt:now,updatedAt:now});
+    const now = Date.now();
+    let thread = activeThread();
+    if (!thread && messages.length) {
+      thread = normalizedThread({
+        id: `chat-${now.toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+        messages,
+        model: model.value || DEFAULT_MODEL,
+        createdAt: now,
+        updatedAt: now,
+      });
       threads.unshift(thread);
-      activeThreadId=thread.id;
-      try{localStorage.setItem(ACTIVE_THREAD_KEY,activeThreadId)}catch{}
-    }else if(thread){
-      thread.messages=messages;
-      thread.title=chatTitle(messages);
-      thread.model=model.value||thread.model||DEFAULT_MODEL;
-      thread.updatedAt=now;
+      activeThreadId = thread.id;
+      try {
+        localStorage.setItem(ACTIVE_THREAD_KEY, activeThreadId);
+      } catch {}
+    } else if (thread) {
+      thread.messages = messages;
+      thread.title = chatTitle(messages);
+      thread.model = model.value || thread.model || DEFAULT_MODEL;
+      thread.updatedAt = now;
     }
     persistThreads();
     syncLegacyMessages(messages);
     renderThreadList();
   }
 
-  function applyLogoTheme(theme){
-    return window.NyxLogo?.apply(theme||localStorage.getItem('nyx.theme')||'default',document).catch?.(()=>{});
+  function applyLogoTheme(theme) {
+    return window.NyxLogo?.apply(
+      theme || localStorage.getItem("nyx.theme") || "default",
+      document,
+    ).catch?.(() => {});
   }
 
-  function markdown(value){return window.NyxMarkdown.render(value)}
+  function markdown(value) {
+    return window.NyxMarkdown.render(value);
+  }
 
-  function messageCopyButton(){
+  function messageCopyButton() {
     return `<button class="ai-message-copy" type="button" data-copy-message title="Copy message" aria-label="Copy message"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/></svg></button>`;
   }
 
-  function setAttachmentStatus(text){
-    attachmentStatus.textContent=String(text||'');
+  function setAttachmentStatus(text) {
+    attachmentStatus.textContent = String(text || "");
   }
 
-  function formatAttachmentSize(size){
-    const bytes=Math.max(0,Number(size)||0);
-    if(bytes<1024) return `${bytes} B`;
-    return `${(bytes/1024).toFixed(bytes<10240?1:0)} KB`;
+  function formatAttachmentSize(size) {
+    const bytes = Math.max(0, Number(size) || 0);
+    if (bytes < 1024) return `${bytes} B`;
+    return `${(bytes / 1024).toFixed(bytes < 10240 ? 1 : 0)} KB`;
   }
 
-  function pastedTextFileName(){
-    const now=new Date();
-    const pad=value=>String(value).padStart(2,'0');
-    return `pasted-text-${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.txt`;
+  function pastedTextFileName() {
+    const now = new Date();
+    const pad = (value) => String(value).padStart(2, "0");
+    return `pasted-text-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.txt`;
   }
 
-  function clearAttachment(){
-    attachedImage=null;
-    attachedText=null;
-    imageInput.value='';
-    attachmentPreview.hidden=true;
-    attachmentPreview.classList.remove('is-error','is-file-error','is-text-file');
-    attachmentThumbnail.hidden=false;
-    attachmentThumbnail.removeAttribute('src');
-    attachmentName.textContent='';
-    setAttachmentStatus('Ready to send');
-    attachImage.classList.remove('has-attachment');
-    attachImage.setAttribute('aria-label','Attach an image');
-    removeAttachment.title='Remove attachment';
-    removeAttachment.setAttribute('aria-label','Remove attachment');
+  function clearAttachment() {
+    attachedImage = null;
+    attachedText = null;
+    imageInput.value = "";
+    attachmentPreview.hidden = true;
+    attachmentPreview.classList.remove("is-error", "is-file-error", "is-text-file");
+    attachmentThumbnail.hidden = false;
+    attachmentThumbnail.removeAttribute("src");
+    attachmentName.textContent = "";
+    setAttachmentStatus("Ready to send");
+    attachImage.classList.remove("has-attachment");
+    attachImage.setAttribute("aria-label", "Attach an image");
+    removeAttachment.title = "Remove attachment";
+    removeAttachment.setAttribute("aria-label", "Remove attachment");
   }
 
-  function showAttachmentError(message,label='Image not attached'){
+  function showAttachmentError(message, label = "Image not attached") {
     clearAttachment();
-    attachmentPreview.hidden=false;
-    attachmentPreview.classList.add('is-error','is-file-error');
-    attachmentThumbnail.hidden=true;
-    attachmentName.textContent=label;
+    attachmentPreview.hidden = false;
+    attachmentPreview.classList.add("is-error", "is-file-error");
+    attachmentThumbnail.hidden = true;
+    attachmentName.textContent = label;
     setAttachmentStatus(message);
   }
 
-  function setAttachment(image){
+  function setAttachment(image) {
     stopScreenSharing();
-    attachedText=null;
-    attachedImage=image;
-    attachmentPreview.hidden=false;
-    attachmentPreview.classList.remove('is-error','is-file-error','is-text-file');
-    attachmentThumbnail.hidden=false;
-    attachmentThumbnail.src=image.dataUrl;
-    attachmentName.textContent=image.name;
-    setAttachmentStatus('Ready to send');
-    attachImage.classList.add('has-attachment');
-    attachImage.setAttribute('aria-label',`Replace attached image: ${image.name}`);
-    removeAttachment.title='Remove image';
-    removeAttachment.setAttribute('aria-label','Remove attached image');
+    attachedText = null;
+    attachedImage = image;
+    attachmentPreview.hidden = false;
+    attachmentPreview.classList.remove("is-error", "is-file-error", "is-text-file");
+    attachmentThumbnail.hidden = false;
+    attachmentThumbnail.src = image.dataUrl;
+    attachmentName.textContent = image.name;
+    setAttachmentStatus("Ready to send");
+    attachImage.classList.add("has-attachment");
+    attachImage.setAttribute("aria-label", `Replace attached image: ${image.name}`);
+    removeAttachment.title = "Remove image";
+    removeAttachment.setAttribute("aria-label", "Remove attached image");
   }
 
-  function setTextAttachment(content){
-    const text=String(content||'');
-    if(!text) return null;
+  function setTextAttachment(content) {
+    const text = String(content || "");
+    if (!text) return null;
     stopScreenSharing();
-    if(text.length>MAX_TEXT_ATTACHMENT_CHARS){
-      showAttachmentError(`Pasted text is limited to ${MAX_TEXT_ATTACHMENT_CHARS.toLocaleString()} characters.`,`Text file not attached`);
+    if (text.length > MAX_TEXT_ATTACHMENT_CHARS) {
+      showAttachmentError(
+        `Pasted text is limited to ${MAX_TEXT_ATTACHMENT_CHARS.toLocaleString()} characters.`,
+        `Text file not attached`,
+      );
       return null;
     }
-    const attachment=normalizedTextAttachment({name:pastedTextFileName(),content:text});
-    if(!attachment) return null;
-    attachedImage=null;
-    attachedText=attachment;
-    imageInput.value='';
-    attachmentPreview.hidden=false;
-    attachmentPreview.classList.remove('is-error','is-file-error');
-    attachmentPreview.classList.add('is-text-file');
-    attachmentThumbnail.hidden=true;
-    attachmentThumbnail.removeAttribute('src');
-    attachmentName.textContent=attachment.name;
+    const attachment = normalizedTextAttachment({ name: pastedTextFileName(), content: text });
+    if (!attachment) return null;
+    attachedImage = null;
+    attachedText = attachment;
+    imageInput.value = "";
+    attachmentPreview.hidden = false;
+    attachmentPreview.classList.remove("is-error", "is-file-error");
+    attachmentPreview.classList.add("is-text-file");
+    attachmentThumbnail.hidden = true;
+    attachmentThumbnail.removeAttribute("src");
+    attachmentName.textContent = attachment.name;
     setAttachmentStatus(`${formatAttachmentSize(attachment.size)} · Ready to send`);
-    attachImage.classList.remove('has-attachment');
-    attachImage.setAttribute('aria-label','Attach an image (replaces the text file)');
-    removeAttachment.title='Remove text file';
-    removeAttachment.setAttribute('aria-label','Remove attached text file');
+    attachImage.classList.remove("has-attachment");
+    attachImage.setAttribute("aria-label", "Attach an image (replaces the text file)");
+    removeAttachment.title = "Remove text file";
+    removeAttachment.setAttribute("aria-label", "Remove attached text file");
     return attachment;
   }
 
-  function readImageFile(file){
-    if(!file||!SUPPORTED_IMAGE_TYPES.has(String(file.type||'').toLowerCase())){
-      showAttachmentError('Choose a PNG, JPG, WebP, or GIF image.');
+  function readImageFile(file) {
+    if (!file || !SUPPORTED_IMAGE_TYPES.has(String(file.type || "").toLowerCase())) {
+      showAttachmentError("Choose a PNG, JPG, WebP, or GIF image.");
       return Promise.resolve(null);
     }
-    if(file.size>MAX_IMAGE_BYTES){
-      showAttachmentError('Choose an image smaller than 8 MB.');
+    if (file.size > MAX_IMAGE_BYTES) {
+      showAttachmentError("Choose an image smaller than 8 MB.");
       return Promise.resolve(null);
     }
-    return new Promise(resolve=>{
-      const reader=new FileReader();
-      reader.onload=()=>{
-        const image={name:file.name||'Attached image',size:file.size,type:file.type,dataUrl:String(reader.result||'')};
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const image = {
+          name: file.name || "Attached image",
+          size: file.size,
+          type: file.type,
+          dataUrl: String(reader.result || ""),
+        };
         setAttachment(image);
         resolve(image);
       };
-      reader.onerror=()=>{
+      reader.onerror = () => {
         showAttachmentError("N7X could not read that image.");
         resolve(null);
       };
@@ -637,386 +1055,551 @@
     });
   }
 
-  function prepareImageForModel(source){
-    if(!source?.dataUrl) return Promise.reject(new Error('The attached image is unavailable.'));
-    return new Promise((resolve,reject)=>{
-      const image=new Image();
-      image.onload=()=>{
-        try{
-          const originalWidth=Math.max(1,image.naturalWidth||1);
-          const originalHeight=Math.max(1,image.naturalHeight||1);
-          if(source.dataUrl.length<=MAX_PREPARED_IMAGE_CHARS&&Math.max(originalWidth,originalHeight)<=MAX_PREPARED_IMAGE_EDGE){
-            resolve({dataUrl:source.dataUrl,mime:source.type,width:originalWidth,height:originalHeight,screenCapture:source.screenCapture===true});
+  function prepareImageForModel(source) {
+    if (!source?.dataUrl) return Promise.reject(new Error("The attached image is unavailable."));
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => {
+        try {
+          const originalWidth = Math.max(1, image.naturalWidth || 1);
+          const originalHeight = Math.max(1, image.naturalHeight || 1);
+          if (
+            source.dataUrl.length <= MAX_PREPARED_IMAGE_CHARS &&
+            Math.max(originalWidth, originalHeight) <= MAX_PREPARED_IMAGE_EDGE
+          ) {
+            resolve({
+              dataUrl: source.dataUrl,
+              mime: source.type,
+              width: originalWidth,
+              height: originalHeight,
+              screenCapture: source.screenCapture === true,
+            });
             return;
           }
-          const canvas=document.createElement('canvas');
-          const context=canvas.getContext('2d');
-          if(!context) throw new Error('Image preparation is unavailable.');
-          let scale=Math.min(1,MAX_PREPARED_IMAGE_EDGE/Math.max(originalWidth,originalHeight));
-          let prepared='';
-          for(let attempt=0;attempt<7;attempt+=1){
-            canvas.width=Math.max(1,Math.round(originalWidth*scale));
-            canvas.height=Math.max(1,Math.round(originalHeight*scale));
-            context.fillStyle='#ffffff';
-            context.fillRect(0,0,canvas.width,canvas.height);
-            context.drawImage(image,0,0,canvas.width,canvas.height);
-            prepared=canvas.toDataURL('image/jpeg',Math.max(.52,.9-attempt*.07));
-            if(prepared.length<=MAX_PREPARED_IMAGE_CHARS) break;
-            scale*=.82;
+          const canvas = document.createElement("canvas");
+          const context = canvas.getContext("2d");
+          if (!context) throw new Error("Image preparation is unavailable.");
+          let scale = Math.min(
+            1,
+            MAX_PREPARED_IMAGE_EDGE / Math.max(originalWidth, originalHeight),
+          );
+          let prepared = "";
+          for (let attempt = 0; attempt < 7; attempt += 1) {
+            canvas.width = Math.max(1, Math.round(originalWidth * scale));
+            canvas.height = Math.max(1, Math.round(originalHeight * scale));
+            context.fillStyle = "#ffffff";
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(image, 0, 0, canvas.width, canvas.height);
+            prepared = canvas.toDataURL("image/jpeg", Math.max(0.52, 0.9 - attempt * 0.07));
+            if (prepared.length <= MAX_PREPARED_IMAGE_CHARS) break;
+            scale *= 0.82;
           }
-          if(!prepared||prepared.length>MAX_PREPARED_IMAGE_CHARS) throw new Error("N7X could not prepare that image within the upload limit.");
-          resolve({dataUrl:prepared,mime:'image/jpeg',width:originalWidth,height:originalHeight,screenCapture:source.screenCapture===true});
-        }catch(error){reject(error)}
+          if (!prepared || prepared.length > MAX_PREPARED_IMAGE_CHARS)
+            throw new Error("N7X could not prepare that image within the upload limit.");
+          resolve({
+            dataUrl: prepared,
+            mime: "image/jpeg",
+            width: originalWidth,
+            height: originalHeight,
+            screenCapture: source.screenCapture === true,
+          });
+        } catch (error) {
+          reject(error);
+        }
       };
-      image.onerror=()=>reject(new Error("N7X could not decode that image."));
-      image.src=source.dataUrl;
+      image.onerror = () => reject(new Error("N7X could not decode that image."));
+      image.src = source.dataUrl;
     });
   }
 
-  const screenChat=window.createNyxScreenChat({conversation,input,form,stop:stopScreenSharing,status:screenStatus,brand:()=>aiBrand()});
+  const screenChat = window.createNyxScreenChat({
+    conversation,
+    input,
+    form,
+    stop: stopScreenSharing,
+    status: screenStatus,
+    brand: () => aiBrand(),
+  });
 
-  function stopScreenSharing(){
+  function stopScreenSharing() {
     screenChat.destroy();
-    const active=screenStream;
-    screenStream=null;
-    if(active) active.getTracks().forEach(track=>track.stop());
-    screenVideo.srcObject=null;
-    screenPreview.hidden=true;
-    shareScreen.classList.remove('has-attachment');
-    shareScreen.setAttribute('aria-pressed','false');
-    screenStatus.textContent='A fresh frame is attached only when you send.';
+    const active = screenStream;
+    screenStream = null;
+    if (active) active.getTracks().forEach((track) => track.stop());
+    screenVideo.srcObject = null;
+    screenPreview.hidden = true;
+    shareScreen.classList.remove("has-attachment");
+    shareScreen.setAttribute("aria-pressed", "false");
+    screenStatus.textContent = "A fresh frame is attached only when you send.";
   }
 
-  async function startScreenSharing(){
-    if(!navigator.mediaDevices?.getDisplayMedia){
-      showAttachmentError('Screen sharing is not supported by this browser.','Screen sharing unavailable');
+  async function startScreenSharing() {
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      showAttachmentError(
+        "Screen sharing is not supported by this browser.",
+        "Screen sharing unavailable",
+      );
       return;
     }
     stopScreenSharing();
     clearAttachment();
-    try{
-      const stream=await navigator.mediaDevices.getDisplayMedia({video:{frameRate:{ideal:5,max:10}},audio:false});
-      const track=stream.getVideoTracks()[0];
-      if(!track) throw new Error('No screen was selected.');
-      screenStream=stream;
-      track.addEventListener('ended',stopScreenSharing,{once:true});
-      screenVideo.srcObject=stream;
-      screenPreview.hidden=false;
-      shareScreen.classList.add('has-attachment');
-      shareScreen.setAttribute('aria-pressed','true');
-      screenStatus.textContent='A fresh frame is attached only when you send.';
-      await screenVideo.play().catch(()=>{});
-      if(screenStream===stream)screenChat.start();
-    }catch(error){
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: { ideal: 5, max: 10 } },
+        audio: false,
+      });
+      const track = stream.getVideoTracks()[0];
+      if (!track) throw new Error("No screen was selected.");
+      screenStream = stream;
+      track.addEventListener("ended", stopScreenSharing, { once: true });
+      screenVideo.srcObject = stream;
+      screenPreview.hidden = false;
+      shareScreen.classList.add("has-attachment");
+      shareScreen.setAttribute("aria-pressed", "true");
+      screenStatus.textContent = "A fresh frame is attached only when you send.";
+      await screenVideo.play().catch(() => {});
+      if (screenStream === stream) screenChat.start();
+    } catch (error) {
       stopScreenSharing();
-      if(error?.name!=='NotAllowedError') showAttachmentError(error?.message||"N7X could not start screen sharing.",'Screen sharing unavailable');
+      if (error?.name !== "NotAllowedError")
+        showAttachmentError(
+          error?.message || "N7X could not start screen sharing.",
+          "Screen sharing unavailable",
+        );
     }
   }
 
-  function captureSharedScreen(){
-    if(!screenStream||screenStream.getVideoTracks()[0]?.readyState==='ended') return Promise.reject(new Error('Screen sharing has ended. Start it again to attach your screen.'));
-    const width=Math.max(1,screenVideo.videoWidth||Number(screenStream.getVideoTracks()[0]?.getSettings?.().width)||0);
-    const height=Math.max(1,screenVideo.videoHeight||Number(screenStream.getVideoTracks()[0]?.getSettings?.().height)||0);
-    if(width<=1||height<=1) return Promise.reject(new Error('The shared screen is not ready yet. Wait a moment and try again.'));
-    const scale=Math.min(1,MAX_PREPARED_IMAGE_EDGE/Math.max(width,height));
-    const canvas=document.createElement('canvas');
-    const context=canvas.getContext('2d');
-    if(!context) return Promise.reject(new Error('Screen capture is unavailable in this browser.'));
-    canvas.width=Math.max(1,Math.round(width*scale));
-    canvas.height=Math.max(1,Math.round(height*scale));
-    context.drawImage(screenVideo,0,0,canvas.width,canvas.height);
-    let quality=.88;
-    let dataUrl=canvas.toDataURL('image/jpeg',quality);
-    while(dataUrl.length>MAX_PREPARED_IMAGE_CHARS&&quality>.5){
-      quality-=.08;
-      dataUrl=canvas.toDataURL('image/jpeg',quality);
+  function captureSharedScreen() {
+    if (!screenStream || screenStream.getVideoTracks()[0]?.readyState === "ended")
+      return Promise.reject(
+        new Error("Screen sharing has ended. Start it again to attach your screen."),
+      );
+    const width = Math.max(
+      1,
+      screenVideo.videoWidth ||
+        Number(screenStream.getVideoTracks()[0]?.getSettings?.().width) ||
+        0,
+    );
+    const height = Math.max(
+      1,
+      screenVideo.videoHeight ||
+        Number(screenStream.getVideoTracks()[0]?.getSettings?.().height) ||
+        0,
+    );
+    if (width <= 1 || height <= 1)
+      return Promise.reject(
+        new Error("The shared screen is not ready yet. Wait a moment and try again."),
+      );
+    const scale = Math.min(1, MAX_PREPARED_IMAGE_EDGE / Math.max(width, height));
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    if (!context)
+      return Promise.reject(new Error("Screen capture is unavailable in this browser."));
+    canvas.width = Math.max(1, Math.round(width * scale));
+    canvas.height = Math.max(1, Math.round(height * scale));
+    context.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);
+    let quality = 0.88;
+    let dataUrl = canvas.toDataURL("image/jpeg", quality);
+    while (dataUrl.length > MAX_PREPARED_IMAGE_CHARS && quality > 0.5) {
+      quality -= 0.08;
+      dataUrl = canvas.toDataURL("image/jpeg", quality);
     }
-    if(dataUrl.length>MAX_PREPARED_IMAGE_CHARS) return Promise.reject(new Error("N7X could not prepare that screen frame within the upload limit."));
-    return Promise.resolve({name:'Shared screen',size:Math.ceil(dataUrl.length*.75),type:'image/jpeg',dataUrl,screenCapture:true});
+    if (dataUrl.length > MAX_PREPARED_IMAGE_CHARS)
+      return Promise.reject(
+        new Error("N7X could not prepare that screen frame within the upload limit."),
+      );
+    return Promise.resolve({
+      name: "Shared screen",
+      size: Math.ceil(dataUrl.length * 0.75),
+      type: "image/jpeg",
+      dataUrl,
+      screenCapture: true,
+    });
   }
 
-  function responseParts(value){
-    const source=String(value||'');
-    const tag=/<\/?think\b[^>]*>/gi;
-    let answer='';
-    let reasoning='';
-    let cursor=0;
-    let inThinking=false;
+  function responseParts(value) {
+    const source = String(value || "");
+    const tag = /<\/?think\b[^>]*>/gi;
+    let answer = "";
+    let reasoning = "";
+    let cursor = 0;
+    let inThinking = false;
     let match;
-    while((match=tag.exec(source))){
-      const chunk=source.slice(cursor,match.index);
-      if(inThinking) reasoning+=chunk;
-      else answer+=chunk;
-      if(/^<\//.test(match[0])) inThinking=false;
-      else inThinking=true;
-      cursor=match.index+match[0].length;
+    while ((match = tag.exec(source))) {
+      const chunk = source.slice(cursor, match.index);
+      if (inThinking) reasoning += chunk;
+      else answer += chunk;
+      if (/^<\//.test(match[0])) inThinking = false;
+      else inThinking = true;
+      cursor = match.index + match[0].length;
     }
-    const tail=source.slice(cursor);
-    if(inThinking) reasoning+=tail;
-    else answer+=tail;
-    if(!inThinking){
-      const unfinished=answer.match(/<\/?t(?:h(?:i(?:n(?:k)?)?)?)?$/i);
-      if(unfinished) answer=answer.slice(0,-unfinished[0].length);
+    const tail = source.slice(cursor);
+    if (inThinking) reasoning += tail;
+    else answer += tail;
+    if (!inThinking) {
+      const unfinished = answer.match(/<\/?t(?:h(?:i(?:n(?:k)?)?)?)?$/i);
+      if (unfinished) answer = answer.slice(0, -unfinished[0].length);
     }
-    return {answer,reasoning};
+    return { answer, reasoning };
   }
 
-  function appendReasoning(content,text){
-    const details=document.createElement('details');
-    details.className='ai-reasoning';
-    const summary=document.createElement('summary');
-    summary.textContent='Reasoning summary';
-    const body=document.createElement('div');
-    body.className='ai-reasoning-body';
-    body.innerHTML=markdown(text);
-    details.append(summary,body);
+  function appendReasoning(content, text) {
+    const details = document.createElement("details");
+    details.className = "ai-reasoning";
+    const summary = document.createElement("summary");
+    summary.textContent = "Reasoning summary";
+    const body = document.createElement("div");
+    body.className = "ai-reasoning-body";
+    body.innerHTML = markdown(text);
+    details.append(summary, body);
     content.appendChild(details);
   }
 
-  function normalizeMetadata(value){
-    const sources=[];
-    for(const source of (Array.isArray(value?.sources)?value.sources:[]).slice(0,12)){
-      try{
-        const url=new URL(String(source.url||''));
-        if(!['https:','http:'].includes(url.protocol)||url.username||url.password||url.href.length>2048)continue;
-        if(!sources.some(item=>item.url===url.href))sources.push({url:url.href,title:String(source.title||url.hostname).slice(0,160)});
-      }catch{}
+  function normalizeMetadata(value) {
+    const sources = [];
+    for (const source of (Array.isArray(value?.sources) ? value.sources : []).slice(0, 12)) {
+      try {
+        const url = new URL(String(source.url || ""));
+        if (
+          !["https:", "http:"].includes(url.protocol) ||
+          url.username ||
+          url.password ||
+          url.href.length > 2048
+        )
+          continue;
+        if (!sources.some((item) => item.url === url.href))
+          sources.push({
+            url: url.href,
+            title: String(source.title || url.hostname).slice(0, 160),
+          });
+      } catch {}
     }
-    return {sources,summary:String(value?.summary||'').slice(0,2400)};
+    return { sources, summary: String(value?.summary || "").slice(0, 2400) };
   }
 
-  function appendSources(content,sources){
-    if(!sources.length)return;
-    const section=document.createElement('section');
-    section.className='ai-sources';
-    section.setAttribute('aria-label','Web sources');
-    const heading=document.createElement('h3');heading.textContent='Sources';
-    const links=document.createElement('div');links.className='ai-source-links';
-    sources.forEach((source,index)=>{
-      const link=document.createElement('a');link.className='ai-source';
-      link.href=source.url;link.target='_blank';link.rel='noopener noreferrer';
-      const number=document.createElement('span');number.className='ai-source-number';number.textContent=String(index+1);
-      const copy=document.createElement('span');
-      const title=document.createElement('strong');title.textContent=source.title;
-      const host=document.createElement('small');host.textContent=new URL(source.url).hostname.replace(/^www\./,'');
-      copy.append(title,host);link.append(number,copy);links.appendChild(link);
+  function appendSources(content, sources) {
+    if (!sources.length) return;
+    const section = document.createElement("section");
+    section.className = "ai-sources";
+    section.setAttribute("aria-label", "Web sources");
+    const heading = document.createElement("h3");
+    heading.textContent = "Sources";
+    const links = document.createElement("div");
+    links.className = "ai-source-links";
+    sources.forEach((source, index) => {
+      const link = document.createElement("a");
+      link.className = "ai-source";
+      link.href = source.url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      const number = document.createElement("span");
+      number.className = "ai-source-number";
+      number.textContent = String(index + 1);
+      const copy = document.createElement("span");
+      const title = document.createElement("strong");
+      title.textContent = source.title;
+      const host = document.createElement("small");
+      host.textContent = new URL(source.url).hostname.replace(/^www\./, "");
+      copy.append(title, host);
+      link.append(number, copy);
+      links.appendChild(link);
     });
-    section.append(heading,links);content.appendChild(section);
+    section.append(heading, links);
+    content.appendChild(section);
   }
 
-  const aiBrand=()=>document.documentElement.dataset.tutsiApp==='ai'?'Tutsi AI':"N7X AI";
-  const aiStatusText=value=>String(value||'').replace(/\bNyx AI\b/g,aiBrand());
+  const aiBrand = () =>
+    document.documentElement.dataset.tutsiApp === "ai" ? "Tutsi AI" : "N7X AI";
+  const aiStatusText = (value) => String(value || "").replace(/\bNyx AI\b/g, aiBrand());
 
-  function setMessageContent(message,text,{error=false,thinking=false}={}){
-    const content=message.querySelector('.ai-message-content');
-    if(!content) return;
-    message.classList.toggle('ai-message-error',error);
-    message.classList.toggle('is-thinking',thinking);
-    if(thinking){
-      message._nyxMessageText='';
-      content.innerHTML=`<span class="ai-thinking" aria-label="${aiBrand()} is thinking"><i></i><i></i><i></i></span>`;
+  function setMessageContent(message, text, { error = false, thinking = false } = {}) {
+    const content = message.querySelector(".ai-message-content");
+    if (!content) return;
+    message.classList.toggle("ai-message-error", error);
+    message.classList.toggle("is-thinking", thinking);
+    if (thinking) {
+      message._nyxMessageText = "";
+      content.innerHTML = `<span class="ai-thinking" aria-label="${aiBrand()} is thinking"><i></i><i></i><i></i></span>`;
       return;
     }
-    if(message.classList.contains('ai-message-user')||error){
-      const displayText=error?aiStatusText(text):String(text||'');
-      message._nyxMessageText=displayText;
-      content.textContent=displayText;
+    if (message.classList.contains("ai-message-user") || error) {
+      const displayText = error ? aiStatusText(text) : String(text || "");
+      message._nyxMessageText = displayText;
+      content.textContent = displayText;
       return;
     }
-    const parts=responseParts(text);
-    const metadata=normalizeMetadata(message._nyxMetadata);
-    const summaryOpen=content.querySelector('.ai-reasoning')?.open;
-    message._nyxMessageText=parts.answer.trim();
+    const parts = responseParts(text);
+    const metadata = normalizeMetadata(message._nyxMetadata);
+    const summaryOpen = content.querySelector(".ai-reasoning")?.open;
+    message._nyxMessageText = parts.answer.trim();
     content.replaceChildren();
-    if(metadata.summary||parts.reasoning.trim()){
-      appendReasoning(content,metadata.summary||parts.reasoning.trim());
-      if(summaryOpen)content.querySelector('.ai-reasoning').open=true;
+    if (metadata.summary || parts.reasoning.trim()) {
+      appendReasoning(content, metadata.summary || parts.reasoning.trim());
+      if (summaryOpen) content.querySelector(".ai-reasoning").open = true;
     }
-    if(parts.answer.trim()){
-      const answer=document.createElement('div');
-      answer.className='ai-answer';
-      answer.innerHTML=markdown(parts.answer.trim());
+    if (parts.answer.trim()) {
+      const answer = document.createElement("div");
+      answer.className = "ai-answer";
+      answer.innerHTML = markdown(parts.answer.trim());
       content.appendChild(answer);
     }
-    appendSources(content,metadata.sources);
+    appendSources(content, metadata.sources);
   }
 
-  function downloadTextAttachment(attachment){
-    const normalized=normalizedTextAttachment(attachment);
-    if(!normalized) return;
-    const url=URL.createObjectURL(new Blob([normalized.content],{type:'text/plain;charset=utf-8'}));
-    const link=document.createElement('a');
-    link.href=url;
-    link.download=normalized.name;
+  function downloadTextAttachment(attachment) {
+    const normalized = normalizedTextAttachment(attachment);
+    if (!normalized) return;
+    const url = URL.createObjectURL(
+      new Blob([normalized.content], { type: "text/plain;charset=utf-8" }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = normalized.name;
     document.body.appendChild(link);
     link.click();
     link.remove();
-    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  function normalizeTiming(value){
-    if(!value||!Number.isFinite(value.elapsedMs)||value.elapsedMs<0)return null;
-    return {elapsedMs:Math.min(value.elapsedMs,3600000),firstTextMs:Number.isFinite(value.firstTextMs)?Math.max(0,Math.min(value.firstTextMs,value.elapsedMs)):null,tokens:Number.isFinite(value.tokens)?Math.max(0,Math.min(value.tokens,1000000)):0,estimated:value.estimated!==false};
+  function normalizeTiming(value) {
+    if (!value || !Number.isFinite(value.elapsedMs) || value.elapsedMs < 0) return null;
+    return {
+      elapsedMs: Math.min(value.elapsedMs, 3600000),
+      firstTextMs: Number.isFinite(value.firstTextMs)
+        ? Math.max(0, Math.min(value.firstTextMs, value.elapsedMs))
+        : null,
+      tokens: Number.isFinite(value.tokens) ? Math.max(0, Math.min(value.tokens, 1000000)) : 0,
+      estimated: value.estimated !== false,
+    };
   }
-  function showTiming(message,value,waiting=false){
-    const timing=normalizeTiming(value);if(!timing)return;
-    let stats=message.querySelector('.ai-response-stats');
-    if(!stats){stats=document.createElement('div');stats.className='ai-response-stats';message.querySelector('.ai-message-body').append(stats);}
-    const seconds=(timing.elapsedMs/1000).toFixed(1);
-    const first=timing.firstTextMs===null?(waiting?'Waiting '+seconds+'s':'No answer text'):'First text '+(timing.firstTextMs/1000).toFixed(1)+'s';
-    const speed=timing.tokens>0&&timing.elapsedMs>0?' | '+(timing.estimated?'~':'')+(timing.tokens/(timing.elapsedMs/1000)).toFixed(1)+' tok/s'+(timing.estimated?' (estimated)':''):'';
-    stats.textContent=first+speed+(waiting?'':' | '+seconds+'s total');
-    stats.title='Measured on this device. Tokens per second averages the entire request, including waiting. Estimates use roughly four characters per token; reported usage may include reasoning tokens.';
+  function showTiming(message, value, waiting = false) {
+    const timing = normalizeTiming(value);
+    if (!timing) return;
+    let stats = message.querySelector(".ai-response-stats");
+    if (!stats) {
+      stats = document.createElement("div");
+      stats.className = "ai-response-stats";
+      message.querySelector(".ai-message-body").append(stats);
+    }
+    const seconds = (timing.elapsedMs / 1000).toFixed(1);
+    const first =
+      timing.firstTextMs === null
+        ? waiting
+          ? "Waiting " + seconds + "s"
+          : "No answer text"
+        : "First text " + (timing.firstTextMs / 1000).toFixed(1) + "s";
+    const speed =
+      timing.tokens > 0 && timing.elapsedMs > 0
+        ? " | " +
+          (timing.estimated ? "~" : "") +
+          (timing.tokens / (timing.elapsedMs / 1000)).toFixed(1) +
+          " tok/s" +
+          (timing.estimated ? " (estimated)" : "")
+        : "";
+    stats.textContent = first + speed + (waiting ? "" : " | " + seconds + "s total");
+    stats.title =
+      "Measured on this device. Tokens per second averages the entire request, including waiting. Estimates use roughly four characters per token; reported usage may include reasoning tokens.";
   }
 
-  function showContinuation(message){
-    if(message.querySelector('.continue-response'))return;
-    const button=document.createElement('button');button.type='button';button.className='continue-response';button.textContent='Continue response';button.title='This reply reached its response limit. Continue using your remaining allowance.';
-    button.onclick=()=>{if(send.disabled)return;if(conversation.querySelector('.ai-message:last-child')!==message)return;if(input.value.trim()){input.focus();return;}input.value='Continue your previous response from where it stopped, without repeating it.';void submitPrompt();};
-    message.querySelector('.ai-message-body').append(button);
+  function showContinuation(message) {
+    if (message.querySelector(".continue-response")) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "continue-response";
+    button.textContent = "Continue response";
+    button.title =
+      "This reply reached its response limit. Continue using your remaining allowance.";
+    button.onclick = () => {
+      if (send.disabled) return;
+      if (conversation.querySelector(".ai-message:last-child") !== message) return;
+      if (input.value.trim()) {
+        input.focus();
+        return;
+      }
+      input.value = "Continue your previous response from where it stopped, without repeating it.";
+      void submitPrompt();
+    };
+    message.querySelector(".ai-message-body").append(button);
   }
 
-  function addMessage(role,text,{error=false,thinking=false,attachment=null,imageId=null,mediaJobId=null,metadata=null,timing=null,modelId='',modelName='',finishReason=null}={}){
-    conversation.querySelector('[data-ai-welcome]')?.remove();
-    conversation.classList.remove('is-empty');
-    const assistant=role!=='user';
-    const message=document.createElement('article');
-    message._nyxMetadata=normalizeMetadata(metadata);
-    message.className=`ai-message ai-message-${assistant?'assistant':'user'}`;
-    message.innerHTML=`
-      <div class="ai-message-avatar" aria-hidden="true">${assistant?'':'You'}</div>
+  function addMessage(
+    role,
+    text,
+    {
+      error = false,
+      thinking = false,
+      attachment = null,
+      imageId = null,
+      mediaJobId = null,
+      metadata = null,
+      timing = null,
+      modelId = "",
+      modelName = "",
+      finishReason = null,
+    } = {},
+  ) {
+    conversation.querySelector("[data-ai-welcome]")?.remove();
+    conversation.classList.remove("is-empty");
+    const assistant = role !== "user";
+    const message = document.createElement("article");
+    message._nyxMetadata = normalizeMetadata(metadata);
+    message.className = `ai-message ai-message-${assistant ? "assistant" : "user"}`;
+    message.innerHTML = `
+      <div class="ai-message-avatar" aria-hidden="true">${assistant ? "" : "You"}</div>
       <div class="ai-message-body">
-        <div class="ai-message-meta"><strong>${assistant?'Assistant':'You'}</strong><div class="ai-message-actions">${messageCopyButton()}</div></div>
+        <div class="ai-message-meta"><strong>${assistant ? "Assistant" : "You"}</strong><div class="ai-message-actions">${messageCopyButton()}</div></div>
         <div class="ai-message-content"></div>
       </div>`;
-    if(assistant)setReplyModel(message,modelId,modelName);
-    if(assistant&&timing)showTiming(message,timing);
-    if(attachment?.dataUrl&&!assistant){
-      const figure=document.createElement('figure');
-      figure.className='ai-message-attachment';
-      const image=document.createElement('img');
-      image.src=attachment.dataUrl;
-      image.alt=attachment.name||'Attached image';
-      const caption=document.createElement('figcaption');
-      caption.textContent=attachment.name||'Attached image';
-      figure.append(image,caption);
-      message.querySelector('.ai-message-content')?.before(figure);
-    }else if(attachment?.content&&!assistant){
-      const textAttachment=normalizedTextAttachment(attachment);
-      if(textAttachment){
-        const file=document.createElement('button');
-        file.className='ai-message-attachment ai-message-text-attachment';
-        file.type='button';
-        file.dataset.downloadTextAttachment='';
-        file.title=`Download ${textAttachment.name}`;
-        file.innerHTML=`<span class="ai-text-file-icon" aria-hidden="true">TXT</span><span class="ai-text-file-copy"><strong>${escapeHtml(textAttachment.name)}</strong><small>${escapeHtml(formatAttachmentSize(textAttachment.size))} · Download</small></span>`;
-        file._nyxTextAttachment=textAttachment;
-        message.querySelector('.ai-message-content')?.before(file);
+    if (assistant) setReplyModel(message, modelId, modelName);
+    if (assistant && timing) showTiming(message, timing);
+    if (attachment?.dataUrl && !assistant) {
+      const figure = document.createElement("figure");
+      figure.className = "ai-message-attachment";
+      const image = document.createElement("img");
+      image.src = attachment.dataUrl;
+      image.alt = attachment.name || "Attached image";
+      const caption = document.createElement("figcaption");
+      caption.textContent = attachment.name || "Attached image";
+      figure.append(image, caption);
+      message.querySelector(".ai-message-content")?.before(figure);
+    } else if (attachment?.content && !assistant) {
+      const textAttachment = normalizedTextAttachment(attachment);
+      if (textAttachment) {
+        const file = document.createElement("button");
+        file.className = "ai-message-attachment ai-message-text-attachment";
+        file.type = "button";
+        file.dataset.downloadTextAttachment = "";
+        file.title = `Download ${textAttachment.name}`;
+        file.innerHTML = `<span class="ai-text-file-icon" aria-hidden="true">TXT</span><span class="ai-text-file-copy"><strong>${escapeHtml(textAttachment.name)}</strong><small>${escapeHtml(formatAttachmentSize(textAttachment.size))} · Download</small></span>`;
+        file._nyxTextAttachment = textAttachment;
+        message.querySelector(".ai-message-content")?.before(file);
       }
     }
-    setMessageContent(message,text,{error,thinking});
-    if(finishReason==='length')showContinuation(message);
+    setMessageContent(message, text, { error, thinking });
+    if (finishReason === "length") showContinuation(message);
     conversation.appendChild(message);
-    if(imageId)void showGeneratedImage(message,imageId);
-    if(mediaJobId)void showMediaJob(message,mediaJobId);
+    if (imageId) void showGeneratedImage(message, imageId);
+    if (mediaJobId) void showMediaJob(message, mediaJobId);
     applyLogoTheme();
     scrollToBottom(true);
     return message;
   }
 
-  function starterIcon(kind){
-    const icons={
-      project:'<path d="M4 7.5h16M7.5 4v7M16.5 4v7M5 12h14v8H5z"/>',
-      explain:'<path d="M12 3a7 7 0 0 0-4 12.74V19h8v-3.26A7 7 0 0 0 12 3Z"/><path d="M9 22h6M9.5 15h5"/>',
-      code:'<path d="m8 9-3 3 3 3M16 9l3 3-3 3M14 5l-4 14"/>',
-      ideas:'<path d="M12 3v3M4.22 6.22l2.12 2.12M3 14h3M18 14h3M17.66 8.34l2.12-2.12"/><path d="M8.5 18h7M9.5 21h5M12 8a5 5 0 0 0-3 9h6a5 5 0 0 0-3-9Z"/>'
+  function starterIcon(kind) {
+    const icons = {
+      project: '<path d="M4 7.5h16M7.5 4v7M16.5 4v7M5 12h14v8H5z"/>',
+      explain:
+        '<path d="M12 3a7 7 0 0 0-4 12.74V19h8v-3.26A7 7 0 0 0 12 3Z"/><path d="M9 22h6M9.5 15h5"/>',
+      code: '<path d="m8 9-3 3 3 3M16 9l3 3-3 3M14 5l-4 14"/>',
+      ideas:
+        '<path d="M12 3v3M4.22 6.22l2.12 2.12M3 14h3M18 14h3M17.66 8.34l2.12-2.12"/><path d="M8.5 18h7M9.5 21h5M12 8a5 5 0 0 0-3 9h6a5 5 0 0 0-3-9Z"/>',
     };
-    return `<svg aria-hidden="true" viewBox="0 0 24 24">${icons[kind]||icons.ideas}</svg>`;
+    return `<svg aria-hidden="true" viewBox="0 0 24 24">${icons[kind] || icons.ideas}</svg>`;
   }
 
-  function starter(prompt,title,kind){
+  function starter(prompt, title, kind) {
     return `<button class="ai-starter" type="button" data-prompt="${escapeHtml(prompt)}"><span class="ai-starter-icon">${starterIcon(kind)}</span><span class="ai-starter-copy"><strong>${escapeHtml(title)}</strong></span></button>`;
   }
 
-  function welcome(){
+  function welcome() {
     return `<section class="ai-welcome" data-ai-welcome>
       <h2>What's on your mind?</h2>
       <div class="ai-starters">
-        ${starter('Help me plan and build a new project from scratch','Plan a project','project')}
-        ${starter('Explain quantum computing in simple terms with a useful analogy','Explain something','explain')}
-        ${starter('Review this code for bugs, clarity, and performance improvements','Review my code','code')}
-        ${starter('Brainstorm ten original ideas for a creative side project','Brainstorm ideas','ideas')}
+        ${starter("Help me plan and build a new project from scratch", "Plan a project", "project")}
+        ${starter("Explain quantum computing in simple terms with a useful analogy", "Explain something", "explain")}
+        ${starter("Review this code for bugs, clarity, and performance improvements", "Review my code", "code")}
+        ${starter("Brainstorm ten original ideas for a creative side project", "Brainstorm ideas", "ideas")}
       </div>
     </section>`;
   }
 
-  function threadDate(timestamp){
-    const date=new Date(Number(timestamp)||Date.now());
-    const today=new Date();
-    if(date.toDateString()===today.toDateString()) return date.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
-    const yesterday=new Date(today);
-    yesterday.setDate(today.getDate()-1);
-    if(date.toDateString()===yesterday.toDateString()) return 'Yesterday';
-    return date.toLocaleDateString([],{month:'short',day:'numeric'});
+  function threadDate(timestamp) {
+    const date = new Date(Number(timestamp) || Date.now());
+    const today = new Date();
+    if (date.toDateString() === today.toDateString())
+      return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+    return date.toLocaleDateString([], { month: "short", day: "numeric" });
   }
 
-  function threadIcon(){
+  function threadIcon() {
     return '<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 5h14v11H9l-4 3V5Z"/></svg>';
   }
 
-  function renderThreadList(){
-    const items=[...threads].sort((left,right)=>right.updatedAt-left.updatedAt);
-    const query=threadSearch.value.trim().toLowerCase();
-    const visible=query?items.filter(thread=>`${thread.title}\n${thread.messages.map(item=>item.content).join('\n')}`.toLowerCase().includes(query)):items;
-    threadCount.textContent=query?`${visible.length}/${items.length}`:String(items.length);
-    historyEmpty.hidden=visible.length>0;
-    historyEmpty.textContent=items.length?(query?'No matching chats.':'No chats yet.'):'No chats yet.';
-    threadList.innerHTML=visible.map(thread=>`<div role="listitem"><button class="ai-thread-button" type="button" data-thread-id="${escapeHtml(thread.id)}" aria-current="${!temporaryMode&&thread.id===activeThreadId?'true':'false'}"><span class="ai-thread-icon">${threadIcon()}</span><span class="ai-thread-copy"><strong>${escapeHtml(thread.title)}</strong><small>${escapeHtml(threadDate(thread.updatedAt))}</small></span></button></div>`).join('');
-    temporaryChat.setAttribute('aria-pressed',String(temporaryMode));
+  function renderThreadList() {
+    const items = [...threads].sort((left, right) => right.updatedAt - left.updatedAt);
+    const query = threadSearch.value.trim().toLowerCase();
+    const visible = query
+      ? items.filter((thread) =>
+          `${thread.title}\n${thread.messages.map((item) => item.content).join("\n")}`
+            .toLowerCase()
+            .includes(query),
+        )
+      : items;
+    threadCount.textContent = query ? `${visible.length}/${items.length}` : String(items.length);
+    historyEmpty.hidden = visible.length > 0;
+    historyEmpty.textContent = items.length
+      ? query
+        ? "No matching chats."
+        : "No chats yet."
+      : "No chats yet.";
+    threadList.innerHTML = visible
+      .map(
+        (thread) =>
+          `<div role="listitem"><button class="ai-thread-button" type="button" data-thread-id="${escapeHtml(thread.id)}" aria-current="${!temporaryMode && thread.id === activeThreadId ? "true" : "false"}"><span class="ai-thread-icon">${threadIcon()}</span><span class="ai-thread-copy"><strong>${escapeHtml(thread.title)}</strong><small>${escapeHtml(threadDate(thread.updatedAt))}</small></span></button></div>`,
+      )
+      .join("");
+    temporaryChat.setAttribute("aria-pressed", String(temporaryMode));
   }
 
-  function stopRequest(){
+  function stopRequest() {
     activeController?.abort();
-    activeController=null;
+    activeController = null;
     setBusy(false);
   }
 
-  function setSidebarOpen(open){
-    app.classList.toggle('is-sidebar-open',Boolean(open));
-    sidebarToggle.setAttribute('aria-expanded',String(Boolean(open)));
+  function setSidebarOpen(open) {
+    app.classList.toggle("is-sidebar-open", Boolean(open));
+    sidebarToggle.setAttribute("aria-expanded", String(Boolean(open)));
   }
 
-  function startNewChat({temporary=false}={}){
+  function startNewChat({ temporary = false } = {}) {
     stopRequest();
     clearAttachment();
-    temporaryMode=temporary;
-    temporaryMessages=[];
-    activeThreadId='';
-    if(!temporary){
-      try{localStorage.removeItem(ACTIVE_THREAD_KEY)}catch{}
+    temporaryMode = temporary;
+    temporaryMessages = [];
+    activeThreadId = "";
+    if (!temporary) {
+      try {
+        localStorage.removeItem(ACTIVE_THREAD_KEY);
+      } catch {}
       syncLegacyMessages([]);
     }
     renderThreadList();
     render();
-    input.value='';
+    input.value = "";
     autoGrow();
 
     input.focus();
   }
 
-  function selectThread(id){
-    const thread=threads.find(item=>item.id===id);
-    if(!thread) return;
+  function selectThread(id) {
+    const thread = threads.find((item) => item.id === id);
+    if (!thread) return;
     stopRequest();
     clearAttachment();
-    temporaryMode=false;
-    temporaryMessages=[];
-    activeThreadId=thread.id;
-    try{localStorage.setItem(ACTIVE_THREAD_KEY,activeThreadId)}catch{}
+    temporaryMode = false;
+    temporaryMessages = [];
+    activeThreadId = thread.id;
+    try {
+      localStorage.setItem(ACTIVE_THREAD_KEY, activeThreadId);
+    } catch {}
     syncLegacyMessages(thread.messages);
-    if(modelCatalog.some(item=>item.id===thread.model)){
-      model.value=thread.model;
-      localStorage.setItem(MODEL_KEY,thread.model);
+    if (modelCatalog.some((item) => item.id === thread.model)) {
+      model.value = thread.model;
+      localStorage.setItem(MODEL_KEY, thread.model);
       syncModelControl();
     }
     renderThreadList();
@@ -1025,103 +1608,147 @@
     input.focus();
   }
 
-  const PROFILE_MINECRAFT_COLORS=Object.freeze({
-    '0':'#000000','1':'#0000aa','2':'#00aa00','3':'#00aaaa',
-    '4':'#aa0000','5':'#aa00aa','6':'#ffaa00','7':'#aaaaaa',
-    '8':'#555555','9':'#5555ff',a:'#55ff55',b:'#55ffff',
-    c:'#ff5555',d:'#ff55ff',e:'#ffff55',f:'#ffffff'
+  const PROFILE_MINECRAFT_COLORS = Object.freeze({
+    "0": "#000000",
+    "1": "#0000aa",
+    "2": "#00aa00",
+    "3": "#00aaaa",
+    "4": "#aa0000",
+    "5": "#aa00aa",
+    "6": "#ffaa00",
+    "7": "#aaaaaa",
+    "8": "#555555",
+    "9": "#5555ff",
+    a: "#55ff55",
+    b: "#55ffff",
+    c: "#ff5555",
+    d: "#ff55ff",
+    e: "#ffff55",
+    f: "#ffffff",
   });
 
-  function visibleProfileName(value){
-    return String(value||'').replace(/&[0-9a-fklmnor]/gi,'').trim();
+  function visibleProfileName(value) {
+    return String(value || "")
+      .replace(/&[0-9a-fklmnor]/gi, "")
+      .trim();
   }
 
-  function renderProfileName(element,value){
-    const source=String(value||'');
-    const pattern=/&([0-9a-fklmnor])/gi;
-    const fragment=document.createDocumentFragment();
-    let cursor=0;
+  function renderProfileName(element, value) {
+    const source = String(value || "");
+    const pattern = /&([0-9a-fklmnor])/gi;
+    const fragment = document.createDocumentFragment();
+    let cursor = 0;
     let match;
-    let style={};
-    const append=text=>{
-      if(!text) return;
-      const span=document.createElement('span');
-      span.textContent=text;
-      if(style.color) span.style.color=style.color;
-      if(style.bold) span.style.fontWeight='900';
-      if(style.italic) span.style.fontStyle='italic';
-      const decorations=[];
-      if(style.underline) decorations.push('underline');
-      if(style.strike) decorations.push('line-through');
-      if(decorations.length) span.style.textDecoration=decorations.join(' ');
-      if(style.magic) span.classList.add('ai-minecraft-magic');
+    let style = {};
+    const append = (text) => {
+      if (!text) return;
+      const span = document.createElement("span");
+      span.textContent = text;
+      if (style.color) span.style.color = style.color;
+      if (style.bold) span.style.fontWeight = "900";
+      if (style.italic) span.style.fontStyle = "italic";
+      const decorations = [];
+      if (style.underline) decorations.push("underline");
+      if (style.strike) decorations.push("line-through");
+      if (decorations.length) span.style.textDecoration = decorations.join(" ");
+      if (style.magic) span.classList.add("ai-minecraft-magic");
       fragment.append(span);
     };
-    while((match=pattern.exec(source))){
-      append(source.slice(cursor,match.index));
-      cursor=pattern.lastIndex;
-      const code=match[1].toLowerCase();
-      if(PROFILE_MINECRAFT_COLORS[code]) style={color:PROFILE_MINECRAFT_COLORS[code]};
-      else if(code==='l') style.bold=true;
-      else if(code==='o') style.italic=true;
-      else if(code==='n') style.underline=true;
-      else if(code==='m') style.strike=true;
-      else if(code==='k') style.magic=true;
-      else if(code==='r') style={};
+    while ((match = pattern.exec(source))) {
+      append(source.slice(cursor, match.index));
+      cursor = pattern.lastIndex;
+      const code = match[1].toLowerCase();
+      if (PROFILE_MINECRAFT_COLORS[code]) style = { color: PROFILE_MINECRAFT_COLORS[code] };
+      else if (code === "l") style.bold = true;
+      else if (code === "o") style.italic = true;
+      else if (code === "n") style.underline = true;
+      else if (code === "m") style.strike = true;
+      else if (code === "k") style.magic = true;
+      else if (code === "r") style = {};
     }
     append(source.slice(cursor));
     element.replaceChildren(fragment);
-    element.title=visibleProfileName(source)||'Profile';
+    element.title = visibleProfileName(source) || "Profile";
   }
 
-  function updateProfile(profile={}){
-    const fallbackName=String(localStorage.getItem('nyx.userName')||'Profile').trim()||'Profile';
-    const name=String(profile.displayName||fallbackName).trim()||'Profile';
-    const handle=String(profile.handle||"Open your N7X profile").trim();
-    const avatar=String(profile.avatarUrl||'').trim();
-    renderProfileName(profileName,name);
-    profileHandle.textContent=handle;
-    profileInitial.textContent=(Array.from(visibleProfileName(name))[0]||'N').toUpperCase();
-    if(/^(?:https?:|blob:|data:image\/|\/)/i.test(avatar)){
-      profileAvatar.src=avatar;
-      profileAvatar.hidden=false;
-      profileInitial.hidden=true;
-    }else{
-      profileAvatar.removeAttribute('src');
-      profileAvatar.hidden=true;
-      profileInitial.hidden=false;
+  function updateProfile(profile = {}) {
+    const fallbackName =
+      String(localStorage.getItem("nyx.userName") || "Profile").trim() || "Profile";
+    const name = String(profile.displayName || fallbackName).trim() || "Profile";
+    const handle = String(profile.handle || "Open your N7X profile").trim();
+    const avatar = String(profile.avatarUrl || "").trim();
+    renderProfileName(profileName, name);
+    profileHandle.textContent = handle;
+    profileInitial.textContent = (Array.from(visibleProfileName(name))[0] || "N").toUpperCase();
+    if (/^(?:https?:|blob:|data:image\/|\/)/i.test(avatar)) {
+      profileAvatar.src = avatar;
+      profileAvatar.hidden = false;
+      profileInitial.hidden = true;
+    } else {
+      profileAvatar.removeAttribute("src");
+      profileAvatar.hidden = true;
+      profileInitial.hidden = false;
     }
   }
 
-  function requestProfile(){
+  function requestProfile() {
     updateProfile();
-    if(parent!==window) parent.postMessage({type:'nyx:ai-profile-request'},location.origin);
+    if (parent !== window) parent.postMessage({ type: "nyx:ai-profile-request" }, location.origin);
   }
 
-  function updateThreadTitle(items){
-    const first=items.find(item=>item.role==='user')?.content||'';
-    threadTitle.textContent=temporaryMode&&!first?'Temporary chat':(first ? (first.length>58?`${first.slice(0,58)}…`:first) : 'New conversation');
+  function updateThreadTitle(items) {
+    const first = items.find((item) => item.role === "user")?.content || "";
+    threadTitle.textContent =
+      temporaryMode && !first
+        ? "Temporary chat"
+        : first
+          ? first.length > 58
+            ? `${first.slice(0, 58)}…`
+            : first
+          : "New conversation";
   }
 
-  function render(){
-    const items=savedMessages();
-    conversation.innerHTML='';
-    if(!items.length){
-      conversation.classList.add('is-empty');
-      conversation.innerHTML=welcome();
-    }else{
-      conversation.classList.remove('is-empty');
-      let start=Math.max(0,items.length-MESSAGE_PAGE_SIZE);
-      const append=item=>addMessage(item.role,item.content,{attachment:item.textAttachment||null,imageId:item.imageId,mediaJobId:item.mediaJobId,metadata:item.metadata,timing:item.timing,modelId:item.modelId,modelName:item.modelName,finishReason:item.finishReason});
+  function render() {
+    const items = savedMessages();
+    conversation.innerHTML = "";
+    if (!items.length) {
+      conversation.classList.add("is-empty");
+      conversation.innerHTML = welcome();
+    } else {
+      conversation.classList.remove("is-empty");
+      let start = Math.max(0, items.length - MESSAGE_PAGE_SIZE);
+      const append = (item) =>
+        addMessage(item.role, item.content, {
+          attachment: item.textAttachment || null,
+          imageId: item.imageId,
+          mediaJobId: item.mediaJobId,
+          metadata: item.metadata,
+          timing: item.timing,
+          modelId: item.modelId,
+          modelName: item.modelName,
+          finishReason: item.finishReason,
+        });
       items.slice(start).forEach(append);
-      if(start){
-        const earlier=document.createElement('button');earlier.type='button';earlier.className='ai-history-earlier';earlier.textContent='Load earlier messages';
-        earlier.addEventListener('click',()=>{
-          const height=feed.scrollHeight,top=feed.scrollTop,next=Math.max(0,start-MESSAGE_PAGE_SIZE);
-          const fragment=document.createDocumentFragment();loadingEarlier=true;
-          try{items.slice(next,start).forEach(item=>fragment.append(append(item)))}finally{loadingEarlier=false}
-          earlier.after(fragment);start=next;if(!start)earlier.remove();
-          feed.scrollTop=top+feed.scrollHeight-height;
+      if (start) {
+        const earlier = document.createElement("button");
+        earlier.type = "button";
+        earlier.className = "ai-history-earlier";
+        earlier.textContent = "Load earlier messages";
+        earlier.addEventListener("click", () => {
+          const height = feed.scrollHeight,
+            top = feed.scrollTop,
+            next = Math.max(0, start - MESSAGE_PAGE_SIZE);
+          const fragment = document.createDocumentFragment();
+          loadingEarlier = true;
+          try {
+            items.slice(next, start).forEach((item) => fragment.append(append(item)));
+          } finally {
+            loadingEarlier = false;
+          }
+          earlier.after(fragment);
+          start = next;
+          if (!start) earlier.remove();
+          feed.scrollTop = top + feed.scrollHeight - height;
         });
         conversation.prepend(earlier);
       }
@@ -1130,568 +1757,1046 @@
     applyLogoTheme();
   }
 
-  function modelLabel(id){
-    return modelCatalog.find(item=>item.id===id)?.label||id;
+  function modelLabel(id) {
+    return modelCatalog.find((item) => item.id === id)?.label || id;
   }
 
-  const modelCompanies={
-    openai:['OpenAI','openai'],anthropic:['Anthropic','anthropic'],google:['Google','gemini'],
-    deepseek:['DeepSeek','deepseek'],qwen:['Qwen','qwen'],'x-ai':['xAI','xai'],xai:['xAI','xai'],
-    mistralai:['Mistral','mistral'],moonshotai:['Moonshot','moonshot'],'z-ai':['Z.ai','zai'],
-    inception:['Inception','inception'],nvidia:['NVIDIA','nvidia'],'meta-llama':['Meta','meta'],
-    cohere:['Cohere','cohere'],minimax:['MiniMax','minimax'],openrouter:['OpenRouter','openrouter'],
-    xiaomi:['Xiaomi','xiaomimimo'],amazon:['Amazon','aws'],microsoft:['Microsoft','microsoft'],
-    perplexity:['Perplexity','perplexity'],stepfun:['StepFun','stepfun'],baidu:['Baidu','baidu'],
-    bytedance:['ByteDance','bytedance'],arcee:['Arcee','arcee'],ai21:['AI21','ai21'],
-    "arcee-ai":["Arcee", "arcee"],
-    "bytedance-seed":["ByteDance", "bytedance"],
-    "meta":["Meta", "meta"],
-    "aion-labs":["Aion Labs", "aionlabs"],
-    "tencent":["Tencent", "tencent"],
-    "sakana":["Sakana AI", "sakana"],
-    "poolside":["Poolside", "poolside"],
-    "upstage":["Upstage", "upstage"],
-    "nousresearch":["Nous Research", "nousresearch"],
-    "perceptron":["Perceptron", "perceptron"],
-    "inference-net":["Inference.net", "inference"],
-    "ibm-granite":["IBM", "ibm"],
-    "rekaai":["Reka", "reka"],
-    "relace":["Relace", "relace"],
-    "morph":["Morph", "morph"],
-    "fireworks":["Fireworks", "fireworks"],
-    "dots-studio":["Dots", "dotsstudio"],
-    "liquid":["Liquid AI", "liquid"],
-    "kwaipilot":["Kwai", "kwaipilot"],
-    "meituan":["Meituan", "longcat"],
-    "thinkingmachines":["Thinking Machines", "thinkingmachines"],
-    "inclusionai":["InclusionAI", "inclusionai"],
-    "thedrummer":["TheDrummer", "thedrummer"],
-    "typesafe":["TypeSafe", "typesafe"],
-    "unbiased":["Unbiased", "unbiased"],
-    "writer":["Writer", "writer"],
-    "stealth":["Stealth", "stealth"],
-    "sao10k":["Sao10K", "sao10k"],
-    "anthracite-org":["Anthracite", "anthracite-org"],
-    "gryphe":["Gryphe", "gryphe"],
-    "undi95":["Undi95", "undi95"],
-    "cognitivecomputations":["Cognitive Computations", "cognitivecomputations"],
-    "prism-ml":["PrismML", "prism-ml"],
-    "mancer":["Mancer", "mancer"],
-    "black-forest-labs":["Black Forest Labs", "flux"],
-    "recraft":["Recraft", "recraft"],
-    "runway":["Runway", "runway"],
-    "kwaivgi":["Kling", "kling"],
-    "elevenlabs":["ElevenLabs", "elevenlabs"],
-    "assemblyai":["AssemblyAI", "assemblyai"],
-    "suno":["Suno", "suno"],
-    "alibaba":["Alibaba", "alibaba"],
-    apodex:['Apodex','apodex'],heygen:['HeyGen','heygen'],togethercomputer:['Together','togethercomputer'],
-    voyageai:['Voyage AI','voyageai'],respan:['Respan','respan'],jaredpalmer:['Jared Palmer','jaredpalmer'],
-    'fish-audio':['Fish Audio','fish-audio'],'nex-agi':['Nex AGI','nex-agi'],deepgram:['Deepgram','deepgram'],
-    krea:['Krea','krea'],sourceful:['Sourceful','sourceful'],canopylabs:['Canopy Labs','canopylabs'],
-    sesame:['Sesame','sesame'],hexgrad:['Hexgrad','hexgrad'],thenlper:['Thenlper','thenlper'],
-    intfloat:['Intfloat','intfloat'],'sentence-transformers':['Sentence Transformers','sentence-transformers'],baai:['BAAI','baai']
+  const modelCompanies = {
+    openai: ["OpenAI", "openai"],
+    anthropic: ["Anthropic", "anthropic"],
+    google: ["Google", "gemini"],
+    deepseek: ["DeepSeek", "deepseek"],
+    qwen: ["Qwen", "qwen"],
+    "x-ai": ["xAI", "xai"],
+    xai: ["xAI", "xai"],
+    mistralai: ["Mistral", "mistral"],
+    moonshotai: ["Moonshot", "moonshot"],
+    "z-ai": ["Z.ai", "zai"],
+    inception: ["Inception", "inception"],
+    nvidia: ["NVIDIA", "nvidia"],
+    "meta-llama": ["Meta", "meta"],
+    cohere: ["Cohere", "cohere"],
+    minimax: ["MiniMax", "minimax"],
+    openrouter: ["OpenRouter", "openrouter"],
+    xiaomi: ["Xiaomi", "xiaomimimo"],
+    amazon: ["Amazon", "aws"],
+    microsoft: ["Microsoft", "microsoft"],
+    perplexity: ["Perplexity", "perplexity"],
+    stepfun: ["StepFun", "stepfun"],
+    baidu: ["Baidu", "baidu"],
+    bytedance: ["ByteDance", "bytedance"],
+    arcee: ["Arcee", "arcee"],
+    ai21: ["AI21", "ai21"],
+    "arcee-ai": ["Arcee", "arcee"],
+    "bytedance-seed": ["ByteDance", "bytedance"],
+    "meta": ["Meta", "meta"],
+    "aion-labs": ["Aion Labs", "aionlabs"],
+    "tencent": ["Tencent", "tencent"],
+    "sakana": ["Sakana AI", "sakana"],
+    "poolside": ["Poolside", "poolside"],
+    "upstage": ["Upstage", "upstage"],
+    "nousresearch": ["Nous Research", "nousresearch"],
+    "perceptron": ["Perceptron", "perceptron"],
+    "inference-net": ["Inference.net", "inference"],
+    "ibm-granite": ["IBM", "ibm"],
+    "rekaai": ["Reka", "reka"],
+    "relace": ["Relace", "relace"],
+    "morph": ["Morph", "morph"],
+    "fireworks": ["Fireworks", "fireworks"],
+    "dots-studio": ["Dots", "dotsstudio"],
+    "liquid": ["Liquid AI", "liquid"],
+    "kwaipilot": ["Kwai", "kwaipilot"],
+    "meituan": ["Meituan", "longcat"],
+    "thinkingmachines": ["Thinking Machines", "thinkingmachines"],
+    "inclusionai": ["InclusionAI", "inclusionai"],
+    "thedrummer": ["TheDrummer", "thedrummer"],
+    "typesafe": ["TypeSafe", "typesafe"],
+    "unbiased": ["Unbiased", "unbiased"],
+    "writer": ["Writer", "writer"],
+    "stealth": ["Stealth", "stealth"],
+    "sao10k": ["Sao10K", "sao10k"],
+    "anthracite-org": ["Anthracite", "anthracite-org"],
+    "gryphe": ["Gryphe", "gryphe"],
+    "undi95": ["Undi95", "undi95"],
+    "cognitivecomputations": ["Cognitive Computations", "cognitivecomputations"],
+    "prism-ml": ["PrismML", "prism-ml"],
+    "mancer": ["Mancer", "mancer"],
+    "black-forest-labs": ["Black Forest Labs", "flux"],
+    "recraft": ["Recraft", "recraft"],
+    "runway": ["Runway", "runway"],
+    "kwaivgi": ["Kling", "kling"],
+    "elevenlabs": ["ElevenLabs", "elevenlabs"],
+    "assemblyai": ["AssemblyAI", "assemblyai"],
+    "suno": ["Suno", "suno"],
+    "alibaba": ["Alibaba", "alibaba"],
+    apodex: ["Apodex", "apodex"],
+    heygen: ["HeyGen", "heygen"],
+    togethercomputer: ["Together", "togethercomputer"],
+    voyageai: ["Voyage AI", "voyageai"],
+    respan: ["Respan", "respan"],
+    jaredpalmer: ["Jared Palmer", "jaredpalmer"],
+    "fish-audio": ["Fish Audio", "fish-audio"],
+    "nex-agi": ["Nex AGI", "nex-agi"],
+    deepgram: ["Deepgram", "deepgram"],
+    krea: ["Krea", "krea"],
+    sourceful: ["Sourceful", "sourceful"],
+    canopylabs: ["Canopy Labs", "canopylabs"],
+    sesame: ["Sesame", "sesame"],
+    hexgrad: ["Hexgrad", "hexgrad"],
+    thenlper: ["Thenlper", "thenlper"],
+    intfloat: ["Intfloat", "intfloat"],
+    "sentence-transformers": ["Sentence Transformers", "sentence-transformers"],
+    baai: ["BAAI", "baai"],
   };
-  let modelCompanyFilter='';
-  const modelSearch=document.getElementById('modelSearch');
-  const modelCompaniesHost=document.getElementById('modelCompanies');
-  function modelCompany(item){
-    const key=item.id.split('/')[0].toLowerCase().replace(/^~/,'');
-    const known=modelCompanies[key];
-    return {key:known?.[1]||key,label:known?.[0]||item.company||key||'Other',icon:known?.[1]||''};
+  let modelCompanyFilter = "";
+  const modelSearch = document.getElementById("modelSearch");
+  const modelCompaniesHost = document.getElementById("modelCompanies");
+  function modelCompany(item) {
+    const key = item.id.split("/")[0].toLowerCase().replace(/^~/, "");
+    const known = modelCompanies[key];
+    return {
+      key: known?.[1] || key,
+      label: known?.[0] || item.company || key || "Other",
+      icon: known?.[1] || "",
+    };
   }
-  const colorCompanyIcons=new Set(["kling","assemblyai","alibaba","aionlabs", "arcee", "aws", "baidu", "bytedance", "claude", "cohere", "deepseek", "fireworks", "gemini", "gemma", "hunyuan", "kimi", "kwaipilot", "longcat", "meta", "microsoft", "minimax", "mistral", "morph", "nvidia", "openrouter", "perplexity", "poolside", "qwen", "sakana", "stepfun", "tencent", "upstage"]);
-  const authorIcons={"thinkingmachines": "thinkingmachines-author.png", "inclusionai": "inclusionai-author.png", "thedrummer": "thedrummer-author.png", "typesafe": "typesafe-author.png", "unbiased": "unbiased-author.png", "writer": "writer-author.png", "stealth": "stealth-author.svg", "sao10k": "sao10k-author.webp", "anthracite-org": "anthracite-org-author.webp", "gryphe": "gryphe-author.webp", "undi95": "undi95-author.webp", "cognitivecomputations": "cognitivecomputations-author.png", "prism-ml": "prism-ml-author.png", "mancer": "mancer-author.png"};
-  function modelCompanyIcon(company){
-    const extraIcons={apodex:'svg',heygen:'png',togethercomputer:'svg',voyageai:'svg',respan:'png',jaredpalmer:'png','fish-audio':'svg','nex-agi':'svg',deepgram:'svg',krea:'svg',sourceful:'png',canopylabs:'png',sesame:'png',hexgrad:'png',thenlper:'png',intfloat:'png','sentence-transformers':'png',baai:'svg'};
-    if(extraIcons[company.icon]){
-      const src=`/assets/icons/ai-companies/${company.icon}-author.${extraIcons[company.icon]}`;
-      return ['baai','fish-audio','krea','deepgram','voyageai'].includes(company.icon)?`<span class="ai-company-logo" style="--company-logo:url('${src}')" aria-hidden="true"></span>`:`<img class="ai-company-logo ai-company-logo-color" src="${src}" alt="" aria-hidden="true" width="22" height="22">`;
+  const colorCompanyIcons = new Set([
+    "kling",
+    "assemblyai",
+    "alibaba",
+    "aionlabs",
+    "arcee",
+    "aws",
+    "baidu",
+    "bytedance",
+    "claude",
+    "cohere",
+    "deepseek",
+    "fireworks",
+    "gemini",
+    "gemma",
+    "hunyuan",
+    "kimi",
+    "kwaipilot",
+    "longcat",
+    "meta",
+    "microsoft",
+    "minimax",
+    "mistral",
+    "morph",
+    "nvidia",
+    "openrouter",
+    "perplexity",
+    "poolside",
+    "qwen",
+    "sakana",
+    "stepfun",
+    "tencent",
+    "upstage",
+  ]);
+  const authorIcons = {
+    "thinkingmachines": "thinkingmachines-author.png",
+    "inclusionai": "inclusionai-author.png",
+    "thedrummer": "thedrummer-author.png",
+    "typesafe": "typesafe-author.png",
+    "unbiased": "unbiased-author.png",
+    "writer": "writer-author.png",
+    "stealth": "stealth-author.svg",
+    "sao10k": "sao10k-author.webp",
+    "anthracite-org": "anthracite-org-author.webp",
+    "gryphe": "gryphe-author.webp",
+    "undi95": "undi95-author.webp",
+    "cognitivecomputations": "cognitivecomputations-author.png",
+    "prism-ml": "prism-ml-author.png",
+    "mancer": "mancer-author.png",
+  };
+  function modelCompanyIcon(company) {
+    const extraIcons = {
+      apodex: "svg",
+      heygen: "png",
+      togethercomputer: "svg",
+      voyageai: "svg",
+      respan: "png",
+      jaredpalmer: "png",
+      "fish-audio": "svg",
+      "nex-agi": "svg",
+      deepgram: "svg",
+      krea: "svg",
+      sourceful: "png",
+      canopylabs: "png",
+      sesame: "png",
+      hexgrad: "png",
+      thenlper: "png",
+      intfloat: "png",
+      "sentence-transformers": "png",
+      baai: "svg",
+    };
+    if (extraIcons[company.icon]) {
+      const src = `/assets/icons/ai-companies/${company.icon}-author.${extraIcons[company.icon]}`;
+      return ["baai", "fish-audio", "krea", "deepgram", "voyageai"].includes(company.icon)
+        ? `<span class="ai-company-logo" style="--company-logo:url('${src}')" aria-hidden="true"></span>`
+        : `<img class="ai-company-logo ai-company-logo-color" src="${src}" alt="" aria-hidden="true" width="22" height="22">`;
     }
-    if(authorIcons[company.icon])return `<img class="ai-company-logo ai-company-logo-color" src="/assets/icons/ai-companies/${authorIcons[company.icon]}" alt="" aria-hidden="true" width="22" height="22">`;
-    if(colorCompanyIcons.has(company.icon))return `<img class="ai-company-logo ai-company-logo-color" src="/assets/icons/ai-companies/${company.icon}-color.svg" alt="" aria-hidden="true" width="22" height="22">`;
-    return company.icon ? `<span class="ai-company-logo" style="--company-logo:url('/assets/icons/ai-companies/${company.icon}.svg')" aria-hidden="true"></span>` : '<svg class="ai-company-logo ai-company-logo-color" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 2v4m6-4v4M9 18v4m6-4v4M2 9h4m-4 6h4m12-6h4m-4 6h4"/></svg>';
+    if (authorIcons[company.icon])
+      return `<img class="ai-company-logo ai-company-logo-color" src="/assets/icons/ai-companies/${authorIcons[company.icon]}" alt="" aria-hidden="true" width="22" height="22">`;
+    if (colorCompanyIcons.has(company.icon))
+      return `<img class="ai-company-logo ai-company-logo-color" src="/assets/icons/ai-companies/${company.icon}-color.svg" alt="" aria-hidden="true" width="22" height="22">`;
+    return company.icon
+      ? `<span class="ai-company-logo" style="--company-logo:url('/assets/icons/ai-companies/${company.icon}.svg')" aria-hidden="true"></span>`
+      : '<svg class="ai-company-logo ai-company-logo-color" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 2v4m6-4v4M9 18v4m6-4v4M2 9h4m-4 6h4m12-6h4m-4 6h4"/></svg>';
   }
-  function modelIcon(item){
-    const company=modelCompany(item);
-    const id=item.id.toLowerCase().replace(/^~/,'');
-    const family=id.startsWith('anthropic/claude')?'claude':id.startsWith('google/gemma')?'gemma':id.startsWith('moonshotai/kimi')?'kimi':id.startsWith('x-ai/grok')?'grok':id.startsWith('tencent/hunyuan')?'hunyuan':'';
-    return modelCompanyIcon(family?{...company,icon:family}:company);
+  function modelIcon(item) {
+    const company = modelCompany(item);
+    const id = item.id.toLowerCase().replace(/^~/, "");
+    const family = id.startsWith("anthropic/claude")
+      ? "claude"
+      : id.startsWith("google/gemma")
+        ? "gemma"
+        : id.startsWith("moonshotai/kimi")
+          ? "kimi"
+          : id.startsWith("x-ai/grok")
+            ? "grok"
+            : id.startsWith("tencent/hunyuan")
+              ? "hunyuan"
+              : "";
+    return modelCompanyIcon(family ? { ...company, icon: family } : company);
   }
-  function setReplyModel(message,id,name=''){
-    const clean=typeof id==='string'?id.trim().slice(0,200):'';
-    const exact=modelCatalog.find(item=>item.id===clean);
-    const matches=clean&&!clean.includes('/')?modelCatalog.filter(item=>item.id.split('/').slice(1).join('/')===clean):[];
-    const item=exact||(matches.length===1?matches[0]:null);
-    message._modelId=item?.id||clean;
-    message._modelName=item?.label||String(name||clean||'Assistant').slice(0,200);
-    message.querySelector('.ai-message-meta strong').textContent=message._modelName;
-    message.querySelector('.ai-message-avatar').innerHTML=message._modelId?modelIcon({id:message._modelId,company:'Assistant'}):'<span class="ai-company-initial" aria-hidden="true">AI</span>';
+  function setReplyModel(message, id, name = "") {
+    const clean = typeof id === "string" ? id.trim().slice(0, 200) : "";
+    const exact = modelCatalog.find((item) => item.id === clean);
+    const matches =
+      clean && !clean.includes("/")
+        ? modelCatalog.filter((item) => item.id.split("/").slice(1).join("/") === clean)
+        : [];
+    const item = exact || (matches.length === 1 ? matches[0] : null);
+    message._modelId = item?.id || clean;
+    message._modelName = item?.label || String(name || clean || "Assistant").slice(0, 200);
+    message.querySelector(".ai-message-meta strong").textContent = message._modelName;
+    message.querySelector(".ai-message-avatar").innerHTML = message._modelId
+      ? modelIcon({ id: message._modelId, company: "Assistant" })
+      : '<span class="ai-company-initial" aria-hidden="true">AI</span>';
   }
-  const tutsiModelPicker=()=>document.documentElement.dataset.appShell==='tutsi'||document.documentElement.dataset.tutsiApp==='ai';
-  function renderModelCompanies(){
-    const leading=['openai','anthropic','gemini','deepseek','meta','qwen','xai','mistral'];
-    const rank=key=>leading.includes(key)?leading.indexOf(key):leading.length;
-    const companies=[...new Map([{id:'openai/'},{id:'anthropic/'},...modelCatalog].map(item=>{const company=modelCompany(item);return [company.key,company]})).values()].sort((a,b)=>rank(a.key)-rank(b.key)||a.label.localeCompare(b.label));
-    if(!companies.some(company=>company.key===modelCompanyFilter))modelCompanyFilter='';
-    const tutsi=tutsiModelPicker();modelCompaniesHost.dataset.layout=tutsi?'tutsi':'nyx';
-    const button=(company,showLabel=tutsi)=>`<button type="button" data-model-company="${escapeHtml(company.key)}" title="${escapeHtml(company.label)}" aria-label="${escapeHtml(company.label)} models" aria-pressed="${modelCompanyFilter===company.key}">${modelCompanyIcon(company)}${showLabel?`<span class="ai-company-filter-label">${escapeHtml(company.label)}</span>`:''}</button>`;
-    if(tutsi){modelCompaniesHost.innerHTML=companies.map(company=>button(company)).join('');syncCompanyMotion();return;}
-    const scrolling=companies.filter(company=>!['openai','anthropic'].includes(company.key));
-    modelCompaniesHost.innerHTML=[0,1].map(i=>`<div class="ai-company-column"><div class="ai-company-pinned">${button(companies.find(company=>company.key===(i?'anthropic':'openai')),true)}</div><div class="ai-company-rail" aria-label="${i?'Right':'Left'} company filters"><div class="ai-company-track">${scrolling.filter((_,index)=>index%2===i).map(company=>button(company)).join('')}</div></div></div>`).join('');
-    modelCompaniesHost.querySelectorAll('.ai-company-rail').forEach(rail=>{
-      const copy=rail.firstElementChild.cloneNode(true);
-      copy.setAttribute('aria-hidden','true');copy.dataset.loopCopy='';
-      copy.querySelectorAll('button').forEach(button=>button.tabIndex=-1);
+  const tutsiModelPicker = () =>
+    document.documentElement.dataset.appShell === "tutsi" ||
+    document.documentElement.dataset.tutsiApp === "ai";
+  function renderModelCompanies() {
+    const leading = ["openai", "anthropic", "gemini", "deepseek", "meta", "qwen", "xai", "mistral"];
+    const rank = (key) => (leading.includes(key) ? leading.indexOf(key) : leading.length);
+    const companies = [
+      ...new Map(
+        [{ id: "openai/" }, { id: "anthropic/" }, ...modelCatalog].map((item) => {
+          const company = modelCompany(item);
+          return [company.key, company];
+        }),
+      ).values(),
+    ].sort((a, b) => rank(a.key) - rank(b.key) || a.label.localeCompare(b.label));
+    if (!companies.some((company) => company.key === modelCompanyFilter)) modelCompanyFilter = "";
+    const tutsi = tutsiModelPicker();
+    modelCompaniesHost.dataset.layout = tutsi ? "tutsi" : "nyx";
+    const button = (company, showLabel = tutsi) =>
+      `<button type="button" data-model-company="${escapeHtml(company.key)}" title="${escapeHtml(company.label)}" aria-label="${escapeHtml(company.label)} models" aria-pressed="${modelCompanyFilter === company.key}">${modelCompanyIcon(company)}${showLabel ? `<span class="ai-company-filter-label">${escapeHtml(company.label)}</span>` : ""}</button>`;
+    if (tutsi) {
+      modelCompaniesHost.innerHTML = companies.map((company) => button(company)).join("");
+      syncCompanyMotion();
+      return;
+    }
+    const scrolling = companies.filter((company) => !["openai", "anthropic"].includes(company.key));
+    modelCompaniesHost.innerHTML = [0, 1]
+      .map(
+        (i) =>
+          `<div class="ai-company-column"><div class="ai-company-pinned">${button(
+            companies.find((company) => company.key === (i ? "anthropic" : "openai")),
+            true,
+          )}</div><div class="ai-company-rail" aria-label="${i ? "Right" : "Left"} company filters"><div class="ai-company-track">${scrolling
+            .filter((_, index) => index % 2 === i)
+            .map((company) => button(company))
+            .join("")}</div></div></div>`,
+      )
+      .join("");
+    modelCompaniesHost.querySelectorAll(".ai-company-rail").forEach((rail) => {
+      const copy = rail.firstElementChild.cloneNode(true);
+      copy.setAttribute("aria-hidden", "true");
+      copy.dataset.loopCopy = "";
+      copy.querySelectorAll("button").forEach((button) => (button.tabIndex = -1));
       rail.append(copy);
-      rail.addEventListener('pointerleave',()=>{rail._loopOffset=rail.scrollTop;rail._continueOnHover=false;});
-      rail.addEventListener('focusout',()=>{rail._loopOffset=rail.scrollTop;});
+      rail.addEventListener("pointerleave", () => {
+        rail._loopOffset = rail.scrollTop;
+        rail._continueOnHover = false;
+      });
+      rail.addEventListener("focusout", () => {
+        rail._loopOffset = rail.scrollTop;
+      });
     });
     syncCompanyMotion();
   }
-  let companyFrame=0;
-  function syncCompanyMotion(){
+  let companyFrame = 0;
+  function syncCompanyMotion() {
     cancelAnimationFrame(companyFrame);
-    if(modelCompaniesHost.dataset.layout!==(tutsiModelPicker()?'tutsi':'nyx')){renderModelCompanies();return;}
-    const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const stopped=reduced||tutsiModelPicker();
-    modelMenu.querySelector('[data-model-company=""]').setAttribute('aria-pressed',String(!modelCompanyFilter));
-    modelCompaniesHost.querySelectorAll('[data-loop-copy]').forEach(copy=>copy.hidden=stopped);
-    if(modelMenu.hidden||stopped)return;
-    let previous=0;
-    const tick=time=>{
-      const delta=previous?Math.min(time-previous,50):0;previous=time;
-      modelCompaniesHost.querySelectorAll('.ai-company-rail').forEach((rail,index)=>{
-        const track=rail.firstElementChild;
-        if(track.offsetHeight<=rail.clientHeight){rail.lastElementChild.hidden=true;return;}
-        if(rail.matches(':focus-within')||(rail.matches(':hover')&&!rail._continueOnHover)||document.hidden)return;
-        const offset=(rail._loopOffset??rail.scrollTop)+delta*.018*(index===0?1:-1);
-        rail._loopOffset=((offset%track.offsetHeight)+track.offsetHeight)%track.offsetHeight;
-        rail.scrollTop=rail._loopOffset;
-      });
-      companyFrame=requestAnimationFrame(tick);
-    };
-    companyFrame=requestAnimationFrame(tick);
-  }
-  matchMedia('(prefers-reduced-motion: reduce)').addEventListener('change',syncCompanyMotion);
-
-  function revealModelCompany(key){
-    if(!key||modelMenu.hidden)return;
-    if(tutsiModelPicker()){
-      const button=[...modelCompaniesHost.querySelectorAll('button')].find(item=>item.dataset.modelCompany===key);
-      button?.scrollIntoView({block:'nearest',inline:'nearest'});return;
+    if (modelCompaniesHost.dataset.layout !== (tutsiModelPicker() ? "tutsi" : "nyx")) {
+      renderModelCompanies();
+      return;
     }
-    const button=[...modelCompaniesHost.querySelectorAll('.ai-company-track:not([data-loop-copy]) button')].find(item=>item.dataset.modelCompany===key);
-    const rail=button?.closest('.ai-company-rail');
-    if(!rail)return;
-    const track=rail.firstElementChild;
-    const target=button.getBoundingClientRect().top-rail.getBoundingClientRect().top+rail.scrollTop-(rail.clientHeight-button.offsetHeight)/2;
-    const looping=!rail.lastElementChild.hidden&&track.offsetHeight>rail.clientHeight;
-    rail._loopOffset=looping?((target%track.offsetHeight)+track.offsetHeight)%track.offsetHeight:Math.max(0,Math.min(target,rail.scrollHeight-rail.clientHeight));
-    rail.scrollTop=rail._loopOffset;
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const stopped = reduced || tutsiModelPicker();
+    modelMenu
+      .querySelector('[data-model-company=""]')
+      .setAttribute("aria-pressed", String(!modelCompanyFilter));
+    modelCompaniesHost
+      .querySelectorAll("[data-loop-copy]")
+      .forEach((copy) => (copy.hidden = stopped));
+    if (modelMenu.hidden || stopped) return;
+    let previous = 0;
+    const tick = (time) => {
+      const delta = previous ? Math.min(time - previous, 50) : 0;
+      previous = time;
+      modelCompaniesHost.querySelectorAll(".ai-company-rail").forEach((rail, index) => {
+        const track = rail.firstElementChild;
+        if (track.offsetHeight <= rail.clientHeight) {
+          rail.lastElementChild.hidden = true;
+          return;
+        }
+        if (
+          rail.matches(":focus-within") ||
+          (rail.matches(":hover") && !rail._continueOnHover) ||
+          document.hidden
+        )
+          return;
+        const offset =
+          (rail._loopOffset ?? rail.scrollTop) + delta * 0.018 * (index === 0 ? 1 : -1);
+        rail._loopOffset =
+          ((offset % track.offsetHeight) + track.offsetHeight) % track.offsetHeight;
+        rail.scrollTop = rail._loopOffset;
+      });
+      companyFrame = requestAnimationFrame(tick);
+    };
+    companyFrame = requestAnimationFrame(tick);
   }
-  function filterModelOptions(){
-    const query=(modelSearch.value||'').trim().toLowerCase();
-    const candidates=modelCatalog.filter(item=>!modelCompanyFilter||modelCompany(item).key===modelCompanyFilter);
-    const visible=NyxModelSearch.search(candidates,query,modelCompany);
-    modelOptionsHost.innerHTML=visible.length ? modelMenuOptions(visible,model.value,Boolean(query)) : `<p class="ai-model-empty" role="status">${modelCompanyFilter&&!query?'No models from this provider are available for this account.':'No matching models.'}</p>`;
-    modelOptionsHost.scrollTop=0;
-    const match=visible.find(item=>modelCompany(item).label.toLowerCase()===query)||visible[0];
-    if(query&&match)revealModelCompany(modelCompany(match).key);
-    else if(modelCompanyFilter)revealModelCompany(modelCompanyFilter);
-    const count=modelMenu.querySelector('[data-model-count]');
-    if(count)count.textContent=query||modelCompanyFilter ? `${visible.length} of ${modelCatalog.length}` : `${modelCatalog.length} available`;
+  matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", syncCompanyMotion);
+
+  function revealModelCompany(key) {
+    if (!key || modelMenu.hidden) return;
+    if (tutsiModelPicker()) {
+      const button = [...modelCompaniesHost.querySelectorAll("button")].find(
+        (item) => item.dataset.modelCompany === key,
+      );
+      button?.scrollIntoView({ block: "nearest", inline: "nearest" });
+      return;
+    }
+    const button = [
+      ...modelCompaniesHost.querySelectorAll(".ai-company-track:not([data-loop-copy]) button"),
+    ].find((item) => item.dataset.modelCompany === key);
+    const rail = button?.closest(".ai-company-rail");
+    if (!rail) return;
+    const track = rail.firstElementChild;
+    const target =
+      button.getBoundingClientRect().top -
+      rail.getBoundingClientRect().top +
+      rail.scrollTop -
+      (rail.clientHeight - button.offsetHeight) / 2;
+    const looping = !rail.lastElementChild.hidden && track.offsetHeight > rail.clientHeight;
+    rail._loopOffset = looping
+      ? ((target % track.offsetHeight) + track.offsetHeight) % track.offsetHeight
+      : Math.max(0, Math.min(target, rail.scrollHeight - rail.clientHeight));
+    rail.scrollTop = rail._loopOffset;
   }
-  function groupedModels(models){
-    const priority=['openai/gpt-6-astra','anthropic/claude-fable-5.1','openai/gpt-6-sol','openai/gpt-5.6-sol-pro','openai/gpt-6-luna-pro','openai/gpt-6-luna','openai/gpt-5.6-luna'];
-    const free=item=>item.free||item.id.endsWith(':free')||item.id==='openrouter/free';
-    const company=item=>modelCompany(item).label;
-    const rank=item=>{const index=priority.indexOf(item.id);return index<0?priority.length:index;};
-    const ordered=[...models].sort((a,b)=>Number(free(a))-Number(free(b))
-      ||Number(company(b)==='OpenAI')-Number(company(a)==='OpenAI')
-      ||company(a).localeCompare(company(b))||rank(a)-rank(b)||a.label.localeCompare(b.label));
-    const groups=new Map();
-    ordered.forEach(item=>{
-      const group=`${free(item)?'Free':'Paid'} · ${company(item)}`;
-      if(!groups.has(group)) groups.set(group,[]);
+  function filterModelOptions() {
+    const query = (modelSearch.value || "").trim().toLowerCase();
+    const candidates = modelCatalog.filter(
+      (item) => !modelCompanyFilter || modelCompany(item).key === modelCompanyFilter,
+    );
+    const visible = NyxModelSearch.search(candidates, query, modelCompany);
+    modelOptionsHost.innerHTML = visible.length
+      ? modelMenuOptions(visible, model.value, Boolean(query))
+      : `<p class="ai-model-empty" role="status">${modelCompanyFilter && !query ? "No models from this provider are available for this account." : "No matching models."}</p>`;
+    modelOptionsHost.scrollTop = 0;
+    const match =
+      visible.find((item) => modelCompany(item).label.toLowerCase() === query) || visible[0];
+    if (query && match) revealModelCompany(modelCompany(match).key);
+    else if (modelCompanyFilter) revealModelCompany(modelCompanyFilter);
+    const count = modelMenu.querySelector("[data-model-count]");
+    if (count)
+      count.textContent =
+        query || modelCompanyFilter
+          ? `${visible.length} of ${modelCatalog.length}`
+          : `${modelCatalog.length} available`;
+  }
+  function groupedModels(models) {
+    const priority = [
+      "openai/gpt-6-astra",
+      "anthropic/claude-fable-5.1",
+      "openai/gpt-6-sol",
+      "openai/gpt-5.6-sol-pro",
+      "openai/gpt-6-luna-pro",
+      "openai/gpt-6-luna",
+      "openai/gpt-5.6-luna",
+    ];
+    const free = (item) => item.free || item.id.endsWith(":free") || item.id === "openrouter/free";
+    const company = (item) => modelCompany(item).label;
+    const rank = (item) => {
+      const index = priority.indexOf(item.id);
+      return index < 0 ? priority.length : index;
+    };
+    const ordered = [...models].sort(
+      (a, b) =>
+        Number(free(a)) - Number(free(b)) ||
+        Number(company(b) === "OpenAI") - Number(company(a) === "OpenAI") ||
+        company(a).localeCompare(company(b)) ||
+        rank(a) - rank(b) ||
+        a.label.localeCompare(b.label),
+    );
+    const groups = new Map();
+    ordered.forEach((item) => {
+      const group = `${free(item) ? "Free" : "Paid"} · ${company(item)}`;
+      if (!groups.has(group)) groups.set(group, []);
       groups.get(group).push(item);
     });
     return [...groups];
   }
 
-  function modelCapabilities(item){
-    const labels={text:'Text',image:'Image generation',video:'Video generation',audio:'Audio',speech:'Speech',transcription:'Transcription',embeddings:'Embeddings',rerank:'Rerank',decisions:'Decisions'};
-    const outputs=item.outputModalities||[...(item.text!==false?['text']:[]),...(item.imageGeneration?['image']:[])];
-    return [...new Set([...outputs.map(kind=>labels[kind]||kind),item.vision?'Vision':'',item.reasoning?'Reasoning':''])].filter(Boolean).join(' · ');
+  function modelCapabilities(item) {
+    const labels = {
+      text: "Text",
+      image: "Image generation",
+      video: "Video generation",
+      audio: "Audio",
+      speech: "Speech",
+      transcription: "Transcription",
+      embeddings: "Embeddings",
+      rerank: "Rerank",
+      decisions: "Decisions",
+    };
+    const outputs = item.outputModalities || [
+      ...(item.text !== false ? ["text"] : []),
+      ...(item.imageGeneration ? ["image"] : []),
+    ];
+    return [
+      ...new Set([
+        ...outputs.map((kind) => labels[kind] || kind),
+        item.vision ? "Vision" : "",
+        item.reasoning ? "Reasoning" : "",
+      ]),
+    ]
+      .filter(Boolean)
+      .join(" · ");
   }
 
-  function modelToolOnly(item){return item&&item.text===false&&!item.imageGeneration&&!item.outputModalities?.includes('video');}
-
-  function modelOptions(models){
-    return groupedModels(models).map(([company,items])=>`<optgroup label="${escapeHtml(company)}">${items.map(item=>`<option value="${escapeHtml(item.id)}"${modelToolOnly(item)?' disabled':''}>${escapeHtml(item.label)} · ${escapeHtml(modelCapabilities(item))}</option>`).join('')}</optgroup>`).join('');
+  function modelToolOnly(item) {
+    return (
+      item &&
+      item.text === false &&
+      !item.imageGeneration &&
+      !item.outputModalities?.includes("video")
+    );
   }
 
-  function modelMenuOptions(models,selected,ranked=false){
-    return (ranked?[['Best matches',models]]:groupedModels(models)).map(([company,items],groupIndex)=>{
-      const groupId=`modelGroup${groupIndex}`;
-      return `<section class="ai-model-group" role="group" aria-labelledby="${groupId}">
+  function modelOptions(models) {
+    return groupedModels(models)
+      .map(
+        ([company, items]) =>
+          `<optgroup label="${escapeHtml(company)}">${items.map((item) => `<option value="${escapeHtml(item.id)}"${modelToolOnly(item) ? " disabled" : ""}>${escapeHtml(item.label)} · ${escapeHtml(modelCapabilities(item))}</option>`).join("")}</optgroup>`,
+      )
+      .join("");
+  }
+
+  function modelMenuOptions(models, selected, ranked = false) {
+    return (ranked ? [["Best matches", models]] : groupedModels(models))
+      .map(([company, items], groupIndex) => {
+        const groupId = `modelGroup${groupIndex}`;
+        return `<section class="ai-model-group" role="group" aria-labelledby="${groupId}">
         <p class="ai-model-group-label" id="${groupId}">${escapeHtml(company)}</p>
-        <div class="ai-model-group-grid">${items.map(item=>`<button class="ai-model-option" type="button" role="option" data-model-id="${escapeHtml(item.id)}" aria-selected="${item.id===selected?'true':'false'}">
-          ${modelIcon(item)}<span class="ai-model-option-label"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(modelCompany(item).label)} &middot; ${escapeHtml(modelCapabilities(item))}${modelToolOnly(item)?' · Open in OpenRouter ↗':''}</small></span>
+        <div class="ai-model-group-grid">${items
+          .map(
+            (
+              item,
+            ) => `<button class="ai-model-option" type="button" role="option" data-model-id="${escapeHtml(item.id)}" aria-selected="${item.id === selected ? "true" : "false"}">
+          ${modelIcon(item)}<span class="ai-model-option-label"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(modelCompany(item).label)} &middot; ${escapeHtml(modelCapabilities(item))}${modelToolOnly(item) ? " · Open in OpenRouter ↗" : ""}</small></span>
           <span class="ai-model-option-check" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m5 10 3 3 7-7"/></svg></span>
-        </button>`).join('')}</div>
+        </button>`,
+          )
+          .join("")}</div>
       </section>`;
-    }).join('');
+      })
+      .join("");
   }
 
-  function syncModelControl(){
-    const selected=model.value||DEFAULT_MODEL;
-    const label=modelLabel(selected);
-    modelSelected.textContent=label;
-    modelTrigger.title=`Model: ${label}${(selected.endsWith(":free")||selected==="openrouter/free")?". Uses your account’s token allowance. Provider rate limits also apply.":""}`;
-    modelTrigger.setAttribute('aria-label',`AI model: ${label}`);
-    sidebarModelName.textContent=label;
-    modelOptionsHost.querySelectorAll('[data-model-id]').forEach(option=>{
-      option.setAttribute('aria-selected',String(option.dataset.modelId===selected));
+  function syncModelControl() {
+    const selected = model.value || DEFAULT_MODEL;
+    const label = modelLabel(selected);
+    modelSelected.textContent = label;
+    modelTrigger.title = `Model: ${label}${selected.endsWith(":free") || selected === "openrouter/free" ? ". Uses your account’s token allowance. Provider rate limits also apply." : ""}`;
+    modelTrigger.setAttribute("aria-label", `AI model: ${label}`);
+    sidebarModelName.textContent = label;
+    modelOptionsHost.querySelectorAll("[data-model-id]").forEach((option) => {
+      option.setAttribute("aria-selected", String(option.dataset.modelId === selected));
     });
   }
 
-  function renderModelOptions(models,selected){
-    model.innerHTML=modelOptions(models);
-    model.value=selected;
+  function renderModelOptions(models, selected) {
+    model.innerHTML = modelOptions(models);
+    model.value = selected;
     renderModelCompanies();
     filterModelOptions();
     syncModelControl();
   }
 
-  function modelOptionElements(){
-    return [...modelOptionsHost.querySelectorAll('[data-model-id]')];
+  function modelOptionElements() {
+    return [...modelOptionsHost.querySelectorAll("[data-model-id]")];
   }
 
-  function closeModelMenu({restoreFocus=false}={}){
-    if(modelMenu.hidden) return;
+  function closeModelMenu({ restoreFocus = false } = {}) {
+    if (modelMenu.hidden) return;
     cancelAnimationFrame(companyFrame);
     modelMenu.close();
-    modelMenu.hidden=true;
-    modelPicker.classList.remove('is-open');
-    modelTrigger.setAttribute('aria-expanded','false');
-    if(restoreFocus) modelTrigger.focus();
+    modelMenu.hidden = true;
+    modelPicker.classList.remove("is-open");
+    modelTrigger.setAttribute("aria-expanded", "false");
+    if (restoreFocus) modelTrigger.focus();
   }
 
-  function openModelMenu(direction=0){
-    if(modelTrigger.disabled) return;
-    modelMenu.hidden=false;
+  function openModelMenu(direction = 0) {
+    if (modelTrigger.disabled) return;
+    modelMenu.hidden = false;
     modelMenu.showModal();
     syncCompanyMotion();
-    if(!modelCompanyFilter&&!modelSearch.value.trim()){
-      revealModelCompany('openai');
-      revealModelCompany('anthropic');
+    if (!modelCompanyFilter && !modelSearch.value.trim()) {
+      revealModelCompany("openai");
+      revealModelCompany("anthropic");
     }
-    modelPicker.classList.add('is-open');
-    modelTrigger.setAttribute('aria-expanded','true');
-    requestAnimationFrame(()=>{
-      const options=modelOptionElements();
-      const selectedIndex=Math.max(0,options.findIndex(option=>option.getAttribute('aria-selected')==='true'));
-      const index=direction<0?options.length-1:(direction>0?0:selectedIndex);
-      if(direction){options[index]?.focus({preventScroll:true});options[index]?.scrollIntoView({block:'nearest'});}
-      else modelSearch.focus();
+    modelPicker.classList.add("is-open");
+    modelTrigger.setAttribute("aria-expanded", "true");
+    requestAnimationFrame(() => {
+      const options = modelOptionElements();
+      const selectedIndex = Math.max(
+        0,
+        options.findIndex((option) => option.getAttribute("aria-selected") === "true"),
+      );
+      const index = direction < 0 ? options.length - 1 : direction > 0 ? 0 : selectedIndex;
+      if (direction) {
+        options[index]?.focus({ preventScroll: true });
+        options[index]?.scrollIntoView({ block: "nearest" });
+      } else modelSearch.focus();
     });
   }
 
-  function selectModel(id){
-    if(!modelCatalog.some(item=>item.id===id)) return;
-    if(modelToolOnly(modelCatalog.find(item=>item.id===id))){window.open('https://openrouter.ai/'+encodeURI(id),'_blank','noopener');return;}
-    model.value=id;
-    model.dispatchEvent(new Event('change',{bubbles:true}));
-    closeModelMenu({restoreFocus:true});
+  function selectModel(id) {
+    if (!modelCatalog.some((item) => item.id === id)) return;
+    if (modelToolOnly(modelCatalog.find((item) => item.id === id))) {
+      window.open("https://openrouter.ai/" + encodeURI(id), "_blank", "noopener");
+      return;
+    }
+    model.value = id;
+    model.dispatchEvent(new Event("change", { bubbles: true }));
+    closeModelMenu({ restoreFocus: true });
   }
 
-  async function loadModels(){
-    const status=document.querySelector('.ai-model-status');
-    model.disabled=true;
-    modelTrigger.disabled=true;
-    modelTrigger.setAttribute('aria-busy','true');
-    try{
-      const response=await fetch((tutsiModelPicker()?'/api/tutsi-ai/models':'/api/nyx-ai/models')+(customKey?'?custom=1':''),{headers:await aiHeaders({accept:'application/json'})});
-      const data=await response.json();
-      if(!response.ok) throw new Error(data?.error||`Model catalog failed (${response.status})`);
-      ownerMediaAccess=data.ownerMediaAccess===true;
-      const next=Array.isArray(data?.models)?data.models.flatMap(item=>{
-        if(customKey&&customKind()==='nyx'&&item?.imageGeneration)return [];
-        const id=String(item?.id||'').trim();
-        const label=String(item?.label||id).trim();
-        const company=String(item?.company||'').trim();
-        return id&&label?[{id,label,company,catalogRank:Number.isFinite(item.catalogRank)?item.catalogRank:9999,codingRank:item.codingRank,outputModalities:item.outputModalities,inputModalities:item.inputModalities,poolTokenLimit:Number.isSafeInteger(item?.poolTokenLimit)&&item.poolTokenLimit>0?item.poolTokenLimit:null,free:Boolean(item?.free),text:item?.text!==false,imageGeneration:!(customKey&&customKind()==='nyx')&&Boolean(item?.imageGeneration),vision:customKey&&customKind()==='nyx'?false:Boolean(item?.vision)||KNOWN_VISION_MODELS.has(id),reasoning:Boolean(item?.reasoning)}]:[];
-      }):[];
-      if(!next.length) throw new Error('No models are currently available.');
-      const saved=activeThread()?.model||localStorage.getItem(MODEL_KEY)||DEFAULT_MODEL;
-      const savedLabel=modelCatalog.find(item=>item.id===saved)?.label||saved;
-      modelCatalog=next;
-      const selected=next.some(item=>item.id===saved)?saved:(next.some(item=>item.id===DEFAULT_MODEL)?DEFAULT_MODEL:next[0].id);
-      renderModelOptions(next,selected);
-      if(selected===saved){
-        localStorage.setItem(MODEL_KEY,selected);
-        if(status){status.classList.remove('is-warning');status.title=`${next.length} models available`}
-      }else if(status){
-        status.classList.add('is-warning');
-        status.title=`${savedLabel} is temporarily unavailable. N7X will restore it when it returns.`;
+  async function loadModels() {
+    const status = document.querySelector(".ai-model-status");
+    model.disabled = true;
+    modelTrigger.disabled = true;
+    modelTrigger.setAttribute("aria-busy", "true");
+    try {
+      const response = await fetch(
+        (tutsiModelPicker() ? "/api/tutsi-ai/models" : "/api/nyx-ai/models") +
+          (customKey ? "?custom=1" : ""),
+        { headers: await aiHeaders({ accept: "application/json" }) },
+      );
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error || `Model catalog failed (${response.status})`);
+      ownerMediaAccess = data.ownerMediaAccess === true;
+      const next = Array.isArray(data?.models)
+        ? data.models.flatMap((item) => {
+            if (customKey && customKind() === "nyx" && item?.imageGeneration) return [];
+            const id = String(item?.id || "").trim();
+            const label = String(item?.label || id).trim();
+            const company = String(item?.company || "").trim();
+            return id && label
+              ? [
+                  {
+                    id,
+                    label,
+                    company,
+                    catalogRank: Number.isFinite(item.catalogRank) ? item.catalogRank : 9999,
+                    codingRank: item.codingRank,
+                    outputModalities: item.outputModalities,
+                    inputModalities: item.inputModalities,
+                    poolTokenLimit:
+                      Number.isSafeInteger(item?.poolTokenLimit) && item.poolTokenLimit > 0
+                        ? item.poolTokenLimit
+                        : null,
+                    free: Boolean(item?.free),
+                    text: item?.text !== false,
+                    imageGeneration:
+                      !(customKey && customKind() === "nyx") && Boolean(item?.imageGeneration),
+                    vision:
+                      customKey && customKind() === "nyx"
+                        ? false
+                        : Boolean(item?.vision) || KNOWN_VISION_MODELS.has(id),
+                    reasoning: Boolean(item?.reasoning),
+                  },
+                ]
+              : [];
+          })
+        : [];
+      if (!next.length) throw new Error("No models are currently available.");
+      const saved = activeThread()?.model || localStorage.getItem(MODEL_KEY) || DEFAULT_MODEL;
+      const savedLabel = modelCatalog.find((item) => item.id === saved)?.label || saved;
+      modelCatalog = next;
+      const selected = next.some((item) => item.id === saved)
+        ? saved
+        : next.some((item) => item.id === DEFAULT_MODEL)
+          ? DEFAULT_MODEL
+          : next[0].id;
+      renderModelOptions(next, selected);
+      if (selected === saved) {
+        localStorage.setItem(MODEL_KEY, selected);
+        if (status) {
+          status.classList.remove("is-warning");
+          status.title = `${next.length} models available`;
+        }
+      } else if (status) {
+        status.classList.add("is-warning");
+        status.title = `${savedLabel} is temporarily unavailable. N7X will restore it when it returns.`;
       }
       return true;
-    }catch(error){
-      console.warn("N7X AI model catalog could not be loaded:",error);
-      modelCatalog=[];
-      renderModelOptions([],"");
-      modelSelected.textContent='Models unavailable';
-      if(status){status.classList.add('is-warning');status.title='The model list could not be verified'}
+    } catch (error) {
+      console.warn("N7X AI model catalog could not be loaded:", error);
+      modelCatalog = [];
+      renderModelOptions([], "");
+      modelSelected.textContent = "Models unavailable";
+      if (status) {
+        status.classList.add("is-warning");
+        status.title = "The model list could not be verified";
+      }
       return false;
-    }finally{
-      const available=modelCatalog.length>0;
-      model.disabled=!available;
-      modelTrigger.disabled=!available;
-      modelTrigger.removeAttribute('aria-busy');
+    } finally {
+      const available = modelCatalog.length > 0;
+      model.disabled = !available;
+      modelTrigger.disabled = !available;
+      modelTrigger.removeAttribute("aria-busy");
     }
   }
 
-  function autoGrow(){
-    input.style.height='auto';
-    input.style.height=`${Math.min(input.scrollHeight,MAX_INPUT_HEIGHT)}px`;
-    if(characterCount) characterCount.textContent=`${input.value.length} / ${input.maxLength}`;
+  function autoGrow() {
+    input.style.height = "auto";
+    input.style.height = `${Math.min(input.scrollHeight, MAX_INPUT_HEIGHT)}px`;
+    if (characterCount) characterCount.textContent = `${input.value.length} / ${input.maxLength}`;
   }
 
-  function scrollToBottom(force=false){
-    if(loadingEarlier||(!force&&!followStream)) return;
-    requestAnimationFrame(()=>{feed.scrollTop=feed.scrollHeight});
+  function scrollToBottom(force = false) {
+    if (loadingEarlier || (!force && !followStream)) return;
+    requestAnimationFrame(() => {
+      feed.scrollTop = feed.scrollHeight;
+    });
   }
 
-  function setBusy(busy){
-    feed.setAttribute('aria-busy',String(busy));
-    form.classList.toggle('is-busy',busy);
-    input.disabled=busy;
-    send.disabled=busy||Date.now()<sendCooldownUntil;
-    imageInput.disabled=busy;
-    attachImage.disabled=busy;
-    shareScreen.disabled=busy;
-    removeAttachment.disabled=busy;
-    send.setAttribute('aria-label',busy?`Waiting for ${aiBrand()}`:'Send message');
+  function setBusy(busy) {
+    feed.setAttribute("aria-busy", String(busy));
+    form.classList.toggle("is-busy", busy);
+    input.disabled = busy;
+    send.disabled = busy || Date.now() < sendCooldownUntil;
+    imageInput.disabled = busy;
+    attachImage.disabled = busy;
+    shareScreen.disabled = busy;
+    removeAttachment.disabled = busy;
+    send.setAttribute("aria-label", busy ? `Waiting for ${aiBrand()}` : "Send message");
   }
 
-  function clearChat(){
-    const discardedImages=savedMessages().map(item=>item.imageId).filter(Boolean);
-    for(const id of discardedImages)generatedImageMemory.delete(id);
-    if(discardedImages.length)void generatedImageDatabase().then(db=>{const tx=db.transaction('images','readwrite');for(const id of discardedImages)tx.objectStore('images').delete(id);tx.oncomplete=()=>db.close();tx.onerror=()=>db.close();}).catch(()=>{});
+  function clearChat() {
+    const discardedImages = savedMessages()
+      .map((item) => item.imageId)
+      .filter(Boolean);
+    for (const id of discardedImages) generatedImageMemory.delete(id);
+    if (discardedImages.length)
+      void generatedImageDatabase()
+        .then((db) => {
+          const tx = db.transaction("images", "readwrite");
+          for (const id of discardedImages) tx.objectStore("images").delete(id);
+          tx.oncomplete = () => db.close();
+          tx.onerror = () => db.close();
+        })
+        .catch(() => {});
     stopRequest();
     stopScreenSharing();
     clearAttachment();
-    if(temporaryMode){
-      temporaryMessages=[];
-    }else if(activeThreadId){
-      threads=threads.filter(thread=>thread.id!==activeThreadId);
-      activeThreadId='';
-      try{localStorage.removeItem(ACTIVE_THREAD_KEY)}catch{}
+    if (temporaryMode) {
+      temporaryMessages = [];
+    } else if (activeThreadId) {
+      threads = threads.filter((thread) => thread.id !== activeThreadId);
+      activeThreadId = "";
+      try {
+        localStorage.removeItem(ACTIVE_THREAD_KEY);
+      } catch {}
       persistThreads();
     }
     syncLegacyMessages([]);
     renderThreadList();
     render();
-    input.value='';
+    input.value = "";
     autoGrow();
     input.focus();
   }
 
-  async function copyText(value){
-    if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(String(value||''));return}
-    const helper=document.createElement('textarea');
-    helper.value=String(value||'');
-    helper.style.position='fixed';
-    helper.style.opacity='0';
+  async function copyText(value) {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(String(value || ""));
+      return;
+    }
+    const helper = document.createElement("textarea");
+    helper.value = String(value || "");
+    helper.style.position = "fixed";
+    helper.style.opacity = "0";
     document.body.appendChild(helper);
     helper.select();
-    document.execCommand('copy');
+    document.execCommand("copy");
     helper.remove();
   }
 
-  function showCopied(button){
-    const label=button.querySelector('span');
-    const previous=label?.textContent||'';
-    button.classList.add('is-copied');
-    button.setAttribute('aria-label','Copied');
-    if(label) label.textContent='Copied';
-    setTimeout(()=>{
-      button.classList.remove('is-copied');
-      button.setAttribute('aria-label',button.hasAttribute('data-copy-code')?'Copy code':'Copy message');
-      if(label) label.textContent=previous||'Copy';
-    },1200);
+  function showCopied(button) {
+    const label = button.querySelector("span");
+    const previous = label?.textContent || "";
+    button.classList.add("is-copied");
+    button.setAttribute("aria-label", "Copied");
+    if (label) label.textContent = "Copied";
+    setTimeout(() => {
+      button.classList.remove("is-copied");
+      button.setAttribute(
+        "aria-label",
+        button.hasAttribute("data-copy-code") ? "Copy code" : "Copy message",
+      );
+      if (label) label.textContent = previous || "Copy";
+    }, 1200);
   }
 
-  async function submitPrompt(){
-    const prompt=input.value.trim();
-    let imageAttachment=attachedImage;
-    const textAttachment=attachedText;
-    const sharing=Boolean(screenStream);
-    if((!prompt&&!imageAttachment&&!textAttachment&&!sharing)||send.disabled) return;
-    if(sharing){
-      try{
-        screenStatus.textContent='Capturing the current frame…';
-        imageAttachment=await captureSharedScreen();
-      }catch(error){
-        screenStatus.textContent=error?.message||"N7X could not capture the shared screen.";
+  async function submitPrompt() {
+    const prompt = input.value.trim();
+    let imageAttachment = attachedImage;
+    const textAttachment = attachedText;
+    const sharing = Boolean(screenStream);
+    if ((!prompt && !imageAttachment && !textAttachment && !sharing) || send.disabled) return;
+    if (sharing) {
+      try {
+        screenStatus.textContent = "Capturing the current frame…";
+        imageAttachment = await captureSharedScreen();
+      } catch (error) {
+        screenStatus.textContent = error?.message || "N7X could not capture the shared screen.";
         return;
       }
     }
-    const selectedModelId=model.value||DEFAULT_MODEL;
-    const requestedModel=selectedModelId||DEFAULT_MODEL;
-    const modelInfo=modelCatalog.find(item=>item.id===requestedModel);
-    if(modelToolOnly(modelInfo)){window.open('https://openrouter.ai/'+encodeURI(requestedModel),'_blank','noopener');return;}
-    const generateVideo=Boolean(modelInfo?.outputModalities?.includes('video'));
-    const nativeImage=(ownerMediaAccess||modelInfo?.text===false)&&modelInfo?.imageGeneration;
-    const dedicatedMedia=generateVideo||nativeImage;
-    if(dedicatedMedia&&customKey){addMessage('assistant',"Use N7X shared for dedicated image and video generation, or open the model on OpenRouter.",{error:true,modelId:requestedModel});return;}
-    const generateImage=Boolean(modelInfo?.imageGeneration)&&!generateVideo;
-    const userText=prompt||(sharing?'Please analyze what is currently on my screen.':imageAttachment?'Please analyze this image.':'Please review the attached text file.');
-    const history=savedMessages();
-    if(!history.length) updateThreadTitle([{role:'user',content:userText}]);
-    history.push({role:'user',content:userText,...(textAttachment?{textAttachment}: {})});
+    const selectedModelId = model.value || DEFAULT_MODEL;
+    const requestedModel = selectedModelId || DEFAULT_MODEL;
+    const modelInfo = modelCatalog.find((item) => item.id === requestedModel);
+    if (modelToolOnly(modelInfo)) {
+      window.open("https://openrouter.ai/" + encodeURI(requestedModel), "_blank", "noopener");
+      return;
+    }
+    const generateVideo = Boolean(modelInfo?.outputModalities?.includes("video"));
+    const nativeImage =
+      (ownerMediaAccess || modelInfo?.text === false) && modelInfo?.imageGeneration;
+    const dedicatedMedia = generateVideo || nativeImage;
+    if (dedicatedMedia && customKey) {
+      addMessage(
+        "assistant",
+        "Use N7X shared for dedicated image and video generation, or open the model on OpenRouter.",
+        { error: true, modelId: requestedModel },
+      );
+      return;
+    }
+    const generateImage = Boolean(modelInfo?.imageGeneration) && !generateVideo;
+    const userText =
+      prompt ||
+      (sharing
+        ? "Please analyze what is currently on my screen."
+        : imageAttachment
+          ? "Please analyze this image."
+          : "Please review the attached text file.");
+    const history = savedMessages();
+    if (!history.length) updateThreadTitle([{ role: "user", content: userText }]);
+    history.push({
+      role: "user",
+      content: userText,
+      ...(textAttachment ? { textAttachment } : {}),
+    });
     saveMessages(history);
-    addMessage('user',userText,{attachment:imageAttachment||textAttachment});
-    input.value='';
+    addMessage("user", userText, { attachment: imageAttachment || textAttachment });
+    input.value = "";
     autoGrow();
-    const pending=addMessage('assistant','',{thinking:true,modelId:requestedModel,modelName:modelLabel(requestedModel)});
-    activeController=new AbortController();
+    const pending = addMessage("assistant", "", {
+      thinking: true,
+      modelId: requestedModel,
+      modelName: modelLabel(requestedModel),
+    });
+    activeController = new AbortController();
     setBusy(true);
-    let answer='',finishReason=null;
-    const timingStart=performance.now();let firstTextMs=null,reportedTokens=0;
-    const getTiming=()=>({elapsedMs:performance.now()-timingStart,firstTextMs,tokens:reportedTokens||Math.ceil(answer.length/4),estimated:!reportedTokens});
-    const timingTimer=setInterval(()=>showTiming(pending,getTiming(),true),500);
-    showTiming(pending,getTiming(),true);
-    let generatedImageId=null,mediaJobId=null;
-    let requestSucceeded=false;
-    let renderFrame=0;
-    const renderAnswer=()=>{
-      renderFrame=0;
-      setMessageContent(pending,answer);
+    let answer = "",
+      finishReason = null;
+    const timingStart = performance.now();
+    let firstTextMs = null,
+      reportedTokens = 0;
+    const getTiming = () => ({
+      elapsedMs: performance.now() - timingStart,
+      firstTextMs,
+      tokens: reportedTokens || Math.ceil(answer.length / 4),
+      estimated: !reportedTokens,
+    });
+    const timingTimer = setInterval(() => showTiming(pending, getTiming(), true), 500);
+    showTiming(pending, getTiming(), true);
+    let generatedImageId = null,
+      mediaJobId = null;
+    let requestSucceeded = false;
+    let renderFrame = 0;
+    const renderAnswer = () => {
+      renderFrame = 0;
+      setMessageContent(pending, answer);
       scrollToBottom();
     };
-    try{
-      const preparedImage=imageAttachment?await prepareImageForModel(imageAttachment):null;
-      const imageContext=preparedImage?`Original image dimensions: ${preparedImage.width}x${preparedImage.height}px.`:'';
-      if(preparedImage){
-        if(sharing) screenStatus.textContent=`N7X is reading this screen frame for ${modelLabel(requestedModel)}…`;
+    try {
+      const preparedImage = imageAttachment ? await prepareImageForModel(imageAttachment) : null;
+      const imageContext = preparedImage
+        ? `Original image dimensions: ${preparedImage.width}x${preparedImage.height}px.`
+        : "";
+      if (preparedImage) {
+        if (sharing)
+          screenStatus.textContent = `N7X is reading this screen frame for ${modelLabel(requestedModel)}…`;
         else setAttachmentStatus(`N7X is reading this image for ${modelLabel(requestedModel)}…`);
       }
       let response;
-      if(customKey){
-        const kind=customKind();
-        if((preparedImage||generateImage)&&kind==='nyx')throw new Error("N7X API keys currently support text only. Use N7X shared or an OpenRouter key for images.");
-        const messages=history.slice(-MODEL_CONTEXT_MESSAGES).map(item=>({role:item.role,content:item.content+(item.textAttachment?'\n\n'+item.textAttachment.content:'')}));
-        if(preparedImage)messages[messages.length-1].content=[{type:'text',text:messages[messages.length-1].content},{type:'image_url',image_url:{url:preparedImage.dataUrl}}];
-        response=await fetch(kind==='nyx'?'/api/v1/ai':'https://openrouter.ai/api/v1/chat/completions',{method:'POST',signal:activeController.signal,headers:{'Content-Type':'application/json',Authorization:'Bearer '+customKey},body:JSON.stringify({model:requestedModel,messages,max_tokens:generateImage?2200:512,stream:!generateImage&&kind!=='nyx',...(generateImage?{modalities:['text','image']}:{})})});
-        if(kind==='nyx'&&response.ok){const result=await response.json();const content=result.choices?.[0]?.message?.content||'';response=new Response('data: '+JSON.stringify({model:result.model,choices:[{delta:{content},finish_reason:result.choices?.[0]?.finish_reason}]})+'\n\ndata: [DONE]\n\n',{headers:{'Content-Type':'text/event-stream'}});}
-      }else{
-      response=await fetch(dedicatedMedia?(tutsiModelPicker()?'/api/tutsi-ai/media':'/api/nyx-ai/media'):tutsiModelPicker()?'/api/tutsi-ai':'/api/nyx-ai',{
-        method:'POST',
-        signal:activeController.signal,
-        headers:await aiHeaders({'content-type':'application/json'}),
-        body:JSON.stringify({historyNoticeVersion:1,temporaryChat:temporaryMode,model:requestedModel,message:userText,messages:history.slice(-MODEL_CONTEXT_MESSAGES),textAttachment,imageContext,image:preparedImage,responseDepth:responseDepth(),generateImage,stream:!generateImage})
-      });
-      }
-      if(!response.ok){
-        showSendCooldown(response);
-        const data=await response.json().catch(()=>({}));
-        throw new Error(data?.error?.message||data?.error||(generateImage&&[502,504].includes(response.status)?'The image provider failed or timed out before finishing. Try again or choose another image model.':`N7X AI failed (${response.status})`));
-      }
-      if(dedicatedMedia){
-        const data=await response.json();
-        if(!/^[a-f0-9-]{36}$/.test(data.jobId||''))throw new Error('The video request did not return a job.');
-        mediaJobId=data.jobId;
-        answer=data.kind==='image'?'Rendering your image. You can keep chatting while it finishes.':`Rendering a ${data.duration}-second video${data.resolution?' at '+data.resolution:''}. It may take a few minutes.`;
-        void showMediaJob(pending,mediaJobId);
-      }else if(generateImage){
-        const imageReader=response.body.getReader(),imageDecoder=new TextDecoder();let raw='',imageBytes=0;
-        for(;;){const part=await imageReader.read();if(part.done)break;imageBytes+=part.value.byteLength;if(imageBytes>8*1024*1024){await imageReader.cancel();throw new Error('The generated image response is too large.');}raw+=imageDecoder.decode(part.value,{stream:true});}
-        raw+=imageDecoder.decode();
-        const data=JSON.parse(raw);
-        if(typeof data.model==='string'&&data.model.trim())setReplyModel(pending,data.model);
-        if(data.error)throw new Error(data.error.message||data.error);
-        const reply=data.choices?.[0]?.message;
-        answer=typeof data.text==='string'?data.text:typeof reply?.content==='string'?reply.content:'';
-        const images=data.images||reply?.images||(Array.isArray(reply?.content)?reply.content.filter(part=>part.type==='image_url'):[]);
-        if(images.length>1)throw new Error('Ask for one image at a time.');
-        if(images.length){
-          generatedImageId=await saveGeneratedImage(images[0].dataUrl||images[0].image_url?.url);
-          if(!answer.trim())answer='Generated image.';
-          await showGeneratedImage(pending,generatedImageId);
+      if (customKey) {
+        const kind = customKind();
+        if ((preparedImage || generateImage) && kind === "nyx")
+          throw new Error(
+            "N7X API keys currently support text only. Use N7X shared or an OpenRouter key for images.",
+          );
+        const messages = history
+          .slice(-MODEL_CONTEXT_MESSAGES)
+          .map((item) => ({
+            role: item.role,
+            content:
+              item.content + (item.textAttachment ? "\n\n" + item.textAttachment.content : ""),
+          }));
+        if (preparedImage)
+          messages[messages.length - 1].content = [
+            { type: "text", text: messages[messages.length - 1].content },
+            { type: "image_url", image_url: { url: preparedImage.dataUrl } },
+          ];
+        response = await fetch(
+          kind === "nyx" ? "/api/v1/ai" : "https://openrouter.ai/api/v1/chat/completions",
+          {
+            method: "POST",
+            signal: activeController.signal,
+            headers: { "Content-Type": "application/json", Authorization: "Bearer " + customKey },
+            body: JSON.stringify({
+              model: requestedModel,
+              messages,
+              max_tokens: generateImage ? 2200 : 512,
+              stream: !generateImage && kind !== "nyx",
+              ...(generateImage ? { modalities: ["text", "image"] } : {}),
+            }),
+          },
+        );
+        if (kind === "nyx" && response.ok) {
+          const result = await response.json();
+          const content = result.choices?.[0]?.message?.content || "";
+          response = new Response(
+            "data: " +
+              JSON.stringify({
+                model: result.model,
+                choices: [
+                  { delta: { content }, finish_reason: result.choices?.[0]?.finish_reason },
+                ],
+              }) +
+              "\n\ndata: [DONE]\n\n",
+            { headers: { "Content-Type": "text/event-stream" } },
+          );
         }
-      }else if(!response.headers.get('content-type')?.includes('text/event-stream')){
-        const data=await response.json();
-        if(data.error)throw new Error(data.error.message||data.error);
-        answer=data.text||data.choices?.[0]?.message?.content||'';
-        finishReason=data.finishReason||data.choices?.[0]?.finish_reason||null;
-        if(data.model)setReplyModel(pending,data.model);
-        if(data.metadata)pending._nyxMetadata=normalizeMetadata(data.metadata);
-      }else{
-      if(!response.body) throw new Error('The selected model did not return a stream.');
-      const reader=response.body.getReader();
-      const decoder=new TextDecoder();
-      let buffer='';
-      let streamError='';
-      const consumeLine=line=>{
-        if(!line.startsWith('data:')) return;
-        const raw=line.slice(5).trim();
-        if(!raw||raw==='[DONE]') return;
-        try{
-          const data=JSON.parse(raw);
-          if(typeof data.model==='string'&&data.model.trim())setReplyModel(pending,data.model);
-          if(data.error){streamError=String(data.error.message||data.error);return;}
-          finishReason=data.choices?.[0]?.finish_reason||finishReason;
-          const usageTokens=Number(data.nyx_usage?.completion_tokens??data.usage?.completion_tokens);
-          if(Number.isFinite(usageTokens)&&usageTokens>0)reportedTokens=usageTokens;
-          if(data.nyx_metadata){
-            const previous=pending._nyxMetadata||{sources:[],summary:''};
-            pending._nyxMetadata=normalizeMetadata({sources:[...previous.sources,...(data.nyx_metadata.sources||[])],summary:previous.summary+(data.nyx_metadata.summary||'')});
-            if(!renderFrame)renderFrame=requestAnimationFrame(renderAnswer);
-          }
-          const token=data?.choices?.[0]?.delta?.content||data?.choices?.[0]?.text||'';
-          if(token){
-            if(firstTextMs===null)firstTextMs=performance.now()-timingStart;
-            answer=data?.nyx_replace===true?String(token):answer+token;
-            if(!renderFrame) renderFrame=requestAnimationFrame(renderAnswer);
-          }
-        }catch{}
-      };
-      for(;;){
-        const part=await reader.read();
-        if(part.done) break;
-        buffer+=decoder.decode(part.value,{stream:true});
-        const lines=buffer.split(/\r?\n/);
-        buffer=lines.pop()||'';
-        lines.forEach(consumeLine);
+      } else {
+        response = await fetch(
+          dedicatedMedia
+            ? tutsiModelPicker()
+              ? "/api/tutsi-ai/media"
+              : "/api/nyx-ai/media"
+            : tutsiModelPicker()
+              ? "/api/tutsi-ai"
+              : "/api/nyx-ai",
+          {
+            method: "POST",
+            signal: activeController.signal,
+            headers: await aiHeaders({ "content-type": "application/json" }),
+            body: JSON.stringify({
+              historyNoticeVersion: 1,
+              temporaryChat: temporaryMode,
+              model: requestedModel,
+              message: userText,
+              messages: history.slice(-MODEL_CONTEXT_MESSAGES),
+              textAttachment,
+              imageContext,
+              image: preparedImage,
+              responseDepth: responseDepth(),
+              generateImage,
+              stream: !generateImage,
+            }),
+          },
+        );
       }
-      buffer+=decoder.decode();
-      buffer.split(/\r?\n/).forEach(consumeLine);
-      if(streamError)throw new Error(streamError);
-      if(renderFrame){cancelAnimationFrame(renderFrame);renderAnswer()}
+      if (!response.ok) {
+        showSendCooldown(response);
+        const data = await response.json().catch(() => ({}));
+        throw new Error(
+          data?.error?.message ||
+            data?.error ||
+            (generateImage && [502, 504].includes(response.status)
+              ? "The image provider failed or timed out before finishing. Try again or choose another image model."
+              : `N7X AI failed (${response.status})`),
+        );
       }
-      if(answer&&firstTextMs===null)firstTextMs=performance.now()-timingStart;
-      const clean=answer.trim();
-      const finalAnswer=responseParts(clean).answer.trim();
-      if(!finalAnswer) throw new Error('This model did not produce a final answer. Try again or choose another available model.');
-      setMessageContent(pending,clean);
-      if(finishReason==='length')showContinuation(pending);
-      history.push({role:'assistant',content:finalAnswer,finishReason,modelId:pending._modelId,modelName:pending._modelName,metadata:pending._nyxMetadata,timing:getTiming(),...(generatedImageId?{imageId:generatedImageId}:{}),...(mediaJobId?{mediaJobId}:{})});
+      if (dedicatedMedia) {
+        const data = await response.json();
+        if (!/^[a-f0-9-]{36}$/.test(data.jobId || ""))
+          throw new Error("The video request did not return a job.");
+        mediaJobId = data.jobId;
+        answer =
+          data.kind === "image"
+            ? "Rendering your image. You can keep chatting while it finishes."
+            : `Rendering a ${data.duration}-second video${data.resolution ? " at " + data.resolution : ""}. It may take a few minutes.`;
+        void showMediaJob(pending, mediaJobId);
+      } else if (generateImage) {
+        const imageReader = response.body.getReader(),
+          imageDecoder = new TextDecoder();
+        let raw = "",
+          imageBytes = 0;
+        for (;;) {
+          const part = await imageReader.read();
+          if (part.done) break;
+          imageBytes += part.value.byteLength;
+          if (imageBytes > 8 * 1024 * 1024) {
+            await imageReader.cancel();
+            throw new Error("The generated image response is too large.");
+          }
+          raw += imageDecoder.decode(part.value, { stream: true });
+        }
+        raw += imageDecoder.decode();
+        const data = JSON.parse(raw);
+        if (typeof data.model === "string" && data.model.trim()) setReplyModel(pending, data.model);
+        if (data.error) throw new Error(data.error.message || data.error);
+        const reply = data.choices?.[0]?.message;
+        answer =
+          typeof data.text === "string"
+            ? data.text
+            : typeof reply?.content === "string"
+              ? reply.content
+              : "";
+        const images =
+          data.images ||
+          reply?.images ||
+          (Array.isArray(reply?.content)
+            ? reply.content.filter((part) => part.type === "image_url")
+            : []);
+        if (images.length > 1) throw new Error("Ask for one image at a time.");
+        if (images.length) {
+          generatedImageId = await saveGeneratedImage(
+            images[0].dataUrl || images[0].image_url?.url,
+          );
+          if (!answer.trim()) answer = "Generated image.";
+          await showGeneratedImage(pending, generatedImageId);
+        }
+      } else if (!response.headers.get("content-type")?.includes("text/event-stream")) {
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message || data.error);
+        answer = data.text || data.choices?.[0]?.message?.content || "";
+        finishReason = data.finishReason || data.choices?.[0]?.finish_reason || null;
+        if (data.model) setReplyModel(pending, data.model);
+        if (data.metadata) pending._nyxMetadata = normalizeMetadata(data.metadata);
+      } else {
+        if (!response.body) throw new Error("The selected model did not return a stream.");
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let streamError = "";
+        const consumeLine = (line) => {
+          if (!line.startsWith("data:")) return;
+          const raw = line.slice(5).trim();
+          if (!raw || raw === "[DONE]") return;
+          try {
+            const data = JSON.parse(raw);
+            if (typeof data.model === "string" && data.model.trim())
+              setReplyModel(pending, data.model);
+            if (data.error) {
+              streamError = String(data.error.message || data.error);
+              return;
+            }
+            finishReason = data.choices?.[0]?.finish_reason || finishReason;
+            const usageTokens = Number(
+              data.nyx_usage?.completion_tokens ?? data.usage?.completion_tokens,
+            );
+            if (Number.isFinite(usageTokens) && usageTokens > 0) reportedTokens = usageTokens;
+            if (data.nyx_metadata) {
+              const previous = pending._nyxMetadata || { sources: [], summary: "" };
+              pending._nyxMetadata = normalizeMetadata({
+                sources: [...previous.sources, ...(data.nyx_metadata.sources || [])],
+                summary: previous.summary + (data.nyx_metadata.summary || ""),
+              });
+              if (!renderFrame) renderFrame = requestAnimationFrame(renderAnswer);
+            }
+            const token = data?.choices?.[0]?.delta?.content || data?.choices?.[0]?.text || "";
+            if (token) {
+              if (firstTextMs === null) firstTextMs = performance.now() - timingStart;
+              answer = data?.nyx_replace === true ? String(token) : answer + token;
+              if (!renderFrame) renderFrame = requestAnimationFrame(renderAnswer);
+            }
+          } catch {}
+        };
+        for (;;) {
+          const part = await reader.read();
+          if (part.done) break;
+          buffer += decoder.decode(part.value, { stream: true });
+          const lines = buffer.split(/\r?\n/);
+          buffer = lines.pop() || "";
+          lines.forEach(consumeLine);
+        }
+        buffer += decoder.decode();
+        buffer.split(/\r?\n/).forEach(consumeLine);
+        if (streamError) throw new Error(streamError);
+        if (renderFrame) {
+          cancelAnimationFrame(renderFrame);
+          renderAnswer();
+        }
+      }
+      if (answer && firstTextMs === null) firstTextMs = performance.now() - timingStart;
+      const clean = answer.trim();
+      const finalAnswer = responseParts(clean).answer.trim();
+      if (!finalAnswer)
+        throw new Error(
+          "This model did not produce a final answer. Try again or choose another available model.",
+        );
+      setMessageContent(pending, clean);
+      if (finishReason === "length") showContinuation(pending);
+      history.push({
+        role: "assistant",
+        content: finalAnswer,
+        finishReason,
+        modelId: pending._modelId,
+        modelName: pending._modelName,
+        metadata: pending._nyxMetadata,
+        timing: getTiming(),
+        ...(generatedImageId ? { imageId: generatedImageId } : {}),
+        ...(mediaJobId ? { mediaJobId } : {}),
+      });
       saveMessages(history);
-      recordUsage(userText,finalAnswer);
-      requestSucceeded=true;
-    }catch(error){
-      if(error?.name==='AbortError') return;
-      setMessageContent(pending,error?.message||"N7X AI could not complete that request.",{error:true});
-      if(!customKey)void loadModels();
-    }finally{
-      clearInterval(timingTimer);showTiming(pending,getTiming());
-      if(renderFrame)cancelAnimationFrame(renderFrame);
-      activeController=null;
+      recordUsage(userText, finalAnswer);
+      requestSucceeded = true;
+    } catch (error) {
+      if (error?.name === "AbortError") return;
+      setMessageContent(pending, error?.message || "N7X AI could not complete that request.", {
+        error: true,
+      });
+      if (!customKey) void loadModels();
+    } finally {
+      clearInterval(timingTimer);
+      showTiming(pending, getTiming());
+      if (renderFrame) cancelAnimationFrame(renderFrame);
+      activeController = null;
       setBusy(false);
-      if(requestSucceeded)clearAttachment();
-      if(screenStream) screenStatus.textContent='A fresh frame is attached only when you send.';
+      if (requestSucceeded) clearAttachment();
+      if (screenStream) screenStatus.textContent = "A fresh frame is attached only when you send.";
       input.focus();
       scrollToBottom();
       void renderUsage();
@@ -1699,217 +2804,277 @@
   }
 
   applyWorkspaceTheme();
-  addEventListener('message',event=>{
-    if(event.origin!==location.origin) return;
-    if(event.source===parent&&event.data?.type==='nyx:theme-sync') applyWorkspaceTheme(event.data.theme);
-    if(event.source===parent&&event.data?.type==='nyx:ai-profile'){updateProfile(event.data.profile||{});void renderUsage();}
+  addEventListener("message", (event) => {
+    if (event.origin !== location.origin) return;
+    if (event.source === parent && event.data?.type === "nyx:theme-sync")
+      applyWorkspaceTheme(event.data.theme);
+    if (event.source === parent && event.data?.type === "nyx:ai-profile") {
+      updateProfile(event.data.profile || {});
+      void renderUsage();
+    }
   });
-  addEventListener('focus',()=>{requestProfile();void renderUsage();});
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)void renderUsage();});
-  model.addEventListener('change',()=>void renderUsage());
-  addEventListener('storage',event=>{
-    if(['nyx.theme','nyx.customThemeColor'].includes(event.key)) applyWorkspaceTheme();
-    if(event.key===THREADS_KEY){
-      threads=storedThreads();
-      if(activeThreadId&&!threads.some(thread=>thread.id===activeThreadId)) activeThreadId='';
+  addEventListener("focus", () => {
+    requestProfile();
+    void renderUsage();
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) void renderUsage();
+  });
+  model.addEventListener("change", () => void renderUsage());
+  addEventListener("storage", (event) => {
+    if (["nyx.theme", "nyx.customThemeColor"].includes(event.key)) applyWorkspaceTheme();
+    if (event.key === THREADS_KEY) {
+      threads = storedThreads();
+      if (activeThreadId && !threads.some((thread) => thread.id === activeThreadId))
+        activeThreadId = "";
       renderThreadList();
       render();
     }
-    if(event.key==='nyx.userName') requestProfile();
+    if (event.key === "nyx.userName") requestProfile();
   });
-  feed.addEventListener('scroll',()=>{
-    followStream=feed.scrollHeight-feed.scrollTop-feed.clientHeight<100;
-  },{passive:true});
-  feed.addEventListener('click',async event=>{
-    const starter=event.target.closest('[data-prompt]');
-    if(starter){
-      input.value=starter.dataset.prompt||'';
+  feed.addEventListener(
+    "scroll",
+    () => {
+      followStream = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 100;
+    },
+    { passive: true },
+  );
+  feed.addEventListener("click", async (event) => {
+    const starter = event.target.closest("[data-prompt]");
+    if (starter) {
+      input.value = starter.dataset.prompt || "";
       autoGrow();
       input.focus();
       form.requestSubmit();
       return;
     }
-    const textDownload=event.target.closest('[data-download-text-attachment]');
-    if(textDownload){
+    const textDownload = event.target.closest("[data-download-text-attachment]");
+    if (textDownload) {
       downloadTextAttachment(textDownload._nyxTextAttachment);
       return;
     }
-    const copyCode=event.target.closest('[data-copy-code]');
-    if(copyCode){
-      await copyText(copyCode.closest('.ai-code-block')?.querySelector('pre code')?.textContent||'');
+    const copyCode = event.target.closest("[data-copy-code]");
+    if (copyCode) {
+      await copyText(
+        copyCode.closest(".ai-code-block")?.querySelector("pre code")?.textContent || "",
+      );
       showCopied(copyCode);
       return;
     }
-    const copyMessage=event.target.closest('[data-copy-message]');
-    if(copyMessage){
-      const message=copyMessage.closest('.ai-message');
-      await copyText(message?._nyxMessageText||'');
+    const copyMessage = event.target.closest("[data-copy-message]");
+    if (copyMessage) {
+      const message = copyMessage.closest(".ai-message");
+      await copyText(message?._nyxMessageText || "");
       showCopied(copyMessage);
     }
   });
-  form.addEventListener('submit',event=>{event.preventDefault();void submitPrompt()});
-  attachImage.addEventListener('click',()=>imageInput.click());
-  shareScreen.addEventListener('click',()=>{void startScreenSharing()});
-  stopScreenShare.addEventListener('click',()=>{
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    void submitPrompt();
+  });
+  attachImage.addEventListener("click", () => imageInput.click());
+  shareScreen.addEventListener("click", () => {
+    void startScreenSharing();
+  });
+  stopScreenShare.addEventListener("click", () => {
     stopScreenSharing();
     input.focus();
   });
-  imageInput.addEventListener('change',()=>{void readImageFile(imageInput.files?.[0])});
-  removeAttachment.addEventListener('click',()=>{
+  imageInput.addEventListener("change", () => {
+    void readImageFile(imageInput.files?.[0]);
+  });
+  removeAttachment.addEventListener("click", () => {
     clearAttachment();
     input.focus();
   });
-  input.addEventListener('paste',event=>{
-    const image=[...(event.clipboardData?.files||[])].find(file=>String(file.type||'').startsWith('image/'));
-    if(image){
+  input.addEventListener("paste", (event) => {
+    const image = [...(event.clipboardData?.files || [])].find((file) =>
+      String(file.type || "").startsWith("image/"),
+    );
+    if (image) {
       void readImageFile(image);
       return;
     }
-    const pastedText=String(event.clipboardData?.getData('text/plain')||'');
-    const selectedLength=Math.max(0,(input.selectionEnd||0)-(input.selectionStart||0));
-    const nextLength=input.value.length-selectedLength+pastedText.length;
-    if(pastedText&&nextLength>Number(input.maxLength||4000)){
+    const pastedText = String(event.clipboardData?.getData("text/plain") || "");
+    const selectedLength = Math.max(0, (input.selectionEnd || 0) - (input.selectionStart || 0));
+    const nextLength = input.value.length - selectedLength + pastedText.length;
+    if (pastedText && nextLength > Number(input.maxLength || 4000)) {
       event.preventDefault();
       setTextAttachment(pastedText);
       autoGrow();
     }
   });
-  form.addEventListener('dragenter',event=>{
-    if([...(event.dataTransfer?.items||[])].some(item=>item.kind==='file')) form.classList.add('is-dragging');
+  form.addEventListener("dragenter", (event) => {
+    if ([...(event.dataTransfer?.items || [])].some((item) => item.kind === "file"))
+      form.classList.add("is-dragging");
   });
-  form.addEventListener('dragover',event=>{
-    if([...(event.dataTransfer?.items||[])].some(item=>item.kind==='file')) event.preventDefault();
+  form.addEventListener("dragover", (event) => {
+    if ([...(event.dataTransfer?.items || [])].some((item) => item.kind === "file"))
+      event.preventDefault();
   });
-  form.addEventListener('dragleave',event=>{
-    if(!form.contains(event.relatedTarget)) form.classList.remove('is-dragging');
+  form.addEventListener("dragleave", (event) => {
+    if (!form.contains(event.relatedTarget)) form.classList.remove("is-dragging");
   });
-  form.addEventListener('drop',event=>{
-    form.classList.remove('is-dragging');
-    const file=[...(event.dataTransfer?.files||[])][0];
-    if(!file) return;
+  form.addEventListener("drop", (event) => {
+    form.classList.remove("is-dragging");
+    const file = [...(event.dataTransfer?.files || [])][0];
+    if (!file) return;
     event.preventDefault();
     void readImageFile(file);
   });
-  input.addEventListener('input',autoGrow);
-  input.addEventListener('keydown',event=>{
-    if(event.key==='Enter'&&!event.shiftKey&&!event.ctrlKey&&!event.altKey&&!event.metaKey&&!event.isComposing){
+  input.addEventListener("input", autoGrow);
+  input.addEventListener("keydown", (event) => {
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey &&
+      !event.ctrlKey &&
+      !event.altKey &&
+      !event.metaKey &&
+      !event.isComposing
+    ) {
       event.preventDefault();
       form.requestSubmit();
     }
   });
-  modelTrigger.addEventListener('click',()=>{
-    if(modelMenu.hidden) openModelMenu();
+  modelTrigger.addEventListener("click", () => {
+    if (modelMenu.hidden) openModelMenu();
     else closeModelMenu();
   });
-  modelTrigger.addEventListener('keydown',event=>{
-    if(event.key==='ArrowDown'||event.key==='ArrowUp'){
+  modelTrigger.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
-      openModelMenu(event.key==='ArrowDown'?1:-1);
-    }else if(event.key==='Escape'){
+      openModelMenu(event.key === "ArrowDown" ? 1 : -1);
+    } else if (event.key === "Escape") {
       event.preventDefault();
       closeModelMenu();
     }
   });
-  document.getElementById('modelMenuClose').addEventListener('click',()=>closeModelMenu({restoreFocus:true}));
-  modelMenu.addEventListener('cancel',event=>{event.preventDefault();closeModelMenu({restoreFocus:true});});
-  modelSearch.addEventListener('input',()=>{
-    modelCompanyFilter='';
-    modelMenu.querySelectorAll('[data-model-company]').forEach(item=>item.setAttribute('aria-pressed',String(item.dataset.modelCompany==='')));
+  document
+    .getElementById("modelMenuClose")
+    .addEventListener("click", () => closeModelMenu({ restoreFocus: true }));
+  modelMenu.addEventListener("cancel", (event) => {
+    event.preventDefault();
+    closeModelMenu({ restoreFocus: true });
+  });
+  modelSearch.addEventListener("input", () => {
+    modelCompanyFilter = "";
+    modelMenu
+      .querySelectorAll("[data-model-company]")
+      .forEach((item) =>
+        item.setAttribute("aria-pressed", String(item.dataset.modelCompany === "")),
+      );
     filterModelOptions();
   });
-  modelMenu.addEventListener('click',event=>{
-    const button=event.target.closest('[data-model-company]');
-    if(!button)return;
-    modelCompanyFilter=button.dataset.modelCompany;
-    modelSearch.value='';
-    modelMenu.querySelectorAll('[data-model-company]').forEach(item=>item.setAttribute('aria-pressed',String(item.dataset.modelCompany===modelCompanyFilter)));
-    syncCompanyMotion();filterModelOptions();
-    const rail=button.closest('.ai-company-rail');
-    if(rail)rail._continueOnHover=true;
-    modelSearch.focus({preventScroll:true});
-
+  modelMenu.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-model-company]");
+    if (!button) return;
+    modelCompanyFilter = button.dataset.modelCompany;
+    modelSearch.value = "";
+    modelMenu
+      .querySelectorAll("[data-model-company]")
+      .forEach((item) =>
+        item.setAttribute("aria-pressed", String(item.dataset.modelCompany === modelCompanyFilter)),
+      );
+    syncCompanyMotion();
+    filterModelOptions();
+    const rail = button.closest(".ai-company-rail");
+    if (rail) rail._continueOnHover = true;
+    modelSearch.focus({ preventScroll: true });
   });
-  modelMenu.addEventListener('click',event=>{
-    const option=event.target.closest('[data-model-id]');
-    if(option) selectModel(option.dataset.modelId||'');
+  modelMenu.addEventListener("click", (event) => {
+    const option = event.target.closest("[data-model-id]");
+    if (option) selectModel(option.dataset.modelId || "");
   });
-  modelMenu.addEventListener('keydown',event=>{
-    const option=event.target.closest('[data-model-id]');
-    if(!option&&event.key!=='ArrowDown'&&event.key!=='Escape')return;
-    const options=modelOptionElements();
-    const index=Math.max(0,options.indexOf(option));
-    let target=-1;
-    if(event.key==='ArrowDown') target=option?Math.min(options.length-1,index+1):0;
-    else if(event.key==='ArrowUp') target=Math.max(0,index-1);
-    else if(event.key==='Home') target=0;
-    else if(event.key==='End') target=options.length-1;
-    else if(event.key==='Enter'||event.key===' '){
+  modelMenu.addEventListener("keydown", (event) => {
+    const option = event.target.closest("[data-model-id]");
+    if (!option && event.key !== "ArrowDown" && event.key !== "Escape") return;
+    const options = modelOptionElements();
+    const index = Math.max(0, options.indexOf(option));
+    let target = -1;
+    if (event.key === "ArrowDown") target = option ? Math.min(options.length - 1, index + 1) : 0;
+    else if (event.key === "ArrowUp") target = Math.max(0, index - 1);
+    else if (event.key === "Home") target = 0;
+    else if (event.key === "End") target = options.length - 1;
+    else if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      if(option) selectModel(option.dataset.modelId||'');
+      if (option) selectModel(option.dataset.modelId || "");
       return;
-    }else if(event.key==='Escape'){
+    } else if (event.key === "Escape") {
       event.preventDefault();
       event.stopPropagation();
-      closeModelMenu({restoreFocus:true});
+      closeModelMenu({ restoreFocus: true });
       return;
     }
-    if(target>=0){
+    if (target >= 0) {
       event.preventDefault();
       options[target]?.focus();
-      options[target]?.scrollIntoView({block:'nearest'});
+      options[target]?.scrollIntoView({ block: "nearest" });
     }
   });
-  document.addEventListener('pointerdown',event=>{
-    if(!modelMenu.hidden&&event.target===modelMenu){const rect=modelMenu.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)closeModelMenu({restoreFocus:true});}
+  document.addEventListener("pointerdown", (event) => {
+    if (!modelMenu.hidden && event.target === modelMenu) {
+      const rect = modelMenu.getBoundingClientRect();
+      if (
+        event.clientX < rect.left ||
+        event.clientX > rect.right ||
+        event.clientY < rect.top ||
+        event.clientY > rect.bottom
+      )
+        closeModelMenu({ restoreFocus: true });
+    }
   });
-  model.addEventListener('change',()=>{
-    localStorage.setItem(MODEL_KEY,model.value||DEFAULT_MODEL);
-    model.title=modelLabel(model.value);
-    const thread=activeThread();
-    if(thread){
-      thread.model=model.value||DEFAULT_MODEL;
-      thread.updatedAt=Date.now();
+  model.addEventListener("change", () => {
+    localStorage.setItem(MODEL_KEY, model.value || DEFAULT_MODEL);
+    model.title = modelLabel(model.value);
+    const thread = activeThread();
+    if (thread) {
+      thread.model = model.value || DEFAULT_MODEL;
+      thread.updatedAt = Date.now();
       persistThreads();
       renderThreadList();
     }
     syncModelControl();
   });
-  clear.addEventListener('click',clearChat);
-  newChat.addEventListener('click',()=>startNewChat());
-  temporaryChat.addEventListener('click',()=>startNewChat({temporary:true}));
-  threadList.addEventListener('click',event=>{
-    const button=event.target.closest('[data-thread-id]');
-    if(button) selectThread(button.dataset.threadId||'');
+  clear.addEventListener("click", clearChat);
+  newChat.addEventListener("click", () => startNewChat());
+  temporaryChat.addEventListener("click", () => startNewChat({ temporary: true }));
+  threadList.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-thread-id]");
+    if (button) selectThread(button.dataset.threadId || "");
   });
-  threadSearch.addEventListener('input',renderThreadList);
-  depthButtons.forEach(button=>button.addEventListener('click',()=>{
-    localStorage.setItem(RESPONSE_DEPTH_KEY,button.dataset.responseDepth||'normal');
-    syncResponseDepth();
-  }));
-  sidebarToggle.addEventListener('click',()=>setSidebarOpen(!app.classList.contains('is-sidebar-open')));
-  sidebarClose.addEventListener('click',()=>setSidebarOpen(false));
-  sidebarScrim.addEventListener('click',()=>setSidebarOpen(false));
-  profileButton.addEventListener('click',()=>{
+  threadSearch.addEventListener("input", renderThreadList);
+  depthButtons.forEach((button) =>
+    button.addEventListener("click", () => {
+      localStorage.setItem(RESPONSE_DEPTH_KEY, button.dataset.responseDepth || "normal");
+      syncResponseDepth();
+    }),
+  );
+  sidebarToggle.addEventListener("click", () =>
+    setSidebarOpen(!app.classList.contains("is-sidebar-open")),
+  );
+  sidebarClose.addEventListener("click", () => setSidebarOpen(false));
+  sidebarScrim.addEventListener("click", () => setSidebarOpen(false));
+  profileButton.addEventListener("click", () => {
     requestProfile();
-    if(parent!==window) parent.postMessage({type:'nyx:ai-open-profile'},location.origin);
-    else location.href='/';
+    if (parent !== window) parent.postMessage({ type: "nyx:ai-open-profile" }, location.origin);
+    else location.href = "/";
   });
-  profileAvatar.addEventListener('error',()=>{
-    profileAvatar.hidden=true;
-    profileInitial.hidden=false;
+  profileAvatar.addEventListener("error", () => {
+    profileAvatar.hidden = true;
+    profileInitial.hidden = false;
   });
-  document.addEventListener('keydown',event=>{
-    if(event.key==='Escape'&&app.classList.contains('is-sidebar-open')){
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && app.classList.contains("is-sidebar-open")) {
       event.preventDefault();
       setSidebarOpen(false);
       sidebarToggle.focus();
     }
   });
-  addEventListener('pagehide',stopScreenSharing);
+  addEventListener("pagehide", stopScreenSharing);
 
   setSidebarOpen(true);
   initializeThreads();
-  renderModelOptions(modelCatalog,model.value||DEFAULT_MODEL);
+  renderModelOptions(modelCatalog, model.value || DEFAULT_MODEL);
   renderThreadList();
   render();
   autoGrow();
@@ -1917,6 +3082,9 @@
   renderUsage();
   requestProfile();
 
-  void (async()=>{await loadProviders();await loadModels()})();
+  void (async () => {
+    await loadProviders();
+    await loadModels();
+  })();
   input.focus();
 })();

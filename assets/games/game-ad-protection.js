@@ -1,49 +1,50 @@
 (() => {
-  'use strict';
+  "use strict";
 
   if (globalThis.__nyxGameAdProtection) return;
 
   const blockedHostSuffixes = Object.freeze([
-    'adnxs.com',
-    'ads.emulatorjs.org',
-    'adsrvr.org',
-    'adsterra.com',
-    'adtrafficquality.google',
-    'amazon-adsystem.com',
-    'cdn.r9x.in',
-    'clickadu.com',
-    'criteo.com',
-    'doubleclick.net',
-    'exoclick.com',
-    'gamemonetize.com',
-    'googleadservices.com',
-    'googlesyndication.com',
-    'hilltopads.net',
-    'html5.api.gamedistribution.com',
-    'imasdk.googleapis.com',
-    'mgid.com',
-    'monetag.com',
-    'onclickads.net',
-    'openx.net',
-    'outbrain.com',
-    'pagead2.googlesyndication.com',
-    'playwire.com',
-    'popads.net',
-    'popcash.net',
-    'propellerads.com',
-    'pubmatic.com',
-    'rubiconproject.com',
-    'sdk.poki.com',
-    'taboola.com',
-    'trafficjunky.com',
-    'venatusmedia.com'
+    "adnxs.com",
+    "ads.emulatorjs.org",
+    "adsrvr.org",
+    "adsterra.com",
+    "adtrafficquality.google",
+    "amazon-adsystem.com",
+    "cdn.r9x.in",
+    "clickadu.com",
+    "criteo.com",
+    "doubleclick.net",
+    "exoclick.com",
+    "gamemonetize.com",
+    "googleadservices.com",
+    "googlesyndication.com",
+    "hilltopads.net",
+    "html5.api.gamedistribution.com",
+    "imasdk.googleapis.com",
+    "mgid.com",
+    "monetag.com",
+    "onclickads.net",
+    "openx.net",
+    "outbrain.com",
+    "pagead2.googlesyndication.com",
+    "playwire.com",
+    "popads.net",
+    "popcash.net",
+    "propellerads.com",
+    "pubmatic.com",
+    "rubiconproject.com",
+    "sdk.poki.com",
+    "taboola.com",
+    "trafficjunky.com",
+    "venatusmedia.com",
   ]);
-  const blockedPathPattern = /(?:^|\/)(?:ads?|ad[-_.]?(?:loader|manager|script)|jump[_-]gamemonetize|poki-(?:master-loader|sdk))\.(?:js|mjs)(?:$|\/)/i;
+  const blockedPathPattern =
+    /(?:^|\/)(?:ads?|ad[-_.]?(?:loader|manager|script)|jump[_-]gamemonetize|poki-(?:master-loader|sdk))\.(?:js|mjs)(?:$|\/)/i;
   const blockedCampaignPattern = /\/ad-campaigns\//i;
   const adElementSelector = [
-    '.adsbygoogle',
-    '[data-ad-client]',
-    '[data-ad-slot]',
+    ".adsbygoogle",
+    "[data-ad-client]",
+    "[data-ad-slot]",
     '[id^="google_ads"]',
     '[id*="google_ads"]',
     '[id^="ad-container"]',
@@ -52,19 +53,21 @@
     '[class~="ad-wrapper"]',
     '[class~="ad-overlay"]',
     '[class~="advertisement"]',
-    '[aria-label="Advertisement"]'
-  ].join(',');
+    '[aria-label="Advertisement"]',
+  ].join(",");
   const blockedElements = new WeakSet();
   const stubbedSdkScripts = new WeakSet();
   const completedSdkScripts = new WeakSet();
-  function rememberSdk(node,value) {
-
-
-    if(node?.tagName==='SCRIPT' && /(?:\/poki-sdk(?:-core[^/]*)?\.js|\/sdk\.poki\.com\/)/i.test(String(value)))stubbedSdkScripts.add(node);
+  function rememberSdk(node, value) {
+    if (
+      node?.tagName === "SCRIPT" &&
+      /(?:\/poki-sdk(?:-core[^/]*)?\.js|\/sdk\.poki\.com\/)/i.test(String(value))
+    )
+      stubbedSdkScripts.add(node);
   }
 
   function parsedResource(value) {
-    const raw = String(value || '').trim();
+    const raw = String(value || "").trim();
     if (!raw || /^(?:about|blob|data|javascript):/i.test(raw)) return null;
     try {
       return new URL(raw, document.baseURI || location.href);
@@ -81,25 +84,28 @@
     const url = parsedResource(value);
     if (!url) return false;
     const hostname = url.hostname.toLowerCase();
-    if (blockedHostSuffixes.some(suffix => hostMatches(hostname, suffix))) return true;
-    if (hostname === 'serve.app.playsaurus.com' && blockedCampaignPattern.test(url.pathname)) return true;
+    if (blockedHostSuffixes.some((suffix) => hostMatches(hostname, suffix))) return true;
+    if (hostname === "serve.app.playsaurus.com" && blockedCampaignPattern.test(url.pathname))
+      return true;
     return blockedPathPattern.test(url.pathname);
   }
 
   function resourceValue(node) {
-    return node?.getAttribute?.('src')
-      || node?.getAttribute?.('href')
-      || node?.getAttribute?.('data-src')
-      || node?.getAttribute?.('data')
-      || '';
+    return (
+      node?.getAttribute?.("src") ||
+      node?.getAttribute?.("href") ||
+      node?.getAttribute?.("data-src") ||
+      node?.getAttribute?.("data") ||
+      ""
+    );
   }
 
   function neutralResource(node) {
-    const tag = String(node?.tagName || '').toUpperCase();
-    if (tag === 'IMG') return 'data:image/gif;base64,R0lGODlhAQABAAAAACw=';
-    if (tag === 'SCRIPT') return 'data:text/javascript,';
-    if (tag === 'LINK') return 'data:text/css,';
-    return 'about:blank';
+    const tag = String(node?.tagName || "").toUpperCase();
+    if (tag === "IMG") return "data:image/gif;base64,R0lGODlhAQABAAAAACw=";
+    if (tag === "SCRIPT") return "data:text/javascript,";
+    if (tag === "LINK") return "data:text/css,";
+    return "about:blank";
   }
 
   function markBlocked(node) {
@@ -110,11 +116,13 @@
     } catch {}
     if (!blocked) return false;
     blockedElements.add(node);
-    if(stubbedSdkScripts.has(node)&&!completedSdkScripts.has(node)) {
+    if (stubbedSdkScripts.has(node) && !completedSdkScripts.has(node)) {
       completedSdkScripts.add(node);
-      queueMicrotask(()=>node.dispatchEvent(new Event('load')));
+      queueMicrotask(() => node.dispatchEvent(new Event("load")));
     }
-    try { node.remove(); } catch {}
+    try {
+      node.remove();
+    } catch {}
     return true;
   }
 
@@ -123,7 +131,7 @@
     if (root.nodeType === Node.ELEMENT_NODE && markBlocked(root)) return;
     try {
       root.querySelectorAll?.(adElementSelector)?.forEach(markBlocked);
-      root.querySelectorAll?.('[src],[href],[data-src],[data]')?.forEach(node => {
+      root.querySelectorAll?.("[src],[href],[data-src],[data]")?.forEach((node) => {
         if (isBlockedResource(resourceValue(node))) markBlocked(node);
       });
     } catch {}
@@ -131,12 +139,14 @@
 
   const nativeSetAttribute = Element.prototype.setAttribute;
   Element.prototype.setAttribute = function (name, value) {
-    const key = String(name || '').toLowerCase();
-    if (['src', 'href', 'data-src', 'data'].includes(key) && isBlockedResource(value)) {
-      rememberSdk(this,value);
+    const key = String(name || "").toLowerCase();
+    if (["src", "href", "data-src", "data"].includes(key) && isBlockedResource(value)) {
+      rememberSdk(this, value);
       blockedElements.add(this);
-      if (String(this.tagName || '').toUpperCase() === 'SCRIPT') {
-        try { nativeSetAttribute.call(this, 'type', 'application/x-nyx-blocked'); } catch {}
+      if (String(this.tagName || "").toUpperCase() === "SCRIPT") {
+        try {
+          nativeSetAttribute.call(this, "type", "application/x-nyx-blocked");
+        } catch {}
       }
       return nativeSetAttribute.call(this, key, neutralResource(this));
     }
@@ -150,31 +160,35 @@
       Object.defineProperty(Ctor.prototype, property, {
         configurable: true,
         enumerable: descriptor.enumerable,
-        get() { return descriptor.get.call(this); },
+        get() {
+          return descriptor.get.call(this);
+        },
         set(value) {
           if (isBlockedResource(value)) {
-            rememberSdk(this,value);
+            rememberSdk(this, value);
             blockedElements.add(this);
-            if (String(this.tagName || '').toUpperCase() === 'SCRIPT') {
-              try { nativeSetAttribute.call(this, 'type', 'application/x-nyx-blocked'); } catch {}
+            if (String(this.tagName || "").toUpperCase() === "SCRIPT") {
+              try {
+                nativeSetAttribute.call(this, "type", "application/x-nyx-blocked");
+              } catch {}
             }
             return descriptor.set.call(this, neutralResource(this));
           }
           return descriptor.set.call(this, value);
-        }
+        },
       });
     } catch {}
   }
 
   [
-    [HTMLScriptElement, 'src'],
-    [HTMLIFrameElement, 'src'],
-    [HTMLImageElement, 'src'],
-    [HTMLLinkElement, 'href'],
-    [HTMLSourceElement, 'src'],
-    [HTMLMediaElement, 'src'],
-    [HTMLEmbedElement, 'src'],
-    [HTMLObjectElement, 'data']
+    [HTMLScriptElement, "src"],
+    [HTMLIFrameElement, "src"],
+    [HTMLImageElement, "src"],
+    [HTMLLinkElement, "href"],
+    [HTMLSourceElement, "src"],
+    [HTMLMediaElement, "src"],
+    [HTMLEmbedElement, "src"],
+    [HTMLObjectElement, "data"],
   ].forEach(([Ctor, property]) => patchResourceProperty(Ctor, property));
 
   const nativeAppendChild = Node.prototype.appendChild;
@@ -205,7 +219,8 @@
     if (nativeFetch) {
       globalThis.fetch = (input, init) => {
         const value = input instanceof Request ? input.url : input;
-        if (isBlockedResource(value)) return Promise.resolve(new Response(null, { status: 204, statusText: 'No Content' }));
+        if (isBlockedResource(value))
+          return Promise.resolve(new Response(null, { status: 204, statusText: "No Content" }));
         return nativeFetch(input, init);
       };
     }
@@ -214,7 +229,7 @@
   try {
     const nativeOpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function (method, url, ...rest) {
-      return nativeOpen.call(this, method, isBlockedResource(url) ? 'data:,' : url, ...rest);
+      return nativeOpen.call(this, method, isBlockedResource(url) ? "data:," : url, ...rest);
     };
   } catch {}
 
@@ -228,19 +243,19 @@
   function patchWorker(name) {
     try {
       const NativeWorker = globalThis[name];
-      if (typeof NativeWorker !== 'function') return;
+      if (typeof NativeWorker !== "function") return;
       const ProtectedWorker = function (url, options) {
-        return new NativeWorker(isBlockedResource(url) ? 'data:text/javascript,' : url, options);
+        return new NativeWorker(isBlockedResource(url) ? "data:text/javascript," : url, options);
       };
       ProtectedWorker.prototype = NativeWorker.prototype;
       Object.setPrototypeOf(ProtectedWorker, NativeWorker);
       globalThis[name] = ProtectedWorker;
     } catch {}
   }
-  patchWorker('Worker');
-  patchWorker('SharedWorker');
+  patchWorker("Worker");
+  patchWorker("SharedWorker");
 
-  const resolved = value => Promise.resolve(value);
+  const resolved = (value) => Promise.resolve(value);
   if (!globalThis.PokiSDK) {
     globalThis.PokiSDK = {
       init: () => resolved(),
@@ -256,7 +271,7 @@
       happyTime: () => {},
       setDebug: () => {},
       getURLParam: () => null,
-      getLanguage: () => navigator.language || 'en'
+      getLanguage: () => navigator.language || "en",
     };
   }
   if (!globalThis.gdsdk) {
@@ -264,43 +279,47 @@
       showAd: () => resolved(),
       preloadAd: () => resolved(),
       openConsole: () => {},
-      isAdblockEnabled: true
+      isAdblockEnabled: true,
     };
   }
 
   function notifyGameDistributionReady() {
     try {
       const callback = globalThis.GD_OPTIONS?.onEvent;
-      if (typeof callback === 'function') callback({ name: 'SDK_READY' });
+      if (typeof callback === "function") callback({ name: "SDK_READY" });
     } catch {}
   }
 
   try {
-    const style = document.createElement('style');
-    style.id = 'nyx-game-ad-protection-style';
+    const style = document.createElement("style");
+    style.id = "nyx-game-ad-protection-style";
     style.textContent = `${adElementSelector}{display:none!important;visibility:hidden!important;pointer-events:none!important;width:0!important;height:0!important;min-width:0!important;min-height:0!important}`;
     (document.head || document.documentElement).appendChild(style);
   } catch {}
 
   try {
-    new MutationObserver(records => {
+    new MutationObserver((records) => {
       for (const record of records) {
-        if (record.type === 'childList') record.addedNodes.forEach(clean);
+        if (record.type === "childList") record.addedNodes.forEach(clean);
         else clean(record.target);
       }
     }).observe(document.documentElement, {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['src', 'href', 'data-src', 'data', 'class', 'id']
+      attributeFilter: ["src", "href", "data-src", "data", "class", "id"],
     });
   } catch {}
 
   globalThis.__nyxGameAdProtection = Object.freeze({ isBlockedResource });
   clean(document);
   queueMicrotask(notifyGameDistributionReady);
-  document.addEventListener('DOMContentLoaded', () => {
-    clean(document);
-    notifyGameDistributionReady();
-  }, { once: true });
+  document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+      clean(document);
+      notifyGameDistributionReady();
+    },
+    { once: true },
+  );
 })();

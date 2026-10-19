@@ -1,57 +1,327 @@
-.n7x-user-profile-effect-fx-cosmic-vortex, .n7x-founder-effect-fx-cosmic-vortex { --n7x-profile-art: url("/assets/profile/effects/fx-cosmic-vortex-loop.png"); --n7x-profile-still: url("/assets/profile/effects/fx-cosmic-vortex-still.png"); }
-.n7x-user-profile-effect-fx-nebula-storm, .n7x-founder-effect-fx-nebula-storm { --n7x-profile-art: url("/assets/profile/effects/fx-nebula-storm.png"); --n7x-profile-still: url("/assets/profile/effects/fx-nebula-storm-still.png"); }
-.n7x-user-profile-effect-fx-stellar-burst, .n7x-founder-effect-fx-stellar-burst { --n7x-profile-art: url("/assets/profile/effects/fx-stellar-burst-loop.png"); --n7x-profile-still: url("/assets/profile/effects/fx-stellar-burst-still.png"); }
-.n7x-user-profile-effect-fx-ethereal-flame, .n7x-founder-effect-fx-ethereal-flame { --n7x-profile-art: url("/assets/profile/effects/fx-ethereal-flame.png"); --n7x-profile-still: url("/assets/profile/effects/fx-ethereal-flame-still.png"); }
-.n7x-user-profile-effect-fx-quantum-rift, .n7x-founder-effect-fx-quantum-rift { --n7x-profile-art: url("/assets/profile/effects/fx-quantum-rift-loop.png"); --n7x-profile-still: url("/assets/profile/effects/fx-quantum-rift-still.png"); }
-.n7x-user-profile-effect-fx-astral-cascade, .n7x-founder-effect-fx-astral-cascade { --n7x-profile-art: url("/assets/profile/effects/fx-astral-cascade.png"); --n7x-profile-still: url("/assets/profile/effects/fx-astral-cascade-still.png"); }
-.n7x-user-profile-effect-fx-plasma-wave, .n7x-founder-effect-fx-plasma-wave { --n7x-profile-art: url("/assets/profile/effects/fx-plasma-wave-loop.png"); --n7x-profile-still: url("/assets/profile/effects/fx-plasma-wave-still.png"); }
-.n7x-user-profile-effect-fx-supernova-flash, .n7x-founder-effect-fx-supernova-flash { --n7x-profile-art: url("/assets/profile/effects/fx-supernova-flash.png"); --n7x-profile-still: url("/assets/profile/effects/fx-supernova-flash-still.png"); }
-.n7x-user-profile-effect-fx-void-shards, .n7x-founder-effect-fx-void-shards { --n7x-profile-art: url("/assets/profile/effects/fx-void-shards.png"); --n7x-profile-still: url("/assets/profile/effects/fx-void-shards-still.png"); }
-.n7x-user-profile-effect-fx-prismatic-spark, .n7x-founder-effect-fx-prismatic-spark { --n7x-profile-art: url("/assets/profile/effects/fx-prismatic-spark.png"); --n7x-profile-still: url("/assets/profile/effects/fx-prismatic-spark-still.png"); }
-.n7x-user-profile-effect-fx-arcane-pulse, .n7x-founder-effect-fx-arcane-pulse { --n7x-profile-art: url("/assets/profile/effects/fx-arcane-pulse.png"); --n7x-profile-still: url("/assets/profile/effects/fx-arcane-pulse-still.png"); }
-.n7x-user-profile-effect-fx-solar-surge, .n7x-founder-effect-fx-solar-surge { --n7x-profile-art: url("/assets/profile/effects/fx-solar-surge.png"); --n7x-profile-still: url("/assets/profile/effects/fx-solar-surge-still.png"); }
-.n7x-user-profile-effect-fx-neon-eclipse, .n7x-founder-effect-fx-neon-eclipse { --n7x-profile-art: url("/assets/profile/effects/fx-neon-eclipse.png"); --n7x-profile-still: url("/assets/profile/effects/fx-neon-eclipse-still.png"); }
-.n7x-user-profile-effect-fx-celestial-drift, .n7x-founder-effect-fx-celestial-drift { --n7x-profile-art: url("/assets/profile/effects/fx-celestial-drift-loop.png"); --n7x-profile-still: url("/assets/profile/effects/fx-celestial-drift-still.png"); }
-.n7x-user-profile-effect-fx-shadow-aura, .n7x-founder-effect-fx-shadow-aura { --n7x-profile-art: url("/assets/profile/effects/fx-shadow-aura.png"); --n7x-profile-still: url("/assets/profile/effects/fx-shadow-aura-still.png"); }
-.n7x-user-profile-effect-fx-hyper-aura, .n7x-founder-effect-fx-hyper-aura { --n7x-profile-art: url("/assets/profile/effects/fx-hyper-aura-loop.png"); --n7x-profile-still: url("/assets/profile/effects/fx-hyper-aura-still.png"); }
-.n7x-user-profile-effect-fx-starlight-bloom, .n7x-founder-effect-fx-starlight-bloom { --n7x-profile-art: url("/assets/profile/effects/fx-starlight-bloom.png"); --n7x-profile-still: url("/assets/profile/effects/fx-starlight-bloom-still.png"); }
-.n7x-user-profile-effect-fx-galaxy-shimmer, .n7x-founder-effect-fx-galaxy-shimmer { --n7x-profile-art: url("/assets/profile/effects/fx-galaxy-shimmer.png"); --n7x-profile-still: url("/assets/profile/effects/fx-galaxy-shimmer-still.png"); }
-.n7x-user-profile-effect-fx-cyber-lattice, .n7x-founder-effect-fx-cyber-lattice { --n7x-profile-art: url("/assets/profile/effects/fx-cyber-lattice.png"); --n7x-profile-still: url("/assets/profile/effects/fx-cyber-lattice-still.png"); }
-.n7x-user-profile-effect-fx-abyssal-ring, .n7x-founder-effect-fx-abyssal-ring { --n7x-profile-art: url("/assets/profile/effects/fx-abyssal-ring.png"); --n7x-profile-still: url("/assets/profile/effects/fx-abyssal-ring-still.png"); }
-.n7x-user-profile-effect-fx-dimension-rift, .n7x-founder-effect-fx-dimension-rift { --n7x-profile-art: url("/assets/profile/effects/fx-dimension-rift.png"); --n7x-profile-still: url("/assets/profile/effects/fx-dimension-rift-still.png"); }
-.n7x-user-profile-effect-fx-chrono-spark, .n7x-founder-effect-fx-chrono-spark { --n7x-profile-art: url("/assets/profile/effects/fx-chrono-spark-loop.png"); --n7x-profile-still: url("/assets/profile/effects/fx-chrono-spark-still.png"); }
-.n7x-user-profile-effect-fx-zenith-glow, .n7x-founder-effect-fx-zenith-glow { --n7x-profile-art: url("/assets/profile/effects/fx-zenith-glow-loop.png"); --n7x-profile-still: url("/assets/profile/effects/fx-zenith-glow-still.png"); }
-.n7x-user-profile-effect-fx-infrared-pulse, .n7x-founder-effect-fx-infrared-pulse { --n7x-profile-art: url("/assets/profile/effects/fx-infrared-pulse-loop.png"); --n7x-profile-still: url("/assets/profile/effects/fx-infrared-pulse-still.png"); }
-.n7x-user-profile-effect-fx-glitch-storm, .n7x-founder-effect-fx-glitch-storm { --n7x-profile-art: url("/assets/profile/effects/fx-glitch-storm-loop.png"); --n7x-profile-still: url("/assets/profile/effects/fx-glitch-storm-still.png"); }
-.n7x-user-profile-effect-fx-phantom-flame, .n7x-founder-effect-fx-phantom-flame { --n7x-profile-art: url("/assets/profile/effects/fx-phantom-flame-loop.png"); --n7x-profile-still: url("/assets/profile/effects/fx-phantom-flame-still.png"); }
-.n7x-user-profile-effect-fx-vortex-surge, .n7x-founder-effect-fx-vortex-surge { --n7x-profile-art: url("/assets/profile/effects/fx-vortex-surge-loop.png"); --n7x-profile-still: url("/assets/profile/effects/fx-vortex-surge-still.png"); }
-.n7x-user-profile-effect-fx-nebula-spark, .n7x-founder-effect-fx-nebula-spark { --n7x-profile-art: url("/assets/profile/effects/fx-nebula-spark-loop.png"); --n7x-profile-still: url("/assets/profile/effects/fx-nebula-spark-still.png"); }
-.n7x-user-profile-effect-fx-starlight-echo, .n7x-founder-effect-fx-starlight-echo { --n7x-profile-art: url("/assets/profile/effects/fx-starlight-echo.png"); --n7x-profile-still: url("/assets/profile/effects/fx-starlight-echo-still.png"); }
-.n7x-user-profile-effect-fx-spectral-surge, .n7x-founder-effect-fx-spectral-surge { --n7x-profile-art: url("/assets/profile/effects/fx-spectral-surge.png"); --n7x-profile-still: url("/assets/profile/effects/fx-spectral-surge-still.png"); }
-.n7x-user-profile-effect-fx-cyber-matrix, .n7x-founder-effect-fx-cyber-matrix { --n7x-profile-art: url("/assets/profile/effects/fx-cyber-matrix.png"); --n7x-profile-still: url("/assets/profile/effects/fx-cyber-matrix-still.png"); }
-.n7x-user-profile-effect-fx-dark-void, .n7x-founder-effect-fx-dark-void { --n7x-profile-art: url("/assets/profile/effects/fx-dark-void.png"); --n7x-profile-still: url("/assets/profile/effects/fx-dark-void-still.png"); }
-.n7x-user-profile-effect-fx-nebula-rift, .n7x-founder-effect-fx-nebula-rift { --n7x-profile-art: url("/assets/profile/effects/fx-nebula-rift.png"); --n7x-profile-still: url("/assets/profile/effects/fx-nebula-rift-still.png"); }
-.n7x-user-profile-effect-fx-solar-flare, .n7x-founder-effect-fx-solar-flare { --n7x-profile-art: url("/assets/profile/effects/fx-solar-flare.png"); --n7x-profile-still: url("/assets/profile/effects/fx-solar-flare-still.png"); }
-.n7x-user-profile-effect-fx-sakura-blossom, .n7x-founder-effect-fx-sakura-blossom { --n7x-profile-art: url("/assets/profile/effects/fx-sakura-blossom.png"); --n7x-profile-still: url("/assets/profile/effects/fx-sakura-blossom-still.png"); }
-.n7x-user-profile-effect-fx-arcane-prism, .n7x-founder-effect-fx-arcane-prism { --n7x-profile-art: url("/assets/profile/effects/fx-arcane-prism.png"); --n7x-profile-still: url("/assets/profile/effects/fx-arcane-prism-still.png"); }
-.n7x-user-profile-effect-fx-abyssal-pulse, .n7x-founder-effect-fx-abyssal-pulse { --n7x-profile-art: url("/assets/profile/effects/fx-abyssal-pulse.png"); --n7x-profile-still: url("/assets/profile/effects/fx-abyssal-pulse-still.png"); }
-.n7x-user-profile-effect-fx-neon-stardust, .n7x-founder-effect-fx-neon-stardust { --n7x-profile-art: url("/assets/profile/effects/fx-neon-stardust.png"); --n7x-profile-still: url("/assets/profile/effects/fx-neon-stardust-still.png"); }
-.n7x-user-profile-effect-fx-retro-wave, .n7x-founder-effect-fx-retro-wave { --n7x-profile-art: url("/assets/profile/effects/fx-retro-wave.png"); --n7x-profile-still: url("/assets/profile/effects/fx-retro-wave-still.png"); }
-.n7x-user-profile-effect-fx-glitch-mirage, .n7x-founder-effect-fx-glitch-mirage { --n7x-profile-art: url("/assets/profile/effects/fx-glitch-mirage.png"); --n7x-profile-still: url("/assets/profile/effects/fx-glitch-mirage-still.png"); }
-.n7x-user-profile-effect-fx-celestial-shine, .n7x-founder-effect-fx-celestial-shine { --n7x-profile-art: url("/assets/profile/effects/fx-celestial-shine.png"); --n7x-profile-still: url("/assets/profile/effects/fx-celestial-shine-still.png"); }
-.n7x-user-profile-effect-fx-phantom-mist, .n7x-founder-effect-fx-phantom-mist { --n7x-profile-art: url("/assets/profile/effects/fx-phantom-mist.png"); --n7x-profile-still: url("/assets/profile/effects/fx-phantom-mist-still.png"); }
-.n7x-user-profile-effect-fx-hyperdrive, .n7x-founder-effect-fx-hyperdrive { --n7x-profile-art: url("/assets/profile/effects/fx-hyperdrive.png"); --n7x-profile-still: url("/assets/profile/effects/fx-hyperdrive-still.png"); }
-.n7x-user-profile-effect-fx-quantum-bloom, .n7x-founder-effect-fx-quantum-bloom { --n7x-profile-art: url("/assets/profile/effects/fx-quantum-bloom.png"); --n7x-profile-still: url("/assets/profile/effects/fx-quantum-bloom-still.png"); }
-.n7x-user-profile-effect-fx-prismatic-aura, .n7x-founder-effect-fx-prismatic-aura { --n7x-profile-art: url("/assets/profile/effects/fx-prismatic-aura.png"); --n7x-profile-still: url("/assets/profile/effects/fx-prismatic-aura-still.png"); }
-.n7x-user-profile-effect-fx-astral-spark, .n7x-founder-effect-fx-astral-spark { --n7x-profile-art: url("/assets/profile/effects/fx-astral-spark.png"); --n7x-profile-still: url("/assets/profile/effects/fx-astral-spark-still.png"); }
-.n7x-user-profile-effect-fx-thunderstorm, .n7x-founder-effect-fx-thunderstorm { --n7x-profile-art: url("/assets/profile/effects/fx-thunderstorm.png"); --n7x-profile-still: url("/assets/profile/effects/fx-thunderstorm-still.png"); }
-.n7x-user-profile-effect-fx-crimson-eclipse, .n7x-founder-effect-fx-crimson-eclipse { --n7x-profile-art: url("/assets/profile/effects/fx-crimson-eclipse.png"); --n7x-profile-still: url("/assets/profile/effects/fx-crimson-eclipse-still.png"); }
-.n7x-user-profile-effect-fx-electric-dream, .n7x-founder-effect-fx-electric-dream { --n7x-profile-art: url("/assets/profile/effects/fx-electric-dream.png"); --n7x-profile-still: url("/assets/profile/effects/fx-electric-dream-still.png"); }
-.n7x-user-profile-effect-fx-frozen-shards, .n7x-founder-effect-fx-frozen-shards { --n7x-profile-art: url("/assets/profile/effects/fx-frozen-shards.png"); --n7x-profile-still: url("/assets/profile/effects/fx-frozen-shards-still.png"); }
-.n7x-user-profile-effect-fx-vortex-horizon, .n7x-founder-effect-fx-vortex-horizon { --n7x-profile-art: url("/assets/profile/effects/fx-vortex-horizon.png"); --n7x-profile-still: url("/assets/profile/effects/fx-vortex-horizon-still.png"); }
-.n7x-user-profile-effect-fx-nova-beam, .n7x-founder-effect-fx-nova-beam { --n7x-profile-art: url("/assets/profile/effects/fx-nova-beam.png"); --n7x-profile-still: url("/assets/profile/effects/fx-nova-beam-still.png"); }
-.n7x-user-profile-effect-fx-cybernetic-pulse, .n7x-founder-effect-fx-cybernetic-pulse { --n7x-profile-art: url("/assets/profile/effects/fx-cybernetic-pulse.png"); --n7x-profile-still: url("/assets/profile/effects/fx-cybernetic-pulse-still.png"); }
-.n7x-user-profile-effect-fx-radiant-orbit, .n7x-founder-effect-fx-radiant-orbit { --n7x-profile-art: url("/assets/profile/effects/fx-radiant-orbit.png"); --n7x-profile-still: url("/assets/profile/effects/fx-radiant-orbit-still.png"); }
+.n7x-user-profile-effect-fx-cosmic-vortex,
+.n7x-founder-effect-fx-cosmic-vortex {
+  --n7x-profile-art: url("/assets/profile/effects/fx-cosmic-vortex-loop.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-cosmic-vortex-still.png");
+}
+
+.n7x-user-profile-effect-fx-nebula-storm,
+.n7x-founder-effect-fx-nebula-storm {
+  --n7x-profile-art: url("/assets/profile/effects/fx-nebula-storm.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-nebula-storm-still.png");
+}
+
+.n7x-user-profile-effect-fx-stellar-burst,
+.n7x-founder-effect-fx-stellar-burst {
+  --n7x-profile-art: url("/assets/profile/effects/fx-stellar-burst-loop.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-stellar-burst-still.png");
+}
+
+.n7x-user-profile-effect-fx-ethereal-flame,
+.n7x-founder-effect-fx-ethereal-flame {
+  --n7x-profile-art: url("/assets/profile/effects/fx-ethereal-flame.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-ethereal-flame-still.png");
+}
+
+.n7x-user-profile-effect-fx-quantum-rift,
+.n7x-founder-effect-fx-quantum-rift {
+  --n7x-profile-art: url("/assets/profile/effects/fx-quantum-rift-loop.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-quantum-rift-still.png");
+}
+
+.n7x-user-profile-effect-fx-astral-cascade,
+.n7x-founder-effect-fx-astral-cascade {
+  --n7x-profile-art: url("/assets/profile/effects/fx-astral-cascade.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-astral-cascade-still.png");
+}
+
+.n7x-user-profile-effect-fx-plasma-wave,
+.n7x-founder-effect-fx-plasma-wave {
+  --n7x-profile-art: url("/assets/profile/effects/fx-plasma-wave-loop.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-plasma-wave-still.png");
+}
+
+.n7x-user-profile-effect-fx-supernova-flash,
+.n7x-founder-effect-fx-supernova-flash {
+  --n7x-profile-art: url("/assets/profile/effects/fx-supernova-flash.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-supernova-flash-still.png");
+}
+
+.n7x-user-profile-effect-fx-void-shards,
+.n7x-founder-effect-fx-void-shards {
+  --n7x-profile-art: url("/assets/profile/effects/fx-void-shards.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-void-shards-still.png");
+}
+
+.n7x-user-profile-effect-fx-prismatic-spark,
+.n7x-founder-effect-fx-prismatic-spark {
+  --n7x-profile-art: url("/assets/profile/effects/fx-prismatic-spark.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-prismatic-spark-still.png");
+}
+
+.n7x-user-profile-effect-fx-arcane-pulse,
+.n7x-founder-effect-fx-arcane-pulse {
+  --n7x-profile-art: url("/assets/profile/effects/fx-arcane-pulse.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-arcane-pulse-still.png");
+}
+
+.n7x-user-profile-effect-fx-solar-surge,
+.n7x-founder-effect-fx-solar-surge {
+  --n7x-profile-art: url("/assets/profile/effects/fx-solar-surge.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-solar-surge-still.png");
+}
+
+.n7x-user-profile-effect-fx-neon-eclipse,
+.n7x-founder-effect-fx-neon-eclipse {
+  --n7x-profile-art: url("/assets/profile/effects/fx-neon-eclipse.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-neon-eclipse-still.png");
+}
+
+.n7x-user-profile-effect-fx-celestial-drift,
+.n7x-founder-effect-fx-celestial-drift {
+  --n7x-profile-art: url("/assets/profile/effects/fx-celestial-drift-loop.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-celestial-drift-still.png");
+}
+
+.n7x-user-profile-effect-fx-shadow-aura,
+.n7x-founder-effect-fx-shadow-aura {
+  --n7x-profile-art: url("/assets/profile/effects/fx-shadow-aura.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-shadow-aura-still.png");
+}
+
+.n7x-user-profile-effect-fx-hyper-aura,
+.n7x-founder-effect-fx-hyper-aura {
+  --n7x-profile-art: url("/assets/profile/effects/fx-hyper-aura-loop.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-hyper-aura-still.png");
+}
+
+.n7x-user-profile-effect-fx-starlight-bloom,
+.n7x-founder-effect-fx-starlight-bloom {
+  --n7x-profile-art: url("/assets/profile/effects/fx-starlight-bloom.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-starlight-bloom-still.png");
+}
+
+.n7x-user-profile-effect-fx-galaxy-shimmer,
+.n7x-founder-effect-fx-galaxy-shimmer {
+  --n7x-profile-art: url("/assets/profile/effects/fx-galaxy-shimmer.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-galaxy-shimmer-still.png");
+}
+
+.n7x-user-profile-effect-fx-cyber-lattice,
+.n7x-founder-effect-fx-cyber-lattice {
+  --n7x-profile-art: url("/assets/profile/effects/fx-cyber-lattice.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-cyber-lattice-still.png");
+}
+
+.n7x-user-profile-effect-fx-abyssal-ring,
+.n7x-founder-effect-fx-abyssal-ring {
+  --n7x-profile-art: url("/assets/profile/effects/fx-abyssal-ring.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-abyssal-ring-still.png");
+}
+
+.n7x-user-profile-effect-fx-dimension-rift,
+.n7x-founder-effect-fx-dimension-rift {
+  --n7x-profile-art: url("/assets/profile/effects/fx-dimension-rift.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-dimension-rift-still.png");
+}
+
+.n7x-user-profile-effect-fx-chrono-spark,
+.n7x-founder-effect-fx-chrono-spark {
+  --n7x-profile-art: url("/assets/profile/effects/fx-chrono-spark-loop.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-chrono-spark-still.png");
+}
+
+.n7x-user-profile-effect-fx-zenith-glow,
+.n7x-founder-effect-fx-zenith-glow {
+  --n7x-profile-art: url("/assets/profile/effects/fx-zenith-glow-loop.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-zenith-glow-still.png");
+}
+
+.n7x-user-profile-effect-fx-infrared-pulse,
+.n7x-founder-effect-fx-infrared-pulse {
+  --n7x-profile-art: url("/assets/profile/effects/fx-infrared-pulse-loop.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-infrared-pulse-still.png");
+}
+
+.n7x-user-profile-effect-fx-glitch-storm,
+.n7x-founder-effect-fx-glitch-storm {
+  --n7x-profile-art: url("/assets/profile/effects/fx-glitch-storm-loop.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-glitch-storm-still.png");
+}
+
+.n7x-user-profile-effect-fx-phantom-flame,
+.n7x-founder-effect-fx-phantom-flame {
+  --n7x-profile-art: url("/assets/profile/effects/fx-phantom-flame-loop.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-phantom-flame-still.png");
+}
+
+.n7x-user-profile-effect-fx-vortex-surge,
+.n7x-founder-effect-fx-vortex-surge {
+  --n7x-profile-art: url("/assets/profile/effects/fx-vortex-surge-loop.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-vortex-surge-still.png");
+}
+
+.n7x-user-profile-effect-fx-nebula-spark,
+.n7x-founder-effect-fx-nebula-spark {
+  --n7x-profile-art: url("/assets/profile/effects/fx-nebula-spark-loop.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-nebula-spark-still.png");
+}
+
+.n7x-user-profile-effect-fx-starlight-echo,
+.n7x-founder-effect-fx-starlight-echo {
+  --n7x-profile-art: url("/assets/profile/effects/fx-starlight-echo.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-starlight-echo-still.png");
+}
+
+.n7x-user-profile-effect-fx-spectral-surge,
+.n7x-founder-effect-fx-spectral-surge {
+  --n7x-profile-art: url("/assets/profile/effects/fx-spectral-surge.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-spectral-surge-still.png");
+}
+
+.n7x-user-profile-effect-fx-cyber-matrix,
+.n7x-founder-effect-fx-cyber-matrix {
+  --n7x-profile-art: url("/assets/profile/effects/fx-cyber-matrix.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-cyber-matrix-still.png");
+}
+
+.n7x-user-profile-effect-fx-dark-void,
+.n7x-founder-effect-fx-dark-void {
+  --n7x-profile-art: url("/assets/profile/effects/fx-dark-void.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-dark-void-still.png");
+}
+
+.n7x-user-profile-effect-fx-nebula-rift,
+.n7x-founder-effect-fx-nebula-rift {
+  --n7x-profile-art: url("/assets/profile/effects/fx-nebula-rift.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-nebula-rift-still.png");
+}
+
+.n7x-user-profile-effect-fx-solar-flare,
+.n7x-founder-effect-fx-solar-flare {
+  --n7x-profile-art: url("/assets/profile/effects/fx-solar-flare.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-solar-flare-still.png");
+}
+
+.n7x-user-profile-effect-fx-sakura-blossom,
+.n7x-founder-effect-fx-sakura-blossom {
+  --n7x-profile-art: url("/assets/profile/effects/fx-sakura-blossom.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-sakura-blossom-still.png");
+}
+
+.n7x-user-profile-effect-fx-arcane-prism,
+.n7x-founder-effect-fx-arcane-prism {
+  --n7x-profile-art: url("/assets/profile/effects/fx-arcane-prism.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-arcane-prism-still.png");
+}
+
+.n7x-user-profile-effect-fx-abyssal-pulse,
+.n7x-founder-effect-fx-abyssal-pulse {
+  --n7x-profile-art: url("/assets/profile/effects/fx-abyssal-pulse.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-abyssal-pulse-still.png");
+}
+
+.n7x-user-profile-effect-fx-neon-stardust,
+.n7x-founder-effect-fx-neon-stardust {
+  --n7x-profile-art: url("/assets/profile/effects/fx-neon-stardust.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-neon-stardust-still.png");
+}
+
+.n7x-user-profile-effect-fx-retro-wave,
+.n7x-founder-effect-fx-retro-wave {
+  --n7x-profile-art: url("/assets/profile/effects/fx-retro-wave.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-retro-wave-still.png");
+}
+
+.n7x-user-profile-effect-fx-glitch-mirage,
+.n7x-founder-effect-fx-glitch-mirage {
+  --n7x-profile-art: url("/assets/profile/effects/fx-glitch-mirage.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-glitch-mirage-still.png");
+}
+
+.n7x-user-profile-effect-fx-celestial-shine,
+.n7x-founder-effect-fx-celestial-shine {
+  --n7x-profile-art: url("/assets/profile/effects/fx-celestial-shine.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-celestial-shine-still.png");
+}
+
+.n7x-user-profile-effect-fx-phantom-mist,
+.n7x-founder-effect-fx-phantom-mist {
+  --n7x-profile-art: url("/assets/profile/effects/fx-phantom-mist.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-phantom-mist-still.png");
+}
+
+.n7x-user-profile-effect-fx-hyperdrive,
+.n7x-founder-effect-fx-hyperdrive {
+  --n7x-profile-art: url("/assets/profile/effects/fx-hyperdrive.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-hyperdrive-still.png");
+}
+
+.n7x-user-profile-effect-fx-quantum-bloom,
+.n7x-founder-effect-fx-quantum-bloom {
+  --n7x-profile-art: url("/assets/profile/effects/fx-quantum-bloom.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-quantum-bloom-still.png");
+}
+
+.n7x-user-profile-effect-fx-prismatic-aura,
+.n7x-founder-effect-fx-prismatic-aura {
+  --n7x-profile-art: url("/assets/profile/effects/fx-prismatic-aura.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-prismatic-aura-still.png");
+}
+
+.n7x-user-profile-effect-fx-astral-spark,
+.n7x-founder-effect-fx-astral-spark {
+  --n7x-profile-art: url("/assets/profile/effects/fx-astral-spark.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-astral-spark-still.png");
+}
+
+.n7x-user-profile-effect-fx-thunderstorm,
+.n7x-founder-effect-fx-thunderstorm {
+  --n7x-profile-art: url("/assets/profile/effects/fx-thunderstorm.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-thunderstorm-still.png");
+}
+
+.n7x-user-profile-effect-fx-crimson-eclipse,
+.n7x-founder-effect-fx-crimson-eclipse {
+  --n7x-profile-art: url("/assets/profile/effects/fx-crimson-eclipse.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-crimson-eclipse-still.png");
+}
+
+.n7x-user-profile-effect-fx-electric-dream,
+.n7x-founder-effect-fx-electric-dream {
+  --n7x-profile-art: url("/assets/profile/effects/fx-electric-dream.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-electric-dream-still.png");
+}
+
+.n7x-user-profile-effect-fx-frozen-shards,
+.n7x-founder-effect-fx-frozen-shards {
+  --n7x-profile-art: url("/assets/profile/effects/fx-frozen-shards.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-frozen-shards-still.png");
+}
+
+.n7x-user-profile-effect-fx-vortex-horizon,
+.n7x-founder-effect-fx-vortex-horizon {
+  --n7x-profile-art: url("/assets/profile/effects/fx-vortex-horizon.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-vortex-horizon-still.png");
+}
+
+.n7x-user-profile-effect-fx-nova-beam,
+.n7x-founder-effect-fx-nova-beam {
+  --n7x-profile-art: url("/assets/profile/effects/fx-nova-beam.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-nova-beam-still.png");
+}
+
+.n7x-user-profile-effect-fx-cybernetic-pulse,
+.n7x-founder-effect-fx-cybernetic-pulse {
+  --n7x-profile-art: url("/assets/profile/effects/fx-cybernetic-pulse.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-cybernetic-pulse-still.png");
+}
+
+.n7x-user-profile-effect-fx-radiant-orbit,
+.n7x-founder-effect-fx-radiant-orbit {
+  --n7x-profile-art: url("/assets/profile/effects/fx-radiant-orbit.png");
+  --n7x-profile-still: url("/assets/profile/effects/fx-radiant-orbit-still.png");
+}
+
 .n7x-user-profile-effect-fx-cosmic-vortex>.n7x-user-profile-effect,
 .n7x-founder-effect-fx-cosmic-vortex>.n7x-founder-profile-effect,
 .n7x-user-profile-effect-fx-nebula-storm>.n7x-user-profile-effect,
@@ -173,6 +443,7 @@
   overflow: hidden !important;
   pointer-events: none !important;
 }
+
 .n7x-user-profile-effect-fx-cosmic-vortex>.n7x-user-profile-effect::before,
 .n7x-user-profile-effect-fx-cosmic-vortex>.n7x-user-profile-effect::after,
 .n7x-founder-effect-fx-cosmic-vortex>.n7x-founder-profile-effect::before,
@@ -388,117 +659,124 @@
 .n7x-user-profile-effect-fx-radiant-orbit>.n7x-user-profile-effect::before,
 .n7x-user-profile-effect-fx-radiant-orbit>.n7x-user-profile-effect::after,
 .n7x-founder-effect-fx-radiant-orbit>.n7x-founder-profile-effect::before,
-.n7x-founder-effect-fx-radiant-orbit>.n7x-founder-profile-effect::after { display: none !important; }
-@media (prefers-reduced-motion: reduce) {
-.n7x-user-profile-effect-fx-cosmic-vortex>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-cosmic-vortex>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-nebula-storm>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-nebula-storm>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-stellar-burst>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-stellar-burst>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-ethereal-flame>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-ethereal-flame>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-quantum-rift>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-quantum-rift>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-astral-cascade>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-astral-cascade>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-plasma-wave>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-plasma-wave>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-supernova-flash>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-supernova-flash>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-void-shards>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-void-shards>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-prismatic-spark>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-prismatic-spark>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-arcane-pulse>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-arcane-pulse>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-solar-surge>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-solar-surge>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-neon-eclipse>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-neon-eclipse>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-celestial-drift>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-celestial-drift>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-shadow-aura>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-shadow-aura>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-hyper-aura>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-hyper-aura>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-starlight-bloom>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-starlight-bloom>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-galaxy-shimmer>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-galaxy-shimmer>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-cyber-lattice>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-cyber-lattice>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-abyssal-ring>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-abyssal-ring>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-dimension-rift>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-dimension-rift>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-chrono-spark>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-chrono-spark>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-zenith-glow>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-zenith-glow>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-infrared-pulse>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-infrared-pulse>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-glitch-storm>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-glitch-storm>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-phantom-flame>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-phantom-flame>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-vortex-surge>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-vortex-surge>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-nebula-spark>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-nebula-spark>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-starlight-echo>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-starlight-echo>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-spectral-surge>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-spectral-surge>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-cyber-matrix>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-cyber-matrix>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-dark-void>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-dark-void>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-nebula-rift>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-nebula-rift>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-solar-flare>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-solar-flare>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-sakura-blossom>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-sakura-blossom>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-arcane-prism>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-arcane-prism>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-abyssal-pulse>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-abyssal-pulse>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-neon-stardust>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-neon-stardust>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-retro-wave>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-retro-wave>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-glitch-mirage>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-glitch-mirage>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-celestial-shine>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-celestial-shine>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-phantom-mist>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-phantom-mist>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-hyperdrive>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-hyperdrive>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-quantum-bloom>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-quantum-bloom>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-prismatic-aura>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-prismatic-aura>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-astral-spark>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-astral-spark>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-thunderstorm>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-thunderstorm>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-crimson-eclipse>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-crimson-eclipse>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-electric-dream>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-electric-dream>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-frozen-shards>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-frozen-shards>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-vortex-horizon>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-vortex-horizon>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-nova-beam>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-nova-beam>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-cybernetic-pulse>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-cybernetic-pulse>.n7x-founder-profile-effect,
-.n7x-user-profile-effect-fx-radiant-orbit>.n7x-user-profile-effect,
-.n7x-founder-effect-fx-radiant-orbit>.n7x-founder-profile-effect { background-image: var(--n7x-profile-still) !important; }
+.n7x-founder-effect-fx-radiant-orbit>.n7x-founder-profile-effect::after {
+  display: none !important;
 }
+
+@media (prefers-reduced-motion: reduce) {
+
+  .n7x-user-profile-effect-fx-cosmic-vortex>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-cosmic-vortex>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-nebula-storm>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-nebula-storm>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-stellar-burst>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-stellar-burst>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-ethereal-flame>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-ethereal-flame>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-quantum-rift>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-quantum-rift>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-astral-cascade>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-astral-cascade>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-plasma-wave>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-plasma-wave>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-supernova-flash>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-supernova-flash>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-void-shards>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-void-shards>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-prismatic-spark>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-prismatic-spark>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-arcane-pulse>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-arcane-pulse>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-solar-surge>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-solar-surge>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-neon-eclipse>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-neon-eclipse>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-celestial-drift>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-celestial-drift>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-shadow-aura>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-shadow-aura>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-hyper-aura>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-hyper-aura>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-starlight-bloom>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-starlight-bloom>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-galaxy-shimmer>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-galaxy-shimmer>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-cyber-lattice>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-cyber-lattice>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-abyssal-ring>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-abyssal-ring>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-dimension-rift>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-dimension-rift>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-chrono-spark>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-chrono-spark>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-zenith-glow>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-zenith-glow>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-infrared-pulse>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-infrared-pulse>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-glitch-storm>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-glitch-storm>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-phantom-flame>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-phantom-flame>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-vortex-surge>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-vortex-surge>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-nebula-spark>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-nebula-spark>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-starlight-echo>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-starlight-echo>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-spectral-surge>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-spectral-surge>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-cyber-matrix>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-cyber-matrix>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-dark-void>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-dark-void>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-nebula-rift>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-nebula-rift>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-solar-flare>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-solar-flare>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-sakura-blossom>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-sakura-blossom>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-arcane-prism>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-arcane-prism>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-abyssal-pulse>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-abyssal-pulse>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-neon-stardust>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-neon-stardust>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-retro-wave>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-retro-wave>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-glitch-mirage>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-glitch-mirage>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-celestial-shine>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-celestial-shine>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-phantom-mist>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-phantom-mist>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-hyperdrive>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-hyperdrive>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-quantum-bloom>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-quantum-bloom>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-prismatic-aura>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-prismatic-aura>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-astral-spark>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-astral-spark>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-thunderstorm>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-thunderstorm>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-crimson-eclipse>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-crimson-eclipse>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-electric-dream>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-electric-dream>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-frozen-shards>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-frozen-shards>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-vortex-horizon>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-vortex-horizon>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-nova-beam>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-nova-beam>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-cybernetic-pulse>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-cybernetic-pulse>.n7x-founder-profile-effect,
+  .n7x-user-profile-effect-fx-radiant-orbit>.n7x-user-profile-effect,
+  .n7x-founder-effect-fx-radiant-orbit>.n7x-founder-profile-effect {
+    background-image: var(--n7x-profile-still) !important;
+  }
+}
+
 body.lag-reducer .n7x-user-profile-effect-fx-cosmic-vortex>.n7x-user-profile-effect,
 body.lag-reducer .n7x-founder-effect-fx-cosmic-vortex>.n7x-founder-profile-effect,
 body.lag-reducer .n7x-user-profile-effect-fx-nebula-storm>.n7x-user-profile-effect,
@@ -606,41 +884,151 @@ body.lag-reducer .n7x-founder-effect-fx-nova-beam>.n7x-founder-profile-effect,
 body.lag-reducer .n7x-user-profile-effect-fx-cybernetic-pulse>.n7x-user-profile-effect,
 body.lag-reducer .n7x-founder-effect-fx-cybernetic-pulse>.n7x-founder-profile-effect,
 body.lag-reducer .n7x-user-profile-effect-fx-radiant-orbit>.n7x-user-profile-effect,
-body.lag-reducer .n7x-founder-effect-fx-radiant-orbit>.n7x-founder-profile-effect { background-image: var(--n7x-profile-still) !important; }
+body.lag-reducer .n7x-founder-effect-fx-radiant-orbit>.n7x-founder-profile-effect {
+  background-image: var(--n7x-profile-still) !important;
+}
 
-.n7x-user-profile-effect-fx-cosmic-vortex { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-nebula-storm { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-stellar-burst { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-ethereal-flame { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-quantum-rift { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-astral-cascade { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-plasma-wave { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-supernova-flash { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-void-shards { --n7x-profile-card-ratio: 900 / 1760; }
-.n7x-user-profile-effect-fx-prismatic-spark { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-arcane-pulse { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-solar-surge { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-neon-eclipse { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-celestial-drift { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-shadow-aura { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-hyper-aura { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-starlight-bloom { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-galaxy-shimmer { --n7x-profile-card-ratio: 900 / 1760; }
-.n7x-user-profile-effect-fx-cyber-lattice { --n7x-profile-card-ratio: 900 / 1760; }
-.n7x-user-profile-effect-fx-abyssal-ring { --n7x-profile-card-ratio: 900 / 1760; }
-.n7x-user-profile-effect-fx-dimension-rift { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-chrono-spark { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-zenith-glow { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-infrared-pulse { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-glitch-storm { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-phantom-flame { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-vortex-surge { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-nebula-spark { --n7x-profile-card-ratio: 450 / 880; }
-.n7x-user-profile-effect-fx-starlight-echo { --n7x-profile-card-ratio: 450 / 880; }
-html[data-n7x-theme] body .n7x-user-profile-card.n7x-user-profile-card.n7x-user-profile-card { width: min(360px, 100%) !important; max-width: 360px !important; height: auto !important; min-height: 0 !important; aspect-ratio: var(--n7x-profile-card-ratio, auto); margin-inline: auto; }
+.n7x-user-profile-effect-fx-cosmic-vortex {
+  --n7x-profile-card-ratio: 450 / 880;
+}
 
-:is(.n7x-user-profile-effect,.n7x-founder-profile-effect),:is(.n7x-user-profile-effect,.n7x-founder-profile-effect)::before,:is(.n7x-user-profile-effect,.n7x-founder-profile-effect)::after,:is(.n7x-user-profile-effect,.n7x-founder-profile-effect) *{animation-play-state:paused!important}
-@media(hover:hover) and (prefers-reduced-motion:no-preference){
-:is([class*="n7x-user-profile-effect-"],[class*="n7x-founder-effect-"]):hover{--n7x-profile-current:var(--n7x-profile-art)}
-:is([class*="n7x-user-profile-effect-"],[class*="n7x-founder-effect-"]):hover>:is(.n7x-user-profile-effect,.n7x-founder-profile-effect),:is([class*="n7x-user-profile-effect-"],[class*="n7x-founder-effect-"]):hover>:is(.n7x-user-profile-effect,.n7x-founder-profile-effect)::before,:is([class*="n7x-user-profile-effect-"],[class*="n7x-founder-effect-"]):hover>:is(.n7x-user-profile-effect,.n7x-founder-profile-effect)::after,:is([class*="n7x-user-profile-effect-"],[class*="n7x-founder-effect-"]):hover>:is(.n7x-user-profile-effect,.n7x-founder-profile-effect) *{animation-play-state:running!important}
+.n7x-user-profile-effect-fx-nebula-storm {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-stellar-burst {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-ethereal-flame {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-quantum-rift {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-astral-cascade {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-plasma-wave {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-supernova-flash {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-void-shards {
+  --n7x-profile-card-ratio: 900 / 1760;
+}
+
+.n7x-user-profile-effect-fx-prismatic-spark {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-arcane-pulse {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-solar-surge {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-neon-eclipse {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-celestial-drift {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-shadow-aura {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-hyper-aura {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-starlight-bloom {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-galaxy-shimmer {
+  --n7x-profile-card-ratio: 900 / 1760;
+}
+
+.n7x-user-profile-effect-fx-cyber-lattice {
+  --n7x-profile-card-ratio: 900 / 1760;
+}
+
+.n7x-user-profile-effect-fx-abyssal-ring {
+  --n7x-profile-card-ratio: 900 / 1760;
+}
+
+.n7x-user-profile-effect-fx-dimension-rift {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-chrono-spark {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-zenith-glow {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-infrared-pulse {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-glitch-storm {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-phantom-flame {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-vortex-surge {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-nebula-spark {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+.n7x-user-profile-effect-fx-starlight-echo {
+  --n7x-profile-card-ratio: 450 / 880;
+}
+
+html[data-n7x-theme] body .n7x-user-profile-card.n7x-user-profile-card.n7x-user-profile-card {
+  width: min(360px, 100%) !important;
+  max-width: 360px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  aspect-ratio: var(--n7x-profile-card-ratio, auto);
+  margin-inline: auto;
+}
+
+:is(.n7x-user-profile-effect, .n7x-founder-profile-effect),
+:is(.n7x-user-profile-effect, .n7x-founder-profile-effect)::before,
+:is(.n7x-user-profile-effect, .n7x-founder-profile-effect)::after,
+:is(.n7x-user-profile-effect, .n7x-founder-profile-effect) * {
+  animation-play-state: paused !important
+}
+
+@media(hover:hover) and (prefers-reduced-motion:no-preference) {
+  :is([class*="n7x-user-profile-effect-"], [class*="n7x-founder-effect-"]):hover {
+    --n7x-profile-current: var(--n7x-profile-art)
+  }
+
+  :is([class*="n7x-user-profile-effect-"], [class*="n7x-founder-effect-"]):hover>:is(.n7x-user-profile-effect, .n7x-founder-profile-effect),
+  :is([class*="n7x-user-profile-effect-"], [class*="n7x-founder-effect-"]):hover>:is(.n7x-user-profile-effect, .n7x-founder-profile-effect)::before,
+  :is([class*="n7x-user-profile-effect-"], [class*="n7x-founder-effect-"]):hover>:is(.n7x-user-profile-effect, .n7x-founder-profile-effect)::after,
+  :is([class*="n7x-user-profile-effect-"], [class*="n7x-founder-effect-"]):hover>:is(.n7x-user-profile-effect, .n7x-founder-profile-effect) * {
+    animation-play-state: running !important
+  }
 }

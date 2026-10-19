@@ -1,3 +1,8 @@
+import {q94d6} from './lib/q94d6.mjs';
+import {q83b2} from './lib/q83b2.mjs';
+import {q67a9} from './lib/q67a9.mjs';
+import {q51fa} from './lib/q51fa.mjs';
+import {qEnqueue, qStart, qCustom, q68a1} from './lib/discord-bridge.mjs';
 import {q74bd9} from './lib/q74bd9.mjs';
 import {publicAssetBoundary} from './lib/public-assets.mjs';
 import {readChatRelationships, changeChatRelationship, assertChatContact} from './lib/chat-social.mjs';
@@ -118,6 +123,8 @@ app.get('/download/nyx-agents.zip',async(_req,res)=>{try{res.set({'Content-Type'
 installTutsiCrawlerControls(app);
 app.get(["/proxy-assets.json", "/frontend-assets.json"], (_req,res)=>res.status(404).end());
 const nyxifyMeting = createMetingBackend();
+const q90c4 = q83b2(nyxifyMeting);
+const q62f7 = q94d6();
 
 function normalizePublicWispUrl(value) {
   try {
@@ -171,11 +178,10 @@ const nyxCloudGamingProvisioningUsers = new Set();
 const nyxCloudGamingLaunchLimit = createCloudLaunchLimit();
 const nyxCloudGamingCatalogTtlMs = 30 * 60_000;
 let nyxCloudGamingCatalogCache = { expiresAt: 0, games: [], promise: null };
-const nyxifyProviderOrigin = "https://mizumath.com";
 const nyxifyChartOrigin = "https://api.deezer.com";
 const nyxifyArtworkFallbackOrigin = "https://e-cdns-images.dzcdn.net";
 const nyxifyTrackIdPattern = /^\d{1,20}$/;
-const nyxifyTrackKeyPattern = /^(?:netease:)?\d{1,20}$/;
+const nyxifyTrackKeyPattern = /^(?:(?:netease|tidal):)?\d{1,20}$/;
 const nyxifyCoverPathPattern = /^\/img\/images\/(?:cover|artist)\/[a-f0-9]{32}\/[A-Za-z0-9._-]{1,128}$/i;
 const nyxifyCatalogCacheTtlMs = 90_000;
 const nyxifyHomeCacheTtlMs = 5 * 60_000;
@@ -5038,6 +5044,10 @@ function nyxChatChannelGroup(channel) {
   return "chat";
 }
 
+function q76a3(channel) {
+  return /^(announcements?)$/i.test(String(channel?.id || "")) || (channel?.group === "announcements" && /^announcements?$/i.test(String(channel?.name || "").trim()));
+}
+
 function nyxChatChannelDefinition(value, fallback = null) {
   const source = value && typeof value === "object" ? value : {};
   const id = String(source.id || fallback?.id || "").trim().toLowerCase();
@@ -5047,7 +5057,7 @@ function nyxChatChannelDefinition(value, fallback = null) {
     group: nyxChatChannelGroup({ ...fallback, ...source, id }),
     name: founderProfileText(source.name, fallback?.name || "Channel", 32),
     description: founderProfileText(source.description, fallback?.description || "N7X community channel.", 140),
-    minimumRole: nyxRolePolicies[String(source.minimumRole || fallback?.minimumRole || "member").trim().toLowerCase()] ? String(source.minimumRole || fallback?.minimumRole || "member").trim().toLowerCase() : "member"
+    minimumRole: q76a3({ ...fallback, ...source, id }) ? "member" : nyxRolePolicies[String(source.minimumRole || fallback?.minimumRole || "member").trim().toLowerCase()] ? String(source.minimumRole || fallback?.minimumRole || "member").trim().toLowerCase() : "member"
   };
 }
 
@@ -5444,7 +5454,7 @@ function nyxChatReactionPayload(value, viewerUid) {
   return value.map(entry => {
     const emoji = String(entry?.emoji || "");
     const uids = [...new Set((Array.isArray(entry?.uids) ? entry.uids : []).map(uid => String(uid || "").trim()).filter(Boolean))].slice(0, 250);
-    return nyxChatReactionEmoji.has(emoji) && uids.length ? { emoji, count: uids.length, self: uids.includes(viewerUid) } : null;
+    return (nyxChatReactionEmoji.has(emoji)||qCustom(emoji)) && uids.length ? { emoji, count: uids.length, self: uids.includes(viewerUid) } : null;
   }).filter(Boolean);
 }
 
@@ -5574,6 +5584,7 @@ async function nyxChatScope(firebase, uid, source = {}, knownRole = "", clientIp
       type: "channel",
       id: channel,
       key: channel,
+      q76a3: q76a3(channelDefinition),
       private: false,
       ref: firebase.firestore.collection("nyxChatChannels").doc(channel),
       messages: firebase.firestore.collection("nyxChatChannels").doc(channel).collection("messages")
@@ -6500,9 +6511,9 @@ function nyxifyTrackRecord(value, context = {}) {
     id,
     title,
     artist: nyxifyCleanText(source.artist || context.artist, "Unknown artist", 120),
-    artistId: nyxifyTrackIdPattern.test(artistId) ? artistId : "",
+    artistId: /^(?:tidal:)?\d{1,20}$/.test(artistId) ? artistId : "",
     album: nyxifyCleanText(source.album || context.album, "", 160),
-    albumId: nyxifyTrackIdPattern.test(albumId) ? albumId : "",
+    albumId: /^(?:tidal:)?\d{1,20}$/.test(albumId) ? albumId : "",
     cover: nyxifyCoverUrl(source.cover || context.cover),
     catalog: new Set(["deezer", "tidal", "netease"]).has(String(source.catalog || context.catalog || "").toLowerCase()) ? String(source.catalog || context.catalog).toLowerCase() : "",
     duration: Math.max(0, Math.min(14_400, Math.round(Number(source.duration) || 0)))
@@ -6551,30 +6562,6 @@ function nyxifyPlaylistLibrary(value) {
     if (totalCoverData > nyxifyPlaylistCoverLibraryLimit) throw nyxCloudSaveError("The Nyxify playlist artwork library is too large.", 413);
     return true;
   });
-}
-
-async function nyxifyProviderJson(pathname, searchParams = {}) {
-  if (!/^\/api\/music\/(?:search|artist\/\d{1,20}|album\/\d{1,20})$/.test(pathname)) {
-    throw new Error("Nyxify rejected an invalid catalog request.");
-  }
-  const target = new URL(pathname, nyxifyProviderOrigin);
-  for (const [name, value] of Object.entries(searchParams)) target.searchParams.set(name, String(value));
-  const response = await fetch(target, {
-    headers: { Accept: "application/json", "User-Agent": "Nyxify/1.0" },
-    redirect: "error",
-    signal: AbortSignal.timeout(15_000)
-  });
-  if (!response.ok) throw new Error(`The music catalog returned ${response.status}.`);
-  const contentType = String(response.headers.get("content-type") || "").toLowerCase();
-  const contentLength = Number(response.headers.get("content-length") || 0);
-  if (!contentType.includes("application/json") || (contentLength && contentLength > nyxifyJsonByteLimit)) {
-    await response.body?.cancel().catch(() => {});
-    throw new Error("The music catalog returned an invalid response.");
-  }
-  const bytes = Buffer.from(await response.arrayBuffer());
-  if (!bytes.length || bytes.length > nyxifyJsonByteLimit) throw new Error("The music catalog response was too large.");
-  const payload = JSON.parse(bytes.toString("utf8"));
-  return payload && typeof payload === "object" ? payload : {};
 }
 
 async function nyxifyDeezerJson(pathname, searchParams = {}) {
@@ -6633,33 +6620,12 @@ async function nyxifySearch(query) {
   const key = `search:${cleanQuery.toLowerCase()}`;
   const cached = nyxifyCacheGet(nyxifyCatalogCache, key);
   if (cached) return structuredClone(cached);
-  const [tidalResult, deezerResult, nativeResult] = await Promise.allSettled([
-    nyxifyProviderJson("/api/music/search", { q: cleanQuery }),
-    nyxifyDeezerJson("/search", { q: cleanQuery, limit: 50 }),
-    nyxifyMeting.search(cleanQuery)
-  ]);
-  const tidalTracks = tidalResult.status === "fulfilled"
-    ? (Array.isArray(tidalResult.value.data) ? tidalResult.value.data : []).slice(0, 50).map(value => nyxifyTrackRecord(value, { catalog: "tidal" })).filter(Boolean)
-    : [];
-  const deezerTracks = deezerResult.status === "fulfilled"
-    ? (Array.isArray(deezerResult.value.data) ? deezerResult.value.data : []).slice(0, 50).map(nyxifyDeezerTrackRecord).filter(Boolean)
-    : [];
-  const nativeTracks = nativeResult.status === "fulfilled" ? nativeResult.value : [];
-  if (!tidalTracks.length && !deezerTracks.length && !nativeTracks.length) {
-    throw new Error(tidalResult.reason?.message || deezerResult.reason?.message || "No music catalog is available right now.");
-  }
-  const identity = track => `${nyxifyMatchText(track.title)}|${nyxifyMatchText(track.artist)}`;
-  const playableByIdentity = new Map(deezerTracks.map(track => [identity(track), track]));
+  const results = await Promise.allSettled([nyxifyDeezerJson("/search", {q:cleanQuery,limit:50}),q62f7.search(cleanQuery)]);
+  if(results[0].status === "rejected" && (!q62f7.configured || results[1].status === "rejected")) throw new Error("Music catalogs are temporarily unavailable.");
+  const deezer = results[0].status === "fulfilled" ? (results[0].value.data || []).map(nyxifyDeezerTrackRecord).filter(Boolean) : [];
+  const tidal = results[1].status === "fulfilled" ? results[1].value : [];
   const seen = new Set();
-  const nativeWithCovers = nativeTracks.map(track => {const metadata = playableByIdentity.get(identity(track));return {...track, cover: metadata?.cover || track.cover};});
-  const data = [...nativeWithCovers, ...tidalTracks.map(track => playableByIdentity.get(identity(track)) || track), ...deezerTracks]
-    .filter(track => {
-      const key = identity(track);
-      if (!key || seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    })
-    .slice(0, 50);
+  const data = [...deezer,...tidal].filter(track => {const identity = [nyxifyMatchText(track.title),nyxifyMatchText(track.artist),Math.round(track.duration/5)].join('|');if(seen.has(identity))return false;seen.add(identity);return true;}).slice(0,80);
   const result = { data };
   nyxifyCacheSet(nyxifyCatalogCache, key, result, nyxifyCatalogCacheTtlMs, 100);
   return structuredClone(result);
@@ -6728,14 +6694,11 @@ async function nyxifyHome() {
 }
 
 async function nyxifyDetail(type, id) {
+  if (/^tidal:\d{1,20}$/.test(id)) return q62f7.detail(type,id.slice(6));
   if (!new Set(["artist", "album"]).has(type) || !nyxifyTrackIdPattern.test(id)) throw new Error("Invalid Nyxify detail request.");
   const key = `${type}:${id}`;
   const cached = nyxifyCacheGet(nyxifyCatalogCache, key);
   if (cached) return structuredClone(cached);
-  let payload;
-  try {
-    payload = await nyxifyProviderJson(`/api/music/${type}/${id}`);
-  } catch {
     if (type === "artist") {
       const [artist, top, albums] = await Promise.all([
         nyxifyDeezerJson(`/artist/${id}`),
@@ -6766,39 +6729,12 @@ async function nyxifyDetail(type, id) {
       name,
       cover: nyxifyCoverUrl(cover),
       artist,
-      artistId: nyxifyTrackIdPattern.test(artistId) ? artistId : "",
+      artistId: /^(?:tidal:)?\d{1,20}$/.test(artistId) ? artistId : "",
       tracks: (Array.isArray(album.tracks?.data) ? album.tracks.data : []).slice(0, 200)
         .map(value => nyxifyDeezerTrackRecord(value, { album: name, albumId: id, artist, artistId, cover })).filter(Boolean)
     };
     nyxifyCacheSet(nyxifyCatalogCache, key, result, nyxifyCatalogCacheTtlMs, 100);
     return structuredClone(result);
-  }
-  let result;
-  if (type === "artist") {
-    const name = nyxifyCleanText(payload.name, "Unknown artist", 120);
-    const tracks = (Array.isArray(payload.tracks) ? payload.tracks : []).slice(0, 200).map(value => nyxifyTrackRecord(value, { artist: name, artistId: id, catalog: "tidal" })).filter(Boolean);
-    result = {
-      name,
-      cover: tracks.find(track => track.cover)?.cover || nyxifyCoverUrl(payload.cover),
-      total: Math.max(0, Math.min(100_000, Number.parseInt(payload.total, 10) || 0)),
-      albums: (Array.isArray(payload.albums) ? payload.albums : []).slice(0, 100).map(nyxifyAlbumRecord).filter(Boolean),
-      tracks
-    };
-  } else {
-    const name = nyxifyCleanText(payload.name, "Unknown album", 160);
-    const artist = nyxifyCleanText(payload.artist, "Unknown artist", 120);
-    const artistId = String(payload.artistId || "").trim();
-    const cover = nyxifyCoverUrl(payload.cover);
-    result = {
-      name,
-      cover: nyxifyCoverUrl(cover),
-      artist,
-      artistId: nyxifyTrackIdPattern.test(artistId) ? artistId : "",
-      tracks: (Array.isArray(payload.tracks) ? payload.tracks : []).slice(0, 200).map(value => nyxifyTrackRecord(value, { album: name, albumId: id, artist, artistId, cover, catalog: "tidal" })).filter(Boolean)
-    };
-  }
-  nyxifyCacheSet(nyxifyCatalogCache, key, result, nyxifyCatalogCacheTtlMs, 100);
-  return structuredClone(result);
 }
 
 function nyxifyFullTrackScore(video, track) {
@@ -7228,36 +7164,6 @@ async function nyxifyFullTrack(trackId, hints = {}) {
   return structuredClone(result);
 }
 
-function nyxifyProviderUrl(pathname) {
-  const target = new URL(pathname, nyxifyProviderOrigin);
-  if (target.origin !== nyxifyProviderOrigin || target.username || target.password || target.hash) return null;
-  return target;
-}
-
-async function nyxifyFetchAsset(initialUrl, headers) {
-  let target = initialUrl instanceof URL ? initialUrl : nyxifyProviderUrl(initialUrl);
-  if (!target || target.origin !== nyxifyProviderOrigin) throw new Error("Nyxify rejected an invalid media request.");
-  for (let redirects = 0; redirects <= 3; redirects += 1) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15_000);
-    let response;
-    try {
-      response = await fetch(target, { headers, redirect: "manual", signal: controller.signal });
-    } finally {
-      clearTimeout(timeout);
-    }
-    const location = response.headers.get("location");
-    if (response.status >= 300 && response.status < 400 && location) {
-      response.body?.cancel().catch(() => {});
-      target = nyxifyProviderUrl(new URL(location, target).href);
-      if (!target || target.origin !== nyxifyProviderOrigin) throw new Error("Nyxify rejected a media redirect.");
-      continue;
-    }
-    return response;
-  }
-  throw new Error("Nyxify media redirected too many times.");
-}
-
 function nyxifyArtworkFallbackUrl(artworkPath) {
   const match = String(artworkPath || "").match(/^\/img\/images\/(artist|cover)\/([a-f0-9]{32})\/([A-Za-z0-9._-]{1,128})$/i);
   if (!match) return null;
@@ -7290,7 +7196,6 @@ async function nyxifyLoadArtwork(artworkPath, tidalArtworkPath = "") {
     const sources = tidalPath
       ? [() => nyxifyFetchTidalArtwork(tidalPath, imageHeaders)]
       : [
-          () => nyxifyFetchAsset(nyxifyProviderUrl(path), imageHeaders),
           ...(fallbackTarget ? [() => nyxifyFetchFallbackArtwork(fallbackTarget, imageHeaders)] : [])
         ];
     for (let attempt = 0; attempt < sources.length; attempt += 1) {
@@ -10846,7 +10751,7 @@ app.get("/api/chat/bootstrap", async (req, res) => {
       .filter(Boolean)
       .sort((left, right) => right.updatedAtMs - left.updatedAtMs);
     res.json({
-      channels: visibleTextChannels.map(channel=>({...channel,locked:lockedChannels.get(channel.id)===true})),
+      channels: visibleTextChannels.map(channel=>({...channel,locked:q76a3(channel)||lockedChannels.get(channel.id)===true})),
       latestActivity: Object.fromEntries(latestActivity.filter(([channelId]) => visibleTextChannelIds.has(channelId))),
       conversations,
       voice: nyxChatVoiceState(token.uid, "", false, visibleVoiceChannels),
@@ -12062,7 +11967,7 @@ app.post("/api/chat/messages", async (req, res) => {
         const spamExempt=nyxChatCanModerate(nyxRoleForUser(token.uid,administration.data()||{}));
         if(!scope.private){
           const channelState=await transaction.get(scope.ref);
-          if(channelState.data()?.locked===true&&!spamExempt)throw Object.assign(new Error('This channel is locked. Only moderators and higher roles can send messages.'),{status:403});
+          if((scope.q76a3||channelState.data()?.locked===true)&&!spamExempt)throw Object.assign(new Error('This channel is locked. Only moderators and higher roles can send messages.'),{status:403});
         }
         const sendState=spamExempt?null:await transaction.get(sendStateRef);
         const currentAttachments = [];
@@ -12080,7 +11985,8 @@ app.post("/api/chat/messages", async (req, res) => {
           transaction.set(sendStateRef,decision.state);
           if(decision.error)return {blocked:decision};
         }
-        transaction.create(messageRef, value);
+        transaction.create(messageRef, {...value,...(process.env.NYX_DISCORD_BRIDGE_ENABLED==='1'&&!scope.private&&q68a1[scope.id]?{qBridgeEligible:true}:{})});
+        qEnqueue(firebase.firestore,transaction,scope,messageId);
         attachmentRefs.forEach(ref => transaction.set(ref, { bound: true, messageId, scopeType: scope.type, scopeId: scope.id, boundAt: new Date(createdAtMs).toISOString(), expiresAtMs: 0 }, { merge: true }));
         if (scope.private) transaction.set(scope.ref, {
           updatedAt: new Date(createdAtMs).toISOString(),
@@ -12149,12 +12055,13 @@ async function deleteNyxChatMessageDocuments(firebase, documents = [], {scope,ac
   const diskPaths = attachmentSnapshots.map((snapshot, index) => snapshot.data()?.storage === "disk" ? nyxChatAttachmentDiskPath(attachmentIds[index]) : "").filter(Boolean);
   const deleteRefs = [...messages.map(document => document.ref), ...attachmentRefs, ...chunkSnapshots.flatMap(snapshot => snapshot.docs.map(document => document.ref))];
   const originals=new Map(messages.map(document=>[document.ref.path,document]));
-  for (let offset = 0; offset < deleteRefs.length; offset += 200) {
+  for (let offset = 0; offset < deleteRefs.length; offset += 150) {
     const batch = firebase.firestore.batch();
-    deleteRefs.slice(offset, offset + 200).forEach(ref => {
+    deleteRefs.slice(offset, offset + 150).forEach(ref => {
       const original=originals.get(ref.path);
       if(original&&scope){
         const value=original.data()||{},author=value.author||{};
+        qEnqueue(firebase.firestore,batch,scope,original.id);
         batch.create(scope.ref.collection('deletedMessages').doc(original.id),{id:original.id,text:String(value.text||'').slice(0,1000),author:{uid:String(value.authorUid||author.uid||''),displayName:String(author.displayName||"N7X member").slice(0,100),handle:String(author.handle||'').slice(0,100)},createdAtMs:Number(value.createdAtMs)||0,deletedAtMs:Date.now(),deletedBy:String(actorUid||''),attachmentNames:(value.attachments||[]).map(item=>String(item.name||'Attachment').slice(0,200)).slice(0,8)});
       }
       batch.delete(ref);
@@ -12300,7 +12207,7 @@ app.post("/api/chat/messages/:scope/:messageId/reactions", async (req, res) => {
     const scope = await nyxChatScope(firebase, token.uid, { scope: req.params.scope }, "", nyxClientIp(req));
     const messageId = String(req.params.messageId || "").trim();
     const emoji = String(req.body?.emoji || "");
-    if (!/^[a-f0-9]{40}$/.test(messageId) || !nyxChatReactionEmoji.has(emoji)) {
+    if (!/^[a-f0-9]{40}$/.test(messageId) || !nyxChatReactionEmoji.has(emoji)&&!qCustom(emoji)) {
       res.status(400).json({ error: "That reaction is not available." });
       return;
     }
@@ -12317,7 +12224,8 @@ app.post("/api/chat/messages/:scope/:messageId/reactions", async (req, res) => {
       const current = (Array.isArray(snapshot.data()?.reactions) ? snapshot.data().reactions : []).map(entry => ({
         emoji: String(entry?.emoji || ""),
         uids: [...new Set((Array.isArray(entry?.uids) ? entry.uids : []).map(uid => String(uid || "").trim()).filter(Boolean))].slice(0, 250)
-      })).filter(entry => nyxChatReactionEmoji.has(entry.emoji));
+      })).filter(entry => nyxChatReactionEmoji.has(entry.emoji)||qCustom(entry.emoji));
+      if(qCustom(emoji)&&!current.some(item=>item.emoji===emoji))throw Object.assign(new Error("Choose an existing Discord reaction."),{status:400});
       let entry = current.find(item => item.emoji === emoji);
       if (!entry) {
         if(current.length>=20)throw Object.assign(new Error('This message already has 20 different reactions. Choose an existing one.'),{status:409});
@@ -12334,6 +12242,7 @@ app.post("/api/chat/messages/:scope/:messageId/reactions", async (req, res) => {
       }
       reactions = current.filter(item => item.uids.length);
       transaction.set(messageRef, { reactions }, { merge: true });
+      qEnqueue(firebase.firestore,transaction,scope,messageId);
     });
     const revision = recordNyxChatRealtimeEvent({
       kind: "reaction",
@@ -12474,10 +12383,18 @@ app.put("/api/nyxify/playlists", async (req, res) => {
   }
 });
 
+if(process.env.NYX_MUSIC_PROVIDER==='audius')app.use(q67a9(sameOriginRequest));
+
 app.get("/api/nyxify/status", (req, res) => {
   res.set("Cache-Control", "public, max-age=60");
   if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
-  res.json({ configured: true, provider: "deezer-tidal-meting", providerLabel: "Deezer + Tidal search · Native audio playback" });
+  res.json({ configured: true, tidal: { configured: q62f7.configured }, provider: q62f7.configured ? "deezer-tidal-audius-meting" : "deezer-audius-meting", providerLabel: (q62f7.configured ? "Deezer + Tidal" : "Deezer") + " search / Audius + Meting playback" });
+});
+
+app.get("/api/nyxify/lyrics", async (req, res) => {
+  if (!sameOriginRequest(req)) return res.status(403).json({error:"Cross-origin requests are not allowed."});
+  try {res.set("Cache-Control","private, max-age=300").json(await q51fa(req.query));}
+  catch(error){res.status(error.status===400?400:502).json({error:error.status===400?error.message:"Lyrics are temporarily unavailable."});}
 });
 
 app.get("/api/nyxify/home", async (req, res) => {
@@ -12507,7 +12424,7 @@ for (const detailType of ["artist", "album"]) {
     res.set("Cache-Control", "private, max-age=60, stale-while-revalidate=300");
     if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
     const id = String(req.params.id || "").trim();
-    if (!nyxifyTrackIdPattern.test(id)) return res.status(400).json({ error: `Invalid Nyxify ${detailType}.` });
+    if (!/^(?:tidal:)?\d{1,20}$/.test(id)) return res.status(400).json({ error: `Invalid Nyxify ${detailType}.` });
     try {
       res.json(await nyxifyDetail(detailType, id));
     } catch (error) {
@@ -12522,13 +12439,17 @@ app.get("/api/nyxify/playback/:trackId", async (req, res) => {
   if (!nyxifyTrackKeyPattern.test(String(req.params.trackId))) return res.status(400).json({ error: "Invalid Nyxify track." });
   try {
     const hints = { title: req.query.title, artist: req.query.artist, duration: req.query.duration };
-    res.json(String(req.params.trackId).startsWith('netease:')
-      ? await nyxifyMeting.resolveId(String(req.params.trackId).slice(8), hints, {prefetch:req.query.prefetch === '1'})
-      : await nyxifyMeting.resolve(hints, { prefetch: req.query.prefetch === '1' }));
+    res.json(await q90c4.resolve(hints, {id:String(req.params.trackId), prefetch:req.query.prefetch === '1'}));
   } catch (error) {
     if (error.status === 503) res.set("Retry-After", "5");
     res.status(error.status || 502).json({ error: error.status ? error.message : "Music lookup is temporarily unavailable." });
   }
+});
+
+app.get("/api/nyxify/q83b2/:id", async (req, res) => {
+  if (!sameOriginRequest(req)) return res.sendStatus(403);
+  try { res.redirect(307, await q90c4.streamUrl(req.params.id)); }
+  catch (error) { res.status(error.status || 502).send("Audio is unavailable."); }
 });
 
 app.get("/api/nyxify/audio/:id", async (req, res) => {
@@ -13782,7 +13703,6 @@ app.get("/api/founder-profile/auth-config", (_req, res) => {
   const firebase = linkGeneratorFirebaseConfig();
   res.set("Cache-Control", "no-store").json({
     enabled: firebaseAccountModeConfigured(),
-    ownerConfigured: Boolean(founderProfileConfig().administratorUid),
     apiKey: firebaseAccountModeConfigured() ? firebase.webApiKey : "",
     projectId: firebaseAccountModeConfigured() ? firebase.projectId : ""
   });
@@ -14163,7 +14083,7 @@ app.get("/download/nyx-singlefile.html", (_req, res) => {
 
 const remoteDesktop=createRemoteDesktop({firebase:linkGeneratorFirebase,download:()=>companionZip(__dirname,{remote:true})});
 const nyxCloudDesktop=createNyxCloudDesktop({firebase:linkGeneratorFirebase});
-app.use('/api/nyxcloud/lorem',createLoremCloud({firebase:linkGeneratorFirebase,queueTier:async uid=>{
+app.use('/api/nyxcloud/lorem',createLoremCloud({firebase:linkGeneratorFirebase,maintenanceInterval:15000,queueTier:async uid=>{
   const firebase=await linkGeneratorFirebase();
   const record=await firebase.firestore.collection('nyxUserAdministration').doc(uid).get();
   const account=record.data()||{};
@@ -14290,6 +14210,28 @@ export { app, attachNyxChatSocketServer, externalWispUrl, normalizePublicWispUrl
 
 const isDirectRun = process.argv[1] && resolve(process.argv[1]) === join(__dirname, "server.js");
 async function startNyxServer() {
+  let qBridgeRuntime,qBridgeTimer,qBridgeStopped=false;
+  const qBridgeBoot=async()=>{if(qBridgeStopped)return;
+  if(process.env.NYX_DISCORD_BRIDGE_ENABLED==='1'){
+    const firebase=await linkGeneratorFirebase();if(!firebase)throw new Error("Discord bridge requires backend authentication storage");
+    qBridgeRuntime=await qStart({db:firebase.firestore,allowed:async id=>{const c=(await loadNyxChatConfiguration(firebase)).textChannels.find(c=>c.id===id);return Boolean(c&&nyxChatCanAccessChannel('member',c));},mime:value=>nyxChatAttachmentMimeTypes.has(value),files:async(scope,data)=>{
+      const files=[];let total=0;
+      for(const value of (data.attachments||[]).slice(0,4)){
+        const id=String(value.id||'');if(!nyxChatAttachmentIdPattern.test(id))continue;
+        const ref=firebase.firestore.collection('nyxChatAttachments').doc(id),a=(await ref.get()).data();
+        if(!a?.complete||!a.bound||a.scopeType!=='channel'||a.scopeId!==scope||!nyxChatAttachmentMimeTypes.has(a.mime)||a.size>nyxChatAttachmentFileLimit||total+a.size>nyxChatAttachmentFileLimit)continue;
+        let buffer;if(a.storage==='disk'){buffer=await import('node:fs/promises').then(fs=>fs.readFile(nyxChatAttachmentDiskPath(id)));}else{const count=Number(a.totalChunks);if(count<1||count>32)continue;const chunks=await Promise.all(Array.from({length:count},(_,i)=>ref.collection('chunks').doc(String(i).padStart(3,'0')).get()));buffer=Buffer.from(chunks.map(c=>c.data()?.chunk||'').join(''),'base64');}
+        if(buffer.length!==a.size)continue;files.push({data:buffer,name:nyxChatAttachmentName(a.name),contentType:a.mime});total+=buffer.length;
+      }return files;
+    },valid:emoji=>nyxChatReactionEmoji.has(emoji),emit:event=>{const revision=recordNyxChatRealtimeEvent(event);emitNyxChatSocketEvent({...event,revision});},validate:async ids=>{
+      const configuration=await loadNyxChatConfiguration(firebase);
+      const missing=ids.filter(id=>!configuration.textChannels.some(c=>c.id===id));
+      if(missing.length)throw new Error("Configure the requested N7X channels before enabling Discord sync: "+missing.join(", "));
+      for(const id of ids){const c=configuration.textChannels.find(c=>c.id===id);if(!nyxChatCanAccessChannel("member",c))throw new Error("Only public N7X channels may be bridged");}
+    }});
+  }
+  };
+  const qBridgeAttempt=()=>void qBridgeBoot().catch(()=>{console.error('Discord bridge is unavailable; N7X will continue running.');if(!qBridgeStopped){qBridgeTimer=setTimeout(qBridgeAttempt,30000);qBridgeTimer.unref();}});
   const wisp = externalWispUrl ? null : await startWispurr({
     onFailure: () => { console.error("N7X relay worker stopped."); shutdown("worker", 1); }
   });
@@ -14342,8 +14284,10 @@ async function startNyxServer() {
     }
   });
 
+  qBridgeAttempt();
   let shuttingDown = false;
   function shutdown(signal, exitCode = 0) {
+    qBridgeStopped=true;clearTimeout(qBridgeTimer);void qBridgeRuntime?.close();
     remoteDesktop.close();
     closeHttpRelay();
     void nyxTubeBackend.close();

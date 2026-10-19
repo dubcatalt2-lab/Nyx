@@ -28,3 +28,10 @@ const socketContext=vm.createContext({nyxChatRealtimeRevision:1,nyxChatMessagePa
 vm.runInContext(['nyxChatMentionHandles','nyxChatEventMentionsIdentity','nyxChatSocketEventForViewer'].map(name=>serverFns.get(name)).join('\n'),socketContext);
 assert.equal(vm.runInContext("nyxChatSocketEventForViewer({kind:'message',lastMessageText:'@me hello',messageDocument:{text:'@me hello'}},{data:{uid:'me',identity:{handle:'@me'}}}).mentionsViewer",socketContext),true);
 console.log('PASS socket mention uses emitted lastMessageText field');
+
+const policy=vm.createContext({nyxChatChannelIdPattern:/^[a-z0-9-]+$/,founderProfileText:(v,f)=>v||f,nyxRolePolicies:{member:{rank:0},moderator:{rank:50}},nyxRolePolicy:r=>({rank:r==='moderator'?50:0}),nyxSchoolChatChannelId:'school',nyxSchoolChatChannelName:'School',normalizeNyxIp:s=>s,nyxSchoolChatAllowedIp:'allowed'});
+vm.runInContext(['q76a3','nyxChatChannelGroup','nyxChatChannelDefinition','nyxChatIsSchoolRestrictedChannel','nyxChatCanAccessChannel'].map(n=>serverFns.get(n)).join('\n'),policy);
+assert.equal(vm.runInContext("nyxChatCanAccessChannel('member',nyxChatChannelDefinition({id:'announcements',name:'Announcements',minimumRole:'moderator'}))",policy),true);
+assert.equal(vm.runInContext("nyxChatCanAccessChannel('member',nyxChatChannelDefinition({id:'staff-room',name:'Staff Room',minimumRole:'moderator'}))",policy),false);
+assert.equal(vm.runInContext("nyxChatCanAccessChannel('member',nyxChatChannelDefinition({id:'staff-updates',name:'Staff updates',group:'announcements',minimumRole:'moderator'}))",policy),false);
+console.log('PASS public announcement reading with private staff channels preserved');

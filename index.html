@@ -1,6 +1,26 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script>
+(() => {
+  const toggleCover=event=>{
+    if(event.key!=='F12'||event.ctrlKey||event.metaKey||event.altKey||event.shiftKey||event.repeat)return;
+    event.preventDefault();event.stopImmediatePropagation();
+    window.q6f42a91 = Date.now() + 1500;
+    window.location.assign('about:blank');
+  };
+  const boundDocuments=new WeakSet();
+  const bindDocument=doc=>{
+    if(boundDocuments.has(doc))return;
+    boundDocuments.add(doc);
+    (doc.defaultView || doc).addEventListener('keydown',toggleCover,true);
+    const bindFrame=frame=>{try{if(frame.contentDocument)bindDocument(frame.contentDocument);}catch{}};
+    doc.addEventListener('load',event=>{if(event.target?.tagName==='IFRAME')bindFrame(event.target);},true);
+    doc.querySelectorAll('iframe').forEach(bindFrame);
+  };
+  bindDocument(document);
+})();
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>N7X</title>
@@ -111,8 +131,6 @@
 
 
 html.n7x-browser-shell-expected body:not(.q6172f40672fb949e9c)>:is(#customBgImage,#nd9720eea6773,#n0148d6c24d0c,.n11c31f2b2fec,#n4db184acef21,.dock){visibility:hidden!important}
-#n7xPrivacyCover{position:fixed;inset:0;width:100vw;height:100dvh;max-width:none;max-height:none;margin:0;padding:0;border:0;background:#fff;color:#fff}
-#n7xPrivacyCover::backdrop{background:#fff}
 </style>
 <link rel="stylesheet" href="css/obsidian.css?v=20261001-wallpaper-upload-v6">
   <link rel="stylesheet" href="css/profile-editor-layout.css?v=20261004-profile-layout">
@@ -120,30 +138,7 @@ html.n7x-browser-shell-expected body:not(.q6172f40672fb949e9c)>:is(#customBgImag
 </head>
 <body>
 
-<script>
-(() => {
-  const cover=document.createElement('dialog');
-  cover.id='n7xPrivacyCover';
-  cover.dataset.n7xOwnedOverlay='';
-  cover.setAttribute('aria-label',"Privacy cover. Press Escape to return to N7X.");
-  document.body.append(cover);
-  const toggleCover=event=>{
-    if(event.key!=='F12'||event.ctrlKey||event.metaKey||event.altKey||event.shiftKey||event.repeat)return;
-    event.preventDefault();event.stopImmediatePropagation();
-    if(cover.open)cover.close();else cover.showModal();
-  };
-  const boundDocuments=new WeakSet();
-  const bindDocument=doc=>{
-    if(boundDocuments.has(doc))return;
-    boundDocuments.add(doc);
-    doc.addEventListener('keydown',toggleCover,true);
-    const bindFrame=frame=>{try{if(frame.contentDocument)bindDocument(frame.contentDocument);}catch{}};
-    doc.addEventListener('load',event=>{if(event.target?.tagName==='IFRAME')bindFrame(event.target);},true);
-    doc.querySelectorAll('iframe').forEach(bindFrame);
-  };
-  bindDocument(document);
-})();
-</script>
+
 
 <img id="customBgImage" class="custom-bg-image" alt="" referrerpolicy="no-referrer">
 <canvas id="n22e9fbee8c96" aria-hidden="true"></canvas>

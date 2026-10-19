@@ -56,7 +56,7 @@ try {
   assert(libraries.some(label => label.includes('Miscellaneous')), `Miscellaneous coverless library is missing (${libraries.join(', ')})`);
 
   await page.locator('[data-library="gn"]').click();
-  const gnCards = (await page.locator('.game-card').allTextContents()).map(text=>text.normalize('NFKC'));
+  const gnCards = (await page.locator('.q482f08e91ee0').allTextContents()).map(text=>text.normalize('NFKC'));
   assert(gnCards.length === 2 && gnCards.some(card => card.includes('Shared Game')) && gnCards.some(card => card.includes('GN Only')), `GN filter returned the wrong games (${gnCards.join(', ')})`);
   assert(await page.locator('[data-library="gn"]').getAttribute('aria-pressed') === 'true', 'GN library did not expose its active state');
   const neutralLibrary = await page.locator('[data-library="gn"]').evaluate(button => {
@@ -76,16 +76,16 @@ try {
   assert(neutralLibrary.backdrop.includes('blur'), `Library picker is missing its neutral blur (${neutralLibrary.backdrop})`);
 
   await page.locator('[data-library="all"]').click();
-  await page.locator('#gameSearch').fill('Nyx Only');
+  await page.locator('#q768acae37c5a').fill('Nyx Only');
   assert(await page.getByRole('button', {name:'Play Nyx Only',exact:true}).count() === 1, 'All-games search must find games without cover art');
-  await page.locator('#gameSearch').fill('');
+  await page.locator('#q768acae37c5a').fill('');
   await page.locator('[data-library="misc"]').click();
-  assert(await page.locator('.game-card').count() === 1, 'The miscellaneous library did not contain only the coverless games');
+  assert(await page.locator('.q482f08e91ee0').count() === 1, 'The miscellaneous library did not contain only the coverless games');
   await page.locator('[data-library="gn"]').click();
 
   await page.getByRole('button', { name: 'Play Shared Game' }).click();
-  assert((await page.locator('#gameFrame').getAttribute('src'))?.includes('/assets/gn-math/play.html'), 'A game opened from GN did not prefer its GN source');
-  const optimizer = page.locator('#performanceGame');
+  assert((await page.locator('#qcb196f617df1').getAttribute('src'))?.includes('/assets/gn-math/play.html'), 'A game opened from GN did not prefer its GN source');
+  const optimizer = page.locator('#q8eae2f4e61bb');
   assert(await optimizer.getAttribute('data-mode') === 'auto' && await optimizer.getAttribute('data-level') === '0', 'Auto optimizer did not begin at full quality on the simulated capable device');
   await page.evaluate(async () => {
     for (let index = 0; index < 24; index += 1) {
@@ -103,23 +103,23 @@ try {
     longTasks: button.dataset.longTasks
   }));
   assert(automaticOptimizer.level === '1', `Auto optimizer did not react to sustained slow frames (${JSON.stringify(automaticOptimizer)})`);
-  await page.waitForFunction(() => document.getElementById('performanceGame')?.dataset.level === '0', null, { timeout: 16_000 });
+  await page.waitForFunction(() => document.getElementById('q8eae2f4e61bb')?.dataset.level === '0', null, { timeout: 16_000 });
   await optimizer.click();
   let optimizerLayout = await page.evaluate(() => ({
-    mode: document.getElementById('performanceGame').dataset.mode,
+    mode: document.getElementById('q8eae2f4e61bb').dataset.mode,
     level: document.body.dataset.gamePerformanceLevel,
-    frameWidth: document.getElementById('gameFrame').offsetWidth,
-    stageWidth: document.querySelector('.player-stage').clientWidth
+    frameWidth: document.getElementById('qcb196f617df1').offsetWidth,
+    stageWidth: document.querySelector('.q43eac6a150de').clientWidth
   }));
   assert(optimizerLayout.mode === 'balanced' && optimizerLayout.level === '1', `Balanced optimizer mode did not activate (${JSON.stringify(optimizerLayout)})`);
   assert(Math.abs(optimizerLayout.frameWidth / optimizerLayout.stageWidth - 0.86) < 0.02, `Balanced mode used the wrong render scale (${JSON.stringify(optimizerLayout)})`);
 
   await optimizer.click();
   optimizerLayout = await page.evaluate(() => ({
-    mode: document.getElementById('performanceGame').dataset.mode,
+    mode: document.getElementById('q8eae2f4e61bb').dataset.mode,
     level: document.body.dataset.gamePerformanceLevel,
-    frameWidth: document.getElementById('gameFrame').offsetWidth,
-    stageWidth: document.querySelector('.player-stage').clientWidth
+    frameWidth: document.getElementById('qcb196f617df1').offsetWidth,
+    stageWidth: document.querySelector('.q43eac6a150de').clientWidth
   }));
   assert(optimizerLayout.mode === 'boost' && optimizerLayout.level === '2', `Boost optimizer mode did not activate (${JSON.stringify(optimizerLayout)})`);
   assert(Math.abs(optimizerLayout.frameWidth / optimizerLayout.stageWidth - 0.72) < 0.02, `Boost mode used the wrong render scale (${JSON.stringify(optimizerLayout)})`);
@@ -129,7 +129,7 @@ try {
   assert(await optimizer.getAttribute('data-mode') === 'off' && await optimizer.getAttribute('data-level') === '0', 'Optimizer Off mode did not restore full quality');
   await optimizer.click();
   assert(await optimizer.getAttribute('data-mode') === 'auto', 'Optimizer did not cycle back to Auto');
-  await page.locator('#closePlayer').click();
+  await page.locator('#qd322f3d74d9d').click();
 
   const adResult = page.evaluate(() => new Promise(resolve => {
     const listener = event => {
@@ -183,7 +183,7 @@ try {
   await progressive.getByRole('button', { name: 'Play Ready First' }).waitFor({ timeout: 3_000 });
   assert(Date.now() - progressiveStarted < 3_000, 'A stalled optional provider delayed the built-in game library');
   assert(await progressive.locator('#catalogProgress').evaluate(element => element.classList.contains('done')), 'The full-page loading indicator remained after built-in games were ready');
-  assert((await progressive.locator('#gameCount').textContent()).normalize('NFKC').includes('library loading'), 'Progressive loading status did not report the remaining provider');
+  assert((await progressive.locator('#qbd6ae01dd017').textContent()).normalize('NFKC').includes('library loading'), 'Progressive loading status did not report the remaining provider');
   await progressive.close();
 
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
@@ -201,9 +201,9 @@ try {
   await mobile.getByRole('button', { name: /All games/ }).waitFor();
   const mobileOverflow = await mobile.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   assert(!mobileOverflow, 'Mobile game library has horizontal page overflow');
-  await mobile.locator('.game-card').first().click();
-  assert(await mobile.locator('#performanceGame').getAttribute('data-mode') === 'auto' && await mobile.locator('#performanceGame').getAttribute('data-level') === '2', 'Auto optimizer did not start in Boost on the simulated low-end device');
-  await mobile.locator('#closePlayer').click();
+  await mobile.locator('.q482f08e91ee0').first().click();
+  assert(await mobile.locator('#q8eae2f4e61bb').getAttribute('data-mode') === 'auto' && await mobile.locator('#q8eae2f4e61bb').getAttribute('data-level') === '2', 'Auto optimizer did not start in Boost on the simulated low-end device');
+  await mobile.locator('#qd322f3d74d9d').click();
   await mobile.close();
 
   if (process.env.NYX_TEST_REAL_GAME) {

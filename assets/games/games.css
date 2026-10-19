@@ -16,7 +16,9 @@
   --motion: 180ms;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 html,
 body {
@@ -34,7 +36,9 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-body.game-active .library { display: none; }
+body.q8064dac97fa6 .library {
+  display: none;
+}
 
 body.cloud-session-active {
   height: 100vh;
@@ -49,12 +53,12 @@ body.cloud-session-active .library {
 }
 
 body.cloud-session-active .cove-header,
-body.cloud-session-active .game-view-switch,
-body.cloud-session-active #localGamesView {
+body.cloud-session-active .qc7b156557cda,
+body.cloud-session-active #q92df914ad808 {
   display: none;
 }
 
-body.cloud-session-active .cloud-games-view {
+body.cloud-session-active .q42e6e6310e8a {
   position: fixed;
   inset: 0;
   z-index: 20;
@@ -63,15 +67,19 @@ body.cloud-session-active .cloud-games-view {
   border-radius: 0;
 }
 
-body.cloud-session-active .cloud-games-view iframe {
+body.cloud-session-active .q42e6e6310e8a iframe {
   height: 100%;
 }
 
 button,
 input,
-select { font: inherit; }
+select {
+  font: inherit;
+}
 
-button { -webkit-tap-highlight-color: transparent; }
+button {
+  -webkit-tap-highlight-color: transparent;
+}
 
 svg {
   fill: none;
@@ -151,7 +159,7 @@ h1 {
   line-height: 1.5;
 }
 
-.game-view-switch {
+.qc7b156557cda {
   width: max-content;
   max-width: 100%;
   display: grid;
@@ -164,7 +172,7 @@ h1 {
   background: rgba(10, 12, 18, 0.9);
 }
 
-.game-view-button {
+.q0fa2962b8d68 {
   min-width: 128px;
   height: 40px;
   border: 0;
@@ -181,28 +189,32 @@ h1 {
     transform var(--motion) ease;
 }
 
-.game-view-button:hover,
-.game-view-button:focus-visible {
+.q0fa2962b8d68:hover,
+.q0fa2962b8d68:focus-visible {
   color: var(--text);
   background: rgba(255, 255, 255, 0.045);
 }
 
-.game-view-button:focus-visible {
+.q0fa2962b8d68:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-.game-view-button:active { transform: scale(0.98); }
+.q0fa2962b8d68:active {
+  transform: scale(0.98);
+}
 
-.game-view-button.active {
+.q0fa2962b8d68.active {
   background: var(--accent-soft);
   color: color-mix(in srgb, var(--accent) 72%, white);
   box-shadow: inset 0 0 0 1px var(--accent-border);
 }
 
-.games-view[hidden] { display: none; }
+.q3c69de6d2149[hidden] {
+  display: none;
+}
 
-.cloud-games-view {
+.q42e6e6310e8a {
   margin-top: 22px;
   overflow: hidden;
   border: 1px solid var(--border);
@@ -210,7 +222,7 @@ h1 {
   background: #000;
 }
 
-.cloud-games-view iframe {
+.q42e6e6310e8a iframe {
   width: 100%;
   height: max(650px, calc(100vh - 285px));
   display: block;
@@ -291,7 +303,9 @@ h1 {
   cursor: pointer;
 }
 
-.sort-field select { min-width: 92px; }
+.sort-field select {
+  min-width: 92px;
+}
 
 .select-field option {
   background: #111521;
@@ -319,7 +333,9 @@ h1 {
 }
 
 .library-picker-heading h2,
-.library-picker-heading p { margin: 0; }
+.library-picker-heading p {
+  margin: 0;
+}
 
 .library-picker-heading h2 {
   margin-top: 3px;
@@ -329,7 +345,7 @@ h1 {
   letter-spacing: -0.015em;
 }
 
-.library-picker-heading > p {
+.library-picker-heading>p {
   color: rgba(255, 255, 255, 0.66);
   font-size: 12px;
 }
@@ -384,7 +400,9 @@ h1 {
   outline-offset: 2px;
 }
 
-.library-tab:active { transform: scale(0.98); }
+.library-tab:active {
+  transform: scale(0.98);
+}
 
 .library-tab.active {
   border-color: rgba(255, 255, 255, 0.34);
@@ -436,20 +454,27 @@ h1 {
   animation: catalog-loading 1.1s ease-in-out infinite;
 }
 
-.catalog-progress.done { display: none; }
-
-@keyframes catalog-loading {
-  from { transform: translateX(-110%); }
-  to { transform: translateX(250%); }
+.catalog-progress.done {
+  display: none;
 }
 
-.game-grid {
+@keyframes catalog-loading {
+  from {
+    transform: translateX(-110%);
+  }
+
+  to {
+    transform: translateX(250%);
+  }
+}
+
+.q1823ef120d6d {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 15px;
 }
 
-.game-card {
+.q482f08e91ee0 {
   min-width: 0;
   aspect-ratio: 1;
   position: relative;
@@ -470,19 +495,19 @@ h1 {
     box-shadow var(--motion) ease;
 }
 
-.game-card:hover,
-.game-card:focus-visible {
+.q482f08e91ee0:hover,
+.q482f08e91ee0:focus-visible {
   transform: translateY(-2px);
   border-color: var(--accent-border);
   box-shadow: var(--shadow), 0 0 0 1px var(--accent-soft);
 }
 
-.game-card:focus-visible {
+.q482f08e91ee0:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--accent) 78%, white);
   outline-offset: 3px;
 }
 
-.game-cover {
+.qaddd0d3ae838 {
   position: absolute;
   inset: 0;
   display: grid;
@@ -491,7 +516,7 @@ h1 {
   background: var(--surface-raised);
 }
 
-.game-cover::after {
+.qaddd0d3ae838::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -499,7 +524,7 @@ h1 {
   background: linear-gradient(180deg, transparent 48%, rgba(2, 4, 10, 0.1));
 }
 
-.game-cover img {
+.qaddd0d3ae838 img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -513,10 +538,12 @@ h1 {
     filter var(--motion) ease;
 }
 
-.game-cover img.loaded { opacity: 1; }
+.qaddd0d3ae838 img.loaded {
+  opacity: 1;
+}
 
-.game-card:hover .game-cover img,
-.game-card:focus-visible .game-cover img {
+.q482f08e91ee0:hover .qaddd0d3ae838 img,
+.q482f08e91ee0:focus-visible .qaddd0d3ae838 img {
   transform: scale(1.075);
   filter: brightness(0.64);
 }
@@ -534,7 +561,7 @@ h1 {
   font-weight: 750;
 }
 
-.game-name {
+.qf9ea5fbfc68e {
   position: absolute;
   inset: 0;
   z-index: 2;
@@ -554,7 +581,7 @@ h1 {
   transition: opacity var(--motion) ease, transform var(--motion) ease;
 }
 
-.game-source-badge {
+.qa1ec59942bde {
   position: absolute;
   top: 9px;
   left: 9px;
@@ -577,11 +604,13 @@ h1 {
   transition: opacity var(--motion) ease;
 }
 
-.game-card:hover .game-source-badge,
-.game-card:focus-visible .game-source-badge { opacity: 0.72; }
+.q482f08e91ee0:hover .qa1ec59942bde,
+.q482f08e91ee0:focus-visible .qa1ec59942bde {
+  opacity: 0.72;
+}
 
-.game-card:hover .game-name,
-.game-card:focus-visible .game-name {
+.q482f08e91ee0:hover .qf9ea5fbfc68e,
+.q482f08e91ee0:focus-visible .qf9ea5fbfc68e {
   opacity: 1;
   transform: translateY(0);
 }
@@ -594,7 +623,9 @@ h1 {
   padding: 28px 0 0;
 }
 
-.pagination[hidden] { display: none; }
+.pagination[hidden] {
+  display: none;
+}
 
 .page-button {
   min-height: 40px;
@@ -623,7 +654,9 @@ h1 {
   outline-offset: 3px;
 }
 
-.page-button:active:not(:disabled) { transform: scale(0.97); }
+.page-button:active:not(:disabled) {
+  transform: scale(0.97);
+}
 
 .page-button:disabled {
   opacity: 0.34;
@@ -656,9 +689,11 @@ h1 {
   font-size: 21px;
 }
 
-.empty-state p { margin: 0; }
+.empty-state p {
+  margin: 0;
+}
 
-.player {
+.qd571dfa3b0a5 {
   position: fixed;
   inset: 0;
   z-index: 1000;
@@ -667,9 +702,11 @@ h1 {
   background: var(--page-deep);
 }
 
-.player[hidden] { display: none; }
+.qd571dfa3b0a5[hidden] {
+  display: none;
+}
 
-.player-toolbar {
+.qdb16dffa1688 {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
@@ -680,7 +717,7 @@ h1 {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
 }
 
-.player-toolbar h2 {
+.qdb16dffa1688 h2 {
   margin: 0;
   overflow: hidden;
   color: var(--text);
@@ -691,7 +728,7 @@ h1 {
   white-space: nowrap;
 }
 
-.player-actions {
+.q729901beec91 {
   display: flex;
   min-width: 0;
   justify-content: flex-end;
@@ -729,8 +766,17 @@ h1 {
   opacity: 0.72;
 }
 
-.performance-button {flex-shrink:0;white-space:nowrap;font-size:13px;line-height:1.2;}
-.performance-button span {white-space:nowrap;line-height:1.2;}
+.performance-button {
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.performance-button span {
+  white-space: nowrap;
+  line-height: 1.2;
+}
 
 .performance-button svg {
   flex: 0 0 17px;
@@ -777,7 +823,9 @@ h1 {
   outline-offset: 2px;
 }
 
-.toolbar-button:active { transform: scale(0.96); }
+.toolbar-button:active {
+  transform: scale(0.96);
+}
 
 .icon-button {
   width: 40px;
@@ -789,12 +837,12 @@ h1 {
   height: 18px;
 }
 
-.player-stage {
+.q43eac6a150de {
   position: relative;
   min-height: 0;
 }
 
-.player-stage:fullscreen {
+.q43eac6a150de:fullscreen {
   width: 100%;
   height: 100%;
   margin: 0;
@@ -803,7 +851,7 @@ h1 {
   background: #000;
 }
 
-.player iframe {
+.qd571dfa3b0a5 iframe {
   width: 100%;
   height: 100%;
   display: block;
@@ -811,29 +859,28 @@ h1 {
   background: var(--page-deep);
 }
 
+body.qa91fd35fe614 .q43eac6a150de {
+  overflow: hidden;
+}
 
-
-
-body.game-performance-active .player-stage { overflow: hidden; }
-
-body.game-performance-active .player iframe {
+body.qa91fd35fe614 .qd571dfa3b0a5 iframe {
   transform-origin: left top;
   will-change: transform;
 }
 
-body.game-performance-active[data-game-performance-level="1"] .player iframe {
+body.qa91fd35fe614[data-game-performance-level="1"] .qd571dfa3b0a5 iframe {
   width: 86%;
   height: 86%;
   transform: scale(1.1628);
 }
 
-body.game-performance-active[data-game-performance-level="2"] .player iframe {
+body.qa91fd35fe614[data-game-performance-level="2"] .qd571dfa3b0a5 iframe {
   width: 72%;
   height: 72%;
   transform: scale(1.3889);
 }
 
-.player-loading {
+.qa72646e6797d {
   position: absolute;
   inset: 0;
   z-index: 2;
@@ -845,10 +892,15 @@ body.game-performance-active[data-game-performance-level="2"] .player iframe {
   color: var(--muted);
 }
 
-.player-loading.done { display: none; }
-.player-loading.failed .spinner { display: none; }
+.qa72646e6797d.done {
+  display: none;
+}
 
-.player-loading.failed {
+.qa72646e6797d.failed .spinner {
+  display: none;
+}
+
+.qa72646e6797d.failed {
   padding: 24px;
   text-align: center;
 }
@@ -862,9 +914,14 @@ body.game-performance-active[data-game-performance-level="2"] .player iframe {
   animation: spin 0.75s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -875,5 +932,13 @@ body.game-performance-active[data-game-performance-level="2"] .player iframe {
   }
 }
 
-html:has(body.cloud-session-active),html:has(body.game-active){height:100%;overflow:hidden}
-body.game-active{height:100vh;overflow:hidden}
+html:has(body.cloud-session-active),
+html:has(body.q8064dac97fa6) {
+  height: 100%;
+  overflow: hidden
+}
+
+body.q8064dac97fa6 {
+  height: 100vh;
+  overflow: hidden
+}

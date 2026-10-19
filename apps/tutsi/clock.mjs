@@ -21,8 +21,7 @@
     card.addEventListener("animationend", (event) => {
       if (event.animationName === "tutsi-flip-bottom") {
         card.classList.remove("flipping");
-        card.querySelector(".digit-bottom span").textContent =
-          card.dataset.value;
+        card.querySelector(".digit-bottom span").textContent = card.dataset.value;
       }
     });
     digits.push(card);
@@ -53,8 +52,7 @@
       card.dataset.value = number;
       card.querySelector(".digit-top span").textContent = number;
       card.querySelector(".digit-bottom span").textContent = previous || number;
-      card.querySelector(".digit-flip-top span").textContent =
-        previous || number;
+      card.querySelector(".digit-flip-top span").textContent = previous || number;
       card.querySelector(".digit-flip-bottom span").textContent = number;
       if (previous && !reduced && !document.hidden) {
         void card.offsetWidth;

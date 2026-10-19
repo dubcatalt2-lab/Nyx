@@ -1,0 +1,98 @@
+html[data-q73e8] body {
+  --page: transparent;
+  --panel: rgba(24, 24, 27, .48);
+  --panel2: rgba(30, 30, 33, .56);
+  --composer: rgba(20, 20, 23, .65);
+  --app-bg: transparent;
+  --app-panel: rgba(24, 24, 27, .48);
+  --app-raised: rgba(49, 49, 53, .68);
+  --app-field: rgba(18, 18, 21, .48);
+  --app-line: rgba(220, 239, 229, .1);
+  isolation: isolate;
+  background: transparent !important
+}
+
+html[data-q73e8] {
+  background: #111113 !important
+}
+
+.q73e8 {
+  position: fixed;
+  inset: -40px;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(140deg, rgba(12, 12, 15, .36), rgba(10, 10, 13, .58)), var(--q73e8-wallpaper);
+  background-size: cover;
+  background-position: center;
+  filter: blur(18px) grayscale(var(--q73e8, 0));
+}
+
+html[data-q73e8] body :is(.utility-header, .topbar, .workspace-bar, .workspace-header, .ai-header, .media-nav, .tube-sidebar, .assistant-panel, .file-panel, .sidebar, .chats) {
+  background: rgba(24, 24, 27, .45);
+  backdrop-filter: blur(24px) saturate(.85);
+  -webkit-backdrop-filter: blur(24px) saturate(.85);
+  border-color: rgba(225, 241, 232, .1)
+}
+
+html[data-q73e8] body :is(.utility-card, .panel, .project-card, .menu-panel) {
+  background: rgba(27, 27, 30, .48);
+  backdrop-filter: blur(20px);
+  border-color: rgba(225, 241, 232, .1);
+  box-shadow: 0 12px 36px #0002
+}
+
+html[data-q73e8] body :is(.tube-shell, .ai-app, .ai-workspace, .studio-shell) {
+  background: transparent
+}
+
+html[data-q73e8] body :is(.utility-button, .tool-button, .icon-button, .mini-icon-button) {
+  transition: background-color 140ms, color 140ms, transform 140ms;
+  border-color: transparent;
+  background: rgba(216, 238, 225, .055)
+}
+
+html[data-q73e8] body :is(.utility-button, .tool-button, .icon-button, .mini-icon-button):hover:not(:disabled) {
+  background: rgba(216, 238, 225, .13);
+  color: #eef7f1;
+  transform: translateY(-1px)
+}
+
+html[data-q73e8] body :is(.utility-button, .tool-button, .icon-button, .mini-icon-button):active:not(:disabled) {
+  transform: translateY(0)
+}
+
+html[data-n7x-appearance=light][data-q73e8] body {
+  --app-panel: rgba(235, 242, 237, .83);
+  --app-raised: rgba(212, 227, 217, .88);
+  --app-field: rgba(246, 250, 247, .86);
+  --app-line: rgba(20, 40, 29, .16)
+}
+
+html[data-n7x-appearance=light] .q73e8 {
+  background-image: linear-gradient(#eaf1edb8, #eaf1eddb), var(--q73e8-wallpaper)
+}
+
+@media(prefers-reduced-motion:reduce) {
+  html[data-q73e8] body :is(.utility-button, .tool-button, .icon-button, .mini-icon-button) {
+    transition: none;
+    transform: none !important
+  }
+}
+
+html[data-n7x-appearance=light][data-q73e8] body :is(.utility-header, .topbar, .workspace-bar, .workspace-header, .ai-header, .media-nav, .tube-sidebar, .assistant-panel, .file-panel, .sidebar, .chats, .utility-card, .panel, .project-card, .menu-panel) {
+  background: var(--app-panel);
+  border-color: var(--app-line)
+}
+
+html[data-q73e8] body .ai-composer {
+  background: var(--app-panel);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-color: var(--app-line);
+  box-shadow: 0 8px 28px #0002
+}
+
+html[data-q73e8] body :is(.ai-model-menu, .ai-screen-chat) {
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px)
+}

@@ -1,116 +1,748 @@
+html body .n7x-profile-directory-overlay.profile-card-only {
+  --profile-surface: color-mix(in srgb, var(--n7x-surface-panel, #101114) 92%, transparent);
+  padding: 16px;
+  background: #0008;
+  backdrop-filter: blur(3px)
+}
 
-html body .n7x-profile-directory-overlay.profile-card-only{--profile-surface:color-mix(in srgb,var(--n7x-surface-panel,#101114) 92%,transparent);padding:16px;background:#0008;backdrop-filter:blur(3px)}
-html body .profile-card-only .n7x-profile-directory{position:relative;display:block;width:min(440px,100%);height:auto;max-height:calc(100dvh - 32px);overflow:auto;border:1px solid #303237;border-radius:18px;background:var(--profile-surface);color:#f0f1f3;backdrop-filter:blur(10px);box-shadow:0 24px 80px #0005,inset 0 1px #ffffff0c}
-html body .profile-card-only .n7x-profile-directory-header{position:absolute;top:10px;right:10px;z-index:8;padding:0;border:0;background:none}
-html body .profile-card-only .n7x-profile-directory-header>div,html body .profile-card-only .n7x-profile-directory-sidebar,html body .profile-card-only .n7x-profile-directory-view-head{display:none}
-html body .profile-card-only .n7x-profile-directory-header button{border:1px solid #ffffff30;border-radius:50%;background:#101114d9;color:#fff;width:30px;height:30px;font-size:20px;display:grid;place-items:center;padding:6px}
-html body .profile-card-only .n7x-profile-directory-layout{display:block}
-html body .profile-card-only .n7x-profile-directory-view{display:block;padding:0;overflow:visible;background:none}
-html[data-n7x-theme] body .profile-card-only .n7x-profile-directory-card-host .n7x-public-profile-popup{width:100%!important;max-width:none!important;min-height:0!important;height:auto!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;aspect-ratio:auto!important}
-html[data-n7x-theme] body :is(.profile-card-only,.n7x-profile-organized) .n7x-user-profile-card.n7x-public-profile-popup .n7x-user-profile-banner{height:120px!important;margin:0!important;border-radius:0!important}
-html[data-n7x-theme] body :is(.profile-card-only,.n7x-profile-organized) .n7x-user-profile-card.n7x-public-profile-popup .n7x-user-profile-banner img{width:100%;height:100%;object-fit:cover}
-html[data-n7x-theme] body :is(.profile-card-only,.n7x-profile-organized) .n7x-user-profile-card.n7x-public-profile-popup .n7x-user-profile-chrome{position:relative!important;height:42px!important;margin:0!important;padding:0 24px!important}
-html[data-n7x-theme] body :is(.profile-card-only,.n7x-profile-organized) .n7x-user-profile-card.n7x-public-profile-popup .n7x-user-profile-avatar{position:absolute;left:24px;top:-38px;margin:0!important;width:80px!important;height:80px!important;border:4px solid var(--n7x-surface-panel,#101114)!important;box-shadow:none!important;font-size:28px}
-html[data-n7x-theme] body :is(.profile-card-only,.n7x-profile-organized) .n7x-user-profile-card.n7x-public-profile-popup .n7x-user-profile-body{min-height:0!important;margin:0!important;padding:10px 24px 24px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important}
-html body .n7x-popup-name{display:flex;align-items:center;flex-wrap:wrap;gap:8px;min-width:0}
-html body .n7x-popup-name h2{margin:0;max-width:100%;font-size:24px;line-height:1.25;overflow-wrap:anywhere}
-html body .n7x-popup-name .n7x-user-role{min-height:18px;font-size:10px;padding:3px 6px;border:0;background:#eaeaec;color:#16171a}
-html body .n7x-popup-name .n7x-user-role img{display:none}
-html body .n7x-popup-handle{margin:5px 0 16px;color:#9b9fa8;font-size:13px;overflow-wrap:anywhere}
-html body .n7x-popup-status{font-size:12px;color:#b7bcc4}
-html body .n7x-popup-bio{margin:14px 0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px;line-height:1.5;color:#e6e8eb}
-html body .n7x-popup-joined{font-size:11px;color:#9398a1;margin:12px 0}
-html body .profile-card-only .n7x-profile-message{width:100%;height:42px;border:0;border-radius:9px;background:#eeeef0;color:#111316;font:650 14px/1 inherit;cursor:pointer;margin:10px 0 0}
-html body .n7x-profile-contact-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-html body .n7x-profile-contact-actions button{min-height:32px;padding:6px 10px;border:1px solid #303237;border-radius:7px;background:#131519;color:#dfe1e5;font-size:11px;cursor:pointer}
-html body .n7x-profile-contact-actions button:hover{background:#24272d}
-html body .profile-card-only button:disabled{opacity:.45;cursor:default}
-html body .profile-card-only [data-profile-contact-controls]>p{margin:10px 0 0;font-size:11px;color:#aaaeb7;line-height:1.5}
-html body .profile-card-only [data-profile-contact-controls]>p:empty{display:none}
-html body .profile-card-only .n7x-profile-directory-empty{min-height:220px;margin:auto;padding:30px}
-html body .profile-card-only .n7x-profile-directory-no-results{padding:48px 24px 24px}
+html body .profile-card-only .n7x-profile-directory {
+  position: relative;
+  display: block;
+  width: min(440px, 100%);
+  height: auto;
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  border: 1px solid #303237;
+  border-radius: 18px;
+  background: var(--profile-surface);
+  color: #f0f1f3;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 24px 80px #0005, inset 0 1px #ffffff0c
+}
 
-html body :is(.n7x-profile-contact-actions,.n7x-profile-message) svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7}
-html body .n7x-profile-contact-actions button{display:grid;place-items:center;width:36px;height:36px;padding:8px}
-html body .profile-card-only .n7x-profile-message{display:flex;align-items:center;justify-content:center;gap:8px}
+html body .profile-card-only .n7x-profile-directory-header {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 8;
+  padding: 0;
+  border: 0;
+  background: none
+}
 
+html body .profile-card-only .n7x-profile-directory-header>div,
+html body .profile-card-only .n7x-profile-directory-sidebar,
+html body .profile-card-only .n7x-profile-directory-view-head {
+  display: none
+}
+
+html body .profile-card-only .n7x-profile-directory-header button {
+  border: 1px solid #ffffff30;
+  border-radius: 50%;
+  background: #101114d9;
+  color: #fff;
+  width: 30px;
+  height: 30px;
+  font-size: 20px;
+  display: grid;
+  place-items: center;
+  padding: 6px
+}
+
+html body .profile-card-only .n7x-profile-directory-layout {
+  display: block
+}
+
+html body .profile-card-only .n7x-profile-directory-view {
+  display: block;
+  padding: 0;
+  overflow: visible;
+  background: none
+}
+
+html[data-n7x-theme] body .profile-card-only .n7x-profile-directory-card-host .n7x-public-profile-popup {
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 0 !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  aspect-ratio: auto !important
+}
+
+html[data-n7x-theme] body :is(.profile-card-only, .n7x-profile-organized) .n7x-user-profile-card.n7x-public-profile-popup .n7x-user-profile-banner {
+  height: 120px !important;
+  margin: 0 !important;
+  border-radius: 0 !important
+}
+
+html[data-n7x-theme] body :is(.profile-card-only, .n7x-profile-organized) .n7x-user-profile-card.n7x-public-profile-popup .n7x-user-profile-banner img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover
+}
+
+html[data-n7x-theme] body :is(.profile-card-only, .n7x-profile-organized) .n7x-user-profile-card.n7x-public-profile-popup .n7x-user-profile-chrome {
+  position: relative !important;
+  height: 42px !important;
+  margin: 0 !important;
+  padding: 0 24px !important
+}
+
+html[data-n7x-theme] body :is(.profile-card-only, .n7x-profile-organized) .n7x-user-profile-card.n7x-public-profile-popup .n7x-user-profile-avatar {
+  position: absolute;
+  left: 24px;
+  top: -38px;
+  margin: 0 !important;
+  width: 80px !important;
+  height: 80px !important;
+  border: 4px solid var(--n7x-surface-panel, #101114) !important;
+  box-shadow: none !important;
+  font-size: 28px
+}
+
+html[data-n7x-theme] body :is(.profile-card-only, .n7x-profile-organized) .n7x-user-profile-card.n7x-public-profile-popup .n7x-user-profile-body {
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 10px 24px 24px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important
+}
+
+html body .n7x-popup-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0
+}
+
+html body .n7x-popup-name h2 {
+  margin: 0;
+  max-width: 100%;
+  font-size: 24px;
+  line-height: 1.25;
+  overflow-wrap: anywhere
+}
+
+html body .n7x-popup-name .n7x-user-role {
+  min-height: 18px;
+  font-size: 10px;
+  padding: 3px 6px;
+  border: 0;
+  background: #eaeaec;
+  color: #16171a
+}
+
+html body .n7x-popup-name .n7x-user-role img {
+  display: none
+}
+
+html body .n7x-popup-handle {
+  margin: 5px 0 16px;
+  color: #9b9fa8;
+  font-size: 13px;
+  overflow-wrap: anywhere
+}
+
+html body .n7x-popup-status {
+  font-size: 12px;
+  color: #b7bcc4
+}
+
+html body .n7x-popup-bio {
+  margin: 14px 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #e6e8eb
+}
+
+html body .n7x-popup-joined {
+  font-size: 11px;
+  color: #9398a1;
+  margin: 12px 0
+}
+
+html body .profile-card-only .n7x-profile-message {
+  width: 100%;
+  height: 42px;
+  border: 0;
+  border-radius: 9px;
+  background: #eeeef0;
+  color: #111316;
+  font: 650 14px/1 inherit;
+  cursor: pointer;
+  margin: 10px 0 0
+}
+
+html body .n7x-profile-contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px
+}
+
+html body .n7x-profile-contact-actions button {
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid #303237;
+  border-radius: 7px;
+  background: #131519;
+  color: #dfe1e5;
+  font-size: 11px;
+  cursor: pointer
+}
+
+html body .n7x-profile-contact-actions button:hover {
+  background: #24272d
+}
+
+html body .profile-card-only button:disabled {
+  opacity: .45;
+  cursor: default
+}
+
+html body .profile-card-only [data-profile-contact-controls]>p {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: #aaaeb7;
+  line-height: 1.5
+}
+
+html body .profile-card-only [data-profile-contact-controls]>p:empty {
+  display: none
+}
+
+html body .profile-card-only .n7x-profile-directory-empty {
+  min-height: 220px;
+  margin: auto;
+  padding: 30px
+}
+
+html body .profile-card-only .n7x-profile-directory-no-results {
+  padding: 48px 24px 24px
+}
+
+html body :is(.n7x-profile-contact-actions, .n7x-profile-message) svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7
+}
+
+html body .n7x-profile-contact-actions button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 8px
+}
+
+html body .profile-card-only .n7x-profile-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px
+}
 
 html[data-n7x-theme] body .n7x-user-profile-overlay.n7x-profile-drawer.n7x-profile-organized {
-  --editor-surface:color-mix(in srgb,var(--n7x-surface-panel,#121416) 92%,transparent);
-  --editor-control:#0c0e10;
-  --editor-chrome:color-mix(in srgb,var(--theme-accent,#b9b0dc) 4%,#141619);
-  --editor-border:#303339;
-  --editor-text:#eceef1;
-  align-items:center!important;justify-content:center!important;padding:20px!important;
-  background:#0008!important;backdrop-filter:blur(3px)!important;
+  --editor-surface: color-mix(in srgb, var(--n7x-surface-panel, #121416) 92%, transparent);
+  --editor-control: #0c0e10;
+  --editor-chrome: color-mix(in srgb, var(--theme-accent, #b9b0dc) 4%, #141619);
+  --editor-border: #303339;
+  --editor-text: #eceef1;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px !important;
+  background: #0008 !important;
+  backdrop-filter: blur(3px) !important;
 }
+
 html[data-n7x-theme] body .n7x-profile-drawer.n7x-profile-organized .n7x-user-profile-dialog {
-  width:min(1020px,100%)!important;height:min(820px,calc(100dvh - 40px))!important;
-  max-height:calc(100dvh - 40px)!important;min-height:0!important;border:1px solid var(--editor-border)!important;
-  border-radius:18px!important;background:var(--editor-surface)!important;color:var(--editor-text);backdrop-filter:blur(10px);
-  transform:none!important;box-shadow:0 24px 100px #0006!important;overflow:hidden!important;
+  width: min(1020px, 100%) !important;
+  height: min(820px, calc(100dvh - 40px)) !important;
+  max-height: calc(100dvh - 40px) !important;
+  min-height: 0 !important;
+  border: 1px solid var(--editor-border) !important;
+  border-radius: 18px !important;
+  background: var(--editor-surface) !important;
+  color: var(--editor-text);
+  backdrop-filter: blur(10px);
+  transform: none !important;
+  box-shadow: 0 24px 100px #0006 !important;
+  overflow: hidden !important;
 }
-html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-profile-main{position:relative;display:block!important;height:100%!important;padding:0!important;min-height:0!important;background:transparent!important}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-profile-scroll{display:flex!important;flex-direction:column;height:100%!important;padding:0!important;overflow:hidden!important}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-profile-header{position:relative;flex:none;box-sizing:border-box;padding:22px 72px 20px 28px;margin:0!important;background:transparent;border-bottom:1px solid var(--editor-border)}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-profile-header h2{margin:0;font-size:22px!important;line-height:1.3;letter-spacing:-.03em}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-profile-header p{margin:5px 0 0;color:#969ca6;font-size:12px!important;line-height:1.4}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-settings-close{position:absolute!important;right:20px!important;top:24px!important;left:auto!important;z-index:4;width:34px!important;height:34px!important;border:1px solid var(--editor-border)!important;border-radius:9px!important;background:var(--editor-control)!important;padding:7px!important;color:#c9cdd4!important}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-profile-layout{display:grid!important;flex:1;min-height:0;height:auto!important;grid-template-columns:minmax(0,1fr) 400px!important;gap:0!important;margin:0!important}
-html[data-n7x-theme] body .n7x-profile-drawer.n7x-profile-organized .n7x-user-profile-form{display:flex!important;flex-direction:column;height:100%!important;min-height:0!important;padding:0!important;gap:0!important;background:transparent!important;overflow:hidden!important}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-fields-scroll{flex:1;min-height:0;overflow:auto;padding:0 28px 24px;scrollbar-width:thin;scroll-padding-top:76px}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-rail-header{display:none!important}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-section-nav{position:sticky;top:0;z-index:4;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;margin:0 -28px;padding:14px 16px 12px;background:var(--editor-surface);border-bottom:1px solid var(--editor-border)}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-section-nav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-width:0;padding:9px 2px;border:0;border-radius:8px;background:transparent;color:#a9aeb8;font:inherit;font-size:10px;cursor:pointer}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-section-nav button:hover{background:#ffffff09;color:#fff}
-html[data-n7x-theme] body .n7x-profile-organized button svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-editor-section{display:grid!important;padding:24px 0!important;margin:0!important;border:0!important;border-bottom:1px solid var(--editor-border)!important;border-radius:0!important;background:transparent!important;gap:18px!important;scroll-margin-top:78px}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-editor-section h4{margin:0!important;color:#edeef2;font-size:14px!important;font-weight:650;letter-spacing:0;text-transform:none}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-field-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px!important}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-field-wide{grid-column:1/-1!important}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-nameplate-preview{display:none}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-field{min-width:0;gap:8px!important;text-align:left;font-size:12px!important;font-weight:500;color:#c4c8d0;text-transform:none!important}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-field small{font-size:11px!important;font-weight:400;color:#9096a0;text-align:left;line-height:1.5}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-field :is(input:not([type=color]),select,textarea){box-sizing:border-box;width:100%!important;min-height:40px!important;border:1px solid var(--editor-border)!important;border-radius:8px!important;background:var(--editor-control)!important;padding:10px!important;font:inherit!important;font-size:13px!important;color:#eef0f3!important}
-html[data-n7x-theme] body .n7x-profile-organized :is(input,select,textarea,button):focus-visible{outline:2px solid var(--theme-accent,#bbb4db)!important;outline-offset:2px}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-image-list{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-image-control{display:flex!important;flex-direction:column;align-items:stretch!important;padding:16px!important;min-width:0;background:var(--editor-control)!important;border:1px solid var(--editor-border)!important;border-radius:10px!important;gap:12px}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-image-control>div:first-child{display:grid!important;gap:6px;text-align:left}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-image-control small{font-size:11px;line-height:1.4;color:#9096a0}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-artwork-grid{display:grid;gap:18px}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-decoration-field{display:grid!important;background:var(--editor-control)!important;border:1px solid var(--editor-border)!important;border-radius:10px;grid-template-columns:72px minmax(0,1fr);align-items:center;padding:14px!important;gap:8px 16px!important}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-decoration-preview{grid-row:1/4;margin:auto}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-decoration-label{font-size:12px}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-decoration-field small{grid-column:2}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-color-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-user-profile-form>footer{position:relative!important;flex:none;bottom:auto!important;left:auto!important;right:auto!important;display:grid!important;width:auto!important;margin:0!important;padding:16px 24px!important;transform:none!important;opacity:1!important;visibility:visible!important;border:0!important;border-top:1px solid var(--editor-border)!important;border-radius:0!important;background:var(--editor-surface)!important;box-shadow:none!important;grid-template-columns:1fr auto auto!important;gap:8px!important}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-user-profile-form>footer>strong{display:block!important;font-size:11px!important;color:#9096a0;-webkit-text-fill-color:currentColor!important}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-user-profile-form.is-dirty>footer>strong{color:var(--theme-accent,#cbc2e8)}
-html[data-n7x-theme] body .n7x-profile-organized :is(.n7x-profile-image-control button,.n7x-user-profile-form>footer button,.n7x-profile-preview-toggle){display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:36px!important;padding:8px 12px!important;border:1px solid var(--editor-border)!important;border-radius:8px!important;background:var(--editor-control)!important;color:#c4c8d0!important;font:inherit;font-size:12px!important;white-space:nowrap;cursor:pointer}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-user-profile-form>footer>.settings-action{background:#e7e8ed!important;color:#121417!important;-webkit-text-fill-color:currentColor!important;border-color:#e7e8ed!important}
-html[data-n7x-theme] body .n7x-profile-drawer.n7x-profile-organized .n7x-discord-preview-pane{box-sizing:border-box;position:relative!important;height:100%!important;min-height:0!important;display:flex!important;flex-direction:column;justify-content:flex-start;gap:18px;padding:26px 24px!important;background:var(--editor-chrome)!important;border-left:1px solid var(--editor-border);overflow:auto!important}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-preview-pane>h3{display:block!important;margin:0;text-align:left!important;color:#969ca6!important;font-size:11px!important;font-weight:500!important;letter-spacing:0;text-transform:none}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-preview-pane .n7x-user-profile-view{width:100%!important;display:block!important;padding:0!important}
-html[data-n7x-theme] body .n7x-profile-drawer.n7x-profile-organized .n7x-discord-preview-pane .n7x-public-profile-popup{display:block!important;flex:none;width:100%!important;min-height:0!important;height:auto!important;max-height:none!important;max-width:none!important;aspect-ratio:auto!important;margin:0!important;padding:0!important;overflow:hidden!important;border:1px solid #303237!important;border-radius:14px!important;background:#08090b!important;box-shadow:none!important}
-html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-preview-toggle{display:none!important}
-@media(max-width:780px){
- html[data-n7x-theme] body .n7x-user-profile-overlay.n7x-profile-drawer.n7x-profile-organized{padding:10px!important}
- html[data-n7x-theme] body .n7x-profile-drawer.n7x-profile-organized .n7x-user-profile-dialog{height:calc(100dvh - 20px)!important;max-height:calc(100dvh - 20px)!important;border-radius:14px!important}
- html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-profile-header{padding:18px 140px 18px 18px;min-height:84px}
- html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-profile-header h2{font-size:19px!important}
- html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-settings-close{right:12px!important;top:22px!important}
- html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-preview-toggle{display:inline-flex!important;position:absolute;right:54px;top:21px;font-size:11px!important;padding:7px 9px!important}
- html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-profile-layout{grid-template-columns:minmax(0,1fr)!important}
- html[data-n7x-theme] body .n7x-profile-drawer.n7x-profile-organized .n7x-discord-preview-pane{display:none!important;border:0}
- html[data-n7x-theme] body .n7x-profile-drawer.n7x-profile-organized.show-preview .n7x-discord-preview-pane{display:flex!important}
- html[data-n7x-theme] body .n7x-profile-drawer.n7x-profile-organized.show-preview .n7x-user-profile-form{display:none!important}
- html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-fields-scroll{padding:0 18px 20px}
- html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-section-nav{margin:0 -18px;padding:10px 6px;gap:2px}
- html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-field-grid{grid-template-columns:1fr!important}
- html[data-n7x-theme] body .n7x-profile-organized .n7x-user-profile-form>footer{padding:12px!important}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-profile-main {
+  position: relative;
+  display: block !important;
+  height: 100% !important;
+  padding: 0 !important;
+  min-height: 0 !important;
+  background: transparent !important
 }
-@media(prefers-reduced-motion:reduce){html[data-n7x-theme] body .n7x-profile-organized *{scroll-behavior:auto!important}}
 
-html[data-n7x-theme] body .n7x-profile-organized .n7x-user-profile-form>footer>.settings-action *{color:inherit!important}
+html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-profile-scroll {
+  display: flex !important;
+  flex-direction: column;
+  height: 100% !important;
+  padding: 0 !important;
+  overflow: hidden !important
+}
 
-html body .profile-card-only [data-close-profile-directory] svg{width:16px;height:16px}
+html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-profile-header {
+  position: relative;
+  flex: none;
+  box-sizing: border-box;
+  padding: 22px 72px 20px 28px;
+  margin: 0 !important;
+  background: transparent;
+  border-bottom: 1px solid var(--editor-border)
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-profile-header h2 {
+  margin: 0;
+  font-size: 22px !important;
+  line-height: 1.3;
+  letter-spacing: -.03em
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-profile-header p {
+  margin: 5px 0 0;
+  color: #969ca6;
+  font-size: 12px !important;
+  line-height: 1.4
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-settings-close {
+  position: absolute !important;
+  right: 20px !important;
+  top: 24px !important;
+  left: auto !important;
+  z-index: 4;
+  width: 34px !important;
+  height: 34px !important;
+  border: 1px solid var(--editor-border) !important;
+  border-radius: 9px !important;
+  background: var(--editor-control) !important;
+  padding: 7px !important;
+  color: #c9cdd4 !important
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-profile-layout {
+  display: grid !important;
+  flex: 1;
+  min-height: 0;
+  height: auto !important;
+  grid-template-columns: minmax(0, 1fr) 400px !important;
+  gap: 0 !important;
+  margin: 0 !important
+}
+
+html[data-n7x-theme] body .n7x-profile-drawer.n7x-profile-organized .n7x-user-profile-form {
+  display: flex !important;
+  flex-direction: column;
+  height: 100% !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  background: transparent !important;
+  overflow: hidden !important
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-fields-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 28px 24px;
+  scrollbar-width: thin;
+  scroll-padding-top: 76px
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-rail-header {
+  display: none !important
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-section-nav {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0 -28px;
+  padding: 14px 16px 12px;
+  background: var(--editor-surface);
+  border-bottom: 1px solid var(--editor-border)
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-section-nav button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 9px 2px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #a9aeb8;
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-section-nav button:hover {
+  background: #ffffff09;
+  color: #fff
+}
+
+html[data-n7x-theme] body .n7x-profile-organized button svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-editor-section {
+  display: grid !important;
+  padding: 24px 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--editor-border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  gap: 18px !important;
+  scroll-margin-top: 78px
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-editor-section h4 {
+  margin: 0 !important;
+  color: #edeef2;
+  font-size: 14px !important;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-transform: none
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-field-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px !important
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-field-wide {
+  grid-column: 1/-1 !important
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-nameplate-preview {
+  display: none
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-field {
+  min-width: 0;
+  gap: 8px !important;
+  text-align: left;
+  font-size: 12px !important;
+  font-weight: 500;
+  color: #c4c8d0;
+  text-transform: none !important
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-field small {
+  font-size: 11px !important;
+  font-weight: 400;
+  color: #9096a0;
+  text-align: left;
+  line-height: 1.5
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-field :is(input:not([type=color]), select, textarea) {
+  box-sizing: border-box;
+  width: 100% !important;
+  min-height: 40px !important;
+  border: 1px solid var(--editor-border) !important;
+  border-radius: 8px !important;
+  background: var(--editor-control) !important;
+  padding: 10px !important;
+  font: inherit !important;
+  font-size: 13px !important;
+  color: #eef0f3 !important
+}
+
+html[data-n7x-theme] body .n7x-profile-organized :is(input, select, textarea, button):focus-visible {
+  outline: 2px solid var(--theme-accent, #bbb4db) !important;
+  outline-offset: 2px
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-image-list {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-image-control {
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch !important;
+  padding: 16px !important;
+  min-width: 0;
+  background: var(--editor-control) !important;
+  border: 1px solid var(--editor-border) !important;
+  border-radius: 10px !important;
+  gap: 12px
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-image-control>div:first-child {
+  display: grid !important;
+  gap: 6px;
+  text-align: left
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-image-control small {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #9096a0
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-artwork-grid {
+  display: grid;
+  gap: 18px
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-decoration-field {
+  display: grid !important;
+  background: var(--editor-control) !important;
+  border: 1px solid var(--editor-border) !important;
+  border-radius: 10px;
+  grid-template-columns: 72px minmax(0, 1fr);
+  align-items: center;
+  padding: 14px !important;
+  gap: 8px 16px !important
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-decoration-preview {
+  grid-row: 1/4;
+  margin: auto
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-decoration-label {
+  font-size: 12px
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-decoration-field small {
+  grid-column: 2
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-color-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-user-profile-form>footer {
+  position: relative !important;
+  flex: none;
+  bottom: auto !important;
+  left: auto !important;
+  right: auto !important;
+  display: grid !important;
+  width: auto !important;
+  margin: 0 !important;
+  padding: 16px 24px !important;
+  transform: none !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  border: 0 !important;
+  border-top: 1px solid var(--editor-border) !important;
+  border-radius: 0 !important;
+  background: var(--editor-surface) !important;
+  box-shadow: none !important;
+  grid-template-columns: 1fr auto auto !important;
+  gap: 8px !important
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-user-profile-form>footer>strong {
+  display: block !important;
+  font-size: 11px !important;
+  color: #9096a0;
+  -webkit-text-fill-color: currentColor !important
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-user-profile-form.is-dirty>footer>strong {
+  color: var(--theme-accent, #cbc2e8)
+}
+
+html[data-n7x-theme] body .n7x-profile-organized :is(.n7x-profile-image-control button, .n7x-user-profile-form>footer button, .n7x-profile-preview-toggle) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px !important;
+  padding: 8px 12px !important;
+  border: 1px solid var(--editor-border) !important;
+  border-radius: 8px !important;
+  background: var(--editor-control) !important;
+  color: #c4c8d0 !important;
+  font: inherit;
+  font-size: 12px !important;
+  white-space: nowrap;
+  cursor: pointer
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-user-profile-form>footer>.settings-action {
+  background: #e7e8ed !important;
+  color: #121417 !important;
+  -webkit-text-fill-color: currentColor !important;
+  border-color: #e7e8ed !important
+}
+
+html[data-n7x-theme] body .n7x-profile-drawer.n7x-profile-organized .n7x-discord-preview-pane {
+  box-sizing: border-box;
+  position: relative !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 18px;
+  padding: 26px 24px !important;
+  background: var(--editor-chrome) !important;
+  border-left: 1px solid var(--editor-border);
+  overflow: auto !important
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-preview-pane>h3 {
+  display: block !important;
+  margin: 0;
+  text-align: left !important;
+  color: #969ca6 !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0;
+  text-transform: none
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-preview-pane .n7x-user-profile-view {
+  width: 100% !important;
+  display: block !important;
+  padding: 0 !important
+}
+
+html[data-n7x-theme] body .n7x-profile-drawer.n7x-profile-organized .n7x-discord-preview-pane .n7x-public-profile-popup {
+  display: block !important;
+  flex: none;
+  width: 100% !important;
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  max-width: none !important;
+  aspect-ratio: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid #303237 !important;
+  border-radius: 14px !important;
+  background: #08090b !important;
+  box-shadow: none !important
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-preview-toggle {
+  display: none !important
+}
+
+@media(max-width:780px) {
+  html[data-n7x-theme] body .n7x-user-profile-overlay.n7x-profile-drawer.n7x-profile-organized {
+    padding: 10px !important
+  }
+
+  html[data-n7x-theme] body .n7x-profile-drawer.n7x-profile-organized .n7x-user-profile-dialog {
+    height: calc(100dvh - 20px) !important;
+    max-height: calc(100dvh - 20px) !important;
+    border-radius: 14px !important
+  }
+
+  html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-profile-header {
+    padding: 18px 140px 18px 18px;
+    min-height: 84px
+  }
+
+  html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-profile-header h2 {
+    font-size: 19px !important
+  }
+
+  html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-settings-close {
+    right: 12px !important;
+    top: 22px !important
+  }
+
+  html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-preview-toggle {
+    display: inline-flex !important;
+    position: absolute;
+    right: 54px;
+    top: 21px;
+    font-size: 11px !important;
+    padding: 7px 9px !important
+  }
+
+  html[data-n7x-theme] body .n7x-profile-organized .n7x-discord-profile-layout {
+    grid-template-columns: minmax(0, 1fr) !important
+  }
+
+  html[data-n7x-theme] body .n7x-profile-drawer.n7x-profile-organized .n7x-discord-preview-pane {
+    display: none !important;
+    border: 0
+  }
+
+  html[data-n7x-theme] body .n7x-profile-drawer.n7x-profile-organized.show-preview .n7x-discord-preview-pane {
+    display: flex !important
+  }
+
+  html[data-n7x-theme] body .n7x-profile-drawer.n7x-profile-organized.show-preview .n7x-user-profile-form {
+    display: none !important
+  }
+
+  html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-fields-scroll {
+    padding: 0 18px 20px
+  }
+
+  html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-section-nav {
+    margin: 0 -18px;
+    padding: 10px 6px;
+    gap: 2px
+  }
+
+  html[data-n7x-theme] body .n7x-profile-organized .n7x-profile-field-grid {
+    grid-template-columns: 1fr !important
+  }
+
+  html[data-n7x-theme] body .n7x-profile-organized .n7x-user-profile-form>footer {
+    padding: 12px !important
+  }
+}
+
+@media(prefers-reduced-motion:reduce) {
+  html[data-n7x-theme] body .n7x-profile-organized * {
+    scroll-behavior: auto !important
+  }
+}
+
+html[data-n7x-theme] body .n7x-profile-organized .n7x-user-profile-form>footer>.settings-action * {
+  color: inherit !important
+}
+
+html body .profile-card-only [data-close-profile-directory] svg {
+  width: 16px;
+  height: 16px
+}

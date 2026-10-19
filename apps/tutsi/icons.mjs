@@ -12,8 +12,7 @@ export const icons = {
   travel: '<path d="M5 18.5h14M7 15l3.2-9.5h3.6L17 15M8.5 11h7"/>',
   media: '<path d="M5 6.5h14v11H5z"/><path d="m10 9.5 5 2.5-5 2.5z"/>',
   movies: '<path d="M3 10h18v10H3zM3 10l-1-5 18-3 1 5zM7 4l4 4M14 3l4 4"/>',
-  youtube:
-    '<rect x="3" y="6" width="18" height="12" rx="4"/><path d="m10 9 5 3-5 3z"/>',
+  youtube: '<rect x="3" y="6" width="18" height="12" rx="4"/><path d="m10 9 5 3-5 3z"/>',
   ai: '<path d="M12 2a3 3 0 0 0-3 3v1H7a3 3 0 0 0-3 3v2H3a2 2 0 0 0 0 4h1v2a3 3 0 0 0 3 3h2v1a3 3 0 0 0 6 0v-1h2a3 3 0 0 0 3-3v-2h1a2 2 0 0 0 0-4h-1V9a3 3 0 0 0-3-3h-2V5a3 3 0 0 0-3-3z"/><circle cx="9" cy="11" r="1.2" fill="currentColor"/><circle cx="15" cy="11" r="1.2" fill="currentColor"/><path d="M9 16h6"/>',
   extensions: '<path d="M8.5 3.5v4h-4v4h4v4h4v4h4v-4h4v-4h-4v-4h-4v-4z"/>',
   performance:

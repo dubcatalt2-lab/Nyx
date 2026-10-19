@@ -58,7 +58,7 @@ async function copy(dir=''){
         source=JSON.stringify(catalog);
       }
       if(mini)for(const name of deferredBackgrounds)source=source.replaceAll('backgrounds/'+name,'backgrounds/nyx-blue-light-trails.jpg');
-      if(mini&&relative==='assets/games/index.html')source=source.replace('id="gameFrame"','id="gameFrame" credentialless');
+      if(mini&&relative==='assets/games/index.html')source=source.replace('id="qcb196f617df1"','id="qcb196f617df1" credentialless');
       if(relative==='index.html')source=rewriteFrontendReferences(rewritePublicModules(rewriteRuntimeNames(rewriteProxyReferences(await readFile(path.join(root,'index.html'),'utf8'),'/index.html')),'/index.html',moduleAliases),'/index.html',aliases);
       source=rebase(source);
       if(relative.endsWith('.css'))source=source.replace(/url\(\s*(["']?)([^"')]+)\1\s*\)/g,(match,quote,url)=>{

@@ -127,7 +127,7 @@ try{
       });
       await page.goto(origin+'/apps/chat/'+(index?'?tutsi=1':''));
       await page.locator('[data-message-form]').waitFor({state:'visible'});
-      if(scenario==='http'&&index)await page.locator('[data-voice-transport]').selectOption('http');
+      if(scenario==='http'&&index){await page.locator('details.q63e8>summary').click();await page.locator('[data-voice-transport]').selectOption('http');}
       await page.locator('[data-voice-channel-list] .voice-channel-button').click();
     }
     for(const page of pages)await page.waitForFunction(()=>window.voiceReceived>3&&window.voiceEnergy>0,{},{timeout:20000});

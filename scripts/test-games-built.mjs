@@ -37,11 +37,11 @@ try {
   const manifest=await catalogResponse;
   assert.equal(manifest.status(),200);
   assert((await manifest.json()).catalogs.length>0);
-  await page.locator('.game-card').first().waitFor({timeout:30000});
+  await page.locator('.q482f08e91ee0').first().waitFor({timeout:30000});
   await page.locator('[data-library="local"]').click();
-  assert(await page.locator('.game-card').count()>0);
+  assert(await page.locator('.q482f08e91ee0').count()>0);
   await page.locator('[data-library="gn"]').click();
-  assert(await page.locator('.game-card').count()>0);
+  assert(await page.locator('.q482f08e91ee0').count()>0);
   assert.deepEqual(errors,[]);
   console.log('Built arcade loads the real JSON manifest and both bundled game catalogs.');
 

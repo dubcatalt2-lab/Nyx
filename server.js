@@ -11,9 +11,6 @@ import { existsSync } from 'node:fs';
 import { StaticPackagePreparation } from './lib/static-package-preparation.mjs';
 import {storeMediaReservation,restoreMediaReservation} from './lib/ai-media-reservation.mjs';
 import {createAccountCloudPreferences} from './lib/account-cloud-preferences.mjs';
-import {createRemoteDesktop} from './lib/remote-desktop.mjs';
-import {createNyxCloudDesktop} from './lib/nyxcloud-desktop.mjs';
-import {createLoremCloud} from './lib/nyxcloud-lorem.mjs';
 import {isNookRequest} from './lib/nook-policy.mjs';
 import {createDropOwnerScope} from './lib/drop-owner.mjs';
 import {startMemoryMonitor} from './lib/memory-monitor.mjs';
@@ -7522,6 +7519,10 @@ const nyxCloudGamingCleanupTimer = setInterval(() => {
 }, 30_000);
 nyxCloudGamingCleanupTimer.unref?.();
 
+// Desktop features are unavailable, including bookmarked entry points.
+app.use(['/api/nyxcloud', '/api/private-remote', '/apps/nyxcloud', '/apps/remote', '/apps/remote-entry', '/assets/vendor/novnc'], (_req, res) => {
+  res.status(410).set('Cache-Control', 'no-store').send('Desktop access is unavailable.');
+});
 app.all(["/api/nyxcloud/status", "/api/nyxcloud/search"], (_req, res) => {
   res.set("Cache-Control", "no-store").status(410).json({ error: "NyxCloud has been retired." });
 });
@@ -14082,21 +14083,6 @@ app.get("/download/nyx-singlefile.html", (_req, res) => {
   res.download(join(staticRoot, "nyx-singlefile.html"), "Nyx-Download.html");
 });
 
-const remoteDesktop=createRemoteDesktop({firebase:linkGeneratorFirebase,download:()=>companionZip(__dirname,{remote:true})});
-const nyxCloudDesktop=createNyxCloudDesktop({firebase:linkGeneratorFirebase});
-app.use('/api/nyxcloud/lorem',createLoremCloud({firebase:linkGeneratorFirebase,maintenanceInterval:15000,queueTier:async uid=>{
-  const firebase=await linkGeneratorFirebase();
-  const record=await firebase.firestore.collection('nyxUserAdministration').doc(uid).get();
-  const account=record.data()||{};
-  if(nyxRoleForUser(uid,account)==='owner')return 'owner';
-  return hasPremiumSubscription(account.subscriptionStatus||account.subscription?.status)?'premium':'regular';
-}}));
-app.use('/api/nyxcloud',nyxCloudDesktop.router);
-
-
-app.get(/^\/apps\/nyxcloud$/,(_req,res)=>res.redirect(302,'/apps/nyxcloud/'));
-app.use('/api/private-remote',remoteDesktop.router);
-app.use((req,res,next)=>{let path;try{path=posix.normalize(decodeURIComponent(req.path).replaceAll('\\','/')).toLowerCase();}catch{return res.status(400).end();}if(path==='/apps/remote'||path.startsWith('/apps/remote/'))return remoteDesktop.pageAccess(req,res,next);next();});
 let httpRelayPort = 0;
 const closeHttpRelay = installHttpWisp(app, {
   upstream: () => httpRelayPort ? {url: externalWispUrl || `ws://127.0.0.1:${httpRelayPort}/resources/live/`, origin: `http://127.0.0.1:${httpRelayPort}`} : null,
@@ -14148,7 +14134,6 @@ app.get("/", async (req, res, next) => {
 app.use(publicAssetBoundary(staticRoot));
 app.use(express.static(staticRoot));
 app.use("/assets/vendor/katex/", express.static(katexPath));
-app.use('/assets/vendor/novnc/',express.static(dirname(dirname(require.resolve('@novnc/novnc')))));
 
 app.use("/scramjet/", express.static(scramjetPath));
 app.use("/scramjet-v1/", express.static(scramjetV1Path));
@@ -14254,8 +14239,6 @@ async function startNyxServer() {
       rejectWispUpgrade(socket, "400 Bad Request");
       return;
     }
-    if (upgradePath === '/api/nyxcloud/socket') { nyxCloudDesktop.upgrade(req,socket,head);return; }
-    if (upgradePath === '/api/private-remote/socket') { remoteDesktop.upgrade(req,socket,head);return; }
     if (upgradePath === "/socket.io/" || upgradePath.startsWith("/socket.io/")) {
       return;
     }
@@ -14289,7 +14272,6 @@ async function startNyxServer() {
   let shuttingDown = false;
   function shutdown(signal, exitCode = 0) {
     qBridgeStopped=true;clearTimeout(qBridgeTimer);void qBridgeRuntime?.close();
-    remoteDesktop.close();
     closeHttpRelay();
     void nyxTubeBackend.close();
     nyxTubeInvidiousPlayback.close();

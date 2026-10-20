@@ -307,7 +307,7 @@ for(const file of ['netlify.toml','netlify/functions/api.mjs','scripts/build-net
   let exists=false;try{await access(file);exists=true;}catch(error){if(error.code!=='ENOENT')throw error;}
   if(exists)throw Error('Obsolete deployment file: '+file);
 }
-for (const dependency of ["express", "firebase-admin", "wispurr", "mp4box", "hls.js", "@novnc/novnc"]) {
+for (const dependency of ["express", "firebase-admin", "wispurr", "mp4box", "hls.js"]) {
   if (!packageJson.dependencies?.[dependency]) {
     console.error(`Deployment dependency is missing: ${dependency}`);
     process.exit(1);

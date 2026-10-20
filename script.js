@@ -4308,8 +4308,8 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     }
   }
   function canonicalAddressInput(value) {
-    const raw = unwrapAccidentalUrlSearch(value);
-    if (/^apps\//i.test(raw)) return `/${raw}`;
+    const raw = unwrapAccidentalUrlSearch(String(value || "").replace(/[\u{1d5a0}-\u{1d5d3}]/gu, ch => ch.normalize("NFKC")));
+    if (/^(?:apps|assets)\//i.test(raw)) return `/${raw}`;
     if (/^(?:localhost|(?:\d{1,3}\.){3}\d{1,3})(?::\d+)?(?:\/|$)/i.test(raw))
       return "http://" + raw;
     if (/^[\w.-]+\.[a-z]{2,}(?:[\/:?#]|$)/i.test(raw) && !/^[a-z][a-z0-9+.-]*:/i.test(raw))
@@ -6032,7 +6032,6 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         <button type="button" data-n7x-dock-item="youtube" data-app-url="/apps/nyxtube/" aria-label="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="m10 8 5 3-5 3zM8 21h8"/></svg><span>YouTube</span></button>
         <button type="button" data-n7x-dock-item="ai" data-app-url="nyx://ai" aria-label="AI"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 3 2.1 6.9L19 12l-6.9 2.1L10 21l-2.1-6.9L1 12l6.9-2.1L10 3Z"/><path d="M20 2v6m-3-3h6"/><rect x="2" y="19" width="3" height="3" rx="1"/></svg><span>A1</span></button>
         <button type="button" data-n7x-dock-item="chat" data-app-url="/apps/chat/" aria-label="Chat">${nyxDashboardIcon("chat")}<span>Chat</span></button>
-        <button type="button" data-n7x-dock-item="vms" data-app-url="/apps/nyxcloud/" aria-label="VMs" title="VMs" hidden style="display:none"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="13" rx="2"/><path d="M8 21h8m-4-5v5"/></svg><span>VMs</span></button>
         <button type="button" data-n7x-dock-item="apps" data-app-url="nyx://apps" aria-label="Apps"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="7" height="7" rx="1"/><rect x="3" y="16" width="7" height="6" rx="1"/><rect x="12" y="14" width="7" height="8" rx="1"/><rect x="14" y="2" width="7" height="7" rx="1"/></svg><span>Apps</span></button>
       </nav>
       <div class="n7x-rail-footer"><a class="n7x-rail-discord" data-n7x-trusted-external="discord" data-n7x-dock-item="discord" href="https://discord.com/invite/cAdjYAJs3u" target="_blank" rel="noopener noreferrer" aria-label="Join the N7X Discord server (opens in a new tab)" title="Join our Discord"><i class="n7x-rail-discord-icon" aria-hidden="true"></i><span>Discord</span></a><button type="button" data-n7x-dock-item="settings" data-open="settings" aria-label="Settings">${nyxDashboardIcon("settings")}<span>Settings</span></button><div class="n7x-visual-dock-profile" data-n7x-profile-slot></div></div>`;
@@ -6419,7 +6418,8 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       if (parsed.origin === location.origin && parsed.pathname === "/search")
         return parsed.searchParams.get("q") || "";
       if (parsed.origin === location.origin)
-        return parsed.pathname.replace(/^\/+/, "") || parsed.href;
+        return (parsed.pathname.replace(/^\/+/, "") + parsed.search + parsed.hash || parsed.href).replace(/[A-Za-z]/g, ch =>
+          String.fromCodePoint((ch <= "Z" ? 0x1d5a0 : 0x1d5ba) + ch.toLowerCase().charCodeAt(0) - 97));
       return parsed.href;
     } catch {
       return browserShellSourceUrl(url);
@@ -7523,14 +7523,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     return id;
   }
   async function openNyxVmsApp() {
-    try {
-      const id = openBrowserShellTab("/apps/nyxcloud/?embedded=1", { forceMode: "iframe" });
-      const tab = browserShellTabs.find((item) => item.id === id);
-      if (tab) tab.title = "VMs";
-      renderBrowserShellTabs();
-    } catch (error) {
-      toast(error.message);
-    }
+    toast("Desktop access is unavailable.");
   }
   function openBrowserShellAppTab(url) {
     if (
@@ -12659,7 +12652,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     {
       const searchEngine = selectedSearchEngineMeta();
       const searchLabel = `S3ARC4 ${searchEngine.label} or type a U3L`;
-      return `<div class="ne4236faa3775"><button class="qd524eb71a5e291ae19" data-q4c87198183f80e3743>+</button></div><div class="q02d92983412a114026"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="S3ARC4"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="q6576ed118d3ca9c284"><div class="q4f959b063679fe3afa n7x-minimal-home n7x-visual-home"><main class="browser-shell-start n7x-minimal-hero"><div class="n7x-minimal-brand"><img class="n7x-home-logo" data-n7x-logo src="/assets/icons/nyx-cat-moon.svg?v=3" alt="N7X"><h1 aria-label="n7x" data-no-interface-text><span class="q2c91e70b48a6" aria-hidden="true"><span class="q63fb0e19a7d2">n</span></span><span class="q2c91e70b48a6" aria-hidden="true"><span class="q63fb0e19a7d2 q14e8">7<svg viewBox="0 0 28 57.5" aria-hidden="true" focusable="false"><path d="M4 14H24L11 43"/></svg></span></span><span class="q2c91e70b48a6" aria-hidden="true"><span class="q63fb0e19a7d2 q14e8">x<svg viewBox="0 0 28 57.5" aria-hidden="true" focusable="false"><path d="M5 24L23 43M23 24L5 43"/></svg></span></span></h1></div><form class="browser-blank-search n7x-minimal-search" data-qde71309ef3ca376628><svg class="n7x-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input data-q53154c3f0fbe71a11b data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"></form><nav class="n7x-home-links" data-n7x-recent-searches aria-label="Recent searches" hidden></nav></main><nav class="n7x-minimal-utility-links" aria-label="N7X tools and terms"><a data-open="terms" href="nyx://terms">Terms</a></nav><button class="n7x-appearance-toggle" data-n7x-appearance type="button" aria-label="Use light appearance" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button><button class="n7x-visual-customize" data-open="settings" type="button">${nyxDashboardIcon("settings")}<span>Customize</span></button><div class="n7x-home-presence${nyxFounderIsOwner && nyxOwnerDashboardAccess ? " n7x-owner-presence-action" : ""}" data-n7x-owner-presence role="${nyxFounderIsOwner && nyxOwnerDashboardAccess ? "button" : "status"}" tabindex="${nyxFounderIsOwner && nyxOwnerDashboardAccess ? "0" : "-1"}" aria-live="polite" aria-label="${nyxFounderIsOwner && nyxOwnerDashboardAccess ? "Open Owner Dashboard" : "Current users online"}"><span class="n7x-home-presence-dot" aria-hidden="true"></span><span data-n7x-online-count>${minimalPresenceText}</span></div></div></div>`;
+      return `<div class="ne4236faa3775"><button class="qd524eb71a5e291ae19" data-q4c87198183f80e3743>+</button></div><div class="q02d92983412a114026"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="S3ARC4"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="q6576ed118d3ca9c284"><div class="q4f959b063679fe3afa n7x-minimal-home n7x-visual-home"><main class="browser-shell-start n7x-minimal-hero"><div class="n7x-minimal-brand"><img class="n7x-home-logo" data-n7x-logo src="/assets/icons/nyx-cat-moon.svg?v=3" alt="N7X"><h1 aria-label="N7x" data-no-interface-text><span class="q2c91e70b48a6" aria-hidden="true"><span class="q63fb0e19a7d2">&#120237;</span></span><span class="q2c91e70b48a6" aria-hidden="true"><span class="q63fb0e19a7d2">&#120809;</span></span><span class="q2c91e70b48a6" aria-hidden="true"><span class="q63fb0e19a7d2">&#120273;</span></span></h1></div><form class="browser-blank-search n7x-minimal-search" data-qde71309ef3ca376628><svg class="n7x-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input data-q53154c3f0fbe71a11b data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"></form><nav class="n7x-home-links" data-n7x-recent-searches aria-label="Recent searches" hidden></nav></main><nav class="n7x-minimal-utility-links" aria-label="N7X tools and terms"><a data-open="terms" href="nyx://terms">Terms</a></nav><button class="n7x-appearance-toggle" data-n7x-appearance type="button" aria-label="Use light appearance" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button><button class="n7x-visual-customize" data-open="settings" type="button">${nyxDashboardIcon("settings")}<span>Customize</span></button><div class="n7x-home-presence${nyxFounderIsOwner && nyxOwnerDashboardAccess ? " n7x-owner-presence-action" : ""}" data-n7x-owner-presence role="${nyxFounderIsOwner && nyxOwnerDashboardAccess ? "button" : "status"}" tabindex="${nyxFounderIsOwner && nyxOwnerDashboardAccess ? "0" : "-1"}" aria-live="polite" aria-label="${nyxFounderIsOwner && nyxOwnerDashboardAccess ? "Open Owner Dashboard" : "Current users online"}"><span class="n7x-home-presence-dot" aria-hidden="true"></span><span data-n7x-online-count>${minimalPresenceText}</span></div></div></div>`;
     }
   }
 
@@ -13427,7 +13420,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     const apps = nyxGlobalApps.filter(
       (app) => app.id !== "n7x-vms" && app.url.replace(/\/+$/, "") !== "/apps/nyxcloud",
     );
-    apps.push({ id: "n7x-vms", icon: "n7x-vms", name: "VMs", url: "/apps/nyxcloud/" });
+
     return apps
       .map(
         (app, i) =>

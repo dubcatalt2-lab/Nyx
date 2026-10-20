@@ -48,7 +48,6 @@
     "@mercuryworkshop/scramjet": "2.0.67-alpha.2",
     "@mercuryworkshop/scramjet-controller": "0.0.14",
     "@mercuryworkshop/scramjet-v1": "npm:@mercuryworkshop/scramjet@1.1.0",
-    "@novnc/novnc": "1.7.0",
     "discord.js": "^14.27.0",
     "eruda": "3.4.3",
     "express": "5.2.1",

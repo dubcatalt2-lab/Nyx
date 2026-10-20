@@ -1,14 +1,15 @@
 import {chromium} from "playwright";
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
+import express from "express";
+const server=express().get("/",(_req,res)=>res.send("<!doctype html><body>Image fixture</body>")).listen(0,"127.0.0.1");
+await new Promise(r=>server.once("listening",r));
 const b = await chromium.launch();
 try {
   const p = await b.newPage({ viewport: { width: 1280, height: 900 } });
   p.setDefaultTimeout(10000);
   await p.addInitScript(()=>localStorage.setItem('tutsi.customize.seen','1'));
-  await p.goto("http://localhost:9091/tutsi");
-  await p.locator('#query').waitFor();
-  await p.locator('#studyready-startup').waitFor({state:'detached'});
+  await p.goto("http://127.0.0.1:"+server.address().port);
   await p.addScriptTag({ content: await fs.readFile(process.env.IMAGE_REPAIR_SOURCE || new URL('../js/duck-image-viewport.js',import.meta.url),'utf8') });
   await p.evaluate(async () => {
     const frame = document.createElement("iframe");
@@ -86,9 +87,17 @@ try {
   await p.evaluate(()=>{window.lazyFixtureTab.sourceUrl='https://duckduckgo.com/?q=fixture&ia=web';const image=document.createElement('img');image.id='web-image';image.setAttribute('data-src','/lazy-thumbnail-fixture/web.svg');window.lazyFixtureTab.frame.contentDocument.querySelector('#near').append(image)});
   await p.waitForTimeout(150);
   assert.equal(await lazy.locator('#web-image').getAttribute('src'),null);
+  const thumbnail='https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fexample.com%2Fpic%3Fa%3D1%26b%3D2&f=1';
+  await p.route('https://external-content.duckduckgo.com/**',r=>r.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"/>'}));
+  await lazy.locator('body').evaluate((body,url)=>{
+    const image=document.createElement('img');image.id='encoded-thumbnail';image.setAttribute('src',encodeURIComponent(url));body.append(image);
+  },thumbnail);
+  await p.waitForFunction(()=>document.querySelector('#lazy-fixture').contentDocument.querySelector('#encoded-thumbnail').naturalWidth===80);
+  assert.equal(await lazy.locator('#encoded-thumbnail').getAttribute('src'),thumbnail,'Nested thumbnail URL must not be decoded twice');
   console.log(
     "Shared image-gap repair, stationary delayed thumbnails, bounded preloading, up/down scroll, All-tab restoration passed.",
   );
 } finally {
   await b.close();
+  server.closeAllConnections();await new Promise(r=>server.close(r));
 }

@@ -8,6 +8,7 @@ window.q91studio = function (api) {
       return el;
     };
   const glyphs = {
+    assistant: "M4 4h16v12H9l-5 4z M8 8h8 M8 12h5",
     files: "M6 3h8l4 4v14H6z M14 3v5h5",
     search: "M21 21l-5-5 M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0",
     undo: "M3 10h8a7 7 0 0 1 0 14 M3 10l5-5 M3 10l5 5",
@@ -156,6 +157,18 @@ window.q91studio = function (api) {
     button("Workspace files", () => setExplorer(explorer.hidden), "files"),
     button("Find and replace", () => findDialog.showModal(), "search"),
   );
+  const assistantToggle = button("Toggle N7X AI panel", () => {
+    const opening = document.body.classList.contains("ai-collapsed") ||
+      (matchMedia("(max-width:940px)").matches && !document.body.classList.contains("mobile-show-ai"));
+    api.setPanelCollapsed("assistant", !opening);
+    if (matchMedia("(max-width:940px)").matches) api.setMobileView(opening ? "ai" : "editor");
+    document.body.classList.remove("q91preview-only");
+    settings.layout = "split";
+    persist();
+  }, "assistant");
+  assistantToggle.dataset.togglePanel = "assistant";
+  assistantToggle.setAttribute("aria-pressed", String(!document.body.classList.contains("ai-collapsed")));
+  rail.append(assistantToggle);
   const tabs = make("div", "q91tabs");
   tabs.setAttribute("role", "tablist");
   tabs.setAttribute("aria-label", "Open files");

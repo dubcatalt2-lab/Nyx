@@ -25,7 +25,7 @@ function fixture(env={NYX_AI_CONCURRENT_GLOBAL:3}) {
   let time=Date.parse('2026-09-10T12:00:00Z');
   const create=()=>createAiAllowance({db,config,now:()=>time});
   return {db,config,allowance:create(),create,advance:n=>time+=n,
-    actor:(uid,extra={})=>({uid,device:uid,network:'school',createdAt:Date.parse('2026-08-01T00:00:00Z'),...extra})};
+    actor:(uid,extra={})=>({uid,app:'tutsi',device:uid,network:'school',createdAt:Date.parse('2026-08-01T00:00:00Z'),...extra})};
 }
 const payload=()=>({model:'google/gemini-fixture',messages:[{role:'user',content:'Hello'}],max_tokens:1000});
 const rejected=(p,pattern)=>assert.rejects(p,error=>error.code==='ai_allowance'&&pattern.test(error.message));

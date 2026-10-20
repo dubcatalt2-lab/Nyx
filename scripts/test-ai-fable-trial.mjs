@@ -26,6 +26,8 @@ for(let n=0;n<5;n++){
  a=create();time+=61000;
 }
 assert.equal(db.records.get(key('member')).messages,5);
+assert.equal(db.records.get('nyxAiAllowance/global').newcomerMoney,0,'Settled Fable replies leave general spending unchanged');
+assert.equal(db.records.get('nyxAiAllowance/global').newcomerRequests,0,'Fable does not consume general request budget');
 assert(db.records.get(key('member')).reserved>100000,'Removed account dollar limit must not block five replies');
 const sixth=await a.begin(actor());await assert.rejects(a.reserve(sixth,'shared',payload(),price),/five Fable/);await a.finish(sixth);
 assert.equal((await a.usage(actor())).fableTrial.messagesRemaining,0);
@@ -38,8 +40,9 @@ await a.reserve(repriced,'shared',higher,{inputPerMillion:10,outputPerMillion:10
 time+=61000;
 const media=await a.begin(actor('media'));await assert.rejects(a.reserve(media,'shared',{...payload(),plugins:[{id:'web'}]},price),/text response/);await a.finish(media);
 const global=db.records.get('nyxAiAllowance/global');global.newcomerMoney=1000000;
-const over=await a.begin(actor('global'));await assert.rejects(a.reserve(over,'shared',payload(),price),/shared AI spending/);await a.finish(over);
-assert(!db.records.has(key('global')),'Pre-dispatch rejection must not consume a trial message');
+const over=await a.begin(actor('global'));await a.reserve(over,'shared',payload(),price);await a.finish(over);
+assert.equal(db.records.get(key('global')).messages,1,'Fable has its own campaign budget');
+assert.equal(db.records.get('nyxAiAllowance/global').newcomerMoney,1000000,'Fable does not charge the general budget');
 global.newcomerMoney=0;global.monthMoney=0;db.records.set('nyxAiAllowance/global',global);
 time+=61000;
 const concurrent=await Promise.allSettled([a.begin(actor('race')),a.begin(actor('race'))]);
@@ -68,4 +71,6 @@ await campaign.finish(cancel);
 const pending=await a.begin(actor('expires'));time=fableTrialEnd;
 await assert.rejects(a.reserve(pending,'shared',payload(),price),/Premium|not enabled/);await a.finish(pending);
 await assert.rejects(a.begin(actor('expired')),/not enabled/);
-console.log('PASS Fable: five newcomer replies with $1 site budget, $0.05 output cap, separate input charges, removed account cap, repricing, sixth denial, restart, concurrency, expiry, $1.50 concurrent global cap, settlement/refunds and site-wide budget');
+const independent=createAiAllowance({db:memoryFirestore(),config:aiAllowanceConfig({NYX_AI_DAILY_BUDGET_USD:'0'}),now:()=>fableTrialStart+1000});
+const independentSession=await independent.begin(actor('independent'));const independentReceipt=await independent.reserve(independentSession,'shared',payload(),price);assert(independentReceipt.reserved>50000,'Trial prices are enforced even when general budget is disabled');await independent.finish(independentSession);
+console.log('PASS Fable: five newcomer replies with $1 site budget, $0.05 output cap, separate input charges, removed account cap, repricing, sixth denial, restart, concurrency, expiry, $1.50 concurrent global cap, settlement/refunds and separate general budget');

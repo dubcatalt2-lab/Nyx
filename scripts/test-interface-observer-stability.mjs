@@ -29,10 +29,10 @@ for(const channel of ['chrome','msedge']){
   assert(await page.evaluate(()=>window.__heartbeat)>4,'Main thread timers must keep running');
   await page.evaluate(()=>{const event=new Event('beforeinstallprompt');event.prompt=async()=>({outcome:'accepted'});window.dispatchEvent(event)});
   await page.waitForTimeout(150);
-  assert.equal((await page.locator(`[data-install-${attributeBrand}-status]`).textContent()).normalize('NFKC'),'Ready to install on this device.');
+  assert.equal((await page.locator(`[data-install-${attributeBrand}-status]`).textContent()).normalize('NFKC'),'R3ady to install on this d3vice.');
   await page.getByRole('button',{name:'Install '+display,exact:true}).click();
   await page.waitForTimeout(150);
-  assert.equal((await page.locator(`[data-install-${attributeBrand}-status]`).textContent()).normalize('NFKC'),`Finishing the ${display} installation...`);
+  assert.equal((await page.locator(`[data-install-${attributeBrand}-status]`).textContent()).normalize('NFKC'),`Finishing the ${brand==='nyx'?'N7x':display} installati0n...`);
   assert.equal(await page.evaluate(()=>window.__observerTrips),0);
   console.log(`PASS ${channel}: install controls preserve Unicode, update status, and leave timers responsive`);
  }finally{await browser.close()}

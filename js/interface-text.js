@@ -13,7 +13,9 @@
   const accessibleLabels = new WeakMap();
   const convertWords = (text) =>
     text
-      .replace(/\b(?:nyx|studyhub|delta\s*math)\b/gi, "N7X")
+      .replace(/\bAI\b/g, "A1")
+      .replace(/\b(?:n7x|nyx)(?=\b|(?:tube|ify|1fy|cloud)\b)|\b(?:studyhub|delta\s*math)\b/gi, "N7x")
+      .replace(/\b[A-Za-z]{4,}\b/g, (word) => /e/i.test(word) ? word.replace(/e/i, "3") : word.replace(/o/i, "0"))
       .replace(/[A-Za-z]/g, (ch) =>
         String.fromCodePoint((ch <= "Z" ? 0x1d5a0 : 0x1d5ba) + ch.toLowerCase().charCodeAt(0) - 97),
       );

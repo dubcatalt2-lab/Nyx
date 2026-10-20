@@ -726,48 +726,6 @@
       return payload;
     }
 
-    api("/api/private-remote/access")
-      .then((data) => {
-        if (!data.enabled || !overlay.isConnected) return;
-        const button = document.createElement("button");
-        button.type = "button";
-        button.textContent = "Remote desktop";
-        button.addEventListener("click", async () => {
-          button.disabled = true;
-          try {
-            await api("/api/private-remote/session", { method: "POST" });
-            window.location.assign("/apps/remote/");
-          } catch {
-            button.textContent = "Remote access unavailable";
-          } finally {
-            button.disabled = false;
-          }
-        });
-        overlay.querySelector(".n7x-owner-header-actions").prepend(button);
-      })
-      .catch(() => {});
-    api("/api/nyxcloud/access")
-      .then((data) => {
-        if (!data.allowed || !overlay.isConnected) return;
-        const button = document.createElement("button");
-        button.type = "button";
-        button.textContent = "N7XCL0UD";
-        button.dataset.nyxcloudAccess = "owner";
-        button.title = data.online ? "Open your VM" : "Open N7XCL0UD (VM currently offline)";
-        button.addEventListener("click", async () => {
-          button.disabled = true;
-          try {
-            await api("/api/nyxcloud/session", { method: "POST" });
-            window.location.assign("/apps/nyxcloud/");
-          } catch {
-            button.textContent = "N7XCL0UD unavailable";
-          } finally {
-            button.disabled = false;
-          }
-        });
-        overlay.querySelector(".n7x-owner-header-actions").append(button);
-      })
-      .catch(() => {});
     const aiStatusHost = overlay.querySelector("[data-owner-ai-status]");
     function compactStatus(host, key, label) {
       const details = document.createElement("details"),

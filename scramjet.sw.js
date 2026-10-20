@@ -134,13 +134,9 @@ function nyxBlockedScramjetResponse(event) {
 }
 
 function nyxRequestExpectsAsset(event) {
-  const accept = event.request.headers.get("accept") || "";
-  const path = new URL(event.request.url).pathname;
-  const sourcePath = nyxScramjetSourcePath(event.request.url);
-  return ["script", "worker", "sharedworker", "style"].includes(event.request.destination)
-    || /javascript|ecmascript|text\/css/i.test(accept)
-    || /\.(?:js|mjs|cjs|css|jq|hs|ohs)(?:$|[/?#])/i.test(path)
-    || /\.(?:js|mjs|cjs|css|jq|hs|ohs)(?:$|[/?#])/i.test(sourcePath);
+  // Fetch/XHR APIs can end in .js and accept JavaScript while returning JSON.
+  // Only browser-loaded executable resources are eligible for asset scrubbing.
+  return ["script", "worker", "sharedworker", "style"].includes(event.request.destination);
 }
 
 function nyxEmptyAssetResponse(event) {

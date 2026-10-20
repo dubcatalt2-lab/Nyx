@@ -91,7 +91,7 @@ function repositoryFiles() {
 }
 
 function isStaticSource(path) {
-  return rootFiles.has(path) || staticPrefixes.some((prefix) => path.startsWith(prefix));
+  return !/^(?:apps\/(?:nyxcloud|remote|remote-entry)\/|assets\/vendor\/novnc\/)/.test(path) && (rootFiles.has(path) || staticPrefixes.some((prefix) => path.startsWith(prefix)));
 }
 
 async function copyRepositoryStaticFiles() {
@@ -252,14 +252,6 @@ async function copyKatex() {
   const destination = join(output, "assets", "vendor", "katex");
   await mkdir(dirname(destination), { recursive: true });
   await cp(source, destination, { recursive: true, force: true });
-}
-
-async function copyRemoteViewer() {
-  const source = dirname(dirname(require.resolve("@novnc/novnc")));
-  const destination = join(output, "assets", "vendor", "novnc");
-  await mkdir(destination, { recursive: true });
-  for (const name of ["core", "vendor", "docs", "AUTHORS"])
-    await cp(join(source, name), join(destination, name), { recursive: true });
 }
 
 const buildNameSeed = randomBytes(16).toString("hex");
@@ -524,7 +516,6 @@ async function main() {
   );
   await buildGameStorage(root, output);
   await copyKatex();
-  await copyRemoteViewer();
   await copyProxyRuntimes();
   await writePatchedRuntimes(wispUrl);
   await removeUnavailableUgsEntries();

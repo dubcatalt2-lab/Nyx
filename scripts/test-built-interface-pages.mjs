@@ -10,8 +10,6 @@ try{const page=await browser.newPage();const errors=[];page.on('pageerror',e=>er
  await page.locator('[data-n7x-tos-agree]').click();await page.waitForFunction(()=>localStorage.getItem('nyx.tosAcceptedVersion')==='2026-07-30');
  assert.equal(await page.locator('#setupBrowserMode option[value="ultraviolet"]').count(),0);
  await page.goto(base+'/about-nyx.html');assert(!/StudyHub|\bNyx\b/i.test(await page.locator('body').innerText()));
- await page.goto(base+'/apps/nyxcloud/');
- await page.waitForFunction(()=>document.querySelector('.brand-caption')?.textContent.normalize('NFKC')==='Desktop workspace' && document.querySelector('.brand-caption')?.textContent!=='Desktop workspace');
- assert.equal((await page.title()).normalize('NFKC'),'VMs');assert.notEqual(await page.title(),'VMs','BOM-prefixed desktop page must receive Unicode script');
+ assert.equal((await page.request.get(base+'/apps/nyxcloud/')).status(),404);
  assert.deepEqual(errors,[]);console.log('PASS built startup wizard and terms render Unicode; skip, consent persistence, retired selector removal and About branding work without page exceptions.');
 }finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

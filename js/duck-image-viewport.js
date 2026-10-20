@@ -39,13 +39,12 @@ globalThis.NyxDuckImageViewport = function (t, browserShellSourceUrl) {
     let encoded = raw.slice(match.index);
     const metadataAt = encoded.search(/[?&]%24(?:rfp|io|tf|pf|iframe)=/i);
     if (metadataAt > 0) encoded = encoded.slice(0, metadataAt);
-    let decoded = encoded;
-    for (let pass = 0; pass < 2 && /%[0-9a-f]{2}/i.test(decoded); pass++) {
-      try {
-        decoded = decodeURIComponent(decoded);
-      } catch {
-        break;
-      }
+    let decoded;
+    try {
+      // Decode the outer proxy URL only; nested thumbnail query values must stay escaped.
+      decoded = decodeURIComponent(encoded);
+    } catch {
+      return "";
     }
     return /^https?:\/\//i.test(decoded) ? decoded : "";
   };

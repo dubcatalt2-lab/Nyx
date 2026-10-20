@@ -1,5 +1,7 @@
 ﻿importScripts("/controller/controller.sw.js?v=20260905-cookie-owner-v1");
 
+importScripts("/js/proxy-url-codec.js");
+
 let nyxScramjetRevivePromise = null;
 
 self.addEventListener("install", event => {
@@ -48,7 +50,7 @@ function nyxScramjetSourcePath(requestUrl) {
     const url = new URL(requestUrl);
     const match = url.pathname.match(/^\/~\/(?:sj|tm)\/[^/]+\/[^/]+\/([^?#]*)/);
     if (!match) return "";
-    return new URL(decodeURIComponent(match[1])).pathname;
+    return new URL(self.NyxProxyUrlCodec.decode(match[1])).pathname;
   } catch {
     return "";
   }
@@ -59,7 +61,7 @@ function nyxScramjetSourceUrl(requestUrl) {
     const url = new URL(requestUrl);
     const match = url.pathname.match(/^\/~\/(?:sj|tm)\/[^/]+\/[^/]+\/([^?#]*)/);
     if (!match) return "";
-    return new URL(decodeURIComponent(match[1])).href;
+    return new URL(self.NyxProxyUrlCodec.decode(match[1])).href;
   } catch {
     return "";
   }

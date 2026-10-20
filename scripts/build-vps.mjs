@@ -3,6 +3,7 @@ import { zakaEnabled, zakaIdentifiers } from "./zaka-identifiers.mjs";
 import { encodeLiterals } from "./build-string-literals.mjs";
 import { patchClientSockets } from "./patch-client-sockets.mjs";
 import { buildInterfaceText } from "./build-interface-text.mjs";
+import { buildDomHooks } from "./build-dom-hooks.mjs";
 import { buildGameStorage } from "./build-game-storage.mjs";
 import { buildPublicModules } from "./build-public-modules.mjs";
 import { buildFrontendAssets } from "./build-frontend-assets.mjs";
@@ -536,6 +537,7 @@ async function main() {
     ),
   );
   await buildInterfaceText(output);
+  await buildDomHooks(output, repositoryFiles().filter(isStaticSource));
   await minifyFirstPartyBrowserRuntimes();
   await versionStylesheets();
   await minifyFirstPartyMarkupAndStyles();

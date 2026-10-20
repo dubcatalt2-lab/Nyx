@@ -292,7 +292,7 @@
 
   try {
     const style = document.createElement("style");
-    style.id = "nyx-game-ad-protection-style";
+    style.id = "q96eb731ea642";
     style.textContent = `${adElementSelector}{display:none!important;visibility:hidden!important;pointer-events:none!important;width:0!important;height:0!important;min-width:0!important;min-height:0!important}`;
     (document.head || document.documentElement).appendChild(style);
   } catch {}

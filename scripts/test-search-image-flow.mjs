@@ -25,6 +25,7 @@ try {
     localStorage.setItem("nyx.setupComplete", "true");
     localStorage.setItem("nyx.tosAcceptedVersion", "2026-07-30");
     localStorage.setItem("nyx.browserMode", "scramjet");
+    localStorage.setItem("nyx.autoCloak", "true");
     localStorage.setItem(
       "nyx.releaseNotes.2026-10-02-nyx-1.6.8.seen",
       "2026-10-02-nyx-1.6.8",
@@ -64,6 +65,25 @@ try {
   }
   await page.goto("http://127.0.0.1:" + server.address().port);
   await page.waitForTimeout(8500);
+  if (process.argv.includes("--debug")) console.log("STARTUP", await page.evaluate(() => ({
+    saved: localStorage.getItem("nyx.autoCloak"),
+    codec: typeof globalThis.NyxProxyUrlCodec,
+    prompt: document.querySelector("[data-cloak-cancel]")?.closest('[aria-hidden]')?.outerHTML.slice(0, 240),
+    scripts: [...document.scripts].map(s => s.src).filter(Boolean),
+  })));
+  await page.locator("[data-cloak-cancel]:visible").waitFor();
+  await page.keyboard.press("Shift");
+  await page.waitForTimeout(300);
+  assert.equal(context.pages().length, 1, "Startup and unrelated keys must not open a cloak window");
+  const popupReady = context.waitForEvent("page");
+  await page.locator("[data-cloak-submit]").click();
+  const popup = await popupReady;
+  assert.equal(popup.url(), "about:blank", "Explicit launch remains available");
+  await popup.close();
+  await page.locator("[data-cloak-cancel]").click();
+  await page.locator("[data-cloak-cancel]").waitFor({ state: "hidden" });
+  assert.deepEqual(await page.locator("[id]").evaluateAll(elements =>
+    elements.map(element => element.id).filter(id => /nyx|studyhub/i.test(id))), []);
   const search = page.locator("[data-q53154c3f0fbe71a11b]:visible").first();
   await search.fill("cats");
   await search.press("Enter");
@@ -71,6 +91,9 @@ try {
   await frame
     .getByRole("heading", { name: "Search cats", exact: true })
     .waitFor();
+  const routed = await page.locator("iframe.view.active").getAttribute("src");
+  assert.match(routed, /\/u3\./, "New navigation uses the ROT17 destination representation");
+  assert(!routed.includes("duckduckgo.com") && !routed.includes("%3A%2F%2F"));
   await frame.locator("#images").click();
   await frame.locator("#thumb").waitFor();
   await page.waitForFunction(() =>

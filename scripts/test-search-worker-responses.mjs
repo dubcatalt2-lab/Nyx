@@ -4,6 +4,7 @@ import express from "express";
 import { chromium } from "playwright";
 const source = await readFile("scramjet.sw.js", "utf8");
 const app = express();
+app.get("/js/proxy-url-codec.js", (_req, res) => res.sendFile("js/proxy-url-codec.js", { root: process.cwd() }));
 app.get("/", (_req, res) =>
   res
     .type("html")
@@ -89,6 +90,16 @@ try {
     document.head.append(s);
   });
   assert.equal(await (await bad).text(), "");
+  for (const representation of ["legacy", "versioned"]) {
+    const blocked = await page.evaluate(async (representation) => {
+      const target = "https://google-analytics.com/collect";
+      const token = representation === "legacy" ? encodeURIComponent(target) :
+        "u1." + btoa(target).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      const response = await fetch("/~/sj/session/frame/" + token);
+      return response.status;
+    }, representation);
+    assert.equal(blocked, 204, "Existing tracker protection must decode both representations");
+  }
   console.log(
     "PASS real service worker: JSON fetch/XHR .js APIs, challenge202, rate-limit429 and HTML fragments preserved; executable-script safeguards retained",
   );

@@ -18,7 +18,7 @@ for(const channel of ['chrome','msedge']){
  assert.equal(await page.evaluate(()=>window.__trips),0,'Title ownership must settle without an endless observer loop');
  assert.equal(await page.title(),'Classes','Preserve an explicitly managed tab title');
  assert(await page.evaluate(()=>window.__beats)>4,'Startup timers must remain responsive');
- assert.equal((await page.locator('h1').textContent()).normalize('NFKC'),'Gam3s A1 Music');
+ assert.equal((await page.locator('h1').textContent()).normalize('NFKC'),'It3ms A1 Music');
  assert.notEqual(await page.locator('h1').textContent(),'Games AI Music');
  console.log(`PASS ${channel}: title owner preserved, Unicode content styled, main thread responsive`);
  }finally{await browser.close()}

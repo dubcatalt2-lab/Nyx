@@ -1,3 +1,4 @@
+import {fableTrialActive, fableTrialLabel} from './lib/ai-fable-trial.mjs';
 import {q94d6} from './lib/q94d6.mjs';
 import {q83b2} from './lib/q83b2.mjs';
 import {q67a9} from './lib/q67a9.mjs';
@@ -2278,7 +2279,7 @@ function nyxAiBudgetCatalog(available, personal, provider, actor={}) {
   if (!personal && new URL(nyxAiEndpoint(provider)).hostname === "openrouter.ai") {
     try {
       const config = aiAllowanceConfig(process.env);
-      return available.filter(model => (model.text||model.imageGeneration) && ((isFreeAiModel(model.id)&&freeModelHealth.available(model.id))||(!isFreeAiModel(model.id)&&config.dailyUsd&&Object.hasOwn(config.prices, `${provider?.id || 'shared'}:${model.id}`))));
+      return available.filter(model => (model.text||model.imageGeneration) && ((isFreeAiModel(model.id)&&freeModelHealth.available(model.id))||(!isFreeAiModel(model.id)&&config.dailyUsd&&(Object.hasOwn(config.prices, `${provider?.id || 'shared'}:${model.id}`)||(fableTrialActive(model.id,actor)&&aiCatalogPrice(model)!==null)))));
     } catch { return []; }
   }
   return available;
@@ -2613,7 +2614,7 @@ async function nyxBudgetedAiFetch(provider,url,options) {
   const session=await nyxSharedAiSession(scope);
   let payload;try {payload=JSON.parse(options.body);}catch{throw Object.assign(new Error('Invalid AI request.'),{status:400});}
   let catalogPrice=null;
-  if((hasFullAiCatalog(session.actor)||hasAppAiAllowance(session.actor)||session.actor.premium===true||session.actor.owner===true)&&new URL(url).hostname==='openrouter.ai'){
+  if((hasFullAiCatalog(session.actor)||hasAppAiAllowance(session.actor)||session.actor.premium===true||session.actor.owner===true||fableTrialActive(payload.model,session.actor))&&new URL(url).hostname==='openrouter.ai'){
     const key=String(new Headers(options.headers).get('authorization')||'').replace(/^Bearer\s+/i,'');
     const catalog=await nyxAiAvailableModels(key,false,null,session.actor);
     const selected=catalog.find(model=>model.id===payload.model);
@@ -2763,7 +2764,7 @@ app.get('/api/nyx-ai/models',async(req,res)=>{
   if(!credential.key)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
   const models=await nyxAiAvailableModels(credential.key,false,credential.provider,entitlement);
   if(!models.length)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
-  res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement,aiCatalogPrice(model))).map(model=>hasAppAiAllowance(entitlement)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'No token quota':entitlement.app==='nook'?(nookModelIsExpensive(aiCatalogPrice(model))?'1,000 expensive / browser / 4 days':'7,000 / browser / 4 days'):dropModelIsExpensive(aiCatalogPrice(model),model.id)?'500 shared / 4 days':'No token quota'}:model).map(model=>nookHaikuModel(model.id,entitlement.app)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'Unlimited':`${model.allowanceLabel} \u00b7 $${nookHaikuLimitUsd(entitlement).toFixed(2)} Haiku / account / 4 days`}:model).map(model=>!hasFullAiCatalog(entitlement)&&expensiveClaudeModel(model.id,aiCatalogPrice(model))?{...model,allowanceLabel:[model.allowanceLabel,'$0.05 Claude / account / site / 4 days'].filter(Boolean).join(' · ')}:model),credential:'shared',ownerMediaAccess:hasFullAiCatalog(entitlement)});
+  res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement,aiCatalogPrice(model))).map(model=>hasAppAiAllowance(entitlement)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'No token quota':entitlement.app==='nook'?(nookModelIsExpensive(aiCatalogPrice(model))?'1,000 expensive / browser / 4 days':'7,000 / browser / 4 days'):dropModelIsExpensive(aiCatalogPrice(model),model.id)?'500 shared / 4 days':'No token quota'}:model).map(model=>nookHaikuModel(model.id,entitlement.app)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'Unlimited':`${model.allowanceLabel} \u00b7 $${nookHaikuLimitUsd(entitlement).toFixed(2)} Haiku / account / 4 days`}:model).map(model=>!hasFullAiCatalog(entitlement)&&!fableTrialActive(model.id,entitlement)&&expensiveClaudeModel(model.id,aiCatalogPrice(model))?{...model,allowanceLabel:[model.allowanceLabel,'$0.05 Claude / account / site / 4 days'].filter(Boolean).join(' · ')}:model).map(model=>fableTrialActive(model.id,entitlement)?{...model,allowanceLabel:fableTrialLabel}:model),credential:'shared',ownerMediaAccess:hasFullAiCatalog(entitlement)});
 });
 
 function nyxMediaUsage(usage) {

@@ -1,3 +1,4 @@
+import {fableTrialActive,fableTrialStart} from '../lib/ai-fable-trial.mjs';
 import {hasAppAiAllowance,dropModelIsExpensive} from '../lib/ai-allowance.mjs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
@@ -10,7 +11,7 @@ import {isFreeAiModel} from '../lib/ai-free-models.mjs';
 import {memoryFirestore} from './test-ai-allowance.mjs';
 const [astra,fable]=dailyOwnerModels;
 for(const model of [...dailyOwnerModels,'~openai/gpt-astra-latest','~anthropic/claude-fable-latest']){
- for(const actor of [{},{uid:'other',modelRules:[{model,access:'allow'}]}])assert(!aiModelAllowed(model,actor));
+ for(const actor of [{},{uid:'other',modelRules:[{model,access:'allow'}]}])assert(!aiModelAllowed(model,actor,null,fableTrialStart-1));
  assert(aiModelAllowed(model,{uid:fullCatalogUid}));assert(aiModelAllowed(model,{uid:'premium',premium:true}));assert(aiModelAllowed(model,{uid:'owner',owner:true}));
 }
 const price=aiCatalogPrice({pricing:{prompt:'0.00001',completion:'0.00005'}});
@@ -20,7 +21,7 @@ assert.equal(aiCatalogPrice({pricing:{prompt:'oops',completion:0}}),null);
 
 const source=readFileSync('server.js','utf8'),ast=parse(source,{ecmaVersion:'latest',sourceType:'module'});
 const declaration=name=>{const n=ast.body.find(n=>n.type==='FunctionDeclaration'&&n.id.name===name);return source.slice(n.start,n.end)};
-const context=vm.createContext({hasAppAiAllowance,dropModelIsExpensive,hasFullAiCatalog,aiCatalogPrice,aiAllowanceConfig,isFreeAiModel,URL,process:{env:{NYX_AI_DAILY_BUDGET_USD:'100'}},nyxAiEndpoint:()=> 'https://openrouter.ai/api/v1/chat/completions',freeModelHealth:{available:()=>true}});
+const context=vm.createContext({fableTrialActive,hasAppAiAllowance,dropModelIsExpensive,hasFullAiCatalog,aiCatalogPrice,aiAllowanceConfig,isFreeAiModel,URL,process:{env:{NYX_AI_DAILY_BUDGET_USD:'100'}},nyxAiEndpoint:()=> 'https://openrouter.ai/api/v1/chat/completions',freeModelHealth:{available:()=>true}});
 vm.runInContext(declaration('nyxAiBudgetCatalog'),context);
 const catalog=[{id:astra,text:true,pricing:{prompt:'.00001',completion:'.00005'}},{id:fable,text:true,pricing:{prompt:'.00001',completion:'.00005'}},{id:'new-vendor/new-chat',text:true,pricing:{prompt:'.000001',completion:'.000002'}},{id:'audio-only',text:false,pricing:{prompt:'.000001',completion:'.000002'}},{id:'unpriced-router',text:true,pricing:{prompt:-1,completion:-1}},{id:'openai/gpt-6-sol',text:true,pricing:{prompt:'.000002',completion:'.00001'}}];
 assert.deepEqual(Array.from(context.nyxAiBudgetCatalog(catalog,false,null,{uid:fullCatalogUid}),x=>x.id),catalog.map(x=>x.id));

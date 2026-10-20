@@ -427,7 +427,7 @@
           : /^~?anthropic\/claude-(opus|fable)/.test(model.value)
             ? data.modelCaps?.claude
             : null;
-      if (cap && cap.limit !== null)
+      if (cap && cap.limit !== null && !(model.value === "anthropic/claude-fable-5.1" && data.fableTrial))
         usageStatus.textContent += ` Claude: $${cap.remaining.toFixed(4)} of $${cap.limit.toFixed(2)} remaining.`;
       if (!data.unlimited && model.value === "anthropic/claude-opus-5.5" && data.modelCaps?.opus55)
         usageStatus.textContent += ` Opus: ${format(data.modelCaps.opus55.remaining)} tokens remaining.`;
@@ -437,6 +437,8 @@
         data.modelCaps?.images
       )
         usageStatus.textContent += ` Images: ${data.modelCaps.images.remaining} remaining.`;
+      if (model.value === "anthropic/claude-fable-5.1" && data.fableTrial)
+        usageStatus.textContent += ` Fable trial: ${data.fableTrial.messagesRemaining} of ${data.fableTrial.messageLimit} messages left. Up to $0.05 per request; $0.10 total. Ends ${new Date(data.fableTrial.endsAt).toLocaleString()}. Reserved attempts count; no reset.`;
       usageStatus.textContent += " Counts input, conversation history and output tokens.";
     } catch (error) {
       if (version === usageVersion && error.name !== "AbortError")
@@ -2209,7 +2211,7 @@
             (
               item,
             ) => `<button class="ai-model-option" type="button" role="option" data-model-id="${escapeHtml(item.id)}" aria-selected="${item.id === selected ? "true" : "false"}">
-          ${modelIcon(item)}<span class="ai-model-option-label"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(modelCompany(item).label)} &middot; ${escapeHtml(modelCapabilities(item))}${modelToolOnly(item) ? " · Open in OpenRouter ↗" : ""}</small></span>
+          ${modelIcon(item)}<span class="ai-model-option-label"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(modelCompany(item).label)} &middot; ${escapeHtml(modelCapabilities(item))}${item.allowanceLabel ? " &middot; " + escapeHtml(item.allowanceLabel) : ""}${modelToolOnly(item) ? " · Open in OpenRouter ↗" : ""}</small></span>
           <span class="ai-model-option-check" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m5 10 3 3 7-7"/></svg></span>
         </button>`,
           )
@@ -2315,6 +2317,7 @@
                     id,
                     label,
                     company,
+                    allowanceLabel: String(item.allowanceLabel || ""),
                     catalogRank: Number.isFinite(item.catalogRank) ? item.catalogRank : 9999,
                     codingRank: item.codingRank,
                     outputModalities: item.outputModalities,

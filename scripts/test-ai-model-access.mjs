@@ -1,4 +1,5 @@
-import {hasAppAiAllowance,dropModelIsExpensive,nookModelIsExpensive,expensiveClaudeModel} from '../lib/ai-allowance.mjs';
+import {fableTrialActive,fableTrialLabel} from '../lib/ai-fable-trial.mjs';
+import {nookHaikuModel,nookHaikuLimitUsd,hasAppAiAllowance,dropModelIsExpensive,nookModelIsExpensive,expensiveClaudeModel} from '../lib/ai-allowance.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
@@ -10,17 +11,20 @@ const models=[{id:'google/gemini-2.5-flash-lite'},{id:'openai/gpt-5.6-luna'},{id
 models.push({id:'openai/gpt-6-luna-pro'},{id:'anthropic/claude-opus-5.5'},{id:'openai/gpt-6-luna'},{id:'openai/gpt-6-sol'},{id:'openai/gpt-6-astra'},{id:'anthropic/claude-fable-5.1'});
 const start=source.indexOf("app.get('/api/nyx-ai/models',");
 const end=source.indexOf('\ninstallAiMedia(',start);
-vm.runInNewContext(source.slice(start,end),{app,hasAppAiAllowance,dropModelIsExpensive,nookModelIsExpensive,expensiveClaudeModel,aiModelAllowed,hasFullAiCatalog,nyxAiKey:()=> 'fixture',
+vm.runInNewContext(source.slice(start,end),{app,fableTrialActive,fableTrialLabel,nookHaikuModel,nookHaikuLimitUsd,hasAppAiAllowance,dropModelIsExpensive,nookModelIsExpensive,expensiveClaudeModel,aiModelAllowed,hasFullAiCatalog,nyxAiKey:()=> 'fixture',
  aiCatalogPrice:model=>({inputPerMillion:model.id.includes('claude')?6:1,outputPerMillion:model.id.includes('sol')?10:1}),
- nyxAiPremiumEntitlement:async req=>({app:req.get('authorization')==='Bearer nook'?'nook':null,uid:req.get('authorization')==='Bearer specific'?fullCatalogUid:'other',premium:req.get('authorization')==='Bearer premium',owner:['Bearer owner','Bearer specific'].includes(req.get('authorization'))}),
+ nyxAiPremiumEntitlement:async req=>({app:req.get('authorization')==='Bearer nook'?'nook':null,uid:req.get('authorization')==='Bearer specific'?fullCatalogUid:req.get('authorization')==='Bearer guest'?'':'other',premium:req.get('authorization')==='Bearer premium',owner:['Bearer owner','Bearer specific'].includes(req.get('authorization'))}),
  nyxAiRequestCredential:()=>({key:'fixture'}),nyxAiAvailableModels:async()=>models});
 const server=app.listen(0,'127.0.0.1');await new Promise(resolve=>server.once('listening',resolve));
 try {
  for(const role of ['guest','member','expired','premium','owner'])for(const query of ['','?custom=1']) {
   const response=await fetch(`http://127.0.0.1:${server.address().port}/api/nyx-ai/models${query}`,{headers:{authorization:'Bearer '+role}});
-  assert.equal(response.status,200);assert.match(response.headers.get('cache-control'),/no-store/);
+  assert.equal(response.status,200,await response.clone().text());assert.match(response.headers.get('cache-control'),/no-store/);
   const data=await response.json();
-  assert.equal(data.models.some(m=>['openai/gpt-6-astra','anthropic/claude-fable-5.1'].includes(m.id)),['premium','owner'].includes(role));
+  assert.equal(data.models.some(m=>m.id==='openai/gpt-6-astra'),['premium','owner'].includes(role));
+  const trial=!query&&role!=='guest'&&fableTrialActive('anthropic/claude-fable-5.1',{uid:'other'});
+  assert.equal(data.models.some(m=>m.id==='anthropic/claude-fable-5.1'),['premium','owner'].includes(role)||trial);
+  if(trial&&!['premium','owner'].includes(role))assert.match(data.models.find(m=>m.id==='anthropic/claude-fable-5.1').allowanceLabel,/5 messages total/);
   assert(data.models.some(m=>m.id==='openai/gpt-6-luna'),role+query);
   assert.equal(data.models.some(m=>m.id==='openai/gpt-6-luna-pro'),['premium','owner'].includes(role),role+query);
   assert.equal(data.models.some(m=>m.id==='anthropic/claude-opus-5.5'),['premium','owner'].includes(role),role+query);

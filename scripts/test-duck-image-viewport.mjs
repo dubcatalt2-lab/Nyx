@@ -82,6 +82,15 @@ try {
   assert.equal(await lazy.locator('#dialog').getAttribute('src'),null);
   await lazy.locator('body').evaluate(()=>scrollTo(0,5900));
   await p.waitForFunction(()=>document.querySelector('#lazy-fixture').contentDocument.querySelector('#far').naturalWidth>0);
+  await lazy.locator('body').evaluate(body=>{
+    const image=document.createElement('img');image.id='next-page';
+    image.style='position:absolute;top:9000px';image.loading='lazy';
+    image.setAttribute('data-image-url','/lazy-thumbnail-fixture/next-page.svg');body.append(image);
+  });
+  await p.waitForTimeout(150);
+  assert.equal(await lazy.locator('#next-page').getAttribute('src'),null);
+  await lazy.locator('body').evaluate(()=>scrollTo(0,8900));
+  await p.waitForFunction(()=>document.querySelector('#lazy-fixture').contentDocument.querySelector('#next-page').naturalWidth>0,null,{timeout:3000});
   await lazy.locator('body').evaluate(()=>scrollTo(0,0));
   assert.equal(await lazy.locator('#near img').evaluateAll(images=>images.filter(image=>image.complete&&image.naturalWidth>0).length),7);
   await p.evaluate(()=>{window.lazyFixtureTab.sourceUrl='https://duckduckgo.com/?q=fixture&ia=web';const image=document.createElement('img');image.id='web-image';image.setAttribute('data-src','/lazy-thumbnail-fixture/web.svg');window.lazyFixtureTab.frame.contentDocument.querySelector('#near').append(image)});

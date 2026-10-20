@@ -107,7 +107,8 @@ globalThis.NyxDuckImageViewport = function (t, browserShellSourceUrl) {
       const lazy =
         image.getAttribute("data-src") ||
         image.getAttribute("data-original") ||
-        image.getAttribute("data-lazy-src");
+        image.getAttribute("data-lazy-src") ||
+        image.getAttribute("data-image-url");
       if (!lazy) continue;
       try {
         const url = new URL(lazy, source);

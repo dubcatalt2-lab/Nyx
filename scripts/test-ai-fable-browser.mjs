@@ -15,10 +15,10 @@ try {
     const path=new URL(route.request().url()).pathname;
     if(path.endsWith('/auth-config'))return route.fulfill({json:{enabled:true,apiKey:'fixture',projectId:'fixture'}});
     if(path.endsWith('/providers'))return route.fulfill({json:{providers:[{id:'shared',label:'OpenRouter'}]}});
-    if(path.endsWith('/models'))return route.fulfill({json:{models:[{id:'anthropic/claude-fable-5.1',label:'Claude Fable 5.1',text:true,allowanceLabel:'One-week trial: 5 messages total; $0.05/request, $0.10/account'}]}});
+    if(path.endsWith('/models'))return route.fulfill({json:{models:[{id:'anthropic/claude-fable-5.1',label:'Claude Fable 5.1',text:true,allowanceLabel:'One-week trial: 5 messages total; $0.05 output/reply; input billed separately; $1.50 shared trial budget'}]}});
     if(path.endsWith('/usage')){
       usageCalls++;assert.equal(route.request().headers().authorization,'Bearer fixture');
-      return route.fulfill(signedIn?{json:{fableTrial:{messageLimit:5,messagesRemaining:Math.max(0,5-chatCalls),limitUsd:.10,reservedUsd:chatCalls*.05,endsAt:1793064075385},scope:'account',tokens:{limit,used,pending,remaining:limit-used-pending},periodDays:4,resetAt:Date.now()+86400000,pendingCostsUsd:pending?.001:0}}:{status:401,json:{error:'Sign in',code:'authentication'}});
+      return route.fulfill(signedIn?{json:{fableTrial:{messageLimit:5,messagesRemaining:Math.max(0,5-chatCalls),outputLimitUsd:.05,endsAt:1793064075385},scope:'account',tokens:{limit,used,pending,remaining:limit-used-pending},periodDays:4,resetAt:Date.now()+86400000,pendingCostsUsd:pending?.001:0}}:{status:401,json:{error:'Sign in',code:'authentication'}});
     }
     if(path==='/api/nyx-ai'&&route.request().method()==='POST'){
       used+=25;chatCalls++;
@@ -28,7 +28,7 @@ try {
   });
   await page.addInitScript(()=>localStorage.setItem('nyx.aiUsage.v1',JSON.stringify([{at:Date.now(),tokens:999999}])));
   await page.goto(origin+'/ai.html');
-  await page.waitForFunction(()=>document.querySelector('#usageWeek').textContent==='6,900');
+  await page.waitForFunction(()=>document.querySelector('#usageWeek')?.textContent==='6,900');
   assert.equal(await page.locator('#usageAll').textContent(),'100','Balance comes from server, not local history');
   await page.locator('#model option[value="anthropic/claude-fable-5.1"]').waitFor({state:'attached'});
   for(let i=0;i<2;i++){
@@ -37,6 +37,9 @@ try {
   }
   assert.equal(chatCalls,2);assert(usageCalls>=3);
   assert.match((await page.locator('#usageStatus').textContent()).normalize('NFKC'),/3 of 5 messages left/);
+  assert.match((await page.locator('#usageStatus').textContent()).normalize('NFKC'),/output per reply; input billed separately/);
+  assert.match((await page.locator('#usageStatus').textContent()).normalize('NFKC'),/\$1\.50 shared trial budget/);
+  assert(!/\$0\.10/.test((await page.locator('#usageStatus').textContent()).normalize('NFKC')));
   await page.locator('#modelTrigger').click();
   assert.match((await page.locator('#modelOptions').innerText()).normalize('NFKC'),/5 messages total/);
   await page.setViewportSize({width:390,height:850});
@@ -46,7 +49,7 @@ try {
   await item.click();
   limit=50000;pending=500;
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
-  await page.waitForFunction(()=>document.querySelector('#usageWeek').textContent==='49,350');
+  await page.waitForFunction(()=>document.querySelector('#usageWeek')?.textContent==='49,350');
   assert.equal(await page.locator('#usageRequests').textContent(),'500');
   assert.match((await page.locator('#usageStatus').textContent()).normalize('NFKC'),/50,000 tokens \/ 4 days/);
   assert.match((await page.locator('#usageStatus').textContent()).normalize('NFKC'),/awaiting confirmation/);

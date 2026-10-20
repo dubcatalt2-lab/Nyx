@@ -438,7 +438,7 @@
       )
         usageStatus.textContent += ` Images: ${data.modelCaps.images.remaining} remaining.`;
       if (model.value === "anthropic/claude-fable-5.1" && data.fableTrial)
-        usageStatus.textContent += ` Fable trial: ${data.fableTrial.messagesRemaining} of ${data.fableTrial.messageLimit} messages left. Up to $0.05 per request; $0.10 total. Ends ${new Date(data.fableTrial.endsAt).toLocaleString()}. Reserved attempts count; no reset.`;
+        usageStatus.textContent += ` Fable trial: ${data.fableTrial.messagesRemaining} of ${data.fableTrial.messageLimit} messages left. Up to $0.05 of output per reply; input billed separately. $1.50 shared trial budget. Ends ${new Date(data.fableTrial.endsAt).toLocaleString()}. Reserved attempts count; no reset.`;
       usageStatus.textContent += " Counts input, conversation history and output tokens.";
     } catch (error) {
       if (version === usageVersion && error.name !== "AbortError")

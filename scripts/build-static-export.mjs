@@ -6,6 +6,8 @@ import {minify} from 'terser';
 import {rewriteProxyReferences,proxyAssetNames} from './build-proxy-assets.mjs';
 import {rewriteRuntimeNames} from './build-runtime-names.mjs';
 import {rewriteFrontendReferences,unpackPublishedDocument} from './build-frontend-assets.mjs';
+import {αποκωδικοποίηση} from '../assets/games/catalog-codec.js';
+import {κωδικοποίηση} from './build-game-catalogs.mjs';
 
 const root=process.cwd(),argument=name=>process.argv.find(value=>value.startsWith('--'+name+'='))?.slice(name.length+3);
 const base=argument('base')||'/',wisp=argument('wisp')||'wss://vps-a556737a.vps.ovh.us/resources/live/';
@@ -36,7 +38,7 @@ const sharedTransports=new Set(['/apps/tutsi/relay.mjs','/apps/tutsi/http-relay.
 const deferredBackgrounds=new Set();
 if(mini)for(const file of await readdir(path.join(dist,'assets/backgrounds')))if((await stat(path.join(dist,'assets/backgrounds',file))).size>600000)deferredBackgrounds.add(file);
 const remoteGames=new Set(['Dragonxclient.html','EaglercraftL_1.9_v0_7_0_Offline_Signed.html','EaglercraftX 1.8.8(u29).html','EaglercraftZ_1.11.2.html','eaglercraft.1.5.2.html'].map(name=>'assets/ugs/minecraft/'+name));
-const skip=relative=>(/^(?:scramjet(?:-v1)?|studyjet(?:-v1)?|controller|epoxy|atlas|libcurl|textlib|baremux|uv)\//.test(relative)&&!currentAssets.has(relative))||/^(?:proxy-assets|frontend-assets)\.json$/.test(relative)||relative==='nyx-singlefile.html'||(relative.startsWith('apps/tutsi/')&&!sharedTransports.has(relative));
+const skip=relative=>(/^(?:scramjet(?:-v1)?|st7dyj3t(?:-v1)?|controller|libcurl|textlib|baremux|uv)\//.test(relative)&&!currentAssets.has(relative))||/^(?:proxy-assets|frontend-assets)\.json$/.test(relative)||relative==='nyx-singlefile.html'||(relative.startsWith('apps/tutsi/')&&!sharedTransports.has(relative));
 async function copy(dir=''){
   for(const item of await readdir(path.join(dist,dir),{withFileTypes:true})){
     const relative=path.posix.join(dir,item.name);if(skip(relative))continue;
@@ -46,13 +48,22 @@ async function copy(dir=''){
     if(item.isDirectory()){await mkdir(path.join(output,relative),{recursive:true});await copy(relative);continue;}
     const target=path.join(output,relative);await mkdir(path.dirname(target),{recursive:true});
     if(/\.(?:js|mjs|css|html|json)$/.test(relative)&&(!relative.startsWith('assets/ugs/')||relative==='assets/ugs/play.html'||relative.endsWith('.json'))){
-      let source=publishedPages[relative]?await unpackPublishedDocument(dist,publishedPages[relative]):await readFile(path.join(dist,relative),'utf8');
+      const pageEntry=publishedPages[relative]||('/'+relative===aliases['/assets/games/index.html']?publishedPages['assets/games/index.html']:null);
+      let source=pageEntry?await unpackPublishedDocument(dist,pageEntry):await readFile(path.join(dist,relative),'utf8');
+      let encodedCatalog=false;
+      if(relative.startsWith('assets/games/')&&relative.endsWith('.json')){
+        const value=JSON.parse(source);
+        if(value?.representation==='n7x-xor-1'){
+          source=JSON.stringify(αποκωδικοποίηση(value));
+          encodedCatalog=true;
+        }
+      }
       if(relative==='script.js'||'/'+relative===aliases['/script.js']){
         source=await readFile(path.join(root,'script.js'),'utf8');
         source=source.replace('async function sampleNyxLatency(force=false,publish=true){','async function sampleNyxLatency(force=false,publish=true){return null;').replace('async function sampleNyxDashboardLatency(force=false){','async function sampleNyxDashboardLatency(force=false){return null;');
         source=rewriteFrontendReferences(rewritePublicModules(rewriteRuntimeNames(rewriteProxyReferences(source,'/script.js')),'/script.js',moduleAliases),'/script.js',aliases);
       }
-      if(relative==='assets/games/games.json'){
+      if(relative==='assets/games/games.json'||'/'+relative===aliases['/assets/games/games.json']){
         const catalog=JSON.parse(source);catalog.catalogs=catalog.catalogs.filter(item=>item.id==='local');catalog.fallbackCover='';catalog.includeUnillustrated=true;
         if(mini){const local=catalog.catalogs.find(item=>item.id==='local');local.player='https://vps-a556737a.vps.ovh.us/assets/ugs/play.html?game={path}';local.coversUrl='';}
         source=JSON.stringify(catalog);
@@ -61,6 +72,7 @@ async function copy(dir=''){
       if(mini&&relative==='assets/games/index.html')source=source.replace('id="qcb196f617df1"','id="qcb196f617df1" credentialless');
       if(relative==='index.html')source=rewriteFrontendReferences(rewritePublicModules(rewriteRuntimeNames(rewriteProxyReferences(await readFile(path.join(root,'index.html'),'utf8'),'/index.html')),'/index.html',moduleAliases),'/index.html',aliases);
       source=rebase(source);
+      if(encodedCatalog)source=JSON.stringify(κωδικοποίηση(JSON.parse(source)),null,2)+'\n';
       if(relative.endsWith('.css'))source=source.replace(/url\(\s*(["']?)([^"')]+)\1\s*\)/g,(match,quote,url)=>{
         if(/^(?:[a-z]+:|\/|#)/i.test(url))return match;
         const resolved=path.posix.normalize(path.posix.join(path.posix.dirname(relative),url));

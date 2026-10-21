@@ -48,9 +48,9 @@ let settings = { ...defaults, ...saved };
 
 settings.transport = String(settings.transport)
   .replace(atob("bGliY3VybA=="), "libcurl")
-  .replace("textlib", "libcurl")
-  .replace(atob("ZXBveHk="), "epoxy")
-  .replace("atlas", "epoxy");
+  .replace("textlib", "libcurl");
+if (!["auto", "libcurl", "libcurlRaw"].includes(settings.transport))
+  settings.transport = defaults.transport;
 const palettes = {
   mocha: {
     base: "#1e1e2e",

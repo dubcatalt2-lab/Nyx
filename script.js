@@ -3669,11 +3669,9 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       .trim()
       .toLowerCase()
       .replace(atob("bGliY3VybA=="), "libcurl")
-      .replace("textlib", "libcurl")
-      .replace(atob("ZXBveHk="), "epoxy")
-      .replace("atlas", "epoxy");
+      .replace("textlib", "libcurl");
     if (name === "libcurl" || name === "libcurlraw") return "libcurlRaw";
-    if (name === "epoxy" || name === "wisp" || name === "auto") return name;
+    if (name === "auto") return name;
     return DEFAULT_BROWSER_TRANSPORT;
   }
   if (String(store.text("nyx.transport", DEFAULT_BROWSER_TRANSPORT)).toLowerCase() === "libcurl") {
@@ -7684,7 +7682,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     const effect = esc(store.text("nyx.visualEffect", "none"));
     const effectSpeed = esc(store.text("nyx.visualEffectSpeed", "1.1"));
     const effectAmount = esc(store.text("nyx.visualEffectAmount", "16"));
-    return `<section class="settings-app settings-single-pane browser-only-settings"><main class="settings-main"><h1>Browser Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-qf9af8cc15a78c4d520 value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-qd63da384d65cc75f63 type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-q9587292d4a8aecc541 value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-q4571d830a2955428e0 type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset === "nyx" ? "selected" : ""}>N7X</option><option value="google" ${currentPreset === "google" ? "selected" : ""}>Google</option><option value="drive" ${currentPreset === "drive" ? "selected" : ""}>Google Drive</option><option value="classlink" ${currentPreset === "classlink" ? "selected" : ""}>ClassLink</option><option value="classroom" ${currentPreset === "classroom" ? "selected" : ""}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text("nyx.cloakType", "a") === "a" ? "selected" : ""}>about:blank</option><option value="b" ${store.text("nyx.cloakType", "a") === "b" ? "selected" : ""}>Blob</option><option value="m" ${store.text("nyx.cloakType", "a") === "m" ? "selected" : ""}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text("nyx.cloakRedirectUrl", "https://google.com/"))}" placeholder="Original tab redirect U3L"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Startup cloak prompt</span><button class="settings-action ${store.get("nyx.autoCloak", false) ? "on" : ""}" data-switch="nyx.autoCloak" type="button">${store.get("nyx.autoCloak", false) ? "On" : "Off"}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get("nyx.cloakRedirectOriginal", false) ? "on" : ""}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get("nyx.cloakRedirectOriginal", false) ? "On" : "Off"}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text("nyx.panicKey", "not set"))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme === "default" ? "selected" : ""}>Default</option><option value="ruby" ${theme === "ruby" ? "selected" : ""}>Ruby</option><option value="emerald" ${theme === "emerald" ? "selected" : ""}>Emerald</option><option value="sakura" ${theme === "sakura" ? "selected" : ""}>Sakura</option><option value="fresh" ${theme === "fresh" ? "selected" : ""}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect === "none" ? "selected" : ""}>None</option><option value="rain" ${effect === "rain" ? "selected" : ""}>Rain</option><option value="stars" ${effect === "stars" ? "selected" : ""}>Stars</option><option value="hearts" ${effect === "hearts" ? "selected" : ""}>Hearts</option><option value="pokeballs" ${effect === "pokeballs" ? "selected" : ""}>Pokeballs</option><option value="flowers" ${effect === "flowers" ? "selected" : ""}>Flowers</option><option value="emeralds" ${effect === "emeralds" ? "selected" : ""}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>S3ARC4 Engine</h2><select class="settings-select" data-q9bc51698444e89592e><option value="duckduckgo" ${engine === "duckduckgo" ? "selected" : ""}>DuckDuckGo</option><option value="google" ${engine === "google" ? "selected" : ""}>Google</option><option value="bing" ${engine === "bing" ? "selected" : ""}>Bing</option></select></section><section class="settings-block"><h2>Proxy Engine</h2><select class="settings-select" data-q734d21fd6e93aaf835><option value="auto" ${browserMode === "auto" ? "selected" : ""}>Auto</option><option value="scramjet" ${browserMode === "scramjet" ? "selected" : ""}>Scrapmmy</option></select></section><section class="settings-block"><h2>HTTP bridge</h2><p>Recommended for devices or networks that block WebSockets. Turn off to use direct WebSocket connections. Applies to the default relay; custom relays keep their saved choice. Reload website tabs after changing.</p><div class="settings-row"><span>Use HTTP bridge</span><button class="settings-action ${store.get("nyx.httpBridge", true) ? "on" : ""}" data-switch="nyx.httpBridge" type="button">${store.get("nyx.httpBridge", true) ? "On" : "Off"}</button></div></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-qd8174804477879fb3a><option value="epoxy" ${transport === "epoxy" ? "selected" : ""}>Eppy over Relay</option><option value="wisp" ${transport === "wisp" ? "selected" : ""}>Relay endpoint</option><option value="libcurl" ${transport === "libcurl" ? "selected" : ""}>Libby over Relay</option></select><div class="settings-actions"><button class="settings-action" data-q1d952a7b6d139a28d8 type="button">Save Browser Settings</button></div></section><section class="settings-block"><h2>Website redirects</h2><p>Block automatic jumps to other sites. Links you click and sign-in redirects remain available.</p><div class="settings-row"><span>Block automatic cross-site redirects</span><button class="settings-action ${store.get("nyx.blockAutomaticRedirects", true) ? "on" : ""}" data-switch="nyx.blockAutomaticRedirects" type="button">${store.get("nyx.blockAutomaticRedirects", true) ? "On" : "Off"}</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled() ? "on" : ""}" data-popup-protection data-enabled="${popupProtectionEnabled() ? "true" : "false"}" type="button">Popup Protection ${popupProtectionEnabled() ? "On" : "Off"}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
+    return `<section class="settings-app settings-single-pane browser-only-settings"><main class="settings-main"><h1>Browser Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-qf9af8cc15a78c4d520 value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-qd63da384d65cc75f63 type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-q9587292d4a8aecc541 value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-q4571d830a2955428e0 type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset === "nyx" ? "selected" : ""}>N7X</option><option value="google" ${currentPreset === "google" ? "selected" : ""}>Google</option><option value="drive" ${currentPreset === "drive" ? "selected" : ""}>Google Drive</option><option value="classlink" ${currentPreset === "classlink" ? "selected" : ""}>ClassLink</option><option value="classroom" ${currentPreset === "classroom" ? "selected" : ""}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text("nyx.cloakType", "a") === "a" ? "selected" : ""}>about:blank</option><option value="b" ${store.text("nyx.cloakType", "a") === "b" ? "selected" : ""}>Blob</option><option value="m" ${store.text("nyx.cloakType", "a") === "m" ? "selected" : ""}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text("nyx.cloakRedirectUrl", "https://google.com/"))}" placeholder="Original tab redirect U3L"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Startup cloak prompt</span><button class="settings-action ${store.get("nyx.autoCloak", false) ? "on" : ""}" data-switch="nyx.autoCloak" type="button">${store.get("nyx.autoCloak", false) ? "On" : "Off"}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get("nyx.cloakRedirectOriginal", false) ? "on" : ""}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get("nyx.cloakRedirectOriginal", false) ? "On" : "Off"}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text("nyx.panicKey", "not set"))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme === "default" ? "selected" : ""}>Default</option><option value="ruby" ${theme === "ruby" ? "selected" : ""}>Ruby</option><option value="emerald" ${theme === "emerald" ? "selected" : ""}>Emerald</option><option value="sakura" ${theme === "sakura" ? "selected" : ""}>Sakura</option><option value="fresh" ${theme === "fresh" ? "selected" : ""}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect === "none" ? "selected" : ""}>None</option><option value="rain" ${effect === "rain" ? "selected" : ""}>Rain</option><option value="stars" ${effect === "stars" ? "selected" : ""}>Stars</option><option value="hearts" ${effect === "hearts" ? "selected" : ""}>Hearts</option><option value="pokeballs" ${effect === "pokeballs" ? "selected" : ""}>Pokeballs</option><option value="flowers" ${effect === "flowers" ? "selected" : ""}>Flowers</option><option value="emeralds" ${effect === "emeralds" ? "selected" : ""}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>S3ARC4 Engine</h2><select class="settings-select" data-q9bc51698444e89592e><option value="duckduckgo" ${engine === "duckduckgo" ? "selected" : ""}>DuckDuckGo</option><option value="google" ${engine === "google" ? "selected" : ""}>Google</option><option value="bing" ${engine === "bing" ? "selected" : ""}>Bing</option></select></section><section class="settings-block"><h2>Proxy Engine</h2><select class="settings-select" data-q734d21fd6e93aaf835><option value="auto" ${browserMode === "auto" ? "selected" : ""}>Auto</option><option value="scramjet" ${browserMode === "scramjet" ? "selected" : ""}>Scrapmmy</option></select></section><section class="settings-block"><h2>HTTP bridge</h2><p>Recommended for devices or networks that block WebSockets. Turn off to use direct WebSocket connections. Applies to the default relay; custom relays keep their saved choice. Reload website tabs after changing.</p><div class="settings-row"><span>Use HTTP bridge</span><button class="settings-action ${store.get("nyx.httpBridge", true) ? "on" : ""}" data-switch="nyx.httpBridge" type="button">${store.get("nyx.httpBridge", true) ? "On" : "Off"}</button></div></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-qd8174804477879fb3a><option value="libcurl" ${transport === "libcurl" ? "selected" : ""}>Libby over Relay</option></select><div class="settings-actions"><button class="settings-action" data-q1d952a7b6d139a28d8 type="button">Save Browser Settings</button></div></section><section class="settings-block"><h2>Website redirects</h2><p>Block automatic jumps to other sites. Links you click and sign-in redirects remain available.</p><div class="settings-row"><span>Block automatic cross-site redirects</span><button class="settings-action ${store.get("nyx.blockAutomaticRedirects", true) ? "on" : ""}" data-switch="nyx.blockAutomaticRedirects" type="button">${store.get("nyx.blockAutomaticRedirects", true) ? "On" : "Off"}</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled() ? "on" : ""}" data-popup-protection data-enabled="${popupProtectionEnabled() ? "true" : "false"}" type="button">Popup Protection ${popupProtectionEnabled() ? "On" : "Off"}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
   }
   function browserShellPresetTiles() {
     return `<button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${nyxTabFavicon}"><span>N7X tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
@@ -8079,9 +8077,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       );
     }
     if (transportSelect) {
-      const transportLabels = {
-        epoxy: "Epoxy",
-        wisp: "Wisp",
+      const transportLabels = {        wisp: "Wisp",
         libcurl: "Libcurl",
         libcurlRaw: "Libcurl",
         auto: "Auto",
@@ -10254,7 +10250,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       .trim()
       .toLowerCase()
       .replace(atob("c2NyYW1qZXQ="), "scramjet")
-      .replace("studyjet", "scramjet");
+      .replace("st7dyj3t", "scramjet");
     if (
       value === "uv" ||
       value === "ultra" ||
@@ -10916,30 +10912,10 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     const transport = normalizeBrowserTransportName(
       browserTransportOverride || store.text("nyx.transport", DEFAULT_BROWSER_TRANSPORT),
     );
-    try {
-      if (transport === "libcurlRaw" || transport === "auto") {
-        try {
-          await setTransportWithRetry("/assets/transports/libcurl-baremux.mjs", [
-            { wisp, websocket: wisp },
-          ]);
-          return connection;
-        } catch (error) {
-          throw error;
-        }
-      }
-      if (transport === "wisp") {
-        await setTransportWithRetry("/epoxy/index.mjs", [{ wisp, wisp_v2: false }]);
-        return connection;
-      }
-      await setTransportWithRetry("/epoxy/index.mjs", [{ wisp, wisp_v2: true }]);
-      return connection;
-    } catch (firstError) {
-      if (transport === "libcurlRaw") throw firstError;
-      await setTransportWithRetry("/epoxy/index.mjs", [{ wisp, wisp_v2: false }]).catch(() => {
-        throw firstError;
-      });
-      return connection;
-    }
+    await setTransportWithRetry("/assets/transports/libcurl-baremux.mjs", [
+      { wisp, websocket: wisp },
+    ]);
+    return connection;
   }
   async function createScramjetTransport() {
     await selectWispRelay();
@@ -10959,15 +10935,10 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       const relay = endpoint?.url || wisp;
       let client;
       try {
-        if (name === "libcurlRaw" || name === "auto") {
-          const { default: LibcurlClient } = await import(
-            "/assets/transports/libcurl-scramjet.mjs"
-          );
-          client = new LibcurlClient({ wisp: relay, websocket: relay });
-        } else {
-          const { default: EpoxyTransport } = await import("/assets/transports/epoxy-scramjet.mjs");
-          client = new EpoxyTransport({ wisp: relay, wisp_v2: name !== "wisp" });
-        }
+        const { default: LibcurlClient } = await import(
+          "/assets/transports/libcurl-scramjet.mjs"
+        );
+        client = new LibcurlClient({ wisp: relay, websocket: relay });
       } catch (error) {
         endpoint?.close();
         throw error;
@@ -11458,7 +11429,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       );
 
       const hasErrorText =
-        /^(?:Error:\s*)?(?:scramjet did not start|scramjet route missed|error processing your request|internal server error|internal service worker error|Reconnecting (?:Scramjet|Studyjet)|request failed with error code\s*(?:35|52|56|60)|ssl connect error|ssl peer certificate|failure when receiving data from the peer|localhost refused to connect)\b/i.test(
+        /^(?:Error:\s*)?(?:scramjet did not start|scramjet route missed|error processing your request|internal server error|internal service worker error|Reconnecting (?:Scramjet|St7dyj3t)|request failed with error code\s*(?:35|52|56|60)|ssl connect error|ssl peer certificate|failure when receiving data from the peer|localhost refused to connect)\b/i.test(
           visibleText,
         );
       const blank = !hasVisibleStructure && text.length < 12 && structureCount < 4;
@@ -13613,7 +13584,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       "/scramjet/scramjet.js",
       "/scramjet.sw.js",
       "/baremux/index.mjs",
-      "/epoxy/index.mjs",
+      "/assets/transports/libcurl-baremux.mjs",
       "/controller/controller.api.js",
     ];
     const checks = await Promise.allSettled(files.map((url) => preflightFetchOk(url, 2600)));
@@ -15490,7 +15461,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       );
     }
     function transportRetryOrder(current) {
-      const ordered = ["libcurlRaw", "epoxy", "wisp"];
+      const ordered = ["libcurlRaw"];
       const index = ordered.indexOf(current);
       if (index < 0) return ordered;
       return [...ordered.slice(index + 1), ...ordered.slice(0, index)];
@@ -15829,7 +15800,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
             loadScramjetTab(t, sourceUrl, false);
             handled = true;
           } else if (browserMode === "auto") {
-            if (canAutoTransport) setBrowserTransportOverride("epoxy");
+            if (canAutoTransport) setBrowserTransportOverride("libcurlRaw");
             loadSelectedSearchFallback(t, sourceUrl, "Scramjet relays exhausted");
             handled = true;
           }
@@ -18645,8 +18616,8 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
           <p class="hint">Choose the installed network transport.</p>
           <select id="settingTransport">
             <option value="auto">Auto (recommended)</option>
-            <option value="epoxy">Epoxy</option>
-            <option value="wisp">Wisp</option>
+
+
             <option value="libcurlRaw">Libcurl</option>
           </select>
           <button data-qadbd812e260f8845b0>Save Browser Settings</button>

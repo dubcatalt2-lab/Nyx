@@ -2,10 +2,10 @@ import {readFileSync} from 'node:fs';
 export const runtimeHookNames=JSON.parse(readFileSync(new URL('./runtime-hook-names.json',import.meta.url),'utf8'));
                                                                              
                                                                           
-export const runtimeNames = {scramjet:'studyjet', Scramjet:'StudyJet', SCRAMJET:'STUDYJET', libcurl:'textlib', Libcurl:'Textlib', LibCurl:'TextLib', LIBCURL:'TEXTLIB', epoxy:'atlas', Epoxy:'Atlas', EPOXY:'ATLAS'};
+export const runtimeNames = {scramjet:'st7dyj3t', Scramjet:'St7dyJ3t', SCRAMJET:'ST7DYJ3T', libcurl:'textlib', Libcurl:'Textlib', LibCurl:'TextLib', LIBCURL:'TEXTLIB'};
 export function renameRuntimeText(source) {
   for(const [before,after] of Object.entries(runtimeHookNames).sort((a,b)=>b[0].length-a[0].length)) source=source.split(before).join(after);
-  return source.replace(/scramjet|libcurl|epoxy/gi, name => runtimeNames[name] || runtimeNames[name.toLowerCase()]);
+  return source.replace(/scramjet|studyjet|libcurl/gi, name => runtimeNames[name] || (name.toLowerCase() === 'studyjet' ? 'st7dyj3t' : runtimeNames[name.toLowerCase()]));
 }
 export function renameRuntimeWasm(bytes) {
   if (!WebAssembly.validate(bytes)) throw Error('Invalid input runtime WASM');

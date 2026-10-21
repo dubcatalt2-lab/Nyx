@@ -9,18 +9,18 @@ for(const [before,after] of Object.entries(runtimeHookNames)){
  assert.equal(renameRuntimeText(before),after);
 }
 for(const [before,after] of Object.entries(runtimeNames)) assert.equal(Buffer.byteLength(before),Buffer.byteLength(after));
-assert.equal(renameRuntimeText('ScramjetController ScramjetClient libcurlClient LibcurlTransport EpoxyClient EpoxyTransport Epoxy_wbg_fetch'),'StudyJetController StudyJetClient textlibClient TextlibTransport AtlasClient AtlasTransport Atlas_wbg_fetch');
-assert.equal(rewriteRuntimeNames('/scramjet/ /~sj/ /~/sj/ /~/sj-v1/'),'/studyjet/ /~study/ /4otig/ /~/study-v1/');
+assert.equal(renameRuntimeText('ScramjetController ScramjetClient libcurlClient LibcurlTransport'),'St7dyJ3tController St7dyJ3tClient textlibClient TextlibTransport');
+assert.equal(rewriteRuntimeNames('/scramjet/ /~sj/ /~/sj/ /~/sj-v1/'),'/st7dyj3t/ /~study/ /4otig/ /~/study-v1/');
 for(const pattern of [String.raw`/^\/~\/sj\/[^/]+\/[^/]+\/([^?#]*)/`,String.raw`/^\/~\/(?:sj|tm)\/[^/]+\/[^/]+\/([^?#]*)/`]){
  const regex=Function('return '+rewriteRuntimeNames(pattern))();
  assert.equal(regex.exec('/4otig/session/frame/https%3A%2F%2Ffixture.test%2Fconsent')?.[1],'https%3A%2F%2Ffixture.test%2Fconsent');
 }
 assert.equal(rewriteRuntimeNames('https://example.test/content/article'), 'https://example.test/content/article', 'Upstream content paths are not local navigation prefixes');
-assert.equal(rewriteRuntimeNames('/*! Scramjet license */ const ScramjetClient=1;'),'/*! Scramjet license */ const StudyJetClient=1;');
+assert.equal(rewriteRuntimeNames('/*! Scramjet license */ const ScramjetClient=1;'),'/*! Scramjet license */ const St7dyJ3tClient=1;');
 assert.equal(rewriteRuntimeNames('"bare-mux-worker" "wisp-v2" "WebSocket"'), '"ridgewood-stem-worker" "wisp-v2" "WebSocket"');
 assert.throws(()=>renameRuntimeWasm(Buffer.from('bad wasm')));
-const linked=rewriteProxyReferences('import "../epoxy/index.mjs";','/libcurl/index.mjs');
-assert(linked.includes('../atlas/'));assert(!linked.includes('/epoxy/'));
+const linked=rewriteProxyReferences('import "../libcurl/index.mjs";','/controller/controller-external.mjs');
+assert(linked.includes('../textlib/'));assert(!linked.includes('/libcurl/'));
 const old=/__wbindgen_|__wbg_|setrealmfn|scramjet|libcurl|epoxy|\/\~sj\/|\/\~\/sj\//i;
 let binaries=0,modules=0;
 const testDist=process.env.NYX_TEST_DIST||'dist';

@@ -15,7 +15,7 @@
     /\b(game frame|games|game|libraries|library|arcade|playlists|playlist|players|player|playback|playing|played|plays|play)\b/gi,
     (word) => {
       const replacements = {
-        "game frame": "viewer", games: "items", game: "item", libraries: "collections",
+        "game frame": "viewer", games: "games", game: "game", libraries: "collections",
         library: "collection", arcade: "collection", playlists: "mixes", playlist: "mix",
         players: "viewers", player: "viewer", playback: "audio", playing: "active",
         played: "opened", plays: "starts", play: "start",
@@ -27,6 +27,8 @@
   );
   const convertWords = (text) =>
     neutralWords(text)
+      .replace(/\b(?:game|games|gaming)\b/gi, word => Array.from(word, ch =>
+        String.fromCodePoint((ch <= "Z" ? 0x1d63c : 0x1d656) + ch.toLowerCase().charCodeAt(0) - 97)).join(""))
       .replace(/\bAI\b/g, "A1")
       .replace(/\b(?:n7x|nyx)(?=\b|(?:tube|ify|1fy|cloud)\b)|\b(?:studyhub|delta\s*math)\b/gi, "N7x")
       .replace(/\b[A-Za-z]{4,}\b/g, (word) => /e/i.test(word) ? word.replace(/e/i, "3") : word.replace(/o/i, "0"))

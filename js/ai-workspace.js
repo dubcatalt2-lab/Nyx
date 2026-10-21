@@ -360,10 +360,43 @@
     usageController;
   const usageStatus = document.createElement("p");
   usageStatus.id = "usageStatus";
+  usageStatus.setAttribute("data-no-interface-text", "");
   usageStatus.setAttribute("role", "status");
   usageStatus.style.cssText =
     "font-size:12px;line-height:1.5;color:var(--ai-muted);margin:10px 0 0;overflow-wrap:anywhere";
-  usageWeek.closest("section").append(usageStatus);
+  usageWeek.closest("details").append(usageStatus);
+  function ποσοστόΧρήσης(data, label = "Unavailable") {
+    const μετρητής = document.getElementById("usageMeter");
+    const κείμενο = document.getElementById("usagePercent");
+    const πλήρωση = document.getElementById("usageFill");
+    const όριο = data?.tokens?.limit;
+    const ποσοστό =
+      !data?.unlimited && Number.isFinite(όριο) && όριο > 0
+        ? Math.max(0, Math.min(100, (data.tokens.used / όριο) * 100))
+        : null;
+    κείμενο.textContent = data?.unlimited
+      ? "Unlimited"
+      : ποσοστό === null
+        ? label
+        : `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(ποσοστό)}% used`;
+    πλήρωση.style.width = `${ποσοστό ?? 0}%`;
+    if (ποσοστό !== null) {
+      μετρητής.setAttribute("role", "meter");
+      μετρητής.setAttribute("aria-valuemin", "0");
+      μετρητής.setAttribute("aria-valuemax", "100");
+      μετρητής.setAttribute("aria-valuenow", String(ποσοστό));
+      μετρητής.setAttribute("aria-valuetext", κείμενο.textContent);
+    } else {
+      for (const όνομα of [
+        "role",
+        "aria-valuemin",
+        "aria-valuemax",
+        "aria-valuenow",
+        "aria-valuetext",
+      ])
+        μετρητής.removeAttribute(όνομα);
+    }
+  }
   async function renderUsage() {
     const version = ++usageVersion;
     usageController?.abort();
@@ -374,6 +407,7 @@
       (label, i) => (values[i].parentElement.querySelector("small").textContent = label),
     );
     values.forEach((node) => (node.textContent = "\u2014"));
+    ποσοστόΧρήσης(null, customKey ? "Custom key" : "Checking…");
     if (customKey) {
       usageStatus.textContent =
         customKind() === "nyx"
@@ -404,6 +438,7 @@
       usageWeek.textContent = data.unlimited ? "Unlimited" : format(tokens.remaining);
       usageAll.textContent = format(tokens.used);
       usageRequests.textContent = format(tokens.pending);
+      ποσοστόΧρήσης(data);
       const scope =
         data.scope === "browser"
           ? "Shared browser"
@@ -427,7 +462,11 @@
           : /^~?anthropic\/claude-(opus|fable)/.test(model.value)
             ? data.modelCaps?.claude
             : null;
-      if (cap && cap.limit !== null && !(model.value === "anthropic/claude-fable-5.1" && data.fableTrial))
+      if (
+        cap &&
+        cap.limit !== null &&
+        !(model.value === "anthropic/claude-fable-5.1" && data.fableTrial)
+      )
         usageStatus.textContent += ` Claude: $${cap.remaining.toFixed(4)} of $${cap.limit.toFixed(2)} remaining.`;
       if (!data.unlimited && model.value === "anthropic/claude-opus-5.5" && data.modelCaps?.opus55)
         usageStatus.textContent += ` Opus: ${format(data.modelCaps.opus55.remaining)} tokens remaining.`;
@@ -441,8 +480,10 @@
         usageStatus.textContent += ` Fable trial: ${data.fableTrial.messagesRemaining} of ${data.fableTrial.messageLimit} messages left. Up to $0.05 of output per reply; input billed separately. $1.50 shared trial budget. Ends ${new Date(data.fableTrial.endsAt).toLocaleString()}. Reserved attempts count; no reset.`;
       usageStatus.textContent += " Counts input, conversation history and output tokens.";
     } catch (error) {
-      if (version === usageVersion && error.name !== "AbortError")
+      if (version === usageVersion && error.name !== "AbortError") {
         usageStatus.textContent = error.message || "Allowance unavailable. Try again shortly.";
+        ποσοστόΧρήσης(null, /Sign in/.test(error.message) ? "Sign in" : "Unavailable");
+      }
     }
   }
 
@@ -635,6 +676,7 @@
     figure.className = "ai-message-attachment ai-generated-video";
     const state = document.createElement("p"),
       check = document.createElement("button");
+    state.setAttribute("role", "status");
     check.type = "button";
     check.textContent = "Check progress";
     figure.append(state, check);
@@ -1314,6 +1356,88 @@
     document.documentElement.dataset.tutsiApp === "ai" ? "Tutsi AI" : "N7X AI";
   const aiStatusText = (value) => String(value || "").replace(/\bNyx AI\b/g, aiBrand());
 
+  const κινήσεις = [
+    [
+      1,
+      '<div class="dots" aria-hidden="true"><i style="--n:0"></i><i style="--n:1"></i><i style="--n:2"></i><i style="--n:3"></i><i style="--n:4"></i><i style="--n:5"></i><i style="--n:6"></i></div>',
+    ],
+    [
+      3,
+      '<div class="tiles" aria-hidden="true"><i style="--n:0"></i><i style="--n:1"></i><i style="--n:2"></i><i style="--n:7"></i><i style="--n:8"></i><i style="--n:3"></i><i style="--n:6"></i><i style="--n:5"></i><i style="--n:4"></i></div>',
+    ],
+    [
+      5,
+      '<svg class="constellation" viewBox="0 0 160 110" aria-hidden="true"><path d="M15 55 45 20 80 48 115 15 145 58 110 90 80 48 45 90 15 55M45 20 45 90M115 15 110 90"/><circle cx="15" cy="55" r="3" style="--n:0"/><circle cx="45" cy="20" r="4" style="--n:1"/><circle cx="80" cy="48" r="5" style="--n:2"/><circle cx="115" cy="15" r="3" style="--n:3"/><circle cx="145" cy="58" r="4" style="--n:4"/><circle cx="110" cy="90" r="3" style="--n:5"/><circle cx="45" cy="90" r="4" style="--n:6"/></svg>',
+    ],
+    [6, '<div class="υγρό" aria-hidden="true"><i></i><i></i><i></i></div>'],
+    [
+      9,
+      '<div class="έλικα" aria-hidden="true"><span style="--n:0"><i></i><b></b></span><span style="--n:1"><i></i><b></b></span><span style="--n:2"><i></i><b></b></span><span style="--n:3"><i></i><b></b></span><span style="--n:4"><i></i><b></b></span><span style="--n:5"><i></i><b></b></span><span style="--n:6"><i></i><b></b></span><span style="--n:7"><i></i><b></b></span></div>',
+    ],
+    [10, '<div class="σέλας" aria-hidden="true"><i></i><i></i><i></i><i></i></div>'],
+  ];
+  const λέξειςΣκέψης = [
+    "Baking",
+    "Brewing",
+    "Simmering",
+    "Whisking",
+    "Distilling",
+    "Tempering",
+    "Ruminating",
+    "Philosophizing",
+    "Contemplating",
+    "Cerebrating",
+    "Cogitating",
+    "Calibrating",
+    "Synthesizing",
+    "Computing",
+    "Calculating",
+    "Tinkering",
+    "Crystallizing",
+    "Germinating",
+    "Sprouting",
+    "Unfurling",
+    "Sublimating",
+    "Booping",
+    "Flibbertigibbeting",
+    "Noodling",
+    "Conjuring",
+    "Honking",
+    "Schlepping",
+    "Moseying",
+    "Claoding",
+  ];
+  let διαθέσιμεςΚινήσεις = [];
+  const σκέψεις = new WeakMap();
+  function νέαΣκέψη(message) {
+    if (!διαθέσιμεςΚινήσεις.length) διαθέσιμεςΚινήσεις = [...κινήσεις];
+    const [κίνηση] = διαθέσιμεςΚινήσεις.splice(
+      Math.floor(Math.random() * διαθέσιμεςΚινήσεις.length),
+      1,
+    );
+    const λέξη = Math.floor(Math.random() * λέξειςΣκέψης.length);
+    σκέψεις.set(message, { λέξη, επόμενη: performance.now() + 3500 });
+    return (
+      '<span class="ai-thinking" role="status" aria-label="A1 is waiting for a response"><span class="ai-thinking-art" data-thinking-variant="' +
+      κίνηση[0] +
+      '" aria-hidden="true"><span class="ai-thinking-scene">' +
+      κίνηση[1] +
+      '</span></span><span class="ai-thinking-label" aria-hidden="true" data-no-interface-text>' +
+      λέξειςΣκέψης[λέξη] +
+      "…</span></span>"
+    );
+  }
+  function ενημέρωσηΣκέψης(message) {
+    const κατάσταση = σκέψεις.get(message);
+    const label = message.querySelector(".ai-thinking-label");
+    if (!label || !κατάσταση || performance.now() < κατάσταση.επόμενη) return;
+    κατάσταση.λέξη =
+      (κατάσταση.λέξη + 1 + Math.floor(Math.random() * (λέξειςΣκέψης.length - 1))) %
+      λέξειςΣκέψης.length;
+    κατάσταση.επόμενη = performance.now() + 3500;
+    label.textContent = λέξειςΣκέψης[κατάσταση.λέξη] + "…";
+  }
+
   function setMessageContent(message, text, { error = false, thinking = false } = {}) {
     const content = message.querySelector(".ai-message-content");
     if (!content) return;
@@ -1321,9 +1445,10 @@
     message.classList.toggle("is-thinking", thinking);
     if (thinking) {
       message._nyxMessageText = "";
-      content.innerHTML = `<span class="ai-thinking" aria-label="${aiBrand()} is thinking"><i></i><i></i><i></i></span>`;
+      content.innerHTML = νέαΣκέψη(message);
       return;
     }
+    σκέψεις.delete(message);
     if (message.classList.contains("ai-message-user") || error) {
       const displayText = error ? aiStatusText(text) : String(text || "");
       message._nyxMessageText = displayText;
@@ -1505,14 +1630,15 @@
 
   function welcome() {
     return `<section class="ai-welcome" data-ai-welcome>
-      <h2>What's on your mind?</h2>
-      <div class="ai-starters">
-        ${starter("Help me plan and build a new project from scratch", "Plan a project", "project")}
-        ${starter("Explain quantum computing in simple terms with a useful analogy", "Explain something", "explain")}
-        ${starter("Review this code for bugs, clarity, and performance improvements", "Review my code", "code")}
-        ${starter("Brainstorm ten original ideas for a creative side project", "Brainstorm ideas", "ideas")}
-      </div>
+      <p class="ai-welcome-eyebrow">N7X A1</p>
+      <h2 data-no-interface-text>${escapeHtml(χαιρετισμός())}</h2>
+      <p class="ai-welcome-description">What would you like to explore today?</p>
     </section>`;
+  }
+
+  function χαιρετισμός() {
+    const όνομα = visibleProfileName(profileName.title || profileName.textContent || "").trim();
+    return όνομα && όνομα !== "Profile" ? `Welcome back, ${όνομα}` : "Welcome back";
   }
 
   function threadDate(timestamp) {
@@ -1547,11 +1673,26 @@
         ? "No matching chats."
         : "No chats yet."
       : "No chats yet.";
+    let ομάδα = "";
+    const σήμερα = new Date();
+    const χθες = new Date(σήμερα);
+    χθες.setDate(σήμερα.getDate() - 1);
     threadList.innerHTML = visible
-      .map(
-        (thread) =>
-          `<div role="listitem"><button class="ai-thread-button" type="button" data-thread-id="${escapeHtml(thread.id)}" aria-current="${!temporaryMode && thread.id === activeThreadId ? "true" : "false"}"><span class="ai-thread-icon">${threadIcon()}</span><span class="ai-thread-copy"><strong>${escapeHtml(thread.title)}</strong><small>${escapeHtml(threadDate(thread.updatedAt))}</small></span></button></div>`,
-      )
+      .map((thread) => {
+        const ημέρα = new Date(thread.updatedAt).toDateString();
+        const τίτλος =
+          ημέρα === σήμερα.toDateString()
+            ? "Today"
+            : ημέρα === χθες.toDateString()
+              ? "Yesterday"
+              : "Earlier";
+        const κεφαλίδα =
+          τίτλος !== ομάδα
+            ? `<div class="ai-thread-group" role="presentation">${τίτλος}</div>`
+            : "";
+        ομάδα = τίτλος;
+        return `${κεφαλίδα}<div role="listitem"><button class="ai-thread-button" type="button" data-thread-id="${escapeHtml(thread.id)}" aria-current="${!temporaryMode && thread.id === activeThreadId ? "true" : "false"}"><span class="ai-thread-icon">${threadIcon()}</span><span class="ai-thread-copy" data-user-content><strong>${escapeHtml(thread.title)}</strong><small>${escapeHtml(threadDate(thread.updatedAt))}</small></span></button></div>`;
+      })
       .join("");
     temporaryChat.setAttribute("aria-pressed", String(temporaryMode));
   }
@@ -1565,6 +1706,13 @@
   function setSidebarOpen(open) {
     app.classList.toggle("is-sidebar-open", Boolean(open));
     sidebarToggle.setAttribute("aria-expanded", String(Boolean(open)));
+    sidebarToggle.setAttribute(
+      "aria-label",
+      open ? "Close conversation sidebar" : "Open conversation sidebar",
+    );
+    const πλευρά = document.getElementById("aiSidebar");
+    if (!open && πλευρά.contains(document.activeElement)) sidebarToggle.focus();
+    πλευρά.inert = !open;
   }
 
   function startNewChat({ temporary = false } = {}) {
@@ -1584,6 +1732,7 @@
     input.value = "";
     autoGrow();
 
+    if (window.matchMedia("(max-width: 760px)").matches) setSidebarOpen(false);
     input.focus();
   }
 
@@ -1607,6 +1756,7 @@
     renderThreadList();
     render();
 
+    if (window.matchMedia("(max-width: 760px)").matches) setSidebarOpen(false);
     input.focus();
   }
 
@@ -1680,6 +1830,8 @@
     const handle = String(profile.handle || "Open your N7X profile").trim();
     const avatar = String(profile.avatarUrl || "").trim();
     renderProfileName(profileName, name);
+    const χαιρετισμόςΤίτλος = conversation.querySelector("[data-ai-welcome] h2");
+    if (χαιρετισμόςΤίτλος) χαιρετισμόςΤίτλος.textContent = χαιρετισμός();
     profileHandle.textContent = handle;
     profileInitial.textContent = (Array.from(visibleProfileName(name))[0] || "N").toUpperCase();
     if (/^(?:https?:|blob:|data:image\/|\/)/i.test(avatar)) {
@@ -1712,6 +1864,7 @@
 
   function render() {
     const items = savedMessages();
+    app.classList.toggle("is-intro", !items.length);
     conversation.innerHTML = "";
     if (!items.length) {
       conversation.classList.add("is-empty");
@@ -2183,6 +2336,7 @@
   }
 
   function modelToolOnly(item) {
+    if (item?.id?.endsWith(":batch")) return true;
     return (
       item &&
       item.text === false &&
@@ -2225,6 +2379,8 @@
     const selected = model.value || DEFAULT_MODEL;
     const label = modelLabel(selected);
     modelSelected.textContent = label;
+    const εικονίδιο = modelTrigger.querySelector(".ai-model-status");
+    if (εικονίδιο) εικονίδιο.innerHTML = modelCompanyIcon(modelCompany({ id: selected }));
     modelTrigger.title = `Model: ${label}${selected.endsWith(":free") || selected === "openrouter/free" ? ". Uses your account’s token allowance. Provider rate limits also apply." : ""}`;
     modelTrigger.setAttribute("aria-label", `AI model: ${label}`);
     sidebarModelName.textContent = label;
@@ -2541,7 +2697,10 @@
       tokens: reportedTokens || Math.ceil(answer.length / 4),
       estimated: !reportedTokens,
     });
-    const timingTimer = setInterval(() => showTiming(pending, getTiming(), true), 500);
+    const timingTimer = setInterval(() => {
+      showTiming(pending, getTiming(), true);
+      ενημέρωσηΣκέψης(pending);
+    }, 500);
     showTiming(pending, getTiming(), true);
     let generatedImageId = null,
       mediaJobId = null;
@@ -2569,13 +2728,10 @@
           throw new Error(
             "N7X API keys currently support text only. Use N7X shared or an OpenRouter key for images.",
           );
-        const messages = history
-          .slice(-MODEL_CONTEXT_MESSAGES)
-          .map((item) => ({
-            role: item.role,
-            content:
-              item.content + (item.textAttachment ? "\n\n" + item.textAttachment.content : ""),
-          }));
+        const messages = history.slice(-MODEL_CONTEXT_MESSAGES).map((item) => ({
+          role: item.role,
+          content: item.content + (item.textAttachment ? "\n\n" + item.textAttachment.content : ""),
+        }));
         if (preparedImage)
           messages[messages.length - 1].content = [
             { type: "text", text: messages[messages.length - 1].content },
@@ -2634,6 +2790,7 @@
               imageContext,
               image: preparedImage,
               responseDepth: responseDepth(),
+              reasoningEffort: responseDepth() === "off" ? "low" : responseDepth() === "extended" ? "high" : "medium",
               generateImage,
               stream: !generateImage,
             }),
@@ -2925,7 +3082,11 @@
     event.preventDefault();
     void readImageFile(file);
   });
-  input.addEventListener("input", autoGrow);
+  input.addEventListener("pointerdown", () => app.classList.remove("is-intro"));
+  input.addEventListener("input", () => {
+    app.classList.remove("is-intro");
+    autoGrow();
+  });
   input.addEventListener("keydown", (event) => {
     if (
       event.key === "Enter" &&
@@ -3075,7 +3236,7 @@
   });
   addEventListener("pagehide", stopScreenSharing);
 
-  setSidebarOpen(true);
+  setSidebarOpen(window.matchMedia("(min-width: 761px)").matches);
   initializeThreads();
   renderModelOptions(modelCatalog, model.value || DEFAULT_MODEL);
   renderThreadList();

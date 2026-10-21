@@ -1,5 +1,4 @@
 import { formatJavaScript, formatCss } from "./format-browser-code.mjs";
-import { zakaEnabled, zakaIdentifiers } from "./zaka-identifiers.mjs";
 import { encodeLiterals } from "./build-string-literals.mjs";
 import { patchClientSockets } from "./patch-client-sockets.mjs";
 import { buildInterfaceText } from "./build-interface-text.mjs";
@@ -10,9 +9,9 @@ import { buildFrontendAssets } from "./build-frontend-assets.mjs";
 import { buildPublisherPackage } from "./build-publisher-package.mjs";
 import { spawn, spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
-import { createHash, randomBytes } from "node:crypto";
+import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
-import { cp, mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { cp, copyFile, mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parse } from "acorn";
@@ -96,8 +95,12 @@ function isStaticSource(path) {
 }
 
 async function copyRepositoryStaticFiles() {
-  for (const relative of repositoryFiles()) {
-    if (!isStaticSource(relative) || blockedExtensions.test(relative)) continue;
+  const αρχεία = repositoryFiles().filter(relative => isStaticSource(relative) && !blockedExtensions.test(relative));
+  let επόμενο = 0;
+  const κατάλογοι = new Map();
+  await Promise.all(Array.from({ length: 4 }, async () => {
+   while (επόμενο < αρχεία.length) {
+    const relative = αρχεία[επόμενο++];
     const source = join(root, ...relative.split("/"));
     let info;
     try {
@@ -107,9 +110,13 @@ async function copyRepositoryStaticFiles() {
     }
     if (!info.isFile()) continue;
     const destination = join(output, ...relative.split("/"));
-    await mkdir(dirname(destination), { recursive: true });
-    await cp(source, destination);
-  }
+    const κατάλογος = dirname(destination);
+    if (!κατάλογοι.has(κατάλογος)) κατάλογοι.set(κατάλογος, mkdir(κατάλογος, { recursive: true }));
+    await κατάλογοι.get(κατάλογος);
+    await copyFile(source, destination);
+   }
+  }));
+  console.log(`Copied ${αρχεία.length} static source files.`);
 }
 
 async function copyProxyRuntimes() {
@@ -117,14 +124,12 @@ async function copyProxyRuntimes() {
   const { scramjetPath } = require("@mercuryworkshop/scramjet/path");
   const { scramjetPath: scramjetV1Path } = require("@mercuryworkshop/scramjet-v1/path");
   const controller = dirname(require.resolve("@mercuryworkshop/scramjet-controller"));
-  const epoxy = join(dirname(require.resolve("@mercuryworkshop/epoxy-transport")), "..", "dist");
   const libcurl = dirname(require.resolve("@mercuryworkshop/libcurl-transport"));
   for (const [source, destination] of [
     [baremuxPath, "baremux"],
     [scramjetPath, "scramjet"],
     [scramjetV1Path, "scramjet-v1"],
     [controller, "controller"],
-    [epoxy, "epoxy"],
     [libcurl, "libcurl"],
   ]) {
     await cp(source, join(output, destination), { recursive: true, force: true });
@@ -255,24 +260,10 @@ async function copyKatex() {
   await cp(source, destination, { recursive: true, force: true });
 }
 
-const buildNameSeed = randomBytes(16).toString("hex");
-function runtimeMangleOptions(topLevel, source) {
+function runtimeMangleOptions(topLevel) {
   return {
     toplevel: topLevel,
     safari10: true,
-    nth_identifier: zakaEnabled
-      ? zakaIdentifiers(source)
-      : {
-          get(n) {
-            return (
-              "_" +
-              createHash("sha256")
-                .update(buildNameSeed + ":" + n)
-                .digest("hex")
-                .slice(0, 12)
-            );
-          },
-        },
   };
 }
 

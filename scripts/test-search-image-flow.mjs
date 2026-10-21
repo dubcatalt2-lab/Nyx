@@ -5,7 +5,7 @@ import { chromium } from "playwright";
 import { proxyAssetNames } from "./build-proxy-assets.mjs";
 const root = process.env.NYX_TEST_ASSET_ROOT || "dist";
 const aliases = JSON.parse(
-  await readFile("dist/proxy-assets.json", "utf8"),
+  await readFile(root + "/proxy-assets.json", "utf8"),
 ).aliases;
 const app = express()
   .use((_req, res, next) => {
@@ -46,7 +46,6 @@ try {
   );
   const paths = [
     "/assets/transports/libcurl-scramjet.mjs",
-    "/assets/transports/epoxy-scramjet.mjs",
   ];
   await context.route(
     (url) =>

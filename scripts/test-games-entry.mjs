@@ -22,23 +22,30 @@ try{
  browser=await chromium.launch({channel:'chrome'});
  for(const [path,width] of [['/assets/games/',1280],[renamed,390]]){
   const page=await browser.newPage({viewport:{width,height:900}});const errors=[],requests=[];page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>requests.push(r.url()));
-  await page.clock.install();await page.clock.pauseAt(new Date());await page.goto(base+path+'?collection=all#saved',{waitUntil:'load'});
+  await page.clock.install({time:0});await page.clock.pauseAt(86400000);await page.goto(base+path+'?collection=all#saved',{waitUntil:'load'});
   await page.getByRole('heading',{name:'Learning Library'}).waitFor();assert.equal(await page.locator('#catalog').count(),0);
   assert(await page.locator('img').evaluateAll(images=>images.length===2&&images.every(img=>img.complete&&img.naturalWidth>0)));
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
   await page.screenshot({path:'.codex-artifacts/cover-'+width+'.png',fullPage:true});
-  await page.clock.runFor(950);assert.equal(await page.locator('#catalog').count(),0);assert(!requests.some(u=>u.includes(aliases['/assets/games/games.js'])));
+  await page.clock.runFor(1450);assert.equal(await page.locator('#catalog').count(),0);assert(!requests.some(u=>u.includes(aliases['/assets/games/games.js'])));
   await page.clock.runFor(150);await page.locator('body[data-ready=yes]').waitFor();assert.equal(await page.title(),'Games');
   assert.equal(new URL(page.url()).pathname,renamed);assert.equal(new URL(page.url()).search,'?collection=all');assert.equal(new URL(page.url()).hash,'#saved');assert.deepEqual(errors,[]);await page.close();
  }
  const hidden=await browser.newPage();await hidden.goto(base+'/missing-harness');
  await hidden.setContent('<iframe style="display:none" src="'+base+'/assets/games/"></iframe>');
- const frame=hidden.frameLocator('iframe');await hidden.waitForTimeout(1400);
+ const frame=hidden.frameLocator('iframe');await hidden.waitForTimeout(1800);
  assert.equal(await frame.locator('#catalog').count(),0);
  await hidden.locator('iframe').evaluate(el=>el.style.display='block');
  await frame.getByRole('heading',{name:'Learning Library'}).waitFor();
- await hidden.waitForTimeout(700);assert.equal(await frame.locator('#catalog').count(),0);
+ await hidden.waitForTimeout(1100);assert.equal(await frame.locator('#catalog').count(),0);
  await frame.locator('#catalog').waitFor();await hidden.close();
- console.log('PASS hidden/preloaded frame retains cover until one visible second');
+ const failed=await browser.newPage();
+ await failed.route('**'+pages['assets/games/index.html'].payload,route=>route.fulfill({status:503,body:'Unavailable'}));
+ await failed.goto(base+'/assets/games/');
+ await failed.getByRole('alert').filter({hasText:'Please reload to try again.'}).waitFor();
+ assert.equal(await failed.locator('#catalog').count(),0);
+ await failed.close();
+ console.log('PASS failed encoded document shows a reload message instead of a blank page');
+ console.log('PASS hidden/preloaded frame retains cover until 1.5 visible seconds');
  console.log('PASS educational cover, delayed catalog/runtime, renamed entry, legacy URL, preserved query/hash and encoded payload');
 }finally{await browser?.close();server?.closeAllConnections();if(server)await new Promise(r=>server.close(r));await rm(root,{recursive:true,force:true});}

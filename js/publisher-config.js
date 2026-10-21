@@ -5,6 +5,7 @@ export const publisherConfig = Object.freeze({
   ],
 });
 export function publisherHostAllowed(hostname = location.hostname) {
+  if (location.port === "8080") return false;
   return ["localhost", "127.0.0.1", "[::1]"].includes(hostname) && window === window.top;
 }
 function selectedHome() {

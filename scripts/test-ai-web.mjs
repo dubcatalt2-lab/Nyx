@@ -59,6 +59,13 @@ for(const mutation of [p=>p.max_tool_calls=30,p=>p.tools[0].parameters.max_uses=
 }
 await allowance.finish(owner);
 assert.equal(aiWebTools()[0].parameters.engine,'parallel');
+assert.equal(aiWebTools()[0].parameters.max_characters,600);
+assert.equal(aiWebTools()[1].parameters.max_content_tokens,1200);
+assert.equal(aiWantsWeb("Don't browse, explain current in a circuit"),false);
+assert.equal(aiWantsWeb('Explain this without searching'),false);
+const reasoningPayload={messages:[{role:'system',content:''}],max_tokens:700,reasoning:{effort:'high',exclude:false}};
+aiConfigureChatWeb(reasoningPayload,modelInfo,'search for documentation');
+assert.equal(reasoningPayload.reasoning.effort,'high');
 console.log('PASS AI web: actual streaming/nonstreaming route, automatic request detection, source/summary forwarding, unsafe URL/raw reasoning exclusion, regular pool fit, search billing and tool-budget tampering rejection');
 
 assert.equal(aiWantsWeb('What is on nyxlearning.org'),true);

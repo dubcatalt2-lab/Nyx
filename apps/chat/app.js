@@ -3573,6 +3573,10 @@
   }
   function openReactionPicker(article, message) {
     closeReactionPicker();
+    article ||= refs.messageList.querySelector(
+      `[data-message-id="${CSS.escape(String(message.id))}"]`,
+    );
+    if (!article) return;
     closeMessageContextMenu();
     const scope = { ...state.active },
       previousFocus = document.activeElement;
@@ -3676,7 +3680,7 @@
     picker.append(heading, closeButton, qbar, search, grid, q18d7);
     document.body.append(picker);
     render();
-    const qr = article.querySelector(".reaction-add").getBoundingClientRect(),
+    const qr = (article.querySelector(".reaction-add") || article).getBoundingClientRect(),
       qp = picker.getBoundingClientRect();
     picker.style.left = `${Math.max(12, Math.min(innerWidth - qp.width - 12, qr.right - qp.width))}px`;
     picker.style.top = `${Math.max(12, Math.min(innerHeight - qp.height - 12, qr.bottom + 6))}px`;
@@ -3942,6 +3946,7 @@
       icon.append(use);
       const copy = document.createElement("span");
       const name = document.createElement("strong");
+      name.setAttribute("data-user-content", "");
       name.textContent = item.file.name;
       const size = document.createElement("small");
       size.textContent = item.status || formatBytes(item.file.size);
@@ -6324,6 +6329,74 @@
       event.preventDefault();
       refs.form.requestSubmit();
     }
+  });
+  const κινούμενα = [];
+  const επιλογήGif = document.querySelector('[data-gif-dialog]');
+  const πλήκτροGif = document.querySelector('[data-gif-button]');
+  const αρχείοGif = document.querySelector('[data-gif-file]');
+  const μήνυμαGif = document.querySelector('[data-gif-status]');
+  async function πρόσθεσεGif(file) {
+    if (file.size < 6 || file.size > MAX_FILE_SIZE) throw new Error('Choose a GIF up to 8 MB.');
+    const header = new TextDecoder().decode(await file.slice(0, 6).arrayBuffer());
+    if (!['GIF87a', 'GIF89a'].includes(header)) throw new Error('This file is not a GIF. Use a direct GIF link.');
+    const όνομα = /^[^\\/?#%]{1,90}\.gif$/i.test(file.name || '') ? file.name : 'animation.gif';
+    const έτοιμο = new File([file], όνομα, {type:'image/gif'});
+    κινούμενα.unshift({file:έτοιμο,url:URL.createObjectURL(έτοιμο)});
+    if (κινούμενα.length > 12) URL.revokeObjectURL(κινούμενα.pop().url);
+    σχεδίασεGif();
+    μήνυμαGif.textContent = 'Choose a GIF below to attach it.';
+  }
+  function σχεδίασεGif() {
+    const πλέγμα = document.querySelector('[data-gif-grid]');
+    πλέγμα.replaceChildren();
+    for (const item of κινούμενα) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.setAttribute('data-user-content', '');
+      button.setAttribute('aria-label', 'Attach ' + item.file.name);
+      const image = document.createElement('img');
+      image.src = item.url;
+      image.alt = item.file.name;
+      button.append(image);
+      button.addEventListener('click', () => {
+        if (refs.attachmentButton.disabled) return;
+        chooseFiles([item.file]);
+        επιλογήGif.close();
+        document.querySelector('[data-message-input]').focus();
+      });
+      πλέγμα.append(button);
+    }
+  }
+  πλήκτροGif.addEventListener('click', () => {
+    if (refs.attachmentButton.disabled) return;
+    μήνυμαGif.textContent = κινούμενα.length ? '' : 'Your recent GIFs will appear here.';
+    επιλογήGif.showModal();
+  });
+  document.querySelector('[data-gif-close]').addEventListener('click', () => επιλογήGif.close());
+  document.querySelector('[data-gif-upload]').addEventListener('click', () => αρχείοGif.click());
+  αρχείοGif.addEventListener('change', async () => {
+    try { if (αρχείοGif.files[0]) await πρόσθεσεGif(αρχείοGif.files[0]); }
+    catch (error) { μήνυμαGif.textContent = error.message; }
+    finally { αρχείοGif.value = ''; }
+  });
+  document.querySelector('[data-gif-url-form]').addEventListener('submit', async event => {
+    event.preventDefault();
+    const button = event.currentTarget.querySelector('button');
+    button.disabled = true;
+    try {
+      const url = new URL(document.querySelector('[data-gif-url]').value);
+      if (url.protocol !== 'https:' || url.username || url.password || !/^(?:media\d*\.giphy\.com|i\.giphy\.com|media\.tenor\.com)$/.test(url.hostname)) throw new Error('Use a direct media.giphy.com or media.tenor.com GIF link, or upload the GIF.');
+      μήνυμαGif.textContent = 'Loading GIF…';
+      const response = await fetch(url, {credentials:'omit',redirect:'error',signal:AbortSignal.timeout(15000)});
+      if (!response.ok || Number(response.headers.get('content-length')) > MAX_FILE_SIZE) throw new Error('Could not load this GIF. Try uploading it instead.');
+      const reader=response.body.getReader(), chunks=[];
+      let size=0;
+      try {
+        for (;;) { const {done,value}=await reader.read(); if(done) break; size+=value.length; if(size>MAX_FILE_SIZE) throw new Error('Choose a GIF up to 8 MB.'); chunks.push(value); }
+      } finally { await reader.cancel(); }
+      await πρόσθεσεGif(new File(chunks, 'animation.gif', {type:'image/gif'}));
+    } catch (error) { μήνυμαGif.textContent = error.name==='TypeError' ? 'This link could not be loaded. Upload the GIF instead.' : error.message; }
+    finally { button.disabled=false; }
   });
   refs.attachmentButton.addEventListener("click", () => refs.attachmentInput.click());
   refs.attachmentInput.addEventListener("change", () =>

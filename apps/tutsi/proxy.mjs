@@ -71,11 +71,7 @@ async function transport(settings) {
   installHttpRelaySocket();
   const fallback = httpRelayUrl();
   const urls = transportCandidates(settings);
-  const useLibcurl =
-    !settings.transport || ["auto", "libcurl", "libcurlRaw"].includes(settings.transport);
-  const path = useLibcurl
-    ? "/assets/transports/libcurl-scramjet.mjs"
-    : "/assets/transports/epoxy-scramjet.mjs";
+  const path = "/assets/transports/libcurl-scramjet.mjs";
   const { default: Client } = await import(path);
   const connection = new RelayTransport({
     urls,

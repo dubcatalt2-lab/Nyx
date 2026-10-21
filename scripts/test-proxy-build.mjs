@@ -23,12 +23,13 @@ const a=await scrambleProxyCode(original),b=await scrambleProxyCode(original);
 assert.match(a.code,zakaEnabled?/__[0-9a-f]{64}/:/\u03bb[0-9a-f]{12}/);if(zakaEnabled)assert.equal(a.code,b.code);else assert.notEqual(a.code,b.code);assert(!a.code.includes('localValue'));
 const context={};vm.runInNewContext(a.code,context);assert.equal(context.publicAPI(4).result,5);assert.equal(context.publicAPI(4).name,'namedAPI');
 const privateResult=await scrambleProxyCode('globalThis.C=class { #value=4; #read(){return this.#value;} get(){return this.#read();} };');const privateContext={};vm.runInNewContext(privateResult.code,privateContext);assert.equal(new privateContext.C().get(),4);
-const publicModules=JSON.parse(await readFile('dist/public-modules.json','utf8')).aliases;
+const output=process.env.NYX_TEST_DIST||'dist';
+const publicModules=JSON.parse(await readFile(output+'/public-modules.json','utf8')).aliases;
 const publishedPath=value=>publicModules[value]||value;
 for(const [original,alias] of Object.entries(names)){
   assert.match(alias,/\/@r[0-9a-f]{24}!\.(js|mjs|wasm)$/);
-  await access('dist'+publishedPath(legacyProxyAssetNames[original]));await access('dist'+publishedPath(alias));await access('dist'+publishedPath(original));
-  if(original.endsWith('.wasm'))assert.deepEqual(renameRuntimeWasm(await readFile('dist'+publishedPath(original))),await readFile('dist'+publishedPath(alias)));
-  else assert(!(await readFile('dist'+publishedPath(alias),'utf8')).includes('sourceMappingURL'));
+  await access(output+publishedPath(legacyProxyAssetNames[original]));await access(output+publishedPath(alias));await access(output+publishedPath(original));
+  if(original.endsWith('.wasm'))assert.deepEqual(renameRuntimeWasm(await readFile(output+publishedPath(original))),await readFile(output+publishedPath(alias)));
+  else assert(!(await readFile(output+publishedPath(alias),'utf8')).includes('sourceMappingURL'));
 }
 console.log('PASS opaque aliases, overlapping worker paths, relative imports, randomized locals, public names, WASM identity and compatibility files.');

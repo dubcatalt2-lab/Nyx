@@ -1,5 +1,9 @@
 ﻿import assert from 'node:assert/strict';
-import {qBridge,qEnqueue,qOutbound,qReactionMerge,q68a1,qGuild,qCustom} from '../lib/discord-bridge.mjs';
+import {qBridge,qEnqueue,qOutbound,qReactionMerge,q68a1,qGuild,qCustom,όνομαΚίνησης} from '../lib/discord-bridge.mjs';
+const gif={data:Buffer.from('GIF89afixture'),name:'proxy_url=https%3A%2F%2Fmedia2.giphy.com',contentType:'image/gif'};
+assert.equal(όνομαΚίνησης(gif).name,'animation.gif');
+assert.equal(όνομαΚίνησης({...gif,name:'hello.gif'}).name,'hello.gif');
+assert.equal(όνομαΚίνησης({...gif,data:Buffer.from('not a gif')}).name,gif.name);
 const rows=new Map();let tail=Promise.resolve();
 const snapshot=path=>({id:path.split('/').at(-1),ref:ref(path),exists:rows.has(path),data:()=>structuredClone(rows.get(path))});
 const ref=path=>({path,id:path.split('/').at(-1),get:async()=>snapshot(path),set:async(v,o)=>rows.set(path,o?.merge?{...rows.get(path),...structuredClone(v)}:structuredClone(v)),delete:async()=>rows.delete(path),collection:k=>collection(path+'/'+k)});

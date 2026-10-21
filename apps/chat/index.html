@@ -136,6 +136,7 @@
           <div class="composer-reply-preview" data-reply-preview hidden></div>
           <div class="attachment-preview-list" data-attachment-previews hidden></div>
           <button class="composer-tool" type="button" data-attachment-button aria-label="Attach files" title="Attach files"><svg><use href="#icon-paperclip"/></svg></button>
+          <button class="composer-tool" type="button" data-gif-button aria-label="Choose a GIF" title="Choose a GIF">GIF</button>
           <input type="file" data-attachment-input accept="image/png,image/jpeg,image/gif,image/webp,audio/mpeg,audio/mp4,audio/ogg,audio/wav,audio/webm,video/mp4,video/ogg,video/quicktime,video/webm,application/pdf,text/plain,.docx,.xlsx,.pptx,.mp3,.m4a,.wav,.mp4,.m4v,.mov,.webm" multiple hidden>
           <label>
             <span class="sr-only">Message</span>
@@ -236,6 +237,15 @@
   <dialog class="dm-dialog" data-deleted-dialog>
     <header><div><h2>Deleted messages</h2><p>Owner history for this conversation. Older deletions cannot be recovered. Attachment files are not retained.</p></div><button class="icon-button" type="button" data-deleted-close aria-label="Close deleted messages">Close</button></header>
     <div class="deleted-message-list" data-deleted-list></div><button class="btn-subtle" type="button" data-deleted-older hidden>Load older</button>
+  </dialog>
+  <dialog class="gif-picker" data-gif-dialog aria-labelledby="gifHeading">
+    <header><h2 id="gifHeading">GIFs</h2><button type="button" class="btn-subtle" data-gif-close aria-label="Close GIF picker">Close</button></header>
+    <p>Add an animated GIF, or reuse one from this session.</p>
+    <button type="button" class="btn-subtle" data-gif-upload>Upload a GIF</button>
+    <input type="file" accept="image/gif,.gif" data-gif-file hidden>
+    <form data-gif-url-form><label>Direct GIPHY or Tenor GIF link<input type="url" data-gif-url placeholder="https://media.giphy.com/…/giphy.gif" required></label><button type="submit" class="btn-subtle">Add GIF</button></form>
+    <p data-gif-status role="status"></p>
+    <div class="gif-grid" data-gif-grid aria-label="Recent GIFs"></div>
   </dialog>
   <script src="./emoji-catalog.js?v=20260915-full-reaction-catalog-v37"></script>
   <script src="./voice-relay.js?v=20260923-voice-relay-v1"></script>

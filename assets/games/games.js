@@ -1,3 +1,5 @@
+import { αποκωδικοποίηση } from "./catalog-codec.js";
+
 const dropGames = document.body.classList.contains("drop-games");
 const fittedGameFrames = new WeakSet(),
   fittedGameDocuments = new WeakSet();
@@ -265,7 +267,7 @@ async function fetchCatalogJson(url, label, options = {}) {
         signal: controller.signal,
       });
       if (!response.ok) throw new Error(`${label} returned ${response.status}`);
-      return await response.json();
+      return αποκωδικοποίηση(await response.json());
     } catch (error) {
       lastError = error?.name === "AbortError" ? new Error(`${label} timed out`) : error;
     } finally {

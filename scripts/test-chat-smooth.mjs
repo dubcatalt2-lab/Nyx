@@ -46,9 +46,37 @@ try {
   });
   await page.goto(base+'/apps/chat/');
   await page.locator('.message').first().waitFor();
+  await page.getByRole('button',{name:'Choose a GIF',exact:true}).click();
+  await page.locator('[data-gif-file]').setInputFiles({name:'invalid.gif',mimeType:'image/gif',buffer:Buffer.from('not a gif')});
+  await page.waitForFunction(()=>{
+    const text=document.querySelector('[data-gif-status]')?.textContent.normalize('NFKC');
+    return text==='This file is not a GIF. Use a direct GIF link.' || text==='This fil3 is not a GIF. Use a dir3ct GIF link.';
+  });
+  assert.equal(await page.locator('[data-gif-grid] button').count(),0,'Rejected bytes never become an attachable GIF');
+  const gif=Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7','base64');
+  await page.locator('[data-gif-file]').setInputFiles({name:'wave.gif',mimeType:'image/gif',buffer:gif});
+  await page.getByRole('button',{name:'Attach wave.gif',exact:true}).click();
+  await page.locator('[data-attachment-previews]').getByText('wave.gif',{exact:true}).waitFor();
+  assert(await page.locator('[data-message-input]').evaluate(node=>node===document.activeElement));
+  await page.getByRole('button',{name:'Remove attachment',exact:true}).click();
+  await page.getByRole('button',{name:'Choose a GIF',exact:true}).click();
+  assert.equal(await page.getByRole('button',{name:'Attach wave.gif',exact:true}).count(),1);
+  await page.keyboard.press('Escape');
+  await page.locator('[data-gif-dialog]').waitFor({state:'hidden'});
+  await page.locator('.message').first().scrollIntoViewIfNeeded();
+  await page.waitForTimeout(250);
+  await page.locator('.message').first().click({button:'right'});
+  await page.getByRole('menuitem',{name:'All emojis',exact:true}).click();
+  await page.getByRole('searchbox',{name:'Search reaction emojis'}).fill('rocket');
+  await page.getByRole('button',{name:'React rocket',exact:true}).waitFor();
+  await page.keyboard.press('Escape');
+  assert.equal(await page.getByRole('dialog',{name:'Choose a reaction'}).count(),0,'Context-menu picker closes with Escape');
   await page.locator('.message').first().evaluate(n=>{window.qNode=n;const image=document.createElement('img');image.src='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"/>';n.querySelector('.message-content').append(image);window.qImage=image;});
   await page.locator('.message').first().hover();await page.locator('.reaction-add').first().click();
   assert(await page.locator('.reaction-emoji-grid button').count()<=120);
+  await page.getByRole('button',{name:'Show more',exact:true}).click();
+  const expanded = await page.locator('.reaction-emoji-grid button').count();
+  assert(expanded>120&&expanded<=240,'Show more reveals up to 120 additional catalog entries');
   const pickerBox=await page.locator('.reaction-picker').boundingBox();assert(pickerBox.x>=0&&pickerBox.y>=0&&pickerBox.x+pickerBox.width<=1440);assert.equal(await page.getByRole('button',{name:/Quick react /}).count(),7);
   await page.screenshot({path:'.codex-artifacts/reaction-picker.png'});
   await page.getByRole('searchbox',{name:'Search reaction emojis'}).fill('fire');
@@ -65,7 +93,7 @@ try {
   await page.locator('.reaction-chip.self').waitFor();
   assert(await page.evaluate(()=>qImage.isConnected));
   await page.reload();await page.locator('.message').first().waitFor();assert.equal(await page.locator('.reaction-add').first().textContent(),'\u{1f525}');
-  await page.setViewportSize({width:320,height:568});await page.locator('.reaction-add').first().click();const mobilePicker=await page.locator('.reaction-picker').boundingBox();assert(mobilePicker.x>=0&&mobilePicker.x+mobilePicker.width<=320&&mobilePicker.y>=0&&mobilePicker.y+mobilePicker.height<=568);
+  await page.setViewportSize({width:320,height:568});await page.locator('.message').first().scrollIntoViewIfNeeded();await page.waitForTimeout(350);await page.locator('.reaction-add').first().click();const mobilePicker=await page.locator('.reaction-picker').boundingBox();assert(mobilePicker.x>=0&&mobilePicker.x+mobilePicker.width<=320&&mobilePicker.y>=0&&mobilePicker.y+mobilePicker.height<=568);
   assert.deepEqual(errors,[]);
   console.log('PASS immediate reactions, failed request rollback, stable message/media nodes, bounded searchable picker');
 }finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

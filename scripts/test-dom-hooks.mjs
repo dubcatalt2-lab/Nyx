@@ -30,11 +30,11 @@ const browser=await chromium.launch();
 try{
  const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port);
- await page.getByRole('button',{name:'Start item',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Start game',exact:true}).waitFor();
  const button=page.locator('#'+domHookAlias('id','playButton'));
  assert.equal(await button.evaluate(el=>getComputedStyle(el).color),'rgb(10, 20, 30)');
  await button.click();
- await page.waitForFunction(()=>document.querySelector('#dynamic').textContent.normalize('NFKC')==='It3m coll3ction');
+ await page.waitForFunction(()=>document.querySelector('#dynamic').textContent.normalize('NFKC')==='Game coll3ction');
  assert.deepEqual(await page.evaluate(()=>globalThis.fixtureConfig),{library:'games',play:true,selector:'.game-card'});
  assert.equal(await page.evaluate(()=>globalThis.optional()),undefined);
  assert.equal(await page.locator('body').getAttribute('data-'+domHookAlias('attribute','data-game-mode')),'local');

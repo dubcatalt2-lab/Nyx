@@ -3,7 +3,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parse } from "acorn";
 
-const targeted = /game|librar(?:y|ies)|play|arcade/i;
+const targeted = /game|librar(?:y|ies)|play|arcade|^gif-(?:picker|grid)$/i;
 const property = (node) => node?.computed ? node.property?.value : node?.property?.name;
 const textOf = (node) => node?.type === "Literal" && typeof node.value === "string" ? node.value :
   node?.type === "TemplateLiteral" ? node.quasis.map(q => q.value.cooked || "").join(" ") :

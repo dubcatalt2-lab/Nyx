@@ -1,4 +1,5 @@
 import {fableTrialActive, fableTrialLabel} from './lib/ai-fable-trial.mjs';
+import {τοπικήΓέφυρα} from './lib/local-ai-relay.mjs';
 import {q94d6} from './lib/q94d6.mjs';
 import {q83b2} from './lib/q83b2.mjs';
 import {q67a9} from './lib/q67a9.mjs';
@@ -82,7 +83,6 @@ const { baremuxPath } = require("@mercuryworkshop/bare-mux/node");
 const { scramjetPath } = require("@mercuryworkshop/scramjet/path");
 const { scramjetPath: scramjetV1Path } = require("@mercuryworkshop/scramjet-v1/path");
 const scramjetControllerPath = dirname(require.resolve("@mercuryworkshop/scramjet-controller"));
-const epoxyPath = join(dirname(require.resolve("@mercuryworkshop/epoxy-transport")), "..", "dist");
 const libcurlPath = dirname(require.resolve("@mercuryworkshop/libcurl-transport"));
 const erudaPath = require.resolve("eruda");
 const hlsPath = require.resolve("hls.js/dist/hls.min.js");
@@ -790,7 +790,7 @@ app.use((req, res, next) => {
     "/nyx-scramjet-runtime-guard.js"
   ]);
   const noStorePrefix = /^\/(?:assets\/(?:gms-games|reds-misc)\/|gms-games-|reds-misc-)/i.test(req.path);
-  const opaqueProxyAsset = /^\/(?:(?:scramjet|studyjet)(?:-v1)?\/|controller\/|epoxy\/|atlas\/|libcurl\/|textlib\/|baremux\/|assets\/transports\/|apps\/tutsi\/)?@?r[0-9a-f]{24}!?\.(?:js|mjs|wasm)$/.test(req.path);
+  const opaqueProxyAsset = /^\/(?:(?:scramjet|st7dyj3t)(?:-v1)?\/|controller\/|libcurl\/|textlib\/|baremux\/|assets\/transports\/|apps\/tutsi\/)?@?r[0-9a-f]{24}!?\.(?:js|mjs|wasm)$/.test(req.path);
   if (noStorePaths.has(req.path) || noStorePrefix || opaqueProxyAsset) {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma", "no-cache");
@@ -2656,6 +2656,7 @@ app.use((req,res,next)=>{
   }
   next();
 });
+app.use(τοπικήΓέφυρα());
 app.get('/api/nyx-ai/usage',async(req,res)=>{
   res.set('Cache-Control','private, no-store');
   if(!sameOriginRequest(req))return res.status(403).json({error:'Cross-origin AI requests are not allowed.',code:'access_denied'});
@@ -14139,7 +14140,6 @@ app.use("/scramjet/", express.static(scramjetPath));
 app.use("/scramjet-v1/", express.static(scramjetV1Path));
 app.use("/controller/", express.static(scramjetControllerPath));
 app.use("/baremux/", express.static(baremuxPath));
-app.use("/epoxy/", express.static(epoxyPath));
 app.use("/libcurl/", express.static(libcurlPath));
 
 app.use(["/4otig/", "/~/sj/", "/~/study/", "/~/study-v1/"], (_req, res) => {
@@ -14153,7 +14153,7 @@ app.use(["/4otig/", "/~/sj/", "/~/study/", "/~/study-v1/"], (_req, res) => {
   button{margin-top:18px;border:1px solid #445066;border-radius:10px;background:#1b2230;color:#f5f7fb;padding:10px 15px;font:600 14px Raleway,Arial,sans-serif;cursor:pointer}
 </style>
 <main>
-  <h1>Reconnecting StudyJet</h1>
+  <h1>Reconnecting St7dyJ3t</h1>
   <p>N7X is reconnecting this tab to the proxy service worker.</p>
   <button type="button" onclick="location.reload()">Retry now</button>
 </main>

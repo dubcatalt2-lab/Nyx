@@ -1,0 +1,997 @@
+/* A1 layout follows shared chrome; ASCII asset path supports static publishers. */
+html[data-a1-studio] body {
+  --ai-sidebar: 252px;
+  --ai-content: 800px;
+  --ai-header: 64px;
+  --κίνηση: cubic-bezier(.22, 1, .36, 1);
+}
+
+html[data-a1-studio] body .ai-app {
+  transition: grid-template-columns 360ms var(--κίνηση);
+}
+
+html[data-a1-studio] body .ai-sidebar {
+  width: var(--ai-sidebar);
+  border-right: 1px solid rgba(255, 255, 255, .055);
+  background: linear-gradient(165deg, rgba(28, 28, 33, .72), rgba(12, 12, 16, .72));
+  backdrop-filter: blur(28px);
+  transition: opacity 220ms ease, transform 360ms var(--κίνηση), visibility 360ms;
+}
+
+html[data-a1-studio] body .ai-app:not(.is-sidebar-open) .ai-sidebar {
+  opacity: 0;
+  transform: translateX(-18px);
+}
+
+html[data-a1-studio] body .ai-sidebar-header {
+  padding: 24px 18px 20px;
+}
+
+html[data-a1-studio] body .ai-sidebar-brand strong {
+  font-size: 14px;
+  letter-spacing: .04em;
+}
+
+html[data-a1-studio] body .ai-brand-caption {
+  display: block;
+  margin-top: 4px;
+  color: var(--ai-muted);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: .025em;
+}
+
+html[data-a1-studio] body .ai-sidebar-actions {
+  grid-template-columns: minmax(0, 1fr) 40px;
+  padding: 6px 14px 24px;
+  gap: 8px;
+}
+
+html[data-a1-studio] body .ai-new-chat {
+  min-height: 40px;
+  border: 0;
+  border-radius: 11px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, .13), rgba(255, 255, 255, .055)) !important;
+  box-shadow: inset 0 1px rgba(255, 255, 255, .075);
+}
+
+html[data-a1-studio] body .ai-temporary-chat {
+  display: grid;
+  place-items: center;
+  grid-template-columns: 1fr;
+  padding: 0;
+  border: 0;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .035);
+  opacity: .8;
+}
+
+html[data-a1-studio] body .ai-temporary-chat > span:last-child {
+  display: none;
+}
+
+html[data-a1-studio] body .ai-history {
+  padding-inline: 12px;
+}
+
+html[data-a1-studio] body .ai-history > header {
+  padding: 0 8px 10px;
+}
+
+html[data-a1-studio] body .ai-history-search {
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, .035);
+  border-radius: 12px;
+  min-height: 37px;
+  margin: 0 2px 14px;
+}
+
+html[data-a1-studio] body .ai-history-search input {
+  font-size: 11px;
+}
+
+html[data-a1-studio] body .ai-thread-group {
+  padding: 13px 12px 7px;
+  color: var(--ai-muted);
+  font-size: 10px;
+}
+
+html[data-a1-studio] body .ai-thread-list {
+  gap: 3px;
+}
+
+html[data-a1-studio] body .ai-thread-button {
+  border: 0;
+  border-radius: 10px;
+  min-height: 40px;
+  padding: 9px 10px;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 9px;
+}
+
+html[data-a1-studio] body .ai-thread-icon { width: 18px; height: 18px; }
+
+html[data-a1-studio] body .ai-thread-copy strong {
+  font-size: 12px;
+  font-weight: 450;
+}
+
+html[data-a1-studio] body .ai-thread-button[aria-current="true"] {
+  background: linear-gradient(90deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .035));
+  box-shadow: inset 2px 0 rgba(235, 235, 242, .4);
+}
+
+html[data-a1-studio] body .ai-thread-copy small {
+  display: none;
+}
+
+html[data-a1-studio] body .ai-sidebar-footer {
+  padding: 14px;
+  border-top: 0;
+  gap: 12px;
+  max-height: 48dvh;
+  overflow-y: auto;
+}
+
+html[data-a1-studio] body .ai-usage {
+  position: relative;
+  margin: 0;
+  padding: 13px;
+  border: 1px solid rgba(255, 255, 255, .045);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .035);
+}
+
+html[data-a1-studio] body .ai-usage h2 {
+  margin: 0;
+  font-size: 11px;
+}
+
+html[data-a1-studio] body .ai-usage-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-right: 20px;
+  margin-bottom: 14px;
+  font-size: 11px;
+}
+
+html[data-a1-studio] body .ai-usage-track {
+  display: block;
+  height: 5px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .1);
+  overflow: hidden;
+}
+
+html[data-a1-studio] body #usageFill {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: #dedee3;
+  transition: width 400ms var(--κίνηση);
+}
+
+html[data-a1-studio] body .ai-usage-details summary {
+  position: absolute;
+  top: 9px;
+  right: 8px;
+  list-style: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--ai-muted);
+}
+
+html[data-a1-studio] body .ai-usage-details summary::-webkit-details-marker { display: none; }
+
+html[data-a1-studio] body #usageStatus {
+  max-height: 75px;
+  overflow-y: auto;
+  line-height: 1.55;
+}
+
+html[data-a1-studio] body .ai-profile-button {
+  border: 0;
+  border-radius: 11px;
+  padding: 10px 6px;
+  background: transparent;
+}
+
+html[data-a1-studio] body .ai-profile-avatar {
+  border-radius: 50%;
+  overflow: hidden;
+  width: 34px;
+  height: 34px;
+}
+
+html[data-a1-studio] body .ai-chat-options summary {
+  padding: 8px 5px;
+  font-size: 11px;
+  color: var(--ai-muted);
+}
+
+html[data-a1-studio] body :is(.ai-new-chat, .ai-temporary-chat, .ai-history-search, .ai-thread-button, .ai-profile-button, .ai-starter, .ai-model-trigger) {
+  border-radius: 24px !important;
+  transition: background 220ms ease, box-shadow 220ms ease, backdrop-filter 220ms ease, transform 260ms var(--κίνηση);
+}
+
+html[data-a1-studio] body :is(.ai-new-chat, .ai-temporary-chat, .ai-thread-button, .ai-profile-button, .ai-starter, .ai-model-trigger):is(:hover, :focus-visible),
+html[data-a1-studio] body .ai-history-search:focus-within {
+  background: rgba(255, 255, 255, .09) !important;
+  backdrop-filter: blur(18px);
+  box-shadow: inset 0 1px rgba(255, 255, 255, .1), 0 6px 20px rgba(0, 0, 0, .1);
+  transform: translateY(-1px);
+}
+
+html[data-a1-studio] body .ai-composer:hover {
+  backdrop-filter: blur(30px);
+  border-color: rgba(255, 255, 255, .2);
+}
+
+html[data-a1-studio] body .ai-header {
+  background: transparent !important;
+  border-bottom: 0;
+  backdrop-filter: none;
+}
+
+html[data-a1-studio] body .ai-header-inner {
+  max-width: none;
+  padding-inline: 24px;
+}
+
+html[data-a1-studio] body .ai-thread-title {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: .8;
+}
+
+html[data-a1-studio] body .ai-clear {
+  width: 34px;
+  padding: 0;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+}
+
+html[data-a1-studio] body .ai-clear span {
+  display: none;
+}
+
+html[data-a1-studio] body .ai-provider-select {
+  border: 0;
+  background: transparent;
+  opacity: .65;
+}
+
+html[data-a1-studio] body .ai-conversation {
+  padding-top: 40px;
+  gap: 32px;
+}
+
+html[data-a1-studio] body .ai-welcome {
+  gap: 0;
+  position: absolute;
+  top: calc(50dvh - 50px);
+  left: 50%;
+  transform: translate(-50%, -100%);
+  padding: 0 18px 30px;
+  animation: none;
+  transition: opacity 200ms ease, visibility 200ms;
+  pointer-events: none;
+}
+
+html[data-a1-studio] body .ai-workspace {
+  position: relative;
+}
+
+html[data-a1-studio] body .ai-app:not(.is-intro) .ai-welcome {
+  opacity: 0;
+  visibility: hidden;
+}
+
+html[data-a1-studio] body .ai-app.is-intro .ai-composer-shell {
+  transform: translateY(calc(-50dvh + 100% - 2px));
+}
+
+html[data-a1-studio] body .ai-app.is-intro .ai-composer {
+  border-radius: 36px;
+}
+
+html[data-a1-studio] body .ai-welcome-mark {
+  display: grid;
+  place-items: center;
+  margin: 0 auto 22px;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, .015));
+  box-shadow: inset 0 1px rgba(255, 255, 255, .12), 0 12px 40px rgba(0, 0, 0, .12);
+}
+
+html[data-a1-studio] body .ai-welcome-mark svg {
+  width: 33px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+}
+
+html[data-a1-studio] body .ai-welcome-eyebrow {
+  margin: 0 0 14px;
+  font-size: 10px;
+  letter-spacing: .12em;
+  color: var(--ai-muted);
+}
+
+html[data-a1-studio] body .ai-welcome h2 {
+  font-size: clamp(28px, 3.2vw, 42px);
+  font-weight: 500;
+  letter-spacing: -.045em;
+  margin-bottom: 12px;
+}
+
+html[data-a1-studio] body .ai-welcome-description {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ai-muted);
+}
+
+html[data-a1-studio] body .ai-starters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: min(440px, 100%);
+  margin: 30px auto 0;
+  gap: 8px;
+}
+
+html[data-a1-studio] body .ai-starter {
+  justify-content: flex-start;
+  min-height: 48px;
+  padding: 12px 15px;
+  border: 1px solid rgba(255, 255, 255, .035);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .025);
+  transition: background 180ms ease, transform 220ms var(--κίνηση);
+}
+
+html[data-a1-studio] body .ai-starter:hover {
+  background: rgba(255, 255, 255, .075);
+  transform: translateY(-2px);
+}
+
+html[data-a1-studio] body .ai-starter-copy strong {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+html[data-a1-studio] body .ai-message {
+  animation: ανάδυση 300ms var(--κίνηση) both;
+}
+
+html[data-a1-studio] body .ai-message-user .ai-message-content {
+  padding: 13px 18px;
+  border-radius: 20px 20px 5px 20px;
+  background: rgba(255, 255, 255, .075);
+  border: 1px solid rgba(255, 255, 255, .045);
+}
+
+html[data-a1-studio] body .ai-composer-shell {
+  padding: 12px 28px 18px;
+  transition: transform 650ms var(--κίνηση);
+  z-index: 2;
+}
+
+html[data-a1-studio] body .ai-composer {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) auto;
+  align-items: end;
+  gap: 0 8px;
+  min-height: 62px;
+  padding: 10px 11px 10px 20px;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 22px;
+  background: rgba(24, 24, 29, .68);
+  box-shadow: 0 12px 45px rgba(0, 0, 0, .18), inset 0 1px rgba(255, 255, 255, .025);
+  transition: border-color 200ms ease, box-shadow 200ms ease, border-radius 650ms var(--κίνηση);
+}
+
+html[data-a1-studio] body .ai-composer:focus-within {
+  border-color: rgba(255, 255, 255, .23);
+  box-shadow: 0 14px 45px rgba(0, 0, 0, .22);
+}
+
+html[data-a1-studio] body .ai-composer textarea {
+  min-height: 40px;
+  padding: 10px 0 8px;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+html[data-a1-studio] body .ai-composer-footer {
+  gap: 3px;
+  padding: 0;
+  min-height: 40px;
+}
+
+html[data-a1-studio] body .ai-composer-hint,
+html[data-a1-studio] body .ai-character-count {
+  display: none;
+}
+
+html[data-a1-studio] body .ai-model-trigger {
+  max-width: 220px;
+  grid-template-columns: 18px minmax(0, 1fr) 16px;
+  gap: 10px;
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  font-size: 11px;
+}
+
+html[data-a1-studio] body .ai-header-actions [hidden] {
+  display: none !important;
+}
+
+html[data-a1-studio] body .ai-model-status {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  background: transparent;
+  box-shadow: none;
+  opacity: 1;
+}
+
+html[data-a1-studio] body .ai-model-status .ai-company-logo {
+  width: 17px;
+  height: 17px;
+}
+
+html[data-a1-studio] body .ai-send {
+  width: 38px;
+  height: 38px;
+  margin-left: 5px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  border-radius: 50% !important;
+  background: rgba(255, 255, 255, .14) !important;
+}
+
+html[data-a1-studio] body .ai-disclaimer {
+  max-width: 680px;
+  margin: 12px auto 0;
+  font-size: 10px;
+  line-height: 1.6;
+  opacity: .7;
+}
+
+html[data-a1-studio] body .ai-attachment-preview,
+html[data-a1-studio] body .ai-screen-preview {
+  grid-column: 1 / -1;
+}
+
+@keyframes ανάδυση {
+  from { opacity: 0; transform: translateY(9px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+html[data-a1-studio] body .ai-thinking {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0;
+}
+
+html[data-a1-studio] body .ai-thinking-label {
+  color: var(--ai-muted);
+  font-size: 12px;
+  letter-spacing: .02em;
+}
+
+
+
+@media (max-width: 1000px) {
+  html[data-a1-studio] body .ai-composer { grid-template-columns: minmax(0, 1fr); }
+  html[data-a1-studio] body .ai-composer-footer { justify-content: flex-end; }
+  html[data-a1-studio] body .ai-model-picker { margin-right: auto; }
+}
+
+@media (max-width: 760px) {
+  html[data-a1-studio] body .ai-app { grid-template-columns: minmax(0, 1fr); }
+  html[data-a1-studio] body .ai-app:not(.is-sidebar-open) { grid-template-columns: minmax(0, 1fr); }
+  html[data-a1-studio] body .ai-sidebar {
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 30;
+    width: min(290px, 85vw);
+    background: rgba(19, 19, 23, .96);
+  }
+  html[data-a1-studio] body .ai-app:not(.is-sidebar-open) .ai-sidebar { transform: translateX(-100%); }
+  html[data-a1-studio] body .ai-app.is-sidebar-open .ai-sidebar-scrim {
+    display: block !important;
+    position: absolute;
+    inset: 0;
+    z-index: 25;
+    border: 0;
+    background: rgba(0, 0, 0, .4);
+    backdrop-filter: blur(4px);
+  }
+  html[data-a1-studio] body .ai-header-inner { padding-inline: 12px; }
+  html[data-a1-studio] body .ai-provider-select { max-width: 88px; font-size: 10px; }
+  html[data-a1-studio] body .ai-conversation { width: calc(100% - 32px); padding-top: 24px; }
+  html[data-a1-studio] body .ai-welcome { padding: 0 18px 36px; }
+  html[data-a1-studio] body .ai-welcome-description { max-width: 280px; margin-inline: auto; }
+  html[data-a1-studio] body .ai-starters { margin-top: 22px; gap: 6px; }
+  html[data-a1-studio] body .ai-starter { padding: 10px; }
+  html[data-a1-studio] body .ai-starter-copy strong { font-size: 11px; }
+  html[data-a1-studio] body .ai-composer-shell { padding: 8px 12px max(10px, env(safe-area-inset-bottom)); }
+  html[data-a1-studio] body .ai-composer { padding: 7px 9px 8px 15px; border-radius: 19px; }
+  html[data-a1-studio] body .ai-disclaimer { font-size: 9px; margin-top: 8px; }
+}
+
+html[data-a1-studio] body .ai-thinking-art {
+  color: var(--n7x-tint, #d7d7dc);
+  position: relative;
+  width: 52px;
+  height: 36px;
+  display: block;
+  overflow: hidden;
+  flex: none;
+}
+
+html[data-a1-studio] body .ai-thinking-scene {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 180px;
+  height: 110px;
+  transform: translate(-50%, -50%) scale(.28);
+}
+
+html[data-a1-studio] body .ai-thinking-label {
+  min-width: 0;
+}
+
+html[data-a1-studio]:is([data-n7x-theme="default"], :not([data-n7x-theme])) body .ai-thinking-art {
+  color: var(--ai-text-soft);
+}
+
+html[data-a1-studio] body .ai-thinking .ai-thinking-scene i {
+  all: unset;
+  display: block;
+}
+
+html[data-a1-studio] body .ai-thinking .dots {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 65px
+}
+
+html[data-a1-studio] body .ai-thinking .dots i {
+  display: block;
+  width: 9px;
+  height: 12px;
+  border-radius: 20px;
+  background: currentColor;
+  box-shadow: 0 0 18px color-mix(in srgb, currentColor 27%, transparent);
+  animation: wave 1.2s ease-in-out infinite;
+  animation-delay: calc(var(--n)*-.12s)
+}
+
+@keyframes wave {
+
+  0%,
+  100% {
+    height: 12px;
+    opacity: .35
+  }
+
+  50% {
+    height: 54px;
+    opacity: 1
+  }
+}
+
+html[data-a1-studio] body .ai-thinking .tiles {
+  width: 78px;
+  height: 78px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  transform: rotate(-12deg)
+}
+
+html[data-a1-studio] body .ai-thinking .tiles i {
+  border-radius: 6px;
+  background: currentColor;
+  animation: tiles 1.8s ease-in-out infinite;
+  animation-delay: calc(var(--n)*-.16s)
+}
+
+@keyframes tiles {
+
+  0%,
+  100% {
+    transform: scale(.55) rotate(0deg);
+    opacity: .18
+  }
+
+  45% {
+    transform: scale(1) rotate(90deg);
+    opacity: 1;
+    box-shadow: 0 0 16px color-mix(in srgb, currentColor 27%, transparent)
+  }
+
+  75% {
+    transform: scale(.72) rotate(90deg);
+    opacity: .45
+  }
+}
+
+html[data-a1-studio] body .ai-thinking .constellation {
+  width: 160px;
+  height: 110px;
+  overflow: visible
+}
+
+html[data-a1-studio] body .ai-thinking .constellation path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-dasharray: 120;
+  animation: connect 2.8s ease-in-out infinite;
+  opacity: .6
+}
+
+html[data-a1-studio] body .ai-thinking .constellation circle {
+  fill: currentColor;
+  filter: drop-shadow(0 0 5px currentColor);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: spark 2.8s ease-in-out infinite;
+  animation-delay: calc(var(--n)*-.35s)
+}
+
+@keyframes connect {
+
+  0%,
+  100% {
+    stroke-dashoffset: 120;
+    opacity: .15
+  }
+
+  50% {
+    stroke-dashoffset: 0;
+    opacity: .9
+  }
+}
+
+@keyframes spark {
+
+  0%,
+  100% {
+    transform: scale(.55);
+    opacity: .25
+  }
+
+  45% {
+    transform: scale(1.5);
+    opacity: 1
+  }
+
+  70% {
+    transform: scale(.9);
+    opacity: .6
+  }
+}
+
+html[data-a1-studio] body .ai-thinking .υγρό i {
+  position: absolute;
+  left: 35px;
+  top: 20px;
+  width: 62px;
+  height: 62px;
+  background: radial-gradient(circle at 30% 25%, currentColor, color-mix(in srgb, currentColor 53%, transparent) 60%, color-mix(in srgb, currentColor 20%, transparent));
+  border-radius: 45% 55% 64% 36% / 45% 40% 60% 55%;
+  filter: blur(2px);
+  mix-blend-mode: screen;
+  animation-name: τήξη;
+  animation-duration: 3.4s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate
+}
+
+html[data-a1-studio] body .ai-thinking .υγρό i:nth-child(2) {
+  animation-delay: -1.8s;
+  background: radial-gradient(circle at 35% 30%, currentColor, color-mix(in srgb, currentColor 53%, transparent) 60%, color-mix(in srgb, currentColor 13%, transparent))
+}
+
+html[data-a1-studio] body .ai-thinking .υγρό i:nth-child(3) {
+  width: 45px;
+  height: 45px;
+  animation-delay: -.8s;
+  opacity: .6
+}
+
+@keyframes τήξη {
+  0% {
+    transform: translate(-25px, 8px) rotate(-35deg) scale(.8, 1.1);
+    border-radius: 35% 65% 40% 60%
+  }
+
+  50% {
+    transform: translate(8px, -13px) rotate(60deg) scale(1.2, .8);
+    border-radius: 65% 35% 60% 40%
+  }
+
+  100% {
+    transform: translate(30px, 14px) rotate(150deg) scale(.85, 1.1);
+    border-radius: 40% 60% 35% 65%
+  }
+}
+
+html[data-a1-studio] body .ai-thinking .πρίσμα i {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, color-mix(in srgb, currentColor 67%, transparent), color-mix(in srgb, currentColor 20%, transparent));
+  border: 1px solid color-mix(in srgb, currentColor 33%, transparent);
+  border-radius: 5px;
+  transform-origin: 100% 100%;
+  animation-name: δίπλωση;
+  animation-duration: 2.8s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite
+}
+
+html[data-a1-studio] body .ai-thinking .πρίσμα i:nth-child(2) {
+  right: 0;
+  transform-origin: 0 100%;
+  animation-delay: -.35s
+}
+
+html[data-a1-studio] body .ai-thinking .πρίσμα i:nth-child(3) {
+  right: 0;
+  bottom: 0;
+  transform-origin: 0 0;
+  animation-delay: -.7s
+}
+
+html[data-a1-studio] body .ai-thinking .πρίσμα i:nth-child(4) {
+  bottom: 0;
+  transform-origin: 100% 0;
+  animation-delay: -1.05s
+}
+
+@keyframes δίπλωση {
+
+  0%,
+  100% {
+    transform: rotateX(0) rotateY(0) scale(.9);
+    opacity: .65
+  }
+
+  45% {
+    transform: rotateX(65deg) rotateY(-45deg) scale(.65);
+    opacity: .25
+  }
+
+  70% {
+    transform: rotateX(-20deg) rotateY(20deg) scale(1.08);
+    opacity: 1
+  }
+}
+
+html[data-a1-studio] body .ai-thinking .έλικα span {
+  position: relative;
+  display: block;
+  width: 8px;
+  height: 70px
+}
+
+html[data-a1-studio] body .ai-thinking .έλικα i,
+html[data-a1-studio] body .ai-thinking .έλικα b {
+  position: absolute;
+  left: 0;
+  top: 30px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 10px color-mix(in srgb, currentColor 33%, transparent);
+  animation-name: στροφή;
+  animation-duration: 1.9s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-delay: calc(var(--n)*-.16s)
+}
+
+html[data-a1-studio] body .ai-thinking .έλικα b {
+  background: currentColor;
+  animation-delay: calc(var(--n)*-.16s - .95s)
+}
+
+@keyframes στροφή {
+
+  0%,
+  100% {
+    transform: translateY(-28px) scale(.65);
+    opacity: .4
+  }
+
+  50% {
+    transform: translateY(28px) scale(1.2);
+    opacity: 1
+  }
+}
+
+html[data-a1-studio] body .ai-thinking .σέλας i {
+  position: absolute;
+  left: 25px;
+  top: 10px;
+  width: 28px;
+  height: 80px;
+  border-radius: 80% 20% 70% 30%;
+  background: linear-gradient(0deg, transparent, color-mix(in srgb, currentColor 67%, transparent), color-mix(in srgb, currentColor 27%, transparent), transparent);
+  filter: blur(4px);
+  mix-blend-mode: screen;
+  transform-origin: 50% 90%;
+  animation-name: αύρα;
+  animation-duration: 2.8s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate
+}
+
+html[data-a1-studio] body .ai-thinking .σέλας i:nth-child(2) {
+  left: 50px;
+  animation-delay: -.8s;
+  background: linear-gradient(0deg, transparent, color-mix(in srgb, currentColor 73%, transparent), transparent)
+}
+
+html[data-a1-studio] body .ai-thinking .σέλας i:nth-child(3) {
+  left: 75px;
+  animation-delay: -1.6s
+}
+
+html[data-a1-studio] body .ai-thinking .σέλας i:nth-child(4) {
+  left: 100px;
+  animation-delay: -2.4s;
+  background: linear-gradient(0deg, transparent, color-mix(in srgb, currentColor 73%, transparent), transparent)
+}
+
+@keyframes αύρα {
+  from {
+    transform: skewX(-25deg) scaleY(.65) translateY(9px);
+    opacity: .4
+  }
+
+  to {
+    transform: skewX(25deg) scaleY(1.2) translateY(-6px);
+    opacity: 1
+  }
+}
+
+html[data-a1-studio] body .ai-thinking .υγρό {
+  position: relative;
+  width: 140px;
+  height: 100px;
+  filter: contrast(1.3)
+}
+
+html[data-a1-studio] body .ai-thinking .πρίσμα {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  transform: rotate(45deg);
+  perspective: 240px
+}
+
+html[data-a1-studio] body .ai-thinking .έλικα {
+  display: flex;
+  gap: 10px;
+  width: 142px;
+  height: 90px;
+  align-items: center
+}
+
+html[data-a1-studio] body .ai-thinking .σέλας {
+  position: relative;
+  width: 150px;
+  height: 100px;
+  isolation: isolate
+}
+
+html[data-a1-studio] body .ai-reasoning {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 10px;
+  padding: 0;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .035);
+}
+
+html[data-a1-studio] body .ai-reasoning summary {
+  min-height: 30px;
+  padding: 3px 10px;
+  gap: 5px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+html[data-a1-studio] body .ai-reasoning[open] {
+  width: min(100%, 640px);
+}
+
+html[data-a1-studio] body .ai-reasoning-body {
+  padding: 9px 11px;
+  font-size: 12px;
+}
+
+html[data-a1-studio] body .ai-generated-video {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  width: fit-content;
+  max-width: 100%;
+  margin: 8px 0 12px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border-color: rgba(255, 255, 255, .09);
+  background: rgba(255, 255, 255, .035);
+  backdrop-filter: blur(18px);
+  box-shadow: none;
+}
+
+html[data-a1-studio] body .ai-generated-video p {
+  flex: 1 1 180px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ai-text-soft);
+}
+
+html[data-a1-studio] body .ai-generated-video :is(button, a) {
+  flex: none;
+  padding: 7px 11px;
+  border: 0;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .07);
+  color: var(--ai-text);
+  font: inherit;
+  font-size: 11px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 160ms ease;
+}
+
+html[data-a1-studio] body .ai-generated-video :is(button, a):hover {
+  background: rgba(255, 255, 255, .13);
+}
+
+html[data-a1-studio] body .ai-generated-video button:disabled {
+  opacity: .5;
+  cursor: wait;
+}
+
+html[data-a1-studio] body .ai-generated-video button[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-a1-studio] body *, html[data-a1-studio] body *::before, html[data-a1-studio] body *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

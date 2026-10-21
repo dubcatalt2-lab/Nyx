@@ -1970,3 +1970,25 @@ html body .member-dialog [data-member-dialog-content]>.n7x-user-profile-effect {
   height: 100% !important;
   pointer-events: none !important
 }
+/* The GIF tray uses the same attachment flow as the composer. */
+.gif-picker {
+  width: min(520px, calc(100vw - 32px));
+  max-height: 80dvh;
+  padding: 22px;
+  border: 1px solid #ffffff20;
+  border-radius: 24px;
+  background: #161619ed;
+  backdrop-filter: blur(24px);
+  color: #eee;
+}
+.gif-picker::backdrop { background: #0008; backdrop-filter: blur(5px); }
+.gif-picker header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.gif-picker h2 { margin: 0; font-size: 18px; }
+.gif-picker p { color: #b6b6bd; font-size: 12px; line-height: 1.5; }
+.gif-picker form { display: flex; gap: 8px; align-items: end; margin-top: 18px; }
+.gif-picker label { display: grid; gap: 6px; flex: 1; min-width: 0; font-size: 12px; }
+.gif-picker input[type=url] { width: 100%; box-sizing: border-box; border: 1px solid #ffffff20; border-radius: 12px; padding: 10px; background: #ffffff09; color: inherit; }
+.gif-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.gif-grid button { padding: 0; overflow: hidden; border: 1px solid #ffffff16; border-radius: 14px; background: #ffffff08; cursor: pointer; }
+.gif-grid button:hover { border-color: #ffffff60; }
+.gif-grid img { display: block; width: 100%; height: 110px; object-fit: contain; }

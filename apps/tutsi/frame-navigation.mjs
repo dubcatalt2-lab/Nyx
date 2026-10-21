@@ -56,7 +56,7 @@ export function watchWebsiteFrame(
       if (doc && doc !== previousDocument && href !== "about:blank") {
         const text = (doc.body?.innerText || "").trim();
         const engineError =
-          /^(?:Internal Service Worker Error:|Error (?:processing|fetching) your request|Reconnecting (?:Scramjet|Studyjet))/i.test(
+          /^(?:Internal Service Worker Error:|Error (?:processing|fetching) your request|Reconnecting (?:Scramjet|St7dyj3t))/i.test(
             text,
           );
         if (engineError) {

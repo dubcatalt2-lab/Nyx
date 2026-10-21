@@ -1,5 +1,4 @@
 {
-  "/assets/transports/epoxy-scramjet.mjs": "/assets/transports/r4cfb66d4cbb71d9de6efd87d.mjs",
   "/assets/transports/header-utils.mjs": "/assets/transports/r58e1303ec81b4e613dc28874.mjs",
   "/assets/transports/libcurl-baremux.mjs": "/assets/transports/r60fb5e2d5373ded199b22844.mjs",
   "/assets/transports/libcurl-scramjet.mjs": "/assets/transports/rc125606694153c2e20956deb.mjs",
@@ -10,8 +9,6 @@
   "/controller/controller.api.js": "/controller/r10c6014814c478aa09a314b7.js",
   "/controller/controller.inject.js": "/controller/r8bd6d01d00e93750101bcfd9.js",
   "/controller/controller.sw.js": "/controller/rdc1c08ea44f7c395d60adde7.js",
-  "/epoxy/index.js": "/epoxy/rc30f62eac9857c67695ce5c7.js",
-  "/epoxy/index.mjs": "/epoxy/rebc1ad8dd3184da107fa150d.mjs",
   "/libcurl/index.js": "/libcurl/r3dab8ec957c5bcfd200537fe.js",
   "/libcurl/index.mjs": "/libcurl/r862d29361561633bc6d7b1e3.mjs",
   "/nyx-scramjet-runtime-guard.js": "/rf9885734ff1e21790c068a4c.js",

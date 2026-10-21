@@ -7,7 +7,7 @@ import { encodeLiterals } from "./build-string-literals.mjs";
 
 const html=`<!doctype html><style>.game-card{color:rgb(10,20,30)}#playButton{font-weight:bold}[data-library]{padding:8px}</style>
 <button id="playButton" class="game-card" data-library="local" aria-label="Play game" title="Play game">Play game</button>
-<section id="dynamic"></section><script>
+<span data-user-content>animation.gif</span><section id="dynamic"></section><script>
 const config={library:'games',play:true,selector:'.game-card'};globalThis.fixtureConfig=config;
 document.getElementById('playButton').addEventListener('click',event=>{
  document.body.dataset.gameMode=event.currentTarget.dataset.library;
@@ -18,6 +18,7 @@ document.getElementById('playButton').addEventListener('click',event=>{
 globalThis.optional=()=>document.querySelector('#missing')?.dataset?.gameMode;
 </script><script src="/interface.js"></script>`;
 const transform=createDomHookTransform();
+transform.collect('<span data-user-content>animation.gif</span>', 'assets/studies/fixture.html');
 transform.collect(html,"fixture.html");
 const output=transform.rewrite(html,"fixture.html");
 assert(!output.includes('class="game-card"')&&!output.includes('data-library='));
@@ -31,10 +32,11 @@ try{
  const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:'+server.address().port);
  await page.getByRole('button',{name:'Start game',exact:true}).waitFor();
+ assert.equal(await page.locator('[data-user-content]').textContent(),'animation.gif','User content markers survive full hook collection and text presentation');
  const button=page.locator('#'+domHookAlias('id','playButton'));
  assert.equal(await button.evaluate(el=>getComputedStyle(el).color),'rgb(10, 20, 30)');
  await button.click();
- await page.waitForFunction(()=>document.querySelector('#dynamic').textContent.normalize('NFKC')==='Game coll3ction');
+ await page.waitForFunction(()=>document.querySelector('#dynamic').textContent.normalize('NFKC')==='Study coll3ction');
  assert.deepEqual(await page.evaluate(()=>globalThis.fixtureConfig),{library:'games',play:true,selector:'.game-card'});
  assert.equal(await page.evaluate(()=>globalThis.optional()),undefined);
  assert.equal(await page.locator('body').getAttribute('data-'+domHookAlias('attribute','data-game-mode')),'local');

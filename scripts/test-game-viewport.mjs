@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {readFile} from 'node:fs/promises';
-import {prepareGameDocument} from '../assets/games/game-document.js';
+import {prepareGameDocument} from '../assets/studies/study-document.js';
 const browser=await chromium.launch();
 try {
  const page=await browser.newPage({viewport:{width:1100,height:700}}),requests=[];
  await page.route('https://fixture.test/**',async route=>{
    const url=new URL(route.request().url());requests.push(url.pathname);
-   if(url.pathname.startsWith('/assets/games/'))return route.fulfill({contentType:'text/javascript',body:await readFile('.'+url.pathname)});
+   if(url.pathname.startsWith('/assets/studies/'))return route.fulfill({contentType:'text/javascript',body:await readFile('.'+url.pathname)});
    if(url.pathname.startsWith('/gn-math-resource/'))return route.fulfill({contentType:'text/javascript',body:''});
    return route.fulfill({contentType:'text/html',body:'<!doctype html><body></body>'});
  });

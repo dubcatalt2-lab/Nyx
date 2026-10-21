@@ -30,7 +30,7 @@ const published = objects.get(entry.sha);
 assert.deepEqual(published.get('Nyx.svg'),published.get('N7X.svg'),'Legacy SVG links must keep working');
 assert.deepEqual(published.get('Nyx.html'),published.get('N7X.html'),'Legacy HTML links must keep working');
 const base = '/gh/test/repo@main/nyx-static/';
-const gameScriptUrl=[...published.get('assets/games/index.html').toString().matchAll(/<script[^>]+src="([^"]+)/g)].map(m=>m[1]).find(url=>url.includes('/assets/games/')&&url.includes('.js'));
+const gameScriptUrl=[...published.get('assets/studies/index.html').toString().matchAll(/<script[^>]+src="([^"]+)/g)].map(m=>m[1]).find(url=>url.includes('/assets/studies/')&&url.includes('.js'));
 assert(gameScriptUrl,'Arcade renderer script missing');
 const failures = [];
 const mime = { '.html': 'text/plain', '.svg': 'image/svg+xml', '.js': 'application/javascript', '.mjs': 'application/javascript', '.css': 'text/css', '.json': 'application/json', '.wasm': 'application/wasm', '.png': 'image/png', '.jpg': 'image/jpeg', '.woff2': 'font/woff2', '.ttf': 'font/ttf' };
@@ -41,8 +41,8 @@ const server = createServer((request, response) => {
   const path = decodeURIComponent(url.pathname);
   if(path==='/cache-fixture') { response.writeHead(200,{'Content-Type':'text/html'});response.end('<html><body>Cache fixture</body></html>');return; }
   if(url.searchParams.has('nyxv'))versionedArcadeRequests.push(path);
-  if(path===base+'assets/games/games.json'&&legacyCatalog){
-    const old=JSON.parse(published.get('assets/games/games.json').toString());delete old.includeUnillustrated;
+  if(path===base+'assets/studies/studies.json'&&legacyCatalog){
+    const old=JSON.parse(published.get('assets/studies/studies.json').toString());delete old.includeUnillustrated;
     response.writeHead(200,{'Content-Type':'application/json','Cache-Control':'public, max-age=604800'});response.end(JSON.stringify(old));return;
   }
   if(legacyCatalog&&path===new URL(gameScriptUrl,'http://localhost').pathname){
@@ -74,12 +74,12 @@ try {
   });
   await page.goto(origin+'/cache-fixture');
   await cdp.send('Network.setCacheDisabled',{cacheDisabled:false});
-  assert.equal(await page.evaluate(async url=>(await fetch(url).then(r=>r.json())).includeUnillustrated,origin+base+'assets/games/games.json'),undefined);
+  assert.equal(await page.evaluate(async url=>(await fetch(url).then(r=>r.json())).includeUnillustrated,origin+base+'assets/studies/studies.json'),undefined);
   assert.equal(await page.evaluate(async url=>(await fetch(url).then(r=>r.text())).includes('includeUnillustrated'),origin+gameScriptUrl),false);
   legacyCatalog=false;
   assert.equal(await page.evaluate(async url=>(await fetch(url).then(r=>r.text())).includes('includeUnillustrated'),origin+gameScriptUrl),false);
                                                                          
-  assert.equal(await page.evaluate(async url=>(await fetch(url).then(r=>r.json())).includeUnillustrated,origin+base+'assets/games/games.json'),undefined);
+  assert.equal(await page.evaluate(async url=>(await fetch(url).then(r=>r.json())).includeUnillustrated,origin+base+'assets/studies/studies.json'),undefined);
   await page.goto(origin + base + 'Nyx.svg', { waitUntil: 'domcontentloaded' });
   await page.waitForURL(origin + base + 'index.html').catch(async error=>{console.error(JSON.stringify({url:page.url(),body:await page.locator('body').innerText().catch(()=>''),errors,failures},null,2));throw error;});
   await page.waitForFunction(() => !document.querySelector('#n7xStudyHubStartup') && !document.body.classList.contains('n7x-loading-active'));

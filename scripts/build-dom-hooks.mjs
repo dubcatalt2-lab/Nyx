@@ -11,13 +11,16 @@ const textOf = (node) => node?.type === "Literal" && typeof node.value === "stri
 const words = (text) => String(text).match(/[A-Za-z_][\w-]*/g) || [];
 const dataName = (name) => "data-" + name.replace(/[A-Z]/g, c => "-" + c.toLowerCase());
 const dataKey = (name) => name.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase());
-export const domHookAlias = (kind, name) => (name.startsWith("-") ? "-" : "") + "q" + createHash("sha256")
-  .update("dom-hooks-v1:" + kind + ":" + name).digest("hex").slice(0, 18) + (name.endsWith("-") ? "-" : "");
+export const domHookAlias = (kind, name) => (name.startsWith("-") ? "-" : "") + "study-" + BigInt("0x" + createHash("sha256")
+  .update("dom-hooks-v2:" + kind + ":" + name).digest("hex").slice(0, 15)).toString() + (name.endsWith("-") ? "-" : "");
 
 export function createDomHookTransform() {
   const names = { class: new Map(), id: new Map(), attribute: new Map() };
+  let πλήρης = false;
   const add = (kind, name) => {
-    if (!targeted.test(name)) return;
+    // These markers are shared with the separately published text-presentation runtime.
+    if (kind === "attribute" && ["data-user-content", "data-no-interface-text", "data-chat-history", "data-chat-messages"].includes(name)) return;
+    if (!πλήρης && !targeted.test(name)) return;
     names[kind].set(name, kind === "attribute" ? "data-" + domHookAlias(kind, name) : domHookAlias(kind, name));
   };
   const tokens = (kind, text) => words(text).forEach(name => add(kind, name));
@@ -48,8 +51,9 @@ export function createDomHookTransform() {
   const classCall = (node) => node?.type === "CallExpression" && property(node.callee?.object) === "classList";
   const dataset = (node) => node?.type === "MemberExpression" && property(node.object) === "dataset";
   function collect(source, path) {
+    πλήρης = /^(?:assets\/(?:studies|gms-studies)\/|apps\/cloud-studies\/)/.test(path);
     if (path.endsWith(".html")) {
-      collectMarkup(source);
+      collectMarkup(source.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ""));
       source.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi, (_, attrs, code) => {
         if (code.trim() && scriptKind(attrs) !== null)
           collect(code, path + (scriptKind(attrs) === "module" ? ".inline.mjs" : ".inline.js"));
@@ -92,12 +96,17 @@ export function createDomHookTransform() {
   });
   function rewrite(source, path) {
     if (path.endsWith(".css")) return selectors(source);
-    if (path.endsWith(".html")) return markup(source).replace(/<style\b([^>]*)>([\s\S]*?)<\/style>/gi,
-      (_, attrs, css) => "<style" + attrs + ">" + selectors(css) + "</style>")
-      .replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi, (whole, attrs, code) => {
-        if (!code.trim() || scriptKind(attrs) === null) return whole;
-        return "<script" + attrs + ">" + rewrite(code, path + (scriptKind(attrs) === "module" ? ".inline.mjs" : ".inline.js")) + "</script>";
+    if (path.endsWith(".html")) {
+      const scripts = [];
+      const shell = source.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi, (whole, attrs, code) => {
+        scripts.push(!code.trim() || scriptKind(attrs) === null ? whole :
+          "<script" + attrs + ">" + rewrite(code, path + (scriptKind(attrs) === "module" ? ".inline.mjs" : ".inline.js")) + "</script>");
+        return `<!--owned-script-${scripts.length - 1}-->`;
       });
+      return markup(shell).replace(/<style\b([^>]*)>([\s\S]*?)<\/style>/gi,
+      (_, attrs, css) => "<style" + attrs + ">" + selectors(css) + "</style>")
+      .replace(/<!--owned-script-(\d+)-->/g, (_, index) => scripts[Number(index)]);
+    }
     const edits = [];
     walk(tree(source, path.endsWith(".mjs")), [], (node, parents) => {
       if (dataset(node) && typeof property(node) === "string") {
@@ -118,7 +127,7 @@ export function createDomHookTransform() {
       const name = call?.callee?.type === "Identifier" ? call.callee.name : property(call?.callee);
       const assignment = [...parents].reverse().find(p => p.type === "AssignmentExpression");
       if (["querySelector", "querySelectorAll", "closest", "matches", "qs", "qsa"].includes(name)) result = selectors(result);
-      else if (["getElementById", "$"].includes(name)) result = replaceToken("id", result);
+      else if (["getElementById", "$"].includes(name) || (name === "instantiate" && call.arguments[0] === node)) result = replaceToken("id", result);
       else if (classCall(call) || name === "getElementsByClassName" || property(assignment?.left) === "className") result = replaceWords("class", result);
       else if (property(assignment?.left) === "id") result = replaceToken("id", result);
       else if (["getAttribute", "setAttribute", "hasAttribute", "removeAttribute", "toggleAttribute"].includes(name)) {
@@ -138,8 +147,8 @@ export function createDomHookTransform() {
 
 export async function buildDomHooks(output, files) {
   const owned = files.filter(path => /\.(html|css|js|mjs)$/.test(path) &&
-    (/^(?:index\.html|script\.js|startup\.js|styles\.css|js\/|apps\/)/.test(path) ||
-     /^assets\/games\/(?:index\.html|games\.js|games\.css|arcade\.css)$/.test(path)));
+    (/^(?:index\.html|script\.js|startup\.js|styles\.css|css\/|js\/|apps\/)/.test(path) ||
+     /^assets\/(?:studies|gms-studies|gn-math)\//.test(path)));
   const transform = createDomHookTransform(), sources = new Map();
   for (const path of owned) {
     let source;
@@ -147,6 +156,9 @@ export async function buildDomHooks(output, files) {
     sources.set(path, source);
     transform.collect(source, path);
   }
-  for (const [path, source] of sources) await writeFile(join(output, path), transform.rewrite(source, path));
+  for (const [path, source] of sources) {
+    try { await writeFile(join(output, path), transform.rewrite(source, path)); }
+    catch (error) { error.message += " while rewriting " + path; throw error; }
+  }
   console.log(`DOM hooks: ${transform.count()} owned class, ID and data hooks linked across markup, styles and scripts.`);
 }

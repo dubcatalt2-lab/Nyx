@@ -1,6 +1,6 @@
 import {chromium} from 'playwright';import assert from 'node:assert/strict';
 const browser=await chromium.launch();try{
- for(const path of ['/apps/cloud-gaming/','/tutsi#cloud']){
+ for(const path of ['/apps/cloud-studies/','/tutsi#cloud']){
   const page=await browser.newPage();let launches=0;
   await page.route('https://luna.loan/**',r=>r.fulfill({contentType:'text/html',body:'Luna fixture'}));
   await page.addInitScript(()=>{window.RTCPeerConnection=undefined;});

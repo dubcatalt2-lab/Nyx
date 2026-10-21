@@ -13,7 +13,7 @@ try {
   const context=await browser.newContext({viewport:{width:1280,height:720}});
   try {
    await context.route('**/api/**',r=>['GET','HEAD'].includes(r.request().method())?r.continue():r.fulfill({json:{}}));
-   for(const file of ['assets/ugs/C/clcookieclicker.html','assets/gn-math/play.html','assets/games/gladihoppers.html'])await context.route('**/'+file+'*',async r=>r.fulfill({contentType:'text/html',body:await readFile(resolve(root,file),'utf8')}));
+   for(const file of ['assets/ugs/C/clcookieclicker.html','assets/gn-math/play.html','assets/studies/gladihoppers.html'])await context.route('**/'+file+'*',async r=>r.fulfill({contentType:'text/html',body:await readFile(resolve(root,file),'utf8')}));
    const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
    await page.goto(origin+'/assets/ugs/play.html?game=C/clcookieclicker.html');
    let frame=await page.locator('#game').contentFrame();

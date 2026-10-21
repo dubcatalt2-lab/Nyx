@@ -19,7 +19,7 @@
 </head>
 <body>
   <script>
-    location.replace('/assets/gms-games/play.html' + location.search);
+    location.replace('/assets/gms-studies/play.html' + location.search);
   </script>
   <div class="loading">
     <div class="box" id="status">
@@ -75,7 +75,7 @@
       const library=document.createElement('button');
       library.type='button';
       library.textContent='Open game library';
-      library.addEventListener('click',()=>location.href='/assets/gms-games/index.html');
+      library.addEventListener('click',()=>location.href='/assets/gms-studies/index.html');
       status.append(document.createElement('br'),retry,document.createTextNode(' '),library);
       loading.classList.remove('hidden');
     }
@@ -89,7 +89,7 @@
     }
     function rewrite(html,path){
       const safeFetchGuard=`<script>(()=>{const nativeFetch=window.fetch?.bind(window);if(nativeFetch)window.fetch=(input,init)=>{const url=input instanceof Request?input.url:String(input||'');if(/^about:/i.test(url))return Promise.resolve(new Response(null,{status:204,statusText:'No Content'}));return nativeFetch(input,init)};try{const nativeOpen=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(method,url,...rest){if(/^about:/i.test(String(url||'')))url='data:,';return nativeOpen.call(this,method,url,...rest)}}catch{}})()<\/script>`;
-      const adProtection=`<script src="${location.origin}/assets/games/game-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;
+      const adProtection=`<script src="${location.origin}/assets/studies/study-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;
       const base=`https://raw.githubusercontent.com/isaacduh123/reds-exploit-corner/main/${path.replace(/[^/]+$/,'')}`;
       const repoRoot='https://raw.githubusercontent.com/isaacduh123/reds-exploit-corner/main/';
       const proxyUrl=url=>`${location.origin}/gms-games-proxy?url=${encodeURIComponent(url)}`;

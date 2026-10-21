@@ -1,4 +1,4 @@
-import { gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath } from "./game-cdn.js";
+import { gameResourceUrl, normalizeGameCdnUrl, repairGameResourcePath } from "./study-cdn.js";
 
 export function prepareGameDocument(html, path, sourceUrl) {
   html = String(html).replaceAll(
@@ -43,7 +43,7 @@ export function prepareGameDocument(html, path, sourceUrl) {
       ? location.origin + "/"
       : "https://raw.githubusercontent.com/freebuisness/html/main/";
   const proxyUrl = (url) => gameResourceUrl(url, undefined, location.origin);
-  const adProtection = `<script src="${location.origin}/assets/vendor/game-storage.js"><\/script><script src="${location.origin}/assets/games/game-runtime-compat.js"><\/script><script src="${location.origin}/assets/games/game-health.js"><\/script><script src="${location.origin}/assets/games/game-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;
+  const adProtection = `<script src="${location.origin}/assets/vendor/game-storage.js"><\/script><script src="${location.origin}/assets/studies/study-runtime-compat.js"><\/script><script src="${location.origin}/assets/studies/study-health.js"><\/script><script src="${location.origin}/assets/studies/study-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;
   const sourceHtml = String(html || "")
     .replace(/<script\b[^>]*src=["']\/assets\/js\.js["'][^>]*>[\s\S]*?<\/script>/gi, "")
     .replace(/<link\b[^>]*href=["']\/assets\/css\.css["'][^>]*>/gi, "")
@@ -308,5 +308,5 @@ export function prepareGameDocument(html, path, sourceUrl) {
     : `${adProtection}${safeFitScript()}${safeFetchGuard}${guard}${output}`;
 }
 function safeFitScript() {
-  return `<script src="${location.origin}/assets/games/game-viewport.js"><\/script>`;
+  return `<script src="${location.origin}/assets/studies/study-viewport.js"><\/script>`;
 }

@@ -6,7 +6,7 @@ import {minify} from 'terser';
 import {rewriteProxyReferences,proxyAssetNames} from './build-proxy-assets.mjs';
 import {rewriteRuntimeNames} from './build-runtime-names.mjs';
 import {rewriteFrontendReferences,unpackPublishedDocument} from './build-frontend-assets.mjs';
-import {αποκωδικοποίηση} from '../assets/games/catalog-codec.js';
+import {αποκωδικοποίηση} from '../assets/studies/catalog-codec.js';
 import {κωδικοποίηση} from './build-game-catalogs.mjs';
 
 const root=process.cwd(),argument=name=>process.argv.find(value=>value.startsWith('--'+name+'='))?.slice(name.length+3);
@@ -48,10 +48,10 @@ async function copy(dir=''){
     if(item.isDirectory()){await mkdir(path.join(output,relative),{recursive:true});await copy(relative);continue;}
     const target=path.join(output,relative);await mkdir(path.dirname(target),{recursive:true});
     if(/\.(?:js|mjs|css|html|json)$/.test(relative)&&(!relative.startsWith('assets/ugs/')||relative==='assets/ugs/play.html'||relative.endsWith('.json'))){
-      const pageEntry=publishedPages[relative]||('/'+relative===aliases['/assets/games/index.html']?publishedPages['assets/games/index.html']:null);
+      const pageEntry=publishedPages[relative]||('/'+relative===aliases['/assets/studies/index.html']?publishedPages['assets/studies/index.html']:null);
       let source=pageEntry?await unpackPublishedDocument(dist,pageEntry):await readFile(path.join(dist,relative),'utf8');
       let encodedCatalog=false;
-      if(relative.startsWith('assets/games/')&&relative.endsWith('.json')){
+      if(relative.startsWith('assets/studies/')&&relative.endsWith('.json')){
         const value=JSON.parse(source);
         if(value?.representation==='n7x-xor-1'){
           source=JSON.stringify(αποκωδικοποίηση(value));
@@ -63,13 +63,13 @@ async function copy(dir=''){
         source=source.replace('async function sampleNyxLatency(force=false,publish=true){','async function sampleNyxLatency(force=false,publish=true){return null;').replace('async function sampleNyxDashboardLatency(force=false){','async function sampleNyxDashboardLatency(force=false){return null;');
         source=rewriteFrontendReferences(rewritePublicModules(rewriteRuntimeNames(rewriteProxyReferences(source,'/script.js')),'/script.js',moduleAliases),'/script.js',aliases);
       }
-      if(relative==='assets/games/games.json'||'/'+relative===aliases['/assets/games/games.json']){
+      if(relative==='assets/studies/studies.json'||'/'+relative===aliases['/assets/studies/studies.json']){
         const catalog=JSON.parse(source);catalog.catalogs=catalog.catalogs.filter(item=>item.id==='local');catalog.fallbackCover='';catalog.includeUnillustrated=true;
         if(mini){const local=catalog.catalogs.find(item=>item.id==='local');local.player='https://vps-a556737a.vps.ovh.us/assets/ugs/play.html?game={path}';local.coversUrl='';}
         source=JSON.stringify(catalog);
       }
       if(mini)for(const name of deferredBackgrounds)source=source.replaceAll('backgrounds/'+name,'backgrounds/nyx-blue-light-trails.jpg');
-      if(mini&&relative==='assets/games/index.html')source=source.replace('id="qcb196f617df1"','id="qcb196f617df1" credentialless');
+      if(mini&&relative==='assets/studies/index.html')source=source.replace('id="qcb196f617df1"','id="qcb196f617df1" credentialless');
       if(relative==='index.html')source=rewriteFrontendReferences(rewritePublicModules(rewriteRuntimeNames(rewriteProxyReferences(await readFile(path.join(root,'index.html'),'utf8'),'/index.html')),'/index.html',moduleAliases),'/index.html',aliases);
       source=rebase(source);
       if(encodedCatalog)source=JSON.stringify(κωδικοποίηση(JSON.parse(source)),null,2)+'\n';
@@ -102,7 +102,7 @@ await writeFile(path.join(output,'runtime-config.js'),`globalThis.english_RUNTIM
                                                                               
                                                                                 
                                    
-const arcadeRevision=createHash('sha256').update(await readFile(path.join(output,'assets/games/games.js'))).update(await readFile(path.join(output,'assets/games/games.json'))).digest('hex').slice(0,20);
+const arcadeRevision=createHash('sha256').update(await readFile(path.join(output,'assets/studies/studies.js'))).update(await readFile(path.join(output,'assets/studies/studies.json'))).digest('hex').slice(0,20);
 const compatibility={};
 for(const [from,to] of Object.entries(moduleAliases)){try{await stat(path.join(output,to.slice(1)));compatibility[from.slice(1)]=to.slice(1);}catch{}}
 await writeFile(path.join(output,'public-modules.json'),JSON.stringify({version:1,aliases:compatibility}));
@@ -118,7 +118,7 @@ self.addEventListener('fetch',event=>{
     event.respondWith((async()=>{const response=await fetch(new Request(u.href,event.request));const headers=new Headers(response.headers);headers.set('content-type','text/javascript; charset=utf-8');return new Response(response.body,{status:response.status,headers});})());
     return;
   }
-  if((relative.startsWith('assets/games/')&&/\\.(?:js|json)$/.test(relative))||relative==='assets/ugs/games.json'){
+  if((relative.startsWith('assets/studies/')&&/\\.(?:js|json)$/.test(relative))||relative==='assets/ugs/games.json'){
     u.searchParams.set('nyxv',arcadeRevision);
     event.respondWith(fetch(new Request(u.href,event.request),{cache:'no-cache'}));
     return;

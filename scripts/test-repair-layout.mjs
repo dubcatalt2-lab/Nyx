@@ -17,7 +17,7 @@ try{
  }
  await page.goto('about:blank');
  await page.setContent('<button id="full" onclick="document.documentElement.requestFullscreen()">Fullscreen</button><div style="width:960px;height:540px"><canvas width="960" height="540"></canvas></div>');
- await page.addScriptTag({path:'assets/games/game-viewport.js'});
+ await page.addScriptTag({path:'assets/studies/study-viewport.js'});
  for(const width of [1280,1920,390]){
   await page.setViewportSize({width,height:900});await page.waitForTimeout(80);
   const size=await page.locator('canvas').boundingBox();assert.equal(Math.round(size.width),width);assert.equal(Math.round(size.height),900);

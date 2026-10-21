@@ -6,7 +6,7 @@ const browser=await chromium.launch({channel:'msedge'});
 try{for(const brand of (process.env.NYX_TEST_BRANDS||'nyx,tutsi').split(',')){
  const context=await browser.newContext();
  await context.route('**/api/**',r=>r.fulfill({json:{}}));
- await context.route('**/assets/games/',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><h1>Games fixture</h1>'}));
+ await context.route('**/assets/studies/',r=>r.fulfill({contentType:'text/html',body:'<!doctype html><h1>Games fixture</h1>'}));
  const paths=['/assets/transports/libcurl-scramjet.mjs','/assets/transports/epoxy-scramjet.mjs'];
  await context.route(url=>paths.some(p=>url.pathname===p||url.pathname===proxyAssetNames[p]),r=>r.fulfill({contentType:'text/javascript',body:`export default class {ready=true;async init(){}close(){}connect(){return [()=>{},()=>{}]}async request(raw){const u=new URL(String(raw));if(u.href.includes('slow'))await new Promise(r=>setTimeout(r,3000));const text=['duckduckgo.com','www.google.com','www.bing.com'].includes(u.hostname)?'<h1>Search results</h1><article id="search" class="b_algo" data-testid="result"><a id="result" target="_blank" href="https://example.com/destination">Open result</a></article>':'<h1>'+u.pathname+'</h1>';return {status:200,statusText:'OK',headers:[['content-type','text/html']],body:new Response('<!doctype html><html><head><title>Fixture</title></head><body>'+text+'</body></html>').body};}}` }));
  await context.addInitScript(engine=>{localStorage.setItem('nyx.engine',engine);localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.releaseNotes.2026-09-14-nyx-1.0.3.seen','2026-09-14-nyx-1.0.3');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');localStorage.setItem('tutsi.customize.seen','1');localStorage.setItem('tutsi.settings.v1',JSON.stringify({engine,transport:'libcurl',httpBridge:true,closePrevention:false}));},process.env.NYX_TEST_ENGINE||'duckduckgo');
@@ -18,7 +18,7 @@ try{for(const brand of (process.env.NYX_TEST_BRANDS||'nyx,tutsi').split(',')){
  await submit('https://example.com/old');await heading('/old');
  await submit('https://example.com/slow');await activeFrame().evaluate(f=>f.dispatchEvent(new Event('load')));await page.waitForTimeout(1000);
  assert.match(await input().inputValue(),/example.com\/slow/,'old document must not overwrite pending address');await heading('/slow');
- if(brand==='nyx'){await submit('/assets/games/');await heading('Games fixture');}
+ if(brand==='nyx'){await submit('/assets/studies/');await heading('Games fixture');}
  else {await page.evaluate(()=>location.hash='games');await page.frameLocator('#app-view iframe').getByRole('heading',{name:'Games fixture'}).waitFor();await page.keyboard.press('Alt+h');}
  await submit('test search');const frame=await heading('Search results');
  const frameCount=page.frames().length;const tabs=await page.locator(brand==='nyx'?'.ne4236faa3775 .n523f56a4d19c':'#ne4236faa3775 [role=tab]').count();

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';import vm from 'node:vm';import {readFile} from 'node:fs/promises';
-import {repairGameResource} from '../lib/game-resource-repairs.mjs';import {prepareGameDocument} from '../assets/games/game-document.js';
+import {repairGameResource} from '../lib/game-resource-repairs.mjs';import {prepareGameDocument} from '../assets/studies/study-document.js';
 const source=await readFile('server.js','utf8');
 const fn=source.slice(source.indexOf('function gnMathResourceContentType('),source.indexOf('\nfunction rewriteGnMathJsonAssets('));
 const ctx=vm.createContext({});vm.runInContext(fn,ctx);

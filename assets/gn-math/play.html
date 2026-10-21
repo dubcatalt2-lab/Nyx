@@ -79,9 +79,9 @@
     </div>
   </div>
   <iframe id="gameFrame" class="game-frame" title="GN Math game" sandbox="allow-scripts allow-forms allow-modals allow-downloads allow-pointer-lock allow-presentation" allow="fullscreen; gamepad; autoplay; keyboard-map; clipboard-read; clipboard-write; camera; microphone; display-capture; accelerometer; gyroscope; magnetometer; xr-spatial-tracking" allowfullscreen tabindex="0"></iframe>
-  <script src="/assets/games/game-health.js" data-provider="gn"></script>
+  <script src="/assets/studies/study-health.js" data-provider="gn"></script>
   <script type="module">
-    import {prepareGameDocument} from '/assets/games/game-document.js';
+    import {prepareGameDocument} from '/assets/studies/study-document.js';
     const loading=document.querySelector('.loading');
     const status=document.getElementById('status');
     const progressLabel=document.getElementById('progressLabel');
@@ -175,7 +175,7 @@
       const library=document.createElement('button');
       library.type='button';
       library.textContent='Open game library';
-      library.addEventListener('click',()=>location.href='/assets/games/index.html');
+      library.addEventListener('click',()=>location.href='/assets/studies/index.html');
       status.append(document.createElement('br'),retry,document.createTextNode(' '),library);
       loading.classList.remove('hidden');
       parent.postMessage({type:'nyx:game-failed'},'*');
@@ -226,7 +226,7 @@
       startGameProgress();
       const rawUrl=`https://raw.githubusercontent.com/freebuisness/html/main/${encodeURIComponent(gamePath)}`;
       setGameProgress(22);
-      const localGame={'4-pf.html':'/assets/games/gladihoppers.html','435.html':'/assets/games/small-world-cup.html'}[gamePath];
+      const localGame={'4-pf.html':'/assets/studies/gladihoppers.html','435.html':'/assets/studies/small-world-cup.html'}[gamePath];
       fetch(localGame||`/gn-math-fetch?path=${encodeURIComponent(gamePath)}`,{cache:'no-store'})
         .then(response=>{
           if(response.ok){

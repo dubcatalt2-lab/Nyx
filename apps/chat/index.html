@@ -131,12 +131,13 @@
           </div>
         </section>
 
+        <div class="typing-indicator" data-typing-indicator role="status" hidden></div>
         <form class="message-composer" data-message-form hidden>
           <div class="mention-menu" data-mention-menu role="listbox" aria-label="Message suggestions" hidden></div>
           <div class="composer-reply-preview" data-reply-preview hidden></div>
           <div class="attachment-preview-list" data-attachment-previews hidden></div>
           <button class="composer-tool" type="button" data-attachment-button aria-label="Attach files" title="Attach files"><svg><use href="#icon-paperclip"/></svg></button>
-          <button class="composer-tool" type="button" data-gif-button aria-label="Choose a GIF" title="Choose a GIF">GIF</button>
+          <button class="composer-tool" type="button" data-gif-button aria-label="Choose a GIF" title="Choose a GIF"><span class="gif-badge" data-no-interface-text aria-hidden="true">GIF</span></button>
           <input type="file" data-attachment-input accept="image/png,image/jpeg,image/gif,image/webp,audio/mpeg,audio/mp4,audio/ogg,audio/wav,audio/webm,video/mp4,video/ogg,video/quicktime,video/webm,application/pdf,text/plain,.docx,.xlsx,.pptx,.mp3,.m4a,.wav,.mp4,.m4v,.mov,.webm" multiple hidden>
           <label>
             <span class="sr-only">Message</span>
@@ -238,14 +239,11 @@
     <header><div><h2>Deleted messages</h2><p>Owner history for this conversation. Older deletions cannot be recovered. Attachment files are not retained.</p></div><button class="icon-button" type="button" data-deleted-close aria-label="Close deleted messages">Close</button></header>
     <div class="deleted-message-list" data-deleted-list></div><button class="btn-subtle" type="button" data-deleted-older hidden>Load older</button>
   </dialog>
-  <dialog class="gif-picker" data-gif-dialog aria-labelledby="gifHeading">
-    <header><h2 id="gifHeading">GIFs</h2><button type="button" class="btn-subtle" data-gif-close aria-label="Close GIF picker">Close</button></header>
-    <p>Add an animated GIF, or reuse one from this session.</p>
-    <button type="button" class="btn-subtle" data-gif-upload>Upload a GIF</button>
-    <input type="file" accept="image/gif,.gif" data-gif-file hidden>
-    <form data-gif-url-form><label>Direct GIPHY or Tenor GIF link<input type="url" data-gif-url placeholder="https://media.giphy.com/…/giphy.gif" required></label><button type="submit" class="btn-subtle">Add GIF</button></form>
-    <p data-gif-status role="status"></p>
-    <div class="gif-grid" data-gif-grid aria-label="Recent GIFs"></div>
+  <dialog class="gif-picker" data-gif-dialog aria-label="Choose a GIF">
+    <form data-gif-search-form><button type="submit" aria-label="Search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg></button><input type="search" data-gif-search aria-label="Search GIFs" placeholder="Search GIFs" autocomplete="off" maxlength="100"><button type="button" data-gif-close aria-label="Close GIF picker"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"/></svg></button></form>
+    <nav class="gif-tabs" aria-label="GIF collections"><button type="button" data-gif-trending aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 17 7-7 4 4 7-9M15 5h6v6"/></svg>Trending</button><button type="button" data-gif-favorites aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20 3 11C-2 3 8 0 12 6c4-6 14-3 9 5Z"/></svg>Favorites</button></nav>
+    <div class="gif-results"><p data-gif-status role="status"></p><div class="gif-grid" data-gif-grid aria-label="GIF search results"></div><button type="button" class="btn-subtle" data-gif-more hidden>More GIFs</button></div>
+    <footer>Powered by GIPHY</footer>
   </dialog>
   <script src="./emoji-catalog.js?v=20260915-full-reaction-catalog-v37"></script>
   <script src="./voice-relay.js?v=20260923-voice-relay-v1"></script>

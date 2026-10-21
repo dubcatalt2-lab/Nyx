@@ -46,8 +46,8 @@
     const source=document.getElementById('source');
     let games=[];
     function gameUrl(game){
-      if(game.type==='gba' && game.romId) return new URL(`/assets/gms-games/play.html?v=20260903-game-ad-guard-v1&gba=${encodeURIComponent(game.romId)}`,location.origin).href;
-      return new URL(`/assets/gms-games/play.html?v=20260903-game-ad-guard-v1&game=${encodeURIComponent(game.path)}`,location.origin).href;
+      if(game.type==='gba' && game.romId) return new URL(`/assets/gms-studies/play.html?v=20260903-game-ad-guard-v1&gba=${encodeURIComponent(game.romId)}`,location.origin).href;
+      return new URL(`/assets/gms-studies/play.html?v=20260903-game-ad-guard-v1&game=${encodeURIComponent(game.path)}`,location.origin).href;
     }
     function coverUrl(url){
       if(!url) return '';
@@ -85,10 +85,10 @@
       if(event.target?.classList?.contains('thumb')) event.target.classList.add('broken');
     },true);
     search.addEventListener('input',render);
-    fetch('/assets/gms-games/games.json',{cache:'no-store'})
+    fetch('/assets/gms-studies/studies.json',{cache:'no-store'})
       .then(response=>response.json())
       .then(data=>{
-        games=(Array.isArray(data.games) ? data.games : []).map(game=>({...game,url:gameUrl(game),cover:coverUrl(game.cover)}));
+        games=(Array.isArray(data.studies) ? data.studies : []).map(game=>({...game,url:gameUrl(game),cover:coverUrl(game.cover)}));
         source.textContent=`${games.length} games from GMS Games.`;
         render();
       })

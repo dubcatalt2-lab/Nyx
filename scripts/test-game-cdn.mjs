@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
-import {gameResourceUrl,gameResourceTarget,normalizeGameCdnUrl} from '../assets/games/game-cdn.js';
-import {prepareGameDocument} from '../assets/games/game-document.js';
+import {gameResourceUrl,gameResourceTarget,normalizeGameCdnUrl} from '../assets/studies/study-cdn.js';
+import {prepareGameDocument} from '../assets/studies/study-document.js';
 import {repairGameResource} from '../lib/game-resource-repairs.mjs';
 
 const origin='https://games.test';
@@ -35,7 +35,7 @@ assert.equal(repairGameResource(new URL('https://cdn.jsdelivr.net/gh/other/game@
 
 const callbacks={},storage=new Map();
 const context=vm.createContext({URL,DOMException,origin:'null',navigator:{language:'en-US'},document:{baseURI:proxied,addEventListener:(name,fn)=>callbacks[name]=fn},localStorage:{getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)}});
-await vm.runInContext(await readFile('assets/games/game-runtime-compat.js','utf8'),context);
+await vm.runInContext(await readFile('assets/studies/study-runtime-compat.js','utf8'),context);
 assert.equal(context.EJS_disableDatabases,true);
 let actual;
 context.createUnityInstance=(_canvas,config)=>actual=config;

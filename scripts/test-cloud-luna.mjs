@@ -26,7 +26,7 @@ try {
       assert.equal(route.request().headers().referer, undefined);
       return route.fulfill({contentType: 'text/html', body: '<h1>Luna fixture</h1>'});
     });
-    await page.goto(`http://127.0.0.1:${server.address().port}/apps/cloud-gaming/?embedded=games`);
+    await page.goto(`http://127.0.0.1:${server.address().port}/apps/cloud-studies/?embedded=games`);
     await page.frameLocator('[data-luna-host] iframe').getByText('Luna fixture').waitFor();
     assert.equal(lunaRequests, 1);
     assert.equal(apiRequests, 0, 'Luna default must not start Stratus authentication or restore a hidden session');
@@ -47,7 +47,7 @@ try {
     await page.waitForFunction(() => !document.querySelector('[data-luna-host] iframe'));
     assert.equal(launches, 0);
     const previousRequests = lunaRequests;
-    await page.goto(`http://127.0.0.1:${server.address().port}/apps/cloud-gaming/?provider=stratus`);
+    await page.goto(`http://127.0.0.1:${server.address().port}/apps/cloud-studies/?provider=stratus`);
     await page.getByText('Stratus is currently unavailable. Luna is available above.', {exact: true}).waitFor();
     assert.equal(lunaRequests, previousRequests);
     assert.equal(await page.locator('[data-luna-dialog]').evaluate(el => el.open), false);

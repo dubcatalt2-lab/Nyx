@@ -27,7 +27,9 @@
   );
   const convertWords = (text) =>
     neutralWords(text)
-      .replace(/\b(?:game|games|gaming)\b/gi, word => Array.from(word, ch =>
+      .replace(/\b(?:game|games|gaming)\b/gi, word => Array.from(
+        word === word.toUpperCase() ? (word.toLowerCase() === "game" ? "STUDY" : "STUDIES") :
+          (/^[A-Z]/.test(word) ? "S" : "s") + (word.toLowerCase() === "game" ? "tudy" : "tudies"), ch =>
         String.fromCodePoint((ch <= "Z" ? 0x1d63c : 0x1d656) + ch.toLowerCase().charCodeAt(0) - 97)).join(""))
       .replace(/\bAI\b/g, "A1")
       .replace(/\b(?:n7x|nyx)(?=\b|(?:tube|ify|1fy|cloud)\b)|\b(?:studyhub|delta\s*math)\b/gi, "N7x")
@@ -51,7 +53,7 @@
       if (name === "aria-label") {
         if (rendered !== value) {
           element.setAttribute(name, rendered);
-          accessibleLabels.set(element, rendered);
+          if (accessibleLabels.get(element) === value) accessibleLabels.set(element, rendered);
         }
         continue;
       }

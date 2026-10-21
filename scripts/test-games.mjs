@@ -11,10 +11,12 @@ const manifest = {
   catalogs: [
     { id: 'local', format: 'ugs', url: '/test-games/ugs.json', coversUrl: '/test-games/covers.json', player: '/assets/ugs/play.html?game={path}', priority: 50 },
     { id: 'gn', format: 'gn', url: '/test-games/gn.json', player: '/assets/gn-math/play.html?game={path}', priority: 40 },
-    { id: 'gms', format: 'gms', url: '/test-games/gms.json', player: '/assets/gms-games/play.html?game={path}', priority: 30 },
-    { id: 'lumin', format: 'lumin', sdkUrl: '/test-games/lumin.js', priority: 20 }
+    { id: 'gms', format: 'gms', url: '/test-games/gms.json', player: '/assets/gms-studies/play.html?game={path}', priority: 30 },
+    { id: 'zengs', format: 'zengs', url: '/zengs-games', priority: 20 }
   ]
 };
+
+const zengsFixture = { games: [{ title: 'Zengs Only', url: '/zengs-assets/0/lg/fixture/index.html', cover: '/test-games/cover.png' }] };
 
 const json = body => ({ contentType: 'application/json', body: JSON.stringify(body) });
 const browser = await chromium.launch({ headless: true });
@@ -31,25 +33,22 @@ try {
   page.on('request', request => {
     if (/cdn\.r9x\.in|doubleclick\.net|gamemonetize\.com/i.test(request.url())) blockedRequests.push(request.url());
   });
-  await page.route('**/assets/games/games.json', route => route.fulfill(json(manifest)));
+  await page.route('**/assets/studies/studies.json', route => route.fulfill(json(manifest)));
   await page.route('**/test-games/ugs.json', route => route.fulfill(json([{ title: 'Shared Game', path: 'shared.html' }, { title: 'Nyx Only', path: 'nyx.html' }])));
   await page.route('**/test-games/covers.json', route => route.fulfill(json([])));
   await page.route('**/test-games/gn.json', route => route.fulfill(json([{ title: 'Shared Game', path: 'shared.html', cover: '/test-games/cover.png' }, { title: 'GN Only', path: 'gn.html', cover: '/test-games/cover.png' }])));
   await page.route('**/test-games/gms.json', route => route.fulfill(json([{ title: 'GMS Only', path: 'gms.html', cover: '/test-games/cover.png' }])));
-  await page.route('**/test-games/lumin.js', route => route.fulfill({
-    contentType: 'text/javascript',
-    body: `window.Lumin={init:async()=>{},getGames:async()=>({games:[{id:'lumin-1',name:'Lumin Only',image_token:'cover-1'}],pages:1}),getGameUrl:async()=>({url:'about:blank'}),getImageUrl:async()=>'/test-games/cover.png'};`
-  }));
+  await page.route('**/zengs-games', route => route.fulfill(json(zengsFixture)));
   await page.route(url => url.pathname === '/assets/gn-math/play.html' && url.searchParams.get('game') === 'shared.html', route => route.fulfill({
     contentType: 'text/html',
     body: `<!doctype html><script>parent.postMessage({type:'nyx:game-launched'},'*')<\/script>`
   }));
 
-  await page.goto(`${baseUrl}/assets/games/`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${baseUrl}/assets/studies/`, { waitUntil: 'domcontentloaded' });
   await page.getByRole('button', { name: /All games/ }).waitFor();
-  await page.locator('[data-library="lumin"]').waitFor();
+  await page.locator('[data-library="zengs"]').waitFor();
   const libraries = (await page.locator('[data-library]').allTextContents()).map(text=>text.normalize('NFKC'));
-  assert(libraries.some(label => label.includes('LuminSDK')), `LuminSDK library is missing (${libraries.join(', ')})`);
+  assert(libraries.some(label => label.includes('Zengs')), `Zengs library is missing (${libraries.join(', ')})`);
   assert(libraries.some(label => label.includes('GN Math')), `GN Math library is missing (${libraries.join(', ')})`);
   assert(libraries.some(label => label.includes('GMS')), `GMS library is missing (${libraries.join(', ')})`);
   assert(libraries.some(label => label.includes('N7X Archive')), `N7X Archive library is missing (${libraries.join(', ')})`);
@@ -141,7 +140,7 @@ try {
     const frame = document.createElement('iframe');
     frame.id = 'nyxAdGuardTestFrame';
     frame.sandbox = 'allow-scripts';
-    frame.srcdoc = `<!doctype html><html><head><script src="${location.origin}/assets/games/game-ad-protection.js?v=test"><\/script></head><body><div id="ad-container-test" class="ad-container">Ad</div><script>
+    frame.srcdoc = `<!doctype html><html><head><script src="${location.origin}/assets/studies/study-ad-protection.js?v=test"><\/script></head><body><div id="ad-container-test" class="ad-container">Ad</div><script>
       (async()=>{
         const script=document.createElement('script');
         script.src='https://cdn.r9x.in/example/ads.js';
@@ -169,17 +168,14 @@ try {
     version: 1,
     catalogs: [
       { id: 'gn', format: 'gn', url: '/test-games/progressive-local.json', player: '/assets/gn-math/play.html?game={path}', priority: 50 },
-      { id: 'lumin', format: 'lumin', sdkUrl: '/test-games/stalled-lumin.js', priority: 20 }
+      { id: 'zengs', format: 'zengs', url: '/test-games/stalled-zengs.json', priority: 20 }
     ]
   };
-  await progressive.route('**/assets/games/games.json', route => route.fulfill(json(progressiveManifest)));
+  await progressive.route('**/assets/studies/studies.json', route => route.fulfill(json(progressiveManifest)));
   await progressive.route('**/test-games/progressive-local.json', route => route.fulfill(json([{ title: 'Ready First', path: 'ready.html', cover: '/test-games/cover.png' }])));
-  await progressive.route('**/test-games/stalled-lumin.js', route => route.fulfill({
-    contentType: 'text/javascript',
-    body: `window.Lumin={init:async()=>{},getGames:()=>new Promise(()=>{})};`
-  }));
+  await progressive.route('**/test-games/stalled-zengs.json', () => new Promise(() => {}));
   const progressiveStarted = Date.now();
-  await progressive.goto(`${baseUrl}/assets/games/`, { waitUntil: 'domcontentloaded' });
+  await progressive.goto(`${baseUrl}/assets/studies/`, { waitUntil: 'domcontentloaded' });
   await progressive.getByRole('button', { name: 'Play Ready First' }).waitFor({ timeout: 3_000 });
   assert(Date.now() - progressiveStarted < 3_000, 'A stalled optional provider delayed the built-in game library');
   assert(await progressive.locator('#catalogProgress').evaluate(element => element.classList.contains('done')), 'The full-page loading indicator remained after built-in games were ready');
@@ -191,13 +187,13 @@ try {
     try { Object.defineProperty(navigator, 'hardwareConcurrency', { configurable: true, get: () => 2 }); } catch {}
     try { Object.defineProperty(navigator, 'deviceMemory', { configurable: true, get: () => 2 }); } catch {}
   });
-  await mobile.route('**/assets/games/games.json', route => route.fulfill(json(manifest)));
+  await mobile.route('**/assets/studies/studies.json', route => route.fulfill(json(manifest)));
   await mobile.route('**/test-games/ugs.json', route => route.fulfill(json([{ title: 'Shared Game', path: 'shared.html' }, { title: 'Nyx Only', path: 'nyx.html' }])));
   await mobile.route('**/test-games/covers.json', route => route.fulfill(json([])));
   await mobile.route('**/test-games/gn.json', route => route.fulfill(json([{ title: 'Shared Game', path: 'shared.html', cover: '/test-games/cover.png' }, { title: 'GN Only', path: 'gn.html', cover: '/test-games/cover.png' }])));
   await mobile.route('**/test-games/gms.json', route => route.fulfill(json([{ title: 'GMS Only', path: 'gms.html', cover: '/test-games/cover.png' }])));
-  await mobile.route('**/test-games/lumin.js', route => route.fulfill({ contentType: 'text/javascript', body: `window.Lumin={init:async()=>{},getGames:async()=>({games:[{id:'lumin-1',name:'Lumin Only',image_token:'cover-1'}],pages:1}),getGameUrl:async()=>({url:'about:blank'}),getImageUrl:async()=>'/test-games/cover.png'};` }));
-  await mobile.goto(`${baseUrl}/assets/games/`, { waitUntil: 'domcontentloaded' });
+  await mobile.route('**/zengs-games', route => route.fulfill(json(zengsFixture)));
+  await mobile.goto(`${baseUrl}/assets/studies/`, { waitUntil: 'domcontentloaded' });
   await mobile.getByRole('button', { name: /All games/ }).waitFor();
   const mobileOverflow = await mobile.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   assert(!mobileOverflow, 'Mobile game library has horizontal page overflow');
@@ -212,7 +208,7 @@ try {
     let guardLoaded = false;
     realGame.on('request', request => {
       const url = request.url();
-      if (url.includes('/assets/games/game-ad-protection.js')) guardLoaded = true;
+      if (url.includes('/assets/studies/study-ad-protection.js')) guardLoaded = true;
       if (/imasdk\.googleapis\.com|cdn\.r9x\.in|doubleclick\.net|adtrafficquality\.google|gamemonetize\.com/i.test(url)) realAdRequests.push(url);
     });
     await realGame.goto(`${baseUrl}/assets/gn-math/play.html?game=${encodeURIComponent(process.env.NYX_TEST_REAL_GAME)}`, { waitUntil: 'domcontentloaded' });

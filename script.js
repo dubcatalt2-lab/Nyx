@@ -4883,7 +4883,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     const raw = String(url || "").trim();
     if (!raw || raw === "about:blank" || raw.startsWith("nyx://")) return favicons.nyx;
     if (/(?:^|\/)apps\/chat(?:\/|$)/i.test(raw)) return appIcon("nyx-chat");
-    if (/(?:^|\/)apps\/cloud-gaming(?:\/|$)/i.test(raw)) return appIcon("cloud-gaming");
+    if (/(?:^|\/)apps\/cloud-studies(?:\/|$)/i.test(raw)) return appIcon("cloud-gaming");
     if (/(?:^|\/)apps\/link-checker(?:\/|$)/i.test(raw)) return appIcon("link-checker");
     if (/(?:^|\/)apps\/link-generator(?:\/|$)/i.test(raw)) return appIcon("link-generator");
     if (/(?:^|\/)apps\/api-keys(?:\/|$)/i.test(raw)) return appIcon("api-keys");
@@ -4893,9 +4893,9 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     const source =
       typeof browserShellSourceUrl === "function" ? browserShellSourceUrl(raw) || raw : raw;
     if (
-      source.startsWith("assets/games/") ||
+      source.startsWith("assets/studies/") ||
       source.startsWith("assets/ugs/") ||
-      source.startsWith("/assets/games/") ||
+      source.startsWith("/assets/studies/") ||
       source.startsWith("/assets/ugs/")
     )
       return appIcon("games");
@@ -4967,9 +4967,9 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     if (raw === "nyx://ai") return "N7X A1";
     if (raw.startsWith("nyx://")) return raw.replace("nyx://", "nyx ");
     if (
-      raw.startsWith("assets/games/") ||
+      raw.startsWith("assets/studies/") ||
       raw.startsWith("assets/ugs/") ||
-      raw.startsWith("/assets/games/") ||
+      raw.startsWith("/assets/studies/") ||
       raw.startsWith("/assets/ugs/")
     )
       return "GAMES";
@@ -5932,7 +5932,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     else if (url.includes("/apps/chat/")) activeKey = "chat";
     else if (url.includes("/apps/nyxcloud/")) activeKey = "vms";
     else if (url.includes("/apps/link-generator/")) activeKey = "links";
-    else if (url.includes("/assets/games/")) activeKey = "games";
+    else if (url.includes("/assets/studies/")) activeKey = "games";
     else if (url.includes("/apps") || url === "nyx://apps") activeKey = "apps";
     dock.querySelectorAll("[data-n7x-dock-item]").forEach((button) => {
       if (button.dataset.n7xDockItem === "vms") {
@@ -6025,7 +6025,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       dock.innerHTML = `<div class="n7x-visual-dock-head"><a class="n7x-rail-brand" href="#" data-q65d1b3a935824cab36 aria-label="N7X home"><img src="/assets/icons/nyx-cat-moon-small.svg?v=3" alt=""><span>N7X</span></a><button class="n7x-visual-dock-expand" data-n7x-dock-expand type="button" aria-expanded="true" aria-label="Collapse sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 3v18"/><path data-sidebar-arrow d="m15 8-4 4 4 4"/></svg></button></div>
       <nav aria-label="N7X destinations">
         <button type="button" data-n7x-dock-item="home" data-q65d1b3a935824cab36 aria-label="Home">${nyxDashboardIcon("home")}<span>Home</span></button>
-        <button type="button" data-n7x-dock-item="games" data-app-url="/assets/games/" aria-label="Games">${nyxDashboardIcon("games")}<span>Games</span></button>
+        <button type="button" data-n7x-dock-item="games" data-app-url="/assets/studies/" aria-label="Games">${nyxDashboardIcon("games")}<span>Games</span></button>
         <button type="button" data-n7x-dock-item="music" data-app-url="/apps/nyxify/" aria-label="Music">${nyxDashboardIcon("music")}<span>Music</span></button>
         <button type="button" data-n7x-dock-item="youtube" data-app-url="/apps/nyxtube/" aria-label="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="m10 8 5 3-5 3zM8 21h8"/></svg><span>YouTube</span></button>
         <button type="button" data-n7x-dock-item="ai" data-app-url="nyx://ai" aria-label="AI"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 3 2.1 6.9L19 12l-6.9 2.1L10 21l-2.1-6.9L1 12l6.9-2.1L10 3Z"/><path d="M20 2v6m-3-3h6"/><rect x="2" y="19" width="3" height="3" rx="1"/></svg><span>A1</span></button>
@@ -6088,7 +6088,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     const top = document.querySelector(".n11c31f2b2fec");
     if (top) {
       top.innerHTML =
-        '<div class="brand-mini"><button class="browser-mode-app-button active" data-qd5a5093d5fa4074107 title="Current tab"><span class="browser-home-icon" aria-hidden="true"></span><span class="browser-home-label">Home</span></button><button class="browser-mode-tab" data-q9d19fb46ab08b6ee2e title="New tab"><span>New tab</span></button></div><span class="q0a3abdeec4c819631e" data-q2fe11907731bea19c0>--:--:--</span><form class="qc4af721dd1914ea3fa" data-q9d12ba6470d10e32ab><button class="browser-nav-control" data-q26048427ccea182348 type="button" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button><button class="browser-nav-control" data-qaf80561c2b44848484 type="button" title="Forward" aria-label="Forward"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button><button class="browser-nav-control" data-q931cb380a2dcf55a88 type="button" title="Reload" aria-label="Reload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"></path><path d="M20 4v7h-7"></path></svg></button><button class="browser-nav-control" data-q65d1b3a935824cab36 type="button" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></svg></button><input class="qda21bbca8c9cfc19ff" data-qdb41a1359ce5a90298 placeholder="S3ARC4 or enter a U3L" autocomplete="off"><button class="browser-mode-bookmark browser-mode-settings" data-q0882cea5d2bc5ce380 data-open="settings" type="button" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button><button data-q3fdc51cd120d3cb793 type="button" title="Menu"><span class="fresh-real-icon" aria-hidden="true">⋮</span></button></form><div class="qf0187a37b45e659cd1" id="browserBookmarkPanel" hidden></div><div class="q6a7a0c21fd56bd8b6d" id="browserModeMenu"><button data-q9d19fb46ab08b6ee2e type="button">New tab</button><button data-q414a9927f063f3a22b type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-q9087798bcb7aaa4318 type="button">Hieroglyph Mode</button><button data-app-url="/assets/games/index.html" type="button">GAMES</button><button data-app-url="/apps/chat/" type="button">Chat</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-q850668643b012a598f type="button">Open Tab in Abt:Blank</button></div>';
+        '<div class="brand-mini"><button class="browser-mode-app-button active" data-qd5a5093d5fa4074107 title="Current tab"><span class="browser-home-icon" aria-hidden="true"></span><span class="browser-home-label">Home</span></button><button class="browser-mode-tab" data-q9d19fb46ab08b6ee2e title="New tab"><span>New tab</span></button></div><span class="q0a3abdeec4c819631e" data-q2fe11907731bea19c0>--:--:--</span><form class="qc4af721dd1914ea3fa" data-q9d12ba6470d10e32ab><button class="browser-nav-control" data-q26048427ccea182348 type="button" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button><button class="browser-nav-control" data-qaf80561c2b44848484 type="button" title="Forward" aria-label="Forward"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button><button class="browser-nav-control" data-q931cb380a2dcf55a88 type="button" title="Reload" aria-label="Reload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"></path><path d="M20 4v7h-7"></path></svg></button><button class="browser-nav-control" data-q65d1b3a935824cab36 type="button" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></svg></button><input class="qda21bbca8c9cfc19ff" data-qdb41a1359ce5a90298 placeholder="S3ARC4 or enter a U3L" autocomplete="off"><button class="browser-mode-bookmark browser-mode-settings" data-q0882cea5d2bc5ce380 data-open="settings" type="button" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button><button data-q3fdc51cd120d3cb793 type="button" title="Menu"><span class="fresh-real-icon" aria-hidden="true">⋮</span></button></form><div class="qf0187a37b45e659cd1" id="browserBookmarkPanel" hidden></div><div class="q6a7a0c21fd56bd8b6d" id="browserModeMenu"><button data-q9d19fb46ab08b6ee2e type="button">New tab</button><button data-q414a9927f063f3a22b type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-q9087798bcb7aaa4318 type="button">Hieroglyph Mode</button><button data-app-url="/assets/studies/index.html" type="button">GAMES</button><button data-app-url="/apps/chat/" type="button">Chat</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-q850668643b012a598f type="button">Open Tab in Abt:Blank</button></div>';
       const homeNav = top.querySelector("[data-q65d1b3a935824cab36]");
       if (homeNav) homeNav.innerHTML = nyxDashboardIcon("home");
       const shellAddress = top.querySelector("form.qc4af721dd1914ea3fa");
@@ -6386,13 +6386,13 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       const parsed = new URL(browserShellSourceUrl(url), location.href);
       if (parsed.origin === location.origin && parsed.pathname === "/search")
         return parsed.searchParams.get("q") || "S3ARC4";
-      if (parsed.origin === location.origin && parsed.pathname.includes("/assets/games/"))
+      if (parsed.origin === location.origin && parsed.pathname.includes("/assets/studies/"))
         return "GAMES";
       if (parsed.origin === location.origin && parsed.pathname.includes("/assets/ugs/"))
         return "GAMES";
       if (parsed.origin === location.origin && parsed.pathname.includes("/apps/chat/"))
         return "N7X Chat";
-      if (parsed.origin === location.origin && parsed.pathname.includes("/apps/cloud-gaming/"))
+      if (parsed.origin === location.origin && parsed.pathname.includes("/apps/cloud-studies/"))
         return "Cloud Gaming";
       if (parsed.origin === location.origin && parsed.pathname.includes("/apps/link-checker/"))
         return "Link Checker";
@@ -6644,7 +6644,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         "",
     );
     if (
-      /(?:pixelclient\.xyz|play\.geforcenow\.com|geforcenow\.com|\/assets\/(?:games|ugs|gn-math|gms-games)\/)/i.test(
+      /(?:pixelclient\.xyz|play\.geforcenow\.com|geforcenow\.com|\/assets\/(?:studies|ugs|gn-math|gms-studies)\/)/i.test(
         activeSource,
       )
     ) {
@@ -8077,7 +8077,8 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       );
     }
     if (transportSelect) {
-      const transportLabels = {        wisp: "Wisp",
+      const transportLabels = {
+        wisp: "Wisp",
         libcurl: "Libcurl",
         libcurlRaw: "Libcurl",
         auto: "Auto",
@@ -12657,7 +12658,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     { domain: "duck.ai", title: "Research Assistant", url: "https://duck.ai/", favorite: false },
     nyxAiHomeShortcut,
     nyxTubeHomeShortcut,
-    { domain: "games", title: "Practice Lab", url: "/assets/games/", favorite: false },
+    { domain: "games", title: "Practice Lab", url: "/assets/studies/", favorite: false },
     {
       domain: "tiktok.com",
       title: "Quick Lessons",
@@ -12699,8 +12700,8 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       next.url = "https://cinejoy.to/";
       next.domain = "nyx-movies";
     }
-    if (next.url === "/assets/games/index.html") next.url = "/assets/games/";
-    if (next.url === "/assets/games/") {
+    if (next.url === "/assets/studies/index.html") next.url = "/assets/studies/";
+    if (next.url === "/assets/studies/") {
       next.domain = "games";
     }
     next.title =
@@ -13334,7 +13335,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     ["jsdelivr-publisher", "jsdelivr-publisher", "JSDelivr Publisher", "/apps/jsdelivr-publisher/"],
     ["n7x-api-keys", "api-keys", "N7X API Keys", "/apps/api-keys/"],
     ["youtube", "youtube.com", "YouTube", "/apps/nyxtube/"],
-    ["pirate-cove", "games", "GAMES", "/assets/games/"],
+    ["pirate-cove", "games", "GAMES", "/assets/studies/"],
     ["nyx-chat", "nyx-chat", "N7X Chat", "/apps/chat/"],
     ["nyxify", "nyxify", "Nyxify/built in music", "/apps/nyxify/"],
     ["duck-ai", "duck.ai", "Duck A1", "https://duck.ai/"],
@@ -13896,7 +13897,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         browserShellSourceUrl(t?.sourceUrl || t?.url || "") || t?.sourceUrl || t?.url || "",
       );
       if (
-        /(?:play\.geforcenow\.com|geforcenow\.com|nvidia|pixelclient\.xyz|\/assets\/games\/|\/assets\/ugs\/|\/assets\/gn-math\/|\/assets\/gms-games\/)/i.test(
+        /(?:play\.geforcenow\.com|geforcenow\.com|nvidia|pixelclient\.xyz|\/assets\/studies\/|\/assets\/ugs\/|\/assets\/gn-math\/|\/assets\/gms-studies\/)/i.test(
           source,
         )
       )
@@ -16738,15 +16739,15 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         "/apps/link-generator/index.html",
         "/apps/link-generator/bulk.html",
         "/ai.html",
-        "/assets/games",
-        "/assets/games/",
-        "/assets/games/index.html",
+        "/assets/studies",
+        "/assets/studies/",
+        "/assets/studies/index.html",
         "/apps/link-checker",
         "/apps/link-checker/",
         "/apps/link-checker/index.html",
-        "/apps/cloud-gaming",
-        "/apps/cloud-gaming/",
-        "/apps/cloud-gaming/index.html",
+        "/apps/cloud-studies",
+        "/apps/cloud-studies/",
+        "/apps/cloud-studies/index.html",
         "/api",
         "/api/",
         "/apps/api-keys",
@@ -16807,7 +16808,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         try {
           sourcePath = new URL(sourceTab.sourceUrl || sourceTab.url || "", location.href).pathname;
         } catch {}
-        if (!/^\/assets\/games\/(?:index\.html)?$/.test(sourcePath)) return;
+        if (!/^\/assets\/studies\/(?:index\.html)?$/.test(sourcePath)) return;
         const requestId = String(e.data.requestId || "").slice(0, 120);
         const gameKey = String(e.data.gameKey || "").trim();
         if (!requestId || !gameKey) return;

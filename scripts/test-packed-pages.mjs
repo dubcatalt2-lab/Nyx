@@ -5,7 +5,7 @@ import {createHash} from 'node:crypto';
 import vm from 'node:vm';
 import {parse} from 'acorn';
 const {pages}=JSON.parse(await readFile('dist/published-pages.json','utf8'));
-assert(pages['ai.html'] && pages['assets/games/index.html'] && pages['apps/nyxify/index.html']);
+assert(pages['ai.html'] && pages['assets/studies/index.html'] && pages['apps/nyxify/index.html']);
 for(const [path,entry] of Object.entries(pages)) {
  const shell=await readFile('dist/'+path,'utf8');
  assert(shell.includes(entry.loader),path+' loader linked');

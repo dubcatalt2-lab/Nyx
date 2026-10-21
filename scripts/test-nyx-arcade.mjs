@@ -8,7 +8,7 @@ try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.route('**/assets/games/games.json', route => route.fulfill(json({ catalogs: [
+  await page.route('**/assets/studies/studies.json', route => route.fulfill(json({ catalogs: [
     { id: 'gn', format: 'gn', url: '/arcade-test/catalog.json', player: '/assets/gn-math/play.html?game={path}', priority: 40 }
   ] })));
   await page.route('**/arcade-test/catalog.json', route => route.fulfill(json(
@@ -16,9 +16,9 @@ try {
   )));
   await page.route('**/arcade-test/cover.svg', route => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#246"/></svg>' }));
   await page.route(url => url.pathname === '/assets/gn-math/play.html', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><p>Game ready</p><script>parent.postMessage({type:"nyx:game-launched"},"*")</script>' }));
-  await page.route('**/apps/cloud-gaming/**', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><p>Cloud games</p>' }));
+  await page.route('**/apps/cloud-studies/**', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><p>Cloud games</p>' }));
 
-  await page.goto(base + '/assets/games/');
+  await page.goto(base + '/assets/studies/');
   await page.getByRole('button', { name: 'Launch Slope', exact: true }).waitFor();
   assert.equal((await page.locator('h1').textContent()).normalize('NFKC'), 'COLL3CTION');
   assert.equal(await page.locator('.cove-mark, .subtitle').count(), 0);
@@ -77,7 +77,7 @@ try {
   await page.locator('.q482f08e91ee0').first().waitFor();
   assert.equal(await page.locator('body').evaluate(element => element.classList.contains('q2ff352f9bbd5153b5a')), false);
   assert.equal(await page.locator('.qb9e3292dc267f78416').count(), 0);
-  await page.route('**/arcade-test/tutsi', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><html data-app-shell="tutsi"><iframe data-app-shell="tutsi" src="/assets/games/"></iframe></html>' }));
+  await page.route('**/arcade-test/tutsi', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><html data-app-shell="tutsi"><iframe data-app-shell="tutsi" src="/assets/studies/"></iframe></html>' }));
   await page.goto(base + '/arcade-test/tutsi');
   const tutsi = page.frameLocator('iframe');
   await tutsi.locator('.q482f08e91ee0').first().waitFor();

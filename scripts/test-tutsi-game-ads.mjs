@@ -4,7 +4,7 @@ import {chromium} from 'playwright';
 import {readFile} from 'node:fs/promises';
 import {installGameAdProtection} from '../apps/tutsi/game-ad-runtime.mjs';
 import {isAdUrl} from '../apps/tutsi/protections.mjs';
-const original=(await readFile(new URL('../assets/games/game-ad-protection.js',import.meta.url),'utf8')).trim();
+const original=(await readFile(new URL('../assets/studies/study-ad-protection.js',import.meta.url),'utf8')).trim();
 const executable=source=>JSON.stringify(parse(source,{ecmaVersion:'latest',allowReturnOutsideFunction:true}),(key,value)=>['start','end','raw'].includes(key)?undefined:value);
 assert.equal(executable(installGameAdProtection.toString().slice(installGameAdProtection.toString().indexOf('{')+1,-1)),executable(original.slice('(() => {'.length,-'})();'.length)));
 assert(isAdUrl('https://cdn.playwire.com/sdk.js'));

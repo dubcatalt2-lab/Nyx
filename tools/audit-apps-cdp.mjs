@@ -6,7 +6,7 @@ const transport = process.env.TRANSPORT || "epoxy";
 const allApps = [
   ["Lion AI", "#lion-ai"],
   ["YouTube", "https://www.youtube.com/"],
-  ["Games", "assets/games/index.html"],
+  ["Games", "assets/studies/index.html"],
   ["GeForce Now", "https://play.geforcenow.com/"],
   ["Roblox", "https://www.roblox.com/"],
   ["Discord", "https://discord.com/app"],

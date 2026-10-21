@@ -23,9 +23,11 @@ import {companionZip} from './lib/agent-download.mjs';
 import {installAiMedia} from './lib/ai-media.mjs';
 import {publishSurgeLink,validateSurgeToken} from './lib/surge-publisher.mjs';
 import {createGameReports} from './lib/game-reports.mjs';
-import {gameResourceTarget} from './assets/games/game-cdn.js';
+import {gameResourceTarget} from './assets/studies/study-cdn.js';
 import {gameResourceEdit} from './lib/game-resource-repairs.mjs';
 import {createGameProxy} from './lib/game-proxy-stream.mjs';
+import {installZengsProvider} from './lib/zengs-provider.mjs';
+import {installChatGifs} from './lib/chat-gifs.mjs';
 import { exchangeVoiceAudio, createVoiceAudioAccess, cleanupVoiceAudio } from './lib/chat-voice-relay.mjs';
 import {recordAiExchange,readAiActivity} from './lib/ai-history.mjs';
 import {assignableAiModels,validateAiModelRules} from './lib/ai-model-policy.mjs';
@@ -111,6 +113,8 @@ const app = express();
 const appTraffic = createAppTraffic({file:process.env.NYX_TRAFFIC_FILE || (process.platform === 'win32' ? join(process.env.TEMP || __dirname, 'nyx-app-traffic.json') : '/var/lib/nyx/app-traffic.json')});
 app.use(appTraffic.middleware);
 const gameProxy = createGameProxy();
+installZengsProvider(app);
+installChatGifs(app, {authenticate: authenticatedNyxChatUser, sameOrigin: sameOriginRequest});
 startMemoryMonitor({details: () => ({gameProxy: gameProxy.stats()})});
 const dropOwnerScope=createDropOwnerScope({verify:async token=>(await linkGeneratorFirebase()).auth.verifyIdToken(token,true)});
 app.use(dropOwnerScope.middleware);
@@ -328,7 +332,7 @@ const nyxGlobalAppsLimit = 100;
 const nyxAppsCleanupField = "nyxAppsCleanup20260911";
 const nyxCloudGamingAppMigrationField = "cloudGamingAppInitialized";
 const nyxCloudGamingGamesMergeMigrationField = "cloudGamingMergedIntoGames";
-const nyxCloudGamingGlobalApp = Object.freeze({ id: "cloud-gaming", icon: "cloud-gaming", name: "Cloud Gaming", url: "/apps/cloud-gaming/" });
+const nyxCloudGamingGlobalApp = Object.freeze({ id: "cloud-gaming", icon: "cloud-gaming", name: "Cloud Gaming", url: "/apps/cloud-studies/" });
 const nyxMediaAppsRetiredField = "nyxMediaAppsRetired";
 const nyxTubeReintroducedField = "nyxTubePlayerReintroduced";
 const nyxTubeCatalogNameField = "nyxTubeCatalogName";
@@ -367,7 +371,7 @@ const nyxCodeTutorialsHiddenMigrationField = "nyxCodeTutorialsHidden";
 const nyxJsdelivrPublisherAppMigrationField = "nyxJsdelivrPublisherInitialized";
 const nyxJsdelivrPublisherGlobalApp = Object.freeze({ id: "jsdelivr-publisher", icon: "jsdelivr-publisher", name: "JSDelivr Publisher", url: "/apps/jsdelivr-publisher/" });
 const nyxGamesAppMigrationField = "gamesAppRenamed";
-const nyxGamesGlobalApp = Object.freeze({ id: "pirate-cove", icon: "games", name: "GAMES", url: "/assets/games/" });
+const nyxGamesGlobalApp = Object.freeze({ id: "pirate-cove", icon: "games", name: "GAMES", url: "/assets/studies/" });
 const nyxMoviesBuiltinMigrationField = "nyxMoviesBuiltin20260911";
 const nyxMoviesCinejoyMigrationField = "moviesCinejoyTarget";
 const nyxMoviesGlobalApp = Object.freeze({ id: "movies", icon: "nyx-movies", name: "Movies", url: "https://cinejoy.to/" });
@@ -789,7 +793,7 @@ app.use((req, res, next) => {
     "/scramjet-v1.sw.js",
     "/nyx-scramjet-runtime-guard.js"
   ]);
-  const noStorePrefix = /^\/(?:assets\/(?:gms-games|reds-misc)\/|gms-games-|reds-misc-)/i.test(req.path);
+  const noStorePrefix = /^\/(?:assets\/(?:gms-studies|reds-misc)\/|gms-games-|reds-misc-)/i.test(req.path);
   const opaqueProxyAsset = /^\/(?:(?:scramjet|st7dyj3t)(?:-v1)?\/|controller\/|libcurl\/|textlib\/|baremux\/|assets\/transports\/|apps\/tutsi\/)?@?r[0-9a-f]{24}!?\.(?:js|mjs|wasm)$/.test(req.path);
   if (noStorePaths.has(req.path) || noStorePrefix || opaqueProxyAsset) {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
@@ -873,7 +877,7 @@ app.get("/student-resources.html", (req, res) => {
     "Cache-Control": "private, no-store, no-cache, must-revalidate",
     "X-Robots-Tag": "noindex, nofollow, noarchive, nosnippet"
   });
-  res.sendFile(join(staticRoot, "student-resources.html"));
+  res.sendFile('student-resources.html', { root: staticRoot });
 });
 
 function nyxSearchSuggestionAllowed(req, now = Date.now()) {
@@ -3486,7 +3490,7 @@ installDeveloperApi(app, {
     method:'POST', headers:{Authorization:`Bearer ${nyxAiKey()}`, 'Content-Type':'application/json'},body:JSON.stringify(payload)
   }),
   configured: () => Boolean(nyxAiKey()),
-  page: (req,res) => res.sendFile(join(staticRoot,'apps/api-keys/index.html'))
+  page: (req,res) => res.sendFile('apps/api-keys/index.html', { root: staticRoot })
 });
 
 
@@ -3521,7 +3525,7 @@ async function nyxAiGroqWorkspaceMessages(req) {
 
 app.use((req, res, next) => {
   const referer = String(req.get("referer") || "");
-  const fromGmsRunner = /\/assets\/(?:gms-games|reds-misc)\/play\.html/i.test(referer);
+  const fromGmsRunner = /\/assets\/(?:gms-studies|reds-misc)\/play\.html/i.test(referer);
   if (fromGmsRunner && (req.path === "/" || req.path === "/index.html")) {
     res.status(409).type("html").send(`<!doctype html>
 <meta charset="utf-8">
@@ -3868,9 +3872,9 @@ function nyxGlobalAppIcon(value, url = "") {
   const explicit = String(value || "").trim().toLowerCase();
   if (/^[a-z0-9][a-z0-9.-]{0,79}$/.test(explicit)) return explicit;
   if (/^nyx:\/\/ai$/i.test(url)) return "nyx-ai";
-  if (/^\/(?:apps\/chat|assets\/games)(?:\/|$)/i.test(url)) return /chat/i.test(url) ? "nyx-chat" : "games";
+  if (/^\/(?:apps\/chat|assets\/studies)(?:\/|$)/i.test(url)) return /chat/i.test(url) ? "nyx-chat" : "games";
   if (/^\/apps\/nyxify(?:\/|$)/i.test(url)) return "nyxify";
-  if (/^\/apps\/cloud-gaming(?:\/|$)/i.test(url)) return "cloud-gaming";
+  if (/^\/apps\/cloud-studies(?:\/|$)/i.test(url)) return "cloud-gaming";
   if (/^\/apps\/link-checker(?:\/|$)/i.test(url)) return "link-checker";
   if (/^\/apps\/link-generator(?:\/|$)/i.test(url)) return "link-generator";
   if (/^\/apps\/jsdelivr-publisher(?:\/|$)/i.test(url)) return "jsdelivr-publisher";
@@ -5453,7 +5457,7 @@ function nyxChatReactionPayload(value, viewerUid) {
   return value.map(entry => {
     const emoji = String(entry?.emoji || "");
     const uids = [...new Set((Array.isArray(entry?.uids) ? entry.uids : []).map(uid => String(uid || "").trim()).filter(Boolean))].slice(0, 250);
-    return (nyxChatReactionEmoji.has(emoji)||qCustom(emoji)) && uids.length ? { emoji, count: uids.length, self: uids.includes(viewerUid) } : null;
+    return (nyxChatReactionEmoji.has(emoji)||qCustom(emoji)) && uids.length ? { emoji, count: uids.length, self: uids.includes(viewerUid), uids } : null;
   }).filter(Boolean);
 }
 
@@ -5819,6 +5823,33 @@ function attachNyxChatSocketServer(server) {
         socket.disconnect(true);
       }
     });
+    let τρέχουσαΠληκτρολόγηση = null, έλεγχοςΠληκτρολόγησης = false, τελευταίαΠληκτρολόγηση = 0, γενιάΠληκτρολόγησης = 0;
+    const παύσηΠληκτρολόγησης = () => {
+      γενιάΠληκτρολόγησης++;
+      if (!τρέχουσαΠληκτρολόγηση) return;
+      const event = {...τρέχουσαΠληκτρολόγηση, active:false};
+      for (const id of nyxChatSocketIdsForEvent(event)) io.sockets.sockets.get(id)?.emit('nyx:chat:typing', event);
+      τρέχουσαΠληκτρολόγηση = null;
+    };
+    socket.on('nyx:chat:typing', async value => {
+      if (value?.active === false) { παύσηΠληκτρολόγησης(); return; }
+      if (έλεγχοςΠληκτρολόγησης || Date.now() - τελευταίαΠληκτρολόγηση < 2500) return;
+      τελευταίαΠληκτρολόγηση = Date.now(); έλεγχοςΠληκτρολόγησης = true;
+      const γενιά = γενιάΠληκτρολόγησης;
+      try {
+        const {firebase, token, identity} = await authorizeNyxChatSocket(socket, socket.data.token);
+        await assertNyxChatCanSend(firebase, token.uid);
+        const scope = await nyxChatScope(firebase, token.uid, {scope:String(value?.scopeId || '').slice(0,100)}, identity.role, nyxClientIp(socket.request));
+        if (scope.private) await firebase.firestore.runTransaction(transaction => assertChatContact(firebase.firestore, transaction, token.uid, scope.participants.find(id => id !== token.uid)));
+        else if ((scope.q76a3 || (await scope.ref.get()).data()?.locked === true) && !identity.canModerate) return;
+        if (!socket.connected || γενιά !== γενιάΠληκτρολόγησης) return;
+        if (τρέχουσαΠληκτρολόγηση?.scopeId !== scope.id) παύσηΠληκτρολόγησης();
+        τρέχουσαΠληκτρολόγηση = {scopeType:scope.private?'conversation':'channel',scopeId:scope.id,participants:scope.private?scope.participants:[],uid:token.uid,displayName:identity.displayName,avatarUrl:identity.avatarUrl,active:true};
+        for (const id of nyxChatSocketIdsForEvent(τρέχουσαΠληκτρολόγηση)) io.sockets.sockets.get(id)?.emit('nyx:chat:typing', τρέχουσαΠληκτρολόγηση);
+      } catch { παύσηΠληκτρολόγησης(); }
+      finally { έλεγχοςΠληκτρολόγησης = false; }
+    });
+    socket.on('disconnect', παύσηΠληκτρολόγησης);
     socket.on("nyx:voice:signal", (value, acknowledge) => {
       try {
         relayNyxChatVoiceSignal(uid, value, new Set(socket.data.visibleVoiceChannelIds || []));
@@ -7950,11 +7981,11 @@ app.get("/api/nyxtube/community", async (req, res) => {
 
 
 app.get(["/apps/nyxtube", "/apps/nyxtube/"], (_req, res) => {
-  res.sendFile(join(staticRoot, "apps", "nyxtube", "index.html"));
+  res.sendFile('apps/nyxtube/index.html', { root: staticRoot });
 });
 
 app.get(["/apps/nyxify", "/apps/nyxify/"], (_req, res) => {
-  res.sendFile(join(staticRoot, "apps", "nyxify", "index.html"));
+  res.sendFile('apps/nyxify/index.html', { root: staticRoot });
 });
 
 app.get(/^\/apps\/movies(?:\/index\.html|\/)?$/, (_req,res)=>res.redirect(302,'https://cinejoy.to/'));
@@ -8426,10 +8457,10 @@ app.post("/api/custom-hostnames", async (req, res) => {
 });
 
 app.get("/tutsi/connect-domain", (_req, res) => {
-  res.sendFile(join(staticRoot, "apps", "tutsi", "connect-domain.html"));
+  res.sendFile('apps/tutsi/connect-domain.html', { root: staticRoot });
 });
 app.get("/connect-domain", (_req, res) => {
-  res.sendFile(join(staticRoot, "apps", "connect-domain", "index.html"));
+  res.sendFile('apps/connect-domain/index.html', { root: staticRoot });
 });
 
 app.post("/api/link-checker/full-scan/start", async (req, res) => {
@@ -12846,9 +12877,9 @@ const gameReportCatalog=new Map();
 let gameReportCatalogReady=false;
 function loadGameReportCatalog(){
   if(gameReportCatalogReady)return true;
-  try {for(const [provider,folder] of [['local','ugs'],['gn','gn-math'],['gms','gms-games']]){
-    const raw=JSON.parse(readFileSync(join(__dirname,'assets',folder,'games.json'),'utf8'));
-    for(const game of (Array.isArray(raw)?raw:raw.games||[]))if(game.path)gameReportCatalog.set(`${provider}:${game.path}`,String(game.title||game.name||game.path).slice(0,160));
+  try {for(const [provider,folder] of [['local','ugs'],['gn','gn-math'],['gms','gms-studies']]){
+    const raw=JSON.parse(readFileSync(join(__dirname,'assets',folder,provider==='gms'?'studies.json':'games.json'),'utf8'));
+    for(const game of (Array.isArray(raw)?raw:raw.studies||raw.games||[]))if(game.path)gameReportCatalog.set(`${provider}:${game.path}`,String(game.title||game.name||game.path).slice(0,160));
   }gameReportCatalogReady=true;return true;}catch{return false;}
 }
 const gameReports=createGameReports({catalog:gameReportCatalog,file:process.env.NYX_GAME_REPORT_FILE||(process.platform==='win32'?join(process.env.TEMP||'.','nyx-game-reports.json'):'/var/lib/nyx/game-reports.json')});
@@ -14122,7 +14153,7 @@ app.get("/scramjet-v1/scramjet.all.js", (_req, res) => {
 });
 app.get(["/tutsi", "/tutsi/"], (_req, res) => {
   res.set("Cache-Control", "no-cache");
-  res.sendFile(join(staticRoot, "apps", "tutsi", "index.html"));
+  res.sendFile('apps/tutsi/index.html', { root: staticRoot });
 });
 
 app.get("/", async (req, res, next) => {
@@ -14130,7 +14161,7 @@ app.get("/", async (req, res, next) => {
     if (await customHostnameSite(req.hostname) !== "tutsi") return next();
   } catch { return res.status(503).set("Retry-After", "30").send("Website temporarily unavailable. Please retry shortly."); }
   res.set("Cache-Control", "no-cache");
-  res.sendFile(join(staticRoot, "apps", "tutsi", "index.html"));
+  res.sendFile('apps/tutsi/index.html', { root: staticRoot });
 });
 app.use(publicAssetBoundary(staticRoot));
 app.use(express.static(staticRoot));
@@ -14189,7 +14220,7 @@ app.use((req, res, next) => {
 });
 
 app.use((_req, res) => {
-  res.sendFile(join(staticRoot, "index.html"));
+  res.sendFile('index.html', { root: staticRoot });
 });
 
 export { app, attachNyxChatSocketServer, externalWispUrl, normalizePublicWispUrl, nyxActiveGuestUsers, nyxActorCanReviewSearchHistory, nyxChatCanAccessChannel, nyxChatIsSchoolRestrictedChannel, nyxClientIp, nyxRolePresentation, nyxVisibleCustomRoles, nyxifyArtistMatches, nyxifyDurationMatches, nyxifyFullTrackCompare, nyxifyMultilingualTopMatch, nyxifyOfficialArtistScore, nyxifyTrackTitleMatches, recordLocalPresence };

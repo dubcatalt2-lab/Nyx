@@ -17,7 +17,7 @@ function fitGameFrame(frame) {
   if (!doc?.documentElement || fittedGameDocuments.has(doc)) return;
   fittedGameDocuments.add(doc);
   const script = doc.createElement("script");
-  script.src = new URL("/assets/games/game-viewport.js", location.origin).href;
+  script.src = new URL("/assets/studies/study-viewport.js", location.origin).href;
   (doc.head || doc.documentElement).append(script);
   const scan = (node) => {
     if (node.nodeType !== 1) return;
@@ -98,10 +98,10 @@ const state = {
 const GAME_LIBRARIES = Object.freeze([
   { id: "all", label: "All games", shortLabel: "All", description: "Every available game" },
   {
-    id: "lumin",
-    label: "LuminSDK",
-    shortLabel: "Lumin",
-    description: "Games delivered through LuminSDK",
+    id: "zengs",
+    label: "Zengs",
+    shortLabel: "Zengs",
+    description: "Games delivered through Zen GS",
   },
   { id: "gn", label: "GN Math", shortLabel: "GN", description: "The GN Math collection" },
   { id: "gms", label: "GMS", shortLabel: "GMS", description: "The GMS collection" },
@@ -135,13 +135,9 @@ const cloudGameRequests = new Map();
 let cloudGameRequestId = 0;
 let activeGameStorageBaseline = {};
 const cloudAuthRelays = new Map();
-const luminCoverUrls = new Map();
-let luminSdkPromise = null;
-let luminReadyPromise = null;
 
 const CATALOG_FETCH_TIMEOUT = 8_000;
 const CATALOG_FETCH_ATTEMPTS = 2;
-const LUMIN_OPERATION_TIMEOUT = 9_000;
 
 let arcadeFeatured;
 let arcadeRandom;
@@ -243,16 +239,6 @@ function wait(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-function withTimeout(promise, milliseconds, label) {
-  let timer = 0;
-  return Promise.race([
-    Promise.resolve(promise),
-    new Promise((_, reject) => {
-      timer = setTimeout(() => reject(new Error(`${label} timed out`)), milliseconds);
-    }),
-  ]).finally(() => clearTimeout(timer));
-}
-
 async function fetchCatalogJson(url, label, options = {}) {
   const attempts = Math.max(1, Number(options.attempts) || CATALOG_FETCH_ATTEMPTS);
   const timeout = Math.max(1_000, Number(options.timeout) || CATALOG_FETCH_TIMEOUT);
@@ -279,66 +265,6 @@ async function fetchCatalogJson(url, label, options = {}) {
   throw lastError || new Error(`${label} is unavailable`);
 }
 
-function loadLuminSdk(sdkUrl, sdkIntegrity = "") {
-  if (window.Lumin?.init) return Promise.resolve(window.Lumin);
-  if (luminSdkPromise) return luminSdkPromise;
-  luminSdkPromise = new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    let settled = false;
-    script.src = sdkUrl;
-    script.async = true;
-    script.referrerPolicy = "no-referrer";
-    if (sdkIntegrity) {
-      script.integrity = sdkIntegrity;
-      script.crossOrigin = "anonymous";
-    }
-    const finish = (error, value) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      if (error) reject(error);
-      else resolve(value);
-    };
-    const timer = setTimeout(
-      () => finish(new Error("LuminSDK timed out")),
-      LUMIN_OPERATION_TIMEOUT,
-    );
-    script.addEventListener(
-      "load",
-      () =>
-        window.Lumin?.init
-          ? finish(null, window.Lumin)
-          : finish(new Error("LuminSDK loaded without exposing its API")),
-      { once: true },
-    );
-    script.addEventListener("error", () => finish(new Error("LuminSDK could not be loaded")), {
-      once: true,
-    });
-    document.head.append(script);
-  }).catch((error) => {
-    luminSdkPromise = null;
-    throw error;
-  });
-  return luminSdkPromise;
-}
-
-async function ensureLuminReady(
-  sdkUrl = state.manifest?.catalogs?.find((catalog) => catalog.format === "lumin")?.sdkUrl,
-  sdkIntegrity = state.manifest?.catalogs?.find((catalog) => catalog.format === "lumin")
-    ?.sdkIntegrity,
-) {
-  if (luminReadyPromise) return luminReadyPromise;
-  luminReadyPromise = (async () => {
-    const lumin = await loadLuminSdk(sdkUrl, sdkIntegrity);
-    await withTimeout(lumin.init({ headless: true }), LUMIN_OPERATION_TIMEOUT, "LuminSDK setup");
-    return lumin;
-  })().catch((error) => {
-    luminReadyPromise = null;
-    throw error;
-  });
-  return luminReadyPromise;
-}
-
 function setGameView(view, updateUrl = true) {
   const nextView = view === "cloud" ? "cloud" : "all";
   elements.localView.hidden = nextView !== "all";
@@ -349,7 +275,7 @@ function setGameView(view, updateUrl = true) {
     button.setAttribute("aria-pressed", String(active));
   }
   if (nextView === "cloud" && !elements.cloudFrame.src) {
-    elements.cloudFrame.src = "/apps/cloud-gaming/?embedded=games";
+    elements.cloudFrame.src = "/apps/cloud-studies/?embedded=games";
   }
   if (updateUrl) {
     try {
@@ -612,7 +538,6 @@ function gameTitleScore(title, source = "") {
   if (clean.length > 48) score -= clean.length - 48;
   if (/[?@]|(?:template|wrapper|play online|demo)$/i.test(clean)) score -= 35;
   if (source === "duckmath") score += 5;
-  if (source === "lumin") score += 3;
   return score;
 }
 
@@ -654,7 +579,7 @@ function externalGamePlayer(value) {
     url.username = "";
     url.password = "";
     url.hash = "";
-    return `/assets/games/remote-play.html?v=20260805-selected-proxy-engine-v3&url=${encodeURIComponent(url.href)}`;
+    return `/assets/studies/remote-play.html?v=20260805-selected-proxy-engine-v3&url=${encodeURIComponent(url.href)}`;
   } catch {
     return "";
   }
@@ -699,7 +624,7 @@ function directCover(url) {
         if (owner.toLowerCase() === "gn-math" && repository.toLowerCase() === "covers") {
           return `https://raw.githack.com/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/${encodeURIComponent(branch)}/${path.map(encodeURIComponent).join("/")}`;
         }
-        return `https://cdn.jsdelivr.net/gh/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}@${encodeURIComponent(branch)}/${path.map(encodeURIComponent).join("/")}`;
+        return `/gms-games-proxy?url=${encodeURIComponent(parsed.href)}`;
       }
     }
     return parsed.protocol === "https:" ? parsed.href : "";
@@ -710,7 +635,7 @@ function directCover(url) {
 
 function rawItems(data) {
   if (Array.isArray(data)) return data;
-  return Array.isArray(data?.games) ? data.games : [];
+  return Array.isArray(data?.studies) ? data.studies : Array.isArray(data?.games) ? data.games : [];
 }
 
 function excludedGameItem(item) {
@@ -733,53 +658,6 @@ function excludedGameItem(item) {
 }
 
 async function adaptCatalog(catalog) {
-  if (catalog.format === "lumin") {
-    const lumin = await ensureLuminReady(catalog.sdkUrl, catalog.sdkIntegrity);
-    const games = [];
-    const limit = 100;
-    let page = 1;
-    let pages = 1;
-    do {
-      const result = await withTimeout(
-        lumin.getGames({ page, limit }),
-        LUMIN_OPERATION_TIMEOUT,
-        `LuminSDK catalog page ${page}`,
-      );
-      const items = Array.isArray(result?.games) ? result.games : [];
-      games.push(...items);
-      pages = Math.max(1, Number(result?.pages) || 1);
-      page += 1;
-    } while (page <= pages);
-
-    return games.flatMap((item) => {
-      const id = String(item?.id || "").trim();
-      const title = cleanGameTitle(item?.name || id, "lumin");
-      if (!id || !title) return [];
-      const player = `lumin-game:${id}`;
-      const cover = item?.image_token ? `lumin-cover:${item.image_token}` : "";
-      return [
-        {
-          key: gameKey(title),
-          title,
-          url: player,
-          cover,
-          covers: cover ? [cover] : [],
-          priority: Number(catalog.priority) || 0,
-          source: catalog.id,
-          sources: [
-            {
-              url: player,
-              source: catalog.id,
-              priority: Number(catalog.priority) || 0,
-              title,
-              luminId: id,
-            },
-          ],
-        },
-      ];
-    });
-  }
-
   const items = rawItems(await fetchCatalogJson(catalog.url, catalog.id));
   let knownCovers = new Set();
 
@@ -796,7 +674,7 @@ async function adaptCatalog(catalog) {
   return items.flatMap((item) => {
     if (excludedGameItem(item)) return [];
     const path = String(item.path || "").replace(/^\/+/, "");
-    if (!path && catalog.format !== "duckmath" && catalog.format !== "external") return [];
+    if (!path && catalog.format !== "duckmath" && catalog.format !== "external" && catalog.format !== "zengs") return [];
     const suppliedTitle = String(item.title || item.name || "")
       .replace(/\s+/g, " ")
       .trim();
@@ -809,7 +687,7 @@ async function adaptCatalog(catalog) {
     );
     if (!title) return [];
     let player =
-      catalog.format === "duckmath"
+      ["duckmath", "zengs"].includes(catalog.format)
         ? String(item.url || "")
         : catalog.format === "external"
           ? externalGamePlayer(item.url)
@@ -829,7 +707,7 @@ async function adaptCatalog(catalog) {
         player = fillTemplate(catalog.gbaPlayer, { romId: item.romId });
       }
       covers.push(safeCover(item.cover), directCover(item.cover));
-    } else if (catalog.format === "external") {
+    } else if (["external", "zengs"].includes(catalog.format)) {
       covers.push(safeCover(item.cover), safeCover(item.coverFallback), directCover(item.cover));
     }
 
@@ -941,25 +819,7 @@ function makeCover(game) {
   image.decoding = "async";
   image.referrerPolicy = "no-referrer";
   let index = 0;
-  const setImageSource = async (source) => {
-    if (!source.startsWith("lumin-cover:")) {
-      image.src = source;
-      return;
-    }
-    const token = source.slice("lumin-cover:".length);
-    try {
-      let url = luminCoverUrls.get(token);
-      if (!url) {
-        const lumin = await ensureLuminReady();
-        url = await lumin.getImageUrl(token);
-        if (url) luminCoverUrls.set(token, url);
-      }
-      if (url) image.src = url;
-      else image.dispatchEvent(new Event("error"));
-    } catch {
-      image.dispatchEvent(new Event("error"));
-    }
-  };
+  const setImageSource = (source) => { image.src = source; };
   void setImageSource(game.covers[index]);
   image.addEventListener("load", () => {
     image.classList.add("loaded");
@@ -994,12 +854,15 @@ function makeCard(game) {
   const activeSource = ["all", "misc"].includes(state.activeLibrary)
     ? game.source
     : state.activeLibrary;
-  source.textContent =
+  const πάροχος =
     GAME_LIBRARIES.find((library) => library.id === activeSource)?.shortLabel || "Game";
+  source.textContent = ονομασίαΠαρόχου(πάροχος);
+  source.setAttribute("aria-label", πάροχος);
   card.append(source);
 
   const name = document.createElement("span");
   name.className = "qf9ea5fbfc68e";
+  name.setAttribute("data-user-content", "");
   name.textContent = game.title;
   card.append(name);
   return card;
@@ -1056,6 +919,12 @@ function libraryGameCount(libraryId) {
   ).length;
 }
 
+function ονομασίαΠαρόχου(κείμενο) {
+  return String(κείμενο).replace(/[A-Za-z]/g, (γράμμα) =>
+    String.fromCodePoint(γράμμα.charCodeAt(0) + (γράμμα <= "Z" ? 0x1d63c - 65 : 0x1d656 - 97)),
+  );
+}
+
 function renderLibraryTabs() {
   const fragment = document.createDocumentFragment();
   for (const library of GAME_LIBRARIES) {
@@ -1070,7 +939,8 @@ function renderLibraryTabs() {
     button.classList.toggle("active", state.activeLibrary === library.id);
 
     const label = document.createElement("span");
-    label.textContent = library.label;
+    label.textContent = ονομασίαΠαρόχου(library.label);
+    button.setAttribute("aria-label", `${library.label}, ${count.toLocaleString()} games`);
     const total = document.createElement("span");
     total.className = "library-tab-count";
     total.textContent = count.toLocaleString();
@@ -1270,7 +1140,7 @@ function gameProviderLabel(source, index) {
     local: dropGames ? "Archive" : "N7X Archive",
     gn: "GN Math",
     gms: "GMS",
-    lumin: "LuminSDK",
+    zengs: "Zengs",
     catclass: "CatClass",
     duckmath: "DuckMath",
   };
@@ -1290,7 +1160,9 @@ function syncGameProvider() {
     const labelIndex = (labelIndexes.get(label) || 0) + 1;
     labelIndexes.set(label, labelIndex);
     option.value = String(index);
-    option.textContent = labelTotals.get(label) > 1 ? `${label} ${labelIndex}` : label;
+    const όνομα = labelTotals.get(label) > 1 ? `${label} ${labelIndex}` : label;
+    option.textContent = ονομασίαΠαρόχου(όνομα);
+    option.setAttribute("aria-label", όνομα);
     return option;
   });
   elements.provider.replaceChildren(...options);
@@ -1352,20 +1224,6 @@ async function launchGameSource(index, reason = "") {
     }
   } catch {}
   let playableUrl = source.url;
-  if (source.source === "lumin") {
-    try {
-      const lumin = await ensureLuminReady();
-      const result = await lumin.getGameUrl(
-        source.luminId || source.url.slice("lumin-game:".length),
-      );
-      playableUrl = String(result?.url || "");
-      if (!playableUrl) throw new Error("LuminSDK did not return a playable URL");
-    } catch {
-      if (attempt === state.sourceAttempt && state.activeGame)
-        tryNextGameSource("The Lumin game could not be prepared.");
-      return;
-    }
-  }
   if (attempt !== state.sourceAttempt || !state.activeGame) return;
   elements.frame.src = playableUrl;
 
@@ -1373,13 +1231,13 @@ async function launchGameSource(index, reason = "") {
   try {
     sameOrigin = new URL(playableUrl, location.href).origin === location.origin;
   } catch {}
-  if (sameOrigin || source.source === "lumin") {
+  if (sameOrigin) {
     state.sourceTimer = setTimeout(
       () => {
         if (attempt !== state.sourceAttempt || !state.activeGame) return;
         launchGameSource(index + 1, "The current source did not finish loading.");
       },
-      source.source === "lumin" ? 25_000 : 18_000,
+      18_000,
     );
   }
 }
@@ -1454,7 +1312,7 @@ function closeGame() {
 }
 
 async function loadLibrary() {
-  state.manifest = await fetchCatalogJson("/assets/games/games.json", "Catalog manifest", {
+  state.manifest = await fetchCatalogJson("/assets/studies/studies.json", "Catalog manifest", {
     attempts: 3,
   });
   const catalogs = Array.isArray(state.manifest.catalogs) ? state.manifest.catalogs : [];
@@ -1577,7 +1435,7 @@ elements.frame.addEventListener("load", () => {
     managedRunner =
       sameOrigin &&
       /^\/assets\/(?:ugs|gn-math|gms-games|reds-misc)\/play\.html$/i.test(parsed.pathname);
-    if (sameOrigin && parsed.pathname === "/assets/games/remote-play.html") managedRunner = true;
+    if (sameOrigin && parsed.pathname === "/assets/studies/remote-play.html") managedRunner = true;
   } catch {}
 
   if (!sameOrigin || managedRunner) setTimeout(finishGameLaunch, 900);

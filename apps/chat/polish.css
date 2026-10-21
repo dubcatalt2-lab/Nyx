@@ -1458,7 +1458,7 @@ button:focus-visible,
 }
 
 .message-composer {
-  grid-template-columns: 40px minmax(0, 1fr) 40px;
+  grid-template-columns: 40px 40px minmax(0, 1fr) 40px;
   gap: 10px
 }
 
@@ -1971,24 +1971,55 @@ html body .member-dialog [data-member-dialog-content]>.n7x-user-profile-effect {
   pointer-events: none !important
 }
 /* The GIF tray uses the same attachment flow as the composer. */
-.gif-picker {
-  width: min(520px, calc(100vw - 32px));
-  max-height: 80dvh;
-  padding: 22px;
+  .gif-picker {
+  width: min(480px, calc(100vw - 24px));
+  max-height: min(700px, calc(100dvh - 32px));
+  padding: 12px 12px 0;
   border: 1px solid #ffffff20;
-  border-radius: 24px;
-  background: #161619ed;
-  backdrop-filter: blur(24px);
-  color: #eee;
+  border-radius: 22px;
+  background: #141416dc;
+  backdrop-filter: blur(28px) saturate(1.15);
+  color: var(--chat-accent, #eee);
+  box-shadow: 0 20px 70px #0007;
 }
-.gif-picker::backdrop { background: #0008; backdrop-filter: blur(5px); }
-.gif-picker header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.gif-picker h2 { margin: 0; font-size: 18px; }
-.gif-picker p { color: #b6b6bd; font-size: 12px; line-height: 1.5; }
-.gif-picker form { display: flex; gap: 8px; align-items: end; margin-top: 18px; }
-.gif-picker label { display: grid; gap: 6px; flex: 1; min-width: 0; font-size: 12px; }
-.gif-picker input[type=url] { width: 100%; box-sizing: border-box; border: 1px solid #ffffff20; border-radius: 12px; padding: 10px; background: #ffffff09; color: inherit; }
-.gif-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.gif-grid button { padding: 0; overflow: hidden; border: 1px solid #ffffff16; border-radius: 14px; background: #ffffff08; cursor: pointer; }
-.gif-grid button:hover { border-color: #ffffff60; }
-.gif-grid img { display: block; width: 100%; height: 110px; object-fit: contain; }
+.gif-picker[open] { display: flex; flex-direction: column; animation: gif-arrive .18s ease-out; }
+.gif-picker::backdrop { background: #0003; }
+.gif-picker svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; flex-shrink: 0; }
+.gif-picker form { display: flex; align-items: center; gap: 4px; border: 1px solid #ffffff25; border-radius: 14px; padding: 4px; background: #0003; flex-shrink: 0; }
+.gif-picker form:focus-within { border-color: var(--chat-accent); }
+.gif-picker form button { display: grid; place-items: center; width: 34px; height: 34px; border: 0; background: transparent; color: inherit; cursor: pointer; }
+.gif-picker input[type=search] { flex: 1; min-width: 0; width: 100%; border: 0; outline: 0; padding: 8px 2px; background: transparent; color: inherit; font: inherit; }
+.gif-tabs { display: flex; gap: 8px; padding: 10px 0; flex-shrink: 0; }
+.gif-tabs button { display: flex; align-items: center; gap: 8px; border: 0; border-radius: 10px; padding: 8px 12px; background: transparent; color: inherit; opacity: .65; cursor: pointer; }
+.gif-tabs button[aria-pressed=true], .gif-tabs button:hover { background: #ffffff0b; opacity: 1; }
+.gif-results { overflow-y: auto; min-height: 160px; scrollbar-width: thin; overscroll-behavior: contain; }
+.gif-picker [data-gif-status] { margin: 0; font-size: 13px; opacity: .7; }
+.gif-picker [data-gif-status]:not(:empty) { padding: 10px 4px; }
+.gif-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.gif-tile { position: relative; min-width: 0; aspect-ratio: 1; }
+.gif-grid .gif-attach { display: block; width: 100%; height: 100%; padding: 0; overflow: hidden; border: 0; border-radius: 12px; background: #ffffff08; cursor: pointer; }
+.gif-grid img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .18s ease; }
+.gif-tile:hover img { transform: scale(1.035); }
+.gif-grid .gif-heart { position: absolute; top: 7px; right: 7px; display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid #ffffff16; border-radius: 11px; color: inherit; background: #18181bbd; backdrop-filter: blur(10px); opacity: 0; cursor: pointer; transition: opacity .15s ease; }
+.gif-tile:hover .gif-heart, .gif-tile:focus-within .gif-heart, .gif-heart[aria-pressed=true] { opacity: 1; }
+.gif-heart[aria-pressed=true] svg { fill: currentColor; }
+.gif-picker footer { flex-shrink: 0; padding: 10px; text-align: center; font-size: 11px; opacity: .6; }
+.gif-picker button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+@media (hover: none) { .gif-grid .gif-heart { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .gif-picker[open] { animation: none; } .gif-grid img { transition: none; } }
+@keyframes gif-arrive { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+
+.typing-indicator { display: flex; align-items: center; gap: 8px; min-height: 28px; margin: 0 24px 5px; font-size: 12px; color: var(--chat-accent); }
+.typing-indicator[hidden] { display: none; }
+.reaction-avatars { display: inline-flex; align-items: center; padding-left: 5px; }
+.reaction-avatars .avatar { width: 20px; height: 20px; min-width: 20px; flex: 0 0 20px; margin-left: -5px; border: 2px solid #202023; border-radius: 50%; font-size: 9px; box-sizing: border-box; }
+.reaction-avatars .avatar-face { width: 100%; height: 100%; }
+.reaction-avatars .n7x-avatar-decoration { display: none; }
+.typing-dots { display: inline-flex; align-items: center; gap: 4px; padding: 6px 9px; border: 1px solid #ffffff15; border-radius: 20px; background: #ffffff05; }
+.typing-dots i { width: 5px; height: 5px; background: currentColor; border-radius: 50%; animation: typing-bounce 1.2s infinite ease-in-out; }
+.typing-dots i:nth-child(2) { animation-delay: .15s; }
+.typing-dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes typing-bounce { 0%,60%,100% { opacity: .4; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+@media (prefers-reduced-motion: reduce) { .typing-dots i { animation: none; } }
+
+.gif-badge { display: grid; place-items: center; width: 24px; height: 25px; border-radius: 3px; background: #b9bbc3; color: #242427; font: 800 11px/1 Arial, sans-serif; letter-spacing: -.5px; }

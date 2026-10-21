@@ -32,8 +32,8 @@ try {
   browser = await chromium.launch({ channel: 'msedge', headless: true });
   const page=await browser.newPage();
   const errors=[]; page.on('pageerror',error=>errors.push(error.message));
-  const catalogResponse=page.waitForResponse(response=>new URL(response.url()).pathname==='/assets/games/games.json');
-  await page.goto(base+'/assets/games/');
+  const catalogResponse=page.waitForResponse(response=>new URL(response.url()).pathname==='/assets/studies/studies.json');
+  await page.goto(base+'/assets/studies/');
   const manifest=await catalogResponse;
   assert.equal(manifest.status(),200);
   assert((await manifest.json()).catalogs.length>0);

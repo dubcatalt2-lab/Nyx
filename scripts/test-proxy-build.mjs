@@ -6,15 +6,15 @@ import vm from 'node:vm';
 import {rewriteFrontendReferences} from './build-frontend-assets.mjs';
 import {proxyAssetNames as names,legacyProxyAssetNames,rewriteProxyReferences,scrambleProxyCode} from './build-proxy-assets.mjs';
 
-const gameAliases={'/assets/games/games.js':'/assets/games/@test!.js'};
+const gameAliases={'/assets/studies/studies.js':'/assets/studies/@test!.js'};
 for(const suffix of ['on','.map','/extra','-backup','_backup','%20copy']) {
-  const url='/assets/games/games.js'+suffix;
-  assert.equal(rewriteFrontendReferences(JSON.stringify(url),'/assets/games/games.js',gameAliases),JSON.stringify(url));
+  const url='/assets/studies/studies.js'+suffix;
+  assert.equal(rewriteFrontendReferences(JSON.stringify(url),'/assets/studies/studies.js',gameAliases),JSON.stringify(url));
 }
 for(const suffix of ['', '?v=1', '#entry']) {
-  assert.equal(rewriteFrontendReferences(JSON.stringify('/assets/games/games.js'+suffix),'/assets/games/index.html',gameAliases),JSON.stringify('/assets/games/@test!.js'+suffix));
+  assert.equal(rewriteFrontendReferences(JSON.stringify('/assets/studies/studies.js'+suffix),'/assets/studies/index.html',gameAliases),JSON.stringify('/assets/studies/@test!.js'+suffix));
 }
-assert.equal(rewriteFrontendReferences('fetch("games.json");import("./games.js?v=1")','/assets/games/index.html',gameAliases),'fetch("games.json");import("./@test!.js?v=1")');
+assert.equal(rewriteFrontendReferences('fetch("studies.json");import("./studies.js?v=1")','/assets/studies/index.html',gameAliases),'fetch("studies.json");import("./@test!.js?v=1")');
 
 assert.equal(rewriteProxyReferences('importScripts("/controller/controller.sw.js","/scramjet.sw.js")','/scramjet.sw.js'),`importScripts("${names['/controller/controller.sw.js']}","${names['/scramjet.sw.js']}")`);
 assert.equal(rewriteProxyReferences('import x from "./header-utils.mjs"','/assets/transports/libcurl-baremux.mjs'),`import x from "./${names['/assets/transports/header-utils.mjs'].split('/').at(-1)}"`);

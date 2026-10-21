@@ -1418,6 +1418,7 @@
       });
       socket.on("disconnect", () => {
         state.socketConnected = false;
+        πληκτρολογούν.clear(); δείξεΠληκτρολόγηση();
         if (state.me) setConnection("Reconnecting", "error");
       });
       socket.on("connect_error", (error) => {
@@ -1435,6 +1436,12 @@
         void refreshUpdates({ force: true }).finally(() => {
           state.revision = Math.max(state.revision, Number(payload?.revision || 0));
         });
+      });
+      socket.on('nyx:chat:typing', event => {
+        if (!event?.uid || event.uid === state.me?.uid) return;
+        if (event.active) πληκτρολογούν.set(event.uid,{...event,until:Date.now()+6500});
+        else πληκτρολογούν.delete(event.uid);
+        δείξεΠληκτρολόγηση();
       });
       socket.on("nyx:chat:event", (event) => {
         void handleSocketChatEvent(event).catch(() => {});
@@ -3206,6 +3213,34 @@
     image.loading = "lazy";
     target.append(image);
   }
+  const πληκτρολογούν = new Map();
+  let τελευταίαΑποστολήΠληκτρολόγησης = 0, παύσηΧρόνου = 0, τελευταίαΈνδειξη = '';
+  function δείξεΠληκτρολόγηση() {
+    const root = document.querySelector('[data-typing-indicator]');
+    const now = Date.now();
+    for (const [uid,item] of πληκτρολογούν) if (item.until < now) πληκτρολογούν.delete(uid);
+    const users = [...πληκτρολογούν.values()].filter(item => item.scopeId === state.active.id && item.scopeType === (state.active.type === 'channel' ? 'channel' : 'conversation'));
+    const signature = JSON.stringify(users.map(user => [user.uid,user.displayName,user.avatarUrl]));
+    if (signature === τελευταίαΈνδειξη) return;
+    τελευταίαΈνδειξη = signature;
+    root.replaceChildren(); root.hidden = !users.length;
+    if (!users.length) return;
+    const avatars = document.createElement('span'); avatars.className = 'reaction-avatars';
+    for (const user of users.slice(0,3)) avatars.append(avatarElement(user));
+    const dots = document.createElement('span'); dots.className = 'typing-dots'; dots.setAttribute('aria-hidden','true'); dots.innerHTML = '<i></i><i></i><i></i>';
+    const text = document.createElement('span'); text.setAttribute('data-user-content','');
+    const names = users.slice(0,3).map(user => user.displayName || 'Someone');
+    text.textContent = users.length === 1 ? names[0] + ' is typing…' : names.join(', ') + (users.length>3 ? ' and ' + (users.length-3) + ' others' : '') + ' are typing…';
+    root.append(avatars,dots,text);
+  }
+  function στείλεΠληκτρολόγηση(active = false) {
+    clearTimeout(παύσηΧρόνου);
+    if (active) παύσηΧρόνου = setTimeout(() => στείλεΠληκτρολόγηση(false),4000);
+    if (!state.socketConnected || !state.me || (active && Date.now()-τελευταίαΑποστολήΠληκτρολόγησης < 3000)) return;
+    if (active) τελευταίαΑποστολήΠληκτρολόγησης = Date.now();
+    state.socket?.emit('nyx:chat:typing',{scopeId:state.active.id,active});
+  }
+  setInterval(δείξεΠληκτρολόγηση,1000);
   function renderReactions(message, content) {
     const root = document.createElement("div");
     root.className = "message-reactions";
@@ -3213,12 +3248,21 @@
       const button = document.createElement("button");
       button.type = "button";
       button.className = `reaction-chip${reaction.self ? " self" : ""}`;
+      button.setAttribute("data-user-content", "");
       button.setAttribute("aria-pressed", String(Boolean(reaction.self)));
       button.setAttribute("aria-label", `${reaction.emoji}, ${reaction.count} reactions`);
       q73d2(button, reaction.emoji);
       const count = document.createElement("span");
       count.textContent = String(reaction.count);
       button.append(count);
+      const people = (reaction.uids || []).map(uid => state.members.find(person => person.uid === uid) || (state.me?.uid === uid ? state.me : {uid,displayName:'Member'}));
+      if (people.length) {
+        const avatars = document.createElement('span'); avatars.className = 'reaction-avatars'; avatars.setAttribute('aria-hidden','true');
+        for (const person of people.slice(0,3)) avatars.append(avatarElement(person));
+        button.append(avatars);
+        const names = people.map(person => person.displayName || 'Member').join(', ');
+        button.title = names; button.setAttribute('aria-label',`${reaction.emoji}, ${reaction.count} reactions: ${names}`);
+      }
       button.addEventListener("click", () => void toggleReaction(message, reaction.emoji));
       root.append(button);
     });
@@ -3733,7 +3777,8 @@
     if (q31d9) {
       q31d9.count += q31d9.self ? -1 : 1;
       q31d9.self = !q31d9.self;
-    } else q52a0.push({ emoji, count: 1, self: true });
+      q31d9.uids = q31d9.self ? [...new Set([...(q31d9.uids || []),state.me.uid])] : (q31d9.uids || []).filter(uid=>uid!==state.me.uid);
+    } else q52a0.push({ emoji, count: 1, self: true, uids:[state.me.uid] });
     const q15b7 = q52a0.filter((item) => item.count > 0);
     q74b8.add(q19c2);
     q48d1().reactions = q15b7;
@@ -3865,7 +3910,9 @@
       closeDrawers();
       return;
     }
+    στείλεΠληκτρολόγηση(false);
     state.active = { ...scope };
+    δείξεΠληκτρολόγηση();
     state.files = [];
     state.replyingTo = null;
     renderFilePreviews();
@@ -5184,6 +5231,7 @@
     if (!state.files.length && !text.startsWith(commandPrefix)) {
       const scope = { ...state.active };
       const replyMessage = state.replyingTo;
+      στείλεΠληκτρολόγηση(false);
       refs.input.value = "";
       state.replyingTo = null;
       renderReplyPreview();
@@ -5225,6 +5273,7 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
+      στείλεΠληκτρολόγηση(false);
       refs.input.value = "";
       state.files = [];
       state.replyingTo = null;
@@ -6304,7 +6353,9 @@
   refs.voiceScreen.addEventListener("click", () => void toggleVoiceScreen());
   refs.voiceDisconnect.addEventListener("click", () => void leaveVoice());
   refs.voiceDeafen.addEventListener("click", boostVoiceAudio);
+  refs.input.addEventListener("blur", () => στείλεΠληκτρολόγηση(false));
   refs.input.addEventListener("input", () => {
+    στείλεΠληκτρολόγηση(Boolean(refs.input.value.trim()) && !refs.input.disabled);
     updateComposer();
     updateMentionMenu();
   });
@@ -6330,74 +6381,98 @@
       refs.form.requestSubmit();
     }
   });
-  const κινούμενα = [];
   const επιλογήGif = document.querySelector('[data-gif-dialog]');
   const πλήκτροGif = document.querySelector('[data-gif-button]');
-  const αρχείοGif = document.querySelector('[data-gif-file]');
   const μήνυμαGif = document.querySelector('[data-gif-status]');
-  async function πρόσθεσεGif(file) {
-    if (file.size < 6 || file.size > MAX_FILE_SIZE) throw new Error('Choose a GIF up to 8 MB.');
-    const header = new TextDecoder().decode(await file.slice(0, 6).arrayBuffer());
-    if (!['GIF87a', 'GIF89a'].includes(header)) throw new Error('This file is not a GIF. Use a direct GIF link.');
-    const όνομα = /^[^\\/?#%]{1,90}\.gif$/i.test(file.name || '') ? file.name : 'animation.gif';
-    const έτοιμο = new File([file], όνομα, {type:'image/gif'});
-    κινούμενα.unshift({file:έτοιμο,url:URL.createObjectURL(έτοιμο)});
-    if (κινούμενα.length > 12) URL.revokeObjectURL(κινούμενα.pop().url);
-    σχεδίασεGif();
-    μήνυμαGif.textContent = 'Choose a GIF below to attach it.';
+  const αναζήτησηGif = document.querySelector('[data-gif-search]');
+  const περισσότεραGif = document.querySelector('[data-gif-more]');
+  const πλέγμαGif = document.querySelector('[data-gif-grid]');
+  let αίτημαGif = null, χρονόμετροGif = 0, επόμενοGif = null, όροςGif = '', επιλογήΣεΕξέλιξη = false;
+  let αγαπημέναΕνεργά = false;
+  const κλειδίΑγαπημένων = () => 'nyx.chat.gif-favorites.' + (state.me?.uid || 'guest');
+  function αγαπημέναGif() {
+    try { const items = JSON.parse(localStorage.getItem(κλειδίΑγαπημένων()) || '[]'); return Array.isArray(items) ? items.filter(item => item && typeof item.id === 'string' && /^https:\/\/(?:media\d*|i)\.giphy\.com\//.test(item.url) && /^https:\/\/(?:media\d*|i)\.giphy\.com\//.test(item.preview)).slice(0,100) : []; } catch { return []; }
   }
-  function σχεδίασεGif() {
-    const πλέγμα = document.querySelector('[data-gif-grid]');
-    πλέγμα.replaceChildren();
-    for (const item of κινούμενα) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.setAttribute('data-user-content', '');
-      button.setAttribute('aria-label', 'Attach ' + item.file.name);
-      const image = document.createElement('img');
-      image.src = item.url;
-      image.alt = item.file.name;
-      button.append(image);
-      button.addEventListener('click', () => {
-        if (refs.attachmentButton.disabled) return;
-        chooseFiles([item.file]);
-        επιλογήGif.close();
-        document.querySelector('[data-message-input]').focus();
-      });
-      πλέγμα.append(button);
+  function σχεδίασεGif(item) {
+    const tile = document.createElement('div'); tile.className = 'gif-tile';
+    const button = document.createElement('button'); button.type = 'button'; button.className = 'gif-attach';
+    button.setAttribute('data-user-content',''); button.setAttribute('aria-label','Attach ' + item.title);
+    const image = document.createElement('img'); image.src = item.preview; image.alt = item.title; image.loading = 'lazy'; image.referrerPolicy = 'no-referrer';
+    button.append(image); button.addEventListener('click', () => void επισύναψεGif(item, button));
+    const heart = document.createElement('button'); heart.type = 'button'; heart.className = 'gif-heart';
+    const update = () => { const saved = αγαπημέναGif().some(value => value.id === item.id); heart.setAttribute('aria-pressed',String(saved)); heart.setAttribute('aria-label',(saved ? 'Remove favorite ' : 'Favorite ') + item.title); };
+    heart.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20 3 11C-2 3 8 0 12 6c4-6 14-3 9 5Z"/></svg>';
+    update(); heart.addEventListener('click', () => {
+      const items = αγαπημέναGif(), saved = items.some(value => value.id === item.id);
+      try { localStorage.setItem(κλειδίΑγαπημένων(), JSON.stringify(saved ? items.filter(value => value.id !== item.id) : [item,...items].slice(0,100))); }
+      catch { μήνυμαGif.textContent = 'Favorites could not be saved on this browser.'; return; }
+      update(); if (αγαπημέναΕνεργά) void αναζήτησεGif();
+    });
+    tile.append(button,heart); πλέγμαGif.append(tile);
+  }
+  async function επισύναψεGif(item, button) {
+    if (refs.attachmentButton.disabled || επιλογήΣεΕξέλιξη) return;
+    επιλογήΣεΕξέλιξη = true; button.disabled = true;
+    try {
+      const url = new URL(item.url);
+      if (url.protocol !== 'https:' || url.username || url.password || !/^(?:media\d*|i)\.giphy\.com$/.test(url.hostname)) throw new Error('This GIF is unavailable.');
+      μήνυμαGif.textContent = 'Loading GIF…';
+      const response = await fetch(url, {credentials:'omit', redirect:'error', signal:AbortSignal.timeout(15000)});
+      if (!response.ok || Number(response.headers.get('content-length')) > MAX_FILE_SIZE) throw new Error('This GIF is too large or unavailable. Choose another.');
+      const reader = response.body.getReader(), chunks = []; let size = 0;
+      try {
+        for (;;) { const {done,value} = await reader.read(); if(done) break; size += value.length; if(size > MAX_FILE_SIZE) throw new Error('Choose a GIF up to 8 MB.'); chunks.push(value); }
+      } finally { await reader.cancel(); }
+      const file = new File(chunks, 'animation.gif', {type:'image/gif'});
+      const header = new TextDecoder().decode(await file.slice(0,6).arrayBuffer());
+      if (!['GIF87a','GIF89a'].includes(header)) throw new Error('This GIF could not be loaded. Choose another.');
+      if (!επιλογήGif.open || refs.attachmentButton.disabled) return;
+      chooseFiles([file]); επιλογήGif.close(); refs.input.focus();
+    } catch (error) { μήνυμαGif.textContent = error.message; }
+    finally { επιλογήΣεΕξέλιξη = false; button.disabled = false; }
+  }
+  async function αναζήτησεGif(συνέχεια = false) {
+    αίτημαGif?.abort(); const controller = new AbortController(); αίτημαGif = controller;
+    const q = αναζήτησηGif.value.trim();
+    if (!συνέχεια) { όροςGif = q; επόμενοGif = null; πλέγμαGif.replaceChildren(); }
+    περισσότεραGif.hidden = true; μήνυμαGif.textContent = 'Finding GIFs…';
+    if (αγαπημέναΕνεργά) {
+      for (const item of αγαπημέναGif().filter(item => String(item.title).toLowerCase().includes(q.toLowerCase()))) σχεδίασεGif(item);
+      μήνυμαGif.textContent = πλέγμαGif.childElementCount ? '' : 'Tap a heart to save your favorite GIFs here.';
+      return;
     }
+    try {
+      const payload = await fetchJson(`${API}/gifs?${new URLSearchParams({q: όροςGif, offset:String(συνέχεια ? επόμενοGif || 0 : 0)})}`, {signal:controller.signal});
+      if (αίτημαGif !== controller || !επιλογήGif.open) return;
+      for (const item of payload.items || []) σχεδίασεGif(item);
+      επόμενοGif = payload.next; περισσότεραGif.hidden = επόμενοGif == null;
+      μήνυμαGif.textContent = πλέγμαGif.childElementCount ? '' : 'No GIFs found. Try another search.';
+    } catch (error) {
+      if (controller.signal.aborted || αίτημαGif !== controller) return;
+      μήνυμαGif.textContent = error.message;
+    }
+  }
+  for (const [selector, favorites] of [['[data-gif-trending]',false],['[data-gif-favorites]',true]]) {
+    document.querySelector(selector).addEventListener('click', () => {
+      αγαπημέναΕνεργά = favorites; αναζήτησηGif.value = ''; clearTimeout(χρονόμετροGif);
+      document.querySelector('[data-gif-trending]').setAttribute('aria-pressed',String(!favorites));
+      document.querySelector('[data-gif-favorites]').setAttribute('aria-pressed',String(favorites));
+      void αναζήτησεGif();
+    });
   }
   πλήκτροGif.addEventListener('click', () => {
     if (refs.attachmentButton.disabled) return;
-    μήνυμαGif.textContent = κινούμενα.length ? '' : 'Your recent GIFs will appear here.';
-    επιλογήGif.showModal();
+    επιλογήGif.showModal(); αναζήτησηGif.focus(); void αναζήτησεGif();
   });
   document.querySelector('[data-gif-close]').addEventListener('click', () => επιλογήGif.close());
-  document.querySelector('[data-gif-upload]').addEventListener('click', () => αρχείοGif.click());
-  αρχείοGif.addEventListener('change', async () => {
-    try { if (αρχείοGif.files[0]) await πρόσθεσεGif(αρχείοGif.files[0]); }
-    catch (error) { μήνυμαGif.textContent = error.message; }
-    finally { αρχείοGif.value = ''; }
+  επιλογήGif.addEventListener('close', () => { αίτημαGif?.abort(); clearTimeout(χρονόμετροGif); });
+  επιλογήGif.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); επιλογήGif.close(); }
   });
-  document.querySelector('[data-gif-url-form]').addEventListener('submit', async event => {
-    event.preventDefault();
-    const button = event.currentTarget.querySelector('button');
-    button.disabled = true;
-    try {
-      const url = new URL(document.querySelector('[data-gif-url]').value);
-      if (url.protocol !== 'https:' || url.username || url.password || !/^(?:media\d*\.giphy\.com|i\.giphy\.com|media\.tenor\.com)$/.test(url.hostname)) throw new Error('Use a direct media.giphy.com or media.tenor.com GIF link, or upload the GIF.');
-      μήνυμαGif.textContent = 'Loading GIF…';
-      const response = await fetch(url, {credentials:'omit',redirect:'error',signal:AbortSignal.timeout(15000)});
-      if (!response.ok || Number(response.headers.get('content-length')) > MAX_FILE_SIZE) throw new Error('Could not load this GIF. Try uploading it instead.');
-      const reader=response.body.getReader(), chunks=[];
-      let size=0;
-      try {
-        for (;;) { const {done,value}=await reader.read(); if(done) break; size+=value.length; if(size>MAX_FILE_SIZE) throw new Error('Choose a GIF up to 8 MB.'); chunks.push(value); }
-      } finally { await reader.cancel(); }
-      await πρόσθεσεGif(new File(chunks, 'animation.gif', {type:'image/gif'}));
-    } catch (error) { μήνυμαGif.textContent = error.name==='TypeError' ? 'This link could not be loaded. Upload the GIF instead.' : error.message; }
-    finally { button.disabled=false; }
-  });
+  document.querySelector('[data-gif-search-form]').addEventListener('submit', event => { event.preventDefault(); clearTimeout(χρονόμετροGif); void αναζήτησεGif(); });
+  αναζήτησηGif.addEventListener('input', () => { clearTimeout(χρονόμετροGif); αίτημαGif?.abort(); χρονόμετροGif = setTimeout(() => void αναζήτησεGif(), 300); });
+  περισσότεραGif.addEventListener('click', () => void αναζήτησεGif(true));
+
   refs.attachmentButton.addEventListener("click", () => refs.attachmentInput.click());
   refs.attachmentInput.addEventListener("change", () =>
     chooseFiles(refs.attachmentInput.files || []),

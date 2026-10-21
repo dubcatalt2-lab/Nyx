@@ -1,6 +1,6 @@
 /* A1 layout follows shared chrome; ASCII asset path supports static publishers. */
 html[data-a1-studio] body {
-  --ai-sidebar: 252px;
+  --ai-sidebar: 238px;
   --ai-content: 800px;
   --ai-header: 64px;
   --κίνηση: cubic-bezier(.22, 1, .36, 1);
@@ -12,9 +12,10 @@ html[data-a1-studio] body .ai-app {
 
 html[data-a1-studio] body .ai-sidebar {
   width: var(--ai-sidebar);
-  border-right: 1px solid rgba(255, 255, 255, .055);
-  background: linear-gradient(165deg, rgba(28, 28, 33, .72), rgba(12, 12, 16, .72));
-  backdrop-filter: blur(28px);
+  border-right: 1px solid rgba(255, 255, 255, .035);
+  background: rgba(12, 12, 14, .25);
+  box-shadow: none;
+  backdrop-filter: blur(18px);
   transition: opacity 220ms ease, transform 360ms var(--κίνηση), visibility 360ms;
 }
 
@@ -24,7 +25,7 @@ html[data-a1-studio] body .ai-app:not(.is-sidebar-open) .ai-sidebar {
 }
 
 html[data-a1-studio] body .ai-sidebar-header {
-  padding: 24px 18px 20px;
+  padding: 18px 16px 16px;
 }
 
 html[data-a1-studio] body .ai-sidebar-brand strong {
@@ -43,7 +44,7 @@ html[data-a1-studio] body .ai-brand-caption {
 
 html[data-a1-studio] body .ai-sidebar-actions {
   grid-template-columns: minmax(0, 1fr) 40px;
-  padding: 6px 14px 24px;
+  padding: 4px 14px 18px;
   gap: 8px;
 }
 
@@ -51,8 +52,8 @@ html[data-a1-studio] body .ai-new-chat {
   min-height: 40px;
   border: 0;
   border-radius: 11px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, .13), rgba(255, 255, 255, .055)) !important;
-  box-shadow: inset 0 1px rgba(255, 255, 255, .075);
+  background: rgba(255, 255, 255, .055) !important;
+  box-shadow: none;
 }
 
 html[data-a1-studio] body .ai-temporary-chat {
@@ -117,8 +118,8 @@ html[data-a1-studio] body .ai-thread-copy strong {
 }
 
 html[data-a1-studio] body .ai-thread-button[aria-current="true"] {
-  background: linear-gradient(90deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .035));
-  box-shadow: inset 2px 0 rgba(235, 235, 242, .4);
+  background: rgba(255, 255, 255, .075);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .055);
 }
 
 html[data-a1-studio] body .ai-thread-copy small {
@@ -126,9 +127,9 @@ html[data-a1-studio] body .ai-thread-copy small {
 }
 
 html[data-a1-studio] body .ai-sidebar-footer {
-  padding: 14px;
+  padding: 10px 14px;
   border-top: 0;
-  gap: 12px;
+  gap: 8px;
   max-height: 48dvh;
   overflow-y: auto;
 }
@@ -137,9 +138,9 @@ html[data-a1-studio] body .ai-usage {
   position: relative;
   margin: 0;
   padding: 13px;
-  border: 1px solid rgba(255, 255, 255, .045);
+  border: 0;
   border-radius: 14px;
-  background: rgba(255, 255, 255, .035);
+  background: rgba(255, 255, 255, .025);
 }
 
 html[data-a1-studio] body .ai-usage h2 {
@@ -211,7 +212,7 @@ html[data-a1-studio] body .ai-chat-options summary {
   color: var(--ai-muted);
 }
 
-html[data-a1-studio] body :is(.ai-new-chat, .ai-temporary-chat, .ai-history-search, .ai-thread-button, .ai-profile-button, .ai-starter, .ai-model-trigger) {
+html[data-a1-studio] body :is(.ai-new-chat, .ai-temporary-chat, .ai-history-search, .ai-profile-button, .ai-starter, .ai-model-trigger) {
   border-radius: 24px !important;
   transition: background 220ms ease, box-shadow 220ms ease, backdrop-filter 220ms ease, transform 260ms var(--κίνηση);
 }
@@ -373,7 +374,7 @@ html[data-a1-studio] body .ai-message-user .ai-message-content {
   padding: 13px 18px;
   border-radius: 20px 20px 5px 20px;
   background: rgba(255, 255, 255, .075);
-  border: 1px solid rgba(255, 255, 255, .045);
+  border: 0;
 }
 
 html[data-a1-studio] body .ai-composer-shell {

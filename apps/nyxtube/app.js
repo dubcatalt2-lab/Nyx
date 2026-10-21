@@ -127,13 +127,7 @@
     ]),
   );
 
-  refs.watchBackup = document.createElement("button");
-  refs.watchBackup.type = "button";
-  refs.watchBackup.textContent = "Invidious";
-  refs.watchBackup.dataset.watchBackup = "";
-  refs.watchBackup.hidden = true;
-  refs.watchBackup.title = "Use the Invidious player";
-  refs.watchEngine.after(refs.watchBackup);
+
 
   function applyTheme() {
     if (document.documentElement.dataset.appShell === "tutsi") return;
@@ -522,7 +516,6 @@
     refs.watchQuality.title = player.isNative
       ? "Playback quality"
       : "YouTube selects playback quality automatically";
-    updatePlayerSwitch(player.isNative);
     $("[data-watch-settings-quality]").textContent = player.isNative
       ? `${player.quality}p`
       : "Auto";
@@ -746,18 +739,6 @@
       },
     );
   }
-  function updatePlayerSwitch(native, backup = false) {
-    refs.watchEngine.value = backup ? "invidious" : native ? "native" : "youtube";
-    refs.watchEngine.hidden = !state.nativeAvailable && !backup;
-    refs.watchBackup.setAttribute("aria-pressed", String(backup));
-    refs.watchEngine.textContent = native
-      ? "Switch to embedded"
-      : !state.nativeAvailable
-        ? "Switch to YouTube"
-        : dropTube
-          ? "Switch to DropTube"
-          : "Switch to N7X7UB3";
-  }
   async function createWatch(
     video,
     forceDirect = false,
@@ -768,24 +749,17 @@
   ) {
     finishWatchSpace({ cancel: true });
     const generation = ++state.watchGeneration;
-    const backup = Boolean(
-      state.invidiousEmbedOrigin &&
-        !forceDirect &&
-        (playerOverride === "invidious" || (!fallback && state.preferredPlayer === "invidious")),
-    );
-    const native =
-      !backup &&
-      state.nativeAvailable &&
-      state.preferredPlayer === "native" &&
-      !forceDirect &&
-      !fallback;
-    updatePlayerSwitch(native, backup);
+    const native = true;
+    if (!state.nativeAvailable || !window.NyxNativePlayer) {
+      refs.watchLoading.hidden = true;
+      throw new Error("Native playback is unavailable. Try again later or open this video on YouTube.");
+    }
     clearInterval(state.watchTimer);
     state.watchTimer = 0;
-    refs.watchStage.classList.toggle("invidious-player", backup);
-    refs.watchQuality.closest("label").hidden = backup;
-    refs.watchCaptionOption.hidden = backup;
-    $("[data-shortcut-help-open]").hidden = backup;
+    refs.watchStage.classList.remove("invidious-player");
+    refs.watchQuality.closest("label").hidden = false;
+    refs.watchCaptionOption.hidden = false;
+    $("[data-shortcut-help-open]").hidden = false;
     state.watchPlayer?.destroy?.();
     state.watchPlayer = null;
     refs.watchLoading.hidden = false;
@@ -793,62 +767,7 @@
       ? "Preparing video..."
       : "Loading video";
     refs.watchQuality.disabled = true;
-    if (backup) {
-      if (!/^[A-Za-z0-9_-]{11}$/.test(video.id)) throw new Error("Choose a valid video.");
-      if (window.NyxInvidiousPlayer && !embedOnly) {
-        state.watchPlayer = window.NyxInvidiousPlayer(refs.watchPlayer, {
-          id: video.id,
-          restore: restore || {},
-          onLoading: (loading) => {
-            if (generation === state.watchGeneration) refs.watchLoading.hidden = !loading;
-          },
-          onFailure: (position) => {
-            if (generation === state.watchGeneration && state.view === "watch")
-              void createWatch(video, false, true, position, "invidious", true);
-          },
-        });
-        refs.watchCenterPlay.hidden = true;
-        return;
-      }
-      const url = new URL("/embed/" + video.id, state.invidiousEmbedOrigin);
-      const params = {
-        local: "true",
-        autoplay: restore?.paused ? "0" : "1",
-        quality: "dash",
-        controls: "1",
-        continue: "0",
-        hl: "en-US",
-        start: String(Math.max(0, Number(restore?.time) || 0)),
-        volume: String(
-          restore?.muted ? 0 : Math.max(0, Math.min(100, Number(restore?.volume ?? 100))),
-        ),
-        speed: String(Math.max(0.25, Math.min(2, Number(restore?.rate) || 1))),
-      };
-      for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
-      const frame = document.createElement("iframe");
-      frame.title = "Invidious video player";
-      frame.src = url.href;
-      frame.allow = "autoplay; fullscreen; picture-in-picture";
-      frame.allowFullscreen = true;
-      frame.referrerPolicy = "strict-origin-when-cross-origin";
-      frame.addEventListener(
-        "load",
-        () => {
-          if (generation === state.watchGeneration) refs.watchLoading.hidden = true;
-        },
-        { once: true },
-      );
-      state.watchPlayer = { isInvidious: true, destroy: () => frame.remove() };
-      refs.watchPlayer.replaceChildren(frame);
-      refs.watchCenterPlay.hidden = true;
-
-      return;
-    }
-    const YT = native
-      ? window.NyxNativePlayer
-      : forceDirect
-        ? directYoutubeApi
-        : await youtubeApi();
+    const YT = window.NyxNativePlayer;
     if (generation !== state.watchGeneration) return;
     if (state.view !== "watch" || state.watchVideo?.id !== video.id) return;
     state.watchPlayer?.destroy?.();
@@ -903,29 +822,10 @@
       },
       onError: (event) => {
         if (generation !== state.watchGeneration || state.view !== "watch") return;
-        if (native) {
-          notice(
-            state.invidiousEmbedOrigin
-              ? "Opening the Invidious player. Use the controls inside the video."
-              : "Native playback is unavailable. Opening the YouTube player.",
-          );
-          createWatch(
-            video,
-            false,
-            true,
-            {
-              time: event.target.getCurrentTime() || restore?.time || 0,
-              volume: event.target.getVolume(),
-              rate: event.target.getPlaybackRate(),
-              muted: event.target.isMuted(),
-              paused:
-                event.target.getCurrentTime() > 0
-                  ? event.target.video.paused
-                  : (restore?.paused ?? false),
-            },
-            state.invidiousEmbedOrigin ? "invidious" : "",
-          ).catch(() => notice("The video player could not start."));
-        } else recoverWatch(video, Number(event?.data), YT === directYoutubeApi);
+        refs.watchLoading.hidden = true;
+        refs.notice.textContent = "Native playback is unavailable. Try a lower quality, retry later, or open this video on YouTube.";
+        refs.notice.hidden = false;
+        refs.notice.setAttribute("role", "alert");
       },
     };
     state.watchPlayer = new YT.Player(mount(refs.watchPlayer, "nyxtube-watch"), config);
@@ -1672,7 +1572,8 @@
     preparedShorts.set(video.id, entry);
     entry.promise = (async () => {
       const detail = await shortDetail(video),
-        YT = await youtubeApi();
+        YT = window.NyxNativePlayer;
+      if (!state.nativeAvailable || !YT) throw new Error("Native Shorts playback is unavailable.");
       if (entry.removed || state.view !== "shorts") return;
       entry.detail = detail;
       const node = (entry.node = document.createElement("div"));
@@ -1727,66 +1628,6 @@
     });
     return entry;
   }
-  function showInvidiousShort(video, generation, embedOnly = false, restore = null) {
-    clearShortLoadTimer();
-    clearInterval(state.shortTimer);
-    state.shortTimer = 0;
-    for (const entry of preparedShorts.values()) {
-      entry.removed = true;
-      entry.player?.destroy?.();
-      entry.node?.remove();
-    }
-    preparedShorts.clear();
-    state.shortPlayer?.destroy?.();
-    refs.shortStage.classList.add("invidious-player");
-    if (!/^[A-Za-z0-9_-]{11}$/.test(video.id)) throw new Error("Choose a valid Short.");
-    if (window.NyxInvidiousPlayer && !embedOnly) {
-      state.shortPlayer = window.NyxInvidiousPlayer(refs.shortPlayer, {
-        id: video.id,
-        loop: true,
-        onLoading: (loading) => {
-          if (generation === shortGeneration && state.view === "shorts")
-            refs.shortLoading.hidden = !loading;
-        },
-        onFailure: (position) => {
-          if (generation === shortGeneration && state.view === "shorts")
-            showInvidiousShort(video, generation, true, position);
-        },
-      });
-      notice();
-      return;
-    }
-    const url = new URL("/embed/" + video.id, state.invidiousEmbedOrigin);
-    url.search = new URLSearchParams({
-      local: "true",
-      autoplay: restore?.paused ? "0" : "1",
-      quality: "dash",
-      controls: "1",
-      volume: String(restore?.muted === false ? restore.volume : 0),
-      start: String(restore?.time || 0),
-      speed: String(restore?.rate || 1),
-      loop: "1",
-      continue: "0",
-      hl: "en-US",
-    }).toString();
-    const frame = document.createElement("iframe");
-    frame.title = "Invidious Short player";
-    frame.src = url.href;
-    frame.allow = "autoplay; fullscreen; picture-in-picture";
-    frame.allowFullscreen = true;
-    frame.referrerPolicy = "strict-origin-when-cross-origin";
-    frame.addEventListener(
-      "load",
-      () => {
-        if (generation === shortGeneration && state.view === "shorts")
-          refs.shortLoading.hidden = true;
-      },
-      { once: true },
-    );
-    state.shortPlayer = { isInvidious: true, destroy: () => frame.remove() };
-    refs.shortPlayer.replaceChildren(frame);
-    notice();
-  }
   async function showShort(index) {
     if (!state.shorts.length) return;
     const navigation = ++shortNavigation;
@@ -1824,10 +1665,7 @@
     refs.shortCenterPlay.hidden = true;
     refs.shortProgress.style.width = "0";
     void refillShorts();
-    if (state.invidiousEmbedOrigin) {
-      showInvidiousShort(video, generation);
-      return;
-    }
+
     refs.shortStage.classList.remove("invidious-player");
     for (const entry of preparedShorts.values())
       if (entry.node) {
@@ -2158,16 +1996,6 @@
     refs.watchQuality.addEventListener("change", () =>
       switchPlayback(Number(refs.watchQuality.value)),
     );
-    refs.watchEngine.addEventListener("click", () => {
-      state.preferredPlayer =
-        refs.watchEngine.value === "native" || !state.nativeAvailable ? "youtube" : "native";
-      switchPlayback();
-    });
-    refs.watchBackup.addEventListener("click", () => {
-      state.preferredPlayer = "invidious";
-      notice("Use the controls inside the video for playback, quality and fullscreen.");
-      switchPlayback();
-    });
     refs.watchProgress.addEventListener("input", () => {
       if (ready(state.watchPlayer))
         state.watchPlayer.seekTo(
@@ -2479,20 +2307,7 @@
   json("/api/nyxtube/status")
     .then((status) => {
       if (!status?.configured) throw new Error("N7X7UB3 is not configured yet.");
-      try {
-        const url = new URL(status.invidiousEmbedOrigin);
-        if (
-          url.protocol === "https:" &&
-          !url.username &&
-          !url.password &&
-          !url.port &&
-          url.href === url.origin + "/"
-        )
-          state.invidiousEmbedOrigin = url.origin;
-      } catch {}
-      refs.watchBackup.hidden = !state.invidiousEmbedOrigin;
       state.nativeAvailable = status.nativeAvailable === true;
-      refs.watchEngine.hidden = !state.nativeAvailable;
       return loadInitialView();
     })
     .catch((error) => {

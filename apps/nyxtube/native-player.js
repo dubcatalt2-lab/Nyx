@@ -246,7 +246,7 @@
         return;
       }
       this.fail(
-        "Video loading stopped making progress. Try a lower quality or the embedded player.",
+        "Video loading stopped making progress. Try a lower quality or retry later.",
       );
     }
     fail(message) {

@@ -12,7 +12,7 @@ let server,browser;
 try {
   const file=join(root,'fixture.mp4');
   await promisify(execFile)(process.env.NYX_FFMPEG_BIN||'ffmpeg',['-nostdin','-v','error','-f','lavfi','-i','color=c=blue:s=640x360:r=24','-f','lavfi','-i','sine=frequency=440:sample_rate=44100','-t','30','-c:v','libx264','-pix_fmt','yuv420p','-c:a','aac','-movflags','+faststart',file]);
-  const video={id:'YE7VzlLtp-4',title:'Native player test',creator:'Test creator',description:'A test video.',durationSeconds:30,captions:true};
+  const video={id:'YE7VzlLtp-4',title:'Native player test',creator:'Test creator',description:'A test video.',durationSeconds:30,captions:true,isShort:true};
   let metadataStatus=200,busyReplies=2,failed=false,hold=false,checks=0,detailCalls=0,ownerState='working',ownerRole='owner';
   const app=express();
   app.get('/assets/vendor/hls.min.js',(_req,res)=>res.sendFile(createRequire(import.meta.url).resolve('hls.js/dist/hls.min.js'),{dotfiles:'allow'}));
@@ -101,13 +101,18 @@ try {
   await page.mouse.up();assert.equal(await player.evaluate(v=>v.playbackRate),1.25);assert.ok(await player.evaluate(v=>v.paused));
   await page.mouse.down();await page.waitForTimeout(450);await page.evaluate(()=>dispatchEvent(new Event('blur')));assert.equal(await player.evaluate(v=>v.playbackRate),1.25);await page.mouse.up();
   await player.evaluate(v=>v.pause());await page.locator('[data-watch-settings]').click();await page.locator('[data-watch-speed]').focus();await page.keyboard.press('Space');assert.ok(await player.evaluate(v=>v.paused),'Form controls must not control video');await page.keyboard.press('Escape');
+  assert.equal(await page.locator('[data-watch-engine],[data-watch-backup]').count(),0,'Alternate-player controls are removed');
   failed=true;
-  await page.locator('[data-watch-quality]').selectOption('720');await page.locator('[data-test-embed]').waitFor();await page.waitForFunction(()=>document.querySelector('[data-watch-engine]').value==='youtube');
-  assert.ok(await page.locator('[data-watch-quality]').isDisabled());
+  await page.locator('[data-watch-quality]').selectOption('720');
+  await page.waitForFunction(()=>document.body.innerText.includes('Native playback is unavailable'));
+  assert.equal(await page.locator('[data-test-embed],iframe[src*="youtube"],iframe[src*="invidious"]').count(),0,'Native failures must not open an embedded fallback');
   failed=false;
-  await page.getByRole('button',{name:'Switch to N7X7UB3',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-watch-player] video')?.readyState>=1);
-  await page.getByRole('button',{name:'Switch to embedded',exact:true}).click();await page.locator('[data-test-embed]').waitFor();
-  hold=true;await page.getByRole('button',{name:'Switch to N7X7UB3',exact:true}).click();await page.locator('[data-back]').click();await page.waitForTimeout(1700);assert.equal(await page.locator('[data-watch-player] video').count(),0);
+  await page.goto(base+'/apps/nyxtube/?video='+video.id);
+  await page.waitForFunction(()=>document.querySelector('[data-watch-player] video')?.readyState>=1);
+  hold=true;
+  await page.locator('[data-watch-quality]').selectOption('720');
+  await page.locator('[data-back]').click();await page.waitForTimeout(1700);
+  assert.equal(await page.locator('[data-watch-player] video').count(),0);
   hold=false;metadataStatus=503;
   await page.goto(base+'/apps/nyxtube/?video='+video.id);
   await page.waitForFunction(()=>document.querySelector('[data-watch-player] video')?.readyState>=2);
@@ -116,6 +121,10 @@ try {
   metadataStatus=404;await page.goto(base+'/apps/nyxtube/?video='+video.id);
   await page.waitForTimeout(500);assert.equal(await page.locator('[data-watch-player] video').count(),0,'Unavailable videos must not start fallback playback');
   metadataStatus=200;
+  await page.goto(base+'/apps/nyxtube/');
+  await page.locator('[data-view-button="shorts"]').click();
+  await page.waitForFunction(()=>[...document.querySelectorAll('[data-short-player] video')].some(video=>video.currentTime>.1));
+  assert.equal(await page.locator('[data-short-player] iframe').count(),0,'Shorts use native video without external embeds');
   await page.goto(base+'/owner-test');await page.evaluate(()=>NyxOwnerDashboard.open({getToken:async()=> 'mock'}));
   await page.locator('[data-owner-section="services"]').click();
   await page.locator('[data-owner-tube-state="working"]').waitFor();
@@ -128,5 +137,5 @@ try {
   await page.locator('[data-owner-tube-check]').click();await page.locator('[data-owner-tube-state="working"]').waitFor();assert.equal(checks,1);
   await page.setViewportSize({width:390,height:844});assert.ok(await page.locator('[data-owner-tube-status]').evaluate(el=>el.scrollWidth<=el.clientWidth+1));
   ownerRole='admin';await page.locator('[data-owner-refresh]').first().click();await page.locator('[data-owner-tube-status]').waitFor({state:'hidden'});
-  assert.deepEqual(errors,[]);console.log('Native UI: real video playback, seek, fullscreen, quality state restoration, fallback, cancellation, 320/390px layout and Owner status passed.');
+  assert.deepEqual(errors,[]);console.log('Native UI: real video playback, seek, fullscreen, quality state restoration, native-only failure handling, cancellation, 320/390px layout and Owner status passed.');
 }finally{await browser?.close();await new Promise(r=>server?server.close(r):r());await rm(root,{recursive:true,force:true});}

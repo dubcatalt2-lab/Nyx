@@ -462,7 +462,8 @@ async function versionStylesheets() {
   const files = repositoryFiles().filter(isStaticSource).sort();
   const hash = createHash("sha256");
   for (const path of files.filter((path) => path.endsWith(".css"))) {
-    hash.update(path).update(await readFile(join(root, path)));
+    // Hook rewriting changes selectors even when the source stylesheet did not.
+    hash.update(path).update(await readFile(join(output, path)));
   }
   const revision = hash.digest("hex").slice(0, 16);
   for (const path of files.filter((path) => /\.(?:html|css)$/.test(path))) {

@@ -147,7 +147,7 @@ export function createDomHookTransform() {
 
 export async function buildDomHooks(output, files) {
   const owned = files.filter(path => /\.(html|css|js|mjs)$/.test(path) &&
-    (/^(?:index\.html|script\.js|startup\.js|styles\.css|css\/|js\/|apps\/)/.test(path) ||
+    (/^(?:[^/]+\.html$|script\.js|startup\.js|styles\.css|css\/|js\/|apps\/)/.test(path) ||
      /^assets\/(?:studies|gms-studies|gn-math)\//.test(path)));
   const transform = createDomHookTransform(), sources = new Map();
   for (const path of owned) {

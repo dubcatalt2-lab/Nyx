@@ -6,12 +6,12 @@ import { createHash, randomBytes } from "node:crypto";
 import { buildGameCatalogs, κωδικοποίηση } from "./build-game-catalogs.mjs";
 import { αποκωδικοποίηση } from "../assets/studies/catalog-codec.js";
 import { minify } from "terser";
-const alias = (path) =>
+const alias = (path, αναθεώρηση) =>
   posix.join(
     posix.dirname(path),
     "@r" +
       createHash("sha256")
-        .update("frontend-education-v1:" + path)
+        .update("frontend-education-v1:" + αναθεώρηση + ":" + path)
         .digest("hex")
         .slice(0, 24) +
       "!" +
@@ -96,6 +96,9 @@ export function rewriteFrontendReferences(source, path, aliases) {
   return /\.(?:js|mjs)$/.test(path) ? rewriteRelativeScriptUrls(source, path, aliases) : source;
 }
 export async function buildFrontendAssets(output, files, lessonHtml) {
+  // Cached loaders contain whole documents and imports. Rotate their URL graph
+  // together so a fresh HTML shell cannot reuse scripts from an older release.
+  const αναθεώρηση = randomBytes(16).toString("hex");
   const q6b413 = "/assets/studies/@r" + randomBytes(16).toString("hex") + "!.html";
   const κατάλογοι = await buildGameCatalogs(output);
   const existing = JSON.parse(await readFile(join(output, "proxy-assets.json"), "utf8")).aliases;
@@ -108,7 +111,7 @@ export async function buildFrontendAssets(output, files, lessonHtml) {
       p !== "runtime-config.js",
   );
   const aliases = { ...κατάλογοι, ...Object.fromEntries(candidates.map((p) => ["/" + p,
-    p.startsWith("assets/studies/") ? "/assets/studies/@r" + randomBytes(16).toString("hex") + "!" + posix.extname(p) : alias("/" + p)])) };
+    p.startsWith("assets/studies/") ? "/assets/studies/@r" + randomBytes(16).toString("hex") + "!" + posix.extname(p) : alias("/" + p, αναθεώρηση)])) };
   if (files.includes("assets/studies/index.html")) aliases["/assets/studies/index.html"] = q6b413;
 
   for (const path of [...new Set(files)].filter(
@@ -135,7 +138,7 @@ export async function buildFrontendAssets(output, files, lessonHtml) {
       posix.dirname("/" + path),
       "@r" +
         createHash("sha256")
-          .update("entry:" + path + (path === "assets/studies/index.html" ? randomBytes(16).toString("hex") : ""))
+          .update("entry:" + path + ":" + αναθεώρηση + ":" + original)
           .digest("hex")
           .slice(0, 24) +
         "!.js",

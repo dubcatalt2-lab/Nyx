@@ -32,12 +32,6 @@
       "priority": 20
     },
     {
-      "id": "catclass",
-      "format": "external",
-      "url": "/catclass-games",
-      "priority": 5
-    },
-    {
       "id": "duckmath",
       "format": "duckmath",
       "url": "/duckmath-games",

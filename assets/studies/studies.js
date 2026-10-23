@@ -113,12 +113,6 @@ const GAME_LIBRARIES = Object.freeze([
     description: dropGames ? "The Drop game archive" : "Games stored with N7X",
   },
   {
-    id: "catclass",
-    label: "CatClass",
-    shortLabel: "CatClass",
-    description: "Community game sources",
-  },
-  {
     id: "duckmath",
     label: "DuckMath",
     shortLabel: "DuckMath",
@@ -1285,7 +1279,6 @@ function gameProviderLabel(source, index) {
     gms: "GMS",
     zengs: "Zengs",
     lumin: "𝖫𝗎𝗆𝗂𝗇𝖲𝖣𝖪",
-    catclass: "CatClass",
     duckmath: "DuckMath",
   };
   return labels[source?.source] || `Provider ${index + 1}`;

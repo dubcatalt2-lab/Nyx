@@ -47,7 +47,7 @@ import { createNookDeveloper } from './lib/nook-developer.mjs';
 import { aiImageContent } from './lib/ai-image.mjs';
 ﻿import express from "express";
 import { AsyncLocalStorage } from "node:async_hooks";
-import { createAiAllowance, aiAllowanceConfig, premiumModelLimits, aiModelAllowed, hasAppAiAllowance, dropModelIsExpensive, nookModelIsExpensive, expensiveClaudeModel, nookHaikuModel, nookHaikuLimitUsd } from "./lib/ai-allowance.mjs";
+import { createAiAllowance, aiAllowanceConfig, premiumModelLimits, aiModelAllowed, nyxHaikuModel, hasAppAiAllowance, dropModelIsExpensive, nookModelIsExpensive, expensiveClaudeModel, nookHaikuModel, nookHaikuLimitUsd } from "./lib/ai-allowance.mjs";
 import { createOpenRouterBalanceGuard, createOpenRouterOwnerStatus } from "./lib/openrouter-balance.mjs";
 import { aiOutputImages } from "./lib/ai-output-images.mjs";
 import { aiBudgetResponse } from "./lib/ai-budget-response.mjs";
@@ -2280,7 +2280,7 @@ function nyxAiBudgetCatalog(available, personal, provider, actor={}) {
   if (!personal && new URL(nyxAiEndpoint(provider)).hostname === "openrouter.ai") {
     try {
       const config = aiAllowanceConfig(process.env);
-      return available.filter(model => (model.text||model.imageGeneration) && ((isFreeAiModel(model.id)&&freeModelHealth.available(model.id))||(!isFreeAiModel(model.id)&&config.dailyUsd&&(Object.hasOwn(config.prices, `${provider?.id || 'shared'}:${model.id}`)||(fableTrialActive(model.id,actor)&&aiCatalogPrice(model)!==null)))));
+      return available.filter(model => (model.text||model.imageGeneration) && ((isFreeAiModel(model.id)&&freeModelHealth.available(model.id))||(!isFreeAiModel(model.id)&&config.dailyUsd&&(Object.hasOwn(config.prices, `${provider?.id || 'shared'}:${model.id}`)||((fableTrialActive(model.id,actor)||nyxHaikuModel(model.id,actor.app))&&aiCatalogPrice(model)!==null)))));
     } catch { return []; }
   }
   return available;
@@ -2766,7 +2766,7 @@ app.get('/api/nyx-ai/models',async(req,res)=>{
   if(!credential.key)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
   const models=await nyxAiAvailableModels(credential.key,false,credential.provider,entitlement);
   if(!models.length)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
-  res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement,aiCatalogPrice(model))).map(model=>hasAppAiAllowance(entitlement)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'No token quota':entitlement.app==='nook'?(nookModelIsExpensive(aiCatalogPrice(model))?'1,000 expensive / browser / 4 days':'7,000 / browser / 4 days'):dropModelIsExpensive(aiCatalogPrice(model),model.id)?'500 shared / 4 days':'No token quota'}:model).map(model=>nookHaikuModel(model.id,entitlement.app)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'Unlimited':`${model.allowanceLabel} \u00b7 $${nookHaikuLimitUsd(entitlement).toFixed(2)} Haiku / account / 4 days`}:model).map(model=>!hasFullAiCatalog(entitlement)&&!fableTrialActive(model.id,entitlement)&&expensiveClaudeModel(model.id,aiCatalogPrice(model))?{...model,allowanceLabel:[model.allowanceLabel,'$0.05 Claude / account / site / 4 days'].filter(Boolean).join(' · ')}:model).map(model=>fableTrialActive(model.id,entitlement)?{...model,allowanceLabel:fableTrialLabel}:model),credential:'shared',ownerMediaAccess:hasFullAiCatalog(entitlement)});
+  res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement,aiCatalogPrice(model))).map(model=>hasAppAiAllowance(entitlement)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'No token quota':entitlement.app==='nook'?(nookModelIsExpensive(aiCatalogPrice(model))?'1,000 expensive / browser / 4 days':'7,000 / browser / 4 days'):dropModelIsExpensive(aiCatalogPrice(model),model.id)?'500 shared / 4 days':'No token quota'}:model).map(model=>nookHaikuModel(model.id,entitlement.app)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'Unlimited':`${model.allowanceLabel} \u00b7 $${nookHaikuLimitUsd(entitlement).toFixed(2)} Haiku / account / 4 days`}:model).map(model=>!hasFullAiCatalog(entitlement)&&!fableTrialActive(model.id,entitlement)&&!nyxHaikuModel(model.id,entitlement.app)&&expensiveClaudeModel(model.id,aiCatalogPrice(model))?{...model,allowanceLabel:[model.allowanceLabel,'$0.05 Claude / account / site / 4 days'].filter(Boolean).join(' · ')}:model).map(model=>fableTrialActive(model.id,entitlement)?{...model,allowanceLabel:fableTrialLabel}:model),credential:'shared',ownerMediaAccess:hasFullAiCatalog(entitlement)});
 });
 
 function nyxMediaUsage(usage) {

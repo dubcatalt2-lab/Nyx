@@ -10,7 +10,7 @@ import { chromium } from 'playwright';
                                                                                
 const temp = await mkdtemp(join(tmpdir(), 'nyx-ai-picker-'));
 const staticRoot = join(temp, 'site');
-await symlink(resolve('dist'), staticRoot, process.platform === 'win32' ? 'junction' : 'dir');
+await symlink(resolve(process.env.NYX_TEST_DIST || 'dist'), staticRoot, process.platform === 'win32' ? 'junction' : 'dir');
 const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => /^(path|systemroot|windir|temp|tmp|home|userprofile|localappdata)$/i.test(key)));
 const child = fork(new URL('../server.js', import.meta.url), [], {
   env: { ...env, PORT: '0', WISP_URL:'wss://example.com/wisp/', NYX_STATIC_ROOT: staticRoot, NYX_YOUTUBE_NATIVE_ENABLED: '0' }, silent: true
@@ -77,7 +77,7 @@ try {
         await page.screenshot({path:join(tmpdir(),variant+'-model-picker.png')});
       }else assert.equal(await page.locator('#modelCompanies .ai-company-rail').count(),2);
       const ids=await page.locator('#modelOptions [data-model-id]').evaluateAll(nodes=>nodes.map(n=>n.dataset.modelId));
-      assert.deepEqual(ids.slice(0,4),['anthropic/claude-opus-5.5','openai/gpt-6-sol','openrouter/free','openai/gpt-6-luna-pro']);
+      assert.deepEqual(ids.slice(0,4),['anthropic/claude-opus-5.5','google/gemini-2.5-flash-image','google/gemma-4-31b-it:free','inception/mercury-2.5']);
       const option=id=>page.locator('#modelOptions [data-model-id="'+id+'"]');
       assert.match(readable(await option('openai/gpt-6-luna').innerText()),/Text.*Vision/);
       assert(await option('openai/gpt-6-luna').locator('.ai-model-option-label').evaluate(node=>getComputedStyle(node).whiteSpace!=='nowrap'&&node.scrollWidth<=node.clientWidth+1),'Capability and quota labels must remain readable on mobile');
@@ -137,3 +137,4 @@ try {
   }
   await unlink(staticRoot); await rmdir(temp);
 }
+

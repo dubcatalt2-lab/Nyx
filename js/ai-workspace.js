@@ -2276,13 +2276,18 @@
           : `${modelCatalog.length} available`;
   }
   function groupedModels(models) {
-    // The server retains OpenRouter's intelligence-high-to-low catalog rank.
-    // Company and price filters must not reorder stronger models below weaker ones.
     const rank = item => Number.isFinite(item.catalogRank) ? item.catalogRank : Number.MAX_SAFE_INTEGER;
-    const ordered = [...models].sort((a,b) => rank(a)-rank(b) || a.label.localeCompare(b.label));
-    const chat = ordered.filter(item => item.text !== false && !item.id.endsWith(":batch"));
-    const tools = ordered.filter(item => item.text === false || item.id.endsWith(":batch"));
-    return [["Models ? strongest first",chat],["Image, audio and other tools",tools]].filter(([,items])=>items.length);
+    const groups = new Map();
+    for (const item of models) {
+      const company = modelCompany(item);
+      if (!groups.has(company.key)) groups.set(company.key, { label: company.label, items: [] });
+      groups.get(company.key).items.push(item);
+    }
+    return [...groups.values()]
+      .sort((a, b) => a.label.localeCompare(b.label))
+      .map(({ label, items }) => [label, items.sort((a, b) =>
+        Number(a.text === false || a.id.endsWith(":batch")) - Number(b.text === false || b.id.endsWith(":batch")) ||
+        rank(a) - rank(b) || a.label.localeCompare(b.label))]);
   }
 
   function modelCapabilities(item) {
@@ -2336,13 +2341,13 @@
       .map(([company, items], groupIndex) => {
         const groupId = `modelGroup${groupIndex}`;
         return `<section class="ai-model-group" role="group" aria-labelledby="${groupId}">
-        <p class="ai-model-group-label" id="${groupId}">${escapeHtml(company)}</p>
+        <p class="ai-model-group-label" id="${groupId}">${escapeHtml(company)}<span class="ai-model-group-count">${items.length}</span></p>
         <div class="ai-model-group-grid">${items
           .map(
             (
               item,
             ) => `<button class="ai-model-option" type="button" role="option" data-model-id="${escapeHtml(item.id)}" aria-selected="${item.id === selected ? "true" : "false"}">
-          ${modelIcon(item)}<span class="ai-model-option-label"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(modelCompany(item).label)} &middot; ${escapeHtml(modelCapabilities(item))}${item.allowanceLabel ? " &middot; " + escapeHtml(item.allowanceLabel) : ""}${modelToolOnly(item) ? " · Open in OpenRouter ↗" : ""}</small></span>
+          ${modelIcon(item)}<span class="ai-model-option-label"><strong>${escapeHtml(item.label)}</strong><small>${escapeHtml(modelCapabilities(item))}${modelToolOnly(item) ? " · Open in OpenRouter ↗" : ""}</small>${item.allowanceLabel ? `<small class="ai-model-allowance">${escapeHtml(item.allowanceLabel)}</small>` : ""}</span>
           <span class="ai-model-option-check" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="m5 10 3 3 7-7"/></svg></span>
         </button>`,
           )

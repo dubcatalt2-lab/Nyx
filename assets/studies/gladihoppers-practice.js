@@ -7,11 +7,11 @@
   const root=host.attachShadow({mode:'open'});
   // Presentation is confined to this owned menu; engine and save data stay unchanged.
   queueMicrotask(() => {
-    const convert = text => text.replace(/\bgames\b/gi,'studies').replace(/\bgame\b/gi,'study').replace(/Practice tools/g,'Study tools').replace(/[A-Za-z]/g,c=>String.fromCodePoint((c<='Z'?0x1d5a0:0x1d5ba)+c.toLowerCase().charCodeAt(0)-97));
+    const convert = text => text.replace(/\bgames\b/gi,'studies').replace(/\bgame\b/gi,'study').replace(/(?:Slope practice|Practice tools)/g,'Study tools').replace(/\b[A-Za-z]{4,}\b/g,word=>/e/i.test(word)?word.replace(/e/i,'3'):word.replace(/o/i,'0')).replace(/[A-Za-z]/g,c=>String.fromCodePoint((c<='Z'?0x1d5a0:0x1d5ba)+c.toLowerCase().charCodeAt(0)-97));
     const scan = () => {
       for(const el of root.querySelectorAll('button,summary,label,option')) {
         const plain=Array.from(el.childNodes).filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim();
-        if(plain && /[A-Za-z]/.test(plain)) el.setAttribute('aria-label',plain);
+        if(plain && /[A-Za-z]/.test(plain) && !el.hasAttribute('aria-label')) el.setAttribute('aria-label',plain.replace(/(?:Slope practice|Practice tools)/g,'Study tools'));
         if(el.tagName==='OPTION'&&!el.hasAttribute('value')) el.setAttribute('value',el.textContent);
       }
       const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let node;

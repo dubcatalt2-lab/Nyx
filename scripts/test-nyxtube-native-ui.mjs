@@ -104,8 +104,10 @@ try {
   assert.equal(await page.locator('[data-watch-engine],[data-watch-backup]').count(),0,'Alternate-player controls are removed');
   failed=true;
   await page.locator('[data-watch-quality]').selectOption('720');
-  await page.waitForFunction(()=>document.body.innerText.includes('Native playback is unavailable'));
+  await page.waitForFunction(()=>document.body.innerText.includes('Unavailable'));
   assert.equal(await page.locator('[data-test-embed],iframe[src*="youtube"],iframe[src*="invidious"]').count(),0,'Native failures must not open an embedded fallback');
+  await player.evaluate(v=>{v.dispatchEvent(new Event('waiting'));v.dispatchEvent(new Event('stalled'));});
+  assert.ok(await page.locator('[data-watch-loading]').isHidden(),'A terminal error must not resume the loading spinner');
   failed=false;
   await page.goto(base+'/apps/nyxtube/?video='+video.id);
   await page.waitForFunction(()=>document.querySelector('[data-watch-player] video')?.readyState>=1);

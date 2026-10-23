@@ -24,7 +24,7 @@ assert.equal(decoded[0].url, origin + "/lg/fixture/index.html");
 assert.deepEqual(κατάλογοςZengs({}, origin), []);
 const root = resolve(process.env.NYX_TEST_DIST || ".");
 const manifest = JSON.parse(await readFile(join(root, "assets/studies/studies.json"), "utf8"));
-assert(!manifest.catalogs.some(item => item.id === "lumin"));
+assert(manifest.catalogs.some(item => item.id === "lumin"));
 assert(manifest.catalogs.some(item => item.id === "zengs" && item.url === "/zengs-games"));
 const app = express(); app.use(express.static(root));
 const server = app.listen(0, "127.0.0.1");

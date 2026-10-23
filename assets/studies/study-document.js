@@ -43,7 +43,8 @@ export function prepareGameDocument(html, path, sourceUrl) {
       ? location.origin + "/"
       : "https://raw.githubusercontent.com/freebuisness/html/main/";
   const proxyUrl = (url) => gameResourceUrl(url, undefined, location.origin);
-  const adProtection = `<script src="${location.origin}/assets/vendor/game-storage.js"><\/script><script src="${location.origin}/assets/studies/study-runtime-compat.js"><\/script><script src="${location.origin}/assets/studies/study-health.js"><\/script><script src="${location.origin}/assets/studies/study-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;
+  const slopePractice = path === "S/clslope.html" ? `<script src="${location.origin}/assets/studies/slope-practice.js"><\/script>` : "";
+  const adProtection = `${slopePractice}<script src="${location.origin}/assets/vendor/game-storage.js"><\/script><script src="${location.origin}/assets/studies/study-runtime-compat.js"><\/script><script src="${location.origin}/assets/studies/study-health.js"><\/script><script src="${location.origin}/assets/studies/study-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;
   const sourceHtml = String(html || "")
     .replace(/<script\b[^>]*src=["']\/assets\/js\.js["'][^>]*>[\s\S]*?<\/script>/gi, "")
     .replace(/<link\b[^>]*href=["']\/assets\/css\.css["'][^>]*>/gi, "")
@@ -300,6 +301,9 @@ export function prepareGameDocument(html, path, sourceUrl) {
       ? output.replace(/<head([^>]*)>/i, `<head$1><base href="${proxyUrl(baseHref)}">`)
       : `<base href="${proxyUrl(baseHref)}">${output}`;
   }
+  const practiceTools = path === "785-upd3.html"
+    ? `<script defer src="${location.origin}/assets/studies/study-practice.js"><\/script>` : "";
+  if (practiceTools) output = output.replace(/(<script\b[^>]*src=["'][^"']*\/assets\/scripts\/core\/main\.js[^"']*["'][^>]*>)/i, practiceTools + '$1');
   return /<head([^>]*)>/i.test(output)
     ? output.replace(
         /<head([^>]*)>/i,

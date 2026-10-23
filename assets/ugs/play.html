@@ -11,9 +11,9 @@
 <body>
   <div class="loading" id="loading"><div class="status" id="status"><span>Loading game…</span><div class="track"><div class="fill"></div></div></div></div>
   <iframe id="game" title="Game" allow="autoplay; fullscreen; gamepad; keyboard-map" allowfullscreen tabindex="0"></iframe>
-  <script src="/assets/games/game-health.js" data-provider="local"></script>
+  <script src="/assets/studies/study-health.js" data-provider="local"></script>
   <script type="module">
-    import {prepareGameDocument} from '/assets/games/game-document.js';
+    import {prepareGameDocument} from '/assets/studies/study-document.js';
     const frame=document.getElementById('game');
     const loading=document.getElementById('loading');
     const status=document.getElementById('status');
@@ -32,7 +32,7 @@
     function fail(message){if(failed||launched)return;window.nyxReportGameFailure?.(/blank|timed out/i.test(String(message))?'startup-timeout':'load-error');failed=true;status.textContent=String(message||'This game could not be loaded.');const retry=document.createElement('button');retry.type='button';retry.textContent='retry';retry.onclick=()=>location.reload();status.append(document.createElement('br'),retry);loading.classList.remove('hidden');parent.postMessage({type:'nyx:game-failed'},'*')}
     function unwrap(source){const match=String(source).match(/<Content\b[^>]*>\s*<!\[CDATA\[([\s\S]*?)\]\]>\s*<\/Content>/i);return match?match[1]:String(source)}
     function isWrapped(source){return /<Content\b[^>]*>\s*<!\[CDATA\[/i.test(String(source))}
-    function prepare(source,path){const dir=path.includes('/')?path.slice(0,path.lastIndexOf('/')+1):'';const localBase=`<base href="${location.origin}/assets/ugs/${dir}">`;const adProtection=`<script src="${location.origin}/assets/games/game-health.js"><\/script><script src="${location.origin}/assets/games/game-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;const fit='<style>html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#050814}object,embed,canvas,iframe{max-width:100%;max-height:100%}.ads,.ad,.adsbygoogle,iframe[src*="doubleclick"],iframe[src*="googlesyndication"]{display:none!important}</style>';const html=unwrap(source).replace(/<script\b[^>]*src=["'][^"']*(?:\.\.\/)+storage\/js\/cloak(?:i)?\.js[^"']*["'][^>]*>\s*<\/script>/gi,'').replace(/<script\b[^>]*src=["'][^"']*(?:imasdk|(?:\/|^)ads?\.js(?:\?|$)|jump[_-]gamemonetize|poki-(?:master-loader|sdk)|html5\.api\.gamedistribution\.com|googlesyndication|doubleclick|pagead|cdn\.r9x\.in)[^"']*["'][^>]*>\s*<\/script>/gi,'');const base=/<base\b[^>]*>/i.test(html)?'':localBase;return /<head[^>]*>/i.test(html)?html.replace(/<head([^>]*)>/i,`<head$1>${base}${adProtection}${fit}`):`<!doctype html><html><head>${base}${adProtection}${fit}</head><body>${html}</body></html>`}
+    function prepare(source,path){const dir=path.includes('/')?path.slice(0,path.lastIndexOf('/')+1):'';const localBase=`<base href="${location.origin}/assets/ugs/${dir}">`;const adProtection=`<script src="${location.origin}/assets/studies/study-health.js"><\/script><script src="${location.origin}/assets/studies/study-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;const fit='<style>html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#050814}object,embed,canvas,iframe{max-width:100%;max-height:100%}.ads,.ad,.adsbygoogle,iframe[src*="doubleclick"],iframe[src*="googlesyndication"]{display:none!important}</style>';const html=unwrap(source).replace(/<script\b[^>]*src=["'][^"']*(?:\.\.\/)+storage\/js\/cloak(?:i)?\.js[^"']*["'][^>]*>\s*<\/script>/gi,'').replace(/<script\b[^>]*src=["'][^"']*(?:imasdk|(?:\/|^)ads?\.js(?:\?|$)|jump[_-]gamemonetize|poki-(?:master-loader|sdk)|html5\.api\.gamedistribution\.com|googlesyndication|doubleclick|pagead|cdn\.r9x\.in)[^"']*["'][^>]*>\s*<\/script>/gi,'');const base=/<base\b[^>]*>/i.test(html)?'':localBase;return /<head[^>]*>/i.test(html)?html.replace(/<head([^>]*)>/i,`<head$1>${base}${adProtection}${fit}`):`<!doctype html><html><head>${base}${adProtection}${fit}</head><body>${html}</body></html>`}
     let launchStarted=false;
     let launched=false;
     function reportLaunched(){if(launched||failed)return;launched=true;loading.classList.add('hidden');frame.focus();parent.postMessage({type:'nyx:game-launched'},'*')}
@@ -108,19 +108,19 @@
       location.replace('/assets/gn-math/play.html?game='+(path==='B/clbitplanes.html'?'330.html':'370-f.html'));
     }
     else if(path==='A/clasmallworldcup.html'){
-      const sourceUrl=location.origin+'/assets/games/small-world-cup.html';
+      const sourceUrl=location.origin+'/assets/studies/small-world-cup.html';
       fetch(sourceUrl).then(response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.text();})
         .then(source=>{launchStarted=true;frame.srcdoc=prepareGameDocument(source,path,sourceUrl);})
         .catch(error=>fail(`Could not load game: ${error.message||error}`));
     }
     else if(externalGames[path]){launchStarted=true;frame.src=externalGames[path]}
     else if(repairedDocuments[path]){
-      const sourceUrl=location.origin+'/assets/games/subway-surfers.html';
+      const sourceUrl=location.origin+'/assets/studies/subway-surfers.html';
       fetch(sourceUrl).then(response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.text();})
         .then(source=>{launchStarted=true;frame.srcdoc=prepareGameDocument(source.replace('data-edition="barcelona"',`data-edition="${repairedDocuments[path]}"`),path,sourceUrl);})
         .catch(error=>fail(`Could not load game: ${error.message||error}`));
     }
-    else {const assetUrl=`/assets/ugs/${path}`;fetch(assetUrl,{cache:'no-store'}).then(response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.text()}).then(source=>{launchStarted=true;const hasDeadCloak=/(?:\.\.\/)+storage\/js\/cloak(?:i)?\.js/i.test(source);if(path==='G/clgetawayshootout.html'||isWrapped(source)||/<base\b[^>]*href=["'][^"']*(?:cdn\.jsdelivr\.net|raw(?:cdn)?\.githack\.com|raw\.githubusercontent\.com)/i.test(source))frame.srcdoc=prepareGameDocument(unwrap(source),path,location.origin+assetUrl);else if(isWrapped(source)||hasDeadCloak)frame.srcdoc=prepare(source,path);else frame.src=assetUrl}).catch(error=>fail(`Could not load game: ${error.message||error}`))}
+    else {const assetUrl=`/assets/ugs/${path}`;fetch(assetUrl,{cache:'no-store'}).then(response=>{if(!response.ok)throw new Error(`HTTP ${response.status}`);return response.text()}).then(source=>{launchStarted=true;const hasDeadCloak=/(?:\.\.\/)+storage\/js\/cloak(?:i)?\.js/i.test(source);if(path==='G/clgetawayshootout.html'||isWrapped(source)||/https?:\/\/(?:cdn\.jsdelivr\.net|raw(?:cdn)?\.githack\.com|raw\.githubusercontent\.com)/i.test(source)||/<base\b[^>]*href=["'][^"']*(?:cdn\.jsdelivr\.net|raw(?:cdn)?\.githack\.com|raw\.githubusercontent\.com)/i.test(source))frame.srcdoc=prepareGameDocument(unwrap(source),path,location.origin+assetUrl);else if(isWrapped(source)||hasDeadCloak)frame.srcdoc=prepare(source,path);else frame.src=assetUrl}).catch(error=>fail(`Could not load game: ${error.message||error}`))}
   </script>
 </body>
 </html>

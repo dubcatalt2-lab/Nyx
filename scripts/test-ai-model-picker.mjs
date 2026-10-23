@@ -27,6 +27,7 @@ try {
     child.on('message', message => { if (message.type === 'nyx:listening') { clearTimeout(timeout); resolve(message.port); } });
   });
   const base = `http://127.0.0.1:${port}`;
+  const readable = text => text.normalize('NFKC').replace(/3/g,'e').replace(/0/g,'o');
   const health = await (await fetch(base + '/healthz')).json();
   assert.equal(health.wispImplementation, 'external');
   browser = await chromium.launch({ channel: 'msedge', headless: true });
@@ -40,7 +41,11 @@ try {
     {id:'openai/gpt-6-luna-pro',label:'GPT-6 Luna Pro',vision:true,poolTokenLimit:5000},
     {id:'openai/gpt-6-luna',label:'GPT-6 Luna',vision:true,poolTokenLimit:5000},
     {id:'openai/gpt-6-sol',label:'GPT-6 Sol',vision:true}
-  ];
+  ].map(item=>({...item,catalogRank:[
+    'anthropic/claude-opus-5.5','openai/gpt-6-sol','openrouter/free',
+    'openai/gpt-6-luna-pro','openai/gpt-6-luna','openai/gpt-5.6-luna',
+    'inception/mercury-2.5','google/gemini-2.5-flash-image','google/gemma-4-31b-it:free'
+  ].indexOf(item.id)}));
   for(const variant of ['nyx','tutsi-desktop','tutsi-mobile']) {
     const tutsi=variant.startsWith('tutsi');
     const context=await browser.newContext({viewport:{width:variant.endsWith('mobile')?390:1280,height:850}});
@@ -48,8 +53,8 @@ try {
       let reverse=false;
       await context.route('**/api/**',route=>route.fulfill({contentType:'application/json',body:'{}'}));
       await context.route('**/api/nyx-ai/providers',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({providers:[{id:'shared',label:'OpenRouter'}]})}));
-      await context.route('**/api/nyx-ai/models',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({models:reverse?[...fixtures].reverse():fixtures})}));
-      await context.route('**/api/nyx-ai',route=>route.fulfill({contentType:'text/event-stream',body:'data: '+JSON.stringify({model:'anthropic/claude-opus-5.5',choices:[{delta:{content:'Reply icon regression fixture.'}}]})+'\n\ndata: [DONE]\n\n'}));
+      await context.route('**/api/*-ai/models',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({models:reverse?[...fixtures].reverse():fixtures})}));
+      await context.route('**/api/*-ai',route=>route.fulfill({contentType:'text/event-stream',body:'data: '+JSON.stringify({model:'anthropic/claude-opus-5.5',choices:[{delta:{content:'Reply icon regression fixture.'}}]})+'\n\ndata: [DONE]\n\n'}));
       const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
       await page.goto(base+'/ai.html');
       if(tutsi){
@@ -72,17 +77,16 @@ try {
         await page.screenshot({path:join(tmpdir(),variant+'-model-picker.png')});
       }else assert.equal(await page.locator('#modelCompanies .ai-company-rail').count(),2);
       const ids=await page.locator('#modelOptions [data-model-id]').evaluateAll(nodes=>nodes.map(n=>n.dataset.modelId));
-      assert.deepEqual(ids.slice(0,4),['openai/gpt-6-sol','openai/gpt-6-luna-pro','openai/gpt-6-luna','openai/gpt-5.6-luna']);
-      assert(ids.slice(-2).every(id=>id.endsWith(':free')||id==='openrouter/free'));
+      assert.deepEqual(ids.slice(0,4),['anthropic/claude-opus-5.5','openai/gpt-6-sol','openrouter/free','openai/gpt-6-luna-pro']);
       const option=id=>page.locator('#modelOptions [data-model-id="'+id+'"]');
-      assert.match(await option('openai/gpt-6-luna').innerText(),/Text.*Vision/);
+      assert.match(readable(await option('openai/gpt-6-luna').innerText()),/Text.*Vision/);
       assert(await option('openai/gpt-6-luna').locator('.ai-model-option-label').evaluate(node=>getComputedStyle(node).whiteSpace!=='nowrap'&&node.scrollWidth<=node.clientWidth+1),'Capability and quota labels must remain readable on mobile');
       assert(!/5,000|token cap|token limit/.test(await page.locator('#modelOptions').innerText()));
-      assert(!/Image generation/.test(await option('openai/gpt-6-luna').innerText()));
-      const imageCapabilities=await option('google/gemini-2.5-flash-image').innerText();
+      assert(!/Image generation/.test(readable(await option('openai/gpt-6-luna').innerText())));
+      const imageCapabilities=readable(await option('google/gemini-2.5-flash-image').innerText());
       for(const capability of ['Text','Vision','Image generation'])assert(imageCapabilities.includes(capability));
-      assert.match(await option('inception/mercury-2.5').innerText(),/Text/);
-      assert(!/Vision/.test(await option('inception/mercury-2.5').innerText()));
+      assert.match(readable(await option('inception/mercury-2.5').innerText()),/Text/);
+      assert(!/Vision/.test(readable(await option('inception/mercury-2.5').innerText())));
       await option('openai/gpt-6-luna').click();assert.equal(await page.locator('#model').inputValue(),'openai/gpt-6-luna');
       if(tutsi){
         await page.locator('#input').fill('Check the model avatar');
@@ -91,7 +95,7 @@ try {
         const avatar=page.locator('.ai-message-assistant .ai-message-avatar').last();
         assert.equal(await avatar.evaluate(el=>getComputedStyle(el).backgroundImage),'none','Old Tutsi icon must not appear behind company logo');
         assert.equal(await avatar.locator('.ai-company-logo').count(),1);
-        assert.match(await page.locator('.ai-message-assistant .ai-message-meta strong').last().innerText(),/Claude/);
+        assert.match(readable(await page.locator('.ai-message-assistant .ai-message-meta strong').last().innerText()),/Claude/);
       }
       reverse=true;await page.reload();await page.waitForFunction(()=>document.querySelector('#model')?.value==='openai/gpt-6-luna');
       assert.deepEqual(errors,[]);
@@ -103,7 +107,7 @@ try {
   try{
     await embedded.route('**/api/**',route=>route.fulfill({contentType:'application/json',body:'{}'}));
     await embedded.route('**/api/nyx-ai/providers',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({providers:[{id:'shared',label:'OpenRouter'}]})}));
-    await embedded.route('**/api/nyx-ai/models',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({models:fixtures})}));
+    await embedded.route('**/api/*-ai/models',route=>route.fulfill({contentType:'application/json',body:JSON.stringify({models:fixtures})}));
     await embedded.addInitScript(()=>localStorage.setItem('tutsi.customize.seen','1'));
     const page=await embedded.newPage();
     await page.goto(base+'/apps/tutsi/index.html#settings');

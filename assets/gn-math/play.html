@@ -82,6 +82,7 @@
   <script src="/assets/studies/study-health.js" data-provider="gn"></script>
   <script type="module">
     import {prepareGameDocument} from '/assets/studies/study-document.js';
+    import {currentGnPath} from '/assets/studies/study-catalog.js';
     const loading=document.querySelector('.loading');
     const status=document.getElementById('status');
     const progressLabel=document.getElementById('progressLabel');
@@ -150,7 +151,7 @@
     function finishGameProgress(){
       if(gameLaunched) return;
       if(!gameReadySignal && !gameSurfaceReady()){
-        if(performance.now()-gameLoadStarted>11000){
+        if(performance.now()-gameLoadStarted>60000){
           fail('This game loaded a blank screen. One of its required files is missing or blocked.');
           return;
         }
@@ -202,7 +203,15 @@
     }
 
     window.addEventListener('message',event=>{
+      if(event.source===parent&&event.data?.type==='nyx:gladi-save-result'&&gamePath==='4-pf.html'){
+        frame.contentWindow?.postMessage(event.data,'*');return;
+      }
       if(event.source!==frame.contentWindow) return;
+      if(event.data?.type==='nyx:gladi-save'&&gamePath==='4-pf.html'){
+        if(parent!==window)parent.postMessage(event.data,location.origin);
+        else frame.contentWindow?.postMessage({type:'nyx:gladi-save-result',requestId:event.data.requestId,error:'Open Gladihoppers from the Nyx library to save.'},'*');
+        return;
+      }
       if(event.data?.type==='gn-math:ready'){
         gameReadySignal=true;
         finishGameProgress();
@@ -215,8 +224,14 @@
     });
     frame.addEventListener('load',()=>setTimeout(finishGameProgress,1800));
 
-    const requestedPath=safeGamePath(game);
-    const gamePath=({'266-a.html':'266.html','785-upd2.html':'785-upd3.html','253-update.html':'253-update2.html','801-fix.html':'801-fix2.html'})[requestedPath]||requestedPath;
+    let requestedPath=safeGamePath(game);
+    if(requestedPath){
+      try{
+        const response=await fetch('/assets/gn-math/games.json',{signal:AbortSignal.timeout(5000)});
+        if(response.ok)requestedPath=currentGnPath(requestedPath,await response.json());
+      }catch{/* A cached link can still load when the catalog is unavailable. */}
+    }
+    const gamePath=({'198.html':'198-fix2.html','198-fix.html':'198-fix2.html','266-a.html':'266.html','785-upd2.html':'785-upd3.html','253-update.html':'253-update2.html','801-fix.html':'801-fix2.html'})[requestedPath]||requestedPath;
     const archiveGame={'82-a.html':'C/clcookieclicker.html','177.html':'R/clrun3.html'}[gamePath];
     if(archiveGame){
       location.replace('/assets/ugs/play.html?game='+encodeURIComponent(archiveGame));
@@ -227,7 +242,11 @@
       const rawUrl=`https://raw.githubusercontent.com/freebuisness/html/main/${encodeURIComponent(gamePath)}`;
       setGameProgress(22);
       const localGame={'4-pf.html':'/assets/studies/gladihoppers.html','435.html':'/assets/studies/small-world-cup.html'}[gamePath];
-      fetch(localGame||`/gn-math-fetch?path=${encodeURIComponent(gamePath)}`,{cache:'no-store'})
+      if(localGame){
+        // First-party documents already contain their own runtime and asset paths.
+        // Rewriting encoded production documents as remote HTML breaks their loader.
+        frame.src=localGame;
+      }else fetch(`/gn-math-fetch?path=${encodeURIComponent(gamePath)}`,{cache:'no-store'})
         .then(response=>{
           if(response.ok){
             setGameProgress(48);

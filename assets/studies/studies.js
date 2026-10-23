@@ -96,6 +96,7 @@ const state = {
 };
 
 const GAME_LIBRARIES = Object.freeze([
+  {id:"lumin",label:"𝖫𝗎𝗆𝗂𝗇𝖲𝖣𝖪",shortLabel:"𝖫𝗎𝗆𝗂𝗇",description:"Additional study collection"},
   { id: "all", label: "All games", shortLabel: "All", description: "Every available game" },
   {
     id: "zengs",
@@ -134,7 +135,83 @@ const GAME_LIBRARIES = Object.freeze([
 const cloudGameRequests = new Map();
 let cloudGameRequestId = 0;
 let activeGameStorageBaseline = {};
+let unityCloudAttempt = -1;
 const cloudAuthRelays = new Map();
+const luminCoverUrls = new Map();
+let luminSdkPromise = null;
+let luminReadyPromise = null;
+const LUMIN_OPERATION_TIMEOUT = 9000;
+function withTimeout(promise, milliseconds, label) {
+  let timer = 0;
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`${label} timed out`)), milliseconds);
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
+
+function loadLuminSdk(sdkUrl, sdkIntegrity = "") {
+  if (window.Lumin?.init) return Promise.resolve(window.Lumin);
+  if (luminSdkPromise) return luminSdkPromise;
+  luminSdkPromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    let settled = false;
+    script.src = sdkUrl;
+    script.async = true;
+    script.referrerPolicy = "no-referrer";
+    if (sdkIntegrity) {
+      script.integrity = sdkIntegrity;
+      script.crossOrigin = "anonymous";
+    }
+    const finish = (error, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (error) reject(error);
+      else resolve(value);
+    };
+    const timer = setTimeout(
+      () => finish(new Error("𝖫𝗎𝗆𝗂𝗇𝖲𝖣𝖪 timed out")),
+      LUMIN_OPERATION_TIMEOUT,
+    );
+    script.addEventListener(
+      "load",
+      () =>
+        window.Lumin?.init
+          ? finish(null, window.Lumin)
+          : finish(new Error("𝖫𝗎𝗆𝗂𝗇𝖲𝖣𝖪 loaded without exposing its API")),
+      { once: true },
+    );
+    script.addEventListener("error", () => finish(new Error("𝖫𝗎𝗆𝗂𝗇𝖲𝖣𝖪 could not be loaded")), {
+      once: true,
+    });
+    document.head.append(script);
+  }).catch((error) => {
+    luminSdkPromise = null;
+    throw error;
+  });
+  return luminSdkPromise;
+}
+
+async function ensureLuminReady(
+  sdkUrl = state.manifest?.catalogs?.find((catalog) => catalog.format === "lumin")?.sdkUrl,
+  sdkIntegrity = state.manifest?.catalogs?.find((catalog) => catalog.format === "lumin")
+    ?.sdkIntegrity,
+) {
+  if (luminReadyPromise) return luminReadyPromise;
+  luminReadyPromise = (async () => {
+    const lumin = await loadLuminSdk(sdkUrl, sdkIntegrity);
+    await withTimeout(lumin.init({ headless: true }), LUMIN_OPERATION_TIMEOUT, "𝖫𝗎𝗆𝗂𝗇𝖲𝖣𝖪 setup");
+    return lumin;
+  })().catch((error) => {
+    luminReadyPromise = null;
+    throw error;
+  });
+  return luminReadyPromise;
+}
+
+
 
 const CATALOG_FETCH_TIMEOUT = 8_000;
 const CATALOG_FETCH_ATTEMPTS = 2;
@@ -658,6 +735,54 @@ function excludedGameItem(item) {
 }
 
 async function adaptCatalog(catalog) {
+  if (catalog.format === "lumin") {
+    const lumin = await ensureLuminReady(catalog.sdkUrl, catalog.sdkIntegrity);
+    const games = [];
+    const limit = 100;
+    let page = 1;
+    let pages = 1;
+    do {
+      const result = await withTimeout(
+        lumin.getGames({ page, limit }),
+        LUMIN_OPERATION_TIMEOUT,
+        `𝖫𝗎𝗆𝗂𝗇𝖲𝖣𝖪 catalog page ${page}`,
+      );
+      const items = Array.isArray(result?.games) ? result.games : [];
+      games.push(...items);
+      pages = Math.max(1, Number(result?.pages) || 1);
+      page += 1;
+    } while (page <= pages);
+
+    return games.flatMap((item) => {
+      const id = String(item?.id || "").trim();
+      const title = cleanGameTitle(item?.name || id, "lumin");
+      if (!id || !title) return [];
+      const player = `lumin-game:${id}`;
+      const cover = item?.image_token ? `lumin-cover:${item.image_token}` : "";
+      return [
+        {
+          key: gameKey(title),
+          title,
+          url: player,
+          cover,
+          covers: cover ? [cover] : [],
+          priority: Number(catalog.priority) || 0,
+          source: catalog.id,
+          sources: [
+            {
+              url: player,
+              source: catalog.id,
+              priority: Number(catalog.priority) || 0,
+              title,
+              luminId: id,
+            },
+          ],
+        },
+      ];
+    });
+  }
+
+
   const items = rawItems(await fetchCatalogJson(catalog.url, catalog.id));
   let knownCovers = new Set();
 
@@ -819,7 +944,25 @@ function makeCover(game) {
   image.decoding = "async";
   image.referrerPolicy = "no-referrer";
   let index = 0;
-  const setImageSource = (source) => { image.src = source; };
+  const setImageSource = async (source) => {
+    if (!source.startsWith("lumin-cover:")) {
+      image.src = source;
+      return;
+    }
+    const token = source.slice("lumin-cover:".length);
+    try {
+      let url = luminCoverUrls.get(token);
+      if (!url) {
+        const lumin = await ensureLuminReady();
+        url = await lumin.getImageUrl(token);
+        if (url) luminCoverUrls.set(token, url);
+      }
+      if (url) image.src = url;
+      else image.dispatchEvent(new Event("error"));
+    } catch {
+      image.dispatchEvent(new Event("error"));
+    }
+  };
   void setImageSource(game.covers[index]);
   image.addEventListener("load", () => {
     image.classList.add("loaded");
@@ -1141,6 +1284,7 @@ function gameProviderLabel(source, index) {
     gn: "GN Math",
     gms: "GMS",
     zengs: "Zengs",
+    lumin: "𝖫𝗎𝗆𝗂𝗇𝖲𝖣𝖪",
     catclass: "CatClass",
     duckmath: "DuckMath",
   };
@@ -1224,6 +1368,21 @@ async function launchGameSource(index, reason = "") {
     }
   } catch {}
   let playableUrl = source.url;
+  if (source.source === "lumin") {
+    try {
+      const lumin = await ensureLuminReady();
+      const result = await lumin.getGameUrl(
+        source.luminId || source.url.slice("lumin-game:".length),
+      );
+      playableUrl = String(result?.url || "");
+      if (!/^https:\/\//i.test(playableUrl)) throw new Error("𝖫𝗎𝗆𝗂𝗇𝖲𝖣𝖪 did not return a playable URL");
+    } catch {
+      if (attempt === state.sourceAttempt && state.activeGame)
+        tryNextGameSource("The Lumin game could not be prepared.");
+      return;
+    }
+  }
+
   if (attempt !== state.sourceAttempt || !state.activeGame) return;
   elements.frame.src = playableUrl;
 
@@ -1231,7 +1390,7 @@ async function launchGameSource(index, reason = "") {
   try {
     sameOrigin = new URL(playableUrl, location.href).origin === location.origin;
   } catch {}
-  if (sameOrigin) {
+  if (sameOrigin || source.source === "lumin") {
     state.sourceTimer = setTimeout(
       () => {
         if (attempt !== state.sourceAttempt || !state.activeGame) return;
@@ -1495,7 +1654,7 @@ window.addEventListener("message", (event) => {
     document.body.classList.toggle("cloud-session-active", event.data.active === true);
     return;
   }
-  if (event.origin === location.origin && event.data?.type === "nyx:cloud-game-result") {
+  if (event.source===parent && event.origin === location.origin && event.data?.type === "nyx:cloud-game-result") {
     const request = cloudGameRequests.get(String(event.data.requestId || ""));
     if (request) {
       clearTimeout(request.timer);
@@ -1506,6 +1665,49 @@ window.addEventListener("message", (event) => {
     return;
   }
   if (event.source !== elements.frame.contentWindow || !state.activeGame) return;
+  if(event.data?.type==='nyx:gladi-save'){
+    const sourceUrl=new URL(elements.frame.src,location.href);
+    if(event.origin!==location.origin||sourceUrl.pathname!=='/assets/gn-math/play.html'||sourceUrl.searchParams.get('game')!=='4-pf.html')return;
+    const {requestId,action}=event.data;
+    if(typeof requestId!=='string'||requestId.length>120||!['load','save'].includes(action))return;
+    const frame=event.source,attempt=state.sourceAttempt,localKey='nyx.unitySave.gladihoppers',gameKey='gladihoppers-unity-v1';
+    const validate=value=>{
+      if(!value||typeof value!=='object'||Array.isArray(value))throw Error('Invalid save.');
+      if(!value.unityCount)return {};
+      const count=Number(value.unityCount);if(!Number.isInteger(count)||count<1||count>12)throw Error('Save too large.');
+      const storage={unityCount:String(count)};
+      for(let i=0;i<count;i++){const part=value['unity'+i];if(typeof part!=='string'||part.length>20000||!/^[A-Za-z0-9+/]*={0,2}$/.test(part))throw Error('Invalid save.');storage['unity'+i]=part;}
+      return storage;
+    };
+    void(async()=>{
+      let result;
+      try{
+        if(action==='load'){
+          unityCloudAttempt=-1;
+          let storage={};try{storage=validate(JSON.parse(localStorage.getItem(localKey)||'{}'));}catch{}
+          let cloud=false;
+          if(parent!==window)try{
+            const remote=await requestCloudGameSave('nyx:cloud-game-load',{gameKey});
+            const saved=validate(remote.storage||{});if(saved.unityCount)storage=saved;
+            if(attempt===state.sourceAttempt)unityCloudAttempt=attempt;
+            cloud=true;
+          }catch{}
+          result={storage,cloud};
+        }else{
+          const storage=validate(event.data.storage);if(!storage.unityCount)throw Error('Empty save.');
+          localStorage.setItem(localKey,JSON.stringify(storage));
+          let cloud=false;
+          if(unityCloudAttempt===attempt&&attempt===state.sourceAttempt){
+            const removed=Array.from({length:12-Number(storage.unityCount)},(_,i)=>'unity'+(Number(storage.unityCount)+i));
+            await requestCloudGameSave('nyx:cloud-game-save',{gameKey,storage,removed});cloud=true;
+          }
+          result={saved:true,cloud};
+        }
+      }catch(error){result={error:error.message};}
+      if(attempt===state.sourceAttempt)frame.postMessage({type:'nyx:gladi-save-result',requestId,...result},location.origin);
+    })();
+    return;
+  }
   if (event.data?.type === "nyx:game-launched") finishGameLaunch();
   if (event.data?.type === "nyx:game-failed")
     tryNextGameSource("The current source reported a loading error.");

@@ -26,7 +26,10 @@ try {
   assert(html.includes('<base href="/zengs-assets/0/lg/ovo-2/">'));
   assert(html.includes('src="/zengs-assets/1/npm/example/game.js"'));
   assert(html.includes('fetch("/zengs-assets/0/lg/file.wasm")'));
-  const wasm = await (await fetch(base + "/zengs-assets/0/lg/file.wasm")).arrayBuffer();
+  const sandboxResponse = await fetch(base + "/zengs-assets/0/lg/file.wasm",{headers:{Origin:'null'}});
+  assert.equal(sandboxResponse.headers.get('access-control-allow-origin'),'*');
+  assert.equal(sandboxResponse.headers.get('access-control-allow-credentials'),null);
+  const wasm = await sandboxResponse.arrayBuffer();
   assert.deepEqual([...new Uint8Array(wasm)], [0, 97, 115, 109]);
   assert.equal((await fetch(base + "/zengs-assets/999/file")).status, 404);
   assert.equal((await fetch(base + "/zengs-assets/0//evil.example/file")).status, 400);

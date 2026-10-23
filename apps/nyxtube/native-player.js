@@ -43,7 +43,7 @@
         if (!this.renewing) this.setBuffering(false);
       });
       this.video.addEventListener("ended", () => this.setBuffering(false));
-      this.video.addEventListener("error", () => emit("onError", 900));
+      this.video.addEventListener("error", () => this.fail("The audio or video stream could not be loaded. Try another quality or retry."));
       this.video.addEventListener("loadedmetadata", () => emit("onReady"), { once: true });
       this.watchdog = setInterval(() => this.checkProgress(), 2000);
       this.video.addEventListener("timeupdate", () => {
@@ -57,7 +57,7 @@
       this.prepare().catch((error) => this.fail(error.message));
     }
     setBuffering(value) {
-      if (this.controller.signal.aborted || this.buffering === value) return;
+      if (this.controller.signal.aborted || (this.failed && value) || this.buffering === value) return;
       this.buffering = value;
       this.options.events?.onBuffering?.({ target: this, data: value });
     }
@@ -175,7 +175,7 @@
           playlistLoadPolicy: policy,
         }));
         hls.on(Hls.Events.ERROR, (_event, data) => {
-          if (this.controller.signal.aborted) return;
+          if (this.controller.signal.aborted || this.failed) return;
           if (!data.fatal) {
             if (data.details === Hls.ErrorDetails?.BUFFER_STALLED_ERROR && !this.video.paused)
               this.setBuffering(true);
@@ -323,6 +323,7 @@
       }
     }
     playVideo() {
+      if (this.failed || this.controller.signal.aborted) return;
       this.video.play().catch(() => {
         if (!this.controller.signal.aborted)
           this.options.events?.onStateChange?.({ target: this, data: 2 });

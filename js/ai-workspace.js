@@ -2276,36 +2276,13 @@
           : `${modelCatalog.length} available`;
   }
   function groupedModels(models) {
-    const priority = [
-      "openai/gpt-6-astra",
-      "anthropic/claude-fable-5.1",
-      "openai/gpt-6-sol",
-      "openai/gpt-5.6-sol-pro",
-      "openai/gpt-6-luna-pro",
-      "openai/gpt-6-luna",
-      "openai/gpt-5.6-luna",
-    ];
-    const free = (item) => item.free || item.id.endsWith(":free") || item.id === "openrouter/free";
-    const company = (item) => modelCompany(item).label;
-    const rank = (item) => {
-      const index = priority.indexOf(item.id);
-      return index < 0 ? priority.length : index;
-    };
-    const ordered = [...models].sort(
-      (a, b) =>
-        Number(free(a)) - Number(free(b)) ||
-        Number(company(b) === "OpenAI") - Number(company(a) === "OpenAI") ||
-        company(a).localeCompare(company(b)) ||
-        rank(a) - rank(b) ||
-        a.label.localeCompare(b.label),
-    );
-    const groups = new Map();
-    ordered.forEach((item) => {
-      const group = `${free(item) ? "Free" : "Paid"} · ${company(item)}`;
-      if (!groups.has(group)) groups.set(group, []);
-      groups.get(group).push(item);
-    });
-    return [...groups];
+    // The server retains OpenRouter's intelligence-high-to-low catalog rank.
+    // Company and price filters must not reorder stronger models below weaker ones.
+    const rank = item => Number.isFinite(item.catalogRank) ? item.catalogRank : Number.MAX_SAFE_INTEGER;
+    const ordered = [...models].sort((a,b) => rank(a)-rank(b) || a.label.localeCompare(b.label));
+    const chat = ordered.filter(item => item.text !== false && !item.id.endsWith(":batch"));
+    const tools = ordered.filter(item => item.text === false || item.id.endsWith(":batch"));
+    return [["Models ? strongest first",chat],["Image, audio and other tools",tools]].filter(([,items])=>items.length);
   }
 
   function modelCapabilities(item) {

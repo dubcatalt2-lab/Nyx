@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import {createAiAllowance,aiAllowanceConfig,aiModelAllowed} from '../lib/ai-allowance.mjs';
+import {memoryFirestore} from './test-ai-allowance.mjs';
+const model='anthropic/claude-haiku-5.5',price={inputPerMillion:.1,outputPerMillion:.5};
+const actor={uid:'nyx-haiku-member',app:'nyx',requestedModel:model};
+assert(aiModelAllowed(model,actor,price));
+assert(aiModelAllowed(model,{uid:'legacy'},price));
+assert(!aiModelAllowed(model,{...actor,blocked:true},price));
+assert(!aiModelAllowed(model,{...actor,modelRules:[{model,access:'deny'}]},price));
+assert(!aiModelAllowed('anthropic/claude-opus-5.5',actor,price));
+const db=memoryFirestore(),a=createAiAllowance({db,config:aiAllowanceConfig({})});
+const session=await a.begin(actor);
+const payload=()=>({model,messages:[{role:'user',content:'Hello'}],max_tokens:100});
+// Even an exhausted expensive-Claude balance must not restrict this model.
+db.records.set(session.refs.claude.path,{start:Date.now(),used:999999999});
+const reservation=await a.reserve(session,'shared',payload(),price);
+assert.equal(reservation.claudePrice,null);
+await a.settle(reservation,{input:10,output:20,cost:.000011});
+await a.finish(session,true);
+const ledger=db.records.get(session.refs.models.path);
+assert.equal(ledger.pool.used,30,'Haiku spends the shared account token pool');
+ledger.pool.used=7000;db.records.set(session.refs.models.path,ledger);
+const exhausted=await a.begin(actor);
+await assert.rejects(a.reserve(exhausted,'shared',payload(),price),/7,000-token|7000-token/);
+await a.finish(exhausted);
+console.log('PASS Nyx Haiku default access, moderation, shared token accounting and exhausted account pool.');

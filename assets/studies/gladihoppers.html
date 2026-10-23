@@ -10,9 +10,15 @@
 </head>
 <body>
   <div id="unity-container"></div><div id="progress" role="status">Loading Gladihoppers…</div>
+  <script src="/assets/studies/gladihoppers-save.js"></script>
   <script>
 
     const progress=document.getElementById('progress');
+
+    // Standalone lifecycle bridge: loading must not depend on a removed ad SDK.
+    const idle=()=>{};
+    window.PokiSDK={init:()=>Promise.resolve(),commercialBreak:()=>Promise.resolve(),rewardedBreak:()=>Promise.resolve(false)};
+    for(const method of ['customEvent','destroyAd','displayAd','gameInteractive','gameLoadingFinished','gameLoadingProgress','gameLoadingStart','gameplayStart','gameplayStop','happyTime','roundEnd','roundStart','setPlayerAge','togglePlayerAdvertisingConsent'])window.PokiSDK[method]=idle;
 
     document.xURL=document.URL;
     window.config={cachedDecompressedFileSizes:{'Gladihoppers.data.unityweb':17409938,'Gladihoppers.wasm.code.unityweb':6410659,'Gladihoppers.wasm.framework.unityweb':91463}};
@@ -24,21 +30,30 @@
     };
     const updateProgress=UnityLoader.Progress.update;
     UnityLoader.Progress.update=function(instance,name,event){
-      if(event && !event.lengthComputable && event.target){
-        const requestUrl=new URL(event.target.responseURL,document.baseURI);
-        const sourceUrl=requestUrl.searchParams.get('url') || requestUrl.href;
-        if(sourceUrl.includes('/Build/'))event={type:event.type,lengthComputable:false,loaded:event.loaded,total:event.total,target:{responseURL:sourceUrl}};
+      if(event && !event.lengthComputable){
+        // The legacy loader splits a hard-coded /Build/ URL which proxies rewrite.
+        // Supply its expected byte estimate directly instead of parsing that URL twice.
+        const requestUrl=new URL(event.target?.responseURL||document.baseURI,document.baseURI);
+        const filename=requestUrl.pathname.split('/').pop();
+        const total=window.config.cachedDecompressedFileSizes[filename]||event.total||event.loaded||1;
+        event={type:event.type,lengthComputable:true,loaded:event.loaded||0,total,target:event.target};
       }
       return updateProgress.call(this,instance,name,event);
     };
+    async function boot(){
+    await window.NyxGladiSave.loading;
     try {
       window.unityGame=window.gameInstance=UnityLoader.instantiate('unity-container','/zengs-assets/1/gh/Toaster68/gh@bd6bd0189e8f6579756fbc78ef89241c28e0101b/Build/Gladihoppers.json',{
+        Module:parent===window?{}:{unityFileSystemInit(){window.NyxGladiSave.mount(window.unityGame.Module);}},
         onProgress(instance,value){progress.textContent=`Loading Gladihoppers… ${Math.round(value*100)}%`;if(value===1){progress.hidden=true;parent.postMessage({type:'gn-math:ready'},'*');}}
       });
     } catch(error) {
       progress.textContent='Gladihoppers could not start. Reload to try again.';
       parent.postMessage({type:'gn-math:error',message:progress.textContent},'*');
     }
+    }
+    void boot();
   </script>
+  <script src="/assets/studies/gladihoppers-practice.js"></script>
 </body>
 </html>

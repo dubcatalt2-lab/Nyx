@@ -785,6 +785,7 @@
       },
       onBuffering: (event) => {
         if (generation !== state.watchGeneration) return;
+        if(event.target.failed){refs.watchLoading.hidden=true;return;}
         refs.watchLoading.hidden = !event.data;
         if (event.data) {
           refs.watchLoading.querySelector("strong").textContent = "Loading video chunks...";
@@ -823,7 +824,7 @@
       onError: (event) => {
         if (generation !== state.watchGeneration || state.view !== "watch") return;
         refs.watchLoading.hidden = true;
-        refs.notice.textContent = "Native playback is unavailable. Try a lower quality, retry later, or open this video on YouTube.";
+        refs.notice.textContent = event.target.failure || "Native playback is unavailable. Try a lower quality, retry later, or open this video on YouTube.";
         refs.notice.hidden = false;
         refs.notice.setAttribute("role", "alert");
       },

@@ -24,9 +24,9 @@ for (const privilege of [{ premium: true }, { owner: true }, { coOwner: true }])
     await allowance.finish(await allowance.begin(priority));
   }
   if (!privilege.coOwner) {
-    await assert.rejects(allowance.begin(priority), e => e.retryAfter === 60 && /Please wait/.test(e.message));
+    await allowance.finish(await allowance.begin(priority));
     time += 31000;
-    await assert.rejects(allowance.begin(priority), e => e.retryAfter === 29);
+    await allowance.finish(await allowance.begin(priority));
     time += 30000;
     await allowance.finish(await allowance.begin(priority));
   }
@@ -35,8 +35,8 @@ for (const privilege of [{ premium: true }, { owner: true }, { coOwner: true }])
 {
   const allowance = createAiAllowance({ db: memoryFirestore(), config: aiAllowanceConfig({}) });
   for (let n = 0; n < 4; n++) await allowance.finish(await allowance.begin(actor('regular')));
-  await assert.rejects(allowance.begin(actor('regular')), /Please wait/);
+  await allowance.finish(await allowance.begin(actor('regular')));
   for (let n = 0; n < 2; n++) await allowance.finish(await allowance.begin(actor('api', { premium: true, apiVerified: true, apiMinuteRequests: 2 })));
   await assert.rejects(allowance.begin(actor('api', { premium: true, apiVerified: true, apiMinuteRequests: 2 })), /Please wait/);
 }
-console.log('AI priority: verified privilege reserve access, faster pacing, accurate retry delay, global/account caps and API-key limits passed.');
+console.log('AI priority: verified privilege reserve access, no Nyx sending cooldown, global/account concurrency caps and API-key limits passed.');

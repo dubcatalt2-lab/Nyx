@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import express from 'express';
 import {chromium} from 'playwright';
+import {domHookAlias} from './build-dom-hooks.mjs';
 const server=express().use(express.static(process.env.NYX_TEST_BUILT==='1'?'dist':'.')).listen(0,'127.0.0.1');
 await new Promise(resolve=>server.once('listening',resolve));
 const origin='http://127.0.0.1:'+server.address().port;
@@ -29,7 +30,20 @@ try {for(const brand of ['nyx','tutsi','nook','drop']){
  const ui=brand==='drop'?page.frameLocator('iframe'):page;
  const agents=['nook','drop'].includes(brand);
  await ui.locator('#model option[value="openai/test"]').waitFor({state:'attached'});
+ if(brand==='tutsi')await page.evaluate(attribute=>{document.documentElement.setAttribute(attribute,'tutsi');},process.env.NYX_TEST_BUILT==='1'?'data-'+domHookAlias('attribute','data-app-shell'):'data-app-shell');
  const input=ui.locator(agents?'#prompt':'#input');await input.fill('Hello');await ui.locator('#send').click();
+ if (!agents) {
+  await ui.getByText('Please wait 2 seconds before sending another AI message.',{exact:true}).waitFor();
+  await page.waitForFunction(()=>!document.querySelector('#send').disabled);
+  assert.equal(await ui.locator('.ai-send-cooldown').count(),0);
+  await input.fill('My next draft');
+  await ui.locator('#form').evaluate(form=>form.requestSubmit());
+  await page.waitForTimeout(300);
+  assert.equal(attempts,2,'Nyx/Tutsi must allow an immediate explicit send without a local cooldown');
+  assert.deepEqual(errors,[]);
+  await page.close();console.log('PASS '+brand+' immediate explicit send, no cooldown timer, no automatic paid retry');
+  continue;
+ }
  await ui.locator('.ai-send-cooldown').waitFor();assert(await ui.locator('#send').isDisabled());
  await input.fill('My next draft');
  await ui.locator(agents?'#composer':'#form').evaluate(form=>form.requestSubmit());

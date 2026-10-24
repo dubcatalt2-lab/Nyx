@@ -50,7 +50,7 @@ for(const premium of [false,true]){
   await aiBudgetResponse(response,(usage)=>a.settle(r,usage)).text();await a.finish(s,true);
   assert.equal((await a.usage(actor)).tokens.used,20,'Trailing streaming usage replaces the maximum output reservation');
   for(let i=0;i<3;i++){const request=await a.begin(actor);await a.finish(request,true);}
-  await assert.rejects(a.begin(actor),e=>e.reason==='cooldown'&&e.retryAfter===60);
+  for(let i=0;i<12;i++){const session=await a.begin(actor);await a.finish(session,false);}
   advance(61000);
   const busy=await a.begin(actor);await assert.rejects(a.begin(actor),e=>e.reason==='capacity');await a.finish(busy,false);
   const cap=await a.begin(actor);db.records.get(cap.refs.models.path).pool.used=14000;

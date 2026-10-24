@@ -2711,16 +2711,14 @@ async function nyxAiRateLimit(req, res, next) {
   usage.day = usage.day.filter(time => now - time < 86_400_000);
   usage.seen = now;
   nyxAiUsage.set(usageId, usage);
-  res.setHeader("x-ratelimit-limit-minute", unlimited?"unlimited":nyxAiLimits.minute);
-  res.setHeader("x-ratelimit-remaining-minute", unlimited?"unlimited":Math.max(0, nyxAiLimits.minute - usage.minute.length));
+  res.setHeader("x-ratelimit-limit-minute", "unlimited");
+  res.setHeader("x-ratelimit-remaining-minute", "unlimited");
   res.setHeader("x-ratelimit-limit-day", unlimitedDaily ? "unlimited" : nyxAiLimits.daily);
   res.setHeader("x-ratelimit-remaining-day", unlimitedDaily ? "unlimited" : Math.max(0, nyxAiLimits.daily - usage.day.length));
-  if ((!unlimited && usage.minute.length >= nyxAiLimits.minute) || (!unlimitedDaily && usage.day.length >= nyxAiLimits.daily)) {
-    const retryAfter = usage.minute.length >= nyxAiLimits.minute
-      ? Math.max(1, Math.ceil((60_000 - (now - usage.minute[0])) / 1000))
-      : Math.max(1, Math.ceil((86_400_000 - (now - usage.day[0])) / 1000));
+  if (!unlimitedDaily && usage.day.length >= nyxAiLimits.daily) {
+    const retryAfter = Math.max(1, Math.ceil((86_400_000 - (now - usage.day[0])) / 1000));
     res.setHeader("retry-after", retryAfter);
-    res.status(429).json({ error: usage.minute.length >= nyxAiLimits.minute ? `Please wait ${retryAfter} seconds before sending another AI message.` : "Anonymous AI requests have reached the daily limit. Sign in to continue.", code: usage.minute.length >= nyxAiLimits.minute ? "cooldown" : "anonymous_request_limit", retryAfter });
+    res.status(429).json({ error: "Anonymous AI requests have reached the daily limit. Sign in to continue.", code: "anonymous_request_limit", retryAfter });
     return;
   }
   if ((!unlimited && usage.active >= nyxAiLimits.perIpConcurrent) || nyxAiActiveRequests >= nyxAiLimits.globalConcurrent) {

@@ -121,29 +121,6 @@
     return;
 
   let activeController = null;
-  let sendCooldownUntil = 0,
-    sendCooldownTimer;
-  const cooldownLine = document.createElement("div");
-  cooldownLine.className = "ai-send-cooldown";
-  cooldownLine.hidden = true;
-  cooldownLine.setAttribute("role", "status");
-  cooldownLine.style.cssText = "font-size:12px;text-align:center;padding:4px;";
-  form.before(cooldownLine);
-  function showSendCooldown(response) {
-    const seconds = Number(response.headers.get("retry-after"));
-    if (response.status !== 429 || !Number.isFinite(seconds) || seconds < 1 || seconds > 60) return;
-    sendCooldownUntil = Date.now() + seconds * 1000;
-    clearInterval(sendCooldownTimer);
-    const update = () => {
-      const remaining = Math.max(0, Math.ceil((sendCooldownUntil - Date.now()) / 1000));
-      cooldownLine.hidden = !remaining;
-      cooldownLine.textContent = remaining ? `You can send another message in ${remaining}s.` : "";
-      send.disabled = !!remaining || form.classList.contains("is-busy");
-      if (!remaining) clearInterval(sendCooldownTimer);
-    };
-    update();
-    sendCooldownTimer = setInterval(update, 250);
-  }
   let followStream = true;
   let modelCatalog = [];
   let ownerMediaAccess = false;
@@ -2538,7 +2515,7 @@
     feed.setAttribute("aria-busy", String(busy));
     form.classList.toggle("is-busy", busy);
     input.disabled = busy;
-    send.disabled = busy || Date.now() < sendCooldownUntil;
+    send.disabled = busy;
     imageInput.disabled = busy;
     attachImage.disabled = busy;
     shareScreen.disabled = busy;
@@ -2784,7 +2761,6 @@
         );
       }
       if (!response.ok) {
-        showSendCooldown(response);
         const data = await response.json().catch(() => ({}));
         throw new Error(
           data?.error?.message ||

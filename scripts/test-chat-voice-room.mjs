@@ -78,6 +78,8 @@ try {
  await bob.getByRole('button',{name:'Share screen',exact:true}).click();
  await room.getByRole('button',{name:"Watch Bob's screen",exact:true}).waitFor();
  await alice.waitForFunction(()=>[...document.querySelectorAll('video')].some(v=>v.videoWidth===640));
+ assert(await alice.evaluate(()=>[...document.querySelectorAll('video')].every(v=>v.srcObject.getAudioTracks().length===0)),'Video controls cannot bypass screen audio deafen');
+ assert(await bob.evaluate(()=>[...document.querySelectorAll('video')].every(v=>v.srcObject.getAudioTracks().length===0)),'Local preview cannot echo shared sound');
  await alice.waitForFunction(()=>[...document.querySelectorAll('audio')].filter(a=>a.srcObject?.getAudioTracks().some(t=>t.readyState==='live'&&!t.muted)).length===3);
  const screenAudio=await alice.evaluate(async()=>{
    const audio=[...document.querySelectorAll('audio')].find(a=>a.dataset.screenAudio);

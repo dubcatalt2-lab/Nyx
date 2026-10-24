@@ -2496,7 +2496,8 @@
     video.autoplay = true;
     video.playsInline = true;
     video.muted = true;
-    video.srcObject = stream;
+    // Audio has its own sink so native video controls cannot duplicate it or bypass deafen.
+    video.srcObject = new MediaStream(stream.getVideoTracks());
     const label = document.createElement("span");
     label.textContent = `${participant.displayName || participant.handle || "N7X member"}'s screen`;
     const watch = document.createElement("button");

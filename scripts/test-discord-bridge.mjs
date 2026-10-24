@@ -40,6 +40,16 @@ const fileId='1546000000000000300';remote.set(fileId,discordMessage(fileId,{atta
 await attachments.inbound('general',fileId);const imported=[...rows.entries()].find(([k,v])=>k.includes('/messages/')&&v.qDiscord===fileId)[1];assert.equal(imported.attachments.length,1);const asset=rows.get('nyxChatAttachments/'+imported.attachments[0].id);assert.equal(asset.scopeId,'general');assert.equal(asset.bound,true);assert.equal(asset.size,7);
 const oldId='e'.repeat(40);await ref('nyxChatChannels/general/messages/'+oldId).set({text:'Private historical message',author:{displayName:'Staff'}});const postsBefore=calls.filter(c=>c[0]==='post').length;await worker.outbound('general',oldId);assert.equal(calls.filter(c=>c[0]==='post').length,postsBefore);
 const initial=rows.size;qEnqueue(db,writer(),{id:'general',private:true},'d'.repeat(40),true);qEnqueue(db,writer(),{id:'staff-room'},'d'.repeat(40),true);assert.equal(rows.size,initial);
+assert.equal(q68a1.general,'1563683526518505512');
+const legacyNid='f'.repeat(40),legacyDid='1546000000000000999';
+const {createHash}=await import('node:crypto');const legacyKey=createHash('sha256').update('general:'+legacyNid).digest('hex').slice(0,40);
+const legacyRecord={scope:'general',nid:legacyNid,did:legacyDid,source:'nyx',at:time};
+await ref('qBridgeMap/'+legacyKey).set(legacyRecord);await ref('qBridgeDiscord/'+legacyDid).set(legacyRecord);
+await ref('nyxChatChannels/general/messages/'+legacyNid).set({text:'Keep old General history',qBridgeEligible:true});
+const callCount=calls.length;await worker.inbound('general',legacyDid);await worker.outbound('general',legacyNid);
+assert.equal(calls.length,callCount);assert.equal(rows.get('nyxChatChannels/general/messages/'+legacyNid).text,'Keep old General history');
+const queueSize=rows.size;await worker.receive({t:'MESSAGE_CREATE',d:discordMessage('1546000000000000998',{channel_id:'1540790581687484487'})});assert.equal(rows.size,queueSize);
+console.log('PASS new Global Chat destination; old General events ignored and mapped history preserved without remote mutations');
 await worker.stop();await second.stop();console.log('PASS Discord channel allowlist, text/edit/delete sync, no echo loops, durable retry, worker lease, reaction identities/counts, mentions and custom emoji validation');
 
 

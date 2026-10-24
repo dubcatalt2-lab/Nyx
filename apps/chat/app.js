@@ -1065,6 +1065,8 @@
     name.className = `role-name${custom ? " role-name-special role-name-custom" : role === "member" ? "" : ` role-name-special role-name-${role}`}`;
     if (custom) name.style.setProperty("--role-custom-color", person.customRole.color);
     appendMinecraftName(name, label);
+    if (!name.textContent.replace(/[\s\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, ""))
+      name.textContent = person?.handle || `Member ${String(person?.uid || "").slice(-6)}`;
     return name;
   }
   function isModerator() {
@@ -1327,6 +1329,13 @@
       }
       return;
     }
+    if (event.kind === "edit" && scope && event.messageId) {
+      const key = `${scope.type}:${scope.id}`;
+      const message = (state.messages.get(key) || []).find(item => item.id === event.messageId);
+      if (message) Object.assign(message, {text:event.text, editedAtMs:event.editedAtMs});
+      if (scopeKey() === key) renderMessages();
+      return;
+    }
     if (event.kind === "delete" && scope && event.messageId) {
       const messages = state.messages.get(key) || [];
       state.messages.set(
@@ -1543,8 +1552,75 @@
           ];
   }
   const q63a9 = new Map();
+  let lastNotificationAt = 0;
+  function notificationPreferences() {
+    try {
+      const value = JSON.parse(localStorage.getItem(`nyx-chat-notifications-v1:${state.me?.uid || ""}`) || "{}");
+      return {mode:"all", interval:5, people:{}, scopes:{}, ...value};
+    } catch { return {mode:"all", interval:5, people:{}, scopes:{}}; }
+  }
+  function saveNotificationPreferences(value) {
+    try { localStorage.setItem(`nyx-chat-notifications-v1:${state.me.uid}`, JSON.stringify(value)); }
+    catch { showNotice("Your browser couldn't save notification settings."); }
+  }
+  function memberNotificationLabel(member) {
+    return String(member?.displayName || member?.handle || "Member").replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, "").trim() || `Member ${String(member?.uid || "").slice(-6)}`;
+  }
+  function chatDialog(title) {
+    const dialog = document.createElement("dialog");
+    dialog.className = "chat-preferences-dialog";
+    dialog.setAttribute("aria-label", title);
+    dialog.setAttribute("data-no-interface-text", "");
+    const heading = document.createElement("h2"); heading.textContent = title;
+    const close = document.createElement("button"); close.type = "button"; close.textContent = "Close";
+    close.addEventListener("click", () => dialog.close());
+    dialog.append(heading, close);
+    dialog.addEventListener("close", () => dialog.remove(), {once:true});
+    document.body.append(dialog);
+    return dialog;
+  }
+  function openNotificationSettings() {
+    if (!state.me) return;
+    const dialog = chatDialog("Notifications"), preferences = notificationPreferences();
+    const note = document.createElement("p"); note.textContent = "Choose what gets your attention. These settings apply to your account in this browser.";
+    dialog.append(note);
+    const selectSetting = (label, key, choices) => {
+      const row = document.createElement("label"), select = document.createElement("select");
+      row.textContent = label;
+      select.setAttribute("aria-label", label);
+      choices.forEach(([value, text]) => { const option = document.createElement("option"); option.value = value; option.textContent = text; select.append(option); });
+      select.value = String(preferences[key]);
+      select.addEventListener("change", () => { preferences[key] = key === "interval" ? Number(select.value) : select.value; saveNotificationPreferences(preferences); });
+      row.append(select); dialog.append(row);
+    };
+    selectSetting("Notify me about", "mode", [["all","All messages"],["mentions","Mentions and direct messages"],["off","Nothing"]]);
+    selectSetting("Space out alerts", "interval", [[0,"Every message"],[5,"At least 5 seconds apart"],[15,"At least 15 seconds apart"],[60,"At least a minute apart"]]);
+    const scope = scopeKey(), row = document.createElement("label"), checkbox = document.createElement("input");
+    checkbox.type = "checkbox"; checkbox.checked = Boolean(preferences.scopes[scope]);
+    row.append(checkbox, document.createTextNode("Mute notifications for this conversation"));
+    checkbox.addEventListener("change", () => { if (checkbox.checked) preferences.scopes[scope] = true; else delete preferences.scopes[scope]; saveNotificationPreferences(preferences); });
+    dialog.append(row);
+    const heading = document.createElement("h3"); heading.textContent = "Muted people"; dialog.append(heading);
+    const people = document.createElement("div"); dialog.append(people);
+    const render = () => {
+      people.replaceChildren();
+      if (!Object.keys(preferences.people).length) people.textContent = "No one is muted. Use a message's menu to mute its sender.";
+      Object.entries(preferences.people).forEach(([uid,label]) => {
+        const item = document.createElement("p"), button = document.createElement("button"); button.type = "button"; button.textContent = "Unmute";
+        button.setAttribute("aria-label", `Unmute ${label}`);
+        button.addEventListener("click", () => { delete preferences.people[uid]; saveNotificationPreferences(preferences); render(); });
+        item.append(document.createTextNode(`${label} · ${uid.slice(-6)} `), button); people.append(item);
+      });
+    };
+    render(); dialog.showModal();
+  }
+  document.querySelector("[data-notification-settings]")?.addEventListener("click", openNotificationSettings);
   function playChatPing(notificationId, kind = "chat", details = {}) {
     if (social.muted(details.uid)) return;
+    const preferences = notificationPreferences();
+    const match = notificationId.match(/^(message|dm):([^:]+):/);
+    const key = match ? `${match[1] === "message" ? "channel" : "dm"}:${match[2]}` : "";
+    if (preferences.mode === "off" || (preferences.mode === "mentions" && kind === "chat") || preferences.people[details.uid] || preferences.scopes[key]) return;
     notificationId = notificationId + ":" + kind;
     if (state.notifiedDm.has(notificationId)) return;
     state.notifiedDm.add(notificationId);
@@ -1563,6 +1639,8 @@
     }
     if (state.notifiedDm.size > 200)
       state.notifiedDm.delete(state.notifiedDm.values().next().value);
+    if (Date.now() - lastNotificationAt < Number(preferences.interval) * 1000) return;
+    lastNotificationAt = Date.now();
     const soundKind = kind === "mention" ? "mention" : kind === "dm" ? "dm" : "chat";
     if (window.parent !== window) {
       window.parent.postMessage(
@@ -2299,7 +2377,7 @@
           return;
         }
       }
-      audio._nyxVoiceGain.gain.value = state.voiceDeafened ? 0 : 2.4;
+      audio._nyxVoiceGain.gain.value = state.voiceDeafened ? 0 : (audio.dataset.screenAudio ? 1 : 2.4);
       audio.muted = true;
     });
     void context.resume().catch(() => {});
@@ -2486,6 +2564,13 @@
       entry.audio.srcObject = null;
       entry.audio.remove();
     }
+    entry.extraAudio?.forEach(audio => {
+      audio._nyxVoiceSource?.disconnect();
+      audio._nyxVoiceGain?.disconnect();
+      audio._nyxVoiceCompressor?.disconnect();
+      audio.srcObject = null;
+      audio.remove();
+    });
     removeVoiceScreen(entry);
     dropVoiceMeter(uid);
     state.voicePeers.delete(uid);
@@ -2679,6 +2764,8 @@
       makingOffer: false,
       restartTimer: 0,
       screenSender: null,
+      screenAudioSenders: [],
+      extraAudio: new Map(),
       screenCard: null,
       screenVideo: null,
     };
@@ -2711,6 +2798,7 @@
     if (screenTrack) {
       entry.screenSender = connection.addTrack(screenTrack, state.voiceScreenStream);
       void prioritizeScreenSender(entry.screenSender);
+      entry.screenAudioSenders = state.voiceScreenStream.getAudioTracks().map(track => connection.addTrack(track, state.voiceScreenStream));
     }
     connection.onicecandidate = (event) => {
       if (event.candidate)
@@ -2729,9 +2817,25 @@
         if ("jitterBufferTarget" in event.receiver)
           event.receiver.jitterBufferTarget = VOICE_JITTER_BUFFER_MS;
       } catch {}
-      audio.srcObject = event.streams[0] || new MediaStream([event.track]);
-      audio.muted = state.voiceDeafened;
-      void audio.play().catch(() => {});
+      // Each incoming track needs its own sink: screen sound must not replace the microphone.
+      if (audio.srcObject?.getAudioTracks().some(track => track.id === event.track.id) || entry.extraAudio.has(event.track.id)) return;
+      const sink = audio.srcObject ? document.createElement("audio") : audio;
+      if (sink !== audio) {
+        sink.autoplay = true;
+        sink.hidden = true;
+        sink.dataset.voiceUid = participant.uid;
+        sink.dataset.screenAudio = "true";
+        document.body.append(sink);
+        entry.extraAudio.set(event.track.id, sink);
+        event.track.addEventListener("ended", () => {
+          sink._nyxVoiceSource?.disconnect(); sink._nyxVoiceGain?.disconnect(); sink._nyxVoiceCompressor?.disconnect();
+          sink.srcObject = null; sink.remove(); entry.extraAudio.delete(event.track.id);
+        }, {once:true});
+      }
+      sink.srcObject = new MediaStream([event.track]);
+      sink.muted = state.voiceDeafened;
+      void sink.play().catch(() => {});
+      boostVoiceAudio();
     };
     const updateConnection = () => {
       const status = connection.connectionState;
@@ -2974,6 +3078,8 @@
           entry.connection.removeTrack(entry.screenSender);
           entry.screenSender = null;
         }
+        entry.screenAudioSenders.forEach(sender => entry.connection.removeTrack(sender));
+        entry.screenAudioSenders = [];
         await createVoiceOffer(uid);
       }),
     );
@@ -3008,7 +3114,7 @@
           width: { ideal: 1280 },
           height: { ideal: 720 },
         },
-        audio: false,
+        audio: true,
       });
       if (state.voiceSessionId !== screenSession || state.voiceTransport === "relay") { stream.getTracks().forEach(track => track.stop()); return; }
       const track = stream.getVideoTracks()[0];
@@ -3028,10 +3134,11 @@
           if (entry.screenSender) await entry.screenSender.replaceTrack(track);
           else entry.screenSender = entry.connection.addTrack(track, stream);
           await prioritizeScreenSender(entry.screenSender);
+          entry.screenAudioSenders = stream.getAudioTracks().map(audioTrack => entry.connection.addTrack(audioTrack, stream));
           await createVoiceOffer(uid);
         }),
       );
-      showNotice("Your screen is now shared with this voice channel.", "success");
+      showNotice(stream.getAudioTracks().length ? "Sharing your screen and audio." : "Sharing your screen without audio. To include sound, select a browser tab and turn on Share tab audio.", "success");
     } catch (error) {
       if (error.name !== "NotAllowedError")
         showNotice(error.message || "Screen sharing could not start.");
@@ -3091,6 +3198,7 @@
     state.voiceDeafened = !state.voiceDeafened;
     state.voicePeers.forEach((entry) => {
       entry.audio.muted = state.voiceDeafened;
+      entry.extraAudio.forEach(audio => { audio.muted = state.voiceDeafened; });
     });
     boostVoiceAudio();
     state.voiceAudio?.silence();
@@ -3649,6 +3757,7 @@
       time.className = "message-time";
       time.dateTime = message.createdAt || "";
       time.textContent = message.pending ? "Sending…" : formatTime(message.createdAtMs);
+      if (message.editedAtMs) time.textContent += " · edited";
       meta.append(time);
       content.append(meta);
       if (message.text) {
@@ -3674,6 +3783,11 @@
         article.append(compact);
       }
       if (!message.pending) {
+        const menu = document.createElement("button");
+        menu.type = "button"; menu.className = "message-options"; menu.textContent = "⋯";
+        menu.setAttribute("aria-label", `Message options for ${memberNotificationLabel(message.author)}`);
+        menu.addEventListener("click", () => { const rect = menu.getBoundingClientRect(); openMessageContextMenu({clientX:rect.left, clientY:rect.bottom}, message); });
+        article.append(menu);
         const react = svgButton("smile", "reaction-add", "Add reaction");
         q24c8(react);
         react.addEventListener("click", (event) => {
@@ -3764,6 +3878,17 @@
       reactions.append(button);
     });
     refs.messageContextMenu.append(reactions);
+    if (!message.pending && message.author?.uid === state.me?.uid)
+      refs.messageContextMenu.append(messageContextAction("Edit message", "edit", () => editMessage(message)));
+    if (message.author?.uid && message.author.uid !== state.me?.uid) {
+      const uid = message.author.uid, preferences = notificationPreferences(), muted = Boolean(preferences.people[uid]);
+      refs.messageContextMenu.append(messageContextAction(muted ? "Unmute notifications from this person" : "Mute notifications from this person", "users", () => {
+        const latest = notificationPreferences();
+        if (muted) delete latest.people[uid]; else latest.people[uid] = memberNotificationLabel(message.author);
+        saveNotificationPreferences(latest);
+        showNotice(muted ? "Notifications unmuted." : "Notifications muted for this person.", "success");
+      }));
+    }
     if (!message.pending)
       refs.messageContextMenu.append(
         messageContextAction("All emojis", "smile", () => openReactionPicker(null, message)),
@@ -5491,6 +5616,26 @@
       updateComposer();
       refs.input.focus();
     }
+  }
+  function editMessage(message) {
+    const scope = {...state.active}, key = scopeKey(), uid = state.me?.uid;
+    const originalText = message.text || "";
+    const dialog = chatDialog("Edit message"), form = document.createElement("form"), input = document.createElement("textarea"), error = document.createElement("p"), save = document.createElement("button");
+    input.value = originalText; input.maxLength = 1000; input.rows = 5; input.setAttribute("aria-label", "Edit message text");
+    error.setAttribute("role", "alert"); save.type = "submit"; save.textContent = "Save changes";
+    form.append(input, error, save); dialog.append(form);
+    form.addEventListener("submit", async event => {
+      event.preventDefault(); if (save.disabled || state.me?.uid !== uid) return;
+      save.disabled = true; error.textContent = "";
+      try {
+        const update = await fetchJson(`${API}/messages/${encodeURIComponent(scope.id)}/${encodeURIComponent(message.id)}`, {method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify({text:input.value, originalText})});
+        if (state.me?.uid !== uid) { dialog.close(); return; }
+        const current = (state.messages.get(key) || []).find(item => item.id === message.id);
+        if (current) Object.assign(current, {text:update.text, editedAtMs:update.editedAtMs});
+        if (scopeKey() === key) renderMessages(); dialog.close();
+      } catch (failure) { error.textContent = failure.message; save.disabled = false; }
+    });
+    dialog.showModal(); input.focus(); input.setSelectionRange(input.value.length, input.value.length);
   }
   async function deleteMessage(message) {
     if (!confirm("Delete this message?")) return;

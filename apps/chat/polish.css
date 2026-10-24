@@ -396,6 +396,18 @@ html body {
   color: #aaa6bd
 }
 
+.chat-preferences-dialog { width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: auto; padding: 24px; background: #101014; color: #eee; border: 1px solid #393940; border-radius: 16px; }
+.chat-preferences-dialog::backdrop { background: #000a; }
+.chat-preferences-dialog h2 { margin: 0 0 16px; }
+.chat-preferences-dialog p { color: #bbb; line-height: 1.5; overflow-wrap: anywhere; }
+.chat-preferences-dialog label { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin: 20px 0; }
+.chat-preferences-dialog button, .chat-preferences-dialog select, .chat-preferences-dialog textarea { font: inherit; color: inherit; background: #202026; border: 1px solid #484850; border-radius: 8px; padding: 10px; max-width: 100%; }
+.chat-preferences-dialog textarea { width: 100%; box-sizing: border-box; resize: vertical; margin-top: 16px; }
+.chat-preferences-dialog button { cursor: pointer; }
+.message-options { position: absolute; right: 94px; top: 4px; width: 32px; height: 32px; border: 0; border-radius: 6px; background: #202026; color: #ddd; font-size: 22px; cursor: pointer; z-index: 2; }
+.message:has(.message-options) .message-meta { padding-right: 130px; }
+.message-options:hover, .message-options:focus-visible { background: #383840; color: white; }
+
 .message-delete,
 .reaction-add {
   border-color: var(--chat-line);

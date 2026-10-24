@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFileSync} from 'node:fs';
+import {parse} from 'acorn';
+import express from 'express';
+const source=readFileSync('server.js','utf8'),ast=parse(source,{ecmaVersion:'latest',sourceType:'module'});
+const route=ast.body.find(n=>n.expression?.callee?.property?.name==='patch'&&n.expression.arguments[0]?.value==='/api/chat/messages/:scope/:messageId');
+const app=express();app.use(express.json());let value,blocked=false,muted=false,events=[],queued=0;
+let channel={};
+const id='a'.repeat(40),scope={id:'general',ref:{channel:true},participants:['alice','bob'],private:false,messages:{doc:()=>({})}};
+const firebase={firestore:{async runTransaction(fn){const writes=[];await fn({get:async ref=>({exists:ref.channel||!!value,data:()=>ref.channel?channel:value}),set:(ref,patch)=>writes.push([ref,patch])});writes.forEach(([ref,patch])=>Object.assign(ref.channel?channel:value,patch));}}};
+const error=(status)=>Object.assign(Error('Rejected'),{status});
+vm.runInNewContext(source.slice(route.start,route.end),{app,sameOriginRequest:req=>!req.get('x-bad-origin'),authenticatedNyxChatUser:async req=>{if(!req.get('authorization'))throw error(401);return {firebase,token:{uid:req.get('authorization')}};},assertNyxChatCanSend:async()=>{if(muted)throw error(403);},nyxChatIdentity:async(_f,token)=>({role:'member',canModerate:token.uid==='moderator'}),nyxChatScope:async(_f,uid)=>{if(uid==='outsider')throw error(403);return scope;},nyxClientIp:()=>'',nyxChatText:text=>String(text||'').trim(),nyxChatMessageLimit:1000,nyxChatMentionHandles:text=>[...text.matchAll(/@(\w+)/g)].map(m=>m[1]),nyxChatConsumeSendAttempt:()=>{},assertChatContact:async()=>{if(blocked)throw error(403);},qEnqueue:()=>queued++,recordNyxChatRealtimeEvent:event=>{events.push(event);return events.length;},emitNyxChatSocketEvent:()=>{}});
+const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
+const send=(uid,body={text:'New text',originalText:'Original'},headers={})=>fetch(`http://127.0.0.1:${server.address().port}/api/chat/messages/general/${id}`,{method:'PATCH',headers:{'content-type':'application/json',...(uid?{authorization:uid}:{}),...headers},body:JSON.stringify(body)});
+try{
+ value={text:'Original',authorUid:'alice',attachments:[{id:'gif',type:'image/gif'}],reactions:[{emoji:'x',uids:['bob']}],createdAtMs:123};
+ assert.equal((await send('')).status,401);assert.equal((await send('alice',undefined,{'x-bad-origin':'1'})).status,403);
+ assert.equal((await send('bob')).status,403);assert.equal((await send('moderator')).status,403);assert.equal((await send('outsider')).status,403);
+ muted=true;assert.equal((await send('alice')).status,403);muted=false;
+ channel.locked=true;assert.equal((await send('alice')).status,403);channel={lastMessageAtMs:123,lastMessageAuthorUid:'alice'};
+ assert.equal((await send('alice',{text:'@everyone',originalText:'Original'})).status,403);
+ assert.equal((await send('alice',{text:'x'.repeat(1001),originalText:'Original'})).status,400);
+ assert.equal((await send('alice',{text:'new',originalText:'stale'})).status,409);
+ scope.private=true;blocked=true;assert.equal((await send('alice')).status,403);blocked=false;
+ assert.equal((await send('alice')).status,200);assert.equal(value.text,'New text');assert(value.editedAtMs);assert.equal(value.attachments[0].type,'image/gif');assert.equal(value.reactions[0].uids[0],'bob');assert.equal(value.createdAtMs,123);assert.equal(queued,1);assert.equal(events[0].kind,'edit');
+ assert.equal((await send('alice')).status,409);
+ assert.equal(channel.lastMessageText,'New text');
+ value.attachments=[];assert.equal((await send('alice',{text:'',originalText:'New text'})).status,400);
+ value=null;assert.equal((await send('alice')).status,404);
+ console.log('PASS edit ownership, auth, origins, scope, muted/blocked members, mention/length limits, stale edits, preserved attachments/reactions/date, realtime and bridge queue');
+}finally{server.closeAllConnections();await new Promise(r=>server.close(r));}

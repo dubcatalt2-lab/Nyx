@@ -5499,6 +5499,7 @@ function nyxChatMessagePayload(document, viewerUid = "") {
     reactions: nyxChatReactionPayload(value.reactions, viewerUid),
     createdAt: safeDateIso(value.createdAt, createdAtMs ? new Date(createdAtMs).toISOString() : ""),
     createdAtMs,
+    editedAtMs: Math.max(0, Number(value.editedAtMs || 0)),
     author: {
       uid: authorUid,
       displayName: founderProfileText(author.displayName, "N7X member", 48),
@@ -5700,6 +5701,10 @@ function nyxChatSocketEventForViewer(event = {}, socket) {
     payload.message = nyxChatMessagePayload(event.messageDocument, uid);
     payload.mentionsViewer = nyxChatEventMentionsIdentity(event.lastMessageText || payload.message?.text, identity) || (Boolean(uid) && uid === String(event.replyToAuthorUid || ""));
     payload.lastMessageAuthorUid = String(event.lastMessageAuthorUid || payload.message?.author?.uid || "");
+  } else if (event.kind === "edit") {
+    payload.messageId = String(event.messageId || "");
+    payload.text = String(event.text || "");
+    payload.editedAtMs = event.editedAtMs;
   } else if (event.kind === "delete") {
     payload.messageId = String(event.messageId || "");
   } else if (event.kind === "purge") {
@@ -12180,6 +12185,45 @@ app.post("/api/chat/messages/purge", async (req, res) => {
   } catch (error) {
     res.status(error.status || 503).json({ error: error.message || "Channel messages could not be purged." });
   }
+});
+
+app.patch("/api/chat/messages/:scope/:messageId", async (req, res) => {
+  res.set("Cache-Control", "no-store");
+  if (!sameOriginRequest(req)) return res.status(403).json({error:"Cross-origin requests are not allowed."});
+  try {
+    const {firebase, token} = await authenticatedNyxChatUser(req);
+    await assertNyxChatCanSend(firebase, token.uid);
+    const identity = await nyxChatIdentity(firebase, token);
+    const scope = await nyxChatScope(firebase, token.uid, {scope:req.params.scope}, identity.role, nyxClientIp(req));
+    const messageId = String(req.params.messageId || "");
+    if (!/^[a-f0-9]{40}$/.test(messageId)) return res.status(404).json({error:"Message not found."});
+    const text = nyxChatText(req.body?.text);
+    if (typeof req.body?.text !== "string" || text.length > nyxChatMessageLimit)
+      return res.status(400).json({error:`Messages can be up to ${nyxChatMessageLimit} characters.`});
+    if (!identity.canModerate && (nyxChatMentionHandles(text).includes("everyone") || new Set(nyxChatMentionHandles(text)).size > 5))
+      return res.status(403).json({error:"Use individual mentions, up to five per message."});
+    nyxChatConsumeSendAttempt(token.uid);
+    const messageRef = scope.messages.doc(messageId), editedAtMs = Date.now();
+    await firebase.firestore.runTransaction(async transaction => {
+      if (scope.private) await assertChatContact(firebase.firestore, transaction, token.uid, scope.participants.find(uid => uid !== token.uid));
+      const snapshot = await transaction.get(messageRef), value = snapshot.data() || {};
+      const channelState = await transaction.get(scope.ref);
+      const reject = (status, message) => { throw Object.assign(new Error(message), {status}); };
+      if (!scope.private && (scope.q76a3 || channelState.data()?.locked === true) && !identity.canModerate) reject(403, "This channel is locked.");
+      if (!snapshot.exists) reject(404, "Message not found.");
+      if (String(value.authorUid || value.author?.uid || "") !== token.uid) reject(403, "You can only edit your own messages.");
+      if (typeof req.body?.originalText !== "string" || req.body.originalText !== String(value.text || "")) reject(409, "This message changed. Close the editor and open it again.");
+      if (!text && !value.attachments?.length) reject(400, "Write a message before saving.");
+      transaction.set(messageRef, {text, editedAtMs}, {merge:true});
+      if (Number(channelState.data()?.lastMessageAtMs) === Number(value.createdAtMs) && channelState.data()?.lastMessageAuthorUid === token.uid)
+        transaction.set(scope.ref, {lastMessageText:text.slice(0, scope.private ? 120 : nyxChatMessageLimit)}, {merge:true});
+      qEnqueue(firebase.firestore, transaction, scope, messageId);
+    });
+    const event = {kind:"edit", scopeType:scope.private ? "conversation" : "channel", scopeId:scope.id, participants:scope.participants || [], messageId, text, editedAtMs};
+    const revision = recordNyxChatRealtimeEvent(event);
+    emitNyxChatSocketEvent({...event, revision});
+    res.json({id:messageId, text, editedAtMs});
+  } catch (error) { res.status(error.status || 503).json({error:error.message || "Your edit could not be saved."}); }
 });
 
 app.delete("/api/chat/messages/:scope/:messageId", async (req, res) => {

@@ -42,11 +42,15 @@ try {
     gain.gain.value=0;osc.connect(gain);gain.connect(destination);osc.start();await context.resume();
     window.testMic={context,gain,stream:destination.stream};return destination.stream;
    };
-   navigator.mediaDevices.getDisplayMedia=async()=>{
+   navigator.mediaDevices.getDisplayMedia=async options=>{
+    if(options.audio !== true) throw new Error('Screen audio was not requested');
     const canvas=document.createElement('canvas');canvas.width=640;canvas.height=360;
     const context=canvas.getContext('2d');let n=0;
     window.testScreenTimer=setInterval(()=>{context.fillStyle=n++%2?'#163':'#369';context.fillRect(0,0,640,360)},60);
-    return window.testScreen=canvas.captureStream(15);
+    const sound=new AudioContext(),osc=sound.createOscillator(),gain=sound.createGain(),destination=sound.createMediaStreamDestination();
+    gain.gain.value=.1;osc.frequency.value=880;osc.connect(gain);gain.connect(destination);osc.start();await sound.resume();
+    const stream=canvas.captureStream(15);stream.addTrack(destination.stream.getAudioTracks()[0]);
+    return window.testScreen=stream;
    };
   });
   for(const [file,key] of [['firebase-app.js','firebaseAppModule'],['firebase-auth.js','firebaseAuthModule']])await page.route('**/'+file,r=>r.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:moduleText(key).replaceAll('test-token',name).replaceAll('test-user-1234',name)}));
@@ -74,6 +78,21 @@ try {
  await bob.getByRole('button',{name:'Share screen',exact:true}).click();
  await room.getByRole('button',{name:"Watch Bob's screen",exact:true}).waitFor();
  await alice.waitForFunction(()=>[...document.querySelectorAll('video')].some(v=>v.videoWidth===640));
+ await alice.waitForFunction(()=>[...document.querySelectorAll('audio')].filter(a=>a.srcObject?.getAudioTracks().some(t=>t.readyState==='live'&&!t.muted)).length===3);
+ const screenAudio=await alice.evaluate(async()=>{
+   const audio=[...document.querySelectorAll('audio')].find(a=>a.dataset.screenAudio);
+   const context=new AudioContext(),source=context.createMediaStreamSource(audio.srcObject),analyser=context.createAnalyser();source.connect(analyser);await context.resume();
+   await new Promise(r=>setTimeout(r,200));const data=new Float32Array(analyser.fftSize);analyser.getFloatTimeDomainData(data);source.disconnect();await context.close();
+   return {energy:data.reduce((n,x)=>n+x*x,0),gain:audio._nyxVoiceGain?.gain.value,muted:audio.muted};
+ });
+ assert(screenAudio.energy>.01,'Real screen audio arrives'); assert.equal(screenAudio.gain,1,'Screen sound routed to output');
+ await bob.getByRole('button',{name:'Mute microphone',exact:true}).click();
+ assert(await bob.evaluate(()=>testMic.stream.getAudioTracks().every(t=>!t.enabled)&&testScreen.getAudioTracks().every(t=>t.enabled)),'Mic mute leaves screen sound enabled');
+ await bob.getByRole('button',{name:'Unmute microphone',exact:true}).click();
+ await alice.getByRole('button',{name:'Deafen',exact:true}).click();
+ await alice.waitForFunction(()=>[...document.querySelectorAll('audio')].filter(a=>a._nyxVoiceGain).every(a=>a._nyxVoiceGain.gain.value===0));
+ await alice.getByRole('button',{name:'Undeafen',exact:true}).click();
+ await alice.waitForFunction(()=>[...document.querySelectorAll('audio')].some(a=>a.dataset.screenAudio&&a._nyxVoiceGain?.gain.value===1));
  await room.getByRole('button',{name:"Watch Bob's screen",exact:true}).click();
  assert.equal(await room.getByRole('button',{name:"Watch Bob's screen",exact:true}).getAttribute('aria-expanded'),'true');
  await alice.screenshot({path:'.codex-artifacts/voice-room-screen.png'});
@@ -81,13 +100,19 @@ try {
  await alice.getByRole('button',{name:/Open voice room.*1 screen share/}).click();
  await bob.getByRole('button',{name:'Stop sharing screen',exact:true}).click();
  await room.getByRole('button',{name:"Watch Bob's screen",exact:true}).waitFor({state:'detached'});
+ await alice.waitForFunction(()=>[...document.querySelectorAll('audio')].filter(a=>a.srcObject?.getAudioTracks().some(t=>t.readyState==='live'&&!t.muted)).length===2);
  await bob.getByRole('button',{name:'Share screen',exact:true}).click();
  await room.getByRole('button',{name:"Watch Bob's screen",exact:true}).waitFor();
+ await alice.waitForFunction(()=>[...document.querySelectorAll('audio')].filter(a=>a.srcObject?.getAudioTracks().some(t=>t.readyState==='live'&&!t.muted)).length===3);
  await carol.getByRole('button',{name:'Disconnect voice',exact:true}).click();
  await alice.waitForFunction(()=>document.querySelector('[aria-label="Connected members"]')?.children.length===2);
+ await carol.getByRole('button',{name:/Lounge/}).first().click();
+ await carol.waitForFunction(()=>[...document.querySelectorAll('audio')].filter(a=>a.srcObject?.getAudioTracks().some(t=>t.readyState==='live'&&!t.muted)).length===3);
+ await carol.getByRole('button',{name:'Disconnect voice',exact:true}).click();
  await bob.getByRole('button',{name:'Disconnect voice',exact:true}).click();
  await alice.waitForFunction(()=>document.querySelector('[aria-label="Connected members"]')?.children.length===1);
  assert.equal(await room.locator('video').count(),0);
+ assert.equal(await alice.locator('audio').count(),0);
  await alice.setViewportSize({width:390,height:844});
  assert(await room.isVisible());
  assert(await room.evaluate(e=>e.scrollWidth<=e.clientWidth+1));

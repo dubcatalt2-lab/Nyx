@@ -374,7 +374,7 @@ const nyxGamesAppMigrationField = "gamesAppRenamed";
 const nyxGamesGlobalApp = Object.freeze({ id: "pirate-cove", icon: "games", name: "GAMES", url: "/assets/studies/" });
 const nyxMoviesBuiltinMigrationField = "nyxMoviesBuiltin20260911";
 const nyxMoviesCinejoyMigrationField = "moviesCinejoyTarget";
-const nyxMoviesGlobalApp = Object.freeze({ id: "movies", icon: "nyx-movies", name: "Movies", url: "https://cinejoy.to/" });
+const nyxMoviesGlobalApp = Object.freeze({ id: "movies", icon: "nyx-movies", name: "Movies", url: "https://cinejoy.pk/" });
 const nyxDefaultGlobalApps = Object.freeze([
   { id: "link-checker", icon: "link-checker", name: "Link Checker", url: "/apps/link-checker/" },
   { id: "link-generator", icon: "link-generator", name: "Link Generator", url: "/apps/link-generator/" },
@@ -3920,7 +3920,7 @@ function nyxGlobalAppsFromSnapshot(snapshot) {
   if (!Array.isArray(stored)) return nyxDefaultGlobalAppsPayload();
   return stored.slice(0, nyxGlobalAppsLimit).map(app => {
     const normalized = nyxNormalizeGlobalApp(app);
-    if (normalized?.id === nyxMoviesGlobalApp.id && ["http://icefy.top/", "https://aether.cx/", "https://cinejoy.to/", "/apps/movies/"].includes(normalized.url)) {
+    if (normalized?.id === nyxMoviesGlobalApp.id && ["http://icefy.top/", "https://aether.cx/", "https://cinejoy.to/", "https://cinejoy.pk/", "/apps/movies/"].includes(normalized.url)) {
       return { ...nyxMoviesGlobalApp };
     }
     if (normalized?.id === nyxGamesGlobalApp.id && normalized.url === nyxGamesGlobalApp.url) {
@@ -7988,7 +7988,7 @@ app.get(["/apps/nyxify", "/apps/nyxify/"], (_req, res) => {
   res.sendFile('apps/nyxify/index.html', { root: staticRoot });
 });
 
-app.get(/^\/apps\/movies(?:\/index\.html|\/)?$/, (_req,res)=>res.redirect(302,'https://cinejoy.to/'));
+app.get(/^\/apps\/movies(?:\/index\.html|\/)?$/, (_req,res)=>res.redirect(302,'https://cinejoy.pk/'));
 app.use('/api/movies',(_req,res)=>res.status(410).json({error:'The built-in Movies service has been removed.'}));
 
 function linkGeneratorRateState(clientId, now = Date.now()) {

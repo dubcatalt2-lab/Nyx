@@ -145,7 +145,8 @@
     }
     function rewrite(html,path){
       const safeFetchGuard=`<script>(()=>{const nativeFetch=window.fetch?.bind(window);if(nativeFetch)window.fetch=(input,init)=>{const url=input instanceof Request?input.url:String(input||'');if(/^about:/i.test(url))return Promise.resolve(new Response(null,{status:204,statusText:'No Content'}));return nativeFetch(input,init)};try{const nativeOpen=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(method,url,...rest){if(/^about:/i.test(String(url||'')))url='data:,';return nativeOpen.call(this,method,url,...rest)}}catch{}})()<\/script>`;
-      const adProtection=`<script src="${location.origin}/assets/studies/study-health.js"><\/script><script src="${location.origin}/assets/studies/study-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;
+      const creditTools=/retro-bowl\/index\.html$/.test(path)?`<script src="${location.origin}/assets/studies/q249a7c.js"><\/script>`:"";
+      const adProtection=`${creditTools}<script src="${location.origin}/assets/studies/study-health.js"><\/script><script src="${location.origin}/assets/studies/study-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;
       const base=`https://raw.githubusercontent.com/isaacduh123/reds-exploit-corner/main/${path.replace(/[^/]+$/,'')}`;
       const repoRoot='https://raw.githubusercontent.com/isaacduh123/reds-exploit-corner/main/';
       const proxyUrl=url=>`${location.origin}/gms-games-proxy?url=${encodeURIComponent(url)}`;

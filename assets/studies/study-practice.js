@@ -102,6 +102,9 @@
     const coin=index.objects.filter(o=>o.type==='coin'&&o.x>x-30&&!player._isObjectActivated?.(o)).sort((a,b)=>a.x-b.x)[0];
     if(!coin)return null;
     const ceiling=level.getCeilingY();
+    // Ordinary in-corridor coins use local steering. A distant ordinary coin
+    // must not override obstacle avoidance as though it needed a hidden entrance.
+    if(Number.isFinite(ceiling)&&coin.y<ceiling-30&&coin.y>(level.getFloorY?.()??0)+30&&!index.routes.has(coin))return null;
     const portals=index.objects.filter(o=>o.type==='portal_fly'&&o.x>coin.x-6000&&o.x<coin.x&&Math.abs(o.y-coin.y)<240);
     if(!portals.length)return null;
     let route=index.routes.get(coin);
@@ -176,7 +179,7 @@
       .map(o=>{const angle=(o.rotationDegrees||0)*Math.PI/180;
         const w=Math.abs((o.w||30)*Math.cos(angle))+Math.abs((o.h||30)*Math.sin(angle));
         const h=Math.abs((o.h||30)*Math.cos(angle))+Math.abs((o.w||30)*Math.sin(angle));
-        return {type:o.type,active:scene._player?._isObjectActivated?.(o)||false,x:(o.x-x)*direction,y:o.y*gravity,w,h,radius:o.hitbox_radius||0};})
+        return {type:o.type,active:scene._player?._isObjectActivated?.(o)||false,x:(o.x-x)*direction,y:o.y*gravity,w,h,orbId:o.orbId,padId:o.padId,radius:o.hitbox_radius||0};})
       .filter(o=>o.x+o.w/2>-40&&o.x-o.w/2<lookahead);
     const learned=options.learn?learningFor(scene).failures:[];
     const dangerMargin=learned.some(f=>Math.abs(f.death-x)<240)?4:1;
@@ -186,6 +189,12 @@
       const blocked=threats.some(o=>o.x>-size&&o.x<speed*6+o.w/2&&Math.abs(o.y-(p.y+(p.dashYVelocity||0)*Math.max(0,o.x)/speed)*gravity)<o.h/2+size+dangerMargin);
       return !blocked;
     }
+    // Orbs consume one input edge in every mode, including ship and UFO.
+    // Release the previous edge before chaining another native orb activation.
+    const orb=objects.find(o=>o.type==='jump_ring'&&!o.active&&
+      Math.abs(o.x)<Math.min(30,o.w/2+size-4)&&Math.abs(o.y-p.y*gravity)<o.h/2+size-4);
+    const cube=!(p.isFlying||p.isShip||p.isWave||p.isUfo||p.isBird||p.isDart||p.isSwing||p.isJetpack||p.isBall||p.isSpider||p.isRobot);
+    if(orb&&(!cube||![36,141,1333,1330,84,1022,1594].includes(orb.orbId)))return !(p.upKeyDown||p.wasUpKeyDown||p._orbActivationConsumedForPress||scene._spaceWasDown);
     if(p.isFlying||p.isShip||p.isWave||p.isUfo||p.isBird||p.isDart||p.isSwing||p.isJetpack){
       const top=Number.isFinite(ceiling)&&ceiling>floor+90?ceiling:floor+600;
       let target=(floor+top)/2;
@@ -193,7 +202,7 @@
       if(Number.isFinite(secret))target=Math.max(floor+size+8,Math.min(top-size-8,secret));
       const coin=options.coins?objects.filter(o=>o.type==='coin'&&!o.active&&o.x>-size&&o.x<420).sort((a,b)=>a.x-b.x)[0]:null;
       if(coin&&!Number.isFinite(secret))target=Math.max(floor+size+8,Math.min(top-size-8,coin.y*gravity));
-      const near=threats.filter(o=>o.x>-size&&o.x<speed*(Number.isFinite(secret)&&top>700?30:12)+o.w/2);
+      const near=threats.filter(o=>o.x>-size&&o.x<speed*(Number.isFinite(secret)?(top>700?30:12):36)+o.w/2);
       const safe=[];for(let y=floor+size+8;y<top-size-8;y+=5){if(!learned.some(f=>f.flying&&Number.isFinite(f.y)&&Math.abs(f.death-x)<160&&Math.abs(y-f.y)<20)&&!near.some(o=>Math.abs(y-o.y*gravity)<o.h/2+(Number.isFinite(secret)&&o.type==='solid'?10:size)+dangerMargin))safe.push(y);}
       if(safe.length&&!Number.isFinite(secret))target=safe.reduce((a,b)=>Math.abs(a-target)<Math.abs(b-target)?a:b);
       if(Number.isFinite(secret)&&top>700){
@@ -213,54 +222,110 @@
       // A boundary portal can touch the flight ceiling. Keep native thrust held
       // into its trigger instead of braking below the boundary before activation.
       if(Number.isFinite(secret)&&objects.some(o=>o.type==='portal_fly'&&!o.active&&o.x>-100&&o.x<220&&o.y*gravity>=top-60))target=top+size;
+      // Brake for upcoming geometry using the pinned engine's ship acceleration,
+      // rather than waiting until a wall enters the immediate steering column.
+      if(!Number.isFinite(secret)&&(p.isFlying||p.isShip||p.isWave||p.isDart)&&threats.some(o=>o.x>0&&o.x<800)&&target<=top){
+        const mini=p.isMini?1.176470588:1;
+        const hitSize=(p.isWave||p.isDart)?(p.isMini?6:9):size;
+        const flightBuckets=Array.from({length:70},(_,i)=>threats.filter(o=>Math.abs(o.x-(i+.5)*speed*.9)<o.w/2+size+speed));
+        let flights=[{y:p.y,v:p.yVelocity||0,first:false,cost:0}];
+        for(let frame=0;frame<70;frame++){
+          const next=[];
+          for(const path of flights)for(const press of [false,true]){
+            const n={...path,first:frame?path.first:press};let dead=false;
+            for(let sub=0;sub<2;sub++){
+              if(p.isWave||p.isDart){
+                n.v=(press?1:-1)*gravity*(p.isMini?22.7700072:11.3850036)*(speed/11.540004);
+              }else{
+                const falling=n.v*gravity < -1.916398;
+                n.v+=1.916398*.45*gravity*(press?(falling?.5:.4):-(falling?.8:1.2)*.4)*mini;
+                n.v=Math.max((gravity===1?-12.8:-16)*mini,Math.min((gravity===1?16:12.8)*mini,n.v));
+              }
+              n.y+=n.v*.45;
+              if(n.y<floor+size){n.y=floor+size;n.v=0;}if(n.y>top-size){n.y=top-size;n.v=0;}
+              const px=(frame+sub/2)*speed*.9;
+              if(flightBuckets[frame].some(o=>o.radius?Math.hypot(px-o.x,n.y-o.y*gravity)<o.radius+hitSize+2:Math.abs(px-o.x)<o.w/2+hitSize+2&&Math.abs(n.y-o.y*gravity)<o.h/2+hitSize+2)){dead=true;break;}
+            }
+            n.cost+=Math.abs(n.y-target)*.01;
+            if(!dead)next.push(n);
+          }
+          if(!next.length)break;
+          next.sort((a,b)=>(a.cost+Math.abs(a.y-target))-(b.cost+Math.abs(b.y-target)));
+          const seen=new Set();flights=[];
+          for(const n of next){const key=[Math.round(n.y/6),Math.round(n.v/.5),n.first].join(':');if(seen.has(key))continue;seen.add(key);flights.push(n);if(flights.length===96)break;}
+        }
+        flights.sort((a,b)=>(a.cost+Math.abs(a.y-target))-(b.cost+Math.abs(b.y-target)));
+        if(flights.length)return flights[0].first;
+      }
       const rise=p.y+(p.yVelocity||0)*5<target;
       const hold=p.gravityFlipped?!rise:rise;
       return (p.isUfo||p.isSwing)?hold&&!scene._spaceWasDown:hold;
     }
-    const orb=objects.some(o=>o.type==='jump_ring'&&!o.active&&Math.abs(o.x)<30&&Math.abs(o.y-p.y*gravity)<50);
-    if(orb&&!p.onGround)return !scene._spaceWasDown;
     if(p.isBall||p.isSpider)return objects.some(o=>o.type==='hazard'&&o.x>0&&o.x<speed*6&&Math.abs(o.y-p.y*gravity)<55)&&!scene._spaceWasDown;
-    if(!(p.onGround||p.onCeiling||p.canJump))return p.isRobot&&p.isJumping;
+    if(!(p.onGround||p.onCeiling||p.canJump)&&(!cube||!orb))return p.isRobot&&p.isJumping;
     const base=gravity===1?floor:(Number.isFinite(ceiling)?-ceiling:-100000);
-    // A mode/speed portal invalidates cube physics. Scan 100 blocks, but replan its far side
-    // from the actual new mode instead of inventing a trajectory through the transition.
-    const transition=objects.filter(o=>(o.type.startsWith('portal_')||o.type==='speed'||o.type==='jump_pad')&&o.x>size).reduce((n,o)=>Math.min(n,o.x-size),lookahead);
+    // Stop an individual forecast only when its trajectory actually touches a
+    // transition. Passing its X coordinate above/below it does not change modes.
+    const transitions=objects.filter(o=>!o.active&&((o.type.startsWith('portal_')&&!o.type.startsWith('portal_gravity_'))||o.type==='speed'||(o.type==='jump_pad'&&![35,140,1332,67].includes(o.padId))));
     const acceleration=1.916398*(p.isMini?.975:1),dt=.225;
-    const steps=Math.min(800,Math.max(1,Math.ceil(transition/(speed*.9))));
+    const steps=Math.min(800,Math.max(1,Math.ceil(lookahead/(speed*.9))));
+    const gravityPortals=objects.filter(o=>o.type.startsWith('portal_gravity_')&&!o.active).slice(0,30).map((o,i)=>({...o,bit:1<<i}));
+    const rings=objects.filter(o=>o.type==='jump_ring'&&!o.active&&[36,141,1333,1330,84,1022,1594].includes(o.orbId)).slice(0,30).map((o,i)=>({...o,bit:1<<i}));
+    const pads=objects.filter(o=>o.type==='jump_pad'&&!o.active&&[35,140,1332,67].includes(o.padId)).slice(0,30).map((o,i)=>({...o,bit:1<<i}));
     const coins=options.coins?objects.filter(o=>o.type==='coin'&&!o.active).slice(0,24).map((o,i)=>({...o,bit:1<<i})):[];
     const buckets=Array.from({length:steps},(_,i)=>objects.filter(o=>['solid','hazard','slope'].includes(o.type)&&Math.abs(o.x-(i+.5)*speed*.9)<o.w/2+size+speed));
-    let paths=[{y:p.y*gravity,v:0,ground:true,jumps:0,first:false,margin:40,coins:0,mask:0,risk:0}];
+    let paths=[{y:p.y*gravity,v:(p.yVelocity||0)*gravity,ground:Boolean(p.onGround||p.onCeiling||p.canJump),held:Boolean(p.upKeyDown||p.wasUpKeyDown||p._orbActivationConsumedForPress||scene._spaceWasDown),jumps:0,first:false,margin:40,coins:0,mask:0,rings:0,pads:0,portals:0,sign:1,risk:0}];
     const rank=n=>n.jumps*30+n.risk-n.coins*10000-Math.min(30,n.margin);
     for(let frame=0;frame<steps;frame++){
       const next=[];
-      for(const path of paths)for(const jump of path.ground?[false,true]:[false]){
-        const n={...path};if(frame===0)n.first=jump;
-        if(!jump&&path.ground)n.risk+=learned.filter(f=>f.missed&&Math.abs(f.death-(x+frame*speed*.9*direction))<140).length*180;
-        if(jump){n.v=22.360064*(p.isMini?.8:1);n.ground=false;n.jumps++;n.risk+=learned.filter(f=>!f.missed&&Math.abs(f.launch-(x+frame*speed*.9*direction))<28).length*600;}
-        let dead=false;
+      for(const path of paths)for(const jump of (path.ground||(!path.held&&rings.some(o=>!(path.rings&o.bit)&&Math.abs(frame*speed*.9-o.x)<Math.min(30,o.w/2+size-4)&&Math.abs(path.y-o.y)<o.h/2+size-4)))?[false,true]:[false]){
+        if(path.done){if(!jump)next.push(path);continue;}
+        const n={...path,held:jump};if(frame===0)n.first=jump;
+        if(!jump&&path.ground&&threats.some(o=>o.type==='hazard'&&Math.abs(o.x-frame*speed*.9)<180))n.risk+=Math.min(3,learned.filter(f=>f.missed&&Math.abs(f.death-(x+frame*speed*.9*direction))<140).length)*180;
+        if(jump){if(path.ground){n.v=22.360064*(p.isMini?.8:1)*n.sign;n.ground=false;}n.jumps++;n.risk+=learned.filter(f=>!f.missed&&Math.abs(f.launch-(x+frame*speed*.9*direction))<28).length*600;}
+        let dead=false,orbConsumed=false;
         for(let sub=0;sub<4&&!dead;sub++){
           const old=n.y,px=(frame*4+sub)*speed*dt;
-          if(!n.ground&&!(jump&&sub===0))n.v=Math.max(-30,n.v-acceleration*dt);
-          n.y+=n.v*dt;let surface=base;
+          if(!n.ground&&!(jump&&sub===0))n.v=Math.max(-30,n.v*n.sign-acceleration*dt)*n.sign;
+          n.y+=n.v*dt;let surface=n.sign===1?base:(gravity===1?-(Number.isFinite(ceiling)?ceiling:100000):floor);
           for(const o of buckets[frame]){
-            const dx=Math.abs(px-o.x),top=o.y+o.h/2;
+            const dx=Math.abs(px-o.x),top=o.y*n.sign+o.h/2;
             if(o.type==='solid'||o.type==='slope'){
-              if(dx<o.w/2+size-5&&old>=top+size-2&&n.y<=top+size&&n.v<=0)surface=Math.max(surface,top);
-              if(dx<o.w/2+10&&n.y+10>o.y-o.h/2&&n.y-10<top&&old<top+size-2){dead=true;break;}
+              if(dx<o.w/2+size-5&&old*n.sign>=top+size-2&&n.y*n.sign<=top+size&&n.v*n.sign<=0)surface=Math.max(surface,top);
+              if(dx<o.w/2+10&&n.y*n.sign+10>o.y*n.sign-o.h/2&&n.y*n.sign-10<top&&old*n.sign<top+size-2){dead=true;break;}
             }else{
               const gap=o.radius?Math.hypot(px-o.x,n.y-o.y)-o.radius-size-dangerMargin:Math.abs(n.y-o.y)-o.h/2-size-dangerMargin;
               if(o.radius||dx<o.w/2+size+dangerMargin){n.margin=Math.min(n.margin,gap);if(gap<0){dead=true;break;}}
             }
           }
+          if(n.y*n.sign<=surface+size&&n.v*n.sign<=0){n.y=(surface+size)*n.sign;n.v=0;n.ground=true;}else n.ground=false;
+          for(const pad of pads)if(!(n.pads&pad.bit)&&Math.abs(px-pad.x)<pad.w/2+size&&Math.abs(n.y-pad.y)<pad.h/2+size){
+            n.pads|=pad.bit;n.ground=false;n.v=(pad.padId===140?20.8:pad.padId===1332?40:pad.padId===67?30:32)*(p.isMini?.8:1)*n.sign;
+            if(pad.padId===67){n.sign*=-1;n.v*=.5;}
+          }
+          for(const ring of rings)if(jump&&!path.held&&!orbConsumed&&!(n.rings&ring.bit)&&Math.abs(px-ring.x)<Math.min(30,ring.w/2+size-4)&&Math.abs(n.y-ring.y)<ring.h/2+size-4){
+            orbConsumed=true;n.rings|=ring.bit;n.ground=false;
+            if(ring.orbId===1594){n.sign*=-1;n.v*=.5;}
+            else{
+              if(ring.orbId===1022)n.sign*=-1;
+              n.v=(ring.orbId===1330?-18:22.360064*(p.isMini?.8:1)*(ring.orbId===141?.72:ring.orbId===1333?1.38:1))*n.sign;
+              if(ring.orbId===84){n.sign*=-1;n.v*=.5;}
+            }
+          }
           for(const coin of coins)if(!(n.mask&coin.bit)&&Math.abs(px-coin.x)<coin.w/2+size-2&&Math.abs(n.y-coin.y)<coin.h/2+size-2){n.mask|=coin.bit;n.coins++;}
-          if(n.y<=surface+size&&n.v<=0){n.y=surface+size;n.v=0;n.ground=true;}else n.ground=false;
+          for(const portal of gravityPortals)if(!(n.portals&portal.bit)&&Math.abs(px-portal.x)<portal.w/2+size&&Math.abs(n.y-portal.y)<portal.h/2+size){
+            n.portals|=portal.bit;const sign=portal.type==='portal_gravity_up'?-gravity:portal.type==='portal_gravity_down'?gravity:-n.sign;
+            if(sign!==n.sign){n.sign=sign;n.v*=.5;n.ground=false;}
+          }
+          if(transitions.some(o=>Math.abs(px-o.x)<o.w/2+size&&Math.abs(n.y-o.y)<o.h/2+size)){n.done=true;break;}
         }
         if(!dead)next.push(n);
       }
       if(!next.length)break;
       // Deduplicate equivalent futures, keeping distinct launch times and both first inputs.
       next.sort((a,b)=>rank(a)-rank(b));const seen=new Set();paths=[];
-      for(const n of next){const key=[Math.round(n.y/3),Math.round(n.v),n.ground,n.first,n.mask].join(':');if(seen.has(key))continue;seen.add(key);paths.push(n);if(paths.length===16)break;}
+      for(const n of next){const key=[Math.round(n.y/3),Math.round(n.v),n.ground,n.first,n.mask,n.rings,n.pads,n.portals,n.sign,n.held,n.done].join(':');if(seen.has(key))continue;seen.add(key);paths.push(n);if(paths.length===16)break;}
+      if(paths.every(n=>n.done))break;
     }
     paths.sort((a,b)=>rank(a)-rank(b));
     return paths[0]?.first||false;

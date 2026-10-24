@@ -1,5 +1,5 @@
 window.NyxVoiceRelay = class {
-  constructor({ stream, audioContext, exchange, accept, muted, deafened, status, denied }) {
+  constructor({ stream, audioContext, exchange, accept, muted, deafened, status, denied, activity }) {
     Object.assign(this, {
       stream,
       audioContext,
@@ -9,6 +9,7 @@ window.NyxVoiceRelay = class {
       deafened,
       status,
       denied,
+      activity,
     });
     this.pending = [];
     this.sequence = 0;
@@ -110,6 +111,8 @@ window.NyxVoiceRelay = class {
       source.disconnect();
     };
     source.start(at);
+    const rms = Math.sqrt(samples.reduce((sum, value) => sum + value * value, 0) / samples.length);
+    this.activity?.(frame.fromUid, rms, at - now);
     this.playheads.set(key, { seq: frame.seq, at: at + 0.1 });
     if (this.playheads.size > 16) this.playheads.delete(this.playheads.keys().next().value);
   }

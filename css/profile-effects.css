@@ -434,7 +434,7 @@
   position: absolute !important;
   inset: 0 !important;
   z-index: 3 !important;
-  background: var(--n7x-profile-current, var(--n7x-profile-still)) center / contain no-repeat !important;
+  background: var(--n7x-profile-current, var(--n7x-profile-still)) center / 100% 100% no-repeat !important;
   opacity: 1 !important;
   border: 0 !important;
   border-radius: inherit !important;

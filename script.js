@@ -4789,7 +4789,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     "nyx-ai": localIcon("shortcut-nyx-ai.svg?v=7"),
     "aether.cx": localIcon("theatre-masks.svg?v=1"),
     "icefy.top": localIcon("theatre-masks.svg?v=1"),
-    "cinejoy.to": localIcon("nyx-movies.svg?v=1"),
+    "cinejoy.pk": localIcon("nyx-movies.svg?v=1"),
     "nyx-movies": localIcon("nyx-movies.svg?v=1"),
     "fmhy.net": localIcon("theatre-masks.svg?v=1"),
     "nyx-chat": localIcon("chat.svg?v=2"),
@@ -12645,7 +12645,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
   const moviesHomeShortcut = {
     domain: "nyx-movies",
     title: "Movies",
-    url: "https://cinejoy.to/",
+    url: "https://cinejoy.pk/",
     favorite: false,
   };
   const defaultHomeShortcuts = [
@@ -12688,6 +12688,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         "http://icefy.top",
         "https://aether.cx",
         "https://cinejoy.to",
+        "https://cinejoy.pk",
         "/apps/movies",
         "/apps/movies/index.html",
       ].includes(
@@ -12697,7 +12698,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
           .toLowerCase(),
       )
     ) {
-      next.url = "https://cinejoy.to/";
+      next.url = "https://cinejoy.pk/";
       next.domain = "nyx-movies";
     }
     if (next.url === "/assets/studies/index.html") next.url = "/assets/studies/";
@@ -13340,7 +13341,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     ["nyxify", "nyxify", "Nyxify/built in music", "/apps/nyxify/"],
     ["duck-ai", "duck.ai", "Duck A1", "https://duck.ai/"],
     ["nyx-ai", "nyx-ai", "N7X A1", "nyx://ai"],
-    ["movies", "nyx-movies", "Movies", "https://cinejoy.to/"],
+    ["movies", "nyx-movies", "Movies", "https://cinejoy.pk/"],
     ["more-movie-sites", "fmhy.net", "More Movie Sites", "https://fmhy.net/video#p-stream-forks"],
     ["tiktok", "tiktok.com", "TikTok", "https://www.tiktok.com/"],
     ["animex", "animex.one", "Animex", "https://animex.one/"],
@@ -13357,7 +13358,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       .trim()
       .toLowerCase();
     const name = String(app?.name || "").trim();
-    const url = normalizeInternalAppUrl(app?.url);
+    const url = id === "movies" ? normalizeHomeShortcut({ url: app?.url }).url : normalizeInternalAppUrl(app?.url);
     if (!/^[a-z0-9][a-z0-9-]{1,63}$/.test(id) || !name || !url) return null;
     return { id, icon, name: name.slice(0, 48), url: url.slice(0, 2048) };
   }

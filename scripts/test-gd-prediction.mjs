@@ -34,3 +34,46 @@ const boundarySteer=vm.runInNewContext('('+source.slice(source.indexOf('  functi
 const boundaryScene={_playerWorldX:0,_state:{isFlying:true,y:562,yVelocity:1},_level:{getFloorY:()=>0,getCeilingY:()=>600,getNearbySectionObjects:()=>[{type:'portal_fly',x:80,y:630,w:180,h:60}]}};
 assert.equal(boundarySteer(boundaryScene),true,'keep thrust into a ceiling portal rather than braking below its trigger');
 console.log('PASS: held thrust activates boundary flight portals.');
+
+const orbObject={type:'jump_ring',x:0,y:100,w:60,h:60};
+function orbInput(state,previous=false,active=false){
+ return steer({_playerWorldX:0,_spaceWasDown:previous,_player:{_isObjectActivated:()=>active},
+ _state:{y:100,yVelocity:0,...state},
+ _level:{getFloorY:()=>0,getCeilingY:()=>600,getNearbySectionObjects:()=>[orbObject]}});
+}
+assert.equal(orbInput({isFlying:true,wasUpKeyDown:false}),true,'ship must tap nearby orb before steering');
+assert.equal(orbInput({isUfo:true,_orbActivationConsumedForPress:true}),false,'release consumed orb press');
+assert.equal(orbInput({wasUpKeyDown:true}),false,'chain must include a release edge');
+assert.equal(orbInput({wasUpKeyDown:false}),true,'next orb can consume a fresh press');
+assert.equal(orbInput({onGround:true}),true,'orb at ground level can still accept a press');
+assert.equal(orbInput({isFlying:true,y:500},false,true),false,'activated orb must not trigger again');
+const emptyRetry={...retryScene,_level:{...retryScene._level,getNearbySectionObjects:()=>[]}};
+assert.equal(retrySteer(emptyRetry),false,'old failure memory must not invent jumps on empty ground');
+console.log('PASS orb taps across modes, release edges, activated-orb exclusion and safe-ground retry behavior');
+
+function mechanics(objects,state={}){
+ return steer({_playerWorldX:0,_state:{y:30,yVelocity:0,onGround:true,canJump:true,...state},
+ _level:{getFloorY:()=>0,getCeilingY:()=>600,getNearbySectionObjects:()=>objects}});
+}
+const ceilingSpikes=Array.from({length:12},(_,i)=>({type:'hazard',x:-30+i*60,y:234,w:12,h:24}));
+assert.equal(mechanics(ceilingSpikes),false,'stay below ceiling spikes on ordinary ground');
+assert.equal(mechanics([...ceilingSpikes,{type:'jump_pad',padId:35,x:62,y:4,w:50,h:8}]),true,
+ 'jump over a pad whose native boost would hit ceiling spikes');
+assert.equal(mechanics([{type:'jump_ring',orbId:36,x:0,y:100,w:72,h:72},
+ {type:'hazard',x:70,y:215,w:100,h:120}],{y:100,yVelocity:-1,onGround:false,canJump:false}),false,
+ 'skip an optional yellow orb when its boost collides with an overhead obstacle');
+assert.equal(mechanics([{type:'portal_gravity_down',x:40,y:500,w:50,h:100},
+ {type:'hazard',x:80,y:30,w:12,h:24}]),true,
+ 'a portal above the player must not hide the hazard beyond its X coordinate');
+console.log('PASS pad avoidance, optional orb decisions and missed-portal trajectory checks');
+
+routeContext.normalLevel={objects:[{type:'coin',x:27990,y:450,w:60,h:60},
+ {type:'portal_fly',x:25290,y:338,w:60,h:180}],getFloorY:()=>0,getCeilingY:()=>600};
+vm.runInContext('levelObjects(normalLevel)',routeContext);
+assert.equal(vm.runInContext('secretFlightTarget(normalLevel,player,26400)',routeContext),null,
+ 'a normal coin must not take precedence over in-corridor obstacle avoidance');
+assert.equal(special({isWave:true,y:300},[{type:'hazard',x:100,y:410,w:70,h:120}]),false,
+ 'wave should descend away from a rising collision trajectory');
+assert.equal(special({isWave:true,y:300,gravityFlipped:true},[{type:'hazard',x:100,y:410,w:70,h:120}]),true,
+ 'inverted wave uses the opposite held input for the same safe direction');
+console.log('PASS normal versus secret coin routing and inverted wave inputs');

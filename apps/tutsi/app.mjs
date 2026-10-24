@@ -437,7 +437,7 @@ $("test-connection").onclick = async () => {
 $("connection-shortcut").onclick = () => (location.hash = "connection");
 const appPaths = {
   ai: "/ai.html",
-  movies: "https://cinejoy.to/",
+  movies: "https://cinejoy.pk/",
   music: "/apps/nyxify/",
   games: "/assets/studies/",
   cloud: "/apps/cloud-studies/",
@@ -560,7 +560,7 @@ $("address").addEventListener("blur", () => {
 function route() {
   const name = location.hash.slice(1) || "home";
   if (name === "movies") {
-    void navigate("https://cinejoy.to/");
+    void navigate("https://cinejoy.pk/");
     return;
   }
   const section = appPaths[name]

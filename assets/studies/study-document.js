@@ -44,7 +44,8 @@ export function prepareGameDocument(html, path, sourceUrl) {
       : "https://raw.githubusercontent.com/freebuisness/html/main/";
   const proxyUrl = (url) => gameResourceUrl(url, undefined, location.origin);
   const slopePractice = path === "S/clslope.html" ? `<script src="${location.origin}/assets/studies/slope-practice.js"><\/script>` : "";
-  const adProtection = `${slopePractice}<script src="${location.origin}/assets/vendor/game-storage.js"><\/script><script src="${location.origin}/assets/studies/study-runtime-compat.js"><\/script><script src="${location.origin}/assets/studies/study-health.js"><\/script><script src="${location.origin}/assets/studies/study-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;
+  const creditTools = /^(?:33(?:[-_.][a-z0-9_.-]*)?\.html|R\/clretrobowl(?:fixed)?\.html)$/.test(path) ? `<script src="${location.origin}/assets/studies/q249a7c.js"><\/script>` : "";
+  const adProtection = `${creditTools}${slopePractice}<script src="${location.origin}/assets/vendor/game-storage.js"><\/script><script src="${location.origin}/assets/studies/study-runtime-compat.js"><\/script><script src="${location.origin}/assets/studies/study-health.js"><\/script><script src="${location.origin}/assets/studies/study-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;
   const sourceHtml = String(html || "")
     .replace(/<script\b[^>]*src=["']\/assets\/js\.js["'][^>]*>[\s\S]*?<\/script>/gi, "")
     .replace(/<link\b[^>]*href=["']\/assets\/css\.css["'][^>]*>/gi, "")

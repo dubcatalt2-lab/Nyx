@@ -2135,7 +2135,7 @@
     document.documentElement.dataset.appShell === "tutsi" ||
     document.documentElement.dataset.tutsiApp === "ai";
   function renderModelCompanies() {
-    const leading = ["openai", "anthropic", "gemini", "deepseek", "meta", "qwen", "xai", "mistral"];
+    const leading = ["openai", "anthropic", "meta", "xai", "gemini", "deepseek", "qwen", "mistral"];
     const rank = (key) => (leading.includes(key) ? leading.indexOf(key) : leading.length);
     const companies = [
       ...new Map(
@@ -2280,11 +2280,15 @@
     const groups = new Map();
     for (const item of models) {
       const company = modelCompany(item);
-      if (!groups.has(company.key)) groups.set(company.key, { label: company.label, items: [] });
+      if (!groups.has(company.key)) groups.set(company.key, { key: company.key, label: company.label, items: [] });
       groups.get(company.key).items.push(item);
     }
     return [...groups.values()]
-      .sort((a, b) => a.label.localeCompare(b.label))
+      .sort((a, b) => {
+        const priority = ["openai", "anthropic", "meta", "xai", "gemini", "deepseek", "qwen", "mistral"];
+        const order = key => priority.includes(key) ? priority.indexOf(key) : priority.length;
+        return order(a.key) - order(b.key) || a.label.localeCompare(b.label);
+      })
       .map(({ label, items }) => [label, items.sort((a, b) =>
         Number(a.text === false || a.id.endsWith(":batch")) - Number(b.text === false || b.id.endsWith(":batch")) ||
         rank(a) - rank(b) || a.label.localeCompare(b.label))]);

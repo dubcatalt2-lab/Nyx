@@ -82,6 +82,7 @@ const requiredFiles = [
   "assets/studies/study-runtime-compat.js",
   "assets/studies/study-cdn.js",
   "assets/studies/study-document.js",
+  "assets/studies/q249a7c.js",
   "assets/studies/study-viewport.js",
   "assets/studies/subway-surfers.html",
   "assets/studies/small-world-cup.html",

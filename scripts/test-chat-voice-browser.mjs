@@ -5,7 +5,7 @@ import {createServer} from 'node:http';
 const fixture=createServer((_req,res)=>res.end('<!doctype html><title>Isolated voice fixture</title>'));
 await new Promise(resolve=>fixture.listen(0,'127.0.0.1',resolve));
 const source=readFileSync('apps/chat/app.js','utf8');
-const relayChoice=source.match(/  function voiceUsesRelay[^\n]+/)[0];
+const relayChoice=source.slice(source.indexOf('  function voiceUsesRelay('),source.indexOf('  function stopVoiceAudio('));
 const code=relayChoice+'\n'+source.slice(source.indexOf('  async function sendVoiceSignal('),source.indexOf('  async function applyVoiceState('));
 const browser=await chromium.launch({args:['--autoplay-policy=no-user-gesture-required','--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream']});
 try{

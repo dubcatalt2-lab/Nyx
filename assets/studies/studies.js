@@ -19,6 +19,11 @@ function fitGameFrame(frame) {
   const script = doc.createElement("script");
   script.src = new URL("/assets/studies/study-viewport.js", location.origin).href;
   (doc.head || doc.documentElement).append(script);
+  if (/^retro bowl(?: fixed| college)?$/i.test(state.activeGame?.title || '')) {
+    const tools = doc.createElement('script');
+    tools.src = new URL('/assets/studies/q249a7c.js', location.origin).href;
+    (doc.head || doc.documentElement).append(tools);
+  }
   const scan = (node) => {
     if (node.nodeType !== 1) return;
     if (node.matches("iframe")) fitGameFrame(node);
@@ -1369,6 +1374,7 @@ async function launchGameSource(index, reason = "") {
       );
       playableUrl = String(result?.url || "");
       if (!/^https:\/\//i.test(playableUrl)) throw new Error("𝖫𝗎𝗆𝗂𝗇𝖲𝖣𝖪 did not return a playable URL");
+      if (/^retro bowl(?: fixed| college)?$/i.test(state.activeGame?.title || "")) playableUrl = externalGamePlayer(playableUrl);
     } catch {
       if (attempt === state.sourceAttempt && state.activeGame)
         tryNextGameSource("The Lumin game could not be prepared.");

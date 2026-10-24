@@ -2023,3 +2023,30 @@ html body .member-dialog [data-member-dialog-content]>.n7x-user-profile-effect {
 @media (prefers-reduced-motion: reduce) { .typing-dots i { animation: none; } }
 
 .gif-badge { display: grid; place-items: center; width: 24px; height: 25px; border-radius: 3px; background: #b9bbc3; color: #242427; font: 800 11px/1 Arial, sans-serif; letter-spacing: -.5px; }
+
+
+/* Connected room stays inside the conversation; sidebar voice controls remain usable. */
+.voice-room-view { position:absolute; inset:0; z-index:6; overflow:auto; padding:20px; background:#000; color:var(--chat-text,#eee); font-family:Arial,sans-serif; }
+.voice-room-view[hidden] { display:none; }
+.voice-room-view header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.voice-room-view h2 { font-size:20px; margin:0; }
+.voice-room-view p { color:#b9bbc4; line-height:1.5; }
+.voice-room-view button, [data-voice-open] { border:1px solid #444; border-radius:8px; padding:9px 12px; background:#171717; color:inherit; font:inherit; cursor:pointer; }
+[data-voice-open] { width:100%; margin:8px 0; font-size:12px; }
+.voice-room-roster { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px; }
+.voice-room-member { min-width:0; border:2px solid #333; border-radius:14px; padding:14px; background:#111; text-align:center; }
+.voice-room-member button { display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; border:0; background:transparent; overflow-wrap:anywhere; }
+.voice-room-member .avatar { width:60px; height:60px; }
+.voice-room-member small { display:block; min-height:18px; color:#b9bbc4; }
+.voice-room-member.voice-speaking { border-color:#6de6a5; box-shadow:0 0 0 2px #6de6a5; }
+.voice-speaking .avatar { outline:3px solid #6de6a5; outline-offset:3px; }
+.voice-room-view .voice-screen-stage { position:static; width:100%; max-height:none; padding:0; border:0; background:#000; box-shadow:none; grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr)); }
+.voice-room-view .voice-screen-card { padding:10px; display:flex; flex-direction:column; gap:10px; }
+.voice-room-view .voice-screen-card span { position:static; max-width:100%; padding:0; background:transparent; font-size:13px; }
+.voice-room-view .voice-screen-card video { max-height:30vh; aspect-ratio:16/9; }
+.voice-room-view .voice-screen-expanded { grid-column:1/-1; }
+.voice-room-view .voice-screen-expanded video { max-height:65vh; }
+.voice-room-view button:focus-visible, [data-voice-open]:focus-visible { outline:2px solid #fff; outline-offset:3px; }
+@media(max-width:600px) { .voice-room-view { padding:12px; } .voice-room-roster { grid-template-columns:repeat(2,minmax(0,1fr)); } .voice-room-view header { align-items:flex-start; } }
+
+.voice-room-controls { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0 20px; }

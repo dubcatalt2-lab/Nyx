@@ -11,7 +11,7 @@ const base = process.env.NYX_TEST_BASE_URL || 'http://127.0.0.1:' + server.addre
 const browser = await chromium.launch({channel: 'msedge', headless: true});
 const me = {uid: 'fixture-member', displayName: 'Alex', handle: '@alex', role: 'member'};
 const peer = {uid: 'outside-directory', displayName: 'River', handle: '@river', role: 'owner', online: true};
-let relations = [], actions = [], dmCalls = 0, q18=false, qFail=false;
+let relations = [], actions = [], dmCalls = 0, q18=false, qFail=false, validGif=false;
 const errors = [];
 try {
   const page = await browser.newPage({viewport: {width: 1440, height: 940}});
@@ -30,6 +30,7 @@ try {
   await page.route('**/socket.io/**', route => route.abort());
   await page.route('**/api/**', async route => {
     const path = new URL(route.request().url()).pathname;
+    if (path === '/api/chat/gifs/media') { const preview = new URL(route.request().url()).searchParams.get('url').endsWith('/preview.gif'); return route.fulfill({contentType:'image/gif',body:preview || validGif ? Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7','base64') : Buffer.from('not a gif')}); }
     let payload = {};
     if(path.endsWith('/reactions')){await new Promise(r=>setTimeout(r,650));if(qFail)return route.fulfill({status:500,json:{error:'Fixture rejection'}});q18=!q18;return route.fulfill({json:{reactions:q18?[{emoji:'\u{1f525}',count:1,self:true,uids:[me.uid]}]:[]}});}
 
@@ -71,9 +72,9 @@ try {
   await page.waitForFunction(()=>window.fixtureSocketSent.some(event=>event.name==='nyx:chat:typing'&&!event.value.active));
   await page.waitForTimeout(7000);
   assert(await page.locator('[data-typing-indicator]').isHidden(),'Stale typing indicators expire');
-  let validGif = false;
-  await page.route('https://media.giphy.com/media/fixture/giphy.gif', route => route.fulfill({contentType:'image/gif', headers:{'access-control-allow-origin':'*'},body:validGif?Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7','base64'):Buffer.from('not a gif')}));
+  await page.route('https://*.giphy.com/**', route => route.abort());
   await page.getByRole('button',{name:'Choose a GIF',exact:true}).click();
+  await page.waitForFunction(()=>{const img=document.querySelector('[data-gif-grid] img');return img?.naturalWidth>0 && img.src.startsWith('blob:');});
   await page.getByRole('button',{name:'Favorite Wave',exact:true}).click();
   await page.getByRole('button',{name:'Favorites',exact:true}).click();
   await page.getByRole('button',{name:'Remove favorite Wave',exact:true}).waitFor();

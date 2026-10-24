@@ -131,9 +131,13 @@ try{
       await page.locator('[data-voice-channel-list] .voice-channel-button').click();
     }
     for(const page of pages)await page.waitForFunction(()=>window.voiceReceived>3&&window.voiceEnergy>0,{},{timeout:20000});
+    for(const page of pages) {
+      await page.waitForFunction(()=>document.querySelector('[aria-label="Connected members"]')?.children.length===2);
+      await page.waitForFunction(()=>[...document.querySelectorAll('[aria-label="Connected members"] small')].some(e=>e.textContent.normalize('NFKC').replaceAll('3','e').replaceAll('0','o')==='Speaking'));
+    }
     assert([...liveSessions.values()].some(p=>p.audioTransport==='relay'));
     if(scenario==='http'){assert.equal(counters.socket,0);assert(counters.http>0);}
-    else {assert(counters.socket>0);socketFailure=true;const before=counters.http;await pages[0].waitForFunction(()=>document.querySelector('[data-voice-status]').textContent==='Voice via HTTP',{},{timeout:15000});assert(counters.http>before);}
+    else {assert(counters.socket>0);socketFailure=true;const before=counters.http;await pages[0].waitForFunction(()=>document.querySelector('[data-voice-status]').textContent.normalize('NFKC').replaceAll('3','e').replaceAll('0','o')==='Voice via HTTP',{},{timeout:15000});assert(counters.http>before);}
     await pages[0].locator('[data-voice-mute]').click();
     await pages[0].waitForTimeout(1500);const before=await pages[1].evaluate(()=>window.voiceReceived);
     await pages[0].waitForTimeout(700);assert.equal(await pages[1].evaluate(()=>window.voiceReceived),before,'muted sender sends no frames');

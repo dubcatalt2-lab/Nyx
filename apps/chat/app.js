@@ -350,6 +350,8 @@
     },
   ];
   const SLASH_COMMANDS = [
+    {name:'device',usage:'/device ban @person',description:'Owner: block a selected browser until unbanned, without blocking its IP. Use /device unban to undo.',staff:true},
+    {name:'role',usage:'/role add @person mod',description:'Owner: assign a built-in role or custom role by name.',staff:true},
     { name: "help", usage: "/help", description: "Show every N7X Chat command." },
     { name: "dm", usage: "/dm @person [message]", description: "Open a private conversation." },
     {
@@ -362,7 +364,7 @@
       name: "ban",
       usage: "/ban @person [message]",
       description:
-        "Disable an account (Moderator+). Owner: /ban device @person blocks one browser only.",
+        "Disable an account (Moderator+). Use @username or a quoted display name. /device ban blocks one browser without its IP.",
       staff: true,
     },
     {
@@ -648,6 +650,11 @@
     voiceStream: null,
     voiceScreenStream: null,
     voiceScreenBusy: false,
+    voiceRoomOpen: false,
+    voiceMeters: new Map(),
+    voiceSpeakingUntil: new Map(),
+    voiceMeterTimer: 0,
+    voiceLocalScreen: {},
     voicePeers: new Map(),
     voiceAudio: null,
     voiceAudioStarting: false,
@@ -2070,6 +2077,10 @@
       stream: state.voiceStream,
       audioContext: state.audioContext,
       exchange: (frames) => exchangeVoiceAudioFrames(frames, sessionId),
+      activity: (uid, level, delay) => {
+        if (state.voiceSessionId === sessionId && level > 0.012)
+          state.voiceSpeakingUntil.set(uid, performance.now() + delay * 1000 + 450);
+      },
       muted: () => state.voiceMuted,
       deafened: () => state.voiceDeafened,
       denied: () => {
@@ -2117,6 +2128,147 @@
     return known
       ? { ...value, ...known, channelId: value?.channelId, sessionId: value?.sessionId }
       : value;
+  }
+  function ensureVoiceRoom() {
+    if (refs.voiceRoomView) return;
+    const room = document.createElement("section");
+    room.className = "voice-room-view";
+    room.setAttribute("data-no-interface-text", "");
+    room.setAttribute("aria-label", "Voice room");
+    room.hidden = true;
+    const header = document.createElement("header");
+    const title = document.createElement("h2");
+    title.tabIndex = -1;
+    const close = document.createElement("button");
+    close.type = "button";
+    close.textContent = "Back to chat";
+    close.addEventListener("click", () => setVoiceRoomOpen(false));
+    header.append(title, close);
+    const note = document.createElement("p");
+    const controls = document.createElement("div");
+    controls.className = "voice-room-controls";
+    refs.voiceRoomControls = [refs.voiceMute, refs.voiceDeafen, refs.voiceScreen, refs.voiceDisconnect].map(original => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.addEventListener("click", () => original.click());
+      controls.append(button);
+      return {button, original};
+    });
+    const roster = document.createElement("div");
+    roster.className = "voice-room-roster";
+    roster.setAttribute("role", "list");
+    roster.setAttribute("aria-label", "Connected members");
+    const heading = document.createElement("h3");
+    heading.textContent = "Screen shares";
+    const empty = document.createElement("p");
+    empty.textContent = "No screens are being shared.";
+    refs.voiceScreenStage.before(room);
+    room.append(header, note, controls, roster, heading, empty, refs.voiceScreenStage);
+    Object.assign(refs, {voiceRoomView: room, voiceRoomTitle: title, voiceRoomNote: note,
+      voiceRoster: roster, voiceScreenEmpty: empty});
+    room.addEventListener("keydown", event => {
+      if (event.key === "Escape") { event.stopPropagation(); setVoiceRoomOpen(false); }
+    });
+  }
+  function setVoiceRoomOpen(open) {
+    ensureVoiceRoom();
+    state.voiceRoomOpen = Boolean(open && state.voiceChannelId);
+    renderVoiceRoom();
+    if (state.voiceRoomOpen) { closeDrawers(); refs.voiceRoomTitle.focus(); }
+    else document.querySelector("[data-voice-open]")?.focus();
+  }
+  function renderVoiceRoom() {
+    ensureVoiceRoom();
+    refs.voiceRoomView.hidden = !state.voiceRoomOpen || !state.voiceChannelId;
+    const participants = state.voiceParticipants.filter(p => p.channelId === state.voiceChannelId);
+    const channel = state.voiceChannels.find(c => c.id === state.voiceChannelId);
+    refs.voiceRoomTitle.textContent = `${channel?.name || "Voice room"} - ${participants.length} connected`;
+    refs.voiceRoomNote.textContent = state.voiceTransport === "relay"
+      ? "Compatibility / HTTP voice is audio only. Screen sharing and watching require WebRTC."
+      : "An outline shows who is speaking. Select Watch / Enlarge on a screen share to watch it here.";
+    // Keep focused member buttons intact during routine state refreshes.
+    const key = JSON.stringify(participants.map(p => [p.uid, p.sessionId, voiceMember(p)]));
+    if (refs.voiceRoster._rosterKey !== key) {
+      refs.voiceRoster._rosterKey = key;
+      refs.voiceRoster.replaceChildren();
+      participants.forEach(participant => {
+        const member = voiceMember(participant);
+        const card = document.createElement("div");
+        card.className = "voice-room-member";
+        card.setAttribute("role", "listitem");
+        card.dataset.voiceMemberUid = participant.uid;
+        const profile = document.createElement("button");
+        profile.type = "button";
+        profile.append(avatarElement(member, true));
+        const name = document.createElement("strong");
+        name.textContent = `${member.displayName || member.handle || "Member"}${participant.uid === state.me?.uid ? " (You)" : ""}`;
+        profile.append(name);
+        profile.addEventListener("click", () => viewMemberProfile(member));
+        const status = document.createElement("small");
+        status.textContent = "Listening";
+        card.append(profile, status);
+        refs.voiceRoster.append(card);
+      });
+    }
+    refs.voiceRoomControls.forEach(({button, original}) => {
+      const label = original.getAttribute("aria-label");
+      button.textContent = label;
+      button.setAttribute("aria-label", `${label} in voice room`);
+      button.disabled = original.disabled;
+    });
+    const count = refs.voiceScreenStage.children.length;
+    refs.voiceScreenEmpty.hidden = Boolean(count);
+    const opener = document.querySelector("[data-voice-open]");
+    if (opener) opener.textContent = count ? `Open voice room - ${count} screen share${count === 1 ? "" : "s"}` : "Open voice room";
+  }
+  function dropVoiceMeter(uid) {
+    const meter = state.voiceMeters.get(uid);
+    if (meter) { meter.source.disconnect(); meter.analyser.disconnect(); }
+    state.voiceMeters.delete(uid);
+    state.voiceSpeakingUntil.delete(uid);
+  }
+  function clearVoiceActivity() {
+    clearInterval(state.voiceMeterTimer);
+    state.voiceMeterTimer = 0;
+    [...state.voiceMeters.keys()].forEach(dropVoiceMeter);
+    state.voiceSpeakingUntil.clear();
+  }
+  function sampleVoiceActivity() {
+    if (!state.voiceChannelId) return;
+    const context = state.audioContext;
+    const participants = state.voiceParticipants.filter(p => p.channelId === state.voiceChannelId);
+    const active = new Set(participants.map(p => p.uid));
+    for (const uid of state.voiceMeters.keys()) if (!active.has(uid)) dropVoiceMeter(uid);
+    for (const uid of state.voiceSpeakingUntil.keys()) if (!active.has(uid)) state.voiceSpeakingUntil.delete(uid);
+    participants.forEach(p => {
+      const self = p.uid === state.me?.uid;
+      const stream = self ? state.voiceStream : state.voicePeers.get(p.uid)?.audio?.srcObject;
+      let meter = state.voiceMeters.get(p.uid);
+      if (meter && (meter.stream !== stream || meter.sessionId !== p.sessionId)) { dropVoiceMeter(p.uid); meter = null; }
+      if (!meter && stream?.getAudioTracks().some(t => t.readyState === "live") && context) {
+        try {
+          const source = context.createMediaStreamSource(stream), analyser = context.createAnalyser();
+          analyser.fftSize = 512;
+          source.connect(analyser);
+          meter = {source, analyser, stream, sessionId: p.sessionId, samples: new Float32Array(512)};
+          state.voiceMeters.set(p.uid, meter);
+        } catch {}
+      }
+      const suppressed = self ? state.voiceMuted : state.voiceDeafened;
+      if (suppressed) state.voiceSpeakingUntil.delete(p.uid);
+      else if (meter) {
+        meter.analyser.getFloatTimeDomainData(meter.samples);
+        const rms = Math.sqrt(meter.samples.reduce((sum, value) => sum + value * value, 0) / meter.samples.length);
+        if (rms > 0.012) state.voiceSpeakingUntil.set(p.uid, performance.now() + 450);
+      }
+    });
+    document.querySelectorAll("[data-voice-member-uid]").forEach(card => {
+      const uid = card.dataset.voiceMemberUid;
+      const speaking = active.has(uid) && (state.voiceSpeakingUntil.get(uid) || 0) > performance.now();
+      card.classList.toggle("voice-speaking", speaking);
+      const status = card.querySelector("small");
+      if (status) status.textContent = speaking ? "Speaking" : uid === state.me?.uid && state.voiceMuted ? "Muted" : "Listening";
+    });
   }
   function setVoiceButtonIcon(button, icon) {
     button.querySelector("use")?.setAttribute("href", `#icon-${icon}`);
@@ -2187,6 +2339,7 @@
       state.voiceScreenStream ? "Stop sharing screen" : "Share screen",
     );
     refs.voiceScreen.title = state.voiceScreenStream ? "Stop sharing screen" : "Share screen";
+    renderVoiceRoom();
   }
   function renderVoiceChannels() {
     refs.voiceChannelList.replaceChildren();
@@ -2219,6 +2372,8 @@
           const item = document.createElement("button");
           item.type = "button";
           item.className = `voice-member${participant.uid === state.me?.uid ? " self" : ""}`;
+          item.dataset.voiceMemberUid = participant.uid;
+          item.setAttribute("data-user-content", "");
           item.append(avatarElement(member, true));
           const label = document.createElement("span");
           label.append(
@@ -2242,8 +2397,9 @@
     });
     updateVoicePanel();
   }
-  function removeVoiceScreen(entry) {
+  function removeVoiceScreen(entry, { keepListeners = false } = {}) {
     if (!entry) return;
+    if (!keepListeners) { entry.screenCleanup?.(); entry.screenCleanup = null; }
     clearTimeout(entry.screenMuteTimer);
     entry.screenMuteTimer = 0;
     if (!entry.screenCard) return;
@@ -2252,6 +2408,7 @@
     entry.screenCard = null;
     entry.screenVideo = null;
     refs.voiceScreenStage.hidden = !refs.voiceScreenStage.children.length;
+    renderVoiceRoom();
   }
   function showVoiceScreen(entry, participant, stream) {
     removeVoiceScreen(entry);
@@ -2264,22 +2421,48 @@
     video.srcObject = stream;
     const label = document.createElement("span");
     label.textContent = `${participant.displayName || participant.handle || "N7X member"}'s screen`;
-    card.append(video, label);
+    const watch = document.createElement("button");
+    watch.type = "button";
+    watch.textContent = "Watch / Enlarge";
+    watch.setAttribute("aria-label", `Watch ${label.textContent}`);
+    watch.setAttribute("aria-expanded", "false");
+    watch.addEventListener("click", () => {
+      const expanded = card.classList.toggle("voice-screen-expanded");
+      watch.textContent = expanded ? "Reduce" : "Watch / Enlarge";
+      watch.setAttribute("aria-expanded", String(expanded));
+      video.controls = expanded;
+      void video.play().catch(() => {});
+      if (expanded) card.scrollIntoView({block: "nearest"});
+    });
+    card.append(video, label, watch);
     refs.voiceScreenStage.append(card);
     refs.voiceScreenStage.hidden = false;
     entry.screenCard = card;
     entry.screenVideo = video;
+    renderVoiceRoom();
+    const cleanup = [];
     stream.getVideoTracks().forEach((track) => {
-      track.addEventListener("ended", () => removeVoiceScreen(entry), { once: true });
-      track.addEventListener("mute", () => {
+      const ended = () => removeVoiceScreen(entry);
+      const muted = () => {
         clearTimeout(entry.screenMuteTimer);
-        entry.screenMuteTimer = setTimeout(() => removeVoiceScreen(entry), 1500);
-      });
-      track.addEventListener("unmute", () => {
+        entry.screenMuteTimer = setTimeout(() => removeVoiceScreen(entry, {keepListeners: true}), 1500);
+      };
+      const unmuted = () => {
         clearTimeout(entry.screenMuteTimer);
         entry.screenMuteTimer = 0;
+        if (!entry.screenCard && track.readyState === "live" && state.voiceChannelId)
+          showVoiceScreen(entry, participant, stream);
+      };
+      track.addEventListener("ended", ended);
+      track.addEventListener("mute", muted);
+      track.addEventListener("unmute", unmuted);
+      cleanup.push(() => {
+        track.removeEventListener("ended", ended);
+        track.removeEventListener("mute", muted);
+        track.removeEventListener("unmute", unmuted);
       });
     });
+    entry.screenCleanup = () => cleanup.forEach(fn => fn());
     void video.play().catch(() => {});
   }
   function closeVoicePeer(uid) {
@@ -2304,6 +2487,7 @@
       entry.audio.remove();
     }
     removeVoiceScreen(entry);
+    dropVoiceMeter(uid);
     state.voicePeers.delete(uid);
   }
   function closeAllVoicePeers() {
@@ -2539,7 +2723,6 @@
       if (event.track.kind === "video") {
         const stream = event.streams[0] || new MediaStream([event.track]);
         showVoiceScreen(entry, participant, stream);
-        event.track.addEventListener("ended", () => removeVoiceScreen(entry), { once: true });
         return;
       }
       try {
@@ -2705,7 +2888,8 @@
     }, delay);
   }
   async function joinVoice(channelId) {
-    if (state.voiceBusy || state.voiceChannelId === channelId) return;
+    if (state.voiceChannelId === channelId) { setVoiceRoomOpen(true); return; }
+    if (state.voiceBusy) return;
     if (!navigator.mediaDevices?.getUserMedia) {
       showNotice("Voice channels are not supported by this browser.");
       return;
@@ -2754,6 +2938,9 @@
       });
       await applyVoiceState(payload);
       scheduleVoicePoll(VOICE_POLL_MS);
+      clearInterval(state.voiceMeterTimer);
+      state.voiceMeterTimer = setInterval(sampleVoiceActivity, 80);
+      setVoiceRoomOpen(true);
       closeDrawers();
       showNotice(
         `Joined ${state.voiceChannels.find((item) => item.id === channelId)?.name || "voice channel"}.`,
@@ -2779,6 +2966,7 @@
     const stream = state.voiceScreenStream;
     if (!stream) return;
     state.voiceScreenStream = null;
+    removeVoiceScreen(state.voiceLocalScreen);
     stream.getTracks().forEach((track) => track.stop());
     await Promise.all(
       [...state.voicePeers.entries()].map(async ([uid, entry]) => {
@@ -2811,6 +2999,7 @@
     }
     if (state.voiceScreenBusy) return;
     state.voiceScreenBusy = true;
+    const screenSession = state.voiceSessionId;
     updateVoicePanel();
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({
@@ -2821,10 +3010,12 @@
         },
         audio: false,
       });
+      if (state.voiceSessionId !== screenSession || state.voiceTransport === "relay") { stream.getTracks().forEach(track => track.stop()); return; }
       const track = stream.getVideoTracks()[0];
       if (!track) throw new Error("No screen was selected.");
       track.contentHint = "detail";
       state.voiceScreenStream = stream;
+      showVoiceScreen(state.voiceLocalScreen, state.me, stream);
       track.addEventListener(
         "ended",
         () => {
@@ -2851,6 +3042,9 @@
   }
   async function leaveVoice({ notifyServer = true, resumePolling = true } = {}) {
     const sessionId = state.voiceSessionId;
+    clearVoiceActivity();
+    state.voiceRoomOpen = false;
+    removeVoiceScreen(state.voiceLocalScreen);
     stopVoiceAudio();
     state.voiceAudioStatus = "";
     clearTimeout(state.voicePollTimer);
@@ -4938,6 +5132,14 @@
       showNotice(`Custom role removed from ${member.displayName}.`, "success");
     } else {
       const query = args.split(/\s+/).slice(1).join(" ").trim().toLowerCase().replace(/^@/, "");
+      const alias={mod:'moderator',admin:'admin',administrator:'admin'}[query] || query;
+      const builtin=Object.keys(ROLE_LABELS).find(key=>key===alias || ROLE_LABELS[key].toLowerCase()===alias);
+      if (builtin) {
+        if (!confirm(`Assign ${roleLabel(builtin)} to ${member.displayName} (${member.handle})?`)) return;
+        await fetchJson(`/api/owner-dashboard/users/${encodeURIComponent(member.uid)}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'set_role',role:builtin})});
+        showNotice(`${roleLabel(builtin)} assigned to ${member.displayName}.`,'success');
+        await refreshBootstrap(); return;
+      }
       const role = state.customRoles.find(
         (item) => item.id === query || String(item.label || "").toLowerCase() === query,
       );
@@ -5362,15 +5564,46 @@
       "success",
     );
   }
+  async function moderationNameArgs(args) {
+    const match = String(args).trim().match(/^(?:"([^"]+)"|'([^']+)'|(\S+))(?:\s+([\s\S]*))?$/);
+    if (!match) return args;
+    const name = match[1] || match[2] || match[3], rest = match[4] || '';
+    if (name.startsWith('@')) { if (!resolveCommandMember(name)) await searchMembers(name); return name + (rest ? ' ' + rest : ''); }
+    if (!isModerator()) throw new Error('You do not have permission to use that command.');
+    const payload = await fetchJson('/api/owner-dashboard?' + new URLSearchParams({search:name,pageSize:'100',status:'all'}));
+    if (payload.pagination?.truncated || payload.pagination?.pages > 1) throw new Error('Too many matches. Use the exact @username.');
+    const matches = (payload.users || []).filter(user => !user.guest && String(user.displayName || '').toLowerCase() === name.toLowerCase());
+    if (matches.length > 1) throw new Error('That display name matches multiple accounts: ' + matches.map(user => '@' + user.username).join(', ') + '. Choose an @username.');
+    if (!matches.length) { await searchMembers(name); const member=resolveCommandMember(name);if (!member) throw new Error('No matching account. Put display names with spaces in quotes.'); return member.handle + (rest ? ' ' + rest : ''); }
+    const user = matches[0], member={...user,handle:'@'+user.username,self:user.uid===state.me?.uid};
+    searchedMembers.set(member.uid,member);
+    return member.handle + (rest ? ' ' + rest : '');
+  }
   const executeSlashCommandBase = executeSlashCommand;
   executeSlashCommand = async function (raw) {
     const match = String(raw || "").match(/^\/([A-Za-z]+)(?:\s+([\s\S]*))?$/);
-    const commandName = String(match?.[1] || "").toLowerCase();
-    const args = String(match?.[2] || "").trim();
+    let commandName = String(match?.[1] || "").toLowerCase();
+    let args = String(match?.[2] || "").trim();
+    if (commandName === 'device') {
+      const device = args.match(/^(ban|unban)\s+([\s\S]+)$/i);
+      if (!device) throw new Error('Use /device ban @person or /device unban @person.');
+      commandName=device[1].toLowerCase(); args='device '+device[2];
+    }
+    if (commandName === 'role') {
+      const role = args.match(/^(add|remove)\s+([\s\S]+)$/i);
+      if (!role) throw new Error('Use /role add @person mod or /role remove @person.');
+      commandName=role[1].toLowerCase()==='add'?'roleadd':'roleremove';args=role[2];
+      const reversed=args.match(/^(.+?)\s+(@[A-Za-z0-9_.-]+)$/);
+      if (reversed) args=reversed[2]+' '+reversed[1];
+    }
     if (["ban", "unban"].includes(commandName) && /^device\s+/i.test(args)) {
+      if (state.me?.role !== "owner") throw new Error("Only the owner can manage browser bans.");
+      args="device "+await moderationNameArgs(args.replace(/^device\s+/i,""));
       await q74bd9Command(commandName, args);
       return { handled: true };
     }
+    if (['ban','unban','roleadd','roleremove'].includes(commandName)) args=await moderationNameArgs(args);
+    raw='/'+commandName+(args?' '+args:'');
     if (
       /^(ban|ipban|unban|tempban|untempban|duration|warn|demote|mute|unmute)$/.test(commandName) &&
       !resolveCommandMember(args)
@@ -6353,6 +6586,7 @@
   refs.voiceScreen.addEventListener("click", () => void toggleVoiceScreen());
   refs.voiceDisconnect.addEventListener("click", () => void leaveVoice());
   refs.voiceDeafen.addEventListener("click", boostVoiceAudio);
+  document.querySelector("[data-voice-open]")?.addEventListener("click", () => setVoiceRoomOpen(true));
   refs.input.addEventListener("blur", () => στείλεΠληκτρολόγηση(false));
   refs.input.addEventListener("input", () => {
     στείλεΠληκτρολόγηση(Boolean(refs.input.value.trim()) && !refs.input.disabled);
@@ -6393,11 +6627,26 @@
   function αγαπημέναGif() {
     try { const items = JSON.parse(localStorage.getItem(κλειδίΑγαπημένων()) || '[]'); return Array.isArray(items) ? items.filter(item => item && typeof item.id === 'string' && /^https:\/\/(?:media\d*|i)\.giphy\.com\//.test(item.url) && /^https:\/\/(?:media\d*|i)\.giphy\.com\//.test(item.preview)).slice(0,100) : []; } catch { return []; }
   }
+  async function fetchGifMedia(url, signal) {
+    const token = await accountToken();
+    const response = await fetch(`${API}/gifs/media?${new URLSearchParams({url})}`, {
+      headers: {Authorization: `Bearer ${token}`}, signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(20000)]) : AbortSignal.timeout(20000),
+    });
+    if (!response.ok) throw new Error('GIF media is temporarily unavailable.');
+    return response.blob();
+  }
   function σχεδίασεGif(item) {
     const tile = document.createElement('div'); tile.className = 'gif-tile';
     const button = document.createElement('button'); button.type = 'button'; button.className = 'gif-attach';
     button.setAttribute('data-user-content',''); button.setAttribute('aria-label','Attach ' + item.title);
-    const image = document.createElement('img'); image.src = item.preview; image.alt = item.title; image.loading = 'lazy'; image.referrerPolicy = 'no-referrer';
+    const image = document.createElement('img'); image.alt = item.title; image.loading = 'lazy';
+    const controller = new AbortController();
+    επιλογήGif.addEventListener('close', () => controller.abort(), {once:true});
+    void fetchGifMedia(item.preview, controller.signal).then(blob => {
+      if (controller.signal.aborted || !image.isConnected) return;
+      const objectUrl = URL.createObjectURL(blob); image.src = objectUrl;
+      επιλογήGif.addEventListener('close', () => URL.revokeObjectURL(objectUrl), {once:true});
+    }).catch(error => { if (!controller.signal.aborted) μήνυμαGif.textContent = error.message; });
     button.append(image); button.addEventListener('click', () => void επισύναψεGif(item, button));
     const heart = document.createElement('button'); heart.type = 'button'; heart.className = 'gif-heart';
     const update = () => { const saved = αγαπημέναGif().some(value => value.id === item.id); heart.setAttribute('aria-pressed',String(saved)); heart.setAttribute('aria-label',(saved ? 'Remove favorite ' : 'Favorite ') + item.title); };
@@ -6417,13 +6666,9 @@
       const url = new URL(item.url);
       if (url.protocol !== 'https:' || url.username || url.password || !/^(?:media\d*|i)\.giphy\.com$/.test(url.hostname)) throw new Error('This GIF is unavailable.');
       μήνυμαGif.textContent = 'Loading GIF…';
-      const response = await fetch(url, {credentials:'omit', redirect:'error', signal:AbortSignal.timeout(15000)});
-      if (!response.ok || Number(response.headers.get('content-length')) > MAX_FILE_SIZE) throw new Error('This GIF is too large or unavailable. Choose another.');
-      const reader = response.body.getReader(), chunks = []; let size = 0;
-      try {
-        for (;;) { const {done,value} = await reader.read(); if(done) break; size += value.length; if(size > MAX_FILE_SIZE) throw new Error('Choose a GIF up to 8 MB.'); chunks.push(value); }
-      } finally { await reader.cancel(); }
-      const file = new File(chunks, 'animation.gif', {type:'image/gif'});
+      const blob = await fetchGifMedia(url.href);
+      if (blob.size > MAX_FILE_SIZE) throw new Error('Choose a GIF up to 8 MB.');
+      const file = new File([blob], 'animation.gif', {type:'image/gif'});
       const header = new TextDecoder().decode(await file.slice(0,6).arrayBuffer());
       if (!['GIF87a','GIF89a'].includes(header)) throw new Error('This GIF could not be loaded. Choose another.');
       if (!επιλογήGif.open || refs.attachmentButton.disabled) return;
@@ -6559,6 +6804,7 @@
   });
   window.addEventListener("beforeunload", () => {
     clearInterval(voiceBoostTimer);
+    clearVoiceActivity();
     clearInterval(minecraftMagicTimer);
   });
   window.addEventListener("message", (event) => {

@@ -329,7 +329,7 @@ function applySettings() {
   $("blocker").value = settings.blocker;
   $("tab-preset").value = settings.tabPreset;
   $("tab-title").value = settings.tabTitle;
-  $("connection-shortcut").firstChild.textContent = "Browser settings ";
+  $("connection-shortcut").firstChild.textContent = "br00ser settings ";
   tabAppearance();
   frames.forEach(styleApp);
   try {
@@ -341,7 +341,7 @@ function applySettings() {
     if (settings.relay) localStorage.setItem("nyx.wispUrl", settings.relay);
     else localStorage.removeItem("nyx.wispUrl");
   } catch {
-    toast("Your browser could not save these settings.");
+    toast("Your br00ser could not save these settings.");
   }
 }
 for (const [id, key] of Object.entries({
@@ -386,7 +386,7 @@ function applyTabFields() {
   settings.tabPreset = $("tab-preset").value;
   settings.tabTitle = $("tab-title").value;
   applySettings();
-  $("tab-preset-status").textContent = "Applied to this browser tab.";
+  $("tab-preset-status").textContent = "Applied to this br00ser tab.";
 }
 $("tab-title").addEventListener("input", applyTabFields);
 $("tab-preset").addEventListener("input", applyTabFields);
@@ -1528,7 +1528,7 @@ addEventListener(
 $("detect-filter").addEventListener("click", async () => {
   const button = $("detect-filter");
   button.disabled = true;
-  $("filter-detection-result").textContent = "Checking this browser...";
+  $("filter-detection-result").textContent = "Checking this br00ser...";
   try {
     await scanFilters({ refresh: true });
   } catch {
@@ -1573,7 +1573,7 @@ $("use-address-filter").onclick = () => {
   addressFilter = null;
   $("use-address-filter").hidden = true;
   $("filter-address-result").textContent =
-    `${label} saved. Used when the next browser connection starts.`;
+    `${label} saved. Used when the next br00ser connection starts.`;
 };
 
 for (const type of ["keydown", "keyup"])
@@ -1919,7 +1919,7 @@ $("clear-cache").onclick = async () => {
     $("storage-status").textContent =
       "Tutsi cache cleared. Your account and saved data are unchanged.";
   } catch {
-    $("storage-status").textContent = "Cache could not be cleared. Try your browser settings.";
+    $("storage-status").textContent = "Cache could not be cleared. Try your br00ser settings.";
   } finally {
     button.disabled = false;
   }

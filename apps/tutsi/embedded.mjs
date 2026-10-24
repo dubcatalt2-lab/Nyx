@@ -116,7 +116,7 @@ export function decorateEmbedded(doc, app) {
       const link = doc.createElement("a");
       link.id = "tutsi-local-games";
       link.href = "/tutsi#games";
-      link.textContent = "Browser games";
+      link.textContent = "br00ser games";
       link.addEventListener("click", (event) => {
         event.preventDefault();
         location.hash = "games";

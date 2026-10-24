@@ -2,7 +2,7 @@
 
 Compatible clients can configure `wss://nyxlearning.org/wisp/` after deploying this restored server. `/wisp` and `/wisp/` both use the embedded Wispurr service; no separate relay process is needed. The existing `/resources/live/` endpoint remains compatible.
 
-This is a WebSocket endpoint, not a search website. Opening the URL in a normal browser address bar does not test the protocol. Clients on other origins are supported without a Nyx login. IP bans, bounded buffers/streams, TCP ports 80/443 and upstream private/loopback-network restrictions remain in place.
+This is a WebSocket endpoint, not a search website. Opening the URL in a normal br00ser address bar does not test the protocol. Clients on other origins are supported without a Nyx login. IP bans, bounded buffers/streams, TCP ports 80/443 and upstream private/loopback-network restrictions remain in place.
 
 The embedded endpoint requires `WISP_URL` external-relay overrides to be unset; check the configured variable in server.js before changing production environment settings. Do not print private environment files.
 

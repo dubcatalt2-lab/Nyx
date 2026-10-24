@@ -7,7 +7,7 @@ Existing token caps, four-day windows, separate $0.05 expensive-Claude pools per
 ## Current corrections (2026-09-30)
 
 Regular Nyx/Tutsi accounts retain their 7,000-token four-day pool. Nook retains
-its browser pool of 7,000 tokens and 1,000-token expensive subset; Drop retains
+its br00ser pool of 7,000 tokens and 1,000-token expensive subset; Drop retains
 its 500-token expensive-model pool. Existing access rules and owner exemptions
 are preserved. These policies supersede conflicting historical notes below.
 
@@ -59,7 +59,7 @@ Firestore transactions in the server-only `nyxAiAllowance` collection enforce al
 | Simultaneous requests | 1/account, 3/site |
 | New-account simultaneous requests | 1 at the default site capacity |
 | Capacity reserved for owner | 1 of the default 3 slots |
-| AI browser quota | None |
+| AI br00ser quota | None |
 | Account creation through Nyx | 3 attempts/browser/day; 100/network/hour |
 | Maximum output | 700 tokens new; 2,200 otherwise |
 
@@ -118,7 +118,7 @@ Official references: [OpenRouter model catalog](https://openrouter.ai/api/v1/mod
 
 ## Provider retirement (2026-09-10)
 
-OpenRouter is the only supported shared provider. Old shared, Groq, Navy, Hugging Face and personal-provider options and credential fallbacks are removed. The browser ignores previously saved personal-provider credentials. Code Sandbox uses the same OpenRouter catalog. The old `/api/v1/ai` gateway returns 410; existing Nyx key records remain available for listing and revocation, but no longer authorize inference. Image context uses local analysis, not a separate paid vision provider. OpenRouter requires both server-side keys, a positive configured dollar budget and priced models before paid calls can start.
+OpenRouter is the only supported shared provider. Old shared, Groq, Navy, Hugging Face and personal-provider options and credential fallbacks are removed. The br00ser ignores previously saved personal-provider credentials. Code Sandbox uses the same OpenRouter catalog. The old `/api/v1/ai` gateway returns 410; existing Nyx key records remain available for listing and revocation, but no longer authorize inference. Image context uses local analysis, not a separate paid vision provider. OpenRouter requires both server-side keys, a positive configured dollar budget and priced models before paid calls can start.
 
 ## Owner balance warning
 
@@ -128,7 +128,7 @@ The user confirmed $1/day and installed both keys on OVH. The environment now co
 
 ## Eligibility and five-message allowance (2026-09-10)
 
-Shared AI is restricted to accounts whose Firebase Auth creation time is strictly before August 25, 2026 at midnight America/Los_Angeles (2026-08-25T07:00:00Z), or with a server-authorized active Premium entitlement. Existing subscription semantics include trialing. Missing/invalid creation times fail closed for non-Premium accounts. Owner status, manual AI approval, edited profile dates and browser headers do not override eligibility; account bans/restrictions still apply. This policy currently covers shared AI in both Nyx AI and Code Sandbox, across all allowed models.
+Shared AI is restricted to accounts whose Firebase Auth creation time is strictly before August 25, 2026 at midnight America/Los_Angeles (2026-08-25T07:00:00Z), or with a server-authorized active Premium entitlement. Existing subscription semantics include trialing. Missing/invalid creation times fail closed for non-Premium accounts. Owner status, manual AI approval, edited profile dates and br00ser headers do not override eligibility; account bans/restrictions still apply. This policy currently covers shared AI in both Nyx AI and Code Sandbox, across all allowed models.
 
 Each account has five standard requests per UTC day, subject to existing rate, output and dollar limits. Requests 6?10 are permitted only when total daily input/output token usage, including the next request's conservative input and maximum-output reservation, stays at or below 10,000 tokens. The first five requests can exceed that token total if the other limits permit them; in that case no bonus requests are available. The hard ten-message ceiling applies to Premium and Owner too, and cannot be raised by old per-tier environment values. Lower configured tier limits still apply. Unknown/interrupted provider usage retains reserved tokens, retries count toward the same token total, and unsent balance-denied calls refund their token reservation. Accepted request attempts can still consume the message counter when a later validation/provider step fails. Token/message counters reset at 00:00 UTC; money/usage settlements remain idempotent and respect rollover.
 

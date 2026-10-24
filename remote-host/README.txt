@@ -23,7 +23,7 @@ Service credentials use machine DPAPI in a SYSTEM/Administrators-only directory;
    Clipboard sharing, file transfer and audio are not enabled. A Ctrl+Alt+Delete
    button is available in the service viewer. Login-screen behavior must be
    verified after administrator installation; it is not certified by the mock
-   RFB browser test. This setup does not change sleep/power or automatic login.
+   RFB br00ser test. This setup does not change sleep/power or automatic login.
 
 Optional sign-in-only helper (does NOT support locked/signed-out Windows)
 Requires Windows 10/11 and Node.js 22 or 24. No npm packages needed.

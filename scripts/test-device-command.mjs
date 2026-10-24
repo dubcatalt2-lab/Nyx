@@ -48,14 +48,14 @@ try{
   page.on('dialog',dialog=>dialog.accept());await command('/ban @river ordinary account ban');
   await page.waitForFunction(()=>document.querySelector('[data-message-input]').value==='');assert.equal(accountCalls,1,'Existing account ban still uses its original endpoint');
   me.role='member';await open();const before=listCalls;await command('/ban device @river');
-  await page.waitForFunction(()=>document.querySelector('[data-chat-notice]').textContent.normalize('NFKC').replaceAll('3','e').replaceAll('0','o').toLowerCase().includes('only the owner can manage browser bans.'));assert.equal(listCalls,before);assert.equal(writes.length,2);
+  await page.waitForFunction(()=>document.querySelector('[data-chat-notice]').textContent.normalize('NFKC').replaceAll('br00ser','browser').replaceAll('3','e').replaceAll('0','o').toLowerCase().includes('only the owner can manage browser bans.'));assert.equal(listCalls,before);assert.equal(writes.length,2);
   me.role='owner';await open();
   await command('/device ban "River Song"');await dialog.waitFor();
   assert.equal(await dialog.locator('input[type=radio]').count(),2);
   await dialog.getByRole('button',{name:'Cancel',exact:true}).click();
   await command('/ban "River Song" test');await page.waitForFunction(()=>document.querySelector('[data-message-input]').value==='');assert.equal(accountCalls,2);
   duplicate=true;await command('/ban "River Song" test');
-  await page.waitForFunction(()=>document.querySelector('[data-chat-notice]').textContent.normalize('NFKC').replaceAll('3','e').replaceAll('0','o').includes('@other'));assert.equal(accountCalls,2);
+  await page.waitForFunction(()=>document.querySelector('[data-chat-notice]').textContent.normalize('NFKC').replaceAll('br00ser','browser').replaceAll('3','e').replaceAll('0','o').includes('@other'));assert.equal(accountCalls,2);
   duplicate=false;await command('/role add @river mod');await page.waitForFunction(()=>document.querySelector('[data-message-input]').value==='');assert.deepEqual(accountWrites.at(-1),{action:'set_role',role:'moderator'});
   await command('/role add Moderator @river');await page.waitForFunction(()=>document.querySelector('[data-message-input]').value==='');assert.equal(accountWrites.at(-1).role,'moderator');
   assert.deepEqual(errors,[]);console.log('PASS chat command selection, cancellation, targeted ban/unban, unchanged account command, owner restriction and browser runtime');

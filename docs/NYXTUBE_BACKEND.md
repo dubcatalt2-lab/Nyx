@@ -43,8 +43,8 @@ not advertise those URLs as working native formats. Native playback still requir
 valid extractor media access. The frontend also supports a separate Invidious embed
 from `NYX_INVIDIOUS_EMBED_ORIGIN` (default `https://invidious.tiekoetter.com`; empty
 string disables it). Its public embed and companion playback were verified in a
-browser with decoded audio, frames and seeking on October 2, 2026. It streams to the
-browser using the provider's supported player, without storing video on the Nyx VPS.
+br00ser with decoded audio, frames and seeking on October 2, 2026. It streams to the
+br00ser using the provider's supported player, without storing video on the Nyx VPS.
 The previous instance's media routes return an Anubis bot-check page; no challenge
 is bypassed and no third-party cookies are copied to the server.
 
@@ -88,7 +88,7 @@ At the end it retains the current video instead of looping through the initial
 two or three. Previous navigation remains available for retained entries.
 Search/topic changes abort pending fetches and ignore stale results. Not interested
 and Hide channel filter both the retained queue and future pages; up to 500 video
-IDs and 100 channel IDs persist in site-specific browser storage. Reset preferences
+IDs and 100 channel IDs persist in site-specific br00ser storage. Reset preferences
 restores them. Up to 500 likes also persist there. Liking/unliking adjusts future
 For you recommendations without restarting the active player; hiding a channel
 removes its positive preference. Reset clears likes and hides. These are local
@@ -156,7 +156,7 @@ and retains at most 64 sources for 30 seconds. It returns only an allowlisted
 local-proxy media URL, never provider HTML/scripts or cookies. Video bytes stream
 directly from the provider; this path adds no VPS video cache or transcoding.
 
-The browser uses real media events for loading and playback. A media error or
+The br00ser uses real media events for loading and playback. A media error or
 15-second startup/stall refreshes the source at most twice, preserving position,
 volume, mute and pause state. Leaving the video cancels resolution and retries.
 If these attempts fail, the existing public embed opens in adaptive DASH mode.
@@ -169,7 +169,7 @@ iframe or successful source-resolution response is not proof of playing media.
   HLS has no one-hour or whole-video 1.5 GiB limit. Individual fragments, metadata,
   free disk space, provider availability and request deadlines remain bounded.
 - Only HTTPS Google video media URLs from the extractor are requested. No client URL,
-  cookie, signed media URL, or extractor stderr is returned to the browser.
+  cookie, signed media URL, or extractor stderr is returned to the br00ser.
 - H.264/AAC at available 360p, 480p, or 720p. Adaptive MP4 sources with a flat `sidx`
   reuse existing independently playable fragments directly. Ordinary MP4s use their
   sample tables to create roughly six-second fMP4 fragments without re-encoding.

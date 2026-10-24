@@ -231,7 +231,7 @@
       const safe = source.replace(/<\/script/gi, "<\\/script");
       refs.runner.srcdoc = `<!doctype html><script>const send=(kind,text)=>parent.postMessage({type:'nyx:tutorial-run',kind,text:String(text)},'*');console.log=(...values)=>send('log',values.join(' '));try{${safe};send('done','')}catch(error){send('error',error.message)}<\/script>`;
     } else if (state.course === "html") {
-      refs.output.textContent = "HTML saved. Open Code Sandbox to preview it in a browser.";
+      refs.output.textContent = "HTML saved. Open Code Sandbox to preview it in a br00ser.";
     } else if (state.course === "css") {
       refs.output.textContent = "CSS saved. Try it in Code Sandbox with a small HTML page.";
     } else

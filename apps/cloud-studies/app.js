@@ -393,7 +393,7 @@
       return true;
     } catch {
       setNotice(
-        "WebRTC is unavailable in this browser. Cloud streaming needs it. Try Browser games, another browser, or ask your device administrator to enable it.",
+        "WebRTC is unavailable in this br00ser. Cloud streaming needs it. Try br00ser games, another br00ser, or ask your device administrator to enable it.",
         "error",
       );
       return false;

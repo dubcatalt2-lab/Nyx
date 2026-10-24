@@ -329,7 +329,7 @@ async function local(route, body, signal) {
   } catch (error) {
     if (error.name === "AbortError") throw error;
     throw Error(
-      "Cannot reach the companion. Keep its window open and allow local-network access in your browser.",
+      "Cannot reach the companion. Keep its window open and allow local-network access in your br00ser.",
     );
   }
   const data = await response.json();

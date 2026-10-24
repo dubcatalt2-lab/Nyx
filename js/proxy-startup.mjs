@@ -47,14 +47,14 @@ export function loadProxyScript(src, ready, { timeoutMs = 20000 } = {}) {
         } else resolve();
       };
       const timer = setTimeout(
-        () => finish(new Error("The browser engine took too long to load. Please retry.")),
+        () => finish(new Error("The br00ser engine took too long to load. Please retry.")),
         timeoutMs,
       );
       node.onload = () =>
-        finish(ready() ? null : new Error("The browser engine returned an incomplete script."));
+        finish(ready() ? null : new Error("The br00ser engine returned an incomplete script."));
       node.onerror = () =>
         finish(
-          Object.assign(new Error("The browser engine could not load. Please retry."), {
+          Object.assign(new Error("The br00ser engine could not load. Please retry."), {
             retryable: true,
           }),
         );
@@ -78,7 +78,7 @@ export function waitForProxyController(instance, timeoutMs = 20000) {
     instance.wait(),
     new Promise((_, reject) => {
       timer = setTimeout(
-        () => reject(new Error("The browser controller took too long to start. Please retry.")),
+        () => reject(new Error("The br00ser controller took too long to start. Please retry.")),
         timeoutMs,
       );
     }),

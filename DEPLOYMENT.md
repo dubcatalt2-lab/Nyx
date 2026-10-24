@@ -2,7 +2,7 @@
 
 This runbook runs Nyx's website, API, authenticated Socket.IO Chat, Wisp WebSocket service, and self-service custom domains on one Ubuntu VPS. Caddy is the public reverse proxy and automatic HTTPS manager, Nyx listens only on local port `8080`, and systemd keeps both services running. The application serves the generated, minified `dist/` build while the API and IP-ban guard continue to run through Express.
 
-OVH/Caddy is the active deployment target. The VPS build publishes browser assets to `dist/`; server and build modules stay outside the public tree.
+OVH/Caddy is the active deployment target. The VPS build publishes br00ser assets to `dist/`; server and build modules stay outside the public tree.
 
 ## What to buy
 
@@ -78,7 +78,7 @@ The installer:
 - creates an unprivileged, hardened `nyx` systemd service;
 - preserves `/var/lib/nyx/chat-attachments` as the only writable persistent application state directory for historical streamed attachments (new Chat uploads are capped at 8 MB and remain in the bounded attachment flow);
 - serves the generated `dist/` output through the same Express request/IP-ban guard as the API;
-- forwards embedded Wisp and authenticated Socket.IO Chat WebSockets and uses the current browser hostname for their same-origin endpoints;
+- forwards embedded Wisp and authenticated Socket.IO Chat WebSockets and uses the current br00ser hostname for their same-origin endpoints;
 - trusts Cloudflare visitor-IP headers only from Cloudflare's published networks and overwrites spoofable forwarding headers for direct custom domains;
 - configures Caddy On-Demand TLS with Nyx's database-backed hostname authorization endpoint;
 - opens only SSH, HTTP, and HTTPS during base setup (the optional authenticated TURN step adds its bounded voice ports); and

@@ -115,8 +115,8 @@ export function setupDeveloper({ account, user, nook, secret, refresh }) {
       next.key && next.key.app !== "nook"
         ? "Your existing key uses the older API allowance. In Keys, choose “Use Nook models and allowance” to share the pool shown here."
         : next.keyUsesCurrentBrowser
-          ? "Chat and Nook keys share this browser’s allowance."
-          : "Your key uses the browser allowance it was first created with. This browser’s chat allowance is shown separately.";
+          ? "Chat and Nook keys share this br00ser’s allowance."
+          : "Your key uses the br00ser allowance it was first created with. This br00ser’s chat allowance is shown separately.";
     example();
   }
 

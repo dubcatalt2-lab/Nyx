@@ -130,7 +130,7 @@ export function setupMedia({ notice, sizePrompt, canSend, voiceModel }) {
 
   function listen(kind) {
     if (!Recognition) {
-      notice("Voice input is unavailable in this browser. Try Chrome or Edge.");
+      notice("Voice input is unavailable in this br00ser. Try Chrome or Edge.");
       return;
     }
     abortRecognition();
@@ -154,10 +154,10 @@ export function setupMedia({ notice, sizePrompt, canSend, voiceModel }) {
       stopVoice();
       notice(
         event.error === "not-allowed"
-          ? "Microphone permission was denied. Allow it in your browser to use voice."
+          ? "Microphone permission was denied. Allow it in your br00ser to use voice."
           : {
               network:
-                "The browser speech service could not connect. Check your connection and try again.",
+                "The br00ser speech service could not connect. Check your connection and try again.",
               "audio-capture": "No microphone was found. Check your microphone settings.",
               "no-speech": "No speech was heard. Click the microphone to try again.",
             }[event.error] || "Voice input stopped: " + event.error,
@@ -202,7 +202,7 @@ export function setupMedia({ notice, sizePrompt, canSend, voiceModel }) {
       return;
     }
     if (!Recognition) {
-      notice("Voice conversation is unavailable in this browser. Try Chrome or Edge.");
+      notice("Voice conversation is unavailable in this br00ser. Try Chrome or Edge.");
       return;
     }
     if (!canSend()) {
@@ -234,7 +234,7 @@ export function setupMedia({ notice, sizePrompt, canSend, voiceModel }) {
     if (!conversation) return;
     if (!audio?.data || !["audio/mpeg", "audio/wav"].includes(audio.mime)) {
       stopVoice();
-      notice("No model audio was returned. Browser read-aloud is not used.");
+      notice("No model audio was returned. br00ser read-aloud is not used.");
       return;
     }
     try {

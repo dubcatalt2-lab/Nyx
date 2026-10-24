@@ -47,7 +47,7 @@ not a guarantee that this title plays or a claim of measured quality. Do not
 label an iframe load as successful playback. The provider controls its own
 cross-origin player UI. No ad-free guarantee is implied.
 
-GET requests support browser CORS without cookies or an API key. The TMDB token
+GET requests support br00ser CORS without cookies or an API key. The TMDB token
 stays on the Nyx backend. Requests share the existing limit of 120 per minute
 per client IP, cached/coalesced metadata, and bounded upstream concurrency.
 429 responses include `Retry-After: 60`; stop and retry after that delay.

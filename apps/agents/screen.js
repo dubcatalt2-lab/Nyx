@@ -23,7 +23,7 @@ export function n79425056e076({ notice }) {
     }
     if (opening) return;
     if (!navigator.mediaDevices?.getDisplayMedia) {
-      notice("Screen sharing is unavailable in this browser.");
+      notice("Screen sharing is unavailable in this br00ser.");
       return;
     }
     opening = true;

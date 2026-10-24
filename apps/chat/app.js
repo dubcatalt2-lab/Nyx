@@ -350,7 +350,7 @@
     },
   ];
   const SLASH_COMMANDS = [
-    {name:'device',usage:'/device ban @person',description:'Owner: block a selected browser until unbanned, without blocking its IP. Use /device unban to undo.',staff:true},
+    {name:'device',usage:'/device ban @person',description:'Owner: block a selected br00ser until unbanned, without blocking its IP. Use /device unban to undo.',staff:true},
     {name:'role',usage:'/role add @person mod',description:'Owner: assign a built-in role or custom role by name.',staff:true},
     { name: "help", usage: "/help", description: "Show every N7X Chat command." },
     { name: "dm", usage: "/dm @person [message]", description: "Open a private conversation." },
@@ -364,7 +364,7 @@
       name: "ban",
       usage: "/ban @person [message]",
       description:
-        "Disable an account (Moderator+). Use @username or a quoted display name. /device ban blocks one browser without its IP.",
+        "Disable an account (Moderator+). Use @username or a quoted display name. /device ban blocks one br00ser without its IP.",
       staff: true,
     },
     {
@@ -409,7 +409,7 @@
       name: "unban",
       usage: "/unban @person",
       description:
-        "Re-enable an account (Moderator+). Owner: /unban device @person unblocks one browser.",
+        "Re-enable an account (Moderator+). Owner: /unban device @person unblocks one br00ser.",
       staff: true,
     },
     {
@@ -1561,7 +1561,7 @@
   }
   function saveNotificationPreferences(value) {
     try { localStorage.setItem(`nyx-chat-notifications-v1:${state.me.uid}`, JSON.stringify(value)); }
-    catch { showNotice("Your browser couldn't save notification settings."); }
+    catch { showNotice("Your br00ser couldn't save notification settings."); }
   }
   function memberNotificationLabel(member) {
     return String(member?.displayName || member?.handle || "Member").replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, "").trim() || `Member ${String(member?.uid || "").slice(-6)}`;
@@ -1582,7 +1582,7 @@
   function openNotificationSettings() {
     if (!state.me) return;
     const dialog = chatDialog("Notifications"), preferences = notificationPreferences();
-    const note = document.createElement("p"); note.textContent = "Choose what gets your attention. These settings apply to your account in this browser.";
+    const note = document.createElement("p"); note.textContent = "Choose what gets your attention. These settings apply to your account in this br00ser.";
     dialog.append(note);
     const selectSetting = (label, key, choices) => {
       const row = document.createElement("label"), select = document.createElement("select");
@@ -2193,7 +2193,7 @@
         state.voiceAudio = null;
         state.voiceAudioStatus = "Compatibility voice unavailable";
         showNotice(
-          "This browser could not start compatibility audio. Check microphone permissions and try another browser.",
+          "This br00ser could not start compatibility audio. Check microphone permissions and try another br00ser.",
         );
       }
     } finally {
@@ -2996,7 +2996,7 @@
     if (state.voiceChannelId === channelId) { setVoiceRoomOpen(true); return; }
     if (state.voiceBusy) return;
     if (!navigator.mediaDevices?.getUserMedia) {
-      showNotice("Voice channels are not supported by this browser.");
+      showNotice("Voice channels are not supported by this br00ser.");
       return;
     }
     state.voiceBusy = true;
@@ -3101,7 +3101,7 @@
       return;
     }
     if (!navigator.mediaDevices?.getDisplayMedia) {
-      showNotice("Screen sharing is not supported by this browser.");
+      showNotice("Screen sharing is not supported by this br00ser.");
       return;
     }
     if (state.voiceScreenBusy) return;
@@ -3139,7 +3139,7 @@
           await createVoiceOffer(uid);
         }),
       );
-      showNotice(stream.getAudioTracks().length ? "Sharing your screen and audio." : "Sharing your screen without audio. To include sound, select a browser tab and turn on Share tab audio.", "success");
+      showNotice(stream.getAudioTracks().length ? "Sharing your screen and audio." : "Sharing your screen without audio. To include sound, select a br00ser tab and turn on Share tab audio.", "success");
     } catch (error) {
       if (error.name !== "NotAllowedError")
         showNotice(error.message || "Screen sharing could not start.");
@@ -4947,7 +4947,7 @@
     await switchScope({ type: "dm", id: conversation.id });
   }
   async function q74bd9Command(action, args) {
-    if (state.me?.role !== "owner") throw new Error("Only the owner can manage browser bans.");
+    if (state.me?.role !== "owner") throw new Error("Only the owner can manage br00ser bans.");
     const target = args.replace(/^device\s+/i, "").trim();
     let member = resolveCommandMember(target);
     if (!member) {
@@ -4965,18 +4965,18 @@
     if (!devices.length)
       throw new Error(
         action === "ban"
-          ? "No eligible browser is recorded yet. The member must visit Nyx after this update."
+          ? "No eligible br00ser is recorded yet. The member must visit Nyx after this update."
           : "This member has no eligible blocked browsers.",
       );
     const dialog = document.createElement("dialog");
     dialog.className = "command-dialog";
     dialog.dataset.q74bd9 = "";
     const heading = document.createElement("h2");
-    heading.textContent = `${action === "ban" ? "Block" : "Unblock"} a browser for ${member.displayName}`;
+    heading.textContent = `${action === "ban" ? "Block" : "Unblock"} a br00ser for ${member.displayName}`;
     dialog.setAttribute("aria-label", heading.textContent);
     const note = document.createElement("p");
     note.textContent =
-      "Choose one browser profile. Other devices on the same IP stay unaffected. Clearing cookies or changing browsers can bypass this block.";
+      "Choose one br00ser profile. Other devices on the same IP stay unaffected. Clearing cookies or changing browsers can bypass this block.";
     const form = document.createElement("form");
     form.method = "dialog";
     const list = document.createElement("div");
@@ -4998,7 +4998,7 @@
     const reason = document.createElement("input");
     reason.type = "text";
     reason.maxLength = 500;
-    reason.placeholder = "Reason for blocking this browser";
+    reason.placeholder = "Reason for blocking this br00ser";
     reason.setAttribute("aria-label", "Reason");
     reason.required = action === "ban";
     reason.hidden = action !== "ban";
@@ -5011,7 +5011,8 @@
     cancel.onclick = () => dialog.close();
     const submit = document.createElement("button");
     submit.type = "submit";
-    submit.textContent = action === "ban" ? "Block selected browser" : "Unblock selected browser";
+    submit.textContent = action === "ban" ? "Block selected br00ser" : "Unblock selected br00ser";
+    submit.setAttribute("aria-label", action === "ban" ? "Block selected browser" : "Unblock selected browser");
     submit.className = "primary-button";
     form.append(list, reason, cancel, submit);
     dialog.append(heading, note, form);
@@ -5043,7 +5044,7 @@
       body: JSON.stringify({ ...selection, action }),
     });
     showNotice(
-      `Selected browser ${action === "ban" ? "blocked" : "unblocked"}. The account and IP were not banned.`,
+      `Selected br00ser ${action === "ban" ? "blocked" : "unblocked"}. The account and IP were not banned.`,
       "success",
     );
   }
@@ -5743,7 +5744,7 @@
       if (reversed) args=reversed[2]+' '+reversed[1];
     }
     if (["ban", "unban"].includes(commandName) && /^device\s+/i.test(args)) {
-      if (state.me?.role !== "owner") throw new Error("Only the owner can manage browser bans.");
+      if (state.me?.role !== "owner") throw new Error("Only the owner can manage br00ser bans.");
       args="device "+await moderationNameArgs(args.replace(/^device\s+/i,""));
       await q74bd9Command(commandName, args);
       return { handled: true };
@@ -6800,7 +6801,7 @@
     update(); heart.addEventListener('click', () => {
       const items = αγαπημέναGif(), saved = items.some(value => value.id === item.id);
       try { localStorage.setItem(κλειδίΑγαπημένων(), JSON.stringify(saved ? items.filter(value => value.id !== item.id) : [item,...items].slice(0,100))); }
-      catch { μήνυμαGif.textContent = 'Favorites could not be saved on this browser.'; return; }
+      catch { μήνυμαGif.textContent = 'Favorites could not be saved on this br00ser.'; return; }
       update(); if (αγαπημέναΕνεργά) void αναζήτησεGif();
     });
     tile.append(button,heart); πλέγμαGif.append(tile);

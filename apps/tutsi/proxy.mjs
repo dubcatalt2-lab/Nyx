@@ -41,7 +41,7 @@ async function activeWorker() {
   });
   if (registration.active) return registration.active;
   const worker = registration.installing || registration.waiting;
-  if (!worker) throw new Error("Browser worker is unavailable.");
+  if (!worker) throw new Error("br00ser worker is unavailable.");
   await bounded(
     new Promise((resolve, reject) => {
       const changed = () => {
@@ -50,14 +50,14 @@ async function activeWorker() {
           resolve();
         } else if (worker.state === "redundant") {
           worker.removeEventListener("statechange", changed);
-          reject(new Error("Browser worker could not start."));
+          reject(new Error("br00ser worker could not start."));
         }
       };
       worker.addEventListener("statechange", changed);
       changed();
     }),
     20000,
-    "Browser worker startup timed out.",
+    "br00ser worker startup timed out.",
   );
   return registration.active || worker;
 }

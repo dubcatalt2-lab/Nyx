@@ -11,7 +11,7 @@ try{for(const channel of ['chrome','msedge']){const browser=await chromium.launc
  assert.equal(await page.locator('select').inputValue(),'Games');await page.locator('select').selectOption('ai');assert.equal(await page.locator('select').inputValue(),'ai');
  assert.equal((await page.locator('#mixed').innerText()).normalize('NFKC'),'Pr0xy https://example.com/games and owner@example.com');assert(!(await page.locator('#mixed').innerText()).startsWith('Proxy'));
  assert.equal((await page.locator('#readable').innerText()).normalize('NFKC'),'T3rms of S3rvice. W3lcome to N7x. You must c0mply with all applicabl3 laws.');
- assert.equal((await page.locator('#terms').innerText()).normalize('NFKC'),'S3arch cl0ak pr0xy brows3r URL new tab s3ttings acc0unt d0wnload');
+ assert.equal((await page.locator('#terms').innerText()).normalize('NFKC'),'S3arch cl0ak pr0xy br00ser URL new tab s3ttings acc0unt d0wnload');
  assert.equal((await page.locator('#brand').innerText()).normalize('NFKC'),'N7x A1 N7xCLOUD N7xIFY');
  assert.equal(await page.locator('pre').innerText(),'proxy.api Games AI');
  await page.evaluate(()=>{document.title='Movies AI';document.querySelector('#tooltip').title='Games settings';document.querySelector('input').placeholder='Find music';document.querySelector('option').textContent='Movies';const div=document.createElement('div');div.id='inserted';div.textContent='Proxy and games';document.body.append(div)});

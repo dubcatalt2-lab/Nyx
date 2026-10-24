@@ -25,9 +25,9 @@ The service never changes DNS, installs certificates, or reloads production serv
 
 ## Learning site and textbook
 
-The preview and every registered domain serve a course dashboard with 24 interactive skills organized into six suggested grade 7-12 courses, lessons, worked examples, generated questions, hints, full solutions and per-device progress. Browser storage is used only for practice counts; there is no classroom/teacher account integration. The UI takes structural inspiration from public student-practice interfaces and uses original branding and content.
+The preview and every registered domain serve a course dashboard with 24 interactive skills organized into six suggested grade 7-12 courses, lessons, worked examples, generated questions, hints, full solutions and per-device progress. br00ser storage is used only for practice counts; there is no classroom/teacher account integration. The UI takes structural inspiration from public student-practice interfaces and uses original branding and content.
 
-`/textbook` serves the full 150-page book: 15 units with teaching plans, vocabulary, worked examples, vector visual models, guided and independent practice, applications, error discussion, unit review and answer keys (360 questions total). Use browser Print or the PDF download.
+`/textbook` serves the full 150-page book: 15 units with teaching plans, vocabulary, worked examples, vector visual models, guided and independent practice, applications, error discussion, unit review and answer keys (360 questions total). Use br00ser Print or the PDF download.
 
 Build the PDF with `node scripts/build-learning-textbook.mjs` (requires the repository's Playwright development dependency and Chromium). It validates all page bodies fit above their footers and checks the generated PDF has exactly 150 pages. The result is written to `DOMAIN_PAGES_DATA_DIR/textbook.pdf` (default `~/.nyx/domain-pages/textbook.pdf`). For VPS installation, copy that generated PDF to the service's data directory after each textbook change; the service does not need Playwright at runtime. Source HTML remains available if no PDF has been built.
 

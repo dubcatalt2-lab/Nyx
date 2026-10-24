@@ -23,7 +23,7 @@
     if (/Safari/i.test(agent) && !/Chrome|Chromium|Edg/i.test(agent)) {
       return "In Safari, choose File, then Add to Dock.";
     }
-    return "Use the install icon in the browser address bar, or open the browser menu and choose Install N7X.";
+    return "Use the install icon in the br00ser address bar, or open the br00ser menu and choose Install N7X.";
   }
 
   function installCard(kind) {

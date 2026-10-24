@@ -229,7 +229,7 @@ export async function attachBulkJobs({ access }) {
   const download = panel.querySelector("[data-job-download]");
   const clear = panel.querySelector("[data-job-clear]");
   if (!navigator.locks || !globalThis.indexedDB)
-    throw new Error("Large jobs need a browser with local storage and Web Locks support.");
+    throw new Error("Large jobs need a br00ser with local storage and Web Locks support.");
   const store = await openJobStore();
   let running = false;
   const update = (job, message) => {

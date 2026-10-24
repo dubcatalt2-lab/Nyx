@@ -418,7 +418,7 @@
       ποσοστόΧρήσης(data);
       const scope =
         data.scope === "browser"
-          ? "Shared browser"
+          ? "Shared br00ser"
           : data.scope === "expensive-models"
             ? "Expensive models"
             : "Account";
@@ -1157,7 +1157,7 @@
   async function startScreenSharing() {
     if (!navigator.mediaDevices?.getDisplayMedia) {
       showAttachmentError(
-        "Screen sharing is not supported by this browser.",
+        "Screen sharing is not supported by this br00ser.",
         "Screen sharing unavailable",
       );
       return;
@@ -1215,7 +1215,7 @@
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
     if (!context)
-      return Promise.reject(new Error("Screen capture is unavailable in this browser."));
+      return Promise.reject(new Error("Screen capture is unavailable in this br00ser."));
     canvas.width = Math.max(1, Math.round(width * scale));
     canvas.height = Math.max(1, Math.round(height * scale));
     context.drawImage(screenVideo, 0, 0, canvas.width, canvas.height);

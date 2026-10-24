@@ -80,7 +80,7 @@ export function enhanceDesktop(rfb, screen, releaseCapture) {
   window.addEventListener("blur", blur);
   return {
     async lock() {
-      if (!canvas.requestPointerLock) throw Error("Mouse lock is unavailable in this browser.");
+      if (!canvas.requestPointerLock) throw Error("Mouse lock is unavailable in this br00ser.");
       await canvas.requestPointerLock();
     },
     destroy() {

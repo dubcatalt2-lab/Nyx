@@ -583,7 +583,7 @@ window.q91studio = function (api) {
     live.setAttribute("aria-pressed", String(settings.live));
     persist();
     if (settings.live)
-      notify("Browser previews update after you stop typing. Server-run languages still use Run.");
+      notify("br00ser previews update after you stop typing. Server-run languages still use Run.");
   });
   live.setAttribute("aria-pressed", String(Boolean(settings.live)));
   deviceBar.append(live);

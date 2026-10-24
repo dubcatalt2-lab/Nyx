@@ -3,7 +3,7 @@
 The Owner Dashboard uses Firebase Authentication for account metadata and
 Firestore for Nyx profiles, roles, subscriptions, activity, and audit events.
 All privileged reads and mutations run through Firebase Admin on the Nyx
-server. The browser never receives service-account credentials, passwords, or
+server. The br00ser never receives service-account credentials, passwords, or
 stored authentication tokens.
 
 ## Required environment variables

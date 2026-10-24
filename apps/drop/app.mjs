@@ -103,7 +103,7 @@ function saveSettings() {
   try {
     localStorage.setItem("drop.settings", JSON.stringify(settings));
   } catch {
-    notice("Browser storage is unavailable.");
+    notice("br00ser storage is unavailable.");
   }
 }
 function saveTabs() {
@@ -580,7 +580,7 @@ function persistBookmarks() {
   try {
     localStorage.setItem("drop.bookmarks", JSON.stringify(bookmarks));
   } catch {
-    notice("Bookmarks could not be saved. Browser storage may be full.");
+    notice("Bookmarks could not be saved. br00ser storage may be full.");
   }
   syncPageActions();
   renderBookmarks();

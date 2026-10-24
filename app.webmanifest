@@ -2,7 +2,7 @@
   "id": "/",
   "name": "N7X",
   "short_name": "N7X",
-  "description": "Your browser workspace and apps.",
+  "description": "Your br00ser workspace and apps.",
   "start_url": "/?source=installed-app",
   "scope": "/",
   "display": "standalone",

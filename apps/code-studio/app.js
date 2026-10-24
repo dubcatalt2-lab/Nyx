@@ -19,7 +19,7 @@
     },
     javascript: {
       file: "app.js",
-      help: "Run JavaScript in an isolated browser preview.",
+      help: "Run JavaScript in an isolated br00ser preview.",
       starter:
         'const message = document.querySelector("#message");\nconst button = document.querySelector("button");\n\nbutton.addEventListener("click", () => {\n  message.textContent = "You changed the page with JavaScript.";\n});',
       run: true,
@@ -522,7 +522,7 @@
       : [
           {
             title: "No problems found",
-            detail: `${state.file} passed the available browser checks.`,
+            detail: `${state.file} passed the available br00ser checks.`,
             clear: true,
           },
         ];
@@ -1404,10 +1404,10 @@
     link.click();
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 0);
-    lastTerminal = `Exported ${state.file}\nSaved from this browser`;
+    lastTerminal = `Exported ${state.file}\nSaved from this br00ser`;
     runLogLines = [
       { text: `Exported ${state.file}`, tone: "prompt" },
-      { text: "Saved from this browser", tone: "muted" },
+      { text: "Saved from this br00ser", tone: "muted" },
     ];
   }
   function loadLayout() {

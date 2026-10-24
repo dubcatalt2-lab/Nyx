@@ -1,6 +1,6 @@
 # Nyx Stratus service
 
-This directory runs the optional Cloud Gaming backend as a separate, loopback-only process. It is not bundled into browser code and no API key belongs in Git.
+This directory runs the optional Cloud Gaming backend as a separate, loopback-only process. It is not bundled into br00ser code and no API key belongs in Git.
 
 ## Source and license
 

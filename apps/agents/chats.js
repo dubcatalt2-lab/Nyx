@@ -55,7 +55,7 @@ export function setupChats({ open, notice, busy, changed = () => {} }) {
       projects = next;
       return true;
     } catch {
-      notice("Not enough browser storage to save this project. Remove unused files and try again.");
+      notice("Not enough br00ser storage to save this project. Remove unused files and try again.");
       return false;
     }
   }
@@ -139,7 +139,7 @@ export function setupChats({ open, notice, busy, changed = () => {} }) {
     if (!visible.length) {
       const text = document.createElement("p");
       text.className = "muted";
-      text.textContent = uid ? "No chats here yet." : "Sign in to save chats on this browser.";
+      text.textContent = uid ? "No chats here yet." : "Sign in to save chats on this br00ser.";
       list.append(text);
     }
     $("projectList").replaceChildren();
@@ -256,7 +256,7 @@ export function setupChats({ open, notice, busy, changed = () => {} }) {
             files: [],
           };
       if (!entry && projects.length >= 20) {
-        notice("You can save up to 20 projects on this browser.");
+        notice("You can save up to 20 projects on this br00ser.");
         return;
       }
       if (
@@ -271,7 +271,7 @@ export function setupChats({ open, notice, busy, changed = () => {} }) {
     const help = document.createElement("p");
     help.className = "muted";
     help.textContent =
-      "Stored on this browser. Reference files are sent to your selected model with messages in this project. Text and code files only, up to 8,000 characters total per project.";
+      "Stored on this br00ser. Reference files are sent to your selected model with messages in this project. Text and code files only, up to 8,000 characters total per project.";
     dialog.append(help);
     if (!entry) return;
     const files = document.createElement("div");

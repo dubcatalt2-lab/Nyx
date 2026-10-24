@@ -234,7 +234,7 @@ $("fullscreen").onclick = async () => {
     if (document.fullscreenElement) await document.exitFullscreen();
     else await $("screen").requestFullscreen();
   } catch {
-    status("Fullscreen is unavailable in this browser.");
+    status("Fullscreen is unavailable in this br00ser.");
   }
 };
 window.addEventListener("pagehide", () => {

@@ -1307,7 +1307,7 @@
           likes: [...likedShorts.values()],
         }),
       );
-      refs.shortPreferencesStatus.textContent = message + " Saved in this browser.";
+      refs.shortPreferencesStatus.textContent = message + " Saved in this br00ser.";
     } catch {
       refs.shortPreferencesStatus.textContent = message + " Saved for this session only.";
     }

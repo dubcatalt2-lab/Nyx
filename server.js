@@ -905,7 +905,7 @@ app.get("/api/search-suggestions", async (req, res) => {
   }
   try {
     const upstream = await fetch(`https://duckduckgo.com/ac/?q=${encodeURIComponent(query)}&type=list`, {
-      headers: { accept: "application/json, application/javascript", "user-agent": "N7X browser search assistance/1.0" },
+      headers: { accept: "application/json, application/javascript", "user-agent": "N7X br00ser search assistance/1.0" },
       signal: AbortSignal.timeout(2_500)
     });
     if (!upstream.ok) throw new Error(`Suggestion service returned ${upstream.status}`);
@@ -1598,7 +1598,7 @@ function scramjetRuntimeGuard() {
   };
   const opennyxPopupWarning = () => {
     // Popup protection must never create a real popup just to display a
-    // warning. Return a browser-like inert handle to the calling site.
+    // warning. Return a br00ser-like inert handle to the calling site.
     const popup = null;
     return {
       closed: false,
@@ -2764,7 +2764,7 @@ app.get('/api/nyx-ai/models',async(req,res)=>{
   if(!credential.key)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
   const models=await nyxAiAvailableModels(credential.key,false,credential.provider,entitlement);
   if(!models.length)return res.status(503).json({error:'AI is unavailable at this moment. Try again later.'});
-  res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement,aiCatalogPrice(model))).map(model=>hasAppAiAllowance(entitlement)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'No token quota':entitlement.app==='nook'?(nookModelIsExpensive(aiCatalogPrice(model))?'1,000 expensive / browser / 4 days':'7,000 / browser / 4 days'):dropModelIsExpensive(aiCatalogPrice(model),model.id)?'500 shared / 4 days':'No token quota'}:model).map(model=>nookHaikuModel(model.id,entitlement.app)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'Unlimited':`${model.allowanceLabel} \u00b7 $${nookHaikuLimitUsd(entitlement).toFixed(2)} Haiku / account / 4 days`}:model).map(model=>!hasFullAiCatalog(entitlement)&&!fableTrialActive(model.id,entitlement)&&!nyxHaikuModel(model.id,entitlement.app)&&expensiveClaudeModel(model.id,aiCatalogPrice(model))?{...model,allowanceLabel:[model.allowanceLabel,'$0.05 Claude / account / site / 4 days'].filter(Boolean).join(' · ')}:model).map(model=>fableTrialActive(model.id,entitlement)?{...model,allowanceLabel:fableTrialLabel}:model),credential:'shared',ownerMediaAccess:hasFullAiCatalog(entitlement)});
+  res.json({models:models.filter(model=>aiModelAllowed(model.id,entitlement,aiCatalogPrice(model))).map(model=>hasAppAiAllowance(entitlement)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'No token quota':entitlement.app==='nook'?(nookModelIsExpensive(aiCatalogPrice(model))?'1,000 expensive / br00ser / 4 days':'7,000 / br00ser / 4 days'):dropModelIsExpensive(aiCatalogPrice(model),model.id)?'500 shared / 4 days':'No token quota'}:model).map(model=>nookHaikuModel(model.id,entitlement.app)?{...model,allowanceLabel:hasFullAiCatalog(entitlement)?'Unlimited':`${model.allowanceLabel} \u00b7 $${nookHaikuLimitUsd(entitlement).toFixed(2)} Haiku / account / 4 days`}:model).map(model=>!hasFullAiCatalog(entitlement)&&!fableTrialActive(model.id,entitlement)&&!nyxHaikuModel(model.id,entitlement.app)&&expensiveClaudeModel(model.id,aiCatalogPrice(model))?{...model,allowanceLabel:[model.allowanceLabel,'$0.05 Claude / account / site / 4 days'].filter(Boolean).join(' · ')}:model).map(model=>fableTrialActive(model.id,entitlement)?{...model,allowanceLabel:fableTrialLabel}:model),credential:'shared',ownerMediaAccess:hasFullAiCatalog(entitlement)});
 });
 
 function nyxMediaUsage(usage) {
@@ -3109,7 +3109,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       await settleNyxAiNavyTokens(navyReservation, nyxAiCompletionTokens(data) || nyxAiEstimatedTokens(text));
       navyReservationSettled = true;
     }
-    if(generateAudio&&!data.voiceAudio)return res.status(502).json({error:"The voice model did not return audio. No browser voice was substituted."});
+    if(generateAudio&&!data.voiceAudio)return res.status(502).json({error:"The voice model did not return audio. No br00ser voice was substituted."});
     const images=generateImage?aiOutputImages(data):[];
     if(generateImage&&!images.length&&!String(text||'').trim())return res.status(502).json({error:'The model returned no image or explanation. Please try another prompt.'});
     res.json({ ...(generateAudio?{audio:data.voiceAudio}:{}), text: String(text || "").trim(), model:typeof data.model==='string'&&/^~?[a-z0-9][a-z0-9._:/-]{0,199}$/i.test(data.model)?data.model:model, ...(!codeEdit&&!generateImage?{metadata:aiResponseMetadata(data)}:{}), ...(generateImage?{images}:{}), finishReason:data?.choices?.[0]?.finish_reason||null });
@@ -5730,7 +5730,7 @@ function emitNyxChatSocketEvent(event = {}) {
 }
 
 async function authorizeNyxChatSocket(socket, rawToken) {
-  if(await q74bd9Access.blocked(socket.request))throw new Error('This browser has been blocked.');
+  if(await q74bd9Access.blocked(socket.request))throw new Error('This br00ser has been blocked.');
   const value = String(rawToken || "").trim();
   if (!value || value.length > 8_192 || !firebaseAdminModeConfigured()) throw new Error("Sign in to use N7X Chat.");
   const firebase = await linkGeneratorFirebase();

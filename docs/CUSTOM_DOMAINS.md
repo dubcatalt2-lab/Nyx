@@ -5,8 +5,8 @@ Nyx supports self-service A-record hostnames on the OVH deployment through Caddy
 ## Server requirements
 
 - `NYX_CUSTOM_HOST_IPS` contains the comma-separated public IPv4/IPv6 addresses that users may point at Nyx. For the current OVH server, set it to the VPS public IPv4 address.
-- Firebase Admin is configured. Hostnames checked through the optional connection form are stored server-side in `nyxCustomHostnames`; browser access is denied by `firestore.rules`.
-- The VPS build leaves `WISP_URL` unset so the browser uses the current hostname's same-origin `/wisp/` endpoint.
+- Firebase Admin is configured. Hostnames checked through the optional connection form are stored server-side in `nyxCustomHostnames`; br00ser access is denied by `firestore.rules`.
+- The VPS build leaves `WISP_URL` unset so the br00ser uses the current hostname's same-origin `/wisp/` endpoint.
 - Caddy uses `GET /api/custom-hostnames/allow?domain=...` as its authorization endpoint. Known hostnames use the indexed Firestore record; an unknown hostname is accepted automatically only when its current A/AAAA records resolve directly to `NYX_CUSTOM_HOST_IPS`.
 
 ## User flow
@@ -35,6 +35,6 @@ The proxy overwrites `CF-Connecting-IP` with Caddy's trusted `{client_ip}` value
 ## Limitations
 
 - Only A/AAAA hostnames that resolve directly to the configured VPS address can be connected automatically. A hostname proxied through a different CDN will not pass verification.
-- Firebase browser storage and sign-in state are isolated per hostname. Users may need to sign in again on a custom hostname.
+- Firebase br00ser storage and sign-in state are isolated per hostname. Users may need to sign in again on a custom hostname.
 - Cloudflare WAF rules for `nyxlearning.org` do not protect direct FreeDNS aliases. Express's IP-ban guard still covers their HTTP and Wisp traffic.
 - Certificate authorities impose issuance limits. Do not remove Caddy's authorization endpoint or its exact-IP requirement.

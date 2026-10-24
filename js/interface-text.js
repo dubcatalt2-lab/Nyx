@@ -11,7 +11,7 @@
   const attributeExcluded = excluded.replace("textarea,input,", "");
   const attributes = ["title", "placeholder", "label", "aria-label", "alt"];
   const accessibleLabels = new WeakMap();
-  const neutralWords = (text) => text.replace(
+  const neutralWords = (text) => text.replace(/\bbr00ser\b/gi, "browser").replace(
     /\b(game frame|games|game|libraries|library|arcade|playlists|playlist|players|player|playback|playing|played|plays|play)\b/gi,
     (word) => {
       const replacements = {
@@ -27,6 +27,7 @@
   );
   const convertWords = (text) =>
     neutralWords(text)
+      .replace(/\bbrowser\b/gi, "br00ser")
       .replace(/\b(?:game|games|gaming)\b/gi, word => Array.from(
         word === word.toUpperCase() ? (word.toLowerCase() === "game" ? "STUDY" : "STUDIES") :
           (/^[A-Z]/.test(word) ? "S" : "s") + (word.toLowerCase() === "game" ? "tudy" : "tudies"), ch =>

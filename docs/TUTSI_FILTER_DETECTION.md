@@ -24,9 +24,9 @@ Positive means an exposed extension resource responded, not proof that it blocke
 ## Further alternatives reviewed
 
 - https://github.com/uhidontkno/filtercheckerv2 provides URL categorization for Lightspeed, Palo Alto and FortiGuard, not client-installed blocker detection; no replacement added.
-- https://www.cisco.com/c/en/us/support/docs/security/umbrella/224734-verify-umbrella-is-configured-correctly.html describes vendor-specific DNS configuration tests. These are useful diagnostics, not a universal cross-origin browser detection API. Server-side checks would test the VPS rather than the user's Chromebook and are not used as device evidence.
+- https://www.cisco.com/c/en/us/support/docs/security/umbrella/224734-verify-umbrella-is-configured-correctly.html describes vendor-specific DNS configuration tests. These are useful diagnostics, not a universal cross-origin br00ser detection API. Server-side checks would test the VPS rather than the user's Chromebook and are not used as device evidence.
 
-The browser UI preserves Unknown/multiple results and offers manual selection. No user account/profile data is collected by detection.
+The br00ser UI preserves Unknown/multiple results and offers manual selection. No user account/profile data is collected by detection.
 
 ## Expanded historical signature coverage
 

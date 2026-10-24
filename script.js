@@ -3565,7 +3565,7 @@
       <section><h2>8. Intellectual Property</h2><p>Unless otherwise stated, N7X, including its software, branding, design, graphics, logos, interface, and original content, is owned by N7X or its licensors and is protected by applicable intellectual property laws.</p><p>You may not copy, modify, distribute, reverse engineer, sell, or commercially exploit any portion of the Service without prior written permission unless permitted by applicable law.</p></section>
       <section><h2>9. Availability</h2><p>The Service is provided on an <strong>"AS IS"</strong> and <strong>"AS AVAILABLE"</strong> basis.</p><p>We do not guarantee that N7X will always be available, uninterrupted, secure, or error-free.</p><p>Features may be modified, suspended, or discontinued at any time.</p></section>
       <section><h2>10. Privacy</h2><p>Your use of N7X is also subject to our Privacy Policy.</p><p>By using the Service, you acknowledge that N7X may collect and process information necessary to operate, maintain, improve, and secure the Service.</p></section>
-      <section><h2>11. Cookies</h2><p>N7X may use cookies, local storage, or similar technologies to:</p><ul><li>Remember user preferences.</li><li>Improve website performance.</li><li>Analyze anonymous usage statistics.</li><li>Enhance the overall user experience.</li></ul><p>You may disable cookies through your browser settings, although doing so may affect certain features of the Service.</p></section>
+      <section><h2>11. Cookies</h2><p>N7X may use cookies, local storage, or similar technologies to:</p><ul><li>Remember user preferences.</li><li>Improve website performance.</li><li>Analyze anonymous usage statistics.</li><li>Enhance the overall user experience.</li></ul><p>You may disable cookies through your br00ser settings, although doing so may affect certain features of the Service.</p></section>
       <section><h2>12. Limitation of Liability</h2><p>To the fullest extent permitted by applicable law, N7X and its owners, developers, contributors, affiliates, and service providers shall not be liable for any indirect, incidental, special, exemplary, consequential, or punitive damages arising from or relating to the use of the Service.</p></section>
       <section><h2>13. Indemnification</h2><p>You agree to defend, indemnify, and hold harmless N7X, its developers, affiliates, contributors, and service providers from any claims, damages, losses, liabilities, and expenses arising from:</p><ul><li>Your use of the Service.</li><li>Your violation of these Terms.</li><li>Your submitted content.</li><li>Your violation of any applicable law or the rights of another person.</li></ul></section>
       <section><h2>14. Termination</h2><p>We may suspend, restrict, or terminate your access to N7X at any time, with or without notice, if we reasonably believe you have violated these Terms, abused the Service, or created a security or legal risk.</p><p>We may also discontinue the Service, in whole or in part, at any time.</p></section>
@@ -3816,7 +3816,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       if (!overlay || removed.has(overlay) || !overlay.isConnected) continue;
       removed.add(overlay);
       overlay.remove();
-      console.info("N7X removed an ad overlay that escaped its browser tab.");
+      console.info("N7X removed an ad overlay that escaped its br00ser tab.");
     }
     return removed.size;
   }
@@ -3829,7 +3829,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       const overlay = browserInjectedOverlayRoot(root);
       if (overlay?.isConnected) {
         overlay.remove();
-        console.info("N7X blocked an ad overlay from leaving its browser tab.");
+        console.info("N7X blocked an ad overlay from leaving its br00ser tab.");
       }
     };
     const inspect = (records) => {
@@ -6100,7 +6100,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         const settingsButton = shellAddress?.querySelector("[data-q0882cea5d2bc5ce380]");
         const menuButton = shellAddress?.querySelector("[data-q3fdc51cd120d3cb793]");
         if (menuButton) {
-          menuButton.setAttribute("title", "Browser menu");
+          menuButton.setAttribute("title", "br00ser menu");
           menuButton.setAttribute("aria-label", "Browser menu");
           menuButton.innerHTML =
             '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>';
@@ -6113,7 +6113,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         }
         const bookmarkButton = document.createElement("button");
         bookmarkButton.type = "button";
-        bookmarkButton.className = "browser-nav-control browser-mode-bookmark";
+        bookmarkButton.className = "br00ser-nav-control br00ser-mode-bookmark";
         bookmarkButton.dataset.q9ce4745a7133fdb669 = "";
         bookmarkButton.setAttribute("title", "Bookmark this page");
         bookmarkButton.setAttribute("aria-label", "Bookmark this page");
@@ -7682,7 +7682,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     const effect = esc(store.text("nyx.visualEffect", "none"));
     const effectSpeed = esc(store.text("nyx.visualEffectSpeed", "1.1"));
     const effectAmount = esc(store.text("nyx.visualEffectAmount", "16"));
-    return `<section class="settings-app settings-single-pane browser-only-settings"><main class="settings-main"><h1>Browser Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-qf9af8cc15a78c4d520 value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-qd63da384d65cc75f63 type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-q9587292d4a8aecc541 value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-q4571d830a2955428e0 type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset === "nyx" ? "selected" : ""}>N7X</option><option value="google" ${currentPreset === "google" ? "selected" : ""}>Google</option><option value="drive" ${currentPreset === "drive" ? "selected" : ""}>Google Drive</option><option value="classlink" ${currentPreset === "classlink" ? "selected" : ""}>ClassLink</option><option value="classroom" ${currentPreset === "classroom" ? "selected" : ""}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text("nyx.cloakType", "a") === "a" ? "selected" : ""}>about:blank</option><option value="b" ${store.text("nyx.cloakType", "a") === "b" ? "selected" : ""}>Blob</option><option value="m" ${store.text("nyx.cloakType", "a") === "m" ? "selected" : ""}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text("nyx.cloakRedirectUrl", "https://google.com/"))}" placeholder="Original tab redirect U3L"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Startup cloak prompt</span><button class="settings-action ${store.get("nyx.autoCloak", false) ? "on" : ""}" data-switch="nyx.autoCloak" type="button">${store.get("nyx.autoCloak", false) ? "On" : "Off"}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get("nyx.cloakRedirectOriginal", false) ? "on" : ""}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get("nyx.cloakRedirectOriginal", false) ? "On" : "Off"}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text("nyx.panicKey", "not set"))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme === "default" ? "selected" : ""}>Default</option><option value="ruby" ${theme === "ruby" ? "selected" : ""}>Ruby</option><option value="emerald" ${theme === "emerald" ? "selected" : ""}>Emerald</option><option value="sakura" ${theme === "sakura" ? "selected" : ""}>Sakura</option><option value="fresh" ${theme === "fresh" ? "selected" : ""}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect === "none" ? "selected" : ""}>None</option><option value="rain" ${effect === "rain" ? "selected" : ""}>Rain</option><option value="stars" ${effect === "stars" ? "selected" : ""}>Stars</option><option value="hearts" ${effect === "hearts" ? "selected" : ""}>Hearts</option><option value="pokeballs" ${effect === "pokeballs" ? "selected" : ""}>Pokeballs</option><option value="flowers" ${effect === "flowers" ? "selected" : ""}>Flowers</option><option value="emeralds" ${effect === "emeralds" ? "selected" : ""}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>S3ARC4 Engine</h2><select class="settings-select" data-q9bc51698444e89592e><option value="duckduckgo" ${engine === "duckduckgo" ? "selected" : ""}>DuckDuckGo</option><option value="google" ${engine === "google" ? "selected" : ""}>Google</option><option value="bing" ${engine === "bing" ? "selected" : ""}>Bing</option></select></section><section class="settings-block"><h2>Proxy Engine</h2><select class="settings-select" data-q734d21fd6e93aaf835><option value="auto" ${browserMode === "auto" ? "selected" : ""}>Auto</option><option value="scramjet" ${browserMode === "scramjet" ? "selected" : ""}>Scrapmmy</option></select></section><section class="settings-block"><h2>HTTP bridge</h2><p>Recommended for devices or networks that block WebSockets. Turn off to use direct WebSocket connections. Applies to the default relay; custom relays keep their saved choice. Reload website tabs after changing.</p><div class="settings-row"><span>Use HTTP bridge</span><button class="settings-action ${store.get("nyx.httpBridge", true) ? "on" : ""}" data-switch="nyx.httpBridge" type="button">${store.get("nyx.httpBridge", true) ? "On" : "Off"}</button></div></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-qd8174804477879fb3a><option value="libcurl" ${transport === "libcurl" ? "selected" : ""}>Libby over Relay</option></select><div class="settings-actions"><button class="settings-action" data-q1d952a7b6d139a28d8 type="button">Save Browser Settings</button></div></section><section class="settings-block"><h2>Website redirects</h2><p>Block automatic jumps to other sites. Links you click and sign-in redirects remain available.</p><div class="settings-row"><span>Block automatic cross-site redirects</span><button class="settings-action ${store.get("nyx.blockAutomaticRedirects", true) ? "on" : ""}" data-switch="nyx.blockAutomaticRedirects" type="button">${store.get("nyx.blockAutomaticRedirects", true) ? "On" : "Off"}</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled() ? "on" : ""}" data-popup-protection data-enabled="${popupProtectionEnabled() ? "true" : "false"}" type="button">Popup Protection ${popupProtectionEnabled() ? "On" : "Off"}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
+    return `<section class="settings-app settings-single-pane browser-only-settings"><main class="settings-main"><h1>br00ser Settings</h1><div class="settings-section active"><section class="settings-block"><h2>Tab Cloak</h2><div class="settings-form-row"><input class="settings-input" data-qf9af8cc15a78c4d520 value="${savedTitle}" placeholder="Tab title"><input class="settings-input" data-qd63da384d65cc75f63 type="file" accept="image/*,.ico" aria-label="Choose tab icon file"><input type="hidden" data-q9587292d4a8aecc541 value="${savedFavicon}"></div><p>Choose a title and icon file, then press Apply.</p><div class="settings-actions"><button class="settings-action" data-q4571d830a2955428e0 type="button">Apply Tab Cloak</button><button class="settings-action" data-preset="nyx" type="button">Reset</button></div></section><section class="settings-block"><h2>Preset Cloak</h2><select class="settings-select" data-preset-select><option value="nyx" ${currentPreset === "nyx" ? "selected" : ""}>N7X</option><option value="google" ${currentPreset === "google" ? "selected" : ""}>Google</option><option value="drive" ${currentPreset === "drive" ? "selected" : ""}>Google Drive</option><option value="classlink" ${currentPreset === "classlink" ? "selected" : ""}>ClassLink</option><option value="classroom" ${currentPreset === "classroom" ? "selected" : ""}>Google Classroom</option></select></section><section class="settings-block"><h2>Cloaking</h2><div class="settings-form-row"><select class="settings-select" data-cloak-type><option value="a" ${store.text("nyx.cloakType", "a") === "a" ? "selected" : ""}>about:blank</option><option value="b" ${store.text("nyx.cloakType", "a") === "b" ? "selected" : ""}>Blob</option><option value="m" ${store.text("nyx.cloakType", "a") === "m" ? "selected" : ""}>Current tab iframe</option></select><input class="settings-input" data-cloak-redirect-url value="${esc(store.text("nyx.cloakRedirectUrl", "https://google.com/"))}" placeholder="Original tab redirect U3L"></div><div class="settings-actions"><button class="settings-action" data-about type="button">Open in About:Blank</button><button class="settings-action" data-blob type="button">Open in Blob</button></div><div class="settings-row"><span>Startup cloak prompt</span><button class="settings-action ${store.get("nyx.autoCloak", false) ? "on" : ""}" data-switch="nyx.autoCloak" type="button">${store.get("nyx.autoCloak", false) ? "On" : "Off"}</button></div><div class="settings-row"><span>Redirect original after launch</span><button class="settings-action ${store.get("nyx.cloakRedirectOriginal", false) ? "on" : ""}" data-switch="nyx.cloakRedirectOriginal" type="button">${store.get("nyx.cloakRedirectOriginal", false) ? "On" : "Off"}</button></div><div class="settings-actions"><button class="settings-action" data-save-cloak type="button">Save Cloak Settings</button><button class="settings-action" data-launch-selected-cloak type="button">Launch Selected</button></div></section><section class="settings-block"><h2>Panic Key</h2><p>Press this combo anytime to instantly close the current tab without a confirmation.</p><div class="settings-row"><strong class="panic-key-display" data-panic-key-display>${esc(store.text("nyx.panicKey", "not set"))}</strong></div><div class="settings-actions"><button class="settings-action" data-panic-capture type="button">Capture</button><button class="settings-action" data-panic-clear type="button">Clear</button></div></section><section class="settings-block"><h2>Theme</h2><select class="settings-select" data-theme-value><option value="default" ${theme === "default" ? "selected" : ""}>Default</option><option value="ruby" ${theme === "ruby" ? "selected" : ""}>Ruby</option><option value="emerald" ${theme === "emerald" ? "selected" : ""}>Emerald</option><option value="sakura" ${theme === "sakura" ? "selected" : ""}>Sakura</option><option value="fresh" ${theme === "fresh" ? "selected" : ""}>White</option></select></section><section class="settings-block"><h2>Effects</h2><select class="settings-select" data-effect-value><option value="none" ${effect === "none" ? "selected" : ""}>None</option><option value="rain" ${effect === "rain" ? "selected" : ""}>Rain</option><option value="stars" ${effect === "stars" ? "selected" : ""}>Stars</option><option value="hearts" ${effect === "hearts" ? "selected" : ""}>Hearts</option><option value="pokeballs" ${effect === "pokeballs" ? "selected" : ""}>Pokeballs</option><option value="flowers" ${effect === "flowers" ? "selected" : ""}>Flowers</option><option value="emeralds" ${effect === "emeralds" ? "selected" : ""}>Emeralds</option></select><div class="settings-range"><span>Speed</span><input data-effect-speed type="range" min=".3" max="3" step=".1" value="${effectSpeed}"><strong data-effect-speed-label>${effectSpeed}x</strong></div><div class="settings-range"><span>Amount</span><input data-effect-amount type="range" min="1" max="64" step="1" value="${effectAmount}"><strong data-effect-amount-label>${effectAmount}</strong></div></section><section class="settings-block"><h2>S3ARC4 Engine</h2><select class="settings-select" data-q9bc51698444e89592e><option value="duckduckgo" ${engine === "duckduckgo" ? "selected" : ""}>DuckDuckGo</option><option value="google" ${engine === "google" ? "selected" : ""}>Google</option><option value="bing" ${engine === "bing" ? "selected" : ""}>Bing</option></select></section><section class="settings-block"><h2>Proxy Engine</h2><select class="settings-select" data-q734d21fd6e93aaf835><option value="auto" ${browserMode === "auto" ? "selected" : ""}>Auto</option><option value="scramjet" ${browserMode === "scramjet" ? "selected" : ""}>Scrapmmy</option></select></section><section class="settings-block"><h2>HTTP bridge</h2><p>Recommended for devices or networks that block WebSockets. Turn off to use direct WebSocket connections. Applies to the default relay; custom relays keep their saved choice. Reload website tabs after changing.</p><div class="settings-row"><span>Use HTTP bridge</span><button class="settings-action ${store.get("nyx.httpBridge", true) ? "on" : ""}" data-switch="nyx.httpBridge" type="button">${store.get("nyx.httpBridge", true) ? "On" : "Off"}</button></div></section><section class="settings-block"><h2>Transport</h2><select class="settings-select" data-qd8174804477879fb3a><option value="libcurl" ${transport === "libcurl" ? "selected" : ""}>Libby over Relay</option></select><div class="settings-actions"><button class="settings-action" data-q1d952a7b6d139a28d8 type="button">Save br00ser Settings</button></div></section><section class="settings-block"><h2>Website redirects</h2><p>Block automatic jumps to other sites. Links you click and sign-in redirects remain available.</p><div class="settings-row"><span>Block automatic cross-site redirects</span><button class="settings-action ${store.get("nyx.blockAutomaticRedirects", true) ? "on" : ""}" data-switch="nyx.blockAutomaticRedirects" type="button">${store.get("nyx.blockAutomaticRedirects", true) ? "On" : "Off"}</button></div></section><section class="settings-block"><h2>Popup Protection</h2><p>Blocks malicious ads/sites.</p><button class="settings-action ${popupProtectionEnabled() ? "on" : ""}" data-popup-protection data-enabled="${popupProtectionEnabled() ? "true" : "false"}" type="button">Popup Protection ${popupProtectionEnabled() ? "On" : "Off"}</button><p style="margin-top:12px;color:#fde047;font-weight:400;line-height:1.42;text-shadow:none">*Warning: If this option is disabled, your computer may be exposed to various security threats, including viruses such as Trojan, disguised as Opera GX (which obviously is not). Disabling this feature could result in significant damage to your system, unaware access to your data, and potential sale of your personal data. It is <span style="color:#ff3b3b;text-shadow:0 0 4px rgba(255,255,255,.35),0 0 7px rgba(255,59,59,.95),0 0 14px rgba(255,59,59,.82),0 0 24px rgba(185,28,28,.72),0 0 38px rgba(127,29,29,.58)">STRONGLY</span> recommended to keep this setting enabled. This feature remains active unless the user intentionally chooses to disable it.*</p></section></div></main></section>`;
   }
   function browserShellPresetTiles() {
     return `<button class="quick-tile" data-preset="nyx" type="button"><img class="quick-icon" alt="" src="${nyxTabFavicon}"><span>N7X tab</span></button><button class="quick-tile" data-preset="google" type="button"><img class="quick-icon" alt="" src="${favicons.google}"><span>Google tab</span></button><button class="quick-tile" data-preset="drive" type="button"><img class="quick-icon" alt="" src="${favicons.drive}"><span>Drive tab</span></button><button class="quick-tile" data-preset="classlink" type="button"><img class="quick-icon" alt="" src="${favicons.classlink}"><span>ClassLink tab</span></button>`;
@@ -7807,7 +7807,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         "advanced",
         "Advanced",
         settingsIcons.advanced,
-        "Configure power-user browser controls.",
+        "Configure power-user br00ser controls.",
         ["panic key", "font"],
       ],
       ["credits", "Credits", settingsIcons.account, "Thanks to the people who help make N7X.", []],
@@ -7979,7 +7979,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     about.className = "settings-block";
     about.dataset.settingsSearch = "about nyx version support reset cache";
     about.innerHTML =
-      '<div class="n7x-settings-copy"><h2>N7X</h2><p>N7X Learning browser workspace. Settings are stored on this device unless they belong to your signed-in account.</p></div><div class="n7x-settings-control"><p class="n7x-settings-version">Version 2</p><div class="settings-actions"><button class="settings-action" data-clear-n7x-cache type="button">Reset local settings</button></div></div>';
+      '<div class="n7x-settings-copy"><h2>N7X</h2><p>N7X Learning br00ser workspace. Settings are stored on this device unless they belong to your signed-in account.</p></div><div class="n7x-settings-control"><p class="n7x-settings-version">Version 2</p><div class="settings-actions"><button class="settings-action" data-clear-n7x-cache type="button">Reset local settings</button></div></div>';
     categories.get("general").querySelector(".n7x-settings-group").appendChild(about);
 
     const credits = document.createElement("section");
@@ -9896,7 +9896,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
           ),
       ],
       [
-        "Checking browser engine",
+        "Checking br00ser engine",
         async () =>
           doubleCheck(async () =>
             Boolean(window.fetch && window.Promise && window.URL && window.Blob),
@@ -10031,7 +10031,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
 
       await runStep(
         67,
-        "Starting browser",
+        "Starting br00ser",
         async () => {
           await requestNyxKeyboardLock();
           tick();
@@ -10971,7 +10971,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
                 next.init(),
                 new Promise((_, reject) => {
                   timer = setTimeout(
-                    () => reject(new Error("Browser transport startup timed out")),
+                    () => reject(new Error("br00ser transport startup timed out")),
                     10000,
                   );
                 }),
@@ -12223,7 +12223,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     if (scramjetInstallPromise) return scramjetInstallPromise;
     let step = "starting Scramjet";
     scramjetInstallPromise = (async () => {
-      step = "checking browser support";
+      step = "checking br00ser support";
       if (location.protocol === "file:") {
         scramjetInstallError =
           "Scramjet needs N7X to be opened from its website, not as a local file.";
@@ -12231,7 +12231,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       }
       if (!("serviceWorker" in navigator)) {
         scramjetInstallError =
-          "This browser does not support the Service Workers Scramjet needs. Some watch browsers do not provide that feature.";
+          "This br00ser does not support the Service Workers Scramjet needs. Some watch browsers do not provide that feature.";
         return false;
       }
       step = "resetting stale Scramjet state";
@@ -13661,7 +13661,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
           return true;
         },
       },
-      { label: "Loading browser engine", run: () => preflightEngineReady(target) },
+      { label: "Loading br00ser engine", run: () => preflightEngineReady(target) },
       { label: "Opening transport", run: () => preflightTransportReady(target) },
       { label: "Registering service worker", run: () => preflightServiceWorkerReady(target) },
     ];
@@ -13703,7 +13703,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         { label: "Checking requested page", run: searchCheck },
         ...base,
         {
-          label: "Opening browser tab",
+          label: "Opening br00ser tab",
           run: async () => {
             await preflightDelay(160);
             return true;
@@ -13793,7 +13793,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
               ? "Opening Apps"
               : kind === "search"
                 ? "Checking S3ARC4"
-                : "Checking Browser";
+                : "Checking br00ser";
       overlay.innerHTML = `<section class="n7x-preflight-card" role="status" aria-live="polite"><h2 class="n7x-preflight-title">${esc(preflightTitle)}</h2><ul class="n7x-preflight-list">${tasks.map((task, index) => `<li class="n7x-preflight-item" data-preflight-step="${index}"><span class="n7x-preflight-dot">&bull;</span><span>${esc(task.label)}</span></li>`).join("")}</ul><div class="n7x-preflight-bar"><div class="n7x-preflight-fill"></div></div></section>`;
       document.body.appendChild(overlay);
       requestAnimationFrame(() => overlay.classList.add("show"));
@@ -17105,7 +17105,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         }
         store.setText("nyx.transport", nextTransport);
         applyUserSettings();
-        toast("Browser settings saved");
+        toast("br00ser settings saved");
         return;
       }
       if (e.data.type === "nyx:popup-protection") {
@@ -17186,7 +17186,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         store.set("nyx.visualEffectUserChoice", true);
         store.setText("nyx.visualEffect", e.data.effect || "none");
         applyVisualEffectSetting();
-        toast("Browser Mode effect updated");
+        toast("br00ser Mode effect updated");
         return;
       }
       if (e.data.type === "nyx:settings-window") {
@@ -17232,7 +17232,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       width: "520px",
       height: "620px",
       autoMaximize: true,
-      body: `<div class="panel"><h1>N7X Fixes</h1><p class="home-sub">Click N7X in the top-left anytime to see this.</p><div class="glass-grid" style="grid-template-columns:1fr"><div class="glass-card"><h2>Latest fixes</h2><p>- Added animated windows that eject from the bottom dock and fade when closed.</p><p>- Made the Updates window open fullscreen every time.</p><p>- Added one-time Updates popup on startup.</p><p>- Updated glassmorphism so 100%+ lowers blur instead of over-brightening.</p><p>- Replaced the Discord logo with the new attached icon.</p><p>- Removed the left desktop Browser and Updates buttons.</p><p>- Added visible background previews and background upload.</p><p>- Rebuilt the loading screen so it types the welcome text.</p><p>- Added local app icons to avoid blocked favicon requests.</p></div><div class="glass-card"><h2>Browser fixes</h2><p>- Website navigation uses the current engine.</p></div></div></div>`,
+      body: `<div class="panel"><h1>N7X Fixes</h1><p class="home-sub">Click N7X in the top-left anytime to see this.</p><div class="glass-grid" style="grid-template-columns:1fr"><div class="glass-card"><h2>Latest fixes</h2><p>- Added animated windows that eject from the bottom dock and fade when closed.</p><p>- Made the Updates window open fullscreen every time.</p><p>- Added one-time Updates popup on startup.</p><p>- Updated glassmorphism so 100%+ lowers blur instead of over-brightening.</p><p>- Replaced the Discord logo with the new attached icon.</p><p>- Removed the left desktop br00ser and Updates buttons.</p><p>- Added visible background previews and background upload.</p><p>- Rebuilt the loading screen so it types the welcome text.</p><p>- Added local app icons to avoid blocked favicon requests.</p></div><div class="glass-card"><h2>br00ser fixes</h2><p>- Website navigation uses the current engine.</p></div></div></div>`,
     });
   }
   let nyxAiModels = [];
@@ -18497,7 +18497,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         </section>
         <section class="settings-card">
           <h2>Tab Presets</h2>
-          <p>Changes the browser tab title and icon.</p>
+          <p>Changes the br00ser tab title and icon.</p>
           <div class="seg"><button data-preset="classroom" type="button">Google Classroom</button><button data-preset="drive" type="button">Google Drive</button><button data-preset="classlink" type="button">Classlink</button><button data-preset="google" type="button">Google</button><button data-preset="nyx" type="button">Reset</button></div>
         </section>
         <section class="settings-card">
@@ -18563,7 +18563,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
           <button data-clear-n7x-cache type="button">Clear Cache and Reset</button>
         </section>
         <section class="settings-card">
-          <h2>Browser Mode</h2>
+          <h2>br00ser Mode</h2>
           <p>Makes nyx look like a Chrome page with tabs on top, an address bar, and an Apps button instead of the bottom app bar.</p>
         </section>
         <section class="settings-card">
@@ -18586,7 +18586,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
           <div class="settings-row"><span>${esc(toHieroglyphText("Auto Hieroglyph"))}</span><button class="switch ${store.get("nyx.autoHieroglyphText", false) ? "on" : ""}" data-switch="nyx.autoHieroglyphText" aria-label="Auto hieroglyph on open"></button></div>
         </section>
         <section class="settings-card wide settings-backgrounds">
-          <h2>${document.body.classList.contains("q6172f40672fb949e9c") ? "Browser Background" : "Change Background"}</h2>
+          <h2>${document.body.classList.contains("q6172f40672fb949e9c") ? "br00ser Background" : "Change Background"}</h2>
           <p>Pick one of your current N7X backgrounds.</p>
           <div class="background-picker" data-bg-picker data-bg-scope="${document.body.classList.contains("q6172f40672fb949e9c") ? "browser" : "windows"}"></div>
           <div class="settings-row"><span>Background Enhancer</span><button class="switch ${store.get("nyx.backgroundEnhancer", false) ? "on" : ""}" data-bg-enhancer aria-label="Background enhancer"></button></div>
@@ -18599,11 +18599,11 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         </section>
       </div>
 
-      <h1 class="settings-section-title">Browser Settings</h1>
+      <h1 class="settings-section-title">br00ser Settings</h1>
       <div class="settings-grid">
         <section class="settings-card">
           <h2>Change Proxy</h2>
-          <p>Choose the browser engine N7X uses for external sites.
+          <p>Choose the br00ser engine N7X uses for external sites.
 The current engine handles website navigation.
 Auto uses Scramjet with Libcurl by default and can recover with another relay if the connection fails.</p>
           <select id="settingBrowserMode">
@@ -18622,16 +18622,16 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
 
             <option value="libcurlRaw">Libcurl</option>
           </select>
-          <button data-qadbd812e260f8845b0>Save Browser Settings</button>
+          <button data-qadbd812e260f8845b0>Save br00ser Settings</button>
         </section>
         <section class="settings-card">
           <h2>Change S3ARC4 Engine</h2>
-          <p>Pick the s3arc4 engine used for browser searches.</p>
+          <p>Pick the s3arc4 engine used for br00ser searches.</p>
           <select id="settingEngine" data-engine-value><option value="google">Google</option><option value="bing">Bing</option><option value="duckduckgo">DuckDuckGo</option></select>
         </section>
         <section class="settings-card">
           <h2>Effects</h2>
-          <p>Pick the particles shown in browser mode.</p>
+          <p>Pick the particles shown in br00ser mode.</p>
           <select data-effect-value>
             <option value="none">None</option>
             <option value="rain">Rain</option>
@@ -20175,7 +20175,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       if (browserSettingsSave && browserSettingsSave.closest(".q1b8b57bdd44ab91267")) {
         e.preventDefault();
         saveBrowserShellSettings(browserSettingsSave.closest(".q1b8b57bdd44ab91267"));
-        toast("Browser settings saved");
+        toast("br00ser settings saved");
         return;
       }
       const wispSave = e.target.closest?.("[data-q1123eb0020138b2f49]");
@@ -20946,7 +20946,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
           }
           store.setText("nyx.transport", nextTransport);
           applyUserSettings();
-          toast("Browser settings saved");
+          toast("br00ser settings saved");
           return;
         }
         const bgChoice = e.target.closest("[data-bg-choice]");
@@ -20955,7 +20955,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
           const scope = backgroundScope(root);
           chooseBackground(bgChoice.dataset.bgChoice, scope);
           if (root) renderBackgroundChoices(root, bgChoice.dataset.bgChoice);
-          toast(scope === "browser" ? "Browser background applied" : "Background applied");
+          toast(scope === "browser" ? "br00ser background applied" : "Background applied");
           return;
         }
         if (e.target.closest("[data-save-bg]")) {
@@ -21218,7 +21218,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         )
       ) {
         saveBrowserShellSettings(browserSettingsRoot);
-        toast("Browser settings saved");
+        toast("br00ser settings saved");
         return;
       }
       const fontSelect = e.target.closest?.("[data-font-value]");

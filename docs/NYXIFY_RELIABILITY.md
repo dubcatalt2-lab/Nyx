@@ -1,6 +1,6 @@
 # Nyxify playback reliability review — 2026-09-09
 
-Scope: the ordinary listener's music playback path, including browser state, native matching/streaming, player controls and backend resource limits. This is a failure-injection review, not proof that every device, recording or network will work. Released to OVH in bc6c51e alongside the active HTTP logging configuration. Live desktop/phone fault tests and real three-song playback/seeking passed; release verification is recorded in NYX_PROJECT_STATE.md.
+Scope: the ordinary listener's music playback path, including br00ser state, native matching/streaming, player controls and backend resource limits. This is a failure-injection review, not proof that every device, recording or network will work. Released to OVH in bc6c51e alongside the active HTTP logging configuration. Live desktop/phone fault tests and real three-song playback/seeking passed; release verification is recorded in NYX_PROJECT_STATE.md.
 
 ## Findings and fixes
 
@@ -10,12 +10,12 @@ Scope: the ordinary listener's music playback path, including browser state, nat
 | Temporary busy/502/503/504/429 response | One bounded retry honors a short Retry-After before preview fallback. Network lookup failures can also retry once while online. |
 | Rapid track changes | Superseded lookups are aborted; stale results cannot replace the selected song. Selecting an aborted lookup again creates a fresh request. |
 | Pause while matching | The desired paused state and button icon are retained when the song becomes ready. |
-| Browser denies autoplay | The player asks for a play gesture; a rejected play promise does not crash the page. |
+| br00ser denies autoplay | The player asks for a play gesture; a rejected play promise does not crash the page. |
 | Audio error or expired registered media link | One renewed match retries playback from its previous position. |
 | Buffering never raises a media error | A 45-second progress watchdog attempts recovery, then gives an explicit fallback instead of spinning forever. |
 | Connection goes offline | Buffered audio may continue; errors wait for reconnection instead of immediately attempting a preview. |
 | Full audio cannot be matched or has the wrong duration | Existing preview fallback remains, with its status visible in the bottom player as well as Now Playing. |
-| Browser storage is full, denied or corrupt | Playback no longer depends on successfully saving history; failed writes remain in page memory. Invalid stored lists, repeat modes and volume values are handled. Failed saves do not persist after the page closes. |
+| br00ser storage is full, denied or corrupt | Playback no longer depends on successfully saving history; failed writes remain in page memory. Invalid stored lists, repeat modes and volume values are handled. Failed saves do not persist after the page closes. |
 | Many listeners use the same media host | The media connection pool now aligns with the existing 40-transfer limit, removing the previous six-connection queue at a single host. |
 | Malformed ranges or upstream partial responses | Unsafe/reversed ranges return 416; inconsistent partial audio responses and oversized file totals are rejected. |
 | Provider returns HTML instead of audio | Rejected as an upstream failure; no HTML is passed to the audio player. |

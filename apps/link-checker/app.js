@@ -1344,7 +1344,7 @@
       showNotice(
         saved
           ? `FreeDNS scrape complete: ${freednsCache.domains.length.toLocaleString()} domains cached on this device.`
-          : "The scrape completed, but this browser could not save the registry cache.",
+          : "The scrape completed, but this br00ser could not save the registry cache.",
         saved ? "" : "error",
         !saved,
       );
@@ -1644,7 +1644,7 @@
           unsaved += 1;
           if (unsaved >= FREEDNS_FULL_SAVE_BATCH && !flush()) {
             storageFailed = true;
-            throw new Error("This browser could not save more verdicts.");
+            throw new Error("This br00ser could not save more verdicts.");
           }
         }
         setFreednsFullProgress(already + imported, total);
@@ -1672,7 +1672,7 @@
     let error = null;
     try {
       await importProviderResults();
-      if (!flush()) throw new Error("This browser could not save more verdicts.");
+      if (!flush()) throw new Error("This br00ser could not save more verdicts.");
       if (wanted.size) {
         let status = await bulkFetch("/full-scan/start", {
           method: "POST",
@@ -1704,7 +1704,7 @@
       renderWorkspace();
       if (storageFailed)
         showNotice(
-          `The full scan stopped because this browser could not save more verdicts. ${persistedTotal.toLocaleString()} domain results remain saved.`,
+          `The full scan stopped because this br00ser could not save more verdicts. ${persistedTotal.toLocaleString()} domain results remain saved.`,
           "error",
           true,
         );

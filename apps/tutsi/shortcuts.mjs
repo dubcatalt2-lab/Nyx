@@ -52,7 +52,7 @@ export function installShortcuts(doc, actions, depth = 0) {
         }
         if (key === "v") {
           if (!navigator.clipboard?.readText) {
-            actions.notice?.("Use your browser paste menu.");
+            actions.notice?.("Use your br00ser paste menu.");
             return;
           }
           void navigator.clipboard
@@ -70,7 +70,7 @@ export function installShortcuts(doc, actions, depth = 0) {
               } else doc.execCommand("insertText", false, text);
             })
             .catch(() =>
-              actions.notice?.("Clipboard access was denied. Use your browser paste menu."),
+              actions.notice?.("Clipboard access was denied. Use your br00ser paste menu."),
             );
           return;
         }

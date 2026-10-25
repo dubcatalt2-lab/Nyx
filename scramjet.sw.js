@@ -1,6 +1,6 @@
 ﻿importScripts("/js/polygon-graphics-adapter.js");
 
-importScripts("/js/proxy-url-codec.js");
+importScripts("/js/K7b49.js");
 
 let nyxscrRevivePromise = null;
 

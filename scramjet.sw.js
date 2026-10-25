@@ -1,14 +1,14 @@
-﻿importScripts("/controller/controller.sw.js?v=20260905-cookie-owner-v1");
+﻿importScripts("/js/polygon-graphics-adapter.js");
 
 importScripts("/js/proxy-url-codec.js");
 
-let nyxScramjetRevivePromise = null;
+let nyxscrRevivePromise = null;
 
 self.addEventListener("install", event => {
   event.waitUntil(self.skipWaiting());
 });
 
-function nyxScramjetRouteMissHtml() {
+function nyxscrRouteMissHtml() {
   return `<!doctype html>
 <meta charset="utf-8">
 <style>
@@ -19,13 +19,12 @@ function nyxScramjetRouteMissHtml() {
   button{margin-top:18px;border:1px solid #445066;border-radius:10px;background:#1b2230;color:#f5f7fb;padding:10px 15px;font:600 14px system-ui,sans-serif;cursor:pointer}
 </style>
 <main>
-  <h1>Reconnecting Scramjet</h1>
-  <p>N7X is reconnecting this tab to the proxy service worker.</p>
-  <button type="button" onclick="location.reload()">Retry now</button>
+  <h1>Reconnecting scr</h1>
+  <button type="button" onclick="location.reload()">Reload</button>
 </main>
 <script>
   (() => {
-    const key='nyx.scramjet-route-retry:'+location.pathname;
+    const key='nyx.scr-route-retry:'+location.pathname;
     const attempts=Number(sessionStorage.getItem(key)||0);
     if(attempts<2){
       sessionStorage.setItem(key,String(attempts+1));
@@ -37,7 +36,7 @@ function nyxScramjetRouteMissHtml() {
 <\/script>`;
 }
 
-function nyxIsScramjetRequest(event) {
+function nyxIsscrRequest(event) {
   try {
     return new URL(event.request.url).pathname.startsWith(self.NYX_TUTSI_WORKER ? "/~/tm/" : "/~/sj/");
   } catch {
@@ -45,7 +44,7 @@ function nyxIsScramjetRequest(event) {
   }
 }
 
-function nyxScramjetSourcePath(requestUrl) {
+function nyxscrSourcePath(requestUrl) {
   try {
     const url = new URL(requestUrl);
     const match = url.pathname.match(/^\/~\/(?:sj|tm)\/[^/]+\/[^/]+\/([^?#]*)/);
@@ -56,7 +55,7 @@ function nyxScramjetSourcePath(requestUrl) {
   }
 }
 
-function nyxScramjetSourceUrl(requestUrl) {
+function nyxscrSourceUrl(requestUrl) {
   try {
     const url = new URL(requestUrl);
     const match = url.pathname.match(/^\/~\/(?:sj|tm)\/[^/]+\/[^/]+\/([^?#]*)/);
@@ -105,8 +104,8 @@ function nyxHostBlocked(hostname) {
   return nyxBlockedRequestHosts.some(blocked => host === blocked || host.endsWith(`.${blocked}`));
 }
 
-function nyxShouldBlockScramjetRequest(event) {
-  const source = nyxScramjetSourceUrl(event.request.url);
+function nyxShouldBlockscrRequest(event) {
+  const source = nyxscrSourceUrl(event.request.url);
   if (!source) return false;
   try {
     const url = new URL(source);
@@ -118,7 +117,7 @@ function nyxShouldBlockScramjetRequest(event) {
   }
 }
 
-function nyxBlockedScramjetResponse(event) {
+function nyxBlockedscrResponse(event) {
   const accept = event.request.headers.get("accept") || "";
   if (["script", "worker", "sharedworker"].includes(event.request.destination) || /javascript|ecmascript/i.test(accept)) {
     return new Response("", { status: 200, headers: { "Content-Type": "application/javascript; charset=utf-8" } });
@@ -144,7 +143,7 @@ function nyxRequestExpectsAsset(event) {
 function nyxEmptyAssetResponse(event) {
   const accept = event.request.headers.get("accept") || "";
   const path = new URL(event.request.url).pathname;
-  const sourcePath = nyxScramjetSourcePath(event.request.url);
+  const sourcePath = nyxscrSourcePath(event.request.url);
   const looksLikeScript = ["script", "worker", "sharedworker"].includes(event.request.destination)
     || /javascript|ecmascript/i.test(accept)
     || /\.(?:js|mjs|cjs|jq|hs|ohs)(?:$|[/?#])/i.test(path)
@@ -190,9 +189,9 @@ function nyxDelay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function nyxNotifyScramjetControllers() {
-  if (nyxScramjetRevivePromise) return nyxScramjetRevivePromise;
-  nyxScramjetRevivePromise = (async () => {
+async function nyxNotifyscrControllers() {
+  if (nyxscrRevivePromise) return nyxscrRevivePromise;
+  nyxscrRevivePromise = (async () => {
     const clients = await self.clients.matchAll({
       includeUncontrolled: true,
       type: "window"
@@ -204,9 +203,9 @@ async function nyxNotifyScramjetControllers() {
     }
     await nyxDelay(60);
   })().finally(() => {
-    nyxScramjetRevivePromise = null;
+    nyxscrRevivePromise = null;
   });
-  return nyxScramjetRevivePromise;
+  return nyxscrRevivePromise;
 }
 
 async function nyxRouteAfterRevive(event) {
@@ -215,35 +214,35 @@ async function nyxRouteAfterRevive(event) {
   while (Date.now() < deadline) {
     const now = Date.now();
     if (now >= nextNotifyAt) {
-      await nyxNotifyScramjetControllers();
+      await nyxNotifyscrControllers();
       nextNotifyAt = now + 500;
     }
-    if ($scramjetController.shouldRoute(event)) {
-      return nyxRouteScramjet(event);
+    if ($scrController.shouldRoute(event)) {
+      return nyxRoutescr(event);
     }
     await nyxDelay(100);
   }
-  return new Response(nyxScramjetRouteMissHtml(), {
+  return new Response(nyxscrRouteMissHtml(), {
     status: 502,
     headers: { "Content-Type": "text/html; charset=utf-8" }
   });
 }
 
-async function nyxRouteScramjet(event) {
-  const response = await $scramjetController.route(event);
+async function nyxRoutescr(event) {
+  const response = await $scrController.route(event);
   return nyxScrubAssetResponse(event, response);
 }
 
 self.addEventListener("fetch", event => {
-  if (!self.NYX_TUTSI_WORKER && nyxShouldBlockScramjetRequest(event)) {
-    event.respondWith(nyxBlockedScramjetResponse(event));
+  if (!self.NYX_TUTSI_WORKER && nyxShouldBlockscrRequest(event)) {
+    event.respondWith(nyxBlockedscrResponse(event));
     return;
   }
-  if ($scramjetController.shouldRoute(event)) {
-    event.respondWith(nyxRouteScramjet(event));
+  if ($scrController.shouldRoute(event)) {
+    event.respondWith(nyxRoutescr(event));
     return;
   }
-  if (nyxIsScramjetRequest(event)) {
+  if (nyxIsscrRequest(event)) {
     event.respondWith(nyxRouteAfterRevive(event));
   }
 });
@@ -251,10 +250,10 @@ self.addEventListener("fetch", event => {
 self.addEventListener("activate", event => {
   event.waitUntil(Promise.all([
     self.clients.claim(),
-    nyxNotifyScramjetControllers().catch(() => {})
+    nyxNotifyscrControllers().catch(() => {})
   ]));
 });
 
 setTimeout(() => {
-  nyxNotifyScramjetControllers().catch(() => {});
+  nyxNotifyscrControllers().catch(() => {});
 }, 120);

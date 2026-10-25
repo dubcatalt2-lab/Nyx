@@ -1,3 +1,4 @@
+import {repositoryControllerInjection} from './lib/controller-injection.mjs';
 import {fableTrialActive, fableTrialLabel} from './lib/ai-fable-trial.mjs';
 import {τοπικήΓέφυρα} from './lib/local-ai-relay.mjs';
 import {q94d6} from './lib/q94d6.mjs';
@@ -791,11 +792,12 @@ app.use((req, res, next) => {
     "/scramjet-v1/scramjet.all.js",
     "/scramjet-v1/scramjet.sync.js",
     "/scramjet-v1/scramjet.wasm.wasm",
-    "/scramjet-v1.sw.js",
+    "/oldsj/old.sw.js",
     "/nyx-scramjet-runtime-guard.js"
   ]);
+  if (req.path.startsWith("/oldsj/") && req.path.endsWith(".js")) res.setHeader("Service-Worker-Allowed", "/");
   const noStorePrefix = /^\/(?:assets\/(?:gms-studies|reds-misc)\/|gms-games-|reds-misc-)/i.test(req.path);
-  const opaqueProxyAsset = /^\/(?:(?:scramjet|st7dyj3t)(?:-v1)?\/|controller\/|libcurl\/|textlib\/|baremux\/|assets\/transports\/|apps\/tutsi\/)?@?r[0-9a-f]{24}!?\.(?:js|mjs|wasm)$/.test(req.path);
+  const opaqueProxyAsset = /^\/(?:(?:scramjet|st7dyj3t)(?:-v1)?\/|controller\/|oldsj\/|libcurl\/|textlib\/|baremux\/|assets\/transports\/|apps\/tutsi\/)?@?r[0-9a-f]{24}!?\.(?:js|mjs|wasm)$/.test(req.path);
   if (noStorePaths.has(req.path) || noStorePrefix || opaqueProxyAsset) {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma", "no-cache");
@@ -1393,6 +1395,7 @@ function patchedBareMuxIndex() {
 
 
 function patchedScramjetControllerAsset(name) {
+  if (name === "controller.inject.js") return repositoryControllerInjection();
   let source = readFileSync(join(scramjetControllerPath, name), "utf8");
   if (name === "controller.sw.js") {
     const clientsOriginal = 'sendSetCookie:async({cookies:e,options:r})=>{let o=await self.clients.matchAll()';
@@ -1410,11 +1413,6 @@ function patchedScramjetControllerAsset(name) {
     const original = 'let t=e.data.$controller$setCookie;t.options?.clear';
     const patched = 'let t=e.data.$controller$setCookie;if(t.controllerId&&t.controllerId!==this.id)return;t.options?.clear';
     if (!source.includes(original)) throw new Error("Scramjet controller cookie sync signature changed");
-    source = source.replace(original, patched);
-  } else if (name === "controller.inject.js") {
-    const original = 'let t=e.data.$controller$setCookie;if(t.options?.clear&&this.cookieJar.clear()';
-    const patched = 'let t=e.data.$controller$setCookie;if(t.controllerId&&!String(this.init.prefix?.pathname||"").includes("/"+t.controllerId+"/"))return;if(t.options?.clear&&this.cookieJar.clear()';
-    if (!source.includes(original)) throw new Error("Scramjet injected cookie sync signature changed");
     source = source.replace(original, patched);
   }
   return source;

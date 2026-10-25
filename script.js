@@ -5554,7 +5554,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
   const scramjetV1StateVersion = "nyx-scramjet-v1-ready-before-route-v5";
   const scramjetServiceWorkerUrl = "/polygon.studies.js?v=nyx-sj-20260905-cookie-owner-v5";
   const scramjetV1RuntimeUrl = "/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-ready-before-route-v5";
-  const scramjetV1ServiceWorkerUrl = "/scramjet-v1.sw.js?v=nyx-sj-v1-ready-before-route-v5";
+  const scramjetV1ServiceWorkerUrl = "/oldsj/old.sw.js?v=nyx-sj-v1-ready-before-route-v5";
   function installNyxConsoleDedupe(scope = "top") {
     if (console.__nyxDedupeInstalled) return;
     const seen = new Map();

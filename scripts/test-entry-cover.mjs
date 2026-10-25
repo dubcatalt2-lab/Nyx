@@ -28,6 +28,6 @@ try{
  await page.goto(base+'/district/index.html');await page.clock.runFor(1600);await page.waitForURL('**/app.html');assert.equal(new URL(page.url()).pathname,'/app.html');
  await page.goto(base+'/app/index.html?legacy=1#ai');await page.clock.runFor(100);await page.waitForURL('**/app.html?legacy=1#ai');
  await context.close();
- const nojs=await browser.newContext({javaScriptEnabled:false});const fallback=await nojs.newPage();await fallback.goto(base+'/');await fallback.getByRole('link',{name:'Open workspace',exact:true}).waitFor();await nojs.close();
+ const nojs=await browser.newContext({javaScriptEnabled:false});const fallback=await nojs.newPage();await fallback.goto(base+'/');await fallback.getByRole('link',{name:'Open School Calendar',exact:true}).waitFor();await nojs.close();
  console.log('PASS fresh cloak, mobile bounds, 1.012s redirect, query/hash and storage preservation, app base URL, direct entry/reload without loop, no-JS link');
 }finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

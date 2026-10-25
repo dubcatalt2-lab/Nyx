@@ -162,7 +162,7 @@ const requiredFiles = [
   "startup.js",
   "styles.css",
   "polygon.studies.js",
-  "scramjet-v1.sw.js",
+  "oldsj/old.sw.js",
   "js/loading-screen.js",
   "js/availability.js",
   "js/nyx-logo.js",

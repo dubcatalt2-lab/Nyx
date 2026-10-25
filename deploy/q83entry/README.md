@@ -10,6 +10,8 @@ Caddy's exact-host route verifies every non-gate request before N7X or the deskt
 
 Each successful password submission authorizes one top-level page entry, which must happen within one minute. Reloading, opening another tab, or navigating to a fresh top-level page requires the password again, including for previously issued sessions. br00ser-restored documents that do not make a network request are not a new gate verification. Fetch Metadata distinguishes top-level documents from embedded frames; HTML requests without that metadata also require a new entry.
 
+Successful sign-in opens `/app.html` directly. Opening the redirecting cover at `/` would consume the one-use entry before the real app loads.
+
 The host-only Secure/HttpOnly/SameSite=Strict cookie still authorizes assets, API calls, embedded frames and upgrades for up to eight hours so an opened application continues working. It no longer grants repeat top-level entry. One-use entry permissions are in-memory and reset on service restart. Rotating the signing key invalidates all issued cookies. Rate limits are in-memory and reset on service restart. The username is not persisted. Changing the shared password should also rotate the signing key.
 
 Run `node deploy/q83entry/test-entry.mjs` from the repository root for the one-use entry and Edge br00ser regression. It uses an isolated fixture password/configuration and the existing obfuscated `q19.js`; it does not read or modify production credentials. The br00ser fixture reconstructs Fetch Metadata because Playwright intercepts requests before Chromium adds those headers.

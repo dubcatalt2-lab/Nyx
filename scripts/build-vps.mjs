@@ -1,4 +1,5 @@
 import { formatJavaScript, formatCss } from "./format-browser-code.mjs";
+import { repositoryControllerInjection } from "../lib/controller-injection.mjs";
 import { buildBlooketCatalog } from "./build-blooket-catalog.mjs";
 import { encodeLiterals } from "./build-string-literals.mjs";
 import { patchClientSockets } from "./patch-client-sockets.mjs";
@@ -43,7 +44,7 @@ const rootFiles = new Set([
   "student-resources.html",
   "styles.css",
   "polygon.studies.js",
-  "scramjet-v1.sw.js",
+  "oldsj/old.sw.js",
 ]);
 const staticPrefixes = ["district/", "app/", "apps/", "assets/", "css/", "js/"];
 const blockedExtensions = /\.(?:7z|avi|mkv|mov|mp4|rar|webm|zip)$/i;
@@ -135,7 +136,13 @@ async function copyProxyRuntimes() {
     [controller, "controller"],
     [libcurl, "libcurl"],
   ]) {
-    await cp(source, join(output, destination), { recursive: true, force: true });
+    await cp(source, join(output, destination), {
+      recursive: true, force: true,
+      filter: file => destination !== "controller" || !/controller\.inject\.js(?:\.map)?$/.test(file),
+    });
+    if (destination === "controller") {
+      await writeFile(join(output, destination, "controller.inject.js"), repositoryControllerInjection());
+    }
     if (destination === "libcurl") {
       for (const name of ["index.mjs", "index.js"]) {
         const file = join(output, destination, name);

@@ -19,8 +19,8 @@ function nyxscrRouteMissHtml() {
   button{margin-top:18px;border:1px solid #445066;border-radius:10px;background:#1b2230;color:#f5f7fb;padding:10px 15px;font:600 14px system-ui,sans-serif;cursor:pointer}
 </style>
 <main>
-  <h1>Reconnecting scr</h1>
-  <button type="button" onclick="location.reload()">Reload</button>
+  <h1>Error While Connecting</h1>
+  <button type="button" onclick="location.reload()">Reload Page</button>
 </main>
 <script>
   (() => {

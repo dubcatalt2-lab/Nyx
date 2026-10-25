@@ -1,5 +1,5 @@
-// Portable functions: the controller serializes them into documents and workers.
-// This is a URL representation, not encryption or a security boundary.
+
+// obfuscated with zaka obfuscator free 3.0 cracked (jk vdr dont destroy me for adding this comment)
 globalThis.NyxProxyUrlCodec = Object.freeze({
   encode: function (value) {
     const text = String(value || "");

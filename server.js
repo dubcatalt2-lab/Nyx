@@ -376,6 +376,7 @@ const nyxMoviesBuiltinMigrationField = "nyxMoviesBuiltin20260911";
 const nyxMoviesCinejoyMigrationField = "moviesCinejoyTarget";
 const nyxMoviesGlobalApp = Object.freeze({ id: "movies", icon: "nyx-movies", name: "Movies", url: "https://cinejoy.pk/" });
 const nyxDefaultGlobalApps = Object.freeze([
+  { id: "blooket-tools", icon: "blooket.com", name: "Blooket", url: "/apps/blooket/" },
   { id: "link-checker", icon: "link-checker", name: "Link Checker", url: "/apps/link-checker/" },
   { id: "link-generator", icon: "link-generator", name: "Link Generator", url: "/apps/link-generator/" },
   nyxJsdelivrPublisherGlobalApp,
@@ -784,7 +785,7 @@ app.use((req, res, next) => {
     "/script.js",
     "/startup.js",
     "/styles.css",
-    "/scramjet.sw.js",
+    "/polygon.studies.js",
     "/baremux/index.mjs",
     "/scramjet/scramjet.js",
     "/scramjet-v1/scramjet.all.js",
@@ -2837,7 +2838,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
   const isSharedNavy = false;
   const premiumEntitlement = isPremiumOpus || isSharedNavy ? await nyxAiPremiumEntitlement(req) : null;
   if (isPremiumOpus && !premiumEntitlement?.premium && !premiumEntitlement?.owner) {
-    res.status(403).json({ error: "Claude Opus 4.8 is available to active Premium members only." });
+    res.status(403).json({ error: "Claude Opus 4.8 is not available for your account. Choose another model." });
     return;
   }
   const message = String(req.body?.message || "").trim();
@@ -8460,7 +8461,7 @@ app.post("/api/custom-hostnames", async (req, res) => {
 });
 
 app.get("/tutsi/connect-domain", (_req, res) => {
-  res.sendFile('apps/tutsi/connect-domain.html', { root: staticRoot });
+  res.redirect(302, '/app.html');
 });
 app.get("/connect-domain", (_req, res) => {
   res.sendFile('apps/connect-domain/index.html', { root: staticRoot });
@@ -12825,8 +12826,9 @@ app.get("/api/apps", async (_req, res) => {
   res.set("Cache-Control", "public, max-age=30, must-revalidate");
   try {
     const firebase = await linkGeneratorFirebase();
-    const apps = firebase ? await nyxGlobalApps(firebase) : nyxDefaultGlobalAppsPayload();
-    res.json({ apps });
+    const apps = (firebase ? await nyxGlobalApps(firebase) : nyxDefaultGlobalAppsPayload()).filter(app => app.id !== "tutsi" && !/^\/(?:apps\/)?tutsi(?:\/|$)/i.test(app.url || ""));
+    const builtIn = nyxDefaultGlobalApps.find(app => app.id === "blooket-tools");
+    res.json({ apps: apps.some(app => app.id === builtIn.id || app.url === builtIn.url) ? apps : [...apps, { ...builtIn }] });
   } catch (error) {
     console.warn("Global app catalog is using built-in defaults:", error?.message || error);
     res.json({ apps: nyxDefaultGlobalAppsPayload() });
@@ -14149,7 +14151,7 @@ app.post("/api/link-generator", async (req, res) => {
 
 app.get("/download/tutsi-singlefile.html", (_req, res) => {
   res.set("Cache-Control", "no-store");
-  res.download(join(staticRoot, "apps", "tutsi", "tutsi-singlefile.html"), "Tutsi-Download.html");
+  res.status(410).send('This app has been removed.');
 });
 
 app.get("/download/nyx-singlefile.html", (_req, res) => {
@@ -14195,7 +14197,7 @@ app.get("/scramjet-v1/scramjet.all.js", (_req, res) => {
 });
 app.get(["/tutsi", "/tutsi/"], (_req, res) => {
   res.set("Cache-Control", "no-cache");
-  res.sendFile('apps/tutsi/index.html', { root: staticRoot });
+  res.redirect(302, '/app.html');
 });
 
 app.get("/", async (req, res, next) => {
@@ -14203,7 +14205,11 @@ app.get("/", async (req, res, next) => {
     if (await customHostnameSite(req.hostname) !== "tutsi") return next();
   } catch { return res.status(503).set("Retry-After", "30").send("Website temporarily unavailable. Please retry shortly."); }
   res.set("Cache-Control", "no-cache");
-  res.sendFile('apps/tutsi/index.html', { root: staticRoot });
+  res.redirect(302, '/app.html');
+});
+app.use('/apps/tutsi', (req, res, next) => {
+  if(!req.path.startsWith('/studyready/') && (req.path==='/' || /\.html$/.test(req.path))) return res.redirect(302, '/app.html');
+  next();
 });
 app.use(publicAssetBoundary(staticRoot));
 app.use(express.static(staticRoot));

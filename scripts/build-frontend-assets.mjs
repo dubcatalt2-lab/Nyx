@@ -148,7 +148,7 @@ export async function buildFrontendAssets(output, files, lessonHtml) {
       Buffer.from(original)
         .toString("base64")
         .match(/.{1,112}/g) || [];
-    const migrate = ["index.html", "apps/tutsi/index.html", "apps/drop/index.html"].includes(path)
+    const migrate = ["app.html", "apps/tutsi/index.html", "apps/drop/index.html"].includes(path)
       ? `await (${migrateStorage.toString()})(JSON.parse(atob(${JSON.stringify(Buffer.from(JSON.stringify(storageNames)).toString("base64"))})));`
       : "";
     const q51ea = path === "assets/studies/index.html";
@@ -169,7 +169,9 @@ export async function buildFrontendAssets(output, files, lessonHtml) {
         })
       ).code,
     );
-    const shell = q51ea
+    const shell = path === "index.html"
+      ? original.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "").replace("</body>", `<script src="${loader}"></script></body>`)
+      : q51ea
       ? q73d92.replace("</body>", `<script src="${loader}"></script></body>`)
       : !["apps/tutsi/index.html", "apps/drop/index.html"].includes(path)
         ? `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>N7X</title><link rel="icon" href="/assets/icons/nyx-cat-moon-small.svg?v=3"></head><body><script src="${loader}"></script></body></html>`

@@ -32,6 +32,12 @@ try{
  await page.goto(`http://127.0.0.1:${server.address().port}/apps/chat/`);
  const own=page.getByRole('button',{name:'Message options for Alex',exact:true});await own.click();
  await page.getByRole('menuitem',{name:'Edit message',exact:true}).click();
+ const edit=page.getByRole('dialog',{name:'Edit message',exact:true});
+ await page.screenshot({path:'.codex-artifacts/chat-edit-mobile.png'});
+ assert(await edit.evaluate(e=>e.scrollWidth<=e.clientWidth+1));
+ assert.match(await edit.evaluate(e=>getComputedStyle(e).backdropFilter),/blur/);
+ await page.setViewportSize({width:1280,height:900});await page.screenshot({path:'.codex-artifacts/chat-edit-desktop.png'});
+ await page.setViewportSize({width:390,height:844});
  await page.getByLabel('Edit message text',{exact:true}).fill('Edited <script> stays text');
  await page.getByRole('button',{name:'Save changes',exact:true}).click();
  await page.getByRole('dialog',{name:'Edit message',exact:true}).waitFor({state:'detached'});

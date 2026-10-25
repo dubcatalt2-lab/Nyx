@@ -1,19 +1,19 @@
 html[data-q73e8] body {
   --page: transparent;
-  --panel: rgba(24, 24, 27, .48);
-  --panel2: rgba(30, 30, 33, .56);
-  --composer: rgba(20, 20, 23, .65);
+  --panel: rgba(4, 4, 6, .76);
+  --panel2: rgba(8, 8, 10, .82);
+  --composer: rgba(3, 3, 5, .84);
   --app-bg: transparent;
-  --app-panel: rgba(24, 24, 27, .48);
-  --app-raised: rgba(49, 49, 53, .68);
-  --app-field: rgba(18, 18, 21, .48);
+  --app-panel: rgba(4, 4, 6, .76);
+  --app-raised: rgba(12, 12, 15, .86);
+  --app-field: rgba(0, 0, 0, .55);
   --app-line: rgba(220, 239, 229, .1);
   isolation: isolate;
   background: transparent !important
 }
 
 html[data-q73e8] {
-  background: #111113 !important
+  background: #000 !important
 }
 
 .q73e8 {
@@ -21,21 +21,21 @@ html[data-q73e8] {
   inset: -40px;
   z-index: -1;
   pointer-events: none;
-  background: linear-gradient(140deg, rgba(12, 12, 15, .36), rgba(10, 10, 13, .58)), var(--q73e8-wallpaper);
+  background: #000 var(--q73e8-wallpaper);
   background-size: cover;
   background-position: center;
-  filter: blur(18px) grayscale(var(--q73e8, 0));
+  filter: blur(24px) brightness(.28) grayscale(var(--q73e8, 0));
 }
 
-html[data-q73e8] body :is(.utility-header, .topbar, .workspace-bar, .workspace-header, .ai-header, .media-nav, .tube-sidebar, .assistant-panel, .file-panel, .sidebar, .chats) {
-  background: rgba(24, 24, 27, .45);
+html[data-q73e8] body :is(.utility-header, .topbar, .workspace-bar, .workspace-header, .ai-header, .media-nav, .tube-sidebar, .assistant-panel, .file-panel, .sidebar, .chats, .vault-sidebar, .vault-header) {
+  background: rgba(3, 3, 5, .68);
   backdrop-filter: blur(24px) saturate(.85);
   -webkit-backdrop-filter: blur(24px) saturate(.85);
   border-color: rgba(225, 241, 232, .1)
 }
 
-html[data-q73e8] body :is(.utility-card, .panel, .project-card, .menu-panel) {
-  background: rgba(27, 27, 30, .48);
+html[data-q73e8] body :is(.utility-card, .panel, .project-card, .menu-panel, .vault-session, .vault-card, .vault-dialog) {
+  background: rgba(5, 5, 7, .74);
   backdrop-filter: blur(20px);
   border-color: rgba(225, 241, 232, .1);
   box-shadow: 0 12px 36px #0002
@@ -69,7 +69,8 @@ html[data-n7x-appearance=light][data-q73e8] body {
 }
 
 html[data-n7x-appearance=light] .q73e8 {
-  background-image: linear-gradient(#eaf1edb8, #eaf1eddb), var(--q73e8-wallpaper)
+  background-image: var(--q73e8-wallpaper);
+  filter: blur(24px) brightness(1.1) grayscale(var(--q73e8, 0))
 }
 
 @media(prefers-reduced-motion:reduce) {

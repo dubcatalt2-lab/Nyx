@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict';
+import express from 'express';
+import {chromium} from 'playwright';
+const app=express();app.use(express.static(process.env.NYX_TEST_STATIC_ROOT||'.'));const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
+const base=process.env.NYX_TEST_APP_ORIGIN||`http://127.0.0.1:${server.address().port}`;
+const browser=await chromium.launch();
+try{
+ const context=await browser.newContext();const page=await context.newPage();const coverRequests=[];page.on('request',r=>coverRequests.push(r.url()));await page.clock.install();
+ await context.addCookies([{name:'entry-session-test',value:'keep',url:base,httpOnly:true,sameSite:'Lax'}]);
+ await page.goto(base+'/?source=installed-app#ai');
+ await page.getByRole('heading',{name:'News at a glance'}).waitFor();
+ assert.equal(await page.title(),'Antelope Valley Union High School District');
+ await page.waitForFunction(()=>Array.from(document.images).filter(i=>i.loading!=='lazy').every(i=>i.complete&&i.naturalWidth>0));
+ await page.evaluate(()=>{localStorage.setItem('entry-preservation-test','keep');sessionStorage.setItem('entry-preservation-test','keep');});
+ assert(coverRequests.every(url=>url.startsWith(base+'/')),'Cloak must load locally');
+ await page.setViewportSize({width:1440,height:1000});await page.screenshot({path:'.codex-artifacts/entry-cover-desktop.png'});
+ await page.setViewportSize({width:320,height:568});
+ assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ await page.screenshot({path:'.codex-artifacts/entry-cover-mobile.png'});
+ await page.clock.runFor(1000);assert.equal(new URL(page.url()).pathname,'/');
+ await page.clock.runFor(12);await page.waitForURL('**/app.html?source=installed-app#ai');
+ assert.equal((await context.cookies(base)).find(c=>c.name==='entry-session-test')?.value,'keep');
+ assert.equal(await page.evaluate(()=>localStorage.getItem('entry-preservation-test')),'keep');
+ assert.equal(await page.evaluate(()=>sessionStorage.getItem('entry-preservation-test')),'keep');
+ await page.waitForFunction(expected=>document.baseURI===expected,base+'/');
+ assert.equal(await page.evaluate(()=>document.baseURI),base+'/');
+ await page.reload();await page.clock.runFor(1600);assert.equal(new URL(page.url()).pathname,'/app.html');
+ await page.goto(base+'/district/index.html');await page.clock.runFor(1600);await page.waitForURL('**/app.html');assert.equal(new URL(page.url()).pathname,'/app.html');
+ await page.goto(base+'/app/index.html?legacy=1#ai');await page.clock.runFor(100);await page.waitForURL('**/app.html?legacy=1#ai');
+ await context.close();
+ const nojs=await browser.newContext({javaScriptEnabled:false});const fallback=await nojs.newPage();await fallback.goto(base+'/');await fallback.getByRole('link',{name:'Open workspace',exact:true}).waitFor();await nojs.close();
+ console.log('PASS fresh cloak, mobile bounds, 1.012s redirect, query/hash and storage preservation, app base URL, direct entry/reload without loop, no-JS link');
+}finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}

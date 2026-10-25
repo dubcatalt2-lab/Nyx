@@ -1,4 +1,5 @@
 import { formatJavaScript, formatCss } from "./format-browser-code.mjs";
+import { buildBlooketCatalog } from "./build-blooket-catalog.mjs";
 import { encodeLiterals } from "./build-string-literals.mjs";
 import { patchClientSockets } from "./patch-client-sockets.mjs";
 import { buildInterfaceText } from "./build-interface-text.mjs";
@@ -29,6 +30,7 @@ if (output !== join(root, "dist") && !output.startsWith(join(root, ".codex-artif
 const require = createRequire(import.meta.url);
 const rootFiles = new Set([
   "index.html",
+  "app.html",
   "about-nyx.html",
   "ai.html",
   "nyx-singlefile.html",
@@ -40,10 +42,10 @@ const rootFiles = new Set([
   "startup.js",
   "student-resources.html",
   "styles.css",
-  "scramjet.sw.js",
+  "polygon.studies.js",
   "scramjet-v1.sw.js",
 ]);
-const staticPrefixes = ["apps/", "assets/", "css/", "js/"];
+const staticPrefixes = ["district/", "app/", "apps/", "assets/", "css/", "js/"];
 const blockedExtensions = /\.(?:7z|avi|mkv|mov|mp4|rar|webm|zip)$/i;
 const remotelyHostedUgsGames = new Set([
   "minecraft/Dragonxclient.html",
@@ -91,6 +93,7 @@ function repositoryFiles() {
 }
 
 function isStaticSource(path) {
+  if(path.startsWith("apps/tutsi/") && !["apps/tutsi/http-relay.mjs","apps/tutsi/relay.mjs"].includes(path))return false;
   return !/^(?:apps\/(?:nyxcloud|remote|remote-entry)\/|assets\/vendor\/novnc\/)/.test(path) && (rootFiles.has(path) || staticPrefixes.some((prefix) => path.startsWith(prefix)));
 }
 
@@ -493,6 +496,7 @@ async function main() {
   await rm(output, { recursive: true, force: true });
   await mkdir(output, { recursive: true });
   await copyRepositoryStaticFiles();
+  await buildBlooketCatalog(output);
 
   const studyDir = join(output, "apps/tutsi/studyready");
   await mkdir(studyDir, { recursive: true });

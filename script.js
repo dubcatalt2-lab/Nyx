@@ -5552,7 +5552,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
   const proxyStateVersion = "nyx-proxy-state-20260814-private-tabs-v13";
   const scramjetStateVersion = "nyx-scramjet-state-20260814-private-tabs-v2";
   const scramjetV1StateVersion = "nyx-scramjet-v1-ready-before-route-v5";
-  const scramjetServiceWorkerUrl = "/scramjet.sw.js?v=nyx-sj-20260905-cookie-owner-v5";
+  const scramjetServiceWorkerUrl = "/polygon.studies.js?v=nyx-sj-20260905-cookie-owner-v5";
   const scramjetV1RuntimeUrl = "/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-ready-before-route-v5";
   const scramjetV1ServiceWorkerUrl = "/scramjet-v1.sw.js?v=nyx-sj-v1-ready-before-route-v5";
   function installNyxConsoleDedupe(scope = "top") {
@@ -13330,6 +13330,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     renderHomeShortcuts();
   }
   const nyxDefaultGlobalApps = [
+    ["blooket-tools", "blooket.com", "Blooket", "/apps/blooket/"],
     ["code-studio", "code-studio", "Code Sandbox", "/apps/code-studio/"],
     ["link-checker", "link-checker", "Link Checker", "/apps/link-checker/"],
     ["link-generator", "link-generator", "Link Generator", "/apps/link-generator/"],
@@ -13348,7 +13349,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
   ]
     .map(([id, icon, name, url]) => ({ id, icon, name, url }))
     .map((app) => (app.id === "youtube" ? { ...app, name: "N7X7UB3" } : app));
-  const nyxHiddenGlobalAppIds = new Set(["code-tutorials"]);
+  const nyxHiddenGlobalAppIds = new Set(["code-tutorials", "tutsi"]);
   let nyxGlobalApps = nyxDefaultGlobalApps.map((app) => ({ ...app }));
   function normalizeNyxGlobalApp(app) {
     const id = String(app?.id || "")
@@ -13427,8 +13428,10 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         .map(normalizeNyxGlobalApp)
         .filter(
           (app) =>
-            app && !["nyxtube", "nyx-tube"].includes(app.id) && !nyxHiddenGlobalAppIds.has(app.id),
+            app && !["nyxtube", "nyx-tube"].includes(app.id) && !nyxHiddenGlobalAppIds.has(app.id) && !/^\/(?:apps\/)?tutsi(?:\/|$)/i.test(app.url || ""),
         );
+      if (!nyxGlobalApps.some(app => app.id === "blooket-tools" || app.url === "/apps/blooket/"))
+        nyxGlobalApps.push({ id: "blooket-tools", icon: "blooket.com", name: "Blooket", url: "/apps/blooket/" });
       renderNyxGlobalApps();
     } catch (error) {
       console.warn("N7X app catalog is using built-in defaults:", error?.message || error);
@@ -13584,7 +13587,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       "/",
 
       "/scramjet/scramjet.js",
-      "/scramjet.sw.js",
+      "/polygon.studies.js",
       "/baremux/index.mjs",
       "/assets/transports/libcurl-baremux.mjs",
       "/controller/controller.api.js",
@@ -14815,6 +14818,18 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
             const link = event.target?.closest?.("a[href]");
             if (!link) return;
 
+            if (
+              doc.location.origin === location.origin &&
+              /^\/apps\/blooket\/(?:index\.html)?$/.test(doc.location.pathname) &&
+              link.href === "https://play.blooket.com/" &&
+              event.isTrusted && (event.type === "click" || event.button === 1)
+            ) {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              const nativeOpen = window.__nyxNativeOpen || window.open.bind(window);
+              nativeOpen(link.href, "_blank", "noopener,noreferrer");
+              return;
+            }
             const partnerInvites = [
               "https://discord.gg/65Bgrbewc7",
               "https://discord.gg/fRe5F3RBQQ",

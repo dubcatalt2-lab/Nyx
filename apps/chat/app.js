@@ -1572,9 +1572,10 @@
     dialog.setAttribute("aria-label", title);
     dialog.setAttribute("data-no-interface-text", "");
     const heading = document.createElement("h2"); heading.textContent = title;
-    const close = document.createElement("button"); close.type = "button"; close.textContent = "Close";
+    const close = svgButton("close", "chat-dialog-close", "Close");
     close.addEventListener("click", () => dialog.close());
-    dialog.append(heading, close);
+    const header = document.createElement("header"); header.className = "chat-dialog-header"; header.append(heading, close);
+    dialog.append(header);
     dialog.addEventListener("close", () => dialog.remove(), {once:true});
     document.body.append(dialog);
     return dialog;
@@ -5623,9 +5624,18 @@
     const scope = {...state.active}, key = scopeKey(), uid = state.me?.uid;
     const originalText = message.text || "";
     const dialog = chatDialog("Edit message"), form = document.createElement("form"), input = document.createElement("textarea"), error = document.createElement("p"), save = document.createElement("button");
+    dialog.classList.add("chat-edit-dialog");
     input.value = originalText; input.maxLength = 1000; input.rows = 5; input.setAttribute("aria-label", "Edit message text");
     error.setAttribute("role", "alert"); save.type = "submit"; save.textContent = "Save changes";
-    form.append(input, error, save); dialog.append(form);
+    const label = document.createElement("label"); label.textContent = "Message"; label.append(input);
+    const hint = document.createElement("span"); hint.className = "chat-edit-count"; hint.setAttribute("aria-live", "polite");
+    const updateCount = () => { hint.textContent = `${input.value.length} / ${input.maxLength}`; };
+    input.addEventListener("input", updateCount); updateCount();
+    const cancel = document.createElement("button"); cancel.type = "button"; cancel.textContent = "Cancel"; cancel.addEventListener("click", () => dialog.close());
+    save.className = "chat-edit-save";
+    const footer = document.createElement("footer"); footer.className = "chat-dialog-actions"; footer.append(hint, cancel, save);
+    form.append(label, error, footer); dialog.append(form);
+    input.addEventListener("keydown", event => { if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) { event.preventDefault(); form.requestSubmit(); } });
     form.addEventListener("submit", async event => {
       event.preventDefault(); if (save.disabled || state.me?.uid !== uid) return;
       save.disabled = true; error.textContent = "";

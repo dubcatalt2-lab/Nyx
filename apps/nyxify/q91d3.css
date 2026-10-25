@@ -1,5 +1,5 @@
 html body.q91d3 {
-  --app-bg: #101314;
+  --app-bg: #000;
   --app-panel: rgba(18, 24, 23, .72);
   --app-raised: rgba(211, 239, 221, .1);
   --app-field: rgba(22, 30, 27, .65);
@@ -8,7 +8,7 @@ html body.q91d3 {
   --app-line: rgba(220, 239, 229, .09);
   --accent: #a6e2c4 !important;
   --accent-rgb: 166, 226, 196 !important;
-  --surface: rgba(18, 25, 22, .65);
+  --surface: rgba(4, 4, 6, .76);
   --dim: #99a6a0;
   --hover: rgba(210, 235, 221, .065);
   --selected: rgba(166, 226, 196, .09);
@@ -23,14 +23,14 @@ html body.q91d3 {
   inset: -30px;
   z-index: -1;
   pointer-events: none;
-  background-image: linear-gradient(rgba(9, 15, 13, .65), rgba(8, 13, 11, .8)), var(--q58e6-wallpaper, url("/assets/backgrounds/@r61db98a407ce!.jpg"));
+  background-image: var(--q58e6-wallpaper, url("/assets/backgrounds/@r61db98a407ce!.jpg"));
   background-size: cover;
   background-position: center;
-  filter: blur(18px) grayscale(var(--q58e6, 0));
+  filter: blur(24px) brightness(.28) grayscale(var(--q58e6, 0));
 }
 
 .q91d3 header {
-  background: rgba(12, 19, 16, .65);
+  background: rgba(3, 3, 5, .68);
   backdrop-filter: blur(24px);
   border-bottom: 1px solid var(--app-line)
 }

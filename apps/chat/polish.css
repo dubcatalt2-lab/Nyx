@@ -53,7 +53,7 @@ html body .chat-app::before {
   inset: 0;
   pointer-events: none;
   background: var(--chat-wallpaper, url('/assets/backgrounds/@r61db98a407ce!.jpg')) center/cover no-repeat;
-  filter: blur(18px) brightness(.65) grayscale(var(--q64b7, 0));
+  filter: blur(24px) brightness(.28) grayscale(var(--q64b7, 0));
   opacity: .85;
   transform: scale(1.06);
 }
@@ -396,14 +396,30 @@ html body {
   color: #aaa6bd
 }
 
-.chat-preferences-dialog { width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: auto; padding: 24px; background: #101014; color: #eee; border: 1px solid #393940; border-radius: 16px; }
-.chat-preferences-dialog::backdrop { background: #000a; }
+.chat-preferences-dialog { box-sizing: border-box; width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; padding: 24px; background: rgba(3, 3, 6, .88); color: #f5f5f7; border: 1px solid #ffffff20; border-radius: 20px; box-shadow: 0 24px 90px #000b; backdrop-filter: blur(32px) saturate(.85); -webkit-backdrop-filter: blur(32px) saturate(.85); font-family: system-ui, sans-serif; }
+.chat-preferences-dialog::backdrop { background: #0008; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
 .chat-preferences-dialog h2 { margin: 0 0 16px; }
 .chat-preferences-dialog p { color: #bbb; line-height: 1.5; overflow-wrap: anywhere; }
 .chat-preferences-dialog label { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin: 20px 0; }
-.chat-preferences-dialog button, .chat-preferences-dialog select, .chat-preferences-dialog textarea { font: inherit; color: inherit; background: #202026; border: 1px solid #484850; border-radius: 8px; padding: 10px; max-width: 100%; }
+.chat-preferences-dialog button, .chat-preferences-dialog select, .chat-preferences-dialog textarea { font: inherit; color: inherit; background: #ffffff08; border: 1px solid #ffffff24; border-radius: 10px; padding: 10px 14px; max-width: 100%; }
 .chat-preferences-dialog textarea { width: 100%; box-sizing: border-box; resize: vertical; margin-top: 16px; }
 .chat-preferences-dialog button { cursor: pointer; }
+.chat-dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+.chat-dialog-header h2 { margin: 0; font-family: system-ui, sans-serif; font-size: 21px; font-weight: 650; letter-spacing: -.4px; }
+.chat-preferences-dialog .chat-dialog-close { width: 36px; height: 36px; padding: 8px; display: grid; place-items: center; border-color: transparent; background: transparent; color: #aaa; }
+.chat-dialog-close svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; }
+.chat-edit-dialog form > label { display: block; margin: 0; font-size: 13px; color: #aaa; }
+.chat-edit-dialog form textarea { margin-top: 9px; min-height: 144px; max-height: 42dvh; line-height: 1.55; padding: 14px; background: #0005; color: #f5f5f7; font-size: 15px; outline: none; }
+.chat-edit-dialog textarea:focus { border-color: #bca8ff99; box-shadow: 0 0 0 3px #bca8ff14; }
+.chat-edit-dialog [role=alert]:empty { display: none; }
+.chat-edit-dialog [role=alert] { color: #ffb2bd; font-size: 13px; }
+.chat-dialog-actions { display: flex; align-items: center; gap: 10px; margin-top: 20px; }
+.chat-edit-count { margin-right: auto; color: #92929e; font-size: 12px; font-variant-numeric: tabular-nums; }
+.chat-preferences-dialog .chat-edit-save { background: #d4c6ff; color: #171022; border-color: transparent; font-weight: 600; }
+.chat-preferences-dialog button:hover { background: #ffffff14; }
+.chat-preferences-dialog .chat-edit-save:hover { background: #e3daff; }
+.chat-preferences-dialog button:disabled { opacity: .45; cursor: wait; }
+@media(max-width:440px) { .chat-preferences-dialog { padding: 20px; } .chat-dialog-actions { flex-wrap: wrap; } .chat-edit-count { flex-basis: 100%; } .chat-dialog-actions button { flex: 1; min-height: 42px; } }
 .message-options { position: absolute; right: 94px; top: 4px; width: 32px; height: 32px; border: 0; border-radius: 6px; background: #202026; color: #ddd; font-size: 22px; cursor: pointer; z-index: 2; }
 .message:has(.message-options) .message-meta { padding-right: 130px; }
 .message-options:hover, .message-options:focus-visible { background: #383840; color: white; }

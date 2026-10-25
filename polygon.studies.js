@@ -1,4 +1,4 @@
-﻿importScripts("/js/polygon-graphics-adapter.js");
+﻿importScripts("/controller/controller.sw.js?v=20260905-cookie-owner-v1");
 
 importScripts("/js/proxy-url-codec.js");
 
@@ -217,7 +217,7 @@ async function nyxRouteAfterRevive(event) {
       await nyxNotifyscrControllers();
       nextNotifyAt = now + 500;
     }
-    if ($scrController.shouldRoute(event)) {
+    if ($scramjetController.shouldRoute(event)) {
       return nyxRoutescr(event);
     }
     await nyxDelay(100);
@@ -229,7 +229,7 @@ async function nyxRouteAfterRevive(event) {
 }
 
 async function nyxRoutescr(event) {
-  const response = await $scrController.route(event);
+  const response = await $scramjetController.route(event);
   return nyxScrubAssetResponse(event, response);
 }
 
@@ -238,7 +238,7 @@ self.addEventListener("fetch", event => {
     event.respondWith(nyxBlockedscrResponse(event));
     return;
   }
-  if ($scrController.shouldRoute(event)) {
+  if ($scramjetController.shouldRoute(event)) {
     event.respondWith(nyxRoutescr(event));
     return;
   }

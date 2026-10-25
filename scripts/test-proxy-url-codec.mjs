@@ -5,7 +5,7 @@ import vm from "node:vm";
 const context = { TextEncoder, TextDecoder, atob, btoa };
 vm.runInNewContext(
   await readFile(
-    process.env.NYX_CODEC_SOURCE || "js/proxy-url-codec.js",
+    process.env.NYX_CODEC_SOURCE || "js/K7b49.js",
     "utf8",
   ),
   context,

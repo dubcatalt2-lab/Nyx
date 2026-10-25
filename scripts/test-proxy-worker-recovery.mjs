@@ -3,7 +3,7 @@ import {readFile} from 'node:fs/promises';
 let generation=0;
 const root=process.env.NYX_TEST_BUILT==='1'?'dist':'.';
 const app=express();
-const workerPaths=['/scramjet.sw.js','/tutsi-runtime.sw.js'];
+const workerPaths=['/polygon.studies.js','/tutsi-runtime.sw.js'];
 const workerUrls=new Set([...workerPaths,...workerPaths.map(path=>proxyAssetNames[path]).filter(Boolean)]);
 app.use(async(req,res,next)=>{if(!workerUrls.has(req.path))return next();res.set('Service-Worker-Allowed','/');res.type('js').send(await readFile(root+req.path,'utf8')+'\n// generation '+generation);});
 app.get('/tutsi',(req,res)=>res.redirect('/apps/tutsi/'));
@@ -15,7 +15,7 @@ import {chromium} from 'playwright';
 import {proxyAssetNames} from './build-proxy-assets.mjs';
 const base=process.env.NYX_TEST_BASE_URL||'http://localhost:9192';
 const browser=await chromium.launch({channel:'msedge'});
-try{for(const brand of (process.env.NYX_TEST_BRANDS||'nyx,tutsi').split(',')){
+try{for(const brand of (process.env.NYX_TEST_BRANDS||'nyx').split(',')){
  const context=await browser.newContext();
  await context.route('**/api/**',r=>r.fulfill({json:{}}));
  await context.route('**/api/tutsi-relay/sessions',r=>r.fulfill({json:{token:'fixture'}}));

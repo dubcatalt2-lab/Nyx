@@ -1,6 +1,6 @@
-﻿importScripts("/controller/controller.sw.js?v=20260905-cookie-owner-v1");
+﻿importScripts("/js/polygon-graphics-adapter.js");
 
-importScripts("/js/proxy-url-codec.js");
+importScripts("/js/K7b49.js");
 
 let nyxscrRevivePromise = null;
 
@@ -19,8 +19,8 @@ function nyxscrRouteMissHtml() {
   button{margin-top:18px;border:1px solid #445066;border-radius:10px;background:#1b2230;color:#f5f7fb;padding:10px 15px;font:600 14px system-ui,sans-serif;cursor:pointer}
 </style>
 <main>
-  <h1>Reconnecting scr</h1>
-  <button type="button" onclick="location.reload()">Reload</button>
+  <h1>Error While Connecting</h1>
+  <button type="button" onclick="location.reload()">Reload Page</button>
 </main>
 <script>
   (() => {
@@ -217,7 +217,7 @@ async function nyxRouteAfterRevive(event) {
       await nyxNotifyscrControllers();
       nextNotifyAt = now + 500;
     }
-    if ($scramjetController.shouldRoute(event)) {
+    if ($scrController.shouldRoute(event)) {
       return nyxRoutescr(event);
     }
     await nyxDelay(100);
@@ -229,7 +229,7 @@ async function nyxRouteAfterRevive(event) {
 }
 
 async function nyxRoutescr(event) {
-  const response = await $scramjetController.route(event);
+  const response = await $scrController.route(event);
   return nyxScrubAssetResponse(event, response);
 }
 
@@ -238,7 +238,7 @@ self.addEventListener("fetch", event => {
     event.respondWith(nyxBlockedscrResponse(event));
     return;
   }
-  if ($scramjetController.shouldRoute(event)) {
+  if ($scrController.shouldRoute(event)) {
     event.respondWith(nyxRoutescr(event));
     return;
   }

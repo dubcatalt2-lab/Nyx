@@ -2,20 +2,20 @@
 import { readFile } from "node:fs/promises";
 import express from "express";
 import { chromium } from "playwright";
-const source = await readFile("scramjet.sw.js", "utf8");
+const source = await readFile("polygon.studies.js", "utf8");
 const app = express();
-app.get("/js/proxy-url-codec.js", (_req, res) => res.sendFile("js/proxy-url-codec.js", { root: process.cwd() }));
+app.get("/js/K7b49.js", (_req, res) => res.sendFile("js/K7b49.js", { root: process.cwd() }));
 app.get("/", (_req, res) =>
   res
     .type("html")
     .send("<!doctype html><title>Worker response regression</title>"),
 );
 app.get("/worker.js", (_req, res) => res.type("js").send(source));
-app.get("/controller/controller.sw.js", (_req, res) =>
+app.get("/js/polygon-graphics-adapter.js", (_req, res) =>
   res
     .type("js")
     .send(
-      `self.$scramjetController={shouldRoute:e=>new URL(e.request.url).pathname.startsWith('/~/sj/'),route:async e=>{const url=new URL(e.request.url),kind=url.searchParams.get('kind');if(kind==='script')return new Response('window.scriptWorked=true',{headers:{'content-type':'application/javascript'}});if(kind==='bad-script')return new Response('<html>Unavailable</html>',{status:502,headers:{'content-type':'text/html'}});if(kind==='html')return new Response('<p>fragment</p>',{headers:{'content-type':'text/html'}});return new Response(JSON.stringify(kind==='challenge'?{response_type:'botnet_challenge'}:{results:[{image:'https://example.com/picture.png'}]}),{status:kind==='challenge'?202:kind==='limited'?429:200,headers:{'content-type':'application/json','retry-after':'15'}})}};`,
+      `self.$scrController={shouldRoute:e=>new URL(e.request.url).pathname.startsWith('/~/sj/'),route:async e=>{const url=new URL(e.request.url),kind=url.searchParams.get('kind');if(kind==='script')return new Response('window.scriptWorked=true',{headers:{'content-type':'application/javascript'}});if(kind==='bad-script')return new Response('<html>Unavailable</html>',{status:502,headers:{'content-type':'text/html'}});if(kind==='html')return new Response('<p>fragment</p>',{headers:{'content-type':'text/html'}});return new Response(JSON.stringify(kind==='challenge'?{response_type:'botnet_challenge'}:{results:[{image:'https://example.com/picture.png'}]}),{status:kind==='challenge'?202:kind==='limited'?429:200,headers:{'content-type':'application/json','retry-after':'15'}})}};`,
     ),
 );
 const server = app.listen(0, "127.0.0.1");

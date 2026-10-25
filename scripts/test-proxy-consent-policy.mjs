@@ -6,7 +6,7 @@ import {rewriteRuntimeNames} from './build-runtime-names.mjs';
 for(const built of [false,true]){
 const context=vm.createContext({URL,Response,Headers,importScripts(){},setTimeout(){},TextEncoder,TextDecoder,btoa,atob,self:{addEventListener(){}}});
 const source=readFileSync('polygon.studies.js','utf8')+';this.shouldBlock=nyxShouldBlockscrRequest;';
-vm.runInContext(readFileSync('js/proxy-url-codec.js','utf8'),context);
+vm.runInContext(readFileSync('js/K7b49.js','utf8'),context);
 context.self.NyxProxyUrlCodec=context.NyxProxyUrlCodec;
 vm.runInContext(built?rewriteRuntimeNames(source):source,context);
 const blocked=url=>context.shouldBlock({request:{url:`https://nyx.test/${built?'4otig':'~/sj'}/session/frame/`+context.self.NyxProxyUrlCodec.encode(url)}});

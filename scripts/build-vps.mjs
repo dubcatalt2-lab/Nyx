@@ -351,7 +351,7 @@ async function minifyFirstPartyBrowserRuntimes() {
   );
   const targets = [...new Set([...trackedRuntimes, ...generatedRuntimes])]
     .sort()
-    .map((path) => ({ path, topLevel: true }));
+    .map((path) => ({ path, topLevel: path !== "js/polygon-graphics-adapter.js" }));
   const nameCache = {};
   let sourceBytes = 0;
   let outputBytes = 0;

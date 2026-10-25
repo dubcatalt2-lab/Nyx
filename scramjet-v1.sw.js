@@ -1,21 +1,16 @@
-importScripts("/scramjet-v1/scramjet.all.js?v=nyx-sj-v1-ready-before-route-v5");
+importScripts("https://cdn.jsdelivr.net/gh/zaka13alt/sjv1assets@main/s.js");
 
-const { ScramjetServiceWorker } = $scramjetLoadWorker();
-const scramjet = new ScramjetServiceWorker();
-const scramjetReady = scramjet.loadConfig();
+const { __99416ServiceWorker } = __99416LoadWorker();
+const __99416 = new __99416ServiceWorker();
 
-self.addEventListener("install", event => {
-  event.waitUntil(self.skipWaiting());
-});
+async function handleRequest(event) {
+	await __99416.loadConfig();
+	if (__99416.route(event)) {
+		return __99416.fetch(event);
+	}
+	return fetch(event.request);
+}
 
-self.addEventListener("activate", event => {
-  event.waitUntil(self.clients.claim());
-});
-
-self.addEventListener("fetch", event => {
-  event.respondWith((async () => {
-    await scramjetReady;
-    if (scramjet.route(event)) return scramjet.fetch(event);
-    return fetch(event.request);
-  })());
+self.addEventListener("fetch", (event) => {
+	event.respondWith(handleRequest(event));
 });

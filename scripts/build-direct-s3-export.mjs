@@ -2,6 +2,7 @@ import {cp,mkdir,readFile,writeFile,readdir,stat} from 'node:fs/promises';
 import {resolve,join} from 'node:path';import {createHash} from 'node:crypto';
 import {directS3Origin} from '../lib/static-host-access.mjs';
 import {minify} from 'terser';
+import {connectionCheckPage} from './s3-connection-check.mjs';
 const argument=name=>process.argv.find(a=>a.startsWith('--'+name+'='))?.slice(name.length+3);
 const origin=directS3Origin(argument('origin')||''),backend=argument('backend')||'https://nyxlearning.org';
 if(new URL(backend).origin!==backend||!backend.startsWith('https://'))throw Error('Use a backend HTTPS origin without a path.');
@@ -26,6 +27,7 @@ for(const name of new Set(['index.html',...Object.keys(pages)])){
  const compiled=await minify(boot,{mangle:{toplevel:true},compress:true,format:{comments:false}});
  await writeFile(file,'<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nyx</title></head><body><script>'+compiled.code+'</script></body></html>');
 }
+await writeFile(join(output,'site','connection-check.html'),await connectionCheckPage(origin,backend));
 const files=[];async function scan(dir=''){for(const item of await readdir(join(output,'site',dir),{withFileTypes:true})){const name=join(dir,item.name);if(item.isDirectory())await scan(name);else{const bytes=await readFile(join(output,'site',name));files.push({path:name.replaceAll('\\','/'),bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')});}}}await scan();
 await writeFile(join(output,'manifest.json'),JSON.stringify({origin,backend,entryUrl,files},null,2));
 await cp('static-export/upload-direct-s3.mjs',join(output,'upload.mjs'));

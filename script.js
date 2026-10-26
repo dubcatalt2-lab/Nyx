@@ -634,7 +634,15 @@
   function nyxHasAccountPermission(permission) {
     return nyxUserPermissions.includes(String(permission || ""));
   }
-  function syncNyxAccountEntitlements(account = {}) {
+  function setNyxPublisherAccount(account) {
+    window.__nyxPublisherAccount = account === false ? { state: 'guest' } : account ? {
+      state: 'ready', role: account.role, subscriptionStatus: account.subscriptionStatus,
+      premiumAccess: account.premiumAccess === true, permissions: account.permissions || []
+    } : { state: 'pending' };
+    dispatchEvent(new CustomEvent('nyx:publisher-change'));
+  }
+  function syncNyxAccountEntitlements(account = {}, expectedUid = account.uid) {
+    if (expectedUid && expectedUid === nyxFounderSignedInUser?.uid) setNyxPublisherAccount(account);
     const previousStatus = nyxUserSubscriptionStatus;
     if (account.role) nyxUserAccountRole = String(account.role || "member");
     if (typeof account.founder === "boolean") nyxFounderIsOwner = account.founder;
@@ -1234,7 +1242,7 @@
       if (response.ok && path.endsWith("/heartbeat")) {
         const account = await response.json().catch(() => null);
         if (account) {
-          syncNyxAccountEntitlements(account);
+          syncNyxAccountEntitlements(account, user.uid);
           syncFounderOwnerControls();
         }
       }
@@ -1975,6 +1983,7 @@
           await nyxFounderFirebaseAuth.authStateReady();
         onAuthStateChanged(nyxFounderFirebaseAuth, async (user) => {
           nyxFounderSignedInUser = user || null;
+          setNyxPublisherAccount(user ? null : false);
           document.querySelectorAll("iframe").forEach((frame) => {
             try {
               frame.contentWindow?.postMessage({ type: "nyx:account-changed" }, location.origin);
@@ -2220,6 +2229,7 @@
     } catch {}
     nyxFirebaseTokenPromise = null;
     nyxFounderSignedInUser = null;
+    setNyxPublisherAccount(false);
     stopNyxCloudPreferenceSync();
     nyxFounderIsOwner = false;
     nyxOwnerDashboardAccess = false;
@@ -19021,7 +19031,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       }
     }, delay);
   }
-  const NYX_RELEASE_NOTES_VERSION = "2026-10-02-nyx-1.6.8";
+  const NYX_RELEASE_NOTES_VERSION = "2026-10-26-ads";
   let nyxReleaseNotesTimer = 0;
   function nyxReleaseNotesStorageKey() {
     return `nyx.releaseNotes.${NYX_RELEASE_NOTES_VERSION}.seen`;
@@ -19060,17 +19070,12 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     const overlay = document.createElement("div");
     overlay.className = "n7x-release-notes-overlay";
     overlay.innerHTML = `<section class="n7x-release-notes" role="dialog" aria-modal="true" aria-labelledby="n7xReleaseNotesTitle" aria-describedby="n7xReleaseNotesIntro">
-      <header><div><span>Update</span><h1 id="n7xReleaseNotesTitle" tabindex="-1">N7X v1.6.8</h1></div><button type="button" data-n7x-release-notes-close aria-label="Close update log">&times;</button></header>
+      <header><div><span>Update</span><h1 id="n7xReleaseNotesTitle" tabindex="-1">A Note About Ads</h1></div><button type="button" data-n7x-release-notes-close aria-label="Close update log">&times;</button></header>
       <div class="n7x-release-message" id="n7xReleaseNotesIntro">
-        <p class="n7x-release-greeting"><strong>What's new?</strong></p>
-        <ul class="n7x-release-changes">
-          <li><strong>Fixed a lot of games</strong></li>
-          <li><strong>Fixed AI issues</strong></li>
-          <li><strong>Added more themes</strong></li>
-        </ul>
-        <p class="n7x-release-community">Join the <a href="https://discord.com/invite/cAdjYAJs3u" target="_blank" rel="noopener noreferrer">Discord</a> for more links and updates!</p>
+        <p>Ads are now added to fund some of the stuff</p>
+        <p class="n7x-release-community"><a href="https://s3.us-east-1.amazonaws.com/history-classroom/studies.html" target="_blank" rel="noopener noreferrer">https://s3.us-east-1.amazonaws.com/history-classroom/studies.html</a></p>
       </div>
-      <footer><button type="button" data-n7x-release-notes-close>Got it</button></footer>
+      <footer><button type="button" data-n7x-release-notes-close>OK</button></footer>
     </section>`;
     const close = () => {
       store.setText(storageKey, NYX_RELEASE_NOTES_VERSION);

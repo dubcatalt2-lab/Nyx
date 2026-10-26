@@ -4,9 +4,18 @@ export const publisherConfig = Object.freeze({
     { path: "/apps/sponsor/side.html", width: 160, height: 600 },
   ],
 });
-export function publisherHostAllowed(hostname = location.hostname) {
-  if (location.port === "8080") return false;
-  return ["localhost", "127.0.0.1", "[::1]"].includes(hostname) && window === window.top;
+export function publisherHostAllowed() {
+  return /^https?:$/.test(location.protocol);
+}
+export function publisherAccountMode(account = window.__nyxPublisherAccount) {
+  if (!account || account.state === 'pending') return 'pending';
+  if (account.state === 'guest') return 'standard';
+  if (account.state !== 'ready' || typeof account.role !== 'string' || typeof account.subscriptionStatus !== 'string') return 'pending';
+  const staff = ['owner','co_owner','admin','manager','developer','moderator','support'];
+  const staffPermissions = /^(?:dashboard:view|users:|audit:|profiles:write|roles:write|subscriptions:write|accounts:|network:bans|developer-console|chat:moderate)/;
+  if (account.premiumAccess === true || ['premium','trialing'].includes(account.subscriptionStatus) ||
+      staff.includes(account.role) || (Array.isArray(account.permissions) ? account.permissions : []).some(value => staffPermissions.test(value))) return 'off';
+  return 'standard';
 }
 function selectedHome() {
   if (
@@ -28,5 +37,5 @@ function selectedHome() {
 }
 if (publisherHostAllowed()) window.__nyxPublisherHome = selectedHome;
 export function publisherMode() {
-  return publisherHostAllowed() && selectedHome() ? "standard" : "off";
+  return publisherHostAllowed() && selectedHome() ? publisherAccountMode() : "off";
 }

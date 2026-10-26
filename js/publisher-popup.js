@@ -21,14 +21,14 @@ if (publisherHostAllowed() && navigator.locks) {
       )
         return;
       const home = event.target.closest(".q4f959b063679fe3afa.n7x-minimal-home:not(.hidden)");
-      if (!home || window.__nyxPublisherHome?.() !== home || publisherMode() === "off") return;
+      if (!home || window.__nyxPublisherHome?.() !== home || publisherMode() !== "standard") return;
       void navigator.locks
         .request("n7x.publisher.home", { ifAvailable: true }, (lock) => {
           if (
             !lock ||
             !navigator.userActivation?.isActive ||
             window.__nyxPublisherHome?.() !== home ||
-            publisherMode() === "off"
+            publisherMode() !== "standard"
           )
             return;
           try {

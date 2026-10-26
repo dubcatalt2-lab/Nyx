@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parse } from "acorn";
+import postcss from "postcss";
+import selectorParser from "postcss-selector-parser";
 
 const targeted = /game|librar(?:y|ies)|play|arcade|^gif-(?:picker|grid)$|voice-room|voice-speaking|voice-screen-expanded|voice-member-uid|voice-open/i;
 const property = (node) => node?.computed ? node.property?.value : node?.property?.name;
@@ -88,6 +90,17 @@ export function createDomHookTransform() {
   const selectors = (value) => value
     .replace(/([.#])([A-Za-z_][\w-]*)/g, (_, prefix, name) => prefix + replaceToken(prefix === "." ? "class" : "id", name))
     .replace(/\bdata-[\w-]+\b/g, name => replaceToken("attribute", name));
+  const embeddedStyles = (value) => {
+    if (/<[a-z]/i.test(value)) return value.replace(/(<style\b[^>]*>)([\s\S]*?)(<\/style>)/gi,
+      (_, open, css, close) => open + selectors(css) + close);
+    try {
+      const css = postcss.parse(value);
+      if (!css.nodes.length || css.nodes.some(node => !['rule', 'atrule', 'comment'].includes(node.type))) return value;
+      let rules = 0;
+      css.walkRules(rule => { selectorParser().astSync(rule.selector); rules++; });
+      return rules ? selectors(value) : value;
+    } catch { return value; }
+  };
   const markup = (value) => value.replace(attributes, (_, name, quote, contents) => {
     const attr = replaceToken("attribute", name);
     const content = name === "class" ? replaceWords("class", contents) :
@@ -134,7 +147,7 @@ export function createDomHookTransform() {
         if (call.arguments[0] === node) result = replaceToken("attribute", result);
         else if (["class", "id"].includes(textOf(call.arguments[0]))) result = replaceWords(textOf(call.arguments[0]), result);
       }
-      if (/\{[^}]*[;:]/s.test(value)) result = selectors(result);
+      if (/\{[^}]*[;:]/s.test(value)) result = embeddedStyles(result);
       if (result === value) return;
       const rendered = isString ? JSON.stringify(result) : JSON.stringify(result).slice(1, -1).replace(/`/g, "\\`").replace(/\$\{/g, "\\${");
       edits.push({ start: node.start, end: node.end, value: rendered });

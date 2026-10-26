@@ -9,6 +9,7 @@ const executable=source=>JSON.stringify(parse(source,{ecmaVersion:'latest',allow
 assert.equal(executable(installGameAdProtection.toString().slice(installGameAdProtection.toString().indexOf('{')+1,-1)),executable(original.slice('(() => {'.length,-'})();'.length)));
 assert(isAdUrl('https://cdn.playwire.com/sdk.js'));
 assert(isAdUrl('https://example.com/poki-sdk.js'));
+assert(!isAdUrl('https://example.com/patch/js/poki-master-loader.js'),'The game engine bootstrap is not an advertising SDK');
 assert(!isAdUrl('https://playwire.com.example.org/game.js'));
 assert(!isAdUrl('https://example.org/game.js?next=doubleclick.net'));
 const browser=await chromium.launch();

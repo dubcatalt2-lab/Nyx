@@ -3,7 +3,7 @@
   window.__nyxGameViewport = true;
   const style = document.createElement("style");
   style.textContent =
-    "html,body{width:100%!important;height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#05070d}canvas,object,embed,ruffle-player,ruffle-object{max-width:100%;max-height:100%}[data-game-fill-parent]{width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;box-sizing:border-box!important}[data-game-fill-surface]{display:block!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;margin:0!important;transform:none!important;border:0!important;object-fit:contain}";
+    "html,body{width:100%!important;height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#05070d}canvas,object,embed,ruffle-player,ruffle-object{max-width:100%;max-height:100%}[data-game-fill-parent]{position:relative!important;inset:auto!important;transform:none!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;margin:0!important;padding:0!important;box-sizing:border-box!important}[data-game-fill-surface]{display:block!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;margin:0!important;transform:none!important;border:0!important;object-fit:contain}";
   (document.head || document.documentElement).append(style);
   let queued = false;
   function fit() {

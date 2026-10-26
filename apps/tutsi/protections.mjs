@@ -47,7 +47,7 @@ export function isAdUrl(value) {
     const host = new URL(value).hostname.toLowerCase();
     return (
       adHosts.some((domain) => host === domain || host.endsWith("." + domain)) ||
-      /(?:^|\/)(?:ads?|ad[-_.]?(?:loader|manager|script)|jump[_-]gamemonetize|poki-(?:master-loader|sdk))\.(?:js|mjs)(?:$|\/)/i.test(
+      /(?:^|\/)(?:ads?|ad[-_.]?(?:loader|manager|script)|jump[_-]gamemonetize|poki-sdk)\.(?:js|mjs)(?:$|\/)/i.test(
         new URL(value).pathname,
       ) ||
       (host === "serve.app.playsaurus.com" && new URL(value).pathname.includes("/ad-campaigns/"))

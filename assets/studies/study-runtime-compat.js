@@ -165,10 +165,25 @@
                 prepare();
                 const options = args[0];
                 if (options && typeof options === "object") {
+                  const baseUrl = options.baseUrl || document.baseURI;
+                  let scriptFolder = options.scriptFolder;
+                  // Construct concatenates its base and script folder for job workers.
+                  // Imported games sometimes supply an absolute folder under that base.
+                  if (typeof scriptFolder === "string" && /^https?:/i.test(scriptFolder)) {
+                    const bases = [baseUrl];
+                    try {
+                      const base = new URL(baseUrl);
+                      const proxied = /^\/gn-math-resource\/(https?)\/(.+)$/.exec(base.pathname);
+                      if (proxied) bases.push(proxied[1] + "://" + proxied[2]);
+                    } catch {}
+                    const matching = bases.find(base => scriptFolder.startsWith(base));
+                    if (matching) scriptFolder = scriptFolder.slice(matching.length);
+                  }
                   args = [
                     {
                       ...options,
-                      baseUrl: options.baseUrl || document.baseURI,
+                      baseUrl,
+                      ...(scriptFolder === undefined ? {} : {scriptFolder}),
                       ...(globalThis.origin === "null" ? { useWorker: false } : {}),
                     },
                     ...args.slice(1),

@@ -39,7 +39,7 @@ export function installGameAdProtection() {
     "venatusmedia.com",
   ]);
   const blockedPathPattern =
-    /(?:^|\/)(?:ads?|ad[-_.]?(?:loader|manager|script)|jump[_-]gamemonetize|poki-(?:master-loader|sdk))\.(?:js|mjs)(?:$|\/)/i;
+    /(?:^|\/)(?:ads?|ad[-_.]?(?:loader|manager|script)|jump[_-]gamemonetize|poki-sdk)\.(?:js|mjs)(?:$|\/)/i;
   const blockedCampaignPattern = /\/ad-campaigns\//i;
   const adElementSelector = [
     ".adsbygoogle",

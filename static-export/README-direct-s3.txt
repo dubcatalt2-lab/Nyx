@@ -1,7 +1,8 @@
 Direct S3 hosting
 
-The entry can use https://s3.amazonaws.com/BUCKET/studies.html.
-It redirects to https://BUCKET.s3.REGION.amazonaws.com before account code runs.
+The entry can use https://s3.REGION.amazonaws.com/BUCKET/studies.html.
+It frames https://BUCKET.s3.REGION.amazonaws.com while retaining the entry URL.
+Account code runs only inside the isolated bucket frame.
 The shared path-style origin must never hold app authentication or user storage.
 No CloudFront is required. This is a static frontend; the existing Nyx backend
 must stay online for authentication, AI, chat, uploads and relay services.

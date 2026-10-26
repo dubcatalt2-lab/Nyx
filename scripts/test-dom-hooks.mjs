@@ -18,6 +18,11 @@ document.getElementById('playButton').addEventListener('click',event=>{
 globalThis.optional=()=>document.querySelector('#missing')?.dataset?.gameMode;
 </script><script src="/interface.js"></script>`;
 const transform=createDomHookTransform();
+transform.collect('<div class="search game-card"></div>', 'assets/studies/embedded.html');
+const generatedScript='const guard = `<script>(() => { const parsed = new URL("https://game.test/?level=1"); window.result = parsed.search + parsed.hash; })()<\\/script>`;';
+assert.equal(transform.rewrite(generatedScript,'assets/studies/guard.js'),generatedScript,'Embedded JavaScript properties must not be interpreted as CSS class selectors');
+const embeddedStyle='const css = `.game-card { color:red; }`;';
+assert(transform.rewrite(embeddedStyle,'assets/studies/style.js').includes(domHookAlias('class','game-card')),'Actual CSS templates retain linked selectors');
 transform.collect('<span data-user-content>animation.gif</span>', 'assets/studies/fixture.html');
 transform.collect(html,"fixture.html");
 const output=transform.rewrite(html,"fixture.html");

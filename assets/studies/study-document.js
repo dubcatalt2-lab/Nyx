@@ -291,7 +291,7 @@ export function prepareGameDocument(html, path, sourceUrl) {
     .replace(/<script\b[^>]*googletagmanager[^>]*>[\s\S]*?<\/script>/gi, "")
     .replace(/<script\b[^>]*google-analytics[^>]*>[\s\S]*?<\/script>/gi, "")
     .replace(
-      /<script\b[^>]*(?:adinplay|imasdk|pagead2|googlesyndication|doubleclick|connect\.facebook|cdn\.r9x\.in|(?:\/|["'])ads?\.js(?:[?"']|$)|jump[_-]gamemonetize|poki-(?:master-loader|sdk)|html5\.api\.gamedistribution\.com)[^>]*>[\s\S]*?<\/script>/gi,
+      /<script\b[^>]*(?:adinplay|imasdk|pagead2|googlesyndication|doubleclick|connect\.facebook|cdn\.r9x\.in|(?:\/|["'])ads?\.js(?:[?"']|$)|jump[_-]gamemonetize|poki-sdk|html5\.api\.gamedistribution\.com)[^>]*>[\s\S]*?<\/script>/gi,
       "",
     )
     .replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi, (tag, attrs, code) =>

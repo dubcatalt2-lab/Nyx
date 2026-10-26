@@ -7,6 +7,7 @@ export const gameCdnHosts = new Set([
 
 export function repairGameResourcePath(pathname) {
   pathname = pathname
+    .replace(/^(\/gh\/bubbls\/UGS-Assets@[^/]+\/blumgi-rocket\/scripts\/project\/)main\.js$/, '$1main2.js')
     .replace(/\/genizy\/google-class(?=@|\/)/g, "/taskmaster773/google-class")
     .replace(
       /\/gh\/genizy\/ovo-3-dimension@[^/]+\//g,

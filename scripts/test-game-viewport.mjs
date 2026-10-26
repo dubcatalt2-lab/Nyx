@@ -1,13 +1,18 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {readFile} from 'node:fs/promises';
-import {prepareGameDocument} from '../assets/studies/study-document.js';
+import {pathToFileURL} from 'node:url';
+import {resolve} from 'node:path';
+const staticRoot=process.env.NYX_TEST_STATIC_ROOT||'.';
+const aliases=staticRoot==='.'?{}:JSON.parse(await readFile(staticRoot+'/frontend-assets.json','utf8')).aliases;
+const documentPath=aliases['/assets/studies/study-document.js']||'/assets/studies/study-document.js';
+const {prepareGameDocument}=await import(pathToFileURL(resolve(staticRoot+documentPath)));
 const browser=await chromium.launch();
 try {
  const page=await browser.newPage({viewport:{width:1100,height:700}}),requests=[];
  await page.route('https://fixture.test/**',async route=>{
    const url=new URL(route.request().url());requests.push(url.pathname);
-   if(url.pathname.startsWith('/assets/studies/'))return route.fulfill({contentType:'text/javascript',body:await readFile('.'+url.pathname)});
+   if(url.pathname.startsWith('/assets/studies/'))return route.fulfill({contentType:'text/javascript',body:await readFile(staticRoot+url.pathname)});
    if(url.pathname.startsWith('/gn-math-resource/'))return route.fulfill({contentType:'text/javascript',body:''});
    return route.fulfill({contentType:'text/html',body:'<!doctype html><body></body>'});
  });
@@ -18,7 +23,10 @@ try {
  await page.evaluate(html=>{const f=document.createElement('iframe');f.sandbox='allow-scripts';f.style='width:1100px;height:700px';f.srcdoc=html;document.body.append(f);},html);
  const frame=page.frames().find(f=>f.parentFrame());await frame.waitForSelector('canvas');await page.waitForTimeout(200);
  const rect=await frame.locator('canvas').boundingBox();assert(rect.width>=1000&&rect.height>=600,'Engine-sized canvas must remain visible');
- assert.equal(await frame.locator('canvas').evaluate(c=>getComputedStyle(c).position),'static','Canvas must stay in normal flow');
+ assert.equal(await frame.locator('canvas').evaluate(c=>getComputedStyle(c).position),'absolute','Primary surface fills its normalized parent');
+ await frame.locator('#wrapper').evaluate(el=>{el.style.cssText='position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)';});
+ const centered=await frame.locator('canvas').evaluate(c=>{const r=c.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};});
+ assert.equal(centered.x,0);assert.equal(centered.y,0);assert.equal(centered.w,1100);assert.equal(centered.h,700);
                                                                                
  await frame.evaluate(()=>{const d=document.createElement('div');d.style.height='0px';d.innerHTML='<canvas width="800" height="500"></canvas>';document.body.append(d);});
  await page.waitForTimeout(100);assert(await frame.locator('canvas').last().evaluate(c=>c.parentElement.getBoundingClientRect().height>0));

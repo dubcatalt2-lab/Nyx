@@ -36,32 +36,40 @@ frontendApp.get('/direct-s3-worker.js',async(_req,res)=>res.type('text/javascrip
 if(!exported)frontendApp.get('/index.html',(_req,res)=>res.type('html').send(`<html><head></head><body><p role="status">Connecting</p><script src="${entry}"></script></body></html>`));
 if(!exported)frontendApp.get('/studies.html',(_req,res)=>res.type('html').send('<html><head></head><body>Fixture workspace</body></html>'));frontendApp.use(express.static(source));
 const frontend=createServer(tls,frontendApp);await new Promise(r=>frontend.listen(0,'127.0.0.1',r));
-const browser=await chromium.launch({args:['--ignore-certificate-errors',`--host-resolver-rules=MAP nyx-fixture.s3.amazonaws.com 127.0.0.1:${frontend.address().port}`]});
+const browser=await chromium.launch({args:['--ignore-certificate-errors','--disable-features=LocalNetworkAccessChecks',`--host-resolver-rules=MAP nyx-fixture.s3.amazonaws.com 127.0.0.1:${frontend.address().port}`]});
 try{
- const page=await browser.newPage({ignoreHTTPSErrors:true});page.on('response',r=>{if(r.url().includes('/api/tutsi-relay/')&&r.status()>=400)console.log('RELAY HTTP',new URL(r.url()).pathname,r.status());});if(exported)await page.addInitScript(()=>{try{if(location.origin!=='https://nyx-fixture.s3.amazonaws.com')return;localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');}catch{}});page.on('pageerror',e=>console.log('PAGE ERROR',e.message));page.context().on('serviceworker',w=>w.on('console',m=>console.log('WORKER',m.text())));if(exported){
+ const page=await browser.newPage({ignoreHTTPSErrors:true});let application=page;page.on('response',r=>{if(r.url().includes('/api/tutsi-relay/')&&r.status()>=400)console.log('RELAY HTTP',new URL(r.url()).pathname,r.status());});if(exported)await page.addInitScript(()=>{try{if(location.origin!=='https://nyx-fixture.s3.amazonaws.com')return;localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');}catch{}});page.on('pageerror',e=>console.log('PAGE ERROR',e.message));page.context().on('serviceworker',w=>w.on('console',m=>console.log('WORKER',m.text())));if(exported){
   const sharedRequests=[];
-  await page.route('https://s3.amazonaws.com/**',async route=>{
+  await page.route('https://s3.us-east-1.amazonaws.com/**',async route=>{
    sharedRequests.push(route.request().url());
    assert.equal(route.request().resourceType(),'document','Shared S3 origin must not load app resources');
    await route.fulfill({status:200,contentType:'text/html',body:await readFile(source+'/studies.html')});
   });
-  await page.goto('https://s3.amazonaws.com/nyx-fixture/studies.html');
-  await page.waitForURL(origin+'/studies.html');
+  await page.goto('https://s3.us-east-1.amazonaws.com/nyx-fixture/studies.html');
+  await page.locator('iframe').waitFor();application=await (await page.locator('iframe').elementHandle()).contentFrame();
+  try{await application.waitForURL(origin+'/studies.html');}catch(error){console.log('FRAME STARTUP',application.url(),await application.locator('body').innerText());throw error;}
+  assert.equal(page.url(),'https://s3.us-east-1.amazonaws.com/nyx-fixture/studies.html');
+  assert.equal(await page.evaluate(()=>{try{return Boolean(document.querySelector('iframe').contentWindow.document);}catch{return false;}}),false,'Shared origin cannot read the isolated app document');
   assert.equal(sharedRequests.length,1);
-  console.log('PASS path-style entry redirects to isolated bucket origin before loading application assets');
- }else await page.goto(origin+'/index.html');await page.waitForURL('**/studies.html');if(exported){await page.waitForFunction(()=>typeof window.nyxLaunchGameFrame==='function');console.log('PASS actual compiled Nyx shell initialized from the exported S3 files');}
- assert.equal(await page.evaluate(async()=>(await fetch('/api/presence')).json().then(data=>data.online)),12);
- assert.equal(await page.evaluate(async()=>(await fetch('/assets/backgrounds/fixture.html')).text()),'<title>Static background</title>');
- assert.equal(await page.evaluate(async()=>{const r=await fetch('/api/private');return r.status}),401);
- assert.deepEqual(await page.evaluate(async()=>{const r=await fetch('/api/private',{mode:'same-origin',cache:'no-store',headers:{Authorization:'Bearer test-only'}});return r.json()}),{ok:true});
- await page.evaluate(()=>fetch('/api/private',{mode:'same-origin',cache:'no-store',headers:{Authorization:'Bearer test-only'}}));assert(seen.at(-1).cookie.includes('nyx_q74bd9=signed-fixture'));
- assert.deepEqual(await page.evaluate(async()=>{const r=await fetch('/api/media',{headers:{Range:'bytes=0-3'}});return [r.status,r.headers.get('content-range'),...new Uint8Array(await r.arrayBuffer())]}),[206,'bytes 0-3/8',0,1,2,3]);
- const chunks=await page.evaluate(async()=>{const response=await fetch('/api/stream',{method:'POST',headers:{Authorization:'Bearer test-only','Content-Type':'application/json'},body:JSON.stringify({message:'fixture'})});const reader=response.body.getReader(),a=await reader.read(),b=await reader.read();return [new TextDecoder().decode(a.value),new TextDecoder().decode(b.value)]});assert.deepEqual(chunks,['data: first\n\n','data: second\n\n']);
- await page.addScriptTag({url:'/socket.io/socket.io.js'});
- for(const transport of ['websocket','polling'])assert.equal(await page.evaluate(transport=>new Promise((resolve,reject)=>{const socket=io({auth:{token:'test-only'},transports:[transport],withCredentials:true,reconnection:false});socket.on('connect_error',reject);socket.on('connect',()=>socket.emit('echo','hello',value=>{socket.disconnect();resolve(value)}));}),transport),'hello');
- assert.equal(await page.evaluate(()=>new Promise((resolve,reject)=>{const socket=new WebSocket('wss://'+location.host+'/resources/live/');socket.onopen=()=>socket.send('proxy-relay');socket.onerror=()=>reject(Error('Relay connection failed'));socket.onmessage=event=>{socket.close();resolve(event.data);};})),'proxy-relay');
+  await application.evaluate(()=>parent.postMessage({type:'nyx:tab-cloak-sync',title:'History classroom',favicon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>'},'*'));
+  await page.waitForFunction(()=>document.title==='History classroom');
+  await page.evaluate(()=>dispatchEvent(new MessageEvent('message',{origin:'https://attacker.test',source:document.querySelector('iframe').contentWindow,data:{type:'nyx:tab-cloak-sync',title:'Wrong title'}})));
+  assert.equal(await page.title(),'History classroom');
+  assert.equal(await page.locator('iframe').getAttribute('allowfullscreen'),'');
+  console.log('PASS regional path-style URL stays visible; application document isolated on the bucket origin');
+ }else await page.goto(origin+'/index.html');await application.waitForURL('**/studies.html');if(exported){await application.waitForFunction(()=>typeof window.nyxLaunchGameFrame==='function');console.log('PASS actual compiled Nyx shell initialized from the exported S3 files');}
+ assert.equal(await application.evaluate(async()=>(await fetch('/api/presence')).json().then(data=>data.online)),12);
+ assert.equal(await application.evaluate(async()=>(await fetch('/assets/backgrounds/fixture.html')).text()),'<title>Static background</title>');
+ assert.equal(await application.evaluate(async()=>{const r=await fetch('/api/private');return r.status}),401);
+ assert.deepEqual(await application.evaluate(async()=>{const r=await fetch('/api/private',{mode:'same-origin',cache:'no-store',headers:{Authorization:'Bearer test-only'}});return r.json()}),{ok:true});
+ await application.evaluate(()=>fetch('/api/private',{mode:'same-origin',cache:'no-store',headers:{Authorization:'Bearer test-only'}}));assert(seen.at(-1).cookie.includes('nyx_q74bd9=signed-fixture'));
+ assert.deepEqual(await application.evaluate(async()=>{const r=await fetch('/api/media',{headers:{Range:'bytes=0-3'}});return [r.status,r.headers.get('content-range'),...new Uint8Array(await r.arrayBuffer())]}),[206,'bytes 0-3/8',0,1,2,3]);
+ const chunks=await application.evaluate(async()=>{const response=await fetch('/api/stream',{method:'POST',headers:{Authorization:'Bearer test-only','Content-Type':'application/json'},body:JSON.stringify({message:'fixture'})});const reader=response.body.getReader(),a=await reader.read(),b=await reader.read();return [new TextDecoder().decode(a.value),new TextDecoder().decode(b.value)]});assert.deepEqual(chunks,['data: first\n\n','data: second\n\n']);
+ await application.addScriptTag({url:'/socket.io/socket.io.js'});
+ for(const transport of ['websocket','polling'])assert.equal(await application.evaluate(transport=>new Promise((resolve,reject)=>{const socket=io({auth:{token:'test-only'},transports:[transport],withCredentials:true,reconnection:false});socket.on('connect_error',reject);socket.on('connect',()=>socket.emit('echo','hello',value=>{socket.disconnect();resolve(value)}));}),transport),'hello');
+ assert.equal(await application.evaluate(()=>new Promise((resolve,reject)=>{const socket=new WebSocket('wss://'+location.host+'/resources/live/');socket.onopen=()=>socket.send('proxy-relay');socket.onerror=()=>reject(Error('Relay connection failed'));socket.onmessage=event=>{socket.close();resolve(event.data);};})),'proxy-relay');
 
- assert.equal(await page.evaluate(async()=>{
+ assert.equal(await application.evaluate(async()=>{
   const {installHttpRelaySocket}=await import('/fixture-relay.mjs');installHttpRelaySocket();
   return new Promise((resolve,reject)=>{const socket=new WebSocket('wss://'+location.host+'/api/tutsi-relay/socket/');socket.binaryType='arraybuffer';let ready=false;
    const timer=setTimeout(()=>{socket.close();reject(Error('HTTP relay timed out'));},10000);

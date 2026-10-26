@@ -1,5 +1,13 @@
 import assert from 'node:assert/strict';import vm from 'node:vm';import {readFile} from 'node:fs/promises';
-import {repairGameResource} from '../lib/game-resource-repairs.mjs';import {prepareGameDocument} from '../assets/studies/study-document.js';
+import {repairGameResource,gameResourceEdit} from '../lib/game-resource-repairs.mjs';import {prepareGameDocument} from '../assets/studies/study-document.js';
+import {repairGameResourcePath} from '../assets/studies/study-cdn.js';
+const gladiUrl=new URL('https://cdn.jsdelivr.net/gh/bubbls/UGS-Assets@main/gladihoppper/Build/Gladihoppers.wasm.framework.unityweb');
+const gladiBody=Buffer.from('result=lengthBytesUTF8(document.xURL)');
+const gladiContext={document:{baseURI:'https://assets.test/game/'},lengthBytesUTF8:value=>Buffer.byteLength(value)};
+vm.runInNewContext(gameResourceEdit(gladiUrl,gladiBody)(gladiBody).toString(),gladiContext);
+assert.equal(gladiContext.result,25);
+assert.equal(repairGameResourcePath('/gh/bubbls/UGS-Assets@main/blumgi-rocket/scripts/project/main.js'),'/gh/bubbls/UGS-Assets@main/blumgi-rocket/scripts/project/main2.js');
+assert.equal(repairGameResourcePath('/gh/other/game@main/scripts/project/main.js'),'/gh/other/game@main/scripts/project/main.js');
 const source=await readFile('server.js','utf8');
 const fn=source.slice(source.indexOf('function gnMathResourceContentType('),source.indexOf('\nfunction rewriteGnMathJsonAssets('));
 const ctx=vm.createContext({});vm.runInContext(fn,ctx);

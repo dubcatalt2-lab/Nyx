@@ -32,6 +32,7 @@ const require = createRequire(import.meta.url);
 const rootFiles = new Set([
   "index.html",
   "app.html",
+  "studies.html",
   "about-nyx.html",
   "ai.html",
   "nyx-singlefile.html",

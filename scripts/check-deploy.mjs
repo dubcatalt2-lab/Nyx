@@ -130,6 +130,7 @@ const requiredFiles = [
   "assets/icons/nyx-movies.svg",
   "index.html",
   "app.html",
+  "studies.html",
   "app/index.html",
   "district/index.html",
   "js/entry-alias.js",

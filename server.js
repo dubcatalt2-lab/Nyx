@@ -8459,7 +8459,7 @@ app.post("/api/custom-hostnames", async (req, res) => {
 });
 
 app.get("/tutsi/connect-domain", (_req, res) => {
-  res.redirect(302, '/app.html');
+  res.redirect(302, '/studies.html');
 });
 app.get("/connect-domain", (_req, res) => {
   res.sendFile('apps/connect-domain/index.html', { root: staticRoot });
@@ -14195,7 +14195,7 @@ app.get("/scramjet-v1/scramjet.all.js", (_req, res) => {
 });
 app.get(["/tutsi", "/tutsi/"], (_req, res) => {
   res.set("Cache-Control", "no-cache");
-  res.redirect(302, '/app.html');
+  res.redirect(302, '/studies.html');
 });
 
 app.get("/", async (req, res, next) => {
@@ -14203,10 +14203,10 @@ app.get("/", async (req, res, next) => {
     if (await customHostnameSite(req.hostname) !== "tutsi") return next();
   } catch { return res.status(503).set("Retry-After", "30").send("Website temporarily unavailable. Please retry shortly."); }
   res.set("Cache-Control", "no-cache");
-  res.redirect(302, '/app.html');
+  res.redirect(302, '/studies.html');
 });
 app.use('/apps/tutsi', (req, res, next) => {
-  if(!req.path.startsWith('/studyready/') && (req.path==='/' || /\.html$/.test(req.path))) return res.redirect(302, '/app.html');
+  if(!req.path.startsWith('/studyready/') && (req.path==='/' || /\.html$/.test(req.path))) return res.redirect(302, '/studies.html');
   next();
 });
 app.use(publicAssetBoundary(staticRoot));

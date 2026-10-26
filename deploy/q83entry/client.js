@@ -15,7 +15,7 @@ q1.addEventListener('submit', async q2 => {
       credentials: 'same-origin'
     });
     if (!q5.ok) throw new Error(q5.status === 429 ? 'Too many attempts. Please wait a few minutes.' : 'Check your username and access password.');
-    location.replace('/app.html');
+    location.replace('/studies.html');
   } catch (q6) {
     q4.textContent = q6.message;
     q3.disabled = false;

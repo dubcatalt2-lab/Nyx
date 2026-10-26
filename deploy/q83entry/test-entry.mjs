@@ -139,7 +139,7 @@ try {
     if (!direct && result.status === 204) {
       if (url.pathname === '/') return route.fulfill({
         contentType: 'text/html',
-        body: '<h1>School cover</h1><script>setTimeout(()=>location.replace("/app.html"),1012)</script>',
+        body: '<h1>School cover</h1><script>setTimeout(()=>location.replace("/studies.html"),1012)</script>',
       });
       if (url.pathname === "/asset.js")
         return route.fulfill({
@@ -172,7 +172,7 @@ try {
     await target.locator("input[name=password]").fill("  " + password + "  ");
     await target.getByRole("button", { name: "Enter library" }).click();
     await target.getByRole("heading", { name: "Application ready" }).waitFor();
-    assert.equal(new URL(target.url()).pathname, '/app.html', 'One-use admission opens the app directly, not the redirecting cover');
+    assert.equal(new URL(target.url()).pathname, '/studies.html', 'One-use admission opens the app directly, not the redirecting cover');
   };
   await page.goto(origin);
   await page.locator("input[name=password]").waitFor();

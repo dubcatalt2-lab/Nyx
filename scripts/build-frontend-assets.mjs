@@ -148,7 +148,7 @@ export async function buildFrontendAssets(output, files, lessonHtml) {
       Buffer.from(original)
         .toString("base64")
         .match(/.{1,112}/g) || [];
-    const migrate = ["app.html", "apps/tutsi/index.html", "apps/drop/index.html"].includes(path)
+    const migrate = ["studies.html", "app.html", "apps/tutsi/index.html", "apps/drop/index.html"].includes(path)
       ? `await (${migrateStorage.toString()})(JSON.parse(atob(${JSON.stringify(Buffer.from(JSON.stringify(storageNames)).toString("base64"))})));`
       : "";
     const q51ea = path === "assets/studies/index.html";

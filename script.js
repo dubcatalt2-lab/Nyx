@@ -26,6 +26,12 @@
   });
 
   const $ = (id) => document.getElementById(id);
+  const nyxChatEnabled = globalThis['nyx.static.chat'] !== false;
+  if (!nyxChatEnabled) {
+    const style = document.createElement('style');
+    style.textContent = '[data-app-url^="/apps/chat"],[data-n7x-dock-item="chat"]{display:none!important}';
+    document.head.append(style);
+  }
   const qsa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
   const esc = (s) =>
     String(s ?? "").replace(
@@ -13350,8 +13356,8 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
   ]
     .map(([id, icon, name, url]) => ({ id, icon, name, url }))
     .map((app) => (app.id === "youtube" ? { ...app, name: "N7X7UB3" } : app));
-  const nyxHiddenGlobalAppIds = new Set(["code-tutorials", "tutsi"]);
-  let nyxGlobalApps = nyxDefaultGlobalApps.map((app) => ({ ...app }));
+  const nyxHiddenGlobalAppIds = new Set(["code-tutorials", "tutsi", ...(!nyxChatEnabled ? ['nyx-chat'] : [])]);
+  let nyxGlobalApps = nyxDefaultGlobalApps.filter((app) => !nyxHiddenGlobalAppIds.has(app.id)).map((app) => ({ ...app }));
   function normalizeNyxGlobalApp(app) {
     const id = String(app?.id || "")
       .trim()

@@ -31,7 +31,7 @@ if(source==='dist'){const aliases=JSON.parse(await readFile('dist/frontend-asset
 const exportConfig=exported?JSON.parse(await readFile(source+'/direct-s3-config.json','utf8')):null;if(exportConfig){runtime=exportConfig.runtime;entry=exportConfig.aliases['/js/direct-s3-entry.js']||entry;worker='/direct-s3-worker.js';}
 let httpModule='/apps/tutsi/http-relay.mjs';
 if(source==='dist'||exported){const modules=JSON.parse(await readFile(source+'/public-modules.json','utf8')).aliases;httpModule=modules[httpModule]||httpModule;}
-const frontendApp=express();frontendApp.get('/assets/backgrounds/fixture.html',(_req,res)=>res.type('html').send('<title>Static background</title>'));frontendApp.get('/fixture-relay.mjs',async(_req,res)=>res.type('text/javascript').send(await readFile(source+httpModule,'utf8')));frontendApp.get('/direct-s3-config.json',(_req,res)=>res.json({origin,backend:backendOrigin,runtime,aliases:exportConfig?.aliases||{}}));
+const frontendApp=express();frontendApp.get('/assets/backgrounds/fixture.html',(_req,res)=>res.type('html').send('<title>Static background</title>'));frontendApp.get('/fixture-relay.mjs',async(_req,res)=>res.type('text/javascript').send(await readFile(source+httpModule,'utf8')));frontendApp.get('/direct-s3-config.json',(_req,res)=>res.json({origin,backend:backendOrigin,runtime,aliases:exportConfig?.aliases||{},features:exportConfig?.features||{}}));
 frontendApp.get('/direct-s3-worker.js',async(_req,res)=>res.type('text/javascript').send(await readFile(source+worker,'utf8')));
 if(!exported)frontendApp.get('/index.html',(_req,res)=>res.type('html').send(`<html><head></head><body><p role="status">Connecting</p><script src="${entry}"></script></body></html>`));
 if(!exported)frontendApp.get('/studies.html',(_req,res)=>res.type('html').send('<html><head></head><body>Fixture workspace</body></html>'));frontendApp.use(express.static(source));
@@ -65,8 +65,14 @@ try{
  await application.evaluate(()=>fetch('/api/private',{mode:'same-origin',cache:'no-store',headers:{Authorization:'Bearer test-only'}}));assert(seen.at(-1).cookie.includes('nyx_q74bd9=signed-fixture'));
  assert.deepEqual(await application.evaluate(async()=>{const r=await fetch('/api/media',{headers:{Range:'bytes=0-3'}});return [r.status,r.headers.get('content-range'),...new Uint8Array(await r.arrayBuffer())]}),[206,'bytes 0-3/8',0,1,2,3]);
  const chunks=await application.evaluate(async()=>{const response=await fetch('/api/stream',{method:'POST',headers:{Authorization:'Bearer test-only','Content-Type':'application/json'},body:JSON.stringify({message:'fixture'})});const reader=response.body.getReader(),a=await reader.read(),b=await reader.read();return [new TextDecoder().decode(a.value),new TextDecoder().decode(b.value)]});assert.deepEqual(chunks,['data: first\n\n','data: second\n\n']);
+ if(exportConfig?.features?.chat===false){
+  for(const path of ['/apps/chat/','/api/chat/state','/socket.io/socket.io.js'])assert.equal(await application.evaluate(async path=>(await fetch(path)).status,path),404);
+  assert.equal(await application.locator('[data-app-url^="/apps/chat"]:visible').count(),0);
+  console.log('PASS chat omitted; chat HTTP and realtime routes blocked');
+ }else{
  await application.addScriptTag({url:'/socket.io/socket.io.js'});
  for(const transport of ['websocket','polling'])assert.equal(await application.evaluate(transport=>new Promise((resolve,reject)=>{const socket=io({auth:{token:'test-only'},transports:[transport],withCredentials:true,reconnection:false});socket.on('connect_error',reject);socket.on('connect',()=>socket.emit('echo','hello',value=>{socket.disconnect();resolve(value)}));}),transport),'hello');
+ }
  assert.equal(await application.evaluate(()=>new Promise((resolve,reject)=>{const socket=new WebSocket('wss://'+location.host+'/resources/live/');socket.onopen=()=>socket.send('proxy-relay');socket.onerror=()=>reject(Error('Relay connection failed'));socket.onmessage=event=>{socket.close();resolve(event.data);};})),'proxy-relay');
 
  assert.equal(await application.evaluate(async()=>{

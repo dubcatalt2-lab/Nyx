@@ -112,8 +112,13 @@ let catClassGamesCache = { games: [], expires: 0, promise: null };
 let catClassCoverUrls = new Set();
 const nyxCustomRoleLabelLimit = 64;
 const app = express();
+const nyxChatEnabled = process.env.NYX_CHAT_ENABLED !== '0';
 const staticHostAccess=createStaticHostAccess(String(process.env.NYX_STATIC_ORIGINS||'').split(',').map(value=>value.trim()));
 app.use(staticHostAccess.middleware);
+app.use((req,res,next)=>{
+  if(!nyxChatEnabled && /^\/(?:api\/chat|apps\/chat|socket\.io)(?:\/|$)/.test(req.path))return res.status(404).json({error:'Not found'});
+  next();
+});
 const appTraffic = createAppTraffic({file:process.env.NYX_TRAFFIC_FILE || (process.platform === 'win32' ? join(process.env.TEMP || __dirname, 'nyx-app-traffic.json') : '/var/lib/nyx/app-traffic.json')});
 app.use(appTraffic.middleware);
 const gameProxy = createGameProxy();
@@ -3547,7 +3552,7 @@ app.get("/healthz", (_req, res) => {
     service: "nyx",
     wisp: externalWispUrl ? "external" : "embedded",
     wispImplementation: externalWispUrl ? "external" : "wispurr",
-    chatRealtime: nyxChatSocketServer ? "socket.io" : "polling"
+    chatRealtime: !nyxChatEnabled ? "disabled" : nyxChatSocketServer ? "socket.io" : "polling"
   });
 });
 
@@ -5781,6 +5786,7 @@ async function refreshNyxChatSocketAuthorizations() {
 }
 
 function attachNyxChatSocketServer(server) {
+  if (!nyxChatEnabled) return null;
   if (nyxChatSocketServer) return nyxChatSocketServer;
   const io = new SocketIOServer(server, {
     cors:{origin:(origin,callback)=>callback(null,staticHostAccess.allowed(origin)),credentials:true},
@@ -14282,7 +14288,7 @@ const isDirectRun = process.argv[1] && resolve(process.argv[1]) === join(__dirna
 async function startNyxServer() {
   let qBridgeRuntime,qBridgeTimer,qBridgeStopped=false;
   const qBridgeBoot=async()=>{if(qBridgeStopped)return;
-  if(process.env.NYX_DISCORD_BRIDGE_ENABLED==='1'){
+  if(nyxChatEnabled && process.env.NYX_DISCORD_BRIDGE_ENABLED==='1'){
     const firebase=await linkGeneratorFirebase();if(!firebase)throw new Error("Discord bridge requires backend authentication storage");
     qBridgeRuntime=await qStart({db:firebase.firestore,allowed:async id=>{const c=(await loadNyxChatConfiguration(firebase)).textChannels.find(c=>c.id===id);return Boolean(c&&nyxChatCanAccessChannel('member',c));},mime:value=>nyxChatAttachmentMimeTypes.has(value),files:async(scope,data)=>{
       const files=[];let total=0;
@@ -14324,6 +14330,7 @@ async function startNyxServer() {
       return;
     }
     if (upgradePath === "/socket.io/" || upgradePath.startsWith("/socket.io/")) {
+      if(!nyxChatEnabled)rejectWispUpgrade(socket);
       return;
     }
     if (!externalWispUrl && ["/resources/live/", "/resources/live", "/wisp/", "/wisp"].includes(upgradePath)) {
@@ -14363,7 +14370,7 @@ async function startNyxServer() {
     if (shuttingDown) return;
     shuttingDown = true;
     const workerStopped = wisp?.stop();
-    chatSocketServer.disconnectSockets(true);
+    chatSocketServer?.disconnectSockets(true);
     server.close(() => Promise.allSettled([Promise.resolve(workerStopped), appTraffic.close()]).then(() => process.exit(exitCode)));
     setTimeout(() => {
       for (const socket of serverSockets) socket.destroy();

@@ -2,6 +2,7 @@
 (()=>{
  const backend=document.querySelector('meta[name="nyx-static-backend"]')?.content;
  if(!backend)return;
+ if(document.querySelector('meta[name="nyx-chat-enabled"]')?.content==='0')globalThis['nyx.static.chat']=false;
  if(!navigator.serviceWorker?.controller){location.replace('/index.html?returnTo='+encodeURIComponent(location.pathname+location.search+location.hash));return;}
  const key=Symbol.for('nyx.direct-s3.runtime');if(window[key])return;window[key]=true;
  const target=new URL(backend),NativeSocket=window.WebSocket;

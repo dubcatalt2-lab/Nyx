@@ -21,12 +21,13 @@ try{
  await set({state:'guest'});await page.locator('aside[data-ready]').nth(1).waitFor();assert.equal(loads,4);
  await page.setViewportSize({width:800,height:600});await page.locator('aside[data-ready]').nth(1).waitFor();
  await page.evaluate(()=>{
+   document.body.classList.add('q12346517d2fb00ddb9');
    const main=document.querySelector('main');main.classList.remove('q6139d8ecebcdf8e8c1');
    document.querySelector('section').classList.add('hidden');
    const surface=document.createElement('div');surface.className='q6576ed118d3ca9c284';surface.style.cssText='position:relative;width:700px;height:520px';surface.innerHTML='<iframe class="view active" title="Games" src="about:blank"></iframe>';main.append(surface);
  });
  await page.locator('.q6576ed118d3ca9c284 aside[data-ready]').nth(1).waitFor();assert.equal(loads,6,'Two banners on games surface below old 900px cutoff');
- await page.evaluate(()=>{document.querySelector('.q6576ed118d3ca9c284').remove();document.querySelector('main').classList.add('q6139d8ecebcdf8e8c1');document.querySelector('section').classList.remove('hidden');});
+ await page.evaluate(()=>{document.body.classList.remove('q12346517d2fb00ddb9');document.querySelector('.q6576ed118d3ca9c284').remove();document.querySelector('main').classList.add('q6139d8ecebcdf8e8c1');document.querySelector('section').classList.remove('hidden');});
  await page.locator('aside[data-ready]').nth(1).waitFor();await page.mouse.click(550,300);await page.waitForTimeout(50);assert.equal(await page.evaluate(()=>window.testPopups),4,'Returning home resets two-popup allowance without timer');
  await page.mouse.click(550,300);assert.equal(await page.evaluate(()=>window.testPopups),4);
  console.log('PASS auth/exemptions, two banners on home and games below 900px, cleanup on upgrade, and two popunder attempts per home visit without a time cap; provider requests intercepted.');

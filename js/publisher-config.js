@@ -37,7 +37,7 @@ function selectedHome() {
 }
 if (publisherHostAllowed()) window.__nyxPublisherHome = selectedHome;
 export function publisherSurface() {
-  if (document.hidden || document.fullscreenElement || document.body?.classList.contains('n7x-loading-active') || document.body?.classList.contains('q12346517d2fb00ddb9')) return null;
+  if (document.hidden || document.fullscreenElement || document.body?.classList.contains('n7x-loading-active')) return null;
   return selectedHome() || [...document.querySelectorAll('.n2ac0604c6ebc .q6576ed118d3ca9c284')].find(surface => surface.getClientRects().length && getComputedStyle(surface).visibility === 'visible') || null;
 }
 export function publisherMode() {

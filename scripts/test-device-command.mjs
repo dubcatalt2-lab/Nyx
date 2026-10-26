@@ -35,13 +35,13 @@ try{
   const command=async text=>{await page.locator('[data-message-input]').fill(text);await page.locator('[data-message-form]').evaluate(form=>form.requestSubmit());};
   const dialog=page.locator('dialog[data-q74bd9]');
   await open();await command('/ban device @river');await dialog.waitFor();
-  assert.equal(await dialog.locator('input:checked').count(),0,'Multiple devices require explicit selection');
+  assert.equal(await dialog.locator('input[type=radio]:checked').count(),0,'Multiple devices require explicit selection');
   await dialog.getByRole('button',{name:'Cancel',exact:true}).click();await dialog.waitFor({state:'detached'});assert.equal(writes.length,0);
   await command('/ban device @river');await dialog.waitFor();
   await dialog.locator('input[type=radio]').nth(1).check();await dialog.getByLabel('Reason',{exact:true}).fill('Test moderation');
   await dialog.getByRole('button',{name:'Block selected browser',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('[data-message-input]').value==='');
-  assert.deepEqual(writes,[{id:'b'.repeat(64),reason:'Test moderation',action:'ban'}]);assert.equal(accountCalls,0);
+  assert.deepEqual(writes,[{id:'b'.repeat(64),reason:'Test moderation',blockAccount:true,action:'ban'}]);assert.equal(accountCalls,0);
   await command('/unban device @river');await dialog.waitFor();assert.equal(await dialog.locator('input[type=radio]').count(),1);
   await dialog.getByRole('button',{name:'Unblock selected browser',exact:true}).click();
   await page.waitForFunction(()=>document.querySelector('[data-message-input]').value==='');assert.equal(writes.at(-1).action,'unban');

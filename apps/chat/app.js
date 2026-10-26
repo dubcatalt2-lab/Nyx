@@ -4977,7 +4977,7 @@
     dialog.setAttribute("aria-label", heading.textContent);
     const note = document.createElement("p");
     note.textContent =
-      "Choose one br00ser profile. Other devices on the same IP stay unaffected. Clearing cookies or changing browsers can bypass this block.";
+      "Choose a br00ser. Also block the account to keep it blocked after cookies are cleared or the member switches browsers. Other people on the same network stay unaffected.";
     const form = document.createElement("form");
     form.method = "dialog";
     const list = document.createElement("div");
@@ -5005,6 +5005,11 @@
     reason.hidden = action !== "ban";
     reason.className = "settings-input";
     reason.value = target.split(/\s+/).slice(1).join(" ");
+    const accountLabel=document.createElement('label');
+    const blockAccount=document.createElement('input');
+    blockAccount.type='checkbox';blockAccount.checked=true;
+    accountLabel.append(blockAccount,document.createTextNode(' Also block this account'));
+    accountLabel.hidden=action!=='ban';
     const cancel = document.createElement("button");
     cancel.type = "button";
     cancel.textContent = "Cancel";
@@ -5015,7 +5020,7 @@
     submit.textContent = action === "ban" ? "Block selected br00ser" : "Unblock selected br00ser";
     submit.setAttribute("aria-label", action === "ban" ? "Block selected browser" : "Unblock selected browser");
     submit.className = "primary-button";
-    form.append(list, reason, cancel, submit);
+    form.append(list, reason, accountLabel, cancel, submit);
     dialog.append(heading, note, form);
     document.body.append(dialog);
     const selection = await new Promise((resolve) => {
@@ -5025,6 +5030,7 @@
         resolve({
           id: form.querySelector('input[name="q74bd9"]:checked').value,
           reason: reason.value.trim(),
+          ...(action==='ban'?{blockAccount:blockAccount.checked}:{}),
         });
         dialog.close();
       });
@@ -5045,7 +5051,7 @@
       body: JSON.stringify({ ...selection, action }),
     });
     showNotice(
-      `Selected br00ser ${action === "ban" ? "blocked" : "unblocked"}. The account and IP were not banned.`,
+      action==='ban' ? `Br00ser blocked${selection.blockAccount?' and account access blocked':''}. Other people on the network are unaffected.` : 'Br00ser unblocked and its linked account restriction removed. Other bans are unchanged.',
       "success",
     );
   }

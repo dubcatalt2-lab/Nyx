@@ -342,6 +342,7 @@
   usageStatus.style.cssText =
     "font-size:12px;line-height:1.5;color:var(--ai-muted);margin:10px 0 0;overflow-wrap:anywhere";
   usageWeek.closest("details").append(usageStatus);
+  import('/js/rewarded-unlocks.js').then(({mountRewardPreview})=>mountRewardPreview(usageWeek.closest('details'))).catch(()=>{});
   function ποσοστόΧρήσης(data, label = "Unavailable") {
     const μετρητής = document.getElementById("usageMeter");
     const κείμενο = document.getElementById("usagePercent");

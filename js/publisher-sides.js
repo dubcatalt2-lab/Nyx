@@ -1,4 +1,4 @@
-import { publisherConfig, publisherHostAllowed, publisherMode } from "./publisher-config.js";
+import { publisherConfig, publisherHostAllowed, publisherMode, publisherSurface } from "./publisher-config.js";
 import { createPublisherFrame } from "./publisher-frame.js";
 import "./publisher-popup.js";
 
@@ -6,8 +6,6 @@ export function startHomeSponsors() {
   if (!publisherHostAllowed() || publisherConfig.homeBanners.length !== 2) return;
   const states = new Map();
   let scheduled = false;
-  let deadline = 0;
-  let expired = false;
   const dismissed = new Set();
   const style = document.createElement("style");
   style.textContent =
@@ -16,6 +14,7 @@ export function startHomeSponsors() {
   style.textContent +=
     ".n7x-home-sponsor header{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:4px;font-size:8px}.n7x-home-sponsor button{display:grid;place-items:center;flex:none;width:24px;height:24px;border:1px solid #ffffff30;border-radius:6px;background:#151515;color:#eee;cursor:pointer}.n7x-home-sponsor button svg{width:12px;height:12px}";
 
+  style.textContent += '.n7x-sponsored-page>iframe.view{left:88px!important;right:88px!important;width:calc(100% - 176px)!important}.n7x-sponsored-page>.n7x-home-sponsor[data-side="left"]{left:12px}.n7x-sponsored-page>.n7x-home-sponsor[data-side="right"]{right:12px}@media(max-width:600px){.n7x-sponsored-page>iframe.view{left:0!important;right:0!important;width:100%!important;bottom:280px!important;height:calc(100% - 280px)!important}.n7x-sponsored-page>.n7x-home-sponsor{bottom:4px}}';
   function clear(state) {
     for (const slot of state.slots) {
       slot.frame.destroy();
@@ -25,26 +24,23 @@ export function startHomeSponsors() {
   }
   function update() {
     scheduled = false;
-    if (deadline && Date.now() >= deadline) expired = true;
     const mode = publisherMode();
-    const eligible = !expired && !["off", "pending"].includes(mode);
-    const homes = [...document.querySelectorAll(".q4f959b063679fe3afa.n7x-minimal-home")];
+    const eligible = !["off", "pending"].includes(mode);
+    const surface = publisherSurface();
+    const homes = [...new Set([...states.keys(), ...(surface ? [surface] : [])])];
     for (const home of homes) {
       if (!states.has(home)) states.set(home, { slots: [], attempted: false });
       const state = states.get(home);
-      const rect = home.getBoundingClientRect();
-      const available = eligible && window.__nyxPublisherHome?.() === home;
+      const available = eligible && surface === home;
       const visible =
         available &&
         !document.hidden &&
         !home.classList.contains("hidden") &&
-        home.closest(".n2ac0604c6ebc.q6139d8ecebcdf8e8c1") &&
-        rect.width >= 900 &&
-        rect.height >= 520 &&
         getComputedStyle(home).visibility !== "hidden" &&
         !document.body.classList.contains("n7x-loading-active");
       if (!visible) {
         clear(state);
+        if(home.classList.contains('n7x-sponsored-page'))home.classList.remove('n7x-sponsored-page');
         state.attempted = false;
         continue;
       }
@@ -76,6 +72,7 @@ export function startHomeSponsors() {
               slot.host.remove();
               return false;
             });
+          if(!state.slots.length && home.classList.contains('n7x-sponsored-page'))home.classList.remove('n7x-sponsored-page');
         });
         header.append(label, close);
         host.append(header);
@@ -84,14 +81,12 @@ export function startHomeSponsors() {
           ...placement,
           onReady: () => {
             host.dataset.ready = "true";
-            if (!deadline) {
-              deadline = Date.now() + 300000;
-              setTimeout(update, 300000);
-            }
+            if (home.matches('.q6576ed118d3ca9c284')) home.classList.add('n7x-sponsored-page');
           },
           onUnavailable: () => {
             slot.failed = true;
             host.hidden = true;
+            if(state.slots.every(item=>item.failed)&&home.classList.contains('n7x-sponsored-page'))home.classList.remove('n7x-sponsored-page');
           },
         });
         const creative = document.createElement("div");
@@ -122,6 +117,7 @@ export function startHomeSponsors() {
   });
   window.addEventListener("resize", schedule);
   window.addEventListener("nyx:publisher-change", schedule);
+  document.addEventListener('fullscreenchange', schedule);
   document.addEventListener("visibilitychange", schedule);
   update();
 }

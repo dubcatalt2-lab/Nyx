@@ -9,6 +9,7 @@ const ref=path=>({path,get:async()=>snap(path),collection:name=>collection(path+
 const db={collection,runTransaction(fn){const task=tail.then(async()=>{const writes=[];const result=await fn({get:async r=>{assert.equal(writes.length,0);return snap(r.path)},set:(r,v,o)=>writes.push([r.path,v,o])});for(const[p,v,o]of writes)records.set(p,{...(o?.merge?records.get(p):{}),...structuredClone(v)});return result});tail=task.catch(()=>{});return task}};
 const audit=[];
 const options={firebase:async()=>({firestore:db}),ownerUid:()=> 'owner-001',now:()=>stamp,sameOrigin:req=>req.headers.origin==='https://owner.test',authorize:async req=>{if(!req.headers.authorization)throw Object.assign(Error('Sign in'),{status:401});return {actor:{role:req.headers.authorization==='owner'?'owner':'member'},token:{uid:req.headers.authorization==='owner'?'owner-001':'member-002'}}},audit:async(_,event)=>audit.push(event)};
+options.accountUid=async req=>req.headers['x-test-verified-uid']||'';
 let access=q74bd9(options);
 const app=express();app.use(express.json());app.use((...args)=>access.guard(...args));
 app.post('/observe',async(req,res)=>{await access.observe(req,res,req.body.uid,req.body.role||'member');res.json({ok:true})});
@@ -42,5 +43,13 @@ try{
  assert.equal((await call('/resource',{cookie:cookieA.replace(/.$/,'z')})).status,200,'Invalid cookie is treated like a new browser, not a shared IP ban');
  assert.deepEqual(audit.map(v=>v.action),['browser_banned','browser_unbanned']);
  assert(![...records.keys()].some(k=>/IpBan|UserAdministration/.test(k)));
- console.log('PASS device selection, shared-IP isolation, same-account second browser, persistence, unban, owner/self protection, authorization, CSRF, forged targets, active socket closure and audit; no account/IP bans written.');
+ const linkedCookie=await observe('member-004'),linkedId=(await list('member-004'))[0].id;
+ assert.equal((await change('member-004',linkedId,'ban',{body:{id:linkedId,action:'ban',reason:'Test',blockAccount:true}})).status,200);
+ assert.equal(await access.blocked({headers:{'x-test-verified-uid':'member-004'}}),true,'Account restriction survives cookie deletion');
+ assert.equal(await access.blocked({headers:{cookie:cookieC,'x-test-verified-uid':'member-004'}}),true,'Account restriction survives browser switch');
+ assert.equal(await q74bd9(options).accountBlocked('member-004'),true,'Linked account ban survives restart');
+ assert.equal(await access.blocked({headers:{'x-test-verified-uid':'member-005'}}),false,'Other accounts on network unaffected');
+ assert.equal((await change('member-004',linkedId,'unban')).status,200);
+ assert.equal(await access.accountBlocked('member-004'),false,'Unban clears linked restriction');
+ console.log('PASS device selection, optional linked-account restriction across cleared cookies/browsers, persistence, unban, owner/self protection, authorization, CSRF, socket closure and shared-IP isolation. No live users changed.');
 }finally{server.closeAllConnections();await new Promise(r=>server.close(r));}

@@ -776,6 +776,14 @@ const q74bd9Access=q74bd9({
   firebase:linkGeneratorFirebase,
   ownerUid:()=>founderProfileConfig().administratorUid,
   authorize:req=>ownerDashboardActor(req,'network:bans'),
+  accountUid:async req=>{
+    if(req.nyxDeviceAccountUid)return req.nyxDeviceAccountUid;
+    const match=String(req.headers?.authorization||'').match(/^Bearer\s+(.+)$/i);
+    if(!match||!firebaseAdminModeConfigured())return '';
+    const firebase=await linkGeneratorFirebase();
+    try { const token=await firebase.auth.verifyIdToken(match[1],true); return req.nyxDeviceAccountUid=token.uid; }
+    catch(error){if(String(error.code||'').startsWith('auth/'))return '';throw error;}
+  },
   sameOrigin:sameOriginRequest,
   audit:(context,event)=>recordNyxAuditSafe(context.firebase,{actorUid:context.token.uid,actorEmail:context.token.email,...event})
 });
@@ -5743,6 +5751,8 @@ async function authorizeNyxChatSocket(socket, rawToken) {
   if (!value || value.length > 8_192 || !firebaseAdminModeConfigured()) throw new Error("Sign in to use N7X Chat.");
   const firebase = await linkGeneratorFirebase();
   const token = await firebase.auth.verifyIdToken(value, true);
+  socket.request.nyxDeviceAccountUid=token.uid;
+  if(await q74bd9Access.accountBlocked(token.uid))throw new Error('This account has been blocked from Nyx.');
   if (socket.data.uid && socket.data.uid !== token.uid) throw new Error("The N7X Chat account changed.");
   const [identity, configuration] = await Promise.all([
     nyxChatIdentity(firebase, token),

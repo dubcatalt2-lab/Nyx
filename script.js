@@ -19069,6 +19069,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     store.setText(storageKey, NYX_RELEASE_NOTES_VERSION);
     const overlay = document.createElement("div");
     overlay.className = "n7x-release-notes-overlay";
+    overlay.setAttribute("data-no-interface-text", "");
     overlay.innerHTML = `<section class="n7x-release-notes" role="dialog" aria-modal="true" aria-labelledby="n7xReleaseNotesTitle" aria-describedby="n7xReleaseNotesIntro">
       <header><div><span>Update</span><h1 id="n7xReleaseNotesTitle" tabindex="-1">A Note About Ads</h1></div><button type="button" data-n7x-release-notes-close aria-label="Close update log">&times;</button></header>
       <div class="n7x-release-message" id="n7xReleaseNotesIntro">

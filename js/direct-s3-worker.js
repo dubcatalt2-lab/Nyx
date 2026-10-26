@@ -7,7 +7,7 @@ self.addEventListener('fetch',event=>{
  if(url.origin!==self.location.origin||url.pathname==='/direct-s3-config.json'||url.pathname.startsWith('/~/'))return;
  event.respondWith((async()=>{
   const config=await settings;
-  const remote=/^\/(?:api(?:\/|$)|socket\.io(?:\/|$)|healthz$|resources\/live(?:\/|$)|wisp(?:\/|$)|download\/|gn-math-|cloud\/v1\/|assets\/(?:profile|backgrounds|jumpscares)\/)/.test(url.pathname);
+  const remote=/^\/(?:api(?:\/|$)|socket\.io(?:\/|$)|healthz$|resources\/live(?:\/|$)|wisp(?:\/|$)|download\/|gn-math-|cloud\/v1\/)/.test(url.pathname);
   if(remote){
    const headers=new Headers(event.request.headers);headers.delete('host');
    const remoteResponse=await fetch(new URL(url.pathname+url.search,config.backend),{method:event.request.method,headers,body:['GET','HEAD'].includes(event.request.method)?undefined:await event.request.arrayBuffer(),mode:'cors',credentials:'include',redirect:'error',cache:'no-store',signal:event.request.signal});

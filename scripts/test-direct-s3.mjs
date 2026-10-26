@@ -9,6 +9,13 @@ if(generated.error||generated.status!==0){await rm(certificateDir,{recursive:tru
 const tls={key:await readFile(join(certificateDir,'key.pem')),cert:await readFile(join(certificateDir,'cert.pem'))};
 for(const bad of ['https://s3.amazonaws.com','https://nyx-fixture.s3.amazonaws.com:8443','https://nyx-fixture.s3.amazonaws.com/','https://attacker.test'])assert.throws(()=>directS3Origin(bad));
 const access=createStaticHostAccess([origin]),backendApp=express();backendApp.use(access.middleware);backendApp.use(express.json());
+const serverSource=await readFile('server.js','utf8');
+const corsStart=serverSource.indexOf('function setPresenceCors('),corsEnd=serverSource.indexOf('\nfunction nyxGuestIdentity(',corsStart);
+const presenceCors=Function('return ('+serverSource.slice(corsStart,corsEnd)+')')();
+backendApp.get('/api/presence',(_req,res)=>{presenceCors(res);res.json({online:12});});
+const shellSource=await readFile('script.js','utf8'),relayStart=shellSource.indexOf('  function browserHttpRelayUrl()'),relayEnd=shellSource.indexOf('  function wispUrl()',relayStart);
+const relayUrl=Function('location','return ('+shellSource.slice(relayStart,relayEnd)+')()')({protocol:'https:',host:new URL(origin).host});
+assert.equal(relayUrl,'wss://'+new URL(origin).host+'/api/tutsi-relay/socket/');
 const seen=[];backendApp.use((req,res,next)=>{seen.push({path:req.path,authorization:req.headers.authorization,cookie:req.headers.cookie});next();});
 backendApp.get('/api/private',(req,res)=>{if(req.headers.authorization!=='Bearer test-only')return res.status(401).json({error:'Sign in'});res.append('Set-Cookie','nyx_q74bd9=signed-fixture; Path=/; HttpOnly; SameSite=Lax; Secure');res.json({ok:true});});
 backendApp.post('/api/stream',(req,res)=>{if(req.headers.authorization!=='Bearer test-only')return res.sendStatus(401);res.type('text/event-stream');res.write('data: first\n\n');setTimeout(()=>res.end('data: second\n\n'),250);});
@@ -24,7 +31,7 @@ if(source==='dist'){const aliases=JSON.parse(await readFile('dist/frontend-asset
 const exportConfig=exported?JSON.parse(await readFile(source+'/direct-s3-config.json','utf8')):null;if(exportConfig){runtime=exportConfig.runtime;entry=exportConfig.aliases['/js/direct-s3-entry.js']||entry;worker='/direct-s3-worker.js';}
 let httpModule='/apps/tutsi/http-relay.mjs';
 if(source==='dist'||exported){const modules=JSON.parse(await readFile(source+'/public-modules.json','utf8')).aliases;httpModule=modules[httpModule]||httpModule;}
-const frontendApp=express();frontendApp.get('/fixture-relay.mjs',async(_req,res)=>res.type('text/javascript').send(await readFile(source+httpModule,'utf8')));frontendApp.get('/direct-s3-config.json',(_req,res)=>res.json({origin,backend:backendOrigin,runtime,aliases:exportConfig?.aliases||{}}));
+const frontendApp=express();frontendApp.get('/assets/backgrounds/fixture.html',(_req,res)=>res.type('html').send('<title>Static background</title>'));frontendApp.get('/fixture-relay.mjs',async(_req,res)=>res.type('text/javascript').send(await readFile(source+httpModule,'utf8')));frontendApp.get('/direct-s3-config.json',(_req,res)=>res.json({origin,backend:backendOrigin,runtime,aliases:exportConfig?.aliases||{}}));
 frontendApp.get('/direct-s3-worker.js',async(_req,res)=>res.type('text/javascript').send(await readFile(source+worker,'utf8')));
 if(!exported)frontendApp.get('/index.html',(_req,res)=>res.type('html').send(`<html><head></head><body><p role="status">Connecting</p><script src="${entry}"></script></body></html>`));
 if(!exported)frontendApp.get('/studies.html',(_req,res)=>res.type('html').send('<html><head></head><body>Fixture workspace</body></html>'));frontendApp.use(express.static(source));
@@ -43,6 +50,8 @@ try{
   assert.equal(sharedRequests.length,1);
   console.log('PASS path-style entry redirects to isolated bucket origin before loading application assets');
  }else await page.goto(origin+'/index.html');await page.waitForURL('**/studies.html');if(exported){await page.waitForFunction(()=>typeof window.nyxLaunchGameFrame==='function');console.log('PASS actual compiled Nyx shell initialized from the exported S3 files');}
+ assert.equal(await page.evaluate(async()=>(await fetch('/api/presence')).json().then(data=>data.online)),12);
+ assert.equal(await page.evaluate(async()=>(await fetch('/assets/backgrounds/fixture.html')).text()),'<title>Static background</title>');
  assert.equal(await page.evaluate(async()=>{const r=await fetch('/api/private');return r.status}),401);
  assert.deepEqual(await page.evaluate(async()=>{const r=await fetch('/api/private',{mode:'same-origin',cache:'no-store',headers:{Authorization:'Bearer test-only'}});return r.json()}),{ok:true});
  await page.evaluate(()=>fetch('/api/private',{mode:'same-origin',cache:'no-store',headers:{Authorization:'Bearer test-only'}}));assert(seen.at(-1).cookie.includes('nyx_q74bd9=signed-fixture'));
@@ -53,8 +62,8 @@ try{
  assert.equal(await page.evaluate(()=>new Promise((resolve,reject)=>{const socket=new WebSocket('wss://'+location.host+'/resources/live/');socket.onopen=()=>socket.send('proxy-relay');socket.onerror=()=>reject(Error('Relay connection failed'));socket.onmessage=event=>{socket.close();resolve(event.data);};})),'proxy-relay');
 
  assert.equal(await page.evaluate(async()=>{
-  const {HttpRelaySocket}=await import('/fixture-relay.mjs');
-  return new Promise((resolve,reject)=>{const socket=new HttpRelaySocket('wss://'+location.host+'/api/tutsi-relay/socket/');socket.binaryType='arraybuffer';let ready=false;
+  const {installHttpRelaySocket}=await import('/fixture-relay.mjs');installHttpRelaySocket();
+  return new Promise((resolve,reject)=>{const socket=new WebSocket('wss://'+location.host+'/api/tutsi-relay/socket/');socket.binaryType='arraybuffer';let ready=false;
    const timer=setTimeout(()=>{socket.close();reject(Error('HTTP relay timed out'));},10000);
    socket.onerror=()=>{clearTimeout(timer);reject(Error('HTTP relay failed'));};
    socket.onmessage=async event=>{if(!ready){ready=true;socket.send(new TextEncoder().encode('http-relay'));}else{while(socket.bufferedAmount&&socket.readyState===1)await new Promise(r=>setTimeout(r,10));if(socket.readyState!==1)return;clearTimeout(timer);socket.close();resolve(new TextDecoder().decode(event.data));}};

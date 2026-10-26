@@ -3564,7 +3564,7 @@ function pruneLocalPresence(now = Date.now()) {
 
 function setPresenceCors(res) {
   res.set({
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": res.getHeader("Access-Control-Allow-Origin") || "*",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Authorization, Content-Type",
     "Access-Control-Max-Age": "86400"

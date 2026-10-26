@@ -71,12 +71,20 @@ html body.theme-fresh {
 }
 
 html body .na4d232506ecd {
-  background:
-    linear-gradient(color-mix(in srgb, var(--n7x-load-bg) 84%, transparent), color-mix(in srgb, var(--n7x-load-bg) 92%, transparent)),
-    linear-gradient(90deg, color-mix(in srgb, var(--n7x-load-accent) 9%, transparent) 1px, transparent 1px),
-    linear-gradient(color-mix(in srgb, var(--n7x-load-accent) 9%, transparent) 1px, transparent 1px),
-    radial-gradient(ellipse at 50% 52%, var(--n7x-load-surface) 0%, var(--n7x-load-bg) 54%, var(--n7x-load-deep-bg) 100%) !important;
-  background-size: auto, 28px 28px, 28px 28px, auto !important;
+  background: #000 !important;
+}
+
+html body #n3e8549522c8c .n7x-loading-logo {
+  display: block;
+  width: clamp(72px, 16vw, 96px);
+  height: auto;
+  margin: 0 auto 32px;
+  object-fit: contain;
+}
+
+html body #n3e8549522c8c .n7x-loading-row {
+  width: min(320px, calc(100vw - 48px));
+  grid-template-columns: minmax(0, 1fr);
 }
 
 html body #n3e8549522c8c .nd241a91ed781 h2 {

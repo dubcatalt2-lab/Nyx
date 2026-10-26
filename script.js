@@ -10534,8 +10534,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     }
   }
   function browserHttpRelayUrl() {
-    const backend = document.querySelector('meta[name="nyx-static-backend"]')?.content;
-    return `${location.protocol === "https:" ? "wss:" : "ws:"}//${backend ? new URL(backend).host : location.host}/api/tutsi-relay/socket/`;
+    return `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/api/tutsi-relay/socket/`;
   }
   function wispUrl() {
     return (

@@ -3956,7 +3956,8 @@ body.theme-sakura .lion-ai-image-status {
 .na4d232506ecd {
   position: fixed;
   inset: 0;
-  z-index: 4700;
+  z-index: 2147483647;
+  outline: none;
   display: none;
   place-items: center;
   overflow: hidden;

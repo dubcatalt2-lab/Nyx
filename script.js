@@ -10522,7 +10522,8 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       return configured.endsWith("/") ? configured : configured + "/";
     if (!hasHostedBackend()) return "wss://wisp.mercurywork.shop/";
     const protocol = location.protocol === "https:" ? "wss:" : "ws:";
-    return `${protocol}//${location.host}/resources/live/`;
+    const backend = document.querySelector('meta[name="nyx-static-backend"]')?.content;
+    return `${protocol}//${backend ? new URL(backend).host : location.host}/resources/live/`;
   }
   function storedCustomWispUrl() {
     try {
@@ -10533,7 +10534,8 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     }
   }
   function browserHttpRelayUrl() {
-    return `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/api/tutsi-relay/socket/`;
+    const backend = document.querySelector('meta[name="nyx-static-backend"]')?.content;
+    return `${location.protocol === "https:" ? "wss:" : "ws:"}//${backend ? new URL(backend).host : location.host}/api/tutsi-relay/socket/`;
   }
   function wispUrl() {
     return (

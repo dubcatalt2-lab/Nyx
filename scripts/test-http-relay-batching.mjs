@@ -51,6 +51,8 @@ try{
  for(let i=0;i<4;i++)socket.send(new Uint8Array(262144).fill(i));
  const bytesUntil=Date.now()+4000;while(socket.bufferedAmount&&Date.now()<bytesUntil)await new Promise(resolve=>setTimeout(resolve,10));
  assert.equal(socket.bufferedAmount,0);assert.equal(requests,2,'Length headers count toward the 1 MiB envelope limit');
+ // A successful write acknowledgement can precede the upstream message event.
+ while(received.length<4&&Date.now()<bytesUntil)await new Promise(resolve=>setTimeout(resolve,10));
  assert.deepEqual(received.map(frame=>[frame.length,frame[0],frame.at(-1)]),Array.from({length:4},(_,i)=>[262144,i,i]));
  socket.close();
                                                                                        

@@ -1,4 +1,5 @@
 import {repositoryControllerInjection} from './lib/controller-injection.mjs';
+import {createStaticHostAccess} from './lib/static-host-access.mjs';
 import {fableTrialActive, fableTrialLabel} from './lib/ai-fable-trial.mjs';
 import {τοπικήΓέφυρα} from './lib/local-ai-relay.mjs';
 import {q94d6} from './lib/q94d6.mjs';
@@ -111,6 +112,8 @@ let catClassGamesCache = { games: [], expires: 0, promise: null };
 let catClassCoverUrls = new Set();
 const nyxCustomRoleLabelLimit = 64;
 const app = express();
+const staticHostAccess=createStaticHostAccess(String(process.env.NYX_STATIC_ORIGINS||'').split(',').map(value=>value.trim()));
+app.use(staticHostAccess.middleware);
 const appTraffic = createAppTraffic({file:process.env.NYX_TRAFFIC_FILE || (process.platform === 'win32' ? join(process.env.TEMP || __dirname, 'nyx-app-traffic.json') : '/var/lib/nyx/app-traffic.json')});
 app.use(appTraffic.middleware);
 const gameProxy = createGameProxy();
@@ -465,6 +468,7 @@ function normalizeNyxIp(value) {
 }
 
 function nyxChatOriginAllowed(origin, requestHost = "") {
+  if(staticHostAccess.allowed(origin))return true;
   if (!embeddedWispAllowedOrigins.length || embeddedWispAllowedOrigins.includes("*")) return true;
   const normalizedOrigin = String(origin || "").trim().replace(/\/$/, "");
   if (embeddedWispAllowedOrigins.includes(normalizedOrigin)) return true;
@@ -5779,6 +5783,7 @@ async function refreshNyxChatSocketAuthorizations() {
 function attachNyxChatSocketServer(server) {
   if (nyxChatSocketServer) return nyxChatSocketServer;
   const io = new SocketIOServer(server, {
+    cors:{origin:(origin,callback)=>callback(null,staticHostAccess.allowed(origin)),credentials:true},
     path: "/socket.io",
     serveClient: true,
     maxHttpBufferSize: 100_000,
@@ -6337,6 +6342,7 @@ function linkGeneratorClientId(req) {
 }
 
 function sameOriginRequest(req) {
+  if(staticHostAccess.allowed(req.headers.origin))return true;
   const fetchSite = String(req.get("sec-fetch-site") || "").trim().toLowerCase();
   if (fetchSite === "same-origin" || fetchSite === "same-site") return true;
   if (fetchSite === "cross-site") return false;
@@ -14162,6 +14168,7 @@ const closeHttpRelay = installHttpWisp(app, {
   upstream: () => httpRelayPort ? {url: externalWispUrl || `ws://127.0.0.1:${httpRelayPort}/resources/live/`, origin: `http://127.0.0.1:${httpRelayPort}`} : null,
   clientIp: nyxClientIp, banned: nyxRequestIpIsBanned,
   allowed: req => {
+    if (staticHostAccess.allowed(req.headers.origin)) return true;
     if (req.headers['sec-fetch-site'] && req.headers['sec-fetch-site'] !== 'same-origin') return false;
     if (req.headers.origin) {
       try { return new URL(req.headers.origin).host === req.headers.host; } catch { return false; }

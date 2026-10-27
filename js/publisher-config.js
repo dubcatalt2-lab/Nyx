@@ -38,7 +38,7 @@ function selectedHome() {
 if (publisherHostAllowed()) window.__nyxPublisherHome = selectedHome;
 export function publisherSurface() {
   if (document.hidden || document.fullscreenElement || document.body?.classList.contains('n7x-loading-active')) return null;
-  return selectedHome() || [...document.querySelectorAll('.n2ac0604c6ebc .q6576ed118d3ca9c284')].find(surface => surface.getClientRects().length && getComputedStyle(surface).visibility === 'visible') || null;
+  return selectedHome();
 }
 export function publisherMode() {
   return publisherHostAllowed() && publisherSurface() ? publisherAccountMode() : "off";

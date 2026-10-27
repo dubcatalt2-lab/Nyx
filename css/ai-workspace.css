@@ -2337,22 +2337,27 @@ button:disabled {
   stroke-linejoin: round
 }
 
-.ai-code-block pre {
-  margin: 0;
-  padding: 15px 16px;
-  overflow: auto;
-  color: var(--ai-text-soft);
-  font: 400 12.5px/1.7 "JetBrains Mono", monospace;
-  tab-size: 2
+.ai-code-block .ai-code-area {
+  display:block;
+  box-sizing:border-box;
+  width:100%;
+  min-height:120px;
+  max-height:70vh;
+  margin:0;
+  padding:16px;
+  border:0;
+  border-radius:0;
+  resize:vertical;
+  overflow:auto;
+  background:#08090c;
+  color:var(--ai-text-soft);
+  font:400 13px/1.7 ui-monospace,Consolas,monospace;
+  tab-size:2;
+  white-space:pre;
 }
-
-.ai-code-block pre code {
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: none;
-  color: inherit;
-  font: inherit
+.ai-code-block .ai-code-area:focus-visible {
+  outline:2px solid var(--ai-accent,#bfaaff);
+  outline-offset:-3px;
 }
 
 .ai-table-wrap {
@@ -3233,6 +3238,8 @@ body.ai-screen-chat-window {
 
 .continue-response {
   display: inline-flex;
+  align-items:center;
+  gap:8px;
   margin-top: 14px;
   padding: 7px 12px;
   border: 1px solid #8885;

@@ -70,7 +70,7 @@ try {
   assert.equal((await send('unpriced',{model:'google/gemini-unpriced'})).status,503);assert.equal(calls,0);
   await new Promise(resolve=>setTimeout(resolve,30));
   const ok=await send('member');assert.equal(ok.status,200,await ok.clone().text());assert.match(ok.headers.get('set-cookie'),/HttpOnly/);await ok.text();
-  assert.equal(calls,1);assert.equal(lastPayload.max_tokens,700);assert.equal(lastPayload.stream_options.include_usage,true);
+  assert.equal(calls,1);assert.equal(lastPayload.max_tokens,1000);assert.equal(lastPayload.stream_options.include_usage,true);
   assert.equal(lastPayload.provider.max_price.prompt,1);assert.equal(lastPayload.provider.max_price.completion,2);
   await new Promise(resolve=>setTimeout(resolve,30));
   assert.equal((await send(null,{}, {'x-nyx-ai-api-key':'retired-personal'})).status,410);assert.equal(calls,1);
@@ -127,7 +127,7 @@ try {
   balance=1;await new Promise(resolve=>setTimeout(resolve,30));
   const repairCalls=calls,chargedBefore=[...db.records.values()].reduce((sum,row)=>sum+(row.tokens&&typeof row.tokens==='number'?row.tokens:0),0);
   const repaired=await send('repair-member',{repair:true});assert.equal(repaired.status,200);await repaired.text();
-  await new Promise(resolve=>setTimeout(resolve,30));assert.equal(calls,repairCalls+2);assert.equal(lastPayload.max_tokens,700);
+  await new Promise(resolve=>setTimeout(resolve,30));assert.equal(calls,repairCalls+2);assert.equal(lastPayload.max_tokens,1000);
   const chargedAfter=[...db.records.values()].reduce((sum,row)=>sum+(row.tokens&&typeof row.tokens==='number'?row.tokens:0),0);assert.equal(chargedAfter-chargedBefore,24,'Both provider calls must be charged');assert.equal(db.records.get('nyxAiAllowance/global').slots.length,0);
   const freeResponse=await send('late-free-catalog',{model:'nvidia/nemotron-3-ultra-550b-a55b:free'});
   assert.equal(freeResponse.status,200);await freeResponse.text();

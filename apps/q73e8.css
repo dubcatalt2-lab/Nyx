@@ -16,6 +16,15 @@ html[data-q73e8] {
   background: #000 !important
 }
 
+html[data-q73e8][data-nyx-embedded-background],
+html[data-q73e8][data-nyx-embedded-background] body {
+  background: transparent !important;
+}
+html[data-nyx-embedded-background] :is(.q73e8, .q48e2),
+html[data-nyx-embedded-background] body::before {
+  display: none !important;
+}
+
 .q73e8 {
   position: fixed;
   inset: -40px;

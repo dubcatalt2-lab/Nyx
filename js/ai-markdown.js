@@ -155,7 +155,7 @@
         }
         if (index < lines.length) index += 1;
         blocks.push(
-          `<div class="ai-code-block"><div class="ai-code-head"><span>${escapeHtml(language)}</span><button class="ai-code-copy" type="button" data-copy-code aria-label="Copy code"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/></svg><span>Copy</span></button></div><pre><code>${escapeHtml(code.join("\n"))}</code></pre></div>`,
+          `<div class="ai-code-block"><div class="ai-code-head"><span>${escapeHtml(language)}</span><button class="ai-code-copy" type="button" data-copy-code aria-label="Copy code"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M15 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h3"/></svg><span>Copy</span></button></div><textarea class="ai-code-area" readonly spellcheck="false" wrap="off" rows="${Math.max(4, Math.min(20, code.length))}" aria-label="${escapeHtml(language)} code">\n${escapeHtml(code.join("\n"))}</textarea></div>`,
         );
         continue;
       }

@@ -36,6 +36,7 @@ function q73e8() {
     const host =
       window.parent !== window && parent.location.origin === location.origin ? parent : null;
     if (host) {
+      document.documentElement.setAttribute('data-nyx-embedded-background', '');
       const root = host.document.documentElement,
         body = host.document.body;
       variant = root.getAttribute("data-n7x-beam-wallpaper") || "";

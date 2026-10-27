@@ -1,12 +1,14 @@
 import { publisherConfig, publisherHostAllowed, publisherMode, publisherSurface } from "./publisher-config.js";
 import { createPublisherFrame } from "./publisher-frame.js";
 import "./publisher-popup.js";
+import {startPlacements} from './publisher-placements.js';
 
 export function startHomeSponsors() {
   if (!publisherHostAllowed() || publisherConfig.homeBanners.length !== 2) return;
   const states = new Map();
   let scheduled = false;
-  const dismissed = new Set();
+  const dismissed = new Map();
+  let visitHome = null;
   const style = document.createElement("style");
   style.textContent =
     '.n7x-home-sponsor{position:absolute;bottom:24px;width:64px;z-index:3;color:var(--obsidian-muted,#aaa);font:10px/1.4 system-ui;text-align:center}.n7x-home-sponsor[data-side="left"]{left:24px}.n7x-home-sponsor[data-side="right"]{right:24px}.n7x-home-sponsor>span{display:block;margin-bottom:8px}.n7x-home-sponsor .n7x-home-creative{width:64px;height:240px;overflow:hidden}.n7x-home-sponsor iframe{transform:scale(.4);transform-origin:top left;display:block;width:160px;height:600px;border:0;background:transparent}.n7x-home-sponsor:not([data-ready]){visibility:hidden}.n7x-home-sponsor[hidden]{display:none!important}';
@@ -14,7 +16,6 @@ export function startHomeSponsors() {
   style.textContent +=
     ".n7x-home-sponsor header{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:4px;font-size:8px}.n7x-home-sponsor button{display:grid;place-items:center;flex:none;width:24px;height:24px;border:1px solid #ffffff30;border-radius:6px;background:#151515;color:#eee;cursor:pointer}.n7x-home-sponsor button svg{width:12px;height:12px}";
 
-  style.textContent += '.n7x-sponsored-page>iframe.view{left:88px!important;right:88px!important;width:calc(100% - 176px)!important}.n7x-sponsored-page>.n7x-home-sponsor[data-side="left"]{left:12px}.n7x-sponsored-page>.n7x-home-sponsor[data-side="right"]{right:12px}@media(max-width:600px){.n7x-sponsored-page>iframe.view{left:0!important;right:0!important;width:100%!important;bottom:280px!important;height:calc(100% - 280px)!important}.n7x-sponsored-page>.n7x-home-sponsor{bottom:4px}}';
   function clear(state) {
     for (const slot of state.slots) {
       slot.frame.destroy();
@@ -24,6 +25,13 @@ export function startHomeSponsors() {
   }
   function update() {
     scheduled = false;
+    const visit = [...document.querySelectorAll('.n2ac0604c6ebc.q6139d8ecebcdf8e8c1 .n7x-minimal-home:not(.hidden)')].find(node => node.getClientRects().length) || null;
+    if (visit !== visitHome) {
+      for (const timer of dismissed.values()) clearTimeout(timer);
+      dismissed.clear();
+      for (const state of states.values()) state.attempted = false;
+      visitHome = visit;
+    }
     const mode = publisherMode();
     const eligible = !["off", "pending"].includes(mode);
     const surface = publisherSurface();
@@ -64,7 +72,14 @@ export function startHomeSponsors() {
         close.innerHTML =
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M6 18 18 6"/></svg>';
         close.addEventListener("click", () => {
-          dismissed.add(index);
+          dismissed.set(index, setTimeout(() => {
+            dismissed.delete(index);
+            for (const state of states.values()) {
+              clear(state);
+              state.attempted = false;
+            }
+            schedule();
+          }, 5 * 60 * 1000));
           for (const state of states.values())
             state.slots = state.slots.filter((slot) => {
               if (slot.index !== index) return true;
@@ -81,7 +96,6 @@ export function startHomeSponsors() {
           ...placement,
           onReady: () => {
             host.dataset.ready = "true";
-            if (home.matches('.q6576ed118d3ca9c284')) home.classList.add('n7x-sponsored-page');
           },
           onUnavailable: () => {
             slot.failed = true;
@@ -123,3 +137,4 @@ export function startHomeSponsors() {
 }
 
 startHomeSponsors();
+startPlacements('home');

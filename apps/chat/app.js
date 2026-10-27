@@ -3638,6 +3638,7 @@
       return;
     }
     const copy = document.createElement("span");
+    copy.setAttribute("data-user-content", "");
     const label = document.createElement("strong");
     label.textContent = `Replying to ${message.author?.displayName || message.author?.handle || "N7X member"}`;
     const preview = document.createElement("small");
@@ -3663,11 +3664,12 @@
     refs.input.setSelectionRange(refs.input.value.length, refs.input.value.length);
   }
   function renderMessages() {
-    closeMessageContextMenu();
     const key = scopeKey();
     const messages = (state.messages.get(key) || []).filter(
       (message) => !social.muted(message.author?.uid),
     );
+    if (state.contextMessage && (state.contextScope !== key || !messages.some(message => message.id === state.contextMessage.id))) closeMessageContextMenu();
+    if (reactionPickerTarget && (reactionPickerTarget.scope !== key || !messages.some(message => message.id === reactionPickerTarget.id))) closeReactionPicker();
     const existingById = new Map(
       [...refs.messageList.children].map((node) => [String(node.dataset.messageId || ""), node]),
     );
@@ -3825,6 +3827,7 @@
   }
   function closeMessageContextMenu() {
     state.contextMessage = null;
+    state.contextScope = null;
     refs.messageContextMenu.hidden = true;
     refs.messageContextMenu.replaceChildren();
   }
@@ -3866,6 +3869,7 @@
     closeMessageContextMenu();
     closeReactionPicker();
     state.contextMessage = message;
+    state.contextScope = scopeKey();
     const reactions = document.createElement("div");
     reactions.className = "message-context-reactions";
     REACTIONS.slice(0, 5).forEach((emoji) => {
@@ -3880,6 +3884,19 @@
       reactions.append(button);
     });
     refs.messageContextMenu.append(reactions);
+    if (isModerator() && /^mizu_[a-f0-9]{40}$/.test(message.author?.uid || '')) {
+      for (const banned of [true, false]) {
+        const button = messageContextAction(banned ? 'Ban from shared global chat' : 'Unban from shared global chat', 'users', async () => {
+          try {
+            const path = `${API}/integrations/mizu/users/${encodeURIComponent(message.author.uid)}`;
+            const result = await fetchJson(path, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({banned})});
+            showNotice(result.banned ? 'MizuMath member banned from shared global chat.' : 'MizuMath member can use shared global chat again.', 'success');
+          } catch (error) { showNotice(error.message, 'error'); }
+        }, {danger:banned});
+        button.querySelector('svg').innerHTML = banned ? '<circle cx="12" cy="12" r="8"/><path d="m6.5 6.5 11 11"/>' : '<path d="M7 11V8a5 5 0 0 1 9-3M5 11h14v10H5zM12 15v3"/>';
+        refs.messageContextMenu.append(button);
+      }
+    }
     if (!message.pending && message.author?.uid === state.me?.uid)
       refs.messageContextMenu.append(messageContextAction("Edit message", "edit", () => editMessage(message)));
     if (message.author?.uid && message.author.uid !== state.me?.uid) {
@@ -3933,6 +3950,7 @@
     refs.messageContextMenu.querySelector("button")?.focus();
   }
   let reactionPickerClose = null;
+  let reactionPickerTarget = null;
   function closeReactionPicker() {
     reactionPickerClose?.();
   }
@@ -3945,6 +3963,7 @@
     closeMessageContextMenu();
     const scope = { ...state.active },
       previousFocus = document.activeElement;
+    reactionPickerTarget = {scope:scopeKey(),id:message.id};
     const picker = document.createElement("div");
     picker.className = "reaction-picker";
     picker.setAttribute("role", "dialog");
@@ -3980,6 +3999,7 @@
       controller.abort();
       picker.remove();
       reactionPickerClose = null;
+      reactionPickerTarget = null;
       if (previousFocus?.isConnected) previousFocus.focus();
     };
     let q98a2 = 120;
@@ -4082,7 +4102,6 @@
       options,
     );
     window.addEventListener("resize", closeReactionPicker, options);
-    refs.scroller.addEventListener("scroll", closeReactionPicker, options);
   }
 
   const q74b8 = new Set();
@@ -6922,7 +6941,6 @@
   refs.scroller.addEventListener(
     "scroll",
     () => {
-      closeMessageContextMenu();
       if (state.me) markRead();
     },
     { passive: true },

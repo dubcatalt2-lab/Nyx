@@ -12,7 +12,7 @@ export function createPublisherFrame({
   element.height = height;
   element.setAttribute(
     "sandbox",
-    "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox",
+    "allow-scripts",
   );
   element.dataset.nyxSponsorPath = path;
   element.referrerPolicy = "strict-origin-when-cross-origin";

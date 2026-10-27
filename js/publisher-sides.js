@@ -137,4 +137,4 @@ export function startHomeSponsors() {
 }
 
 startHomeSponsors();
-startPlacements('home');
+// Homepage social bars are omitted; offers are isolated in publisher-popup.

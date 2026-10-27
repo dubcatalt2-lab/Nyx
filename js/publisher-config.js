@@ -1,3 +1,9 @@
+const preferenceKey='nyx.ads.enabled';
+export function publisherAdsEnabled(){try{return localStorage.getItem(preferenceKey)!=='false';}catch{return false;}}
+function refreshAds(){dispatchEvent(new Event('nyx:publisher-change'));for(const button of document.querySelectorAll('[data-n7x-ads-toggle]')){const on=publisherAdsEnabled();button.setAttribute('aria-checked',String(on));button.classList.toggle('on',on);const text=button.querySelector('span');if(text)text.textContent=on?'On':'Off';}}
+window[Symbol.for('nyx.ads.preference')]={enabled:publisherAdsEnabled,set(enabled){try{localStorage.setItem(preferenceKey,String(Boolean(enabled)));}catch{return false;}refreshAds();return true;}};
+addEventListener('storage',event=>{if(event.key===preferenceKey||event.key===null)refreshAds();});
+document.addEventListener('click',event=>{const button=event.target.closest?.('[data-n7x-ads-toggle]');if(!button)return;window[Symbol.for('nyx.ads.preference')].set(!publisherAdsEnabled());});
 export const publisherConfig = Object.freeze({
   homeBanners: [
     { path: "/apps/sponsor/side.html", width: 160, height: 600 },
@@ -8,6 +14,7 @@ export function publisherHostAllowed() {
   return /^https?:$/.test(location.protocol);
 }
 export function publisherAccountMode(account = window.__nyxPublisherAccount) {
+  if (!publisherAdsEnabled()) return 'off';
   if (!account || account.state === 'pending') return 'pending';
   if (account.state === 'guest') return 'standard';
   if (account.state !== 'ready' || typeof account.role !== 'string' || typeof account.subscriptionStatus !== 'string') return 'pending';

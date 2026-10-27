@@ -3,6 +3,8 @@ import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
   "sw.js",
+  "apps/sponsor/offers.html",
+  "apps/sponsor/offers-bridge.js",
   "apps/ad-haven/app.js",
   "apps/ad-haven/banner.html",
   "apps/ad-haven/index.html",

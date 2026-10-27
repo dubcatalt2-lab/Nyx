@@ -13,7 +13,7 @@ function fixture(premium=false){
 }
 for(const premium of [false,true]){
   const f=fixture(premium),{a,actor}=f;
-  const initial=await a.usage(actor);assert.equal(initial.resetAt,null);assert.equal(initial.tokens.limit,premium?70000:14000);
+  const initial=await a.usage(actor);assert.equal(initial.resetAt,null);assert.equal(initial.tokens.limit,premium?140000:50000);
   for(let i=0;i<20;i++){
     const s=await a.begin(actor);
                                                                            
@@ -24,7 +24,7 @@ for(const premium of [false,true]){
   }
   const settled=await a.usage(actor);assert.equal(settled.tokens.used,400);assert.equal(settled.tokens.pending,0);
   const changed=await a.usage({...actor,premium:!premium});assert.equal(changed.tokens.used,400);assert.equal(changed.resetAt,settled.resetAt);
-  assert.equal(changed.tokens.limit,premium?14000:70000);
+  assert.equal(changed.tokens.limit,premium?50000:140000);
   f.advance(4*DAY);assert.equal((await a.usage(actor)).tokens.used,0);
   assert.equal((await a.usage(actor)).resetAt,null,'An expired pool starts its next window on the next request, not a balance read');
 }
@@ -53,7 +53,7 @@ for(const premium of [false,true]){
   for(let i=0;i<12;i++){const session=await a.begin(actor);await a.finish(session,false);}
   advance(61000);
   const busy=await a.begin(actor);await assert.rejects(a.begin(actor),e=>e.reason==='capacity');await a.finish(busy,false);
-  const cap=await a.begin(actor);db.records.get(cap.refs.models.path).pool.used=14000;
+  const cap=await a.begin(actor);db.records.get(cap.refs.models.path).pool.used=50000;
   await assert.rejects(a.reserve(cap,'shared',payload(),price),e=>e.reason==='token_limit');await a.finish(cap,false);
 }
 {

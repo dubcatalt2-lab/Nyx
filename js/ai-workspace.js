@@ -1475,6 +1475,7 @@
         : null,
       tokens: Number.isFinite(value.tokens) ? Math.max(0, Math.min(value.tokens, 1000000)) : 0,
       estimated: value.estimated !== false,
+      totalTokens: Number.isSafeInteger(value.totalTokens) && value.totalTokens >= 0 ? value.totalTokens : null,
     };
   }
   function showTiming(message, value, waiting = false) {
@@ -1501,9 +1502,9 @@
           " tok/s" +
           (timing.estimated ? " (estimated)" : "")
         : "";
-    stats.textContent = first + speed + (waiting ? "" : " | " + seconds + "s total");
+    stats.textContent = first + speed + (waiting ? "" : " | " + seconds + "s total") + (!waiting && timing.totalTokens !== null ? " | " + timing.totalTokens.toLocaleString() + " tokens used" : "");
     stats.title =
-      "Measured on this device. Tokens per second averages the entire request, including waiting. Estimates use roughly four characters per token; reported usage may include reasoning tokens.";
+      "Reply speed is measured in tokens per second, not tokens used. Allowance usage includes the prompt, conversation history, reply and any reasoning tokens reported by the provider.";
   }
 
   function showContinuation(message) {
@@ -2654,12 +2655,13 @@
       finishReason = null;
     const timingStart = performance.now();
     let firstTextMs = null,
-      reportedTokens = 0;
+      reportedTokens = 0, totalTokens = null;
     const getTiming = () => ({
       elapsedMs: performance.now() - timingStart,
       firstTextMs,
       tokens: reportedTokens || Math.ceil(answer.length / 4),
       estimated: !reportedTokens,
+      totalTokens,
     });
     const timingTimer = setInterval(() => {
       showTiming(pending, getTiming(), true);
@@ -2851,6 +2853,7 @@
               data.nyx_usage?.completion_tokens ?? data.usage?.completion_tokens,
             );
             if (Number.isFinite(usageTokens) && usageTokens > 0) reportedTokens = usageTokens;
+            if (Number.isSafeInteger(data.nyx_usage?.total_tokens) && data.nyx_usage.total_tokens >= 0) totalTokens = data.nyx_usage.total_tokens;
             if (data.nyx_metadata) {
               const previous = pending._nyxMetadata || { sources: [], summary: "" };
               pending._nyxMetadata = normalizeMetadata({

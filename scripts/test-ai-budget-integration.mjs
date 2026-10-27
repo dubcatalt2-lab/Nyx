@@ -1,4 +1,6 @@
+import {fableTrialActive} from '../lib/ai-fable-trial.mjs';
 import {createNookDeveloper} from '../lib/nook-developer.mjs';
+import {τοπικήΓέφυρα} from '../lib/local-ai-relay.mjs';
 import {isNookRequest} from '../lib/nook-policy.mjs';
 import {hasAppAiAllowance,dropModelIsExpensive} from '../lib/ai-allowance.mjs';
 import {recordAiExchange,readAiActivity} from '../lib/ai-history.mjs';
@@ -27,7 +29,7 @@ const firebase={firestore:db,auth:{async getUser(uid){return {uid,email:'optiona
 let calls=0,lastPayload,hold,balance=1,providerFailure=false;
 const environment={NYX_AI_CONCURRENT_GLOBAL:3,NYX_OPENROUTER_API_KEY:'fixture-inference',NYX_OPENROUTER_MANAGEMENT_KEY:'fixture-management',NYX_AI_DAILY_BUDGET_USD:'1',NYX_AI_MODEL_PRICES_JSON:JSON.stringify({'shared:google/gemini-fixture':{inputPerMillion:1,outputPerMillion:2},['shared:'+GEMINI]:{inputPerMillion:.1,outputPerMillion:.4},'groq:test':{inputPerMillion:1,outputPerMillion:2}})};
 const context=vm.createContext({isTutsiHostname:host=>host==='tutsi.test',isNookRequest,hasAppAiAllowance,dropModelIsExpensive,recordAiExchange,isFreeAiModel,hasFullAiCatalog,aiCatalogPrice,app,AsyncLocalStorage,aiAllowanceConfig,createAiAllowance,premiumModelLimits,aiBudgetResponse,
-  process:{env:environment},AbortController,AbortSignal,URL,Headers,setTimeout,clearTimeout,
+  τοπικήΓέφυρα,fableTrialActive,process:{env:environment},AbortController,AbortSignal,URL,Headers,setTimeout,clearTimeout,
   createOpenRouterBalanceGuard:options=>createOpenRouterBalanceGuard({...options,fetchImpl:async url=>new Response(JSON.stringify({data:url.endsWith('/credits')?{total_credits:balance,total_usage:0}:{limit_remaining:null}}))}),
   authenticatedNyxUser:async req=>{const uid=req.get('authorization')?.replace('Bearer ','');if(!uid)throw Object.assign(new Error('Auth required'),{status:401});return {firebase,token:{uid,email_verified:false}};},
 
@@ -52,7 +54,7 @@ for(const path of ['/api/nyx-ai'])app.post(path,async(req,res)=>{
     if(path==='/api/v1/ai')return res.status(410).json({error:'Retired'});
     const credential=context.nyxAiRequestCredential(req);
     if(credential.invalid||credential.invalidProvider)return res.status(410).json({error:'Removed'});
-    const options={method:'POST',headers:{authorization:'Bearer fixture-inference'},body:JSON.stringify({model:req.body.model||'google/gemini-fixture',max_tokens:1000,messages:[{role:'user',content:'Hi'}]})};
+    const options={method:'POST',headers:{authorization:'Bearer fixture-inference'},body:JSON.stringify({model:req.body.model||'google/gemini-fixture',stream:true,max_tokens:1000,messages:[{role:'user',content:'Hi'}]})};
     let response=await context.nyxAiProviderFetch({id:'shared'},'https://openrouter.ai/api/v1/chat/completions',options);
     if(req.body.repair){await response.json();response=await context.nyxAiProviderFetch({id:'shared'},'https://openrouter.ai/api/v1/chat/completions',options);}
     res.type('json').send(await response.text());
@@ -67,8 +69,8 @@ try {
   assert.equal((await send('disabled')).status,403);assert.equal(calls,0);
   assert.equal((await send('unpriced',{model:'google/gemini-unpriced'})).status,503);assert.equal(calls,0);
   await new Promise(resolve=>setTimeout(resolve,30));
-  const ok=await send('member');assert.equal(ok.status,200);assert.match(ok.headers.get('set-cookie'),/HttpOnly/);await ok.text();
-  assert.equal(calls,1);assert.equal(lastPayload.max_tokens,700);
+  const ok=await send('member');assert.equal(ok.status,200,await ok.clone().text());assert.match(ok.headers.get('set-cookie'),/HttpOnly/);await ok.text();
+  assert.equal(calls,1);assert.equal(lastPayload.max_tokens,700);assert.equal(lastPayload.stream_options.include_usage,true);
   assert.equal(lastPayload.provider.max_price.prompt,1);assert.equal(lastPayload.provider.max_price.completion,2);
   await new Promise(resolve=>setTimeout(resolve,30));
   assert.equal((await send(null,{}, {'x-nyx-ai-api-key':'retired-personal'})).status,410);assert.equal(calls,1);
@@ -213,10 +215,10 @@ try {
   assert.equal((await fetch(origin+'/api/nyx-ai/usage',{headers:{authorization:'Bearer member','sec-fetch-site':'cross-site'}})).status,403);
   const usageReply=await fetch(origin+'/api/nyx-ai/usage',{headers:{authorization:'Bearer member'}});
   assert.match(usageReply.headers.get('cache-control'),/no-store/);
-  const memberUsage=await usageReply.json();assert.equal(memberUsage.tokens.limit,7000);assert.equal(memberUsage.tokens.used,12);assert.equal(memberUsage.tokens.pending,0);
+  const memberUsage=await usageReply.json();assert.equal(memberUsage.tokens.limit,50000);assert.equal(memberUsage.tokens.used,12);assert.equal(memberUsage.tokens.pending,0);
   db.records.set('nyxUserAdministration/member',{subscriptionStatus:'premium'});
   const upgraded=await(await fetch(origin+'/api/tutsi-ai/usage',{headers:{authorization:'Bearer member'}})).json();
-  assert.equal(upgraded.tokens.limit,50000);assert.equal(upgraded.tokens.used,memberUsage.tokens.used);assert.equal(upgraded.resetAt,memberUsage.resetAt);
+  assert.equal(upgraded.tokens.limit,140000);assert.equal(upgraded.tokens.used,memberUsage.tokens.used);assert.equal(upgraded.resetAt,memberUsage.resetAt);
   const nookUsage=await(await fetch(origin+'/api/nook-ai/usage',{headers:{authorization:'Bearer nook-route',cookie}})).json();
   assert.equal(nookUsage.scope,'browser');assert.equal(nookUsage.tokens.limit,7000);
   const dropUsage=await(await fetch(origin+'/api/drop-ai/usage',{headers:{authorization:'Bearer drop-route'}})).json();

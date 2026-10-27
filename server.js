@@ -2630,6 +2630,7 @@ async function nyxBudgetedAiFetch(provider,url,options) {
   if(!scope)throw Object.assign(new Error('Shared AI requires an authenticated request.'),{status:401});
   const session=await nyxSharedAiSession(scope);
   let payload;try {payload=JSON.parse(options.body);}catch{throw Object.assign(new Error('Invalid AI request.'),{status:400});}
+  if(payload.stream===true)payload.stream_options={...payload.stream_options,include_usage:true};
   let catalogPrice=null;
   if((hasFullAiCatalog(session.actor)||hasAppAiAllowance(session.actor)||session.actor.premium===true||session.actor.owner===true||fableTrialActive(payload.model,session.actor))&&new URL(url).hostname==='openrouter.ai'){
     const key=String(new Headers(options.headers).get('authorization')||'').replace(/^Bearer\s+/i,'');
@@ -2655,6 +2656,11 @@ async function nyxBudgetedAiFetch(provider,url,options) {
     return aiBudgetResponse(response,async(usage,success,imageCount,answer,details)=>{
       scope.success ||= success;
       await scope.allowance.settle(reservation,usage,false,imageCount,{refundTokens:details?.refundTokens});
+      if(usage){
+        scope.reportedUsage ||= {input:0,output:0};
+        scope.reportedUsage.input+=usage.input;
+        scope.reportedUsage.output+=usage.output;
+      } else if(!details?.refundTokens)scope.usageIncomplete=true;
       if(success){
         const lastUser=Array.isArray(scope.req.body?.messages)?scope.req.body.messages.filter(m=>m?.role==='user').at(-1)?.content:'';
         const prompt=typeof scope.req.body?.message==='string'?scope.req.body.message:typeof lastUser==='string'?lastUser:'';
@@ -3087,7 +3093,8 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
         navyReservationSettled = true;
       }
       if(finishReason)res.write(`data: ${JSON.stringify({choices:[{delta:{},finish_reason:finishReason}]})}\n\n`);
-      if(reportedTokens>0)res.write(`data: ${JSON.stringify({nyx_usage:{completion_tokens:reportedTokens}})}\n\n`);
+      const billingScope=nyxAiBudgetContext.getStore(),billing=billingScope?.reportedUsage;
+      if(reportedTokens>0||billing)res.write(`data: ${JSON.stringify({nyx_usage:{completion_tokens:reportedTokens,...(billing&&!billingScope.usageIncomplete?{prompt_tokens:billing.input,total_tokens:billing.input+billing.output}:{} )}})}\n\n`);
       res.write("data: [DONE]\n\n");
       res.end();
       return;

@@ -20,7 +20,7 @@ for(const uid of ['first','second']) {
 }
 assert.equal(db.records.get(`nyxAiAllowance/${fableTrialId}-global`).reserved,1500000,'Normal AI never charges Fable');
 const accountKey='nyxAiAllowance/models-'+createHash('sha256').update('first').digest('hex');
-const ledger=db.records.get(accountKey);ledger.pool.used=14000;db.records.set(accountKey,ledger);
+const ledger=db.records.get(accountKey);ledger.pool.used=50000;db.records.set(accountKey,ledger);
 const exhausted=await a.begin(actor('first'));await assert.rejects(a.reserve(exhausted,'shared',payload()),/account.*allowance/);await a.finish(exhausted);
 const another=await a.begin(actor('third'));await a.reserve(another,'shared',payload());await a.finish(another);
 await assert.rejects(a.begin({...actor('external'),app:'tutsi'}),/shared AI allowance/);

@@ -172,6 +172,10 @@
 
   window.nyxLoadingScreen = {
     show() {
+      if(document.querySelector('meta[name="nyx-static-backend"]'))return {
+        async step(_value,label,task){try{return {ok:true,result:await Promise.resolve().then(task)};}catch(error){console.warn(`Startup task failed: ${label}`,error);return {ok:false,error};}},
+        async complete(){}
+      };
       const splash = document.getElementById("n3e8549522c8c");
       const fill = splash?.querySelector(".n7x-loading-progress span");
       if (!splash || !fill) return null;

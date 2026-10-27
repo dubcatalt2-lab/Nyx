@@ -34,11 +34,11 @@ if(source==='dist'||exported){const modules=JSON.parse(await readFile(source+'/p
 const frontendApp=express();frontendApp.get('/assets/backgrounds/fixture.html',(_req,res)=>res.type('html').send('<title>Static background</title>'));frontendApp.get('/fixture-relay.mjs',async(_req,res)=>res.type('text/javascript').send(await readFile(source+httpModule,'utf8')));frontendApp.get('/direct-s3-config.json',(_req,res)=>res.json({origin,backend:backendOrigin,runtime,aliases:exportConfig?.aliases||{},features:exportConfig?.features||{}}));
 frontendApp.get('/direct-s3-worker.js',async(_req,res)=>res.type('text/javascript').send(await readFile(source+worker,'utf8')));
 if(!exported)frontendApp.get('/index.html',(_req,res)=>res.type('html').send(`<html><head></head><body><p role="status">Connecting</p><script src="${entry}"></script></body></html>`));
-if(!exported)frontendApp.get('/studies.html',(_req,res)=>res.type('html').send('<html><head></head><body>Fixture workspace</body></html>'));frontendApp.use(express.static(source));
+if(!exported)frontendApp.get('/studies.html',(_req,res)=>res.type('html').send(`<html><head><meta name="nyx-static-backend" content="${backendOrigin}"><script src="${runtime}"></script></head><body>Fixture workspace</body></html>`));frontendApp.use(express.static(source));
 const frontend=createServer(tls,frontendApp);await new Promise(r=>frontend.listen(0,'127.0.0.1',r));
 const browser=await chromium.launch({args:['--ignore-certificate-errors','--disable-features=LocalNetworkAccessChecks',`--host-resolver-rules=MAP nyx-fixture.s3.amazonaws.com 127.0.0.1:${frontend.address().port}`]});
 try{
- const page=await browser.newPage({ignoreHTTPSErrors:true});let application=page;page.on('response',r=>{if(r.url().includes('/api/tutsi-relay/')&&r.status()>=400)console.log('RELAY HTTP',new URL(r.url()).pathname,r.status());});if(exported)await page.addInitScript(()=>{try{if(location.origin!=='https://nyx-fixture.s3.amazonaws.com')return;localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');}catch{}});page.on('pageerror',e=>console.log('PAGE ERROR',e.message));page.context().on('serviceworker',w=>w.on('console',m=>console.log('WORKER',m.text())));if(exported){
+ const page=await browser.newPage({ignoreHTTPSErrors:true});await page.addInitScript(()=>{window[Symbol.for('nyx.direct-s3.runtime')]=true;});let application=page;page.on('response',r=>{if(r.url().includes('/api/tutsi-relay/')&&r.status()>=400)console.log('RELAY HTTP',new URL(r.url()).pathname,r.status());});if(exported)await page.addInitScript(()=>{try{if(location.origin!=='https://nyx-fixture.s3.amazonaws.com')return;localStorage.setItem('nyx.setupComplete','true');localStorage.setItem('nyx.tosAcceptedVersion','2026-07-30');}catch{}});page.on('pageerror',e=>console.log('PAGE ERROR',e.message));page.context().on('serviceworker',w=>w.on('console',m=>console.log('WORKER',m.text())));if(exported){
   const sharedRequests=[];
   await page.route('https://s3.us-east-1.amazonaws.com/**',async route=>{
    sharedRequests.push(route.request().url());
@@ -58,6 +58,7 @@ try{
   assert.equal(await page.locator('iframe').getAttribute('allowfullscreen'),'');
   console.log('PASS regional path-style URL stays visible; application document isolated on the bucket origin');
  }else await page.goto(origin+'/index.html');await application.waitForURL('**/studies.html');if(exported){await application.waitForFunction(()=>typeof window.nyxLaunchGameFrame==='function');console.log('PASS actual compiled Nyx shell initialized from the exported S3 files');}
+ assert.equal(await application.locator('progress').count(),0,'S3 entry has no blocking progress screen');
  assert.equal(await application.evaluate(async()=>(await fetch('/api/presence')).json().then(data=>data.online)),12);
  assert.equal(await application.evaluate(async()=>(await fetch('/assets/backgrounds/fixture.html')).text()),'<title>Static background</title>');
  assert.equal(await application.evaluate(async()=>{const r=await fetch('/api/private');return r.status}),401);

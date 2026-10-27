@@ -574,6 +574,8 @@ async function main() {
   console.log(
     `Encoded string literals in ${encodedCount} browser assets after path and storage renaming.`,
   );
+  // Provider-owned worker: retain its required root URL and exact bytes.
+  await copyFile(join(root, "sw.js"), join(output, "sw.js"));
   await buildPublisherPackage(root, output);
   console.log(`VPS build ready in ${output}`);
   console.log(`Wisp endpoint: ${wispUrl}`);

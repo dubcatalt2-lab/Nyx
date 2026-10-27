@@ -2,6 +2,7 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "sw.js",
   "apps/blooket/index.html",
   "apps/blooket/app.js",
   "apps/blooket/connector.mjs",

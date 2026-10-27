@@ -172,7 +172,7 @@
 
   window.nyxLoadingScreen = {
     show() {
-      if(document.querySelector('meta[name="nyx-static-backend"]'))return {
+      if(window[Symbol.for('nyx.direct-s3.ready')] || document.querySelector('meta[name="nyx-static-backend"]'))return {
         async step(_value,label,task){try{return {ok:true,result:await Promise.resolve().then(task)};}catch(error){console.warn(`Startup task failed: ${label}`,error);return {ok:false,error};}},
         async complete(){}
       };

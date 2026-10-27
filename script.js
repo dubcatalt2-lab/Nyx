@@ -13347,6 +13347,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     renderHomeShortcuts();
   }
   const nyxDefaultGlobalApps = [
+    ["ad-haven", "ad-haven", "Ad Haven", "/apps/ad-haven/"],
     ["blooket-tools", "blooket.com", "Blooket", "/apps/blooket/"],
     ["code-studio", "code-studio", "Code Sandbox", "/apps/code-studio/"],
     ["link-checker", "link-checker", "Link Checker", "/apps/link-checker/"],
@@ -13393,6 +13394,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       "games": "games",
     };
     const tools = {
+      "ad-haven": '<path d="m3 10 9-7 9 7v10H3Z"/><path d="M8 20v-7h8v7M8 9h8"/>',
       "n7x-vms": '<rect x="3" y="3" width="18" height="13" rx="2"/><path d="M8 21h8m-4-5v5"/>',
       "link-checker":
         '<path d="M10 13a4 4 0 0 0 5.7 0l2.3-2.3A4 4 0 0 0 12.3 5L11 6.3M8 11l-2 2a4 4 0 0 0 3 7"/><path d="m14 19 2 2 5-5"/>',
@@ -13412,6 +13414,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       (app) => app.id !== "n7x-vms" && app.url.replace(/\/+$/, "") !== "/apps/nyxcloud",
     );
 
+    if (!apps.some(app => app.id === "ad-haven")) apps.push({id:"ad-haven",icon:"ad-haven",name:"Ad Haven",url:"/apps/ad-haven/"});
     return apps
       .map(
         (app, i) =>

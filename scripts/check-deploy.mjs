@@ -3,6 +3,14 @@ import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
   "sw.js",
+  "apps/ad-haven/app.js",
+  "apps/ad-haven/banner.html",
+  "apps/ad-haven/index.html",
+  "apps/ad-haven/multitag.html",
+  "apps/ad-haven/native.html",
+  "apps/ad-haven/popup-bridge.js",
+  "apps/ad-haven/style.css",
+
   "apps/blooket/index.html",
   "apps/blooket/app.js",
   "apps/blooket/connector.mjs",

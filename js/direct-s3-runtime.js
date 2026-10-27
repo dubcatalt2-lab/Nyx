@@ -3,6 +3,7 @@
  const backend=document.querySelector('meta[name="nyx-static-backend"]')?.content;
  if(!backend)return;
  if(document.querySelector('meta[name="nyx-chat-enabled"]')?.content==='0')globalThis['nyx.static.chat']=false;
+ if(document.querySelector('meta[name="nyx-blooket-enabled"]')?.content==='0')globalThis['nyx.static.blooket']=false;
  const key=Symbol.for('nyx.direct-s3.runtime.v2');if(window[key])return;window[key]=true;
  const nativeFetch=window.fetch.bind(window);
  const ready=(async()=>{

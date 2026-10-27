@@ -27,6 +27,7 @@
 
   const $ = (id) => document.getElementById(id);
   const nyxChatEnabled = globalThis['nyx.static.chat'] !== false;
+  const nyxBlooketEnabled = globalThis['nyx.static.blooket'] !== false;
   if (!nyxChatEnabled) {
     const style = document.createElement('style');
     style.textContent = '[data-app-url^="/apps/chat"],[data-n7x-dock-item="chat"]{display:none!important}';
@@ -13368,7 +13369,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
   ]
     .map(([id, icon, name, url]) => ({ id, icon, name, url }))
     .map((app) => (app.id === "youtube" ? { ...app, name: "N7X7UB3" } : app));
-  const nyxHiddenGlobalAppIds = new Set(["code-tutorials", "tutsi", ...(!nyxChatEnabled ? ['nyx-chat'] : [])]);
+  const nyxHiddenGlobalAppIds = new Set(["code-tutorials", "tutsi", ...(!nyxChatEnabled ? ['nyx-chat'] : []), ...(!nyxBlooketEnabled ? ['blooket-tools'] : [])]);
   let nyxGlobalApps = nyxDefaultGlobalApps.filter((app) => !nyxHiddenGlobalAppIds.has(app.id)).map((app) => ({ ...app }));
   function normalizeNyxGlobalApp(app) {
     const id = String(app?.id || "")
@@ -13451,7 +13452,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
           (app) =>
             app && !["nyxtube", "nyx-tube"].includes(app.id) && !nyxHiddenGlobalAppIds.has(app.id) && !/^\/(?:apps\/)?tutsi(?:\/|$)/i.test(app.url || ""),
         );
-      if (!nyxGlobalApps.some(app => app.id === "blooket-tools" || app.url === "/apps/blooket/"))
+      if (nyxBlooketEnabled && !nyxGlobalApps.some(app => app.id === "blooket-tools" || app.url === "/apps/blooket/"))
         nyxGlobalApps.push({ id: "blooket-tools", icon: "blooket.com", name: "Blooket", url: "/apps/blooket/" });
       renderNyxGlobalApps();
     } catch (error) {

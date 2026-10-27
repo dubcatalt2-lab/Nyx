@@ -26,6 +26,7 @@ self.addEventListener('fetch',event=>{
  event.respondWith((async()=>{
   const config=await settings;
   if(config.features?.chat===false && /^\/(?:apps\/chat|api\/chat|socket\.io)(?:\/|$)/.test(url.pathname))return new Response('Not found',{status:404});
+  if(config.features?.blooket===false && /^\/apps\/blooket(?:\/|$)/.test(url.pathname))return new Response('Not found',{status:404});
   const remote=/^\/(?:api(?:\/|$)|socket\.io(?:\/|$)|healthz$|resources\/live(?:\/|$)|wisp(?:\/|$)|download\/|gn-math-|cloud\/v1\/)/.test(url.pathname);
   if(remote){
    await ensureBackendSession();
@@ -38,7 +39,7 @@ self.addEventListener('fetch',event=>{
   const response=await fetch(url.href===event.request.url?event.request:url.href,{headers:event.request.headers,credentials:'same-origin'});
   if(!response.ok||event.request.mode!=='navigate'||!url.pathname.endsWith('.html')||url.pathname==='/index.html')return response;
   let html=await response.text();
-  const injection='<meta name="nyx-static-backend" content="'+config.backend+'">'+(config.features?.chat===false?'<meta name="nyx-chat-enabled" content="0">':'')+'<script src="'+config.runtime+'"></script>';
+  const injection='<meta name="nyx-static-backend" content="'+config.backend+'">'+(config.features?.chat===false?'<meta name="nyx-chat-enabled" content="0">':'')+(config.features?.blooket===false?'<meta name="nyx-blooket-enabled" content="0">':'')+'<script src="'+config.runtime+'"></script>';
   html=html.replace(/<head(?:\s[^>]*)?>/i,match=>match+injection);
   const headers=new Headers(response.headers);headers.delete('content-length');headers.delete('content-encoding');headers.delete('content-disposition');headers.set('Content-Type','text/html; charset=utf-8');
   return new Response(html,{status:response.status,headers});

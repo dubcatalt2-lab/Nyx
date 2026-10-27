@@ -8,9 +8,9 @@ const origin=directS3Origin(argument('origin')||''),backend=argument('backend')|
 if(new URL(backend).origin!==backend||!backend.startsWith('https://'))throw Error('Use a backend HTTPS origin without a path.');
 const bucketHost=new URL(origin).hostname,bucket=bucketHost.split('.s3')[0],region=/\.s3[.-]([a-z0-9-]+)\.amazonaws\.com$/.exec(bucketHost)?.[1]||'us-east-1';
 const entryUrl='https://s3.'+region+'.amazonaws.com/'+bucket+'/studies.html';
-const features={chat:!process.argv.includes('--without-chat')};
+const features={chat:!process.argv.includes('--without-chat'),blooket:false};
 const root=process.cwd(),dist=resolve('dist'),output=resolve('.codex-artifacts','nyx-direct-s3-'+Date.now());
-await mkdir(output,{recursive:true});await cp(dist,join(output,'site'),{recursive:true,filter:p=>!p.endsWith('.map')&&!p.includes('static-package')&&(features.chat||!/\/apps\/chat(?:\/|$)/.test(p.replaceAll('\\','/')))});
+await mkdir(output,{recursive:true});await cp(dist,join(output,'site'),{recursive:true,filter:p=>!p.endsWith('.map')&&!p.includes('static-package')&&!/\/apps\/blooket(?:\/|$)/.test(p.replaceAll('\\','/'))&&(features.chat||!/\/apps\/chat(?:\/|$)/.test(p.replaceAll('\\','/')))});
 const frontend=JSON.parse(await readFile(join(dist,'frontend-assets.json'),'utf8')).aliases;
 const modules=JSON.parse(await readFile(join(dist,'public-modules.json'),'utf8')).aliases;
 const aliases={...frontend,...modules},asset=name=>aliases[name]||name;
@@ -18,9 +18,10 @@ const runtime=asset('/js/direct-s3-runtime.js');
 await cp(join(dist,asset('/js/direct-s3-worker.js').slice(1)),join(output,'site','direct-s3-worker.js'));
 const pages=JSON.parse(await readFile(join(dist,'published-pages.json'),'utf8')).pages;
 if(!features.chat)for(const name of Object.keys(pages))if(name.startsWith('apps/chat/'))delete pages[name];
+for(const name of Object.keys(pages))if(name.startsWith('apps/blooket/'))delete pages[name];
 // Sponsor documents run in isolated data frames, not the account application frame.
 for(const name of Object.keys(pages))if(name.startsWith('apps/sponsor/') || /^apps\/ad-haven\/(banner|native|multitag)\.html$/.test(name))delete pages[name];
-for(const name of Object.keys(pages)){const file=join(output,'site',name);let html=await readFile(file,'utf8');html=html.replace(/<head(?:\s[^>]*)?>/i,head=>head+`<meta name="nyx-static-backend" content="${backend}">${features.chat?'':'<meta name="nyx-chat-enabled" content="0">'}<script src="${runtime}"></script>`);await writeFile(file,html);}
+for(const name of Object.keys(pages)){const file=join(output,'site',name);let html=await readFile(file,'utf8');html=html.replace(/<head(?:\s[^>]*)?>/i,head=>head+`<meta name="nyx-static-backend" content="${backend}"><meta name="nyx-blooket-enabled" content="0">${features.chat?'':'<meta name="nyx-chat-enabled" content="0">'}<script src="${runtime}"></script>`);await writeFile(file,html);}
 await writeFile(join(output,'site','direct-s3-config.json'),JSON.stringify({origin,backend,runtime,aliases,features}));
 await writeFile(join(output,'site','index.html'),`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nyx</title></head><body><script src="${asset('/js/direct-s3-entry.js')}"></script></body></html>`);
 // Changing the backend must activate a new worker even when runtime source is unchanged.

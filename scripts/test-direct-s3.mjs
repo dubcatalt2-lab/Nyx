@@ -31,10 +31,10 @@ if(source==='dist'){const aliases=JSON.parse(await readFile('dist/frontend-asset
 const exportConfig=exported?JSON.parse(await readFile(source+'/direct-s3-config.json','utf8')):null;if(exportConfig){runtime=exportConfig.runtime;entry=exportConfig.aliases['/js/direct-s3-entry.js']||entry;worker='/direct-s3-worker.js';}
 let httpModule='/apps/tutsi/http-relay.mjs';
 if(source==='dist'||exported){const modules=JSON.parse(await readFile(source+'/public-modules.json','utf8')).aliases;httpModule=modules[httpModule]||httpModule;}
-const frontendApp=express();frontendApp.get('/assets/backgrounds/fixture.html',(_req,res)=>res.type('html').send('<title>Static background</title>'));frontendApp.get('/fixture-relay.mjs',async(_req,res)=>res.type('text/javascript').send(await readFile(source+httpModule,'utf8')));frontendApp.get('/direct-s3-config.json',(_req,res)=>res.json({origin,backend:backendOrigin,runtime,aliases:exportConfig?.aliases||{},features:exportConfig?.features||{}}));
+const frontendApp=express();frontendApp.get('/assets/backgrounds/fixture.html',(_req,res)=>res.type('html').send('<title>Static background</title>'));frontendApp.get('/fixture-relay.mjs',async(_req,res)=>res.type('text/javascript').send(await readFile(source+httpModule,'utf8')));frontendApp.get('/direct-s3-config.json',(_req,res)=>res.json({origin,backend:backendOrigin,runtime,aliases:exportConfig?.aliases||{},features:exportConfig?.features||{blooket:false}}));
 frontendApp.get('/direct-s3-worker.js',async(_req,res)=>res.type('text/javascript').send(await readFile(source+worker,'utf8')));
 if(!exported)frontendApp.get('/index.html',(_req,res)=>res.type('html').send(`<html><head></head><body><p role="status">Connecting</p><script src="${entry}"></script></body></html>`));
-if(!exported)frontendApp.get('/studies.html',(_req,res)=>res.type('html').send(`<html><head><meta name="nyx-static-backend" content="${backendOrigin}"><script src="${runtime}"></script></head><body>Fixture workspace</body></html>`));frontendApp.use(express.static(source));
+if(!exported)frontendApp.get('/studies.html',(_req,res)=>res.type('html').send(`<html><head><meta name="nyx-static-backend" content="${backendOrigin}"><meta name="nyx-blooket-enabled" content="0"><script src="${runtime}"></script></head><body>Fixture workspace</body></html>`));frontendApp.use(express.static(source));
 const frontend=createServer(tls,frontendApp);await new Promise(r=>frontend.listen(0,'127.0.0.1',r));
 const browser=await chromium.launch({args:['--ignore-certificate-errors','--disable-features=LocalNetworkAccessChecks',`--host-resolver-rules=MAP nyx-fixture.s3.amazonaws.com 127.0.0.1:${frontend.address().port}`]});
 try{
@@ -66,6 +66,13 @@ try{
  await application.evaluate(()=>fetch('/api/private',{mode:'same-origin',cache:'no-store',headers:{Authorization:'Bearer test-only'}}));assert(seen.at(-1).cookie.includes('nyx_q74bd9=signed-fixture'));
  assert.deepEqual(await application.evaluate(async()=>{const r=await fetch('/api/media',{headers:{Range:'bytes=0-3'}});return [r.status,r.headers.get('content-range'),...new Uint8Array(await r.arrayBuffer())]}),[206,'bytes 0-3/8',0,1,2,3]);
  const chunks=await application.evaluate(async()=>{const response=await fetch('/api/stream',{method:'POST',headers:{Authorization:'Bearer test-only','Content-Type':'application/json'},body:JSON.stringify({message:'fixture'})});const reader=response.body.getReader(),a=await reader.read(),b=await reader.read();return [new TextDecoder().decode(a.value),new TextDecoder().decode(b.value)]});assert.deepEqual(chunks,['data: first\n\n','data: second\n\n']);
+ if(exportConfig?.features?.blooket===false||!exported){
+  for(const path of ['/apps/blooket/','/apps/blooket/index.html','/apps/blooket/catalog.json'])assert.equal(await application.evaluate(async path=>(await fetch(path)).status,path),404);
+  assert.equal(await application.evaluate(()=>globalThis['nyx.static.blooket']),false);
+  if(exported){const manifest=JSON.parse(await readFile(exported+'/manifest.json','utf8'));
+  assert(!manifest.files.some(file=>file.path.startsWith('apps/blooket/')),'Blooket files must not be exported');}
+  console.log('PASS Blooket omitted from S3 files and blocked by the worker');
+ }
  if(exportConfig?.features?.chat===false){
   for(const path of ['/apps/chat/','/api/chat/state','/socket.io/socket.io.js'])assert.equal(await application.evaluate(async path=>(await fetch(path)).status,path),404);
   assert.equal(await application.locator('[data-app-url^="/apps/chat"]:visible').count(),0);

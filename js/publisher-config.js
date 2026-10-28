@@ -5,11 +5,21 @@ window[Symbol.for('nyx.ads.preference')]={enabled:publisherAdsEnabled,set(enable
 addEventListener('storage',event=>{if(event.key===preferenceKey||event.key===null)refreshAds();});
 document.addEventListener('click',event=>{const button=event.target.closest?.('[data-n7x-ads-toggle]');if(!button)return;window[Symbol.for('nyx.ads.preference')].set(!publisherAdsEnabled());});
 export const publisherConfig = Object.freeze({
+  offerAddress: "https://uplcm.com/4/12141120",
   homeBanners: [
     { path: "/apps/sponsor/side.html", width: 160, height: 600 },
     { path: "/apps/sponsor/side.html", width: 160, height: 600 },
   ],
 });
+export function publisherOfferAddress() {
+  try {
+    const value = globalThis.english_RUNTIME_CONFIG?.offerAddress ?? publisherConfig.offerAddress;
+    if (!value) return "";
+    const address = new URL(value);
+    return ["https:", "http:"].includes(address.protocol) && !address.username && !address.password
+      ? address.href : "";
+  } catch { return ""; }
+}
 export function publisherHostAllowed() {
   return /^https?:$/.test(location.protocol);
 }

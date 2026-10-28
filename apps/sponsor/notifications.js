@@ -9,4 +9,5 @@
   script.onerror=()=>{status.textContent='The notification service could not load.';};
   status.textContent='Opening notification setup...';document.head.append(script);
  });
+ button.disabled=false;
 })();

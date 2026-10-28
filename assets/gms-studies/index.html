@@ -54,7 +54,7 @@
       try{
         const parsed=new URL(url,location.href);
         if(['raw.githubusercontent.com','cdn.jsdelivr.net','rawcdn.githack.com','raw.githack.com'].includes(parsed.hostname)){
-          return `/gms-games-proxy?url=${encodeURIComponent(parsed.href)}`;
+          return `/gms-studies-proxy?url=${encodeURIComponent(parsed.href)}`;
         }
         return parsed.href;
       }catch{

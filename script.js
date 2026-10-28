@@ -4810,7 +4810,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     "nyx-movies": localIcon("nyx-movies.svg?v=1"),
     "fmhy.net": localIcon("theatre-masks.svg?v=1"),
     "nyx-chat": localIcon("chat.svg?v=2"),
-    "cloud-gaming": localIcon("cloud-gaming.svg?v=2"),
+    "cloud-gaming": localIcon("cloud-studies.svg?v=2"),
     "nyxify": localIcon("shortcut-nyxify.svg?v=3"),
     "link-checker": localIcon("link-checker.svg?v=2"),
     "link-generator": localIcon("link-generator.svg"),
@@ -7740,7 +7740,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     if (browserModeSelect) {
       const browserModeLabels = {
         auto: "Auto",
-        scramjet: "Scramjet v2",
+        scramjet: "Learning tools",
       };
       [...browserModeSelect.options].forEach((option) => {
         if (browserModeLabels[option.value]) option.textContent = browserModeLabels[option.value];
@@ -18646,7 +18646,7 @@ The current engine handles website navigation.
 Auto uses Scramjet with Libcurl by default and can recover with another relay if the connection fails.</p>
           <select id="settingBrowserMode">
             <option value="auto">Auto</option>
-            <option value="scramjet">Use Scramjet v2</option>
+            <option value="scramjet">Use Learning tools</option>
 
           </select>
         </section>

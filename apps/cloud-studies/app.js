@@ -1,6 +1,6 @@
 (() => {
   "use strict";
-  const API = "/api/cloud-gaming";
+  const API = "/api/cloud-studies";
   const state = {
     games: [],
     filtered: [],

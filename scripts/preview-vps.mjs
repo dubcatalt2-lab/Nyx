@@ -13,7 +13,7 @@ const app=express();
                                                                                
 app.use((req,res,next)=>{
  if(!['localhost','127.0.0.1'].includes(req.hostname)) return res.sendStatus(403);
- const sandboxGameAsset=req.headers.origin==='null'&&['GET','HEAD','OPTIONS'].includes(req.method)&&/^\/(?:gn-math-(?:fetch|asset|proxy)|gms-games-(?:fetch|proxy)|assets\/studies\/(?:study-health|study-ad-protection|study-runtime-compat)\.js)$/.test(req.path);
+ const sandboxGameAsset=req.headers.origin==='null'&&['GET','HEAD','OPTIONS'].includes(req.method)&&/^\/(?:gn-math-(?:fetch|asset|proxy)|gms-studies-(?:fetch|proxy)|assets\/studies\/(?:study-health|study-ad-protection|study-runtime-compat)\.js)$/.test(req.path);
  if(req.headers.origin && !sandboxGameAsset && ![`http://localhost:${port}`,`http://127.0.0.1:${port}`].includes(req.headers.origin)) return res.sendStatus(403);
  next();
 });

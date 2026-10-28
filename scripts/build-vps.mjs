@@ -4,6 +4,7 @@ import { buildBlooketCatalog } from "./build-blooket-catalog.mjs";
 import { encodeLiterals } from "./build-string-literals.mjs";
 import { patchClientSockets } from "./patch-client-sockets.mjs";
 import { buildInterfaceText } from "./build-interface-text.mjs";
+import { buildPublicCopy } from "./build-public-copy.mjs";
 import { buildDomHooks } from "./build-dom-hooks.mjs";
 import { buildGameStorage } from "./build-game-storage.mjs";
 import { buildPublicModules } from "./build-public-modules.mjs";
@@ -540,6 +541,7 @@ async function main() {
         .sort(),
     ),
   );
+  await buildPublicCopy(output);
   await buildInterfaceText(output);
   await buildDomHooks(output, repositoryFiles().filter(isStaticSource));
   await minifyFirstPartyBrowserRuntimes();

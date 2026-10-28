@@ -9,7 +9,7 @@ try {
  await page.route('**/fixture-player',r=>r.fulfill({contentType:'text/html',body:'<body style="margin:0;background:black;color:white">Fixture stream</body>'}));
  await page.route('**/api/**' ,r=>{
  const path=new URL(r.request().url()).pathname;
- if(path==='/api/cloud-gaming/sessions' && r.request().method()==='POST')return new Promise(resolve=>{releaseLaunch=()=>resolve(r.fulfill({contentType:'application/x-ndjson',body:JSON.stringify({id:'fixture',status:'finished_queue'})+'\n'}));});
+ if(path==='/api/cloud-studies/sessions' && r.request().method()==='POST')return new Promise(resolve=>{releaseLaunch=()=>resolve(r.fulfill({contentType:'application/x-ndjson',body:JSON.stringify({id:'fixture',status:'finished_queue'})+'\n'}));});
  if(path.endsWith('/start'))return r.fulfill({json:{session:{id:'fixture',state:'active',gameName:'Fixture',embedUrl:'/fixture-player'}}});
 
  return r.fulfill({json:path.endsWith('/catalog')?{games:Array.from({length:18},(_,i)=>({key:`fixture${i}`,name:`Test Game ${i}`,tags:['Adventure']}))}:path.endsWith('/status')?{configured:true}:path.endsWith('/auth-config')?{enabled:true,projectId:'fixture',apiKey:'fixture'}:{session:null}});

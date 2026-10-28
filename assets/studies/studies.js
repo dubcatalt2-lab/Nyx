@@ -682,7 +682,7 @@ function safeCover(url) {
       "raw.githack.com",
     ]);
     return proxiedHosts.has(parsed.hostname)
-      ? `/gms-games-proxy?url=${encodeURIComponent(parsed.href)}`
+      ? `/gms-studies-proxy?url=${encodeURIComponent(parsed.href)}`
       : parsed.href;
   } catch {
     return "";
@@ -700,7 +700,7 @@ function directCover(url) {
         if (owner.toLowerCase() === "gn-math" && repository.toLowerCase() === "covers") {
           return `https://raw.githack.com/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/${encodeURIComponent(branch)}/${path.map(encodeURIComponent).join("/")}`;
         }
-        return `/gms-games-proxy?url=${encodeURIComponent(parsed.href)}`;
+        return `/gms-studies-proxy?url=${encodeURIComponent(parsed.href)}`;
       }
     }
     return parsed.protocol === "https:" ? parsed.href : "";

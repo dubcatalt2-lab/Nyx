@@ -7,7 +7,7 @@
     const report = (reason) => {
       if (!game || sent.has(reason) || sent.size >= 2) return;
       sent.add(reason);
-      fetch("/api/games/reports", {
+      fetch("/api/studies/reports", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ provider, game, reason }),

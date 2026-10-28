@@ -12,8 +12,8 @@ const failed=createCloudLaunchLimit({now:()=>time});
 for(let i=0;i<8;i++){const r=failed.reserve('user');assert(r.allowed);r.finish(false);assert.equal(failed.reserve('user').retryAfter,10);time+=10000;}
 assert(failed.reserve('user').allowed,'Provider failures do not consume a ten-minute slot');
 const source=await readFile(new URL('../server.js',import.meta.url),'utf8');
-const start=source.indexOf('app.post("/api/cloud-gaming/sessions",');
-const end=source.indexOf('app.get("/api/cloud-gaming/sessions/:id/queue"',start);
+const start=source.indexOf('app.post("/api/cloud-studies/sessions",');
+const end=source.indexOf('app.get("/api/cloud-studies/sessions/:id/queue"',start);
 let handler,resolveCatalog;const provisioning=new Set(),sessions=new Map();let upstreamCalls=0;
 const context={app:{post:(path,fn)=>handler=fn},sameOriginRequest:()=>true,nyxCloudGamingConfig:()=>({configured:true,maxActiveSessions:8,createTimeoutMs:1000}),nyxCloudGamingUser:async()=>({token:{uid:'user'}}),nyxCloudGamingError:(m,status)=>Object.assign(new Error(m),{status}),nyxCloudGamingPublicError:m=>m,nyxCloudGamingProvisioningUsers:provisioning,nyxCloudGamingSessions:sessions,nyxCloudGamingLaunchLimit:createCloudLaunchLimit(),nyxCloudGamingCatalog:()=>new Promise(resolve=>resolveCatalog=resolve),nyxCloudGamingUpstream:async()=>{upstreamCalls++;return new Response(JSON.stringify({id:'fixture-session',status:'queue'})+'\n')},nyxCloudGamingSafeEvent:value=>value,AbortController,TextDecoder,Uint8Array,setTimeout,clearTimeout,Date};
 vm.runInNewContext(source.slice(start,end),context);

@@ -112,8 +112,10 @@ export function createDomHookTransform() {
     if (path.endsWith(".html")) {
       const scripts = [];
       const shell = source.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi, (whole, attrs, code) => {
-        scripts.push(!code.trim() || scriptKind(attrs) === null ? whole :
-          "<script" + attrs + ">" + rewrite(code, path + (scriptKind(attrs) === "module" ? ".inline.mjs" : ".inline.js")) + "</script>");
+        // Local script attributes share owned hooks with their runtime. External SDK attributes remain API fields.
+        const open = /\bsrc\s*=\s*["'](?:https?:)?\/\//i.test(attrs) ? "<script" + attrs + ">" : markup("<script" + attrs + ">");
+        scripts.push(open + (!code.trim() || scriptKind(attrs) === null ? code :
+          rewrite(code, path + (scriptKind(attrs) === "module" ? ".inline.mjs" : ".inline.js"))) + "</script>");
         return `<!--owned-script-${scripts.length - 1}-->`;
       });
       return markup(shell).replace(/<style\b([^>]*)>([\s\S]*?)<\/style>/gi,

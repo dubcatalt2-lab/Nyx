@@ -2,6 +2,8 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "lib/public-paths.mjs",
+  "scripts/build-public-copy.mjs",
   "sw.js",
   "apps/sponsor/offers.html",
   "apps/sponsor/offers-bridge.js",
@@ -244,7 +246,7 @@ const requiredFiles = [
   "apps/cloud-studies/index.html",
   "apps/cloud-studies/styles.css",
   "apps/cloud-studies/app.js",
-  "assets/icons/cloud-gaming.svg",
+  "assets/icons/cloud-studies.svg",
   "apps/nyxify/index.html",
   "apps/nyxify/app.css",
   "apps/nyxify/icons.css",
@@ -261,7 +263,7 @@ const requiredFiles = [
   "lib/nyxify-media-fetch.mjs",
   "assets/icons/shortcut-nyxify.svg",
   "assets/studies/index.html",
-  "assets/studies/arcade.css",
+  "assets/studies/leadership.css",
   "assets/fonts/outfit/Outfit.ttf",
   "assets/fonts/outfit/OFL.txt",
   "assets/studies/gladihoppers.html",

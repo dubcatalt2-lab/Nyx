@@ -4,7 +4,7 @@ const browser=await chromium.launch();try{
   const page=await browser.newPage();let launches=0;
   await page.route('https://luna.loan/**',r=>r.fulfill({contentType:'text/html',body:'Luna fixture'}));
   await page.addInitScript(()=>{window.RTCPeerConnection=undefined;});
-  await page.route('**/api/**',r=>{const url=new URL(r.request().url());if(url.pathname==='/api/cloud-gaming/sessions')launches++;return r.fulfill({json:url.pathname.endsWith('/cloud-gaming/status')?{configured:false,maintenance:true,setupMessage:'Cloud gaming is currently down.'}:{enabled:false}})});
+  await page.route('**/api/**',r=>{const url=new URL(r.request().url());if(url.pathname==='/api/cloud-studies/sessions')launches++;return r.fulfill({json:url.pathname.endsWith('/cloud-gaming/status')?{configured:false,maintenance:true,setupMessage:'Cloud gaming is currently down.'}:{enabled:false}})});
   await page.goto('http://localhost:9091'+path);
   const content=path.startsWith('/tutsi')?page.frameLocator('#app-host iframe:not([hidden])'):page;
   await content.locator('[data-luna-close]').click();

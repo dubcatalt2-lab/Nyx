@@ -1,3 +1,4 @@
+import {rewriteLegacyPublicPath} from './lib/public-paths.mjs';
 import {repositoryControllerInjection} from './lib/controller-injection.mjs';
 import {createStaticHostAccess} from './lib/static-host-access.mjs';
 import {fableTrialActive, fableTrialLabel} from './lib/ai-fable-trial.mjs';
@@ -113,6 +114,7 @@ let catClassGamesCache = { games: [], expires: 0, promise: null };
 let catClassCoverUrls = new Set();
 const nyxCustomRoleLabelLimit = 64;
 const app = express();
+app.use((req,_res,next)=>{req.url=rewriteLegacyPublicPath(req.url);next();});
 const nyxChatEnabled = process.env.NYX_CHAT_ENABLED !== '0';
 const staticHostAccess=createStaticHostAccess(String(process.env.NYX_STATIC_ORIGINS||'').split(',').map(value=>value.trim()));
 app.use(staticHostAccess.middleware);
@@ -814,7 +816,7 @@ app.use((req, res, next) => {
     "/nyx-scramjet-runtime-guard.js"
   ]);
   if (req.path.startsWith("/oldsj/") && req.path.endsWith(".js")) res.setHeader("Service-Worker-Allowed", "/");
-  const noStorePrefix = /^\/(?:assets\/(?:gms-studies|reds-misc)\/|gms-games-|reds-misc-)/i.test(req.path);
+  const noStorePrefix = /^\/(?:assets\/(?:gms-studies|reds-misc)\/|gms-studies-|reds-misc-)/i.test(req.path);
   const opaqueProxyAsset = /^\/(?:(?:scramjet|st7dyj3t)(?:-v1)?\/|controller\/|oldsj\/|libcurl\/|textlib\/|baremux\/|assets\/transports\/|apps\/tutsi\/)?@?r[0-9a-f]{24}!?\.(?:js|mjs|wasm)$/.test(req.path);
   if (noStorePaths.has(req.path) || noStorePrefix || opaqueProxyAsset) {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
@@ -2127,7 +2129,7 @@ function rewriteGmsCssUrls(buffer, baseUrl) {
   return Buffer.from(css.replace(/url\(\s*(["']?)(?![a-z][a-z0-9+.-]*:|\/\/|#|data:|blob:)([^"')]+)\1\s*\)/gi, (_match, quote, raw) => {
     try {
       const next = new URL(String(raw || "").trim(), baseUrl).href;
-      return `url(${quote}/gms-games-proxy?url=${encodeURIComponent(next)}${quote})`;
+      return `url(${quote}/gms-studies-proxy?url=${encodeURIComponent(next)}${quote})`;
     } catch {
       return _match;
     }
@@ -2161,8 +2163,8 @@ async function handleGmsGamesProxy(req, res) {
   } catch (error) { gameProxyError(res, error, 'GMS proxy error'); }
 }
 
-app.get("/gms-games-fetch", handleGmsGamesFetch);
-app.get("/gms-games-proxy", handleGmsGamesProxy);
+app.get("/gms-studies-fetch", handleGmsGamesFetch);
+app.get("/gms-studies-proxy", handleGmsGamesProxy);
 app.get("/reds-misc-fetch", handleGmsGamesFetch);
 app.get("/reds-misc-proxy", handleGmsGamesProxy);
 
@@ -7397,7 +7399,7 @@ function nyxCloudGamingGamePayload(game) {
     key: game.key,
     name: game.name,
     description: game.description,
-    image: hasArtwork ? `/api/cloud-gaming/art/${encodeURIComponent(game.key)}` : "",
+    image: hasArtwork ? `/api/cloud-studies/art/${encodeURIComponent(game.key)}` : "",
     cover: "",
     tags: [...game.tags]
   };
@@ -12635,14 +12637,14 @@ app.get("/api/nyxify/stream/:trackId", async (req, res) => {
   res.status(410).type("text/plain").send("Short previews have been removed. Reload Nyxify to use full-song playback.");
 });
 
-app.get("/api/cloud-gaming/status", (req, res) => {
+app.get("/api/cloud-studies/status", (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
   const config = nyxCloudGamingConfig();
   res.json({ configured: !config.maintenance && config.configured, maintenance: config.maintenance, setupMessage: config.maintenance ? "Cloud gaming is currently down." : config.configured ? "" : config.setupMessage, provider: "Stratus", selfHosted: config.selfHosted, signInRequired: true, maxActiveSessions: config.maxActiveSessions });
 });
 
-app.get("/api/cloud-gaming/catalog", async (req, res) => {
+app.get("/api/cloud-studies/catalog", async (req, res) => {
   res.set("Cache-Control", "private, max-age=300");
   if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
   try {
@@ -12654,7 +12656,7 @@ app.get("/api/cloud-gaming/catalog", async (req, res) => {
   }
 });
 
-app.get("/api/cloud-gaming/art/:key", async (req, res) => {
+app.get("/api/cloud-studies/art/:key", async (req, res) => {
   if (!sameOriginRequest(req)) return res.status(403).type("text/plain").send("Cross-origin requests are not allowed.");
   const key = String(req.params.key || "").trim();
   if (!/^[a-z0-9][a-z0-9_-]{1,127}$/i.test(key)) return res.status(400).type("text/plain").send("Invalid Cloud Gaming title.");
@@ -12671,7 +12673,7 @@ app.get("/api/cloud-gaming/art/:key", async (req, res) => {
   }
 });
 
-app.get("/api/cloud-gaming/session", async (req, res) => {
+app.get("/api/cloud-studies/session", async (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
   try {
@@ -12683,7 +12685,7 @@ app.get("/api/cloud-gaming/session", async (req, res) => {
   }
 });
 
-app.post("/api/cloud-gaming/sessions", async (req, res) => {
+app.post("/api/cloud-studies/sessions", async (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
   let uid = "";
@@ -12791,7 +12793,7 @@ app.post("/api/cloud-gaming/sessions", async (req, res) => {
   }
 });
 
-app.get("/api/cloud-gaming/sessions/:id/queue", async (req, res) => {
+app.get("/api/cloud-studies/sessions/:id/queue", async (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
   try {
@@ -12813,7 +12815,7 @@ app.get("/api/cloud-gaming/sessions/:id/queue", async (req, res) => {
   }
 });
 
-app.post("/api/cloud-gaming/sessions/:id/start", async (req, res) => {
+app.post("/api/cloud-studies/sessions/:id/start", async (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
   try {
@@ -12834,7 +12836,7 @@ app.post("/api/cloud-gaming/sessions/:id/start", async (req, res) => {
   }
 });
 
-app.post("/api/cloud-gaming/sessions/:id/ping", async (req, res) => {
+app.post("/api/cloud-studies/sessions/:id/ping", async (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
   try {
@@ -12848,7 +12850,7 @@ app.post("/api/cloud-gaming/sessions/:id/ping", async (req, res) => {
   }
 });
 
-app.delete("/api/cloud-gaming/sessions/:id", async (req, res) => {
+app.delete("/api/cloud-studies/sessions/:id", async (req, res) => {
   res.set("Cache-Control", "no-store");
   if (!sameOriginRequest(req)) return res.status(403).json({ error: "Cross-origin requests are not allowed." });
   try {
@@ -12970,7 +12972,7 @@ function loadGameReportCatalog(){
   }gameReportCatalogReady=true;return true;}catch{return false;}
 }
 const gameReports=createGameReports({catalog:gameReportCatalog,file:process.env.NYX_GAME_REPORT_FILE||(process.platform==='win32'?join(process.env.TEMP||'.','nyx-game-reports.json'):'/var/lib/nyx/game-reports.json')});
-app.post('/api/games/reports',async(req,res)=>{
+app.post('/api/studies/reports',async(req,res)=>{
   res.set('Cache-Control','no-store');
   if(!sameOriginRequest(req))return res.sendStatus(403);
   try {if(!loadGameReportCatalog())return res.sendStatus(503);const status=await gameReports.report(req.body,req.ip,isTutsiHostname(req.hostname)?'tutsi':'nyx');res.sendStatus(status);}

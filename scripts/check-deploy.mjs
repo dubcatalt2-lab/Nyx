@@ -2,6 +2,7 @@ import { access, readFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const requiredFiles = [
+  "lib/k72c9.mjs",
   "lib/public-paths.mjs",
   "scripts/build-public-copy.mjs",
   "sw.js",

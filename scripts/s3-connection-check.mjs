@@ -3,28 +3,28 @@ import {minify} from 'terser';
 function checkConnection(origin, backend) {
   if(location.origin!==origin){location.replace(origin+'/connection-check.html');return;}
   const output=document.querySelector('pre'),button=document.querySelector('button');
-  const result={site:location.origin,secure:window.isSecureContext,cookiesEnabled:navigator.cookieEnabled,userAgent:navigator.userAgent,checks:[]};
+  const result={site:location.origin,secure:window.isSecureContext,cookiesEnabled:navigator.cookieEnabled,userAgent:navigator.userAgent,checks:[],diagnosticVersion:3,generatedAt:new Date().toISOString(),complete:false};button.disabled=true;
   const render=()=>{output.textContent=JSON.stringify(result,null,2);};
   button.onclick=async()=>{try{await navigator.clipboard.writeText(output.textContent);button.textContent='Copied';}catch{const range=document.createRange();range.selectNodeContents(output);const selection=getSelection();selection.removeAllRanges();selection.addRange(range);button.textContent='Select and copy the results below';}};
+  const bounded=async(task,ms=12000)=>{let timer;try{return await Promise.race([task,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Connection setup timed out.')),ms)})]);}finally{clearTimeout(timer);}};
   const run=async(label,url,options={})=>{
-    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000),start=performance.now();
+    let deadline;const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000),start=performance.now();
     try{
-      const response=await fetch(url,{cache:'no-store',credentials:'omit',...options,signal:controller.signal});
+      const response=await Promise.race([fetch(url,{cache:'no-store',credentials:'omit',...options,signal:controller.signal}),new Promise((_,reject)=>{deadline=setTimeout(()=>reject(Error('Connection check timed out.')),11000)})]);
       const check={label,status:response.status,type:response.type,elapsedMs:Math.round(performance.now()-start)};
       if(url.endsWith('/api/static-host/check')&&response.ok){const body=await response.json();check.sessionProbe={supported:body.supported,cookies:body.cookies};}
       result.checks.push(check);
     }catch(error){result.checks.push({label,error:error.name,message:error.message,elapsedMs:Math.round(performance.now()-start)});}
-    finally{clearTimeout(timer);render();}
+    finally{clearTimeout(timer);clearTimeout(deadline);render();}
   };
   (async()=>{
     render();
-    await run('S3 configuration',origin+'/direct-s3-config.json');
-    await run('Backend connection without CORS',backend+'/healthz',{mode:'no-cors'});
-    await run('Backend health with CORS',backend+'/healthz');
+    await Promise.all([run('S3 configuration',origin+'/direct-s3-config.json'),run('Backend connection without CORS',backend+'/healthz',{mode:'no-cors'}),run('Backend pre-session response with CORS',backend+'/healthz')]);
     await run('Session endpoint without cookies',backend+'/api/static-host/check');
     await run('Session endpoint with cookies',backend+'/api/static-host/check',{credentials:'include'});
     await run('Session cookie retained',backend+'/api/static-host/check',{credentials:'include'});
-    result.complete=true;render();document.querySelector('[role=status]').textContent='Checks finished. Copy the results.';
+    try{await bounded(navigator.serviceWorker.register('/direct-s3-worker.js',{scope:'/',updateViaCache:'none'}));await bounded(navigator.serviceWorker.ready);const start=Date.now();while(!navigator.serviceWorker.controller&&Date.now()-start<5000)await new Promise(r=>setTimeout(r,50));await run('Workspace backend through site worker',origin+'/healthz');await run('Game route through site worker',origin+'/gms-studies-fetch?url=invalid');}catch(error){result.checks.push({label:'Site worker',error:error.name,message:error.message});}
+    result.complete=true;button.disabled=false;render();document.querySelector('[role=status]').textContent='Checks finished. Copy the results.';
   })();
 }
 

@@ -42,7 +42,8 @@ export function prepareGameDocument(html, path, sourceUrl) {
     sourceUrl && new URL(sourceUrl).origin === location.origin
       ? location.origin + "/"
       : "https://raw.githubusercontent.com/freebuisness/html/main/";
-  const proxyUrl = (url) => gameResourceUrl(url, undefined, location.origin);
+  const resourceOrigin = globalThis[Symbol.for('nyx.host.origin')] || globalThis.document?.querySelector?.('meta[name="nyx-static-backend"]')?.content || location.origin;
+  const proxyUrl = (url) => gameResourceUrl(url, undefined, resourceOrigin);
   const slopePractice = path === "S/clslope.html" ? `<script src="${location.origin}/assets/studies/slope-practice.js"><\/script>` : "";
   const creditTools = /^(?:33(?:[-_.][a-z0-9_.-]*)?\.html|R\/clretrobowl(?:fixed)?\.html)$/.test(path) ? `<script src="${location.origin}/assets/studies/q249a7c.js"><\/script>` : "";
   const adProtection = `${creditTools}${slopePractice}<script src="${location.origin}/assets/vendor/game-storage.js"><\/script><script src="${location.origin}/assets/studies/study-runtime-compat.js"><\/script><script src="${location.origin}/assets/studies/study-health.js"><\/script><script src="${location.origin}/assets/studies/study-ad-protection.js?v=20260903-game-ads-v1"><\/script>`;
@@ -194,7 +195,7 @@ export function prepareGameDocument(html, path, sourceUrl) {
            const ignorable=/adinplay|googletagmanager|google-analytics|googlesyndication|doubleclick|facebook|recaptcha|cdn\\.r9x\\.in|pagead/i;
           const important=/\\.(?:wasm|data|unityweb|json|swf|zip|7z|js)(?:[?#]|$)|\\/Build\\//i;
           const repoRoot=${JSON.stringify(repoRoot)};
-          const prox='${location.origin}/gn-math-resource/';
+          const prox='${resourceOrigin}/gn-math-resource/';
           const proxHosts=['cdn.jsdelivr.net','raw.githubusercontent.com','rawcdn.githack.com','raw.githack.com'];
           const repairPath=${repairGameResourcePath.toString()};
           // Some older Unity loaders prepend their asset directory to blob URLs.

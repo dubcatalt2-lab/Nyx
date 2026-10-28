@@ -116,7 +116,7 @@ const nyxCustomRoleLabelLimit = 64;
 const app = express();
 app.use((req,_res,next)=>{req.url=rewriteLegacyPublicPath(req.url);next();});
 const nyxChatEnabled = process.env.NYX_CHAT_ENABLED !== '0';
-const staticHostAccess=createStaticHostAccess(String(process.env.NYX_STATIC_ORIGINS||'').split(',').map(value=>value.trim()));
+const staticHostAccess=createStaticHostAccess(String(process.env.NYX_STATIC_ORIGINS||'').split(',').map(value=>value.trim()),{secret:()=>q74bd9Access.hostingKey()});
 app.use(staticHostAccess.middleware);
 app.use((req,res,next)=>{
   if(!nyxChatEnabled && /^\/(?:api\/chat|apps\/chat|socket\.io)(?:\/|$)/.test(req.path))return res.status(404).json({error:'Not found'});
@@ -14356,6 +14356,7 @@ async function startNyxServer() {
   });
 
   server.on("upgrade", async (req, socket, head) => {
+    try{if(!await staticHostAccess.upgrade(req)){rejectWispUpgrade(socket);return;}}catch{rejectWispUpgrade(socket);return;}
     try {if(await q74bd9Access.blocked(req)){rejectWispUpgrade(socket);return;}await q74bd9Access.track(req,socket);}catch{rejectWispUpgrade(socket);return;}
     let upgradePath;
     try {

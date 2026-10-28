@@ -50,3 +50,11 @@ export function publisherSurface() {
 export function publisherMode() {
   return publisherHostAllowed() && publisherSurface() ? publisherAccountMode() : "off";
 }
+
+// Ad documents need storage, but must not share the app's origin.
+export function publisherDocumentUrl(path){
+ let origin='https://n7x.zakaon.top';
+ if(['localhost','127.0.0.1','[::1]'].includes(location.hostname))origin=location.protocol+'//'+(location.hostname==='localhost'?'127.0.0.1':'localhost')+(location.port?':'+location.port:'');
+ else if(location.hostname==='n7x.zakaon.top')origin='https://counselors.elkamdistrict.help';
+ return new URL(path,origin).href;
+}

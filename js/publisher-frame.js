@@ -1,3 +1,4 @@
+import {publisherDocumentUrl} from './publisher-config.js';
 export function createPublisherFrame({
   path,
   width,
@@ -12,18 +13,16 @@ export function createPublisherFrame({
   element.height = height;
   element.setAttribute(
     "sandbox",
-    "allow-scripts",
+    "allow-scripts allow-same-origin",
   );
   element.dataset.nyxSponsorPath = path;
   element.referrerPolicy = "strict-origin-when-cross-origin";
   element.style.visibility = "hidden";
   element.src = "data:text/html;charset=utf-8,";
-  const controller = new AbortController();
   let finished = false;
   const timer = setTimeout(unavailable, 18000);
   function cleanup(keepMessages = false) {
     clearTimeout(timer);
-    controller.abort();
     if (!keepMessages) window.removeEventListener("message", receive);
     element.removeEventListener("error", unavailable);
   }
@@ -62,19 +61,14 @@ export function createPublisherFrame({
           "/apps/sponsor/side.html",
           "/apps/sponsor/native.html",
           "/apps/sponsor/social.html",
+          "/apps/sponsor/offers.html",
         ].includes(url.pathname)
       )
         throw new Error("Unknown placement");
-      const response = await fetch(url, { signal: controller.signal });
-      if (!response.ok) throw new Error("Placement unavailable");
-      const html = await response.text();
       if (finished) return;
-      const base = new URL(".", url).href.replaceAll("&", "&amp;").replaceAll('"', "&quot;");
-      const documentHtml = html.replace(
-        /<head(?:\s[^>]*)?>/i,
-        (match) => match + '<base href="' + base + '">',
-      );
-      element.src = "data:text/html;charset=utf-8," + encodeURIComponent(documentHtml);
+      // A real document origin is required by the provider's cookie/storage APIs.
+      // Its separate origin prevents provider code from reaching Nyx controls.
+      element.src = publisherDocumentUrl(url.pathname+url.search);
     } catch {
       if (!finished) unavailable();
     }

@@ -1,32 +1,41 @@
 import {publisherAccountMode} from '/js/publisher-config.js';
-
-const start=document.getElementById('start'),stopButton=document.getElementById('stop'),status=document.getElementById('status');
+import {createPublisherFrame} from '/js/publisher-frame.js';
+const start=document.getElementById('start'),stopButton=document.getElementById('stop'),status=document.getElementById('status'),wall=document.getElementById('wall');
 let host=window;try{if(parent!==window&&parent.location.origin===location.origin)host=parent;}catch{}
-let active=false,slots=[],generation=0,manuallyStopped=false;
+let active=false,manuallyStopped=false,slots=[],disposeTags=null;
+const panels=new Set();
 function visible(){try{return !document.hidden&&(!frameElement||frameElement.getClientRects().length>0);}catch{return false;}}
 function eligible(){return publisherAccountMode(host.__nyxPublisherAccount)==='standard'&&visible();}
-let popup=null;
-function closePopup(){popup?.remove();popup=null;}
-function stop(){closePopup();active=false;generation++;for(const slot of slots)slot.destroy();slots=[];for(const id of ['banner','multitag','native']){const box=document.getElementById(id);box.replaceChildren();const note=document.createElement('p');note.textContent='Session stopped';box.append(note);}stopButton.disabled=true;sync();}
-function sync(){if(!active&&!manuallyStopped&&eligible())queueMicrotask(()=>start.click());const mode=publisherAccountMode(host.__nyxPublisherAccount);if(active&&!eligible()){stop();return;}start.disabled=active||!eligible();status.textContent=active?'Ads are on. Stop all ends this session.':mode==='off'?'Ads are turned off for your account.':mode==='standard'?'Ads stopped. Show ads starts them again.':host===window?'Open Ad Haven from the Nyx Apps page.':'Checking your ad settings...';}
-start.addEventListener('click',async()=>{
- if(!eligible()||active)return;manuallyStopped=false;active=true;const version=++generation;stopButton.disabled=false;sync();
- for(const [name,width,height] of [['banner',468,60],['multitag',468,420],['native',468,120]]){
-  const box=document.getElementById(name);box.replaceChildren();const element=document.createElement('iframe');element.title='Advertisement';element.width=width;element.height=height;element.sandbox='allow-scripts';element.src='/apps/ad-haven/'+name+'.html';box.append(element);slots.push({destroy:()=>element.remove()});
+function closePanel(panel){panels.delete(panel);panel.remove();}
+function showPopup(raw){
+ if(!active||!eligible())return null;
+ let url;try{url=new URL(String(raw),location.href);}catch{return null;}
+ if(!['http:','https:'].includes(url.protocol))return null;
+ if(panels.size>=3)closePanel(panels.values().next().value);
+ const panel=document.createElement('section');panel.className='ad-popup';panel.setAttribute('aria-label','Ad popup');panel.style.setProperty('--offset',String(panels.size));
+ const close=document.createElement('button');close.textContent='\u00d7 Close ad';close.setAttribute('aria-label','Close ad popup');close.onclick=()=>closePanel(panel);
+ const frame=document.createElement('iframe');frame.title='Ad popup';frame.sandbox='allow-scripts allow-forms';frame.src=url.href;panel.append(close,frame);wall.append(panel);panels.add(panel);return null;
+}
+function stop(){active=false;disposeTags?.();disposeTags=null;for(const slot of slots)slot.destroy();slots=[];for(const panel of [...panels])closePanel(panel);wall.replaceChildren();sync();}
+function sync(){
+ if(active&&!eligible()){stop();return;}
+ start.disabled=active||!eligible();stopButton.disabled=!active;
+ status.textContent=active?'Ads are on. Stop all clears the page.':publisherAccountMode(host.__nyxPublisherAccount)==='off'?'Ads are turned off.':eligible()?'Ads stopped.':'Open Ad Haven from the Apps page.';
+ if(!active&&!manuallyStopped&&eligible())begin();
+}
+function begin(){
+ if(active||!eligible())return;active=true;manuallyStopped=false;wall.replaceChildren();sync();
+ const placements=[['banner',468,60],['native',468,240],['side',160,600],['banner',468,60],['native',468,240],['banner',468,60],['side',160,600],['banner',468,60]];
+ for(let i=placements.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[placements[i],placements[j]]=[placements[j],placements[i]];}
+ for(const [name,width,height] of placements){
+  const card=document.createElement('article');card.className='ad-piece';if(name==='side')card.classList.add('ad-piece-tall');else card.classList.add('ad-piece-wide');card.setAttribute('aria-label','Advertisement');
+  const slot=createPublisherFrame({path:'/apps/sponsor/'+name+'.html',width,height,dynamicHeight:name==='native',onReady:()=>card.setAttribute('data-ready',''),onUnavailable:()=>card.remove()});card.append(slot.element);wall.append(card);slots.push(slot);
  }
-
-});
-stopButton.addEventListener('click',()=>{manuallyStopped=true;stop();});host.addEventListener('nyx:publisher-change',sync);document.addEventListener('visibilitychange',sync);
+ const mixed=createPublisherFrame({path:'/apps/sponsor/offers.html?haven=1',width:430,height:360});mixed.element.title='Mixed ads';mixed.element.className='ad-mixed';wall.append(mixed.element);slots.push(mixed);
+ const seen=new Set();
+ const receive=event=>{if(event.source!==mixed.element.contentWindow||event.data?.type!=='nyx:offer-open'||!Number.isSafeInteger(event.data.gesture)||seen.has(event.data.gesture)||!navigator.userActivation?.isActive)return;seen.add(event.data.gesture);showPopup(event.data.url);};
+ addEventListener('message',receive);disposeTags=()=>removeEventListener('message',receive);
+}
+start.addEventListener('click',begin);stopButton.addEventListener('click',()=>{manuallyStopped=true;stop();});host.addEventListener('nyx:publisher-change',sync);document.addEventListener('visibilitychange',sync);
 const observer=new MutationObserver(sync);if(host!==window)observer.observe(host.document.body,{subtree:true,attributes:true,attributeFilter:['class','style','hidden']});
-addEventListener('pagehide',()=>{stop();observer.disconnect();host.removeEventListener('nyx:publisher-change',sync);},{once:true});sync();
-
-addEventListener('message',event=>{
- if(!active||!eligible()||event.data?.type!=='haven:open')return;
- if(![...document.querySelectorAll('.slot iframe')].some(frame=>frame.contentWindow===event.source))return;
- let url;try{url=new URL(event.data.url);}catch{return;}
- if(!['https:','http:'].includes(url.protocol))return;
- closePopup();popup=document.createElement('section');popup.className='ad-popup';popup.style.top=Math.min(innerHeight-120,Math.max(12,document.querySelector('.controls').getBoundingClientRect().bottom+12))+'px';popup.setAttribute('aria-label','Ad popup');
- const close=document.createElement('button');close.textContent='\u00d7 Close ad';close.setAttribute('aria-label','Close ad popup');close.onclick=closePopup;
- const frame=document.createElement('iframe');frame.title='Ad popup';frame.sandbox='allow-scripts allow-forms';frame.src=url.href;
- popup.append(close,frame);document.body.append(popup);
-});
+addEventListener('pagehide',()=>{manuallyStopped=true;stop();observer.disconnect();host.removeEventListener('nyx:publisher-change',sync);},{once:true});sync();

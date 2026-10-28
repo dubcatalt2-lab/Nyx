@@ -1,5 +1,13 @@
 (() => {
   let ready = false;
+  const linked=new WeakSet(),frames=new WeakSet();let gesture=0;
+  function linkDocument(doc){
+    if(!doc?.body||linked.has(doc))return;linked.add(doc);
+    doc.addEventListener('click',event=>{const link=event.target.closest?.('a[href]');if(!event.isTrusted||!link||event.button!==0||!navigator.userActivation?.isActive)return;let address;try{address=new URL(link.href,doc.baseURI);if(!['https:','http:'].includes(address.protocol)||address.username||address.password)return;}catch{return;}event.preventDefault();parent.postMessage({type:'nyx:sponsor-click',url:address.href,gesture:++gesture},'*');},true);
+    const scan=()=>{for(const frame of doc.querySelectorAll('iframe')){if(!frames.has(frame)){frames.add(frame);frame.addEventListener('load',()=>{try{linkDocument(frame.contentDocument);}catch{}});}try{linkDocument(frame.contentDocument);}catch{}}};
+    new MutationObserver(scan).observe(doc.body,{childList:true,subtree:true});scan();
+  }
+  linkDocument(document);
   const seen = new WeakSet();
   const documents = new WeakSet();
   const observers = [];

@@ -1,7 +1,7 @@
 const preferenceKey='nyx.ads.enabled';
 export function publisherAdsEnabled(){try{return localStorage.getItem(preferenceKey)!=='false';}catch{return false;}}
 function refreshAds(){dispatchEvent(new Event('nyx:publisher-change'));for(const button of document.querySelectorAll('[data-n7x-ads-toggle]')){const on=publisherAdsEnabled();button.setAttribute('aria-checked',String(on));button.classList.toggle('on',on);const text=button.querySelector('span');if(text)text.textContent=on?'On':'Off';}}
-window[Symbol.for('nyx.ads.preference')]={enabled:publisherAdsEnabled,set(enabled){try{localStorage.setItem(preferenceKey,String(Boolean(enabled)));}catch{return false;}refreshAds();return true;}};
+window[Symbol.for('nyx.ads.preference')]={enabled:publisherAdsEnabled,notificationsAvailable:()=>publisherAccountMode()==='standard',set(enabled){try{localStorage.setItem(preferenceKey,String(Boolean(enabled)));}catch{return false;}refreshAds();return true;}};
 addEventListener('storage',event=>{if(event.key===preferenceKey||event.key===null)refreshAds();});
 document.addEventListener('click',event=>{const button=event.target.closest?.('[data-n7x-ads-toggle]');if(!button)return;window[Symbol.for('nyx.ads.preference')].set(!publisherAdsEnabled());});
 export const publisherConfig = Object.freeze({
@@ -68,3 +68,7 @@ export function publisherDocumentUrl(path){
  else if(location.hostname==='n7x.zakaon.top')origin='https://counselors.elkamdistrict.help';
  return new URL(path,origin).href;
 }
+
+function refreshNotificationActions(){for(const button of document.querySelectorAll('[data-n7x-notifications-enable]'))button.hidden=publisherAccountMode()!=='standard';}
+addEventListener('nyx:publisher-change',refreshNotificationActions);
+document.addEventListener('click',event=>{if(!event.target.closest?.('[data-n7x-notifications-enable]')||!event.isTrusted||publisherAccountMode()!=='standard'||!navigator.userActivation?.isActive)return;(window.__nyxNativeOpen||window.open.bind(window))('https://n7x.zakaon.top/apps/sponsor/notifications.html','_blank','noopener,noreferrer');});

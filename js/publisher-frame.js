@@ -1,4 +1,5 @@
-import {publisherDocumentUrl} from './publisher-config.js';
+import {requestPublisherOpen} from './publisher-open.js';
+import {publisherDocumentUrl,publisherAccountMode} from './publisher-config.js';
 export function createPublisherFrame({
   path,
   width,
@@ -6,6 +7,7 @@ export function createPublisherFrame({
   onReady,
   onUnavailable,
   dynamicHeight = false,
+  onClick,
 }) {
   const element = document.createElement("iframe");
   element.title = "Advertisement";
@@ -19,7 +21,8 @@ export function createPublisherFrame({
   element.referrerPolicy = "strict-origin-when-cross-origin";
   element.style.visibility = "hidden";
   element.src = "data:text/html;charset=utf-8,";
-  let finished = false;
+  let finished = false;const clicked=new Set();
+  function clickAllowed(){let account=window.__nyxPublisherAccount;try{if(parent!==window&&parent.location.origin===location.origin)account=parent.__nyxPublisherAccount||account;}catch{}return publisherAccountMode(account)==='standard'&&!document.hidden&&element.isConnected&&element.getClientRects().length>0&&getComputedStyle(element).visibility==='visible'&&document.activeElement===element&&(!window.frameElement||window.frameElement.getClientRects().length>0);}
   const timer = setTimeout(unavailable, 18000);
   function cleanup(keepMessages = false) {
     clearTimeout(timer);
@@ -35,6 +38,11 @@ export function createPublisherFrame({
   }
   function receive(event) {
     if (event.source !== element.contentWindow) return;
+    if(event.data?.type==='nyx:sponsor-click'){
+      if(!clickAllowed()||!navigator.userActivation?.isActive||!Number.isSafeInteger(event.data.gesture)||clicked.has(event.data.gesture))return;
+      let address;try{address=new URL(event.data.url);if(!['https:','http:'].includes(address.protocol)||address.username||address.password||address.origin===new URL(element.src).origin||address.origin===location.origin)return;}catch{return;}
+      clicked.add(event.data.gesture);if(onClick)onClick(address.href);else requestPublisherOpen(address.href,clickAllowed);return;
+    }
     if (
       dynamicHeight &&
       event.data?.type === "nyx:sponsor-size" &&
@@ -47,7 +55,7 @@ export function createPublisherFrame({
     if (event.data?.type === "nyx:sponsor-unavailable") return unavailable();
     if (event.data?.type !== "nyx:sponsor-ready") return;
     finished = true;
-    cleanup(dynamicHeight);
+    cleanup(true);
     element.style.visibility = "visible";
     onReady?.();
   }

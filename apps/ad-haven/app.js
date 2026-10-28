@@ -29,7 +29,7 @@ function begin(){
  for(let i=placements.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[placements[i],placements[j]]=[placements[j],placements[i]];}
  for(const [name,width,height] of placements){
   const card=document.createElement('article');card.className='ad-piece';if(name==='side')card.classList.add('ad-piece-tall');else card.classList.add('ad-piece-wide');card.setAttribute('aria-label','Advertisement');
-  const slot=createPublisherFrame({path:'/apps/sponsor/'+name+'.html',width,height,dynamicHeight:name==='native',onReady:()=>card.setAttribute('data-ready',''),onUnavailable:()=>card.remove()});card.append(slot.element);wall.append(card);slots.push(slot);
+  const slot=createPublisherFrame({path:'/apps/sponsor/'+name+'.html',width,height,dynamicHeight:name==='native',onClick:showPopup,onReady:()=>card.setAttribute('data-ready',''),onUnavailable:()=>card.remove()});card.append(slot.element);wall.append(card);slots.push(slot);
  }
  const mixed=createPublisherFrame({path:'/apps/sponsor/offers.html?haven=1',width:430,height:360});mixed.element.title='Mixed ads';mixed.element.className='ad-mixed';wall.append(mixed.element);slots.push(mixed);
  const seen=new Set();

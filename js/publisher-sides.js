@@ -16,6 +16,8 @@ export function startHomeSponsors() {
   style.textContent +=
     ".n7x-home-sponsor header{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:4px;font-size:8px}.n7x-home-sponsor button{display:grid;place-items:center;flex:none;width:24px;height:24px;border:1px solid #ffffff30;border-radius:6px;background:#151515;color:#eee;cursor:pointer}.n7x-home-sponsor button svg{width:12px;height:12px}";
 
+  style.textContent += "@media(max-width:600px){.n7x-home-sponsor{width:48px}.n7x-home-sponsor[data-side=left]{left:8px}.n7x-home-sponsor[data-side=right]{right:8px}.n7x-home-sponsor .n7x-home-creative{width:48px;height:180px}.n7x-home-sponsor iframe{transform:scale(.3)}}";
+
   function clear(state) {
     for (const slot of state.slots) {
       slot.frame.destroy();

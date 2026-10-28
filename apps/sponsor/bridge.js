@@ -60,6 +60,7 @@
       parent.postMessage({ type: "nyx:sponsor-unavailable" }, "*");
     }
   }, 12000);
+  document.addEventListener("nyx:placement-ready", report, { once: true });
   watch(document);
   if (document.body.hasAttribute("data-resize-ad")) {
     const resized = () =>

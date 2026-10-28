@@ -11,17 +11,17 @@ function reserve(){const now=Date.now();let state;try{state=JSON.parse(localStor
 function update(){
  scheduled=false;const next=publisherMode()==='standard'?publisherSurface():null;if(next===surface)return;
  frame?.destroy();frame=null;surface=next;used.clear();if(!surface)return;
- const slot=createPublisherFrame({path:'/apps/sponsor/offers.html',width:380,height:220});frame=slot;
+ const slot=createPublisherFrame({path:'/apps/sponsor/offers.html',width:320,height:76});frame=slot;
  slot.element.setAttribute('data-n7x-owned-overlay','');slot.element.title='Sponsored offers';
- slot.element.style.cssText+=';position:absolute;right:16px;top:76px;width:min(380px,calc(100% - 32px));height:min(220px,28vh);border:0;z-index:2;background:transparent';surface.append(slot.element);
+ slot.element.style.cssText+=';position:absolute;left:50%;bottom:18px;transform:translateX(-50%);width:min(320px,max(112px,calc(100% - 160px)));height:76px;border:0;z-index:2;background:transparent';surface.append(slot.element);
 }
 function schedule(){if(!scheduled){scheduled=true;queueMicrotask(update);}}
 addEventListener('message',event=>{
  const data=event.data,source=frame?.element;
- if(!source||event.source!==source.contentWindow||data?.type!=='nyx:offer-open'||publisherMode()!=='standard'||publisherSurface()!==surface||!navigator.userActivation?.isActive||!Number.isSafeInteger(data.gesture)||used.has(data.gesture))return;
- let url;try{url=new URL(data.url);if(!['https:','http:'].includes(url.protocol))return;}catch{return;}
+ if(!source||document.activeElement!==source||event.source!==source.contentWindow||data?.type!=='nyx:offer-open'||publisherMode()!=='standard'||publisherSurface()!==surface||!navigator.userActivation?.isActive||!Number.isSafeInteger(data.gesture)||used.has(data.gesture))return;
+ let url;try{url=new URL(data.url);if(!['https:','http:'].includes(url.protocol)||url.origin===location.origin||url.origin===new URL(source.src).origin)return;}catch{return;}
  used.add(data.gesture);
- const open=()=>{if(source!==frame?.element||publisherMode()!=='standard'||publisherSurface()!==surface||!navigator.userActivation?.isActive||!reserve())return;(window.__nyxNativeOpen||window.open.bind(window))(url.href,'_blank','noopener,noreferrer');};
+ const open=()=>{if(source!==frame?.element||document.activeElement!==source||publisherMode()!=='standard'||publisherSurface()!==surface||!navigator.userActivation?.isActive||!reserve())return;(window.__nyxNativeOpen||window.open.bind(window))(url.href,'_blank','noopener,noreferrer');};
  if(navigator.locks)void navigator.locks.request('nyx-ad-popup',open);else open();
 });
 if(publisherHostAllowed()){

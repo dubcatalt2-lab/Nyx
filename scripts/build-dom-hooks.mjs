@@ -5,7 +5,7 @@ import { parse } from "acorn";
 import postcss from "postcss";
 import selectorParser from "postcss-selector-parser";
 
-const targeted = /game|librar(?:y|ies)|play|arcade|^gif-(?:picker|grid)$|voice-room|voice-speaking|voice-screen-expanded|voice-member-uid|voice-open|^ad-(?:wall|piece(?:-wide|-tall)?|mixed|popup|notices)$|^wall$/i;
+const targeted = /^offer-(?:panel|action|label)$|game|librar(?:y|ies)|play|arcade|^gif-(?:picker|grid)$|voice-room|voice-speaking|voice-screen-expanded|voice-member-uid|voice-open|^ad-(?:wall|piece(?:-wide|-tall)?|mixed|popup|notices)$|^wall$/i;
 const property = (node) => node?.computed ? node.property?.value : node?.property?.name;
 const textOf = (node) => node?.type === "Literal" && typeof node.value === "string" ? node.value :
   node?.type === "TemplateLiteral" ? node.quasis.map(q => q.value.cooked || "").join(" ") :

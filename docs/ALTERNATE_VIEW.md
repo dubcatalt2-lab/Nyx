@@ -17,4 +17,4 @@ Build through the named production builder, then rerun both tests with NYX_TEST_
 
 The production builder removes vendor source-map references from generated copies; source vendor files stay unchanged.
 
-Standalone static-host launches use the configured backend meta address. The Apps entry uses an explicit index.html so the S3 REST endpoint can resolve it before a worker controls the page.
+Standalone static-host launches use the existing runtime backend marker, with document metadata when present. The stored marker survives encoded document replacement. The Apps entry uses an explicit index.html so the S3 REST endpoint can resolve it before a worker controls the page.

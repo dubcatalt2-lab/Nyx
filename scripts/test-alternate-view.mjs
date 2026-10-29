@@ -34,6 +34,10 @@ try {
  await page.getByRole('textbox',{name:'Website address'}).fill('example.net');await page.getByRole('button',{name:'Open',exact:true}).click();
  await page.getByRole('status',{name:'Website opened.',exact:true}).waitFor();
  assert.equal(await page.evaluate(()=>launchParameters.args[0].WeZaN),'wss://backend.example/resources/live/','Static-host standalone views must use the configured backend');
+ await page.evaluate(()=>{document.querySelector('meta[name="nyx-static-backend"]').remove();window[Symbol.for('nyx.host.origin')]='https://retained.example';});
+ await page.getByRole('textbox',{name:'Website address'}).fill('example.edu');await page.getByRole('button',{name:'Open',exact:true}).click();
+ await page.getByRole('status',{name:'Website opened.',exact:true}).waitFor();
+ assert.equal(await page.evaluate(()=>launchParameters.args[0].WeZaN),'wss://retained.example/resources/live/','Backend identity must survive encoded document replacement');
  assert.deepEqual(errors,[]);
  await context.close();
  console.log('PASS alternate view: URL validation, worker coexistence, selected endpoint setup, reopen. Transport delivery mocked.');

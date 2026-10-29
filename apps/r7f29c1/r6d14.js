@@ -13,7 +13,7 @@
     } catch {}
     const configured = globalThis.english_RUNTIME_CONFIG?.wispUrl;
     if (configured) return configured;
-    const backend = document.querySelector('meta[name="nyx-static-backend"]')?.content;
+    const backend = globalThis[Symbol.for('nyx.host.origin')] || document.querySelector('meta[name="nyx-static-backend"]')?.content;
     const endpoint = new URL(backend || location.origin);
     if (!/^https?:$/.test(endpoint.protocol)) throw Error('Invalid backend address.');
     return `${endpoint.protocol === "https:" ? "wss:" : "ws:"}//${endpoint.host}/resources/live/`;

@@ -30,12 +30,15 @@ if link.exists() or link.is_symlink():
 else:link.symlink_to(dest)
 print('Resource workers use an private environment copy with only release-root paths updated; application secrets were not printed')
 ENV
+node "$source_dir/deploy/resource-environment.mjs"
 systemctl daemon-reload
 systemctl enable nyx-resources@18180.service nyx-resources@18181.service
 for port in 18180 18181; do
   systemctl restart "nyx-resources@$port.service"
   node --input-type=module - "$port" <<'WORKER'
 const port=process.argv[2];let ready=false;for(let i=0;i<30;i++){try{const r=await fetch('http://127.0.0.1:'+port+'/healthz',{signal:AbortSignal.timeout(1000)});if(r.ok&&(await r.json()).service==='nyx-resources'){ready=true;break}}catch{}await new Promise(r=>setTimeout(r,500));}if(!ready)throw Error('Resource worker did not start.');
+const {readFileSync}=await import('node:fs');const {execFileSync}=await import('node:child_process');const environment=unit=>{const pid=execFileSync('systemctl',['show',unit,'-p','MainPID','--value'],{encoding:'utf8'}).trim();return Object.fromEntries(readFileSync('/proc/'+pid+'/environ','utf8').split('\0').filter(row=>row.includes('=')).map(row=>{const at=row.indexOf('=');return [row.slice(0,at),row.slice(at+1)]}))};const primary=environment('nyx'),worker=environment('nyx-resources@'+port);for(const key of ['FIREBASE_PROJECT_ID','FIREBASE_CLIENT_EMAIL','FIREBASE_PRIVATE_KEY','FIREBASE_WEB_API_KEY','NYX_STATIC_ORIGINS'])if(primary[key]&&worker[key]!==primary[key])throw Error('Resource account configuration does not match primary service');
+if(['FIREBASE_PROJECT_ID','FIREBASE_CLIENT_EMAIL','FIREBASE_PRIVATE_KEY'].every(key=>primary[key])){const r=await fetch('http://127.0.0.1:'+port+'/assets/entry-cover/district-logo.png',{headers:{Cookie:'nyx_q74bd9='+'0'.repeat(32)+'.'+'0'.repeat(64)},signal:AbortSignal.timeout(15000)});if(!r.ok||!r.headers.get('content-type')?.startsWith('image/png'))throw Error('Resource access check failed for an existing identity-shaped cookie');await r.arrayBuffer();}console.log('PASS resource account configuration and cookie-bearing asset access',port);
 WORKER
 done
 node --input-type=module - <<'READY'

@@ -1,6 +1,6 @@
 # Alternate view
 
-The Apps page includes Alternate view at `/apps/r7f29c1/index.html`. The existing engine remains the default.
+The standalone launcher tile has been removed from the Apps page at the user's request. Integration code is retained at `/apps/r7f29c1/index.html`; the existing engine remains the default.
 
 Vendor source: https://github.com/zaka13alt/uvthing at a090b257525fd88c0037c9c2b8b4334368093f0b. Unmodified vendor files and MIT notice are under assets/vendor/r7f29c1. The upstream launcher is not shipped: it unregisters other service workers.
 

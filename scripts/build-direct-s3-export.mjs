@@ -8,7 +8,7 @@ const argument=name=>process.argv.find(a=>a.startsWith('--'+name+'='))?.slice(na
 const origin=directS3Origin(argument('origin')||''),backend=argument('backend')||'https://n7x.zakaon.top';
 if(new URL(backend).origin!==backend||!backend.startsWith('https://'))throw Error('Use a backend HTTPS origin without a path.');
 const bucketHost=new URL(origin).hostname,bucket=bucketHost.split('.s3')[0],region=/\.s3[.-]([a-z0-9-]+)\.amazonaws\.com$/.exec(bucketHost)?.[1]||'us-east-1';
-const entryUrl='https://s3.'+region+'.amazonaws.com/'+bucket+'/studies.html';
+const entryUrl='https://'+bucket+'.s3.amazonaws.com/studies.html';
 const features={chat:!process.argv.includes('--without-chat'),blooket:false};
 const root=process.cwd(),dist=resolve('dist'),output=resolve('.codex-artifacts','nyx-direct-s3-'+Date.now());
 await mkdir(output,{recursive:true});await cp(dist,join(output,'site'),{recursive:true,filter:p=>!p.endsWith('.map')&&!p.includes('static-package')&&!/\/apps\/blooket(?:\/|$)/.test(p.replaceAll('\\','/'))&&(features.chat||!/\/apps\/chat(?:\/|$)/.test(p.replaceAll('\\','/')))});

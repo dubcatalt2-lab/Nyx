@@ -10,7 +10,7 @@ import {minify} from 'terser';
                                                                           
 export const legacyProxyAssetNames=JSON.parse(await readFile(new URL('./proxy-asset-names.json',import.meta.url),'utf8'));
 const previousProxyAssetNames=Object.fromEntries(Object.entries(legacyProxyAssetNames).map(([original,alias])=>[original,alias.replace(/r([0-9a-f]{24})(\.(?:js|mjs|wasm))$/, '@r$1!$2')]));
-export const proxyAssetNames=Object.fromEntries(Object.entries(legacyProxyAssetNames).map(([original,alias])=>[original,posix.join(renameRuntimeText(posix.dirname(alias)), '@r'+createHash('sha256').update('education-v1:'+(original==='/polygon.studies.js'?'/scramjet.sw.js':original)).digest('hex').slice(0,24)+'!'+posix.extname(alias))]));
+export const proxyAssetNames=Object.fromEntries(Object.entries(legacyProxyAssetNames).map(([original,alias])=>[original,posix.join(renameRuntimeText(posix.dirname(alias)), '@r'+createHash('sha256').update('runtime-v4:'+(original==='/polygon.studies.js'?'/scramjet.sw.js':original)).digest('hex').slice(0,24)+'!'+posix.extname(alias))]));
 const entries=Object.entries(proxyAssetNames);
 const destinations=new Set();
 for(const [original,alias] of entries){

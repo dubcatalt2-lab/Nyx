@@ -1,8 +1,9 @@
 ﻿(() => {
   if (globalThis.__interfaceTextReady) return;
   globalThis.__interfaceTextReady = true;
-  const excluded =
-    "script,style,textarea,input,code,pre,kbd,samp,[contenteditable],[data-no-interface-text],[data-user-content],.chat-messages,.ai-messages,.lyrics,.captions,.ai-message,.message-content,[data-chat-history],[data-chat-messages]";
+  const ownedSelector = value => value;
+  const excluded = ownedSelector(
+    "script,style,textarea,input,code,pre,kbd,samp,[contenteditable],[data-no-interface-text],[data-user-content],.chat-messages,.ai-messages,.lyrics,.captions,.ai-message,.message-content,[data-chat-history],[data-chat-messages]");
   const originals = new WeakMap();
 
   const titleWrites = new WeakMap();
@@ -50,7 +51,8 @@
       if (name === "label" && !["OPTION", "OPTGROUP"].includes(element.tagName)) continue;
       const value = element.getAttribute(name);
       if (!value) continue;
-      const rendered = name === "aria-label" || name === "alt" ? neutralWords(value) : convert(value);
+      const rendered = name === "placeholder" && value === "s37ch or enter ur7" ? value :
+        name === "aria-label" || name === "alt" ? neutralWords(value) : convert(value);
       if (name === "aria-label") {
         if (rendered !== value) {
           element.setAttribute(name, rendered);

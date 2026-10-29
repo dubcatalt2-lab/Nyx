@@ -1,5 +1,6 @@
 (() => {
   "use strict";
+  const ownedSelector = value => value;
 
   const API = "/api/chat";
   const UPDATE_POLL_MS = 3000;
@@ -6879,11 +6880,11 @@
       μήνυμαGif.textContent = error.message;
     }
   }
-  for (const [selector, favorites] of [['[data-gif-trending]',false],['[data-gif-favorites]',true]]) {
+  for (const [selector, favorites] of [[ownedSelector("[data-gif-trending]"),false],[ownedSelector("[data-gif-favorites]"),true]]) {
     document.querySelector(selector).addEventListener('click', () => {
       αγαπημέναΕνεργά = favorites; αναζήτησηGif.value = ''; clearTimeout(χρονόμετροGif);
-      document.querySelector('[data-gif-trending]').setAttribute('aria-pressed',String(!favorites));
-      document.querySelector('[data-gif-favorites]').setAttribute('aria-pressed',String(favorites));
+      document.querySelector(ownedSelector("[data-gif-trending]")).setAttribute('aria-pressed',String(!favorites));
+      document.querySelector(ownedSelector("[data-gif-favorites]")).setAttribute('aria-pressed',String(favorites));
       void αναζήτησεGif();
     });
   }

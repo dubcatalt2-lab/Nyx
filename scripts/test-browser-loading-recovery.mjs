@@ -26,7 +26,7 @@ try{for(const brand of (process.env.NYX_TEST_BRANDS||'tutsi,drop,nyx').split(','
  const page=await context.newPage(),errors=[];page.on('pageerror',error=>errors.push(error.message));
  await page.goto(base+(brand==='nyx'?'/index.html':'/apps/'+brand+'/'));await page.waitForTimeout(8500);
  const query=page.locator(brand==='nyx'?'[data-q53154c3f0fbe71a11b]:visible':'#query').first();
- assert.match((await query.getAttribute('placeholder')).normalize('NFKC'),/S3ARC4/);
+ assert.match((await query.getAttribute('placeholder')).normalize('NFKC'),/s37ch or enter ur7/);
  await query.fill('https://fixture.test/recovered');await query.press('Enter');
  const selector=brand==='nyx'?'.q6576ed118d3ca9c284 iframe.view':brand==='tutsi'?'#browser-stage iframe:not([hidden])':'#stage iframe:not([hidden])';
  const frame=()=>page.frameLocator(selector);

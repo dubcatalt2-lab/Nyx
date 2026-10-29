@@ -10,6 +10,7 @@ const browser=await chromium.launch();try{
  const context=await browser.newContext({permissions:['clipboard-read','clipboard-write']});const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  for(const path of ['/blooket','/blooket/','/blooket/index.html','/apps/blooket/']){
  await page.goto(base+path);await page.getByRole('status',{name:'27 tools',exact:true}).waitFor();
+ assert.deepEqual(await page.locator('use').evaluateAll(nodes=>nodes.map(n=>n.getAttribute('href')).filter(h=>h?.startsWith('#')&&!document.getElementById(h.slice(1)))),[],'All built-in icons resolve');
  await page.getByRole('button',{name:'Copy page link',exact:true}).click();assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),base+'/blooket');
  await page.getByRole('button',{name:'Copy connector code',exact:true}).click();const code=await page.evaluate(()=>navigator.clipboard.readText());assert(code.startsWith('javascript:'));assert(code.includes('blooket'));
  }

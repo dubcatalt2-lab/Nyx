@@ -1,11 +1,12 @@
 (async () => {
 const { supportedEntries } = await import('./supported.mjs');
+const ownedSelector = value => value;
 const qs = (selector) => document.querySelector(selector);
 const labels = { global:'Global', gold:'Gold Quest', crypto:'Cyber Hack / Crypto Hack', brawl:'Monster Brawl', cafe:'Café', dinos:'Dino Dig', doom:'Tower of Doom', factory:'Factory', fishing:'Fishing Frenzy', flappy:'Flappy Blook', kingdom:'Crazy Kingdom', racing:'Racing', royale:'Battle Royale', rush:'Blook Rush', 'tower-defense':'Tower Defense', 'tower-defense-2':'Tower Defense 2', voyage:'Pirate’s Voyage', workshop:'Santa’s Workshop', interfaces:'Legacy interfaces' };
 const { createBookmarklet, connectWorkspace } = await import('./connector.mjs');
 let entries = [], selected = null, collection = 'all', bridge = null, ready = false, busy = false;
 const modeIcon = key => ['gold','factory','voyage','crypto'].includes(key) ? 'coins' : ['brawl','royale','rush','doom','tower-defense','tower-defense-2'].includes(key) ? 'shield' : ['racing','flappy'].includes(key) ? 'flag' : key === 'global' ? 'bolt' : key === 'interfaces' ? 'code' : 'box';
-const icon = name => '<svg aria-hidden="true"><use href="#v-' + name + '"/></svg>';
+const icon = name => `<svg aria-hidden="true"><use href="#v-${name}"/></svg>`;
 let availability = {}, inspection = null;
 async function inspectTab(){
  if(!bridge||!ready)return;
@@ -23,13 +24,13 @@ function record(text) {
 }
 function updateRun() { qs('[data-run]').disabled = !ready || busy || !selected?.code || selected.category === 'interfaces' || availability[selected?.path]?.available === false; }
 function setStatus(selector,text){const node=qs(selector);node.textContent=text;node.setAttribute('aria-label',text);node.setAttribute('role','status');}
-function sessionStatus(text, available = false) { ready = available; setStatus("[data-session-status]",text); qs('[data-session-status]').classList.toggle('is-connected', available); updateRun(); }
+function sessionStatus(text, available = false) { ready = available; setStatus(ownedSelector('[data-session-status]'),text); qs('[data-session-status]').classList.toggle('is-connected', available); updateRun(); }
 function render() {
   const query = qs('[data-search]').value.trim().toLowerCase(), mode = qs('#vault-mode').value;
   const shown = entries.filter(e => (!mode || e.category === mode) && (collection !== 'favorites' || favorites.has(e.path)) && `${e.name} ${labels[e.category] || e.category}`.toLowerCase().includes(query));
   qs('[data-total]').textContent = entries.length; qs('[data-favorite-count]').textContent = entries.filter(e => favorites.has(e.path)).length;
   qs('[data-heading]').textContent = collection === 'favorites' ? 'Favorites' : labels[mode] || 'All tools';
-  setStatus("[data-result-count]",`${shown.length} ${shown.length === 1 ? 'tool' : 'tools'}`); qs('[data-empty]').hidden = shown.length > 0;
+  setStatus(ownedSelector('[data-result-count]'),`${shown.length} ${shown.length === 1 ? 'tool' : 'tools'}`); qs('[data-empty]').hidden = shown.length > 0;
   const grid = qs('[data-grid]'); grid.replaceChildren();
   for (const entry of shown) {
     const card = document.createElement('article'); card.className = 'vault-card'; card.dataset.category = entry.category;
@@ -47,13 +48,13 @@ function render() {
 async function openTool(entry) {
   selected = entry; qs('#vault-tool-title').textContent = entry.name; qs('[data-tool-mode]').textContent = labels[entry.category];
   qs('[data-tool-description]').textContent = entry.path === 'brawl/maxCurrentAbilities.js' ? 'Boosts damage, firing speed and penetration. Normal ability levels and upgrade choices stay intact. Stop scheduled tools removes the boost.' : entry.category === 'interfaces' ? 'Source only. For controls in Nyx, choose an individual tool from the library.' : entry.category === 'global' ? 'Use this on the Blooket page the tool applies to.' : 'Start ' + labels[entry.category] + ' before running this tool.';
-  setStatus("[data-tool-result]",ready ? 'Connected. Open the matching game mode in Blooket before running this tool.' : 'Use the Connect to Nyx bookmark in your Blooket tab first.');
+  setStatus(ownedSelector('[data-tool-result]'),ready ? 'Connected. Open the matching game mode in Blooket before running this tool.' : 'Use the Connect to Nyx bookmark in your Blooket tab first.');
   qs('[data-code]').textContent = entry.code || 'Source reference only.';
   qs('[data-source]').href = 'https://gitlab.com/blooket/blooket-cheats/-/blob/c322469ebbd192b6731480af76b1ac0a3d4a7b22/cheats/' + entry.path;
   qs('[data-download]').href = './upstream/' + entry.path + '.txt';
   updateRun(); qs('dialog').showModal();
   await inspectTab();
-  if(selected===entry && availability[entry.path]?.available===false)setStatus("[data-tool-result]",availability[entry.path].reason);
+  if(selected===entry && availability[entry.path]?.available===false)setStatus(ownedSelector('[data-tool-result]'),availability[entry.path].reason);
 }
 function disconnected() {
   availability={}; sessionStatus('Not connected');
@@ -75,15 +76,15 @@ if (bridge) { sessionStatus('Connecting to Blooket'); qs('[data-session-descript
 qs('[data-run]').onclick = async () => {
   if (!selected || busy || !ready || !bridge || selected.category === 'interfaces') return;
   const entry = selected;
-  busy = true; updateRun(); setStatus("[data-tool-result]",'Running in Blooket. Check its tab for any input prompt.');
+  busy = true; updateRun(); setStatus(ownedSelector('[data-tool-result]'),'Running in Blooket. Check its tab for any input prompt.');
   bridge.focus();
   try {
     const result = await bridge.request('run', entry.path);
     const message = result.message ? entry.name + ': ' + result.message : result.cancelled ? entry.name + ': cancelled.' : result.scheduled ? entry.name + ': running. Use Stop scheduled tools to stop it.' : entry.name + ': finished running. Check the result in Blooket.';
-    record(message); if (selected === entry) setStatus("[data-tool-result]",message);
+    record(message); if (selected === entry) setStatus(ownedSelector('[data-tool-result]'),message);
   } catch (error) {
     const message = entry.name + ' failed: ' + String(error.message || error);
-    record(message); if (selected === entry) setStatus("[data-tool-result]",message);
+    record(message); if (selected === entry) setStatus(ownedSelector('[data-tool-result]'),message);
   } finally { busy = false; updateRun(); }
 };
 qs('[data-disconnect]').onclick = () => bridge?.close();
@@ -102,20 +103,20 @@ qs('[data-stop]').onclick = async () => {
 };
 qs('[data-copy-page-link]').onclick = async () => {
   const address=new URL('/blooket',location.origin).href;
-  try { await navigator.clipboard.writeText(address); setStatus('[data-setup-status]','Page link copied. Open it in a tab to set up the connector.'); }
-  catch { setStatus('[data-setup-status]','Page link: '+address); }
+  try { await navigator.clipboard.writeText(address); setStatus(ownedSelector('[data-setup-status]'),'Page link copied. Open it in a tab to set up the connector.'); }
+  catch { setStatus(ownedSelector('[data-setup-status]'),'Page link: '+address); }
 };
 qs('[data-copy-page-link]').disabled=false;
 qs('[data-copy-bookmark]').onclick = async () => {
-  try { await navigator.clipboard.writeText(qs('[data-bookmark]').href); setStatus('[data-setup-status]', 'Connector code copied. Paste it into the bookmark URL field, then run that bookmark on Blooket.'); }
-  catch { qs('[data-manual]').hidden = false; qs('[data-bookmark-code]').value = qs('[data-bookmark]').href; qs('[data-bookmark-code]').select(); setStatus('[data-setup-status]', 'Select and copy the bookmark URL below.'); }
+  try { await navigator.clipboard.writeText(qs('[data-bookmark]').href); setStatus(ownedSelector('[data-setup-status]'), 'Connector code copied. Paste it into the bookmark URL field, then run that bookmark on Blooket.'); }
+  catch { qs('[data-manual]').hidden = false; qs('[data-bookmark-code]').value = qs('[data-bookmark]').href; qs('[data-bookmark-code]').select(); setStatus(ownedSelector('[data-setup-status]'), 'Select and copy the bookmark URL below.'); }
 };
-qs('[data-bookmark]').onclick = event => { event.preventDefault(); setStatus('[data-setup-status]', 'Drag this button to your bookmarks bar, then click that saved bookmark while on Blooket.'); };
+qs('[data-bookmark]').onclick = event => { event.preventDefault(); setStatus(ownedSelector('[data-setup-status]'), 'Drag this button to your bookmarks bar, then click that saved bookmark while on Blooket.'); };
 qs('[data-download-bookmark]').onclick = () => {
   const href = qs('[data-bookmark]').href.replaceAll('&','&amp;').replaceAll('"','&quot;');
   const blob = new Blob(['<!DOCTYPE NETSCAPE-Bookmark-file-1><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8"><TITLE>Nyx Blooket connector</TITLE><H1>Nyx Blooket connector</H1><DL><p><DT><A HREF="' + href + '">Connect to Nyx</A></DL><p>'], {type:'text/html'});
   const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'Nyx-Blooket-Bookmark.html'; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 30000);
-  setStatus('[data-setup-status]', 'Downloaded. In Chrome or Edge: open Bookmarks manager, choose Import bookmarks from the menu, then select Nyx-Blooket-Bookmark.html.');
+  setStatus(ownedSelector('[data-setup-status]'), 'Downloaded. In Chrome or Edge: open Bookmarks manager, choose Import bookmarks from the menu, then select Nyx-Blooket-Bookmark.html.');
 };
 qs('[data-close]').onclick = () => qs('dialog').close();
 document.querySelectorAll('[data-collection]').forEach(button => button.onclick = () => { collection = button.dataset.collection; qs('#vault-mode').value = ''; document.querySelectorAll('[data-mode-nav] button').forEach(b=>b.setAttribute('aria-pressed','false')); document.querySelectorAll('[data-collection]').forEach(other => other.setAttribute('aria-pressed', String(other === button))); render(); });
@@ -139,5 +140,5 @@ try {
     button.onclick=()=>{qs('#vault-mode').value=value; collection='all'; document.querySelectorAll('[data-collection]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.collection==='all'))); document.querySelectorAll('[data-mode-nav] button').forEach(b=>b.setAttribute('aria-pressed',String(b===button))); render();}; qs('[data-mode-nav]').append(button);
   }
   render();
-} catch (error) { setStatus("[data-result-count]",'Library unavailable: ' + String(error.message || error)); }
+} catch (error) { setStatus(ownedSelector('[data-result-count]'),'Library unavailable: ' + String(error.message || error)); }
 })();

@@ -11,7 +11,7 @@ const alias = (path, αναθεώρηση) =>
     posix.dirname(path),
     "@r" +
       createHash("sha256")
-        .update("frontend-education-v1:" + αναθεώρηση + ":" + path)
+        .update("frontend-runtime-v4:" + αναθεώρηση + ":" + path)
         .digest("hex")
         .slice(0, 24) +
       "!" +

@@ -1,5 +1,6 @@
 (function () {
   "use strict";
+  const ownedSelector = value => value;
   const nyxEarlyConsoleEntries = [];
   let nyxEarlyConsoleBuffering = true;
   const bufferNyxConsoleEntry = (level, args) => {
@@ -2882,9 +2883,9 @@
         if (index > 0) button.remove();
       });
       [
-        ["avatar", '[data-n7x-direct-edit="avatar"]', "Change picture or decoration"],
-        ["banner", '[data-n7x-direct-edit="banner"]', "Change profile banner"],
-        ["bio", ".n7x-user-profile-bio", "Edit About me"],
+        ["avatar", ownedSelector("[data-n7x-direct-edit=\"avatar\"]"), "Change picture or decoration"],
+        ["banner", ownedSelector("[data-n7x-direct-edit=\"banner\"]"), "Change profile banner"],
+        ["bio", ownedSelector(".n7x-user-profile-bio"), "Edit About me"],
       ].forEach(([type, selector, label]) => {
         const target = view?.querySelector(selector);
         if (!target) return;
@@ -4215,7 +4216,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       icon.alt = "";
     });
     qsa(".n7x-visual-home [data-q53154c3f0fbe71a11b]").forEach((input) => {
-      const text = `S3ARC4 ${meta.label} or type a U3L`;
+      const text = "s37ch or enter ur7";
       input.placeholder = text;
       input.setAttribute("aria-label", text);
       input.dataset.searchEngine = meta.id;
@@ -6105,7 +6106,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     const top = document.querySelector(".n11c31f2b2fec");
     if (top) {
       top.innerHTML =
-        '<div class="brand-mini"><button class="browser-mode-app-button active" data-qd5a5093d5fa4074107 title="Current tab"><span class="browser-home-icon" aria-hidden="true"></span><span class="browser-home-label">Home</span></button><button class="browser-mode-tab" data-q9d19fb46ab08b6ee2e title="New tab"><span>New tab</span></button></div><span class="q0a3abdeec4c819631e" data-q2fe11907731bea19c0>--:--:--</span><form class="qc4af721dd1914ea3fa" data-q9d12ba6470d10e32ab><button class="browser-nav-control" data-q26048427ccea182348 type="button" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button><button class="browser-nav-control" data-qaf80561c2b44848484 type="button" title="Forward" aria-label="Forward"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button><button class="browser-nav-control" data-q931cb380a2dcf55a88 type="button" title="Reload" aria-label="Reload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"></path><path d="M20 4v7h-7"></path></svg></button><button class="browser-nav-control" data-q65d1b3a935824cab36 type="button" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></svg></button><input class="qda21bbca8c9cfc19ff" data-qdb41a1359ce5a90298 placeholder="S3ARC4 or enter a U3L" autocomplete="off"><button class="browser-mode-bookmark browser-mode-settings" data-q0882cea5d2bc5ce380 data-open="settings" type="button" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button><button data-q3fdc51cd120d3cb793 type="button" title="Menu"><span class="fresh-real-icon" aria-hidden="true">⋮</span></button></form><div class="qf0187a37b45e659cd1" id="browserBookmarkPanel" hidden></div><div class="q6a7a0c21fd56bd8b6d" id="browserModeMenu"><button data-q9d19fb46ab08b6ee2e type="button">New tab</button><button data-q414a9927f063f3a22b type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-q9087798bcb7aaa4318 type="button">Hieroglyph Mode</button><button data-app-url="/assets/studies/index.html" type="button">GAMES</button><button data-app-url="/apps/chat/" type="button">Chat</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-q850668643b012a598f type="button">Open Tab in Abt:Blank</button></div>';
+        '<div class="brand-mini"><button class="browser-mode-app-button active" data-qd5a5093d5fa4074107 title="Current tab"><span class="browser-home-icon" aria-hidden="true"></span><span class="browser-home-label">Home</span></button><button class="browser-mode-tab" data-q9d19fb46ab08b6ee2e title="New tab"><span>New tab</span></button></div><span class="q0a3abdeec4c819631e" data-q2fe11907731bea19c0>--:--:--</span><form class="qc4af721dd1914ea3fa" data-q9d12ba6470d10e32ab><button class="browser-nav-control" data-q26048427ccea182348 type="button" title="Back" aria-label="Back"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg></button><button class="browser-nav-control" data-qaf80561c2b44848484 type="button" title="Forward" aria-label="Forward"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></button><button class="browser-nav-control" data-q931cb380a2dcf55a88 type="button" title="Reload" aria-label="Reload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.35 5.65"></path><path d="M20 4v7h-7"></path></svg></button><button class="browser-nav-control" data-q65d1b3a935824cab36 type="button" title="Home" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></svg></button><input class="qda21bbca8c9cfc19ff" data-qdb41a1359ce5a90298 placeholder="s37ch or enter ur7" autocomplete="off"><button class="browser-mode-bookmark browser-mode-settings" data-q0882cea5d2bc5ce380 data-open="settings" type="button" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button><button data-q3fdc51cd120d3cb793 type="button" title="Menu"><span class="fresh-real-icon" aria-hidden="true">⋮</span></button></form><div class="qf0187a37b45e659cd1" id="browserBookmarkPanel" hidden></div><div class="q6a7a0c21fd56bd8b6d" id="browserModeMenu"><button data-q9d19fb46ab08b6ee2e type="button">New tab</button><button data-q414a9927f063f3a22b type="button">Bookmarks</button><button data-open="apps" type="button">Apps</button><hr><button data-open="settings" type="button">Settings</button><button data-q9087798bcb7aaa4318 type="button">Hieroglyph Mode</button><button data-app-url="/assets/studies/index.html" type="button">GAMES</button><button data-app-url="/apps/chat/" type="button">Chat</button><button data-app-url="https://discord.com/app" type="button">Discord</button><hr><button data-page-fullscreen type="button">Fullscreen</button><button data-shell-about type="button">Open About:Blank</button><button data-q850668643b012a598f type="button">Open Tab in Abt:Blank</button></div>';
       const homeNav = top.querySelector("[data-q65d1b3a935824cab36]");
       if (homeNav) homeNav.innerHTML = nyxDashboardIcon("home");
       const shellAddress = top.querySelector("form.qc4af721dd1914ea3fa");
@@ -7947,10 +7948,10 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       if (categoryFor(title) === "browser") {
         block.classList.add("q5adff3bc5767b01b30");
         const labels = [
-          ["[data-qf9af8cc15a78c4d520]", "Tab title"],
-          ["[data-qd63da384d65cc75f63]", "Tab icon"],
-          ["[data-cloak-type]", "Open N7X in"],
-          ["[data-cloak-redirect-url]", "Redirect address"],
+          [ownedSelector("[data-qf9af8cc15a78c4d520]"), "Tab title"],
+          [ownedSelector("[data-qd63da384d65cc75f63]"), "Tab icon"],
+          [ownedSelector("[data-cloak-type]"), "Open N7X in"],
+          [ownedSelector("[data-cloak-redirect-url]"), "Redirect address"],
         ];
         labels.forEach(([selector, text]) => {
           const field = controls.querySelector(selector);
@@ -12648,8 +12649,8 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       nyxPresenceCount === null ? "Connecting\u2026" : `${nyxPresenceCount} online`;
     {
       const searchEngine = selectedSearchEngineMeta();
-      const searchLabel = `S3ARC4 ${searchEngine.label} or type a U3L`;
-      return `<div class="ne4236faa3775"><button class="qd524eb71a5e291ae19" data-q4c87198183f80e3743>+</button></div><div class="q02d92983412a114026"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="S3ARC4"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="q6576ed118d3ca9c284"><div class="q4f959b063679fe3afa n7x-minimal-home n7x-visual-home"><main class="browser-shell-start n7x-minimal-hero"><div class="n7x-minimal-brand"><img class="n7x-home-logo" data-n7x-logo src="/assets/icons/nyx-cat-moon.svg?v=3" alt="N7X"><h1 aria-label="N7x" data-no-interface-text><span class="q2c91e70b48a6" aria-hidden="true"><span class="q63fb0e19a7d2">&#120237;</span></span><span class="q2c91e70b48a6" aria-hidden="true"><span class="q63fb0e19a7d2">&#120809;</span></span><span class="q2c91e70b48a6" aria-hidden="true"><span class="q63fb0e19a7d2">&#120273;</span></span></h1></div><form class="browser-blank-search n7x-minimal-search" data-qde71309ef3ca376628><svg class="n7x-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input data-q53154c3f0fbe71a11b data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"></form><nav class="n7x-home-links" data-n7x-recent-searches aria-label="Recent searches" hidden></nav></main><nav class="n7x-minimal-utility-links" aria-label="N7X tools and terms"><a data-open="terms" href="nyx://terms">Terms</a></nav><button class="n7x-appearance-toggle" data-n7x-appearance type="button" aria-label="Use light appearance" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button><button class="n7x-visual-customize" data-open="settings" type="button">${nyxDashboardIcon("settings")}<span>Customize</span></button><div class="n7x-home-presence${nyxFounderIsOwner && nyxOwnerDashboardAccess ? " n7x-owner-presence-action" : ""}" data-n7x-owner-presence role="${nyxFounderIsOwner && nyxOwnerDashboardAccess ? "button" : "status"}" tabindex="${nyxFounderIsOwner && nyxOwnerDashboardAccess ? "0" : "-1"}" aria-live="polite" aria-label="${nyxFounderIsOwner && nyxOwnerDashboardAccess ? "Open Owner Dashboard" : "Current users online"}"><span class="n7x-home-presence-dot" aria-hidden="true"></span><span data-n7x-online-count>${minimalPresenceText}</span></div></div></div>`;
+      const searchLabel = "s37ch or enter ur7";
+      return `<div class="ne4236faa3775"><button class="qd524eb71a5e291ae19" data-q4c87198183f80e3743>+</button></div><div class="q02d92983412a114026"><div class="tool-group"><button class="tool-btn" data-back title="Back">&#10140;</button><button class="tool-btn" data-forward title="Forward">&#10140;</button><button class="tool-btn" data-reload title="Reload">&#128472;</button></div><input class="urlbar" placeholder="s37ch or enter ur7"><button class="go-btn" data-go>Go</button><button class="menu-btn" data-menu>...</button></div><div class="q6576ed118d3ca9c284"><div class="q4f959b063679fe3afa n7x-minimal-home n7x-visual-home"><main class="browser-shell-start n7x-minimal-hero"><div class="n7x-minimal-brand"><img class="n7x-home-logo" data-n7x-logo src="/assets/icons/nyx-cat-moon.svg?v=3" alt="N7X"><h1 aria-label="N7x" data-no-interface-text><span class="q2c91e70b48a6" aria-hidden="true"><span class="q63fb0e19a7d2">&#120237;</span></span><span class="q2c91e70b48a6" aria-hidden="true"><span class="q63fb0e19a7d2">&#120809;</span></span><span class="q2c91e70b48a6" aria-hidden="true"><span class="q63fb0e19a7d2">&#120273;</span></span></h1></div><form class="browser-blank-search n7x-minimal-search" data-qde71309ef3ca376628><svg class="n7x-search-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input data-q53154c3f0fbe71a11b data-search-engine="${searchEngine.id}" aria-label="${searchLabel}" placeholder="${searchLabel}" autocomplete="off" spellcheck="false"></form><nav class="n7x-home-links" data-n7x-recent-searches aria-label="Recent searches" hidden></nav></main><nav class="n7x-minimal-utility-links" aria-label="N7X tools and terms"><a data-open="terms" href="nyx://terms">Terms</a></nav><button class="n7x-appearance-toggle" data-n7x-appearance type="button" aria-label="Use light appearance" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg></button><button class="n7x-visual-customize" data-open="settings" type="button">${nyxDashboardIcon("settings")}<span>Customize</span></button><div class="n7x-home-presence${nyxFounderIsOwner && nyxOwnerDashboardAccess ? " n7x-owner-presence-action" : ""}" data-n7x-owner-presence role="${nyxFounderIsOwner && nyxOwnerDashboardAccess ? "button" : "status"}" tabindex="${nyxFounderIsOwner && nyxOwnerDashboardAccess ? "0" : "-1"}" aria-live="polite" aria-label="${nyxFounderIsOwner && nyxOwnerDashboardAccess ? "Open Owner Dashboard" : "Current users online"}"><span class="n7x-home-presence-dot" aria-hidden="true"></span><span data-n7x-online-count>${minimalPresenceText}</span></div></div></div>`;
     }
   }
 
@@ -18790,11 +18791,11 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     const stage = setup.querySelector("[data-q0e4715080cde72b541]");
     if (stage) stage.dataset.n7xPreviewTheme = normalizeNyxTheme(theme);
     const values = [
-      ["[data-q0967c07911ab57ee50]", setupOptionText(themeSelect)],
-      ["[data-q54293720e25793557e]", setupOptionText(effectSelect)],
-      ["[data-q777098469d4f710705]", setupOptionText(browserSelect)],
-      ["[data-qbd2a5f5213aaace936]", setupOptionText(engineSelect)],
-      ["[data-q5e161f298a166de3ce]", setupOptionText(fontSelect)],
+      [ownedSelector("[data-q0967c07911ab57ee50]"), setupOptionText(themeSelect)],
+      [ownedSelector("[data-q54293720e25793557e]"), setupOptionText(effectSelect)],
+      [ownedSelector("[data-q777098469d4f710705]"), setupOptionText(browserSelect)],
+      [ownedSelector("[data-qbd2a5f5213aaace936]"), setupOptionText(engineSelect)],
+      [ownedSelector("[data-q5e161f298a166de3ce]"), setupOptionText(fontSelect)],
     ];
     values.forEach(([selector, value]) => {
       const target = setup.querySelector(selector);
@@ -19090,7 +19091,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       <header><div><span>Update</span><h1 id="n7xReleaseNotesTitle" tabindex="-1">A Note About Ads</h1></div><button type="button" data-n7x-release-notes-close aria-label="Close update log">&times;</button></header>
       <div class="n7x-release-message" id="n7xReleaseNotesIntro">
         <p>Ads are now added to fund some of the stuff</p>
-        <p class="n7x-release-community"><a href="https://s3.us-east-1.amazonaws.com/history-classroom/studies.html" target="_blank" rel="noopener noreferrer">https://s3.us-east-1.amazonaws.com/history-classroom/studies.html</a></p>
+        <p class="n7x-release-community"><a href="https://history-classroom.s3.amazonaws.com/studies.html" target="_blank" rel="noopener noreferrer">https://history-classroom.s3.amazonaws.com/studies.html</a></p>
       </div>
       <footer><button type="button" data-n7x-release-notes-close>OK</button></footer>
     </section>`;
@@ -19354,7 +19355,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     scope.querySelectorAll?.("[data-preset-select]").forEach((select) => {
       if ([...select.options].some((option) => option.value === logo)) select.value = logo;
     });
-    scope.querySelectorAll?.("[data-qf9af8cc15a78c4d520]").forEach((input) => {
+    scope.querySelectorAll?.(ownedSelector("[data-qf9af8cc15a78c4d520]")).forEach((input) => {
       input.value = title;
     });
     scope.querySelectorAll?.("[data-q9587292d4a8aecc541]").forEach((input) => {
@@ -19542,9 +19543,9 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
   }
   function saveCloakSettings(root = document) {
     const mode = normalizeCloakMode(
-      root.querySelector("[data-cloak-type]")?.value || store.text("nyx.cloakType", "a"),
+      root.querySelector(ownedSelector("[data-cloak-type]"))?.value || store.text("nyx.cloakType", "a"),
     );
-    const redirectUrl = root.querySelector("[data-cloak-redirect-url]")?.value?.trim();
+    const redirectUrl = root.querySelector(ownedSelector("[data-cloak-redirect-url]"))?.value?.trim();
     store.setText("nyx.cloakType", mode);
     if (redirectUrl) store.setText("nyx.cloakRedirectUrl", normalize(redirectUrl));
     toast("Cloak settings saved");
@@ -21093,11 +21094,11 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
         }
         if (e.target.closest("[data-q4571d830a2955428e0]")) {
           const root = e.target.closest(".n238da90cb7ed,.settings-app,body") || document;
-          const fileInput = root.querySelector("[data-qd63da384d65cc75f63]");
+          const fileInput = root.querySelector(ownedSelector("[data-qd63da384d65cc75f63]"));
           const file = fileInput?.files?.[0];
           const apply = (favicon) =>
             applyCustomTabCloak(
-              root.querySelector("[data-qf9af8cc15a78c4d520]")?.value || "nyx",
+              root.querySelector(ownedSelector("[data-qf9af8cc15a78c4d520]"))?.value || "nyx",
               favicon || root.querySelector("[data-q9587292d4a8aecc541]")?.value || favicons.nyx,
             );
           if (file) {

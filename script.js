@@ -10438,12 +10438,17 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       typeof config.codec?.encode === "function" ? config.codec.encode : encodeURIComponent;
     return config.prefix + encode(target);
   }
-  function proxyFailureHtml(message, engine = "N7X", { allowDirect = false, heading = "" } = {}) {
+  function proxyFailureHtml(message, engine = "N7X", { allowDirect = false, heading = "", directUrl = "" } = {}) {
     console.warn(engine, heading, message);
-    const directAction = allowDirect
-      ? "<button type=\"button\" onclick=\"parent.postMessage({type:'nyx:proxy-direct-fallback'},'*')\">Open directly</button>"
+    let directTarget = "";
+    try {
+      const parsed = new URL(directUrl);
+      if (["https:", "http:"].includes(parsed.protocol)) directTarget = parsed.href;
+    } catch {}
+    const directAction = allowDirect && directTarget
+      ? `<a href="${esc(directTarget)}" target="_blank" rel="noopener noreferrer">Open directly &#x2197;</a>`
       : "";
-    return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#101318;color:#ddd;display:grid;place-items:center;min-height:100vh;font:14px system-ui}main{max-width:520px;padding:28px}h1{font-size:22px;margin:0 0 12px}p{line-height:1.6;margin:0 0 22px}nav{display:flex;flex-wrap:wrap;gap:12px}button{padding:12px 18px;border:1px solid #ffffff26;border-radius:12px;background:#ffffff0a;color:inherit;cursor:pointer}</style><main data-nyx-error><h1>${esc(heading || "Page unavailable")}</h1><p>${esc(message || "The page could not load.")}</p><nav aria-label="Page actions"><button type="button" onclick="parent.location.reload()" aria-label="Reload page">&#x21bb; Reload</button>${directAction}</nav></main>`;
+    return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#101318;color:#ddd;display:grid;place-items:center;min-height:100vh;font:14px system-ui}main{max-width:520px;padding:28px}h1{font-size:22px;margin:0 0 12px}p{line-height:1.6;margin:0 0 22px}nav{display:flex;flex-wrap:wrap;gap:12px}button,a{display:inline-block;text-decoration:none;padding:12px 18px;border:1px solid #ffffff26;border-radius:12px;background:#ffffff0a;color:inherit;cursor:pointer}</style><main data-nyx-error><h1>${esc(heading || "Page unavailable")}</h1><p>${esc(message || "The page could not load.")}</p><nav aria-label="Page actions"><button type="button" onclick="parent.location.reload()" aria-label="Reload page">&#x21bb; Reload</button>${directAction}</nav></main>`;
   }
 
   function loadScript(src) {
@@ -16101,6 +16106,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
             clearFrameDocument(t);
             t.frame.srcdoc = proxyFailureHtml(scramjetInstallError, "Scramjet", {
               allowDirect: true,
+              directUrl: url,
             });
             return;
           }
@@ -16335,7 +16341,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
           t.frame.srcdoc = proxyFailureHtml(
             "The private tab session could not start. Reload N7X and try again.",
             "Scramjet",
-            { allowDirect: true },
+            { allowDirect: true, directUrl: url },
           );
         });
     }
@@ -17070,8 +17076,11 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         const sourceTab = state.tabs.find((tab) => tab.frame.contentWindow === e.source);
         const sourceUrl = String(sourceTab?.sourceUrl || "").trim();
         if (!sourceTab || !sourceUrl) return;
-        loadTab(sourceTab, sourceUrl, false, "iframe", sourceUrl);
-        toast("Trying this tab in direct mode");
+        try {
+          const destination = new URL(sourceUrl);
+          if (["https:", "http:"].includes(destination.protocol))
+            window.open(destination.href, "_blank", "noopener,noreferrer");
+        } catch {}
         return;
       }
       if (e.data.type === "nyx:shell-tab-index") {

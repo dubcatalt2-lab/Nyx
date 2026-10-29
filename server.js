@@ -118,6 +118,17 @@ app.use((req,_res,next)=>{req.url=rewriteLegacyPublicPath(req.url);next();});
 const nyxChatEnabled = process.env.NYX_CHAT_ENABLED !== '0';
 const staticHostAccess=createStaticHostAccess(String(process.env.NYX_STATIC_ORIGINS||'').split(',').map(value=>value.trim()),{secret:()=>q74bd9Access.hostingKey()});
 app.use(staticHostAccess.middleware);
+// Liveness must not wait for account/device database checks. Hosted-origin
+// CORS and connection-session validation still run before this public endpoint.
+app.get("/healthz", (_req, res) => {
+  res.status(200).json({
+    ok: true,
+    service: "nyx",
+    wisp: externalWispUrl ? "external" : "embedded",
+    wispImplementation: externalWispUrl ? "external" : "wispurr",
+    chatRealtime: !nyxChatEnabled ? "disabled" : nyxChatSocketServer ? "socket.io" : "polling"
+  });
+});
 app.use((req,res,next)=>{
   if(!nyxChatEnabled && /^\/(?:api\/chat|apps\/chat|socket\.io)(?:\/|$)/.test(req.path))return res.status(404).json({error:'Not found'});
   next();
@@ -3566,15 +3577,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get("/healthz", (_req, res) => {
-  res.status(200).json({
-    ok: true,
-    service: "nyx",
-    wisp: externalWispUrl ? "external" : "embedded",
-    wispImplementation: externalWispUrl ? "external" : "wispurr",
-    chatRealtime: !nyxChatEnabled ? "disabled" : nyxChatSocketServer ? "socket.io" : "polling"
-  });
-});
+
 
 function pruneLocalPresence(now = Date.now()) {
   for (const [sessionId, lastSeen] of presenceSessions) {

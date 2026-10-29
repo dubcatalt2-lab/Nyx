@@ -21432,7 +21432,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       const timeout = setTimeout(() => controller.abort(), 5000);
       const started = performance.now();
       try {
-        const response = await fetch(`/healthz?dashboard=${now}`, {
+        const response = await fetch("/healthz", {
           cache: "no-store",
           headers: { Accept: "application/json" },
           signal: controller.signal,
@@ -21755,14 +21755,14 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
   async function sampleNyxLatency(force = false, publish = true) {
     if (document.hidden || nyxLatencyProbe) return nyxLatencyProbe;
     const now = Date.now();
-    if (!force && now - nyxLatencySampledAt < 900) return null;
+    if (!force && now - nyxLatencySampledAt < 15000) return null;
     nyxLatencySampledAt = now;
     const request = (async () => {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000);
       const started = performance.now();
       try {
-        const response = await fetch(`/healthz?ping=${now}`, {
+        const response = await fetch("/healthz", {
           cache: "no-store",
           headers: { Accept: "application/json" },
           signal: controller.signal,
@@ -21829,10 +21829,10 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
     syncNyxLatencyBubble();
     void calibrateNyxLatency();
     const refresh = () => {
-      if (!document.hidden) void sampleNyxLatency(true);
+      if (!document.hidden) void sampleNyxLatency();
     };
     document.addEventListener("visibilitychange", () => {
-      if (!document.hidden && Date.now() - nyxLatencySampledAt > 900) refresh();
+      if (!document.hidden && Date.now() - nyxLatencySampledAt >= 15000) refresh();
     });
     addEventListener("online", refresh);
     addEventListener("offline", () => {
@@ -21845,7 +21845,7 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
       if (nyxLatencyHistory.length > 24) nyxLatencyHistory = nyxLatencyHistory.slice(-24);
       syncNyxLatencyBubble();
     });
-    setInterval(refresh, 1000);
+    setInterval(refresh, 15000);
   }
   function tick() {
     const d = new Date();

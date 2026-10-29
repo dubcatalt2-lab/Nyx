@@ -12,7 +12,11 @@
       if (selection) return selection;
     } catch {}
     const configured = globalThis.english_RUNTIME_CONFIG?.wispUrl;
-    return configured || `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/resources/live/`;
+    if (configured) return configured;
+    const backend = document.querySelector('meta[name="nyx-static-backend"]')?.content;
+    const endpoint = new URL(backend || location.origin);
+    if (!/^https?:$/.test(endpoint.protocol)) throw Error('Invalid backend address.');
+    return `${endpoint.protocol === "https:" ? "wss:" : "ws:"}//${endpoint.host}/resources/live/`;
   }
   async function prepare() {
     if (!navigator.serviceWorker || !globalThis.isSecureContext) throw Error("Open Nyx over HTTPS or localhost to use this view.");

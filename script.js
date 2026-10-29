@@ -13397,6 +13397,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       "games": "games",
     };
     const tools = {
+      "alternate-view": '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M6 6.5h.01M9 6.5h.01m1 7.5 2 3 3-5-5 2Z"/>',
       "ad-haven": '<path d="m3 10 9-7 9 7v10H3Z"/><path d="M8 20v-7h8v7M8 9h8"/>',
       "n7x-vms": '<rect x="3" y="3" width="18" height="13" rx="2"/><path d="M8 21h8m-4-5v5"/>',
       "link-checker":
@@ -13418,7 +13419,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     );
 
     if (!apps.some(app => app.id === "ad-haven")) apps.push({id:"ad-haven",icon:"ad-haven",name:"Ad Haven",url:"/apps/ad-haven/"});
-    if (!apps.some(app => app.id === "alternate-view")) apps.push({id:"alternate-view",icon:"globe",name:"Alternate view",url:"/apps/r7f29c1/"});
+    if (!apps.some(app => app.id === "alternate-view")) apps.push({id:"alternate-view",icon:"alternate-view",name:"Alternate view",url:"/apps/r7f29c1/index.html"});
     return apps
       .map(
         (app, i) =>

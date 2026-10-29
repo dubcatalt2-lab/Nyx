@@ -1,6 +1,6 @@
 # Alternate view
 
-The Apps page includes Alternate view at `/apps/r7f29c1/`. The existing engine remains the default.
+The Apps page includes Alternate view at `/apps/r7f29c1/index.html`. The existing engine remains the default.
 
 Vendor source: https://github.com/zaka13alt/uvthing at a090b257525fd88c0037c9c2b8b4334368093f0b. Unmodified vendor files and MIT notice are under assets/vendor/r7f29c1. The upstream launcher is not shipped: it unregisters other service workers.
 
@@ -16,3 +16,5 @@ The first checks input rejection, worker coexistence and reopening with transpor
 Build through the named production builder, then rerun both tests with NYX_TEST_STATIC_ROOT=dist. Never edit dist directly.
 
 The production builder removes vendor source-map references from generated copies; source vendor files stay unchanged.
+
+Standalone static-host launches use the configured backend meta address. The Apps entry uses an explicit index.html so the S3 REST endpoint can resolve it before a worker controls the page.

@@ -30,6 +30,10 @@ try {
  assert.match(await page.locator('iframe').getAttribute('src'),/^\/apps\/r7f29c1\/view\//);
  await page.reload();await page.getByRole('textbox',{name:'Website address'}).fill('example.org');await page.getByRole('button',{name:'Open',exact:true}).click();
  await page.getByRole('status',{name:'Website opened.',exact:true}).waitFor();
+ await page.evaluate(()=>{const meta=document.createElement('meta');meta.name='nyx-static-backend';meta.content='https://backend.example';document.head.append(meta);});
+ await page.getByRole('textbox',{name:'Website address'}).fill('example.net');await page.getByRole('button',{name:'Open',exact:true}).click();
+ await page.getByRole('status',{name:'Website opened.',exact:true}).waitFor();
+ assert.equal(await page.evaluate(()=>launchParameters.args[0].WeZaN),'wss://backend.example/resources/live/','Static-host standalone views must use the configured backend');
  assert.deepEqual(errors,[]);
  await context.close();
  console.log('PASS alternate view: URL validation, worker coexistence, selected endpoint setup, reopen. Transport delivery mocked.');

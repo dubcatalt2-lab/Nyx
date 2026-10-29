@@ -10443,7 +10443,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     const directAction = allowDirect
       ? "<button type=\"button\" onclick=\"parent.postMessage({type:'nyx:proxy-direct-fallback'},'*')\">Open directly</button>"
       : "";
-    return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#101318;color:#ddd;display:grid;place-items:center;min-height:100vh;font:14px system-ui}main{display:flex;gap:12px}button{padding:12px 18px;border:1px solid #ffffff26;border-radius:12px;background:#ffffff0a;color:inherit;cursor:pointer}</style><main data-nyx-error><button type="button" onclick="parent.location.reload()" aria-label="Reload page">? Reload</button>${directAction}</main>`;
+    return `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#101318;color:#ddd;display:grid;place-items:center;min-height:100vh;font:14px system-ui}main{max-width:520px;padding:28px}h1{font-size:22px;margin:0 0 12px}p{line-height:1.6;margin:0 0 22px}nav{display:flex;flex-wrap:wrap;gap:12px}button{padding:12px 18px;border:1px solid #ffffff26;border-radius:12px;background:#ffffff0a;color:inherit;cursor:pointer}</style><main data-nyx-error><h1>${esc(heading || "Page unavailable")}</h1><p>${esc(message || "The page could not load.")}</p><nav aria-label="Page actions"><button type="button" onclick="parent.location.reload()" aria-label="Reload page">&#x21bb; Reload</button>${directAction}</nav></main>`;
   }
 
   function loadScript(src) {
@@ -21801,14 +21801,21 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
   function startNyxLatencyMonitor() {
     if (startNyxLatencyMonitor.started) return;
     startNyxLatencyMonitor.started = true;
-    window.NyxAvailability?.start(
-      () => ({ url: wispUrl(), custom: !!storedCustomWispUrl() }),
-      async (failed) => {
-        if (storedCustomWispUrl()) return;
-        const next = await selectWispRelay(failed);
-        if (!storedCustomWispUrl() && next !== failed) resetBrowserProxyRuntime();
-      },
-    );
+    const startAvailability = async () => {
+      if (!storedCustomWispUrl() && store.get("nyx.httpBridge", true)) {
+        const { installHttpRelaySocket } = await import("/apps/tutsi/http-relay.mjs");
+        installHttpRelaySocket();
+      }
+      window.NyxAvailability?.start(
+        () => ({ url: wispUrl(), custom: !!storedCustomWispUrl() }),
+        async (failed) => {
+          if (storedCustomWispUrl()) return;
+          const next = await selectWispRelay(failed);
+          if (!storedCustomWispUrl() && next !== failed) resetBrowserProxyRuntime();
+        },
+      );
+    };
+    void startAvailability().catch((error) => console.warn("Connection monitor unavailable", error));
     syncNyxLatencyBubble();
     void calibrateNyxLatency();
     const refresh = () => {

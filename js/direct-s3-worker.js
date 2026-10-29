@@ -34,7 +34,7 @@ self.addEventListener('fetch',event=>{
  event.respondWith((async()=>{
   const config=await settings;
   if(config.features?.chat===false && /^\/(?:apps\/chat|api\/chat|socket\.io)(?:\/|$)/.test(url.pathname))return new Response('Not found',{status:404});
-  if(config.features?.blooket===false && /^\/apps\/blooket(?:\/|$)/.test(url.pathname))return new Response('Not found',{status:404});
+  if(config.features?.blooket===false && /^\/(?:apps\/blooket|blooket)(?:\/|$)/.test(url.pathname))return new Response('Not found',{status:404});
   const remote=/^\/(?:api(?:\/|$)|socket\.io(?:\/|$)|healthz$|resources\/live(?:\/|$)|wisp(?:\/|$)|download\/|(?:gn-math|gms-games|gms-studies|reds-misc)-|cloud\/v1\/)/.test(url.pathname);
   if(remote){
    let session=await ensureBackendSession();

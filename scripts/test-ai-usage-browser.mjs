@@ -22,7 +22,7 @@ try {
     }
     if(path==='/api/nyx-ai'&&route.request().method()==='POST'){
       used+=25;chatCalls++;
-      return route.fulfill({headers:{'content-type':'text/event-stream'},body:'data: {"choices":[{"delta":{"content":"Hello there."}}]}\n\ndata: {"nyx_usage":{"completion_tokens":15,"prompt_tokens":10,"total_tokens":25}}\n\ndata: [DONE]\n\n'});
+      return route.fulfill({headers:{'content-type':'text/event-stream'},body:'data: {"choices":[{"delta":{"content":"Hello there."}}]}\n\ndata: {"nyx_usage":{"completion_tokens":15,"prompt_tokens":10,"total_tokens":25,"reasoning_tokens":5,"cached_tokens":4}}\n\ndata: [DONE]\n\n'});
     }
     return route.fulfill({json:{}});
   });
@@ -39,6 +39,7 @@ try {
     await page.waitForFunction(expected=>document.querySelector('#usageAll').textContent===String(expected),100+(i+1)*25);
   }
   assert.match(await page.locator(".ai-response-stats").last().textContent(),/25 tokens used/);
+  assert.match(await page.locator(".ai-response-stats").last().getAttribute('aria-label'),/10 input \+ 15 output; 5 reasoning included/);
   assert.equal(chatCalls,6);assert(usageCalls>=7);
   limit=50000;pending=500;
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));

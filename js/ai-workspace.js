@@ -1476,6 +1476,10 @@
       tokens: Number.isFinite(value.tokens) ? Math.max(0, Math.min(value.tokens, 1000000)) : 0,
       estimated: value.estimated !== false,
       totalTokens: Number.isSafeInteger(value.totalTokens) && value.totalTokens >= 0 ? value.totalTokens : null,
+      inputTokens: Number.isSafeInteger(value.inputTokens) && value.inputTokens >= 0 ? value.inputTokens : null,
+      outputTokens: Number.isSafeInteger(value.outputTokens) && value.outputTokens >= 0 ? value.outputTokens : null,
+      reasoningTokens: Number.isSafeInteger(value.reasoningTokens) && value.reasoningTokens >= 0 ? value.reasoningTokens : null,
+      cachedTokens: Number.isSafeInteger(value.cachedTokens) && value.cachedTokens >= 0 ? value.cachedTokens : null,
     };
   }
   function showTiming(message, value, waiting = false) {
@@ -1503,6 +1507,10 @@
           (timing.estimated ? " (estimated)" : "")
         : "";
     stats.textContent = first + speed + (waiting ? "" : " | " + seconds + "s total") + (!waiting && timing.totalTokens !== null ? " | " + timing.totalTokens.toLocaleString() + " tokens used" : "");
+    if (!waiting && timing.totalTokens !== null && timing.inputTokens !== null && timing.outputTokens !== null) {
+      stats.textContent += ` (${timing.inputTokens.toLocaleString()} input + ${timing.outputTokens.toLocaleString()} output${timing.reasoningTokens !== null ? `; ${timing.reasoningTokens.toLocaleString()} reasoning included` : ''})`;
+    }
+    stats.setAttribute("aria-label", stats.textContent);
     stats.title =
       "Reply speed is measured in tokens per second, not tokens used. Allowance usage includes the prompt, conversation history, reply and any reasoning tokens reported by the provider.";
   }
@@ -2656,13 +2664,14 @@
       finishReason = null;
     const timingStart = performance.now();
     let firstTextMs = null,
-      reportedTokens = 0, totalTokens = null;
+      reportedTokens = 0, totalTokens = null, inputTokens = null, outputTokens = null, reasoningTokens = null, cachedTokens = null;
     const getTiming = () => ({
       elapsedMs: performance.now() - timingStart,
       firstTextMs,
       tokens: reportedTokens || Math.ceil(answer.length / 4),
       estimated: !reportedTokens,
       totalTokens,
+      inputTokens, outputTokens, reasoningTokens, cachedTokens,
     });
     const timingTimer = setInterval(() => {
       showTiming(pending, getTiming(), true);
@@ -2855,6 +2864,13 @@
             );
             if (Number.isFinite(usageTokens) && usageTokens > 0) reportedTokens = usageTokens;
             if (Number.isSafeInteger(data.nyx_usage?.total_tokens) && data.nyx_usage.total_tokens >= 0) totalTokens = data.nyx_usage.total_tokens;
+            if (data.nyx_usage) {
+              const valid = value => Number.isSafeInteger(value) && value >= 0;
+              if (valid(data.nyx_usage.prompt_tokens)) inputTokens = data.nyx_usage.prompt_tokens;
+              if (valid(data.nyx_usage.completion_tokens)) outputTokens = data.nyx_usage.completion_tokens;
+              if (valid(data.nyx_usage.reasoning_tokens)) reasoningTokens = data.nyx_usage.reasoning_tokens;
+              if (valid(data.nyx_usage.cached_tokens)) cachedTokens = data.nyx_usage.cached_tokens;
+            }
             if (data.nyx_metadata) {
               const previous = pending._nyxMetadata || { sources: [], summary: "" };
               pending._nyxMetadata = normalizeMetadata({

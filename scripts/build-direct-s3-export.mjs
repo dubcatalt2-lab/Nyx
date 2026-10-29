@@ -2,6 +2,7 @@ import {cp,mkdir,readFile,writeFile,readdir,stat} from 'node:fs/promises';
 import {resolve,join} from 'node:path';import {createHash} from 'node:crypto';
 import {directS3Origin} from '../lib/static-host-access.mjs';
 import {minify} from 'terser';
+import {parse} from 'acorn';
 import {connectionCheckPage} from './s3-connection-check.mjs';
 const argument=name=>process.argv.find(a=>a.startsWith('--'+name+'='))?.slice(name.length+3);
 const origin=directS3Origin(argument('origin')||''),backend=argument('backend')||'https://n7x.zakaon.top';
@@ -23,7 +24,28 @@ for(const name of Object.keys(pages))if(name.startsWith('apps/blooket/'))delete 
 for(const name of Object.keys(pages))if(name.startsWith('apps/sponsor/') || /^apps\/ad-haven\/(banner|native|multitag)\.html$/.test(name))delete pages[name];
 for(const name of Object.keys(pages)){const file=join(output,'site',name);let html=await readFile(file,'utf8');html=html.replace(/<head(?:\s[^>]*)?>/i,head=>head+`<meta name="nyx-static-backend" content="${backend}"><meta name="nyx-blooket-enabled" content="0">${features.chat?'':'<meta name="nyx-chat-enabled" content="0">'}<script src="${runtime}"></script>`);await writeFile(file,html);}
 await writeFile(join(output,'site','direct-s3-config.json'),JSON.stringify({origin,backend,runtime,aliases,features}));
-await writeFile(join(output,'site','index.html'),`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nyx</title></head><body><script src="${asset('/js/direct-s3-entry.js')}"></script></body></html>`);
+let coverSource = await readFile(join(dist,'index.html'),'utf8');
+if (pages['index.html']?.loader) {
+ const loader = await readFile(join(dist,pages['index.html'].loader.slice(1)),'utf8');
+ let encoded;
+ const visit = node => {
+  if (!node || typeof node !== 'object') return;
+  if (node.type === 'CallExpression' && node.callee?.name === 'atob') {
+   const argument = node.arguments[0];
+   if (argument?.type === 'CallExpression' && argument.callee?.property?.name === 'join' && argument.callee.object?.type === 'ArrayExpression' && argument.callee.object.elements.every(part=>part?.type==='Literal'&&typeof part.value==='string')) encoded=argument.callee.object.elements.map(part=>part.value).join('');
+  }
+  for (const value of Object.values(node)) if (Array.isArray(value)) value.forEach(visit); else if (value && typeof value === 'object') visit(value);
+ };
+ visit(parse(loader,{ecmaVersion:'latest'}));
+ if (!encoded) throw Error('Production cover document could not be read.');
+ const bytes = Buffer.from(encoded,'base64');
+ if (createHash('sha256').update(bytes).digest('hex') !== pages['index.html'].sha256) throw Error('Production cover document integrity mismatch.');
+ coverSource=bytes.toString('utf8');
+}
+const s3CoverScript = asset('/js/direct-s3-cover.js');
+const redirects=[...coverSource.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].filter(match=>match[1].includes('window.top.location.href')&&match[1].includes('1012'));
+if (redirects.length !== 1) throw Error('Expected one production cover redirect.');
+await writeFile(join(output,'site','index.html'),coverSource.replace(redirects[0][0],`<script src="${s3CoverScript}"></script>`));
 // Changing the backend must activate a new worker even when runtime source is unchanged.
 const workerPath=join(output,'site','direct-s3-worker.js');
 await writeFile(workerPath,(await readFile(workerPath,'utf8'))+';void '+JSON.stringify(createHash('sha256').update(backend+runtime+JSON.stringify(aliases)+JSON.stringify(features)).digest('hex').slice(0,16))+';');
@@ -33,7 +55,8 @@ for(const name of new Set(['index.html',...Object.keys(pages)])){
  const file=join(output,'site',name),html=await readFile(file,'utf8');
  const boot=`(()=>{if(location.origin!==${JSON.stringify(origin)}){document.documentElement.style.cssText='margin:0;background:#000;color-scheme:dark';document.body.style.margin='0';const frame=document.createElement('iframe');frame.title='Workspace';frame.src=${JSON.stringify(origin+'/'+name)}+location.search+location.hash;frame.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0';frame.allow='autoplay; fullscreen; microphone; camera; display-capture; clipboard-read; clipboard-write; gamepad';frame.allowFullscreen=true;document.body.append(frame);addEventListener('message',event=>{if(event.source!==frame.contentWindow||event.origin!==${JSON.stringify(origin)})return;if(event.data?.type==='nyx:host-context-required'){location.replace(${JSON.stringify(origin+'/'+name)}+location.search+location.hash);return;}if(event.data?.type!=='nyx:tab-cloak-sync')return;if(typeof event.data.title==='string')document.title=event.data.title.slice(0,200);try{const icon=new URL(event.data.favicon,${JSON.stringify(origin)});if(!/^https?:$/.test(icon.protocol)&&!icon.href.toLowerCase().startsWith('data:image/'))return;let link=document.querySelector('link[rel=icon]');if(!link){link=document.createElement('link');link.rel='icon';document.head.append(link);}link.href=icon.href;}catch{}});return;}const html=new TextDecoder().decode(Uint8Array.from(atob(${JSON.stringify(Buffer.from(html).toString('base64'))}),c=>c.charCodeAt(0)));document.open();document.write(html);document.close();})();`;
  const compiled=await minify(boot,{mangle:{toplevel:true},compress:true,format:{comments:false}});
- await writeFile(file,'<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nyx</title></head><body><script>'+compiled.code+'</script></body></html>');
+ const title=name==='index.html'?(coverSource.match(/<title>([^<]*)<\/title>/i)?.[1]||'Nyx'):'Nyx';
+ await writeFile(file,'<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+title+'</title></head><body><script>'+compiled.code+'</script></body></html>');
 }
 await writeFile(join(output,'site','connection-check.html'),await connectionCheckPage(origin,backend));
 const files=[];async function scan(dir=''){for(const item of await readdir(join(output,'site',dir),{withFileTypes:true})){const name=join(dir,item.name);if(item.isDirectory())await scan(name);else{const bytes=await readFile(join(output,'site',name));files.push({path:name.replaceAll('\\','/'),bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')});}}}await scan();

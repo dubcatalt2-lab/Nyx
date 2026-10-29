@@ -36,7 +36,7 @@ export function connectWorkspace({ onStatus, onError, onDisconnect }) {
     const data = event.data;
     if (closed || event.source !== source || event.origin !== origin || data?.protocol !== 'nyx-blooket-v1' || data.channel !== channel) return;
     if (data.type === 'status') {
-      if (data.connectorVersion !== 11) { close(); onError('This bookmark is out of date. Save Connect to Nyx again, then click the new bookmark in Blooket.'); return; }
+      if (![11, 12].includes(data.connectorVersion)) { close(); onError('This bookmark is out of date. Save Connect to Nyx again, then click the new bookmark in Blooket.'); return; }
       if (data.host !== new URL(origin).hostname || data.revision !== 'c322469ebbd192b6731480af76b1ac0a3d4a7b22') return;
       lastSeen = Date.now(); connected = true; onStatus({ host:data.host, path:String(data.path || '/').slice(0,200) });
     } else if (data.type === 'result') {

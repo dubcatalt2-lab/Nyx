@@ -120,6 +120,10 @@ async function copyRepositoryStaticFiles() {
     if (!κατάλογοι.has(κατάλογος)) κατάλογοι.set(κατάλογος, mkdir(κατάλογος, { recursive: true }));
     await κατάλογοι.get(κατάλογος);
     await copyFile(source, destination);
+    if (relative.startsWith("assets/vendor/r7f29c1/") && /\.(?:js|mjs)$/.test(relative)) {
+      const vendor = await readFile(destination, "utf8");
+      await writeFile(destination, vendor.replace(/^[ \t]*\/\/[#@][ \t]*sourceMappingURL=[^\r\n]*(?:\r?\n|$)/gm, ""));
+    }
    }
   }));
   console.log(`Copied ${αρχεία.length} static source files.`);

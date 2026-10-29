@@ -2663,6 +2663,7 @@ async function nyxBudgetedAiFetch(provider,url,options) {
         scope.reportedUsage ||= {input:0,output:0};
         scope.reportedUsage.input+=usage.input;
         scope.reportedUsage.output+=usage.output;
+        for (const key of ['reasoning','cached']) if (Number.isSafeInteger(usage[key])) scope.reportedUsage[key]=(scope.reportedUsage[key]||0)+usage[key];
       } else if(!details?.refundTokens)scope.usageIncomplete=true;
       if(success){
         const lastUser=Array.isArray(scope.req.body?.messages)?scope.req.body.messages.filter(m=>m?.role==='user').at(-1)?.content:'';
@@ -3098,7 +3099,7 @@ app.post("/api/nyx-ai", nyxAiRateLimit, async (req, res) => {
       }
       if(finishReason)res.write(`data: ${JSON.stringify({choices:[{delta:{},finish_reason:finishReason}]})}\n\n`);
       const billingScope=nyxAiBudgetContext.getStore(),billing=billingScope?.reportedUsage;
-      if(reportedTokens>0||billing)res.write(`data: ${JSON.stringify({nyx_usage:{completion_tokens:reportedTokens,...(billing&&!billingScope.usageIncomplete?{prompt_tokens:billing.input,total_tokens:billing.input+billing.output}:{} )}})}\n\n`);
+      if(reportedTokens>0||billing)res.write(`data: ${JSON.stringify({nyx_usage:{completion_tokens:reportedTokens,...(billing&&!billingScope.usageIncomplete?{prompt_tokens:billing.input,completion_tokens:billing.output,total_tokens:billing.input+billing.output,...(billing.reasoning!==undefined?{reasoning_tokens:billing.reasoning}:{}),...(billing.cached!==undefined?{cached_tokens:billing.cached}:{})}:{} )}})}\n\n`);
       res.write("data: [DONE]\n\n");
       res.end();
       return;
@@ -14257,6 +14258,11 @@ app.use('/apps/tutsi', (req, res, next) => {
   if(!req.path.startsWith('/studyready/') && (req.path==='/' || /\.html$/.test(req.path))) return res.redirect(302, '/studies.html');
   next();
 });
+function serveBlooketWorkspace(_req,res) {
+  res.set('Cache-Control','no-cache');
+  res.sendFile(join(staticRoot,'apps/blooket/index.html'));
+}
+app.get(['/blooket','/blooket/','/blooket/index.html'],serveBlooketWorkspace);
 app.use(publicAssetBoundary(staticRoot));
 app.use(express.static(staticRoot));
 app.use("/assets/vendor/katex/", express.static(katexPath));

@@ -10561,6 +10561,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       configuredWispUrls()[0]
     );
   }
+  window.nyxAlternateRelayAddress = () => wispUrl();
   function configuredWispUrls() {
     if (store.get("nyx.httpBridge", true)) return [browserHttpRelayUrl()];
     const extras = globalThis.english_RUNTIME_CONFIG?.wispUrls;
@@ -13417,6 +13418,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     );
 
     if (!apps.some(app => app.id === "ad-haven")) apps.push({id:"ad-haven",icon:"ad-haven",name:"Ad Haven",url:"/apps/ad-haven/"});
+    if (!apps.some(app => app.id === "alternate-view")) apps.push({id:"alternate-view",icon:"globe",name:"Alternate view",url:"/apps/r7f29c1/"});
     return apps
       .map(
         (app, i) =>

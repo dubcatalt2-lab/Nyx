@@ -3,7 +3,7 @@ const dir=resolve('.codex-artifacts/blooket-runtime-fixture');
 try { await Promise.all(['react','react-dom','phaser'].map(name=>access(dir+'/node_modules/'+name+'/package.json'))); }
 catch { throw Error('Install isolated test dependencies: npm install --prefix .codex-artifacts/blooket-runtime-fixture --no-save --no-audit --no-fund react@19.2.0 react-dom@19.2.0 phaser@3.90.0'); }
 const bundle=await build({stdin:{contents:(await readFile('scripts/fixtures/blooket-current-brawl.jsx','utf8')).replace('// CURRENT_GAME_DEFINITIONS',await currentBrawlDefinitions()),resolveDir:resolve('scripts/fixtures'),loader:'jsx'},nodePaths:[dir+'/node_modules'],bundle:true,write:false,format:'iife',define:{'process.env.NODE_ENV':'"production"'},logLevel:'silent'});
-const serverApp=express();serverApp.use(express.static(process.env.NYX_TEST_STATIC_ROOT||'.'));const server=serverApp.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
+const serverApp=express();serverApp.get('/blooket',(_req,res)=>res.sendFile(resolve(process.env.NYX_TEST_STATIC_ROOT||'.','apps/blooket/index.html')));serverApp.use(express.static(process.env.NYX_TEST_STATIC_ROOT||'.'));const server=serverApp.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
 const base=process.env.NYX_TEST_APP_ORIGIN||`http://127.0.0.1:${server.address().port}`,browser=await chromium.launch();
 try{
  const ctx=await browser.newContext();ctx.setDefaultTimeout(20000);const errors=[];ctx.on('page',p=>{p.on('pageerror',e=>errors.push(e.message));p.on('dialog',d=>d.accept('77'));});

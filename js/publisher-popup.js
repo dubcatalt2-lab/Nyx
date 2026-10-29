@@ -1,4 +1,4 @@
-import {publisherHostAllowed,publisherMode,publisherSurface,publisherOfferAddress} from './publisher-config.js';
+import {publisherHostAllowed,publisherMode,publisherAccountMode,publisherSurface,publisherOfferAddress} from './publisher-config.js';
 import {createPublisherFrame} from './publisher-frame.js';
 import {requestPublisherOpen} from './publisher-open.js';
 let surface=null,frame=null,scheduled=false;const used=new Set();
@@ -13,6 +13,13 @@ function update(){
  slot.element.style.cssText+=';position:absolute;left:50%;bottom:18px;transform:translateX(-50%);width:min(320px,max(112px,calc(100% - 160px)));height:76px;border:0;z-index:2;background:transparent';surface.append(slot.element);
 }
 function schedule(){if(!scheduled){scheduled=true;queueMicrotask(update);}}
+
+document.addEventListener('click',event=>{
+ const target=event.target instanceof Element?event.target.closest('[data-n7x-dock-item="games"]'):null;
+ const address=publisherOfferAddress();
+ if(!target||!address||!event.isTrusted||event.defaultPrevented||event.button!==0||!publisherHostAllowed()||publisherAccountMode()!=='standard')return;
+ requestPublisherOpen(address,()=>publisherHostAllowed()&&publisherAccountMode()==='standard'&&target.isConnected);
+},true);
 
 document.addEventListener('click',event=>{
  const address=publisherOfferAddress(),home=publisherSurface(),target=event.target;

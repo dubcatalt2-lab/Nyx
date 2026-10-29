@@ -100,16 +100,22 @@ qs('[data-stop]').onclick = async () => {
   try { await bridge?.request('stop'); record('Scheduled tools stopped. Previous changes remain.'); }
   catch (error) { record(error.message); }
 };
-qs('[data-copy-bookmark]').onclick = async () => {
-  try { await navigator.clipboard.writeText(qs('[data-bookmark]').href); qs('[data-setup-status]').textContent = 'Copied. Create a bookmark and paste this into its URL field.'; }
-  catch { qs('[data-manual]').hidden = false; qs('[data-bookmark-code]').value = qs('[data-bookmark]').href; qs('[data-bookmark-code]').select(); qs('[data-setup-status]').textContent = 'Select and copy the bookmark URL below.'; }
+qs('[data-copy-page-link]').onclick = async () => {
+  const address=new URL('/blooket',location.origin).href;
+  try { await navigator.clipboard.writeText(address); setStatus('[data-setup-status]','Page link copied. Open it in a tab to set up the connector.'); }
+  catch { setStatus('[data-setup-status]','Page link: '+address); }
 };
-qs('[data-bookmark]').onclick = event => { event.preventDefault(); qs('[data-setup-status]').textContent = 'Drag this button to your bookmarks bar, then click that saved bookmark while on Blooket.'; };
+qs('[data-copy-page-link]').disabled=false;
+qs('[data-copy-bookmark]').onclick = async () => {
+  try { await navigator.clipboard.writeText(qs('[data-bookmark]').href); setStatus('[data-setup-status]', 'Connector code copied. Paste it into the bookmark URL field, then run that bookmark on Blooket.'); }
+  catch { qs('[data-manual]').hidden = false; qs('[data-bookmark-code]').value = qs('[data-bookmark]').href; qs('[data-bookmark-code]').select(); setStatus('[data-setup-status]', 'Select and copy the bookmark URL below.'); }
+};
+qs('[data-bookmark]').onclick = event => { event.preventDefault(); setStatus('[data-setup-status]', 'Drag this button to your bookmarks bar, then click that saved bookmark while on Blooket.'); };
 qs('[data-download-bookmark]').onclick = () => {
   const href = qs('[data-bookmark]').href.replaceAll('&','&amp;').replaceAll('"','&quot;');
   const blob = new Blob(['<!DOCTYPE NETSCAPE-Bookmark-file-1><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8"><TITLE>Nyx Blooket connector</TITLE><H1>Nyx Blooket connector</H1><DL><p><DT><A HREF="' + href + '">Connect to Nyx</A></DL><p>'], {type:'text/html'});
   const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'Nyx-Blooket-Bookmark.html'; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 30000);
-  qs('[data-setup-status]').textContent = 'Downloaded. In Chrome or Edge: open Bookmarks manager, choose Import bookmarks from the menu, then select Nyx-Blooket-Bookmark.html.';
+  setStatus('[data-setup-status]', 'Downloaded. In Chrome or Edge: open Bookmarks manager, choose Import bookmarks from the menu, then select Nyx-Blooket-Bookmark.html.');
 };
 qs('[data-close]').onclick = () => qs('dialog').close();
 document.querySelectorAll('[data-collection]').forEach(button => button.onclick = () => { collection = button.dataset.collection; qs('#vault-mode').value = ''; document.querySelectorAll('[data-mode-nav] button').forEach(b=>b.setAttribute('aria-pressed','false')); document.querySelectorAll('[data-collection]').forEach(other => other.setAttribute('aria-pressed', String(other === button))); render(); });

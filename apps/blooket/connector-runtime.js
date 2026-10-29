@@ -240,7 +240,7 @@ function findBlooketEffect() {
 }
 function blooketConnectionDetails(lastAction = null) {
   const info = inspectBlooketComponents();
-  return { version:11, host:location.hostname, runtimeSources:[...document.querySelectorAll('script[src]')].map(script=>{try{const url=new URL(script.src);return url.origin+url.pathname;}catch{return '';}}).filter(Boolean).slice(0,30), elements:info.elements, fibers:info.fibers, hooks:info.hooks, games:info.games.map(game=>({keys:Object.keys(game).slice(0,40),sceneManager:typeof game.scene?.getScenes==='function',scenes:(typeof game.scene?.getScenes==='function'?game.scene.getScenes(false):[game.config?.sceneConfig]).slice(0,30).map(scene=>({active:!!scene?.sys?.isActive?.(),paused:!!scene?.sys?.isPaused?.(),sleeping:!!scene?.sys?.isSleeping?.(),hasPhysics:!!scene?.physics?.world,physicsShape:blooketPhysicsShape(scene),bodies:scene?.physics?.world?.bodies?.entries?.length||0,colliders:scene?.physics?.world?.colliders?._active?.length||0,matches:['td2-services','brawl-services','brawl-enemies','brawl-damage','brawl-magnet','brawl-xp','flappy-avatar','td2-enemies'].filter(purpose=>blooketSceneMatches(scene,purpose))}))})),
+  return { version:12, host:location.hostname, runtimeSources:[...document.querySelectorAll('script[src]')].map(script=>{try{const url=new URL(script.src);return url.origin+url.pathname;}catch{return '';}}).filter(Boolean).slice(0,30), elements:info.elements, fibers:info.fibers, hooks:info.hooks, games:info.games.map(game=>({keys:Object.keys(game).slice(0,40),sceneManager:typeof game.scene?.getScenes==='function',scenes:(typeof game.scene?.getScenes==='function'?game.scene.getScenes(false):[game.config?.sceneConfig]).slice(0,30).map(scene=>({active:!!scene?.sys?.isActive?.(),paused:!!scene?.sys?.isPaused?.(),sleeping:!!scene?.sys?.isSleeping?.(),hasPhysics:!!scene?.physics?.world,physicsShape:blooketPhysicsShape(scene),bodies:scene?.physics?.world?.bodies?.entries?.length||0,colliders:scene?.physics?.world?.colliders?._active?.length||0,matches:['td2-services','brawl-services','brawl-enemies','brawl-damage','brawl-magnet','brawl-xp','flappy-avatar','td2-enemies'].filter(purpose=>blooketSceneMatches(scene,purpose))}))})),
     lastAction, hookStates:info.hookStates,
     components:info.candidates.slice(0,20).map(node=>({
       stateKeys:Object.keys(node.state || {}).slice(0,80),
@@ -311,12 +311,12 @@ function connectOfficialPage(nyxOrigin, actions, contracts={}) {
   if(location.protocol!=='https:'||!officialHost||window!==window.top){alert('Open the official Blooket website in a normal br00ser tab, then click Connect to Nyx.');return;}
   const key=Symbol.for('nyx.blooket.connector.v1');
   const channel=Array.from(crypto.getRandomValues(new Uint8Array(24)),v=>v.toString(16).padStart(2,'0')).join('');
-  const app=window.open(nyxOrigin+'/apps/blooket/#bridge='+channel+'&origin='+encodeURIComponent(location.origin),'_blank');
+  const app=window.open(nyxOrigin+'/blooket#bridge='+channel+'&origin='+encodeURIComponent(location.origin),'_blank');
   if(!app){alert('Allow pop-ups for Blooket, then click Connect to Nyx again.');return;}
   window[key]?.close?.();
   const tasks=new Map(),seen=new Set();let closed=false,paired=false,running=null,heartbeat=0,lastAction=null;
   const send=(type,extra={})=>{if(!closed)app.postMessage({protocol:'nyx-blooket-v1',channel,type,...extra},nyxOrigin);};
-  const status=()=>send('status',{connectorVersion:11,host:location.hostname,path:location.pathname,revision:'c322469ebbd192b6731480af76b1ac0a3d4a7b22'});
+  const status=()=>send('status',{connectorVersion:12,host:location.hostname,path:location.pathname,revision:'c322469ebbd192b6731480af76b1ac0a3d4a7b22'});
   const stopAll=()=>{for(const task of tasks.values())task.stop();tasks.clear();};
   const close=()=>{
     if(closed)return;send('disconnected');closed=true;stopAll();window.clearInterval(heartbeat);

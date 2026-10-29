@@ -6,6 +6,9 @@ export function enableResourceRouting(source){
  const body=source.slice(open+1,end-1),at=body.indexOf('reverse_proxy 127.0.0.1:8080 {');if(at<0||body.indexOf('reverse_proxy 127.0.0.1:8080 {',at+1)>=0)throw Error('Expected the existing primary Nyx backend.');
  const backend=`reverse_proxy 127.0.0.1:18180 127.0.0.1:18181 {
         lb_policy least_conn
+        lb_try_duration 2s
+        fail_duration 10s
+        max_fails 1
         health_uri /healthz
         health_interval 10s
         health_timeout 2s

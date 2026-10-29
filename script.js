@@ -6275,6 +6275,9 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     };
     try {
       const parsed = new URL(raw, location.href);
+      if (parsed.origin === location.origin && parsed.pathname.startsWith('/apps/r7f29c1/view/')) {
+        return decodeRetiredAddress(parsed.href.slice((parsed.origin+'/apps/r7f29c1/view/').length));
+      }
       const retiredPrefix = "/service/";
       const retiredStart = parsed.origin + retiredPrefix;
       const scramjetStart = parsed.origin + "/scramjet/service/";
@@ -10167,12 +10170,12 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     if (mode === "scramjet") return scramjetUrl(target) || target;
     return url;
   }
+  const documentEngine = () => import('/js/document-engine.mjs');
+  async function openDocumentEngine() { return (await documentEngine()).prepareDocumentEngine(wispUrl()); }
   window.nyxProxyGameUrl = async (url) => {
     const target = proxyTargetUrl(url);
     if (!target) return "";
-    const ready = await installScramjet();
-    if (!ready) throw new Error("N7X game proxy is unavailable.");
-    return scramjetUrl(target);
+    return (await openDocumentEngine()).encodeRef(target);
   };
   const nyxManagedGameFrames = new WeakMap();
   const nyxAdProtectedGameFrames = new WeakSet();
@@ -10229,26 +10232,11 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     installGameFrameAdProtection(frame);
     const mode = forceProxy ? "scramjet" : selectedBrowserMode(target);
     if (mode === "scramjet" && String(frame?.tagName || "").toLowerCase() === "iframe") {
-      const ready = await installScramjet();
-      const controller = scramjetController;
-      if (ready && controller) {
-        let managed = nyxManagedGameFrames.get(frame);
-        if (!managed || managed.__nyxScramjetVersion !== "v2") {
-          frame.removeAttribute("src");
-          managed = controller.createFrame(frame, {
-            plugins: [
-              createScramjetCompatibilityPlugin("", "proxy-sri"),
-              createScramjetCompatibilityPlugin(browserAdBlockRuntimeSource, "ad-block"),
-              createScramjetCompatibilityPlugin(scramjetMinimalRuntimeGuardSource, "minimal-guard"),
-            ],
-          });
-          managed.__nyxScramjetVersion = "v2";
-          nyxManagedGameFrames.set(frame, managed);
-        }
-        if (signal?.aborted || !frame.isConnected) return;
-        managed.go(target);
-        return { managed: true, engine: "scramjet", url: target };
-      }
+      const engine = await openDocumentEngine();
+      if (signal?.aborted || !frame.isConnected) return;
+      frame.removeAttribute("srcdoc");
+      frame.src = engine.encodeRef(target);
+      return {managed:true,engine:"document",url:target};
     }
     if (mode === "iframe") return { managed: false, engine: "iframe", url: target };
     throw new Error("N7X game proxy is unavailable.");
@@ -12341,7 +12329,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         browserProxyPrewarmScheduled = false;
         return;
       }
-      void installScramjet();
+      void openDocumentEngine().catch(() => {});
     };
     if (typeof requestIdleCallback === "function") requestIdleCallback(warm, { timeout: 700 });
     else setTimeout(warm, 0);
@@ -13572,19 +13560,20 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
   async function preflightEngineReady(target = "") {
     if (location.protocol === "file:" || !("serviceWorker" in navigator)) return false;
     if (preflightBrowserModeForTarget(target) === "iframe") return true;
-    return installScramjet();
+    await openDocumentEngine();
+    return true;
   }
   async function preflightTransportReady(target = "") {
     if (location.protocol === "file:") return false;
     if (preflightBrowserModeForTarget(target) === "iframe") return true;
-    return !!(await createScramjetTransport());
+    await openDocumentEngine();
+    return true;
   }
   async function preflightServiceWorkerReady(target = "") {
     if (location.protocol === "file:" || !("serviceWorker" in navigator)) return false;
     await preflightEngineReady(target);
     const registrations = await Promise.all([
-      navigator.serviceWorker.getRegistration("/~/sj/").catch(() => null),
-      navigator.serviceWorker.getRegistration("/service/").catch(() => null),
+      navigator.serviceWorker.getRegistration("/apps/r7f29c1/").catch(() => null),
     ]);
     return registrations.some(
       (registration) => registration?.active || registration?.waiting || registration?.installing,
@@ -15360,6 +15349,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       t.frame = frame;
       t.scramjetFrame = null;
       t.scramjetVersion = "";
+      t.documentEngineLoad = false;
       t.scramjetRuntimeGuarded = null;
       t.popupBridgeInstalled = false;
       setFrameSandbox(t, true);
@@ -16071,7 +16061,36 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
           t.actualEngine = "scramjet-v1-failed";
         });
     }
+    function loadDocumentTab(t, url, addHistory = true) {
+      const intent=t.navigationIntent||"";
+      t.sourceUrl=url;t.expectedEngine="document";
+      if (t.scramjetVersion && t.scramjetVersion!=="document") replaceTabFrame(t);
+      setFrameSandbox(t);clearFrameDocument(t);setTabMeta(t,url,addHistory);setTabLoading(t,true);
+      openDocumentEngine().then(engine=>{
+        if(!state.tabs.includes(t)||t.navigationIntent!==intent)return;
+        t.scramjetVersion="document";
+        t.scramjetFrame={go:next=>{t.frame.src=engine.encodeRef(next)}};
+        if(!t.documentEngineLoad){
+          t.documentEngineLoad=true;
+          t.frame.addEventListener('load',()=>{
+            if(!state.tabs.includes(t)||t.scramjetVersion!=="document")return;
+            const next=browserShellSourceUrl(t.frame.getAttribute('src')||'');
+            let actual=next;try{actual=String(t.frame.contentWindow.__u22?.meta?.url||next)}catch{}
+            if(/^https?:/.test(actual)){t.sourceUrl=actual;setTabMeta(t,actual,actual!==t.history[t.index]);}
+            setTabLoading(t,false);syncLoadedTabIcon(t);
+          });
+        }
+        t.actualEngine="document";t.scramjetFrame.go(url);
+      }).catch(error=>{
+        if(!state.tabs.includes(t)||t.navigationIntent!==intent)return;
+        setTabLoading(t,false);t.actualEngine="document-failed";
+        t.frame.srcdoc=proxyFailureHtml(error.message,"Page engine",{allowDirect:true,directUrl:url});
+      });
+    }
     function loadScramjetTab(t, url, addHistory = true) {
+      return loadDocumentTab(t,url,addHistory);
+    }
+    function loadPreviousDocumentTab(t, url, addHistory = true) {
       t.expectedEngine = "scramjet";
       t.sourceUrl = url;
       setTabLoading(t, true);

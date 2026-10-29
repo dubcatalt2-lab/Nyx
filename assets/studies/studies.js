@@ -101,7 +101,7 @@ const state = {
 };
 
 const GAME_LIBRARIES = Object.freeze([
-  {id:"lumin",label:"𝖫𝗎𝗆𝗂𝗇𝖲𝖣𝖪",shortLabel:"𝖫𝗎𝗆𝗂𝗇",description:"Additional study collection"},
+  {id:"lumin",label:"𝖫𝗎𝗆𝗂𝗇𝖲𝖣𝖪",shortLabel:"𝖫𝗎𝗆𝗂𝗇",description:"Additional source"},
   { id: "all", label: "All games", shortLabel: "All", description: "Every available game" },
   {
     id: "zengs",
@@ -109,8 +109,8 @@ const GAME_LIBRARIES = Object.freeze([
     shortLabel: "Zengs",
     description: "Games delivered through Zen GS",
   },
-  { id: "gn", label: "GN Math", shortLabel: "GN", description: "The GN Math collection" },
-  { id: "gms", label: "GMS", shortLabel: "GMS", description: "The GMS collection" },
+  { id: "gn", label: "GN Math", shortLabel: "GN", description: "The GN Math source" },
+  { id: "gms", label: "GMS", shortLabel: "GMS", description: "The GMS source" },
   {
     id: "local",
     label: dropGames ? "Archive" : "N7X Archive",
@@ -237,7 +237,7 @@ if (nyxArcade) {
   const collection = document.createElement("div");
   collection.className = "arcade-collection";
   collection.innerHTML =
-    '<h2>Game library<span class="arcade-heading-line" aria-hidden="true"></span></h2>';
+    '<h2 data-no-interface-text>Books<span class="arcade-heading-line" aria-hidden="true"></span></h2>';
   const tools = document.querySelector(".catalog-tools");
   tools.before(collection);
   collection.append(tools);

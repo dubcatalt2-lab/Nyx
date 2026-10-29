@@ -26,12 +26,6 @@
       "priority": 30
     },
     {
-      "id": "zengs",
-      "format": "zengs",
-      "url": "/zengs-games",
-      "priority": 20
-    },
-    {
       "id": "duckmath",
       "format": "duckmath",
       "url": "/duckmath-games",

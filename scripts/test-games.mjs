@@ -46,9 +46,11 @@ try {
 
   await page.goto(`${baseUrl}/assets/studies/`, { waitUntil: 'domcontentloaded' });
   await page.getByRole('button', { name: /All games/ }).waitFor();
-  await page.locator('[data-library="zengs"]').waitFor();
+  await page.locator('[data-library="gn"]').waitFor();
+  assert(await page.locator('[data-library="zengs"]').count() === 0, 'Removed provider must not appear, including with a cached manifest');
   const libraries = (await page.locator('[data-library]').allTextContents()).map(text=>text.normalize('NFKC'));
-  assert(libraries.some(label => label.includes('Zengs')), `Zengs library is missing (${libraries.join(', ')})`);
+  assert(!libraries.some(label => label.includes('Zengs')), 'Removed provider appeared in library labels');
+  assert(await page.getByRole('heading', {name:'Books',exact:true}).first().textContent() === 'Books', 'Main title must be plain Books');
   assert(libraries.some(label => label.includes('GN Math')), `GN Math library is missing (${libraries.join(', ')})`);
   assert(libraries.some(label => label.includes('GMS')), `GMS library is missing (${libraries.join(', ')})`);
   assert(libraries.some(label => label.includes('N7X Archive')), `N7X Archive library is missing (${libraries.join(', ')})`);
@@ -168,12 +170,12 @@ try {
     version: 1,
     catalogs: [
       { id: 'gn', format: 'gn', url: '/test-games/progressive-local.json', player: '/assets/gn-math/play.html?game={path}', priority: 50 },
-      { id: 'zengs', format: 'zengs', url: '/test-games/stalled-zengs.json', priority: 20 }
+      { id: 'gms', format: 'gms', url: '/test-games/stalled-gms.json', priority: 20 }
     ]
   };
   await progressive.route('**/assets/studies/studies.json', route => route.fulfill(json(progressiveManifest)));
   await progressive.route('**/test-games/progressive-local.json', route => route.fulfill(json([{ title: 'Ready First', path: 'ready.html', cover: '/test-games/cover.png' }])));
-  await progressive.route('**/test-games/stalled-zengs.json', () => new Promise(() => {}));
+  await progressive.route('**/test-games/stalled-gms.json', () => new Promise(() => {}));
   const progressiveStarted = Date.now();
   await progressive.goto(`${baseUrl}/assets/studies/`, { waitUntil: 'domcontentloaded' });
   await progressive.getByRole('button', { name: 'Play Ready First' }).waitFor({ timeout: 3_000 });

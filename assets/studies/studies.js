@@ -103,12 +103,7 @@ const state = {
 const GAME_LIBRARIES = Object.freeze([
   {id:"lumin",label:"𝖫𝗎𝗆𝗂𝗇𝖲𝖣𝖪",shortLabel:"𝖫𝗎𝗆𝗂𝗇",description:"Additional source"},
   { id: "all", label: "All games", shortLabel: "All", description: "Every available game" },
-  {
-    id: "zengs",
-    label: "Zengs",
-    shortLabel: "Zengs",
-    description: "Games delivered through Zen GS",
-  },
+
   { id: "gn", label: "GN Math", shortLabel: "GN", description: "The GN Math source" },
   { id: "gms", label: "GMS", shortLabel: "GMS", description: "The GMS source" },
   {
@@ -222,7 +217,8 @@ if (nyxArcade) {
   document.body.classList.add("n7x-arcade");
   const header = document.querySelector(".cove-header");
   header.querySelector(".eyebrow").textContent = "N7X";
-  header.querySelector("h1").textContent = "ARCADE";
+  header.querySelector("h1").textContent = "Books";
+  header.querySelector("h1").setAttribute("data-no-interface-text", "");
   const masthead = document.createElement("div");
   masthead.className = "arcade-masthead";
   header.before(masthead);
@@ -292,10 +288,10 @@ function renderArcadeFeatures(games) {
     copy.className = "arcade-feature-copy";
     const label = document.createElement("span");
     label.className = "arcade-feature-label";
-    label.textContent = index === 0 ? "In the spotlight" : "Arcade pick";
+    label.textContent = index === 0 ? "In the spotlight" : "Book pick";
     const title = document.createElement("span");
     title.className = "arcade-feature-title";
-    title.textContent = game.title;
+    title.textContent = ονομασίαΠαρόχου(game.title);
     const play = document.createElement("span");
     play.className = "arcade-feature-play";
     play.innerHTML =
@@ -1005,7 +1001,7 @@ function makeCard(game) {
   const name = document.createElement("span");
   name.className = "qf9ea5fbfc68e";
   name.setAttribute("data-user-content", "");
-  name.textContent = game.title;
+  name.textContent = ονομασίαΠαρόχου(game.title);
   card.append(name);
   return card;
 }
@@ -1437,7 +1433,7 @@ async function openGame(game, updateHistory = true, preferredSource = "") {
       : sources.findIndex((source) => !state.failedSources.has(source.url));
   state.activeSourceIndex = firstAvailable >= 0 ? firstAvailable : 0;
   syncGameProvider();
-  elements.q46bf26c70a26.textContent = game.title;
+  elements.q46bf26c70a26.textContent = ονομασίαΠαρόχου(game.title);
   elements.frame.title = game.title;
   elements.player.hidden = false;
   syncGamePerformanceMode();
@@ -1473,7 +1469,7 @@ async function loadLibrary() {
   state.manifest = await fetchCatalogJson("/assets/studies/studies.json", "Catalog manifest", {
     attempts: 3,
   });
-  const catalogs = Array.isArray(state.manifest.catalogs) ? state.manifest.catalogs : [];
+  const catalogs = (Array.isArray(state.manifest.catalogs) ? state.manifest.catalogs : []).filter(catalog => catalog.id !== "zengs" && catalog.format !== "zengs");
   const loaded = new Map();
   const failed = [];
   let completed = 0;

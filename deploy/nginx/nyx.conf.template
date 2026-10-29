@@ -1,6 +1,15 @@
+# Reuse HTTP connections instead of filling Node's TCP accept queue under load.
+# Keep cached sockets below Node's default five-second keep-alive timeout.
+upstream nyx_origin_pool {
+    server 127.0.0.1:8080;
+    keepalive 64;
+    keepalive_requests 1000;
+    keepalive_timeout 4s;
+}
+
 map $http_upgrade $nyx_connection_upgrade {
     default upgrade;
-    ''      close;
+    ''      '';
 }
 
 server {
@@ -13,7 +22,7 @@ server {
     client_max_body_size 2m;
 
     location / {
-        proxy_pass http://127.0.0.1:8080;
+        proxy_pass http://nyx_origin_pool;
         proxy_http_version 1.1;
 
         # cloudflare-real-ip.conf changes $remote_addr only for trusted

@@ -133,7 +133,12 @@ app.use((req,res,next)=>{
   if(!nyxChatEnabled && /^\/(?:api\/chat|apps\/chat|socket\.io)(?:\/|$)/.test(req.path))return res.status(404).json({error:'Not found'});
   next();
 });
-const appTraffic = createAppTraffic({file:process.env.NYX_TRAFFIC_FILE || (process.platform === 'win32' ? join(process.env.TEMP || __dirname, 'nyx-app-traffic.json') : '/var/lib/nyx/app-traffic.json')});
+const appTraffic = createAppTraffic({
+  file:process.env.NYX_TRAFFIC_FILE || (process.platform === 'win32' ? join(process.env.TEMP || __dirname, 'nyx-app-traffic.json') : '/var/lib/nyx/app-traffic.json'),
+  additionalFiles:String(process.env.NYX_TRAFFIC_PEER_FILES||'').split(',').filter(Boolean),
+  flushMs:Math.max(1000,Math.min(60000,Number(process.env.NYX_TRAFFIC_FLUSH_MS)||60000))
+});
+app.locals.nyxTraffic=appTraffic;
 app.use(appTraffic.middleware);
 const gameProxy = createGameProxy();
 installZengsProvider(app);

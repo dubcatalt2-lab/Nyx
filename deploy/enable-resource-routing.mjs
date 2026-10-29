@@ -1,0 +1,10 @@
+import {readFile,writeFile,rename,stat,chown,chmod} from 'node:fs/promises';import {execFile} from 'node:child_process';import {promisify} from 'node:util';import {enableResourceRouting} from './resource-routing.mjs';
+const run=promisify(execFile),file='/etc/caddy/Caddyfile';if(process.getuid?.()!==0)throw Error('Run with sudo.');
+const {stdout:unit}=await run('systemctl',['show','caddy','-p','ActiveState','--value']);if(unit.trim()!=='active')throw Error('The live Caddy frontend is not active.');
+for(const port of [18180,18181]){const r=await fetch('http://127.0.0.1:'+port+'/healthz',{signal:AbortSignal.timeout(2000)});if(!r.ok||(await r.json()).service!=='nyx-resources')throw Error('Resource worker is not ready.');}
+const old=await readFile(file,'utf8'),changed=enableResourceRouting(old),meta=await stat(file),backup=file+'.before-resources-'+Date.now();await writeFile(backup,old,{mode:0o600,flag:'wx'});
+const {stdout:pid}=await run('systemctl',['show','caddy','-p','MainPID','--value']);const environ=(await readFile('/proc/'+pid.trim()+'/environ','utf8')).split('\0');const env={...process.env};for(const entry of environ){const at=entry.indexOf('=');if(at>0)env[entry.slice(0,at)]=entry.slice(at+1);}
+async function staged(content){const temp=file+'.resource-stage';await writeFile(temp,content,{mode:meta.mode&0o777});await chmod(temp,meta.mode&0o777);await chown(temp,meta.uid,meta.gid);return temp;}
+const temp=await staged(changed);try{await run('/usr/bin/caddy',['validate','--config',temp,'--adapter','caddyfile'],{env});}catch{throw Error('Caddy validation failed; the original configuration remains active.');}
+await rename(temp,file);try{await run('systemctl',['reload','caddy']);}catch{await rename(await staged(old),file);await run('systemctl',['reload','caddy']);throw Error('Caddy reload failed; original routing restored.');}
+console.log('Activated read-only resource routing; primary chat/voice/account/AI/write routes unchanged.');console.log('Caddy rollback file:',backup);

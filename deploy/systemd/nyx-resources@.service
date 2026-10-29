@@ -1,0 +1,26 @@
+[Unit]
+Description=Nyx read-only resource worker on port %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=nyx
+Group=nyx
+WorkingDirectory=/var/www
+EnvironmentFile=/etc/nyx/resources.env
+ExecStart=/usr/bin/node /usr/local/lib/nyx/resources/server-resources.mjs --port=%i
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=35
+MemoryHigh=1200M
+MemoryMax=1536M
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/nyx
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

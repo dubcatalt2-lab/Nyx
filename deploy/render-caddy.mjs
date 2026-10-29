@@ -1,11 +1,13 @@
+import {enableResourceRouting} from './resource-routing.mjs';
 import {readFile,writeFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 
 const valid=value=>/^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(value);
-export function renderCaddy(template,domain,{turnDomain='',shared443=false}={}) {
+export function renderCaddy(template,domain,{turnDomain='',shared443=false,resourceWorkers=false}={}) {
   if(!valid(domain)||turnDomain&&!valid(turnDomain)||shared443&&!turnDomain)throw new Error('Invalid Caddy domain configuration.');
   let result=template.replaceAll('__NYX_DOMAIN__',domain);
+  if(resourceWorkers)result=enableResourceRouting(result);
   if(shared443){
     result=result.replace('{','{\n\thttps_port 8443');
     result=result.replace('\tservers {',`\tservers {
@@ -36,5 +38,5 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   const turnDomain=await readFile('/etc/nyx/turn-domain','utf8').then(s=>s.trim()).catch(e=>{if(e.code==='ENOENT')return '';throw e;});
   const shared443=await readFile('/etc/nyx/turn-shared-443','utf8').then(s=>s.trim()==='1').catch(e=>{if(e.code==='ENOENT')return false;throw e;});
   const template=await readFile(new URL('./caddy/nyx.Caddyfile.template',import.meta.url),'utf8');
-  await writeFile(target,renderCaddy(template,domain,{turnDomain,shared443}));
+  await writeFile(target,renderCaddy(template,domain,{turnDomain,shared443,resourceWorkers:process.argv.includes('--resource-workers')}));
 }

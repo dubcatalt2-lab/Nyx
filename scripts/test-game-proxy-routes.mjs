@@ -18,6 +18,8 @@ const base=`http://127.0.0.1:${server.address().port}`;
 try{
   const js=await originalFetch(base+'/reading-resource/https/cdn.jsdelivr.net/gh/bubbls/youtube-playables@main/aquapark-io/main.js');
   assert.equal(js.status,200);assert.match(js.headers.get('content-type'),/javascript/);assert.match(await js.text(),/playBtnClicked/);
+  const legacy=await originalFetch(base+'/gn-math-resource/https/cdn.jsdelivr.net/gh/bubbls/youtube-playables@main/aquapark-io/main.js');
+  assert.equal(legacy.status,200);assert.match(await legacy.text(),/playBtnClicked/);
   const binary=await originalFetch(base+'/reading-resource/https/cdn.jsdelivr.net/gh/fixture/test@main/file.wasm');
   assert.match(binary.headers.get('content-type'),/application\/wasm/);assert.equal(binary.headers.get('cache-control'),'no-store');
   const body=new Uint8Array(await binary.arrayBuffer());assert.equal(body.length,1024*1024);assert.ok(body.every(x=>x===7));

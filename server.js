@@ -2098,7 +2098,7 @@ app.get("/reading-proxy", async (req, res) => {
 app.options(/^\/reading-resource\//, (req, res) => { setGnMathCors(req, res); res.sendStatus(204); });
 app.get(/^\/reading-resource\//, async (req, res) => {
   setGnMathCors(req, res);
-  const target = gameResourceTarget(req.originalUrl);
+  const target = gameResourceTarget(req.url);
   if (!target || !safeGnMathProxyUrl(target.href)) return res.status(400).type('text/plain').send('Invalid game resource URL');
   try {
     await gameProxy.send(req, res, {

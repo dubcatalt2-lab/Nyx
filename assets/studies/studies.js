@@ -97,14 +97,14 @@ const state = {
   performanceLastTune: 0,
   page: 1,
   pageSize: 30,
-  activeLibrary: "all",
+  activeLibrary: "gn",
 };
 
 const GAME_LIBRARIES = Object.freeze([
+  { id: "gn", label: "Reading", shortLabel: "Reading", description: "Reading shelf" },
   {id:"lumin",label:"Reference",shortLabel:"Reference",description:"Reference shelf"},
   { id: "all", label: "All games", shortLabel: "All", description: "Every available game" },
 
-  { id: "gn", label: "Reading", shortLabel: "Reading", description: "Reading shelf" },
   { id: "gms", label: "Math", shortLabel: "Math", description: "Math shelf" },
   {
     id: "local",
@@ -858,7 +858,7 @@ async function adaptCatalog(catalog) {
 
 function sourceScore(source) {
   const priority = Number(source?.priority) || 0;
-  return source?.source === "gn" ? priority - 1000 : priority;
+  return source?.source === "gn" ? priority + 1000 : priority;
 }
 
 function mergeCatalogs(catalogs) {

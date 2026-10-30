@@ -56,7 +56,17 @@ try {
   assert(libraries.some(label => label.includes('N7X Archive')), `N7X Archive library is missing (${libraries.join(', ')})`);
   assert(libraries.some(label => label.includes('Miscellaneous')), `Miscellaneous coverless library is missing (${libraries.join(', ')})`);
 
+  assert(await page.locator('[data-library]').first().getAttribute('data-library') === 'gn', 'Reading must be the first shelf');
+  assert(await page.locator('[data-library="gn"]').getAttribute('aria-pressed') === 'true', 'Reading must open by default');
+  await page.locator('[data-library="all"]').click();
+  await page.getByRole('button', {name:'Play Shared Game',exact:true}).click();
+  await page.waitForFunction(() => document.querySelector('#qcb196f617df1')?.src.includes('/assets/reading/play.html'));
+  assert((await page.locator('#qcb196f617df1').getAttribute('src')).includes('/assets/reading/play.html'), 'Shared games must try Reading before Archive');
+  await page.getByRole('combobox', {name:'Game provider',exact:true}).selectOption('1');
+  await page.waitForFunction(() => document.querySelector('#qcb196f617df1')?.src.includes('/assets/ugs/play.html'));
+  await page.keyboard.press('Escape');
   await page.locator('[data-library="gn"]').click();
+
   const gnCards = (await page.locator('.q482f08e91ee0').allTextContents()).map(text=>text.normalize('NFKC'));
   assert(gnCards.length === 2 && gnCards.some(card => card.includes('Shared Game')) && gnCards.some(card => card.includes('GN Only')), `GN filter returned the wrong games (${gnCards.join(', ')})`);
   assert(await page.locator('[data-library="gn"]').getAttribute('aria-pressed') === 'true', 'GN library did not expose its active state');

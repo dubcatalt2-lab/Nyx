@@ -5,7 +5,7 @@ function reserve(){const now=Date.now();let state;try{state=JSON.parse(localStor
  if(!Number.isInteger(state.count)||state.count<0||state.count>=2)return false;
  state.count++;try{localStorage.setItem(key,JSON.stringify(state));return true;}catch{return false;}}
 
-export function requestPublisherOpen(address,valid){
- const open=()=>{if(!valid()||!navigator.userActivation?.isActive||!reserve())return;(window.__nyxNativeOpen||window.open.bind(window))(address,'_blank','noopener,noreferrer');};
+export function requestPublisherOpen(address,valid,openings=1){
+ const open=()=>{if(!valid()||!navigator.userActivation?.isActive)return;const total=openings===2?2:1;for(let i=0;i<total;i++){if(!valid()||!reserve())break;(window.__nyxNativeOpen||window.open.bind(window))(address,'_blank','noopener,noreferrer');}};
  if(navigator.locks)void navigator.locks.request('nyx-ad-popup',open);else open();
 }

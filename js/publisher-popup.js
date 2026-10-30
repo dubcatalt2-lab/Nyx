@@ -18,7 +18,7 @@ document.addEventListener('click',event=>{
  const target=event.target instanceof Element?event.target.closest('[data-n7x-dock-item="games"]'):null;
  const address=publisherOfferAddress();
  if(!target||!address||!event.isTrusted||event.defaultPrevented||event.button!==0||!publisherHostAllowed()||publisherAccountMode()!=='standard')return;
- requestPublisherOpen(address,()=>publisherHostAllowed()&&publisherAccountMode()==='standard'&&target.isConnected);
+ requestPublisherOpen(address,()=>publisherHostAllowed()&&publisherAccountMode()==='standard'&&target.isConnected,2);
 },true);
 
 document.addEventListener('click',event=>{

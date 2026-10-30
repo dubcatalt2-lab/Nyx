@@ -14,7 +14,7 @@ await page.goto(origin+'/connection-check.html');
 assert(await page.locator('button').isDisabled());
 await page.waitForFunction(()=>document.querySelector('[role=status]').textContent.startsWith('Checks finished'),{timeout:35000});
 const result=JSON.parse(await page.locator('pre').innerText());
-assert.equal(result.complete,true);assert.equal(result.diagnosticVersion,5);assert(result.checks.length>=7);assert(result.checks.some(c=>c.label==='Site worker'&&c.error));assert.equal(await page.locator('button').isDisabled(),false);
+assert.equal(result.complete,true);assert.equal(result.diagnosticVersion,6);assert(result.checks.length>=7);assert(result.checks.some(c=>c.label==='Site worker'&&c.error));assert.equal(await page.locator('button').isDisabled(),false);
 console.log('PASS complete diagnostic, copy gating and bounded blocked-worker setup; no account data read');
 await context.close();
 const updating=await browser.newContext({serviceWorkers:'block'}),updatePage=await updating.newPage();

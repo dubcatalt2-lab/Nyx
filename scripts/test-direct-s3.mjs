@@ -22,6 +22,7 @@ assert.equal(relayUrl,'wss://'+new URL(origin).host+'/api/tutsi-relay/socket/');
 const seen=[];backendApp.use((req,res,next)=>{seen.push({path:req.path,authorization:req.headers.authorization,cookie:req.headers.cookie,identity:req.q74bd9});next();});
 backendApp.get(/^\/reading-resource\//,(req,res)=>{res.set('Access-Control-Allow-Origin',req.headers.origin||'*');res.json({loaded:true})});
 backendApp.get(['/math-fetch','/gms-games-fetch','/reds-misc-fetch'],(_req,res)=>{res.setHeader('Access-Control-Allow-Origin','*');res.type('html').send('<title>Content fixture</title>')});
+backendApp.get(['/game-cover','/duckmath-games'],(_req,res)=>res.json({fixture:true}));
 backendApp.get('/api/private',(req,res)=>{if(req.headers.authorization!=='Bearer test-only')return res.status(401).json({error:'Sign in'});res.append('Set-Cookie','nyx_q74bd9=signed-fixture; Path=/; HttpOnly; SameSite=Lax; Secure');res.json({ok:true});});
 backendApp.post('/api/stream',(req,res)=>{if(req.headers.authorization!=='Bearer test-only')return res.sendStatus(401);res.type('text/event-stream');res.write('data: first\n\n');setTimeout(()=>res.end('data: second\n\n'),250);});
 backendApp.get('/api/media',(req,res)=>{assert.equal(req.headers.range,'bytes=0-3');res.status(206).set({'Content-Type':'application/octet-stream','Content-Range':'bytes 0-3/8'}).send(Buffer.from([0,1,2,3]));});
@@ -114,5 +115,6 @@ try{
  assert.equal(await unavailable.evaluate(async()=>{try{await fetch('/api/private');return false}catch{return true}}),true);
  await unavailableContext.close();failSessionSetup=false;
  console.log('PASS S3 browser static library renders with backend session503; protected API does not bypass access');
+ for(const path of ['/game-cover?title=fixture','/duckmath-games'])assert.equal(await application.evaluate(async path=>(await fetch(path)).status,path),200);
  console.log('PASS direct-S3 controlled HTTPS: worker startup, unauthenticated rejection, bearer preservation, persistent connection identity, sandbox game resources, streaming, ranges, WebSocket routing, real HTTP relay batches and exact-origin CORS (cookies '+(noCookies?'blocked':'allowed')+'). No live accounts/providers used.');
 }finally{await browser.close();stopHttp();for(const socket of upstream.clients)socket.terminate();upstream.close();relay.close();sockets.close();backend.closeAllConnections();frontend.closeAllConnections();await Promise.all([new Promise(r=>backend.close(r)),new Promise(r=>frontend.close(r))]);await rm(certificateDir,{recursive:true,force:true});}

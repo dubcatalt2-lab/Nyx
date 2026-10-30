@@ -14220,7 +14220,7 @@ app.get("/download/nyx-singlefile.html", (_req, res) => {
 let httpRelayPort = 0;
 const closeHttpRelay = installHttpWisp(app, {
   upstream: () => httpRelayPort ? {url: externalWispUrl || `ws://127.0.0.1:${httpRelayPort}/resources/live/`, origin: `http://127.0.0.1:${httpRelayPort}`} : null,
-  clientIp: nyxClientIp, banned: nyxRequestIpIsBanned,
+  clientIp: nyxClientIp, clientIdentity: req => req.nyxHostSession ? `host:${req.nyxHostSession.origin}:${req.nyxHostSession.id}` : "", banned: nyxRequestIpIsBanned,
   allowed: req => {
     if (staticHostAccess.allowed(req.headers.origin)) return true;
     if (req.headers['sec-fetch-site'] && req.headers['sec-fetch-site'] !== 'same-origin') return false;

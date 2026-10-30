@@ -5,8 +5,9 @@
  if(document.querySelector('meta[name="nyx-chat-enabled"]')?.content==='0')globalThis['nyx.static.chat']=false;
  if(document.querySelector('meta[name="nyx-blooket-enabled"]')?.content==='0')globalThis['nyx.static.blooket']=false;
  const key=Symbol.for('nyx.direct-s3.runtime.v2');if(window[key])return;window[key]=true;
- let hostSession='',workerContextReady=false;
- navigator.serviceWorker?.addEventListener('message',event=>{if(event.source===navigator.serviceWorker.controller&&event.data?.type==='nyx:host-session'&&typeof event.data.session==='string')hostSession=event.data.session;});
+ let hostSession='',workerContextReady=false,activeBackend=backend;
+ function selectBackend(value){if(!value)return;const url=new URL(value);if(url.protocol!=='https:'||url.origin!==value)throw Error('Invalid connection address');activeBackend=value;window[Symbol.for('nyx.host.origin')]=value;const meta=document.querySelector('meta[name="nyx-static-backend"]');if(meta)meta.content=value;}
+ navigator.serviceWorker?.addEventListener('message',event=>{if(event.source===navigator.serviceWorker.controller&&event.data?.type==='nyx:host-session'&&typeof event.data.session==='string'){hostSession=event.data.session;selectBackend(event.data.backend);}});
  const nativeFetch=window.fetch.bind(window);
  const ready=(async()=>{
   if(!navigator.serviceWorker)throw Error('This br00ser cannot connect this S3 site.');
@@ -18,18 +19,18 @@
   workerContextReady=true;
   hostSession=await new Promise((resolve,reject)=>{
    const channel=new MessageChannel(),timer=setTimeout(()=>{channel.port1.close();reject(Error('The connection session did not start.'));},15000);
-   channel.port1.onmessage=event=>{clearTimeout(timer);channel.port1.close();event.data?.session?resolve(event.data.session):reject(Object.assign(Error(event.data?.error||'The connection session did not start.'),{code:event.data?.code}));};
+   channel.port1.onmessage=event=>{clearTimeout(timer);channel.port1.close();event.data?.session?(selectBackend(event.data.backend),resolve(event.data.session)):reject(Object.assign(Error(event.data?.error||'The connection session did not start.'),{code:event.data?.code}));};
    navigator.serviceWorker.controller.postMessage({type:'nyx:static-session'},[channel.port2]);
   });
  })();
- ready.then(()=>{const refresh=()=>{if(document.hidden)return;const channel=new MessageChannel();const timer=setTimeout(()=>channel.port1.close(),15000);channel.port1.onmessage=event=>{clearTimeout(timer);channel.port1.close();if(event.data?.session)hostSession=event.data.session;};navigator.serviceWorker.controller?.postMessage({type:'nyx:host-session-refresh'},[channel.port2]);};const interval=setInterval(refresh,1800000);document.addEventListener('visibilitychange',refresh);addEventListener('pagehide',()=>{clearInterval(interval);document.removeEventListener('visibilitychange',refresh);},{once:true});}).catch(()=>{});
+ ready.then(()=>{const refresh=()=>{if(document.hidden)return;const channel=new MessageChannel();const timer=setTimeout(()=>channel.port1.close(),15000);channel.port1.onmessage=event=>{clearTimeout(timer);channel.port1.close();if(event.data?.session){hostSession=event.data.session;selectBackend(event.data.backend);}};navigator.serviceWorker.controller?.postMessage({type:'nyx:host-session-refresh'},[channel.port2]);};const interval=setInterval(refresh,1800000);document.addEventListener('visibilitychange',refresh);addEventListener('pagehide',()=>{clearInterval(interval);document.removeEventListener('visibilitychange',refresh);},{once:true});}).catch(()=>{});
  // Render the workspace immediately; only requests needing the worker wait for it.
  window[Symbol.for('nyx.direct-s3.ready')]=ready;
  ready.catch(error=>{if(parent!==window&&(!workerContextReady||error.code==='HOST_CONTEXT_REQUIRED'))parent.postMessage({type:'nyx:host-context-required'},'*');});
  window.fetch=function(input,options){const url=new URL(input instanceof Request?input.url:input,location.href);const remote=url.origin===location.origin&&/^\/(?:api(?:\/|$)|socket\.io(?:\/|$)|healthz$|resources\/live(?:\/|$)|wisp(?:\/|$)|download\/|game-cover$|duckmath-games$|(?:reading|math|gn-math|gms-games|gms-studies|reds-misc)-|cloud\/v1\/)/.test(url.pathname);return remote?ready.then(()=>nativeFetch(input,options)):nativeFetch(input,options);};
- const target=new URL(backend),NativeSocket=window.WebSocket;
+ const NativeSocket=window.WebSocket;
  window.WebSocket=class extends NativeSocket{
   get protocol(){const value=super.protocol;return value.startsWith('nyx-host.')?'':value;}
-  constructor(url,protocols){const parsed=new URL(url,location.href);if(parsed.host===location.host&&/^\/(?:api|socket\.io|resources\/live|wisp)(?:\/|$)/.test(parsed.pathname)){parsed.host=target.host;parsed.protocol='wss:';}const values=protocols===undefined?[]:Array.isArray(protocols)?[...protocols]:[protocols];if(parsed.host===target.host&&/^\/(?:resources\/live|wisp)(?:\/|$)/.test(parsed.pathname)&&hostSession)values.push('nyx-host.'+hostSession);super(parsed.href,...(values.length?[values]:[]));}
+  constructor(url,protocols){const target=new URL(activeBackend),parsed=new URL(url,location.href);if(parsed.host===location.host&&/^\/(?:api|socket\.io|resources\/live|wisp)(?:\/|$)/.test(parsed.pathname)){parsed.host=target.host;parsed.protocol='wss:';}const values=protocols===undefined?[]:Array.isArray(protocols)?[...protocols]:[protocols];if(parsed.host===target.host&&/^\/(?:resources\/live|wisp)(?:\/|$)/.test(parsed.pathname)&&hostSession)values.push('nyx-host.'+hostSession);super(parsed.href,...(values.length?[values]:[]));}
  };
 })();

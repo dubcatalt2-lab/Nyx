@@ -9,6 +9,7 @@ import {connectionCheckPage} from './s3-connection-check.mjs';
 const argument=name=>process.argv.find(a=>a.startsWith('--'+name+'='))?.slice(name.length+3);
 const origin=directS3Origin(argument('origin')||''),backend=argument('backend')||'https://n7x.zakaon.top';
 if(new URL(backend).origin!==backend||!backend.startsWith('https://'))throw Error('Use a backend HTTPS origin without a path.');
+const backends=[...new Set([backend,...String(argument('backends')||'').split(',').filter(Boolean)])];for(const value of backends)if(new URL(value).origin!==value||!value.startsWith('https://'))throw Error('Use exact HTTPS backend origins');
 const bucketHost=new URL(origin).hostname,bucket=bucketHost.split('.s3')[0],region=/\.s3[.-]([a-z0-9-]+)\.amazonaws\.com$/.exec(bucketHost)?.[1]||'us-east-1';
 const entryUrl='https://'+bucket+'.s3.amazonaws.com/studies.html';
 const features={chat:!process.argv.includes('--without-chat'),blooket:false};
@@ -25,7 +26,7 @@ for(const name of Object.keys(pages))if(name.startsWith('apps/blooket/'))delete 
 // Sponsor documents run in isolated data frames, not the account application frame.
 for(const name of Object.keys(pages))if(name.startsWith('apps/sponsor/') || /^apps\/ad-haven\/(banner|native|multitag)\.html$/.test(name))delete pages[name];
 for(const name of Object.keys(pages)){const file=join(output,'site',name);let html=await readFile(file,'utf8');html=html.replace(/<head(?:\s[^>]*)?>/i,head=>head+`<meta name="nyx-static-backend" content="${backend}"><meta name="nyx-blooket-enabled" content="0">${features.chat?'':'<meta name="nyx-chat-enabled" content="0">'}<script src="${runtime}"></script>`);await writeFile(file,html);}
-await writeFile(join(output,'site','direct-s3-config.json'),JSON.stringify({origin,backend,runtime,aliases,features,entryAliases:providerPageAliases}));
+await writeFile(join(output,'site','direct-s3-config.json'),JSON.stringify({origin,backend,backends,runtime,aliases,features,entryAliases:providerPageAliases}));
 let coverSource = await readFile(join(dist,'index.html'),'utf8');
 if (pages['index.html']?.loader) {
  const loader = await readFile(join(dist,pages['index.html'].loader.slice(1)),'utf8');
@@ -56,7 +57,7 @@ for(const [oldPath,newPath] of Object.entries(providerPageAliases)){
  await writeFile(file,'<!doctype html><meta charset="utf-8"><script>'+code+'</script><meta http-equiv="refresh" content="0;url='+newPath+'"><title>Books</title><a href="'+newPath+'">Open books</a>');
 }
 const workerPath=join(output,'site','direct-s3-worker.js');
-await writeFile(workerPath,(await readFile(workerPath,'utf8'))+';void '+JSON.stringify(createHash('sha256').update(backend+runtime+JSON.stringify(aliases)+JSON.stringify(features)).digest('hex').slice(0,16))+';');
+await writeFile(workerPath,(await readFile(workerPath,'utf8'))+';void '+JSON.stringify(createHash('sha256').update(JSON.stringify(backends)+runtime+JSON.stringify(aliases)+JSON.stringify(features)).digest('hex').slice(0,16))+';');
 // Shared path-style S3 links frame the isolated bucket host. Never initialize account
 // storage on the shared amazonaws.com origin; hydrate only on our bucket host.
 for(const name of new Set(['index.html',...Object.keys(pages)])){
@@ -66,7 +67,7 @@ for(const name of new Set(['index.html',...Object.keys(pages)])){
  const title=name==='index.html'?(coverSource.match(/<title>([^<]*)<\/title>/i)?.[1]||'Nyx'):'Nyx';
  await writeFile(file,'<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+title+'</title></head><body><script>'+compiled.code+'</script></body></html>');
 }
-await writeFile(join(output,'site','connection-check.html'),await connectionCheckPage(origin,backend));
+await writeFile(join(output,'site','connection-check.html'),await connectionCheckPage(origin,backend,backends));
 const files=[];async function scan(dir=''){for(const item of await readdir(join(output,'site',dir),{withFileTypes:true})){const name=join(dir,item.name);if(item.isDirectory())await scan(name);else{const bytes=await readFile(join(output,'site',name));files.push({path:name.replaceAll('\\','/'),bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')});}}}await scan();
 await writeFile(join(output,'manifest.json'),JSON.stringify({origin,backend,entryUrl,files},null,2));
 await cp('static-export/upload-direct-s3.mjs',join(output,'upload.mjs'));

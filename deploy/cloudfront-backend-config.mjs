@@ -1,0 +1,9 @@
+export const backendPatterns=Object.freeze(['/api/*','/healthz','/resources/live*','/wisp/*','/socket.io/*','/download/*','/cloud/v1/*','/reading-*','/math-*','/gn-math-*','/gms-games-*','/gms-studies-*','/reds-misc-*','/duckmath-games','/game-cover']);
+export function withBackendOrigin(input,{cachePolicyId,originRequestPolicyId,responseHeadersPolicyId}){
+ const config=structuredClone(input);if(config.DefaultCacheBehavior.TargetOriginId!=='classroom-assets'||config.CacheBehaviors.Quantity!==0||config.Origins.Items.some(x=>x.Id==='workspace-backend'))throw Error('Unexpected distribution; review existing configuration');
+ for(const value of [cachePolicyId,originRequestPolicyId,responseHeadersPolicyId])if(typeof value!=='string'||!value)throw Error('Verified managed policy IDs required');
+ config.Origins.Items.push({Id:'workspace-backend',DomainName:'n7x.zakaon.top',OriginPath:'',CustomHeaders:{Quantity:0},CustomOriginConfig:{HTTPPort:80,HTTPSPort:443,OriginProtocolPolicy:'https-only',OriginSslProtocols:{Quantity:1,Items:['TLSv1.2']},OriginReadTimeout:60,OriginKeepaliveTimeout:5},ConnectionAttempts:2,ConnectionTimeout:5,OriginShield:{Enabled:false}});config.Origins.Quantity=config.Origins.Items.length;
+ config.CacheBehaviors={Quantity:backendPatterns.length,Items:backendPatterns.map(PathPattern=>({PathPattern,TargetOriginId:'workspace-backend',TrustedSigners:{Enabled:false,Quantity:0},TrustedKeyGroups:{Enabled:false,Quantity:0},ViewerProtocolPolicy:'https-only',AllowedMethods:{Quantity:7,Items:['HEAD','DELETE','POST','GET','OPTIONS','PUT','PATCH'],CachedMethods:{Quantity:2,Items:['HEAD','GET']}},SmoothStreaming:false,Compress:false,LambdaFunctionAssociations:{Quantity:0},FunctionAssociations:{Quantity:0},FieldLevelEncryptionId:'',CachePolicyId:cachePolicyId,OriginRequestPolicyId:originRequestPolicyId,ResponseHeadersPolicyId:responseHeadersPolicyId}))};
+
+ return config;
+}

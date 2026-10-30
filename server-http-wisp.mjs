@@ -3,7 +3,7 @@ import express from 'express';
 import WebSocket from 'ws';
 
                                                                                      
-export function installHttpWisp(app, {upstream, allowed, clientIp, banned = async () => false}) {
+export function installHttpWisp(app, {upstream, allowed, clientIp, clientIdentity = () => "", banned = async () => false}) {
   const sessions = new Map();
   const attempts = new Map();
   const maxQueue = 20 * 1024 * 1024;
@@ -46,7 +46,7 @@ export function installHttpWisp(app, {upstream, allowed, clientIp, banned = asyn
       if (!target) return res.sendStatus(503);
       const token = randomBytes(32).toString('hex');
       const ws = new WebSocket(target.url, {origin: target.origin, handshakeTimeout: 8000, maxPayload: maxSendQueue, perMessageDeflate: false});
-      const s = {token, ip, ws, touched: Date.now(), frames: [], bytes: 0, sequence: 0, poll: null};
+      const s = {token, ip, owner: clientIdentity(req) || `ip:${ip}`, ws, touched: Date.now(), frames: [], bytes: 0, sequence: 0, poll: null};
       sessions.set(token, s);
       s.connectTimer = setTimeout(() => { dispose(s); if (!res.headersSent) res.sendStatus(504); }, 9000);
       res.on('close', () => { if (!res.writableEnded) dispose(s); });
@@ -67,7 +67,7 @@ export function installHttpWisp(app, {upstream, allowed, clientIp, banned = asyn
   router.use((req, res, next) => {
     const token = /^Bearer ([a-f0-9]{64})$/.exec(req.headers.authorization || '')?.[1];
     const s = sessions.get(token);
-    if (!s || s.ip !== clientIp(req)) return res.sendStatus(410);
+    if (!s || s.owner !== (clientIdentity(req) || `ip:${clientIp(req)}`)) return res.sendStatus(410);
     s.touched = Date.now(); req.relaySession = s; next();
   });
   router.get('/receive', (req, res) => {

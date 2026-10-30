@@ -1,7 +1,8 @@
 const configuration=new URL('./direct-s3-config.json',self.location.href);
 const settings=fetch(configuration,{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Hosting configuration unavailable');return r.json();});
 // The connection identity is stored on this site's own origin, not in cross-site cookies.
-let backendSession,identityRecord;
+let backendSession,identityRecord,activeBackend;
+const unavailableBackends=new Set();
 async function identityStore(){
  if(!identityRecord)identityRecord=(async()=>{
   const store=await caches.open('nyx.host.identity.v1'),key=new URL('/_host_identity',self.location.origin).href;
@@ -15,16 +16,16 @@ function ensureBackendSession(){
  if(!backendSession){const promise=(async()=>{
   const config=await settings,record=await identityStore();
   const headers=new Headers({'X-Nyx-Host-Client':record.value.client});if(record.value.session)headers.set('X-Nyx-Host-Session',record.value.session);
-  const response=await fetch(config.backend+'/api/static-host/check',{headers,credentials:'include',cache:'no-store'});
-  if(!response.ok)throw Error('The connection could not be established.');
-  const result=await response.json();if(!result.supported||typeof result.session!=='string'||!result.session)throw Error('The connection session could not be established.');
-  record.value.session=result.session;await record.save();for(const client of await self.clients?.matchAll({type:'window'})||[])client.postMessage({type:'nyx:host-session',session:result.session});return result.session;
+  const candidates=[...new Set([config.backend,...(config.backends||[])])].map(value=>{const url=new URL(value);if(url.protocol!=='https:'||url.origin!==value)throw Error('Invalid connection configuration');return value;}).sort((a,b)=>Number(unavailableBackends.has(a))-Number(unavailableBackends.has(b)));
+  const connect=async backend=>{const response=await fetch(backend+'/api/static-host/check',{headers,credentials:'include',cache:'no-store',signal:globalThis.AbortSignal?.timeout(4000)});if(!response.ok)throw Error('Connection setup returned '+response.status);const result=await response.json();if(!result.supported||typeof result.session!=='string'||!result.session)throw Error('The connection session could not be established.');return {backend,session:result.session};};
+  let connected;try{connected=await connect(candidates[0]);}catch(firstError){if(candidates.length<2)throw firstError;try{connected=await Promise.any(candidates.slice(1).map(connect));}catch{throw Error('None of the configured connections could be reached.');}}
+  activeBackend=connected.backend;unavailableBackends.delete(activeBackend);record.value.session=connected.session;await record.save();for(const client of await self.clients?.matchAll({type:'window'})||[])client.postMessage({type:'nyx:host-session',session:connected.session,backend:activeBackend});return connected.session;
  })();backendSession=promise;promise.catch(()=>{if(backendSession===promise)backendSession=null;});}
  return backendSession;
 }
 self.addEventListener('message',event=>{
  if(!['nyx:static-session','nyx:host-session-refresh'].includes(event.data?.type)||!event.ports[0])return;if(event.data.type==='nyx:host-session-refresh')backendSession=null;
- event.waitUntil(ensureBackendSession().then(session=>event.ports[0].postMessage({ok:true,session}),error=>event.ports[0].postMessage({error:error.message,code:error.code})));
+ event.waitUntil(ensureBackendSession().then(session=>event.ports[0].postMessage({ok:true,session,backend:activeBackend}),error=>event.ports[0].postMessage({error:error.message,code:error.code})));
 });
 self.addEventListener('install',event=>event.waitUntil(self.skipWaiting()));
 self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
@@ -42,13 +43,14 @@ self.addEventListener('fetch',event=>{
    let session=await ensureBackendSession();
    const headers=new Headers(event.request.headers);headers.delete('host');headers.set('X-Nyx-Host-Session',session);
    const body=['GET','HEAD'].includes(event.request.method)?undefined:await event.request.arrayBuffer();
-   const send=()=>fetch(new URL(url.pathname+url.search,config.backend),{method:event.request.method,headers,body,mode:'cors',credentials:'include',redirect:'error',cache:'no-store',signal:event.request.signal});
-   let remoteResponse=await send();
+   let requestBackend=activeBackend;
+   const send=()=>fetch(new URL(url.pathname+url.search,requestBackend),{method:event.request.method,headers,body,mode:'cors',credentials:'include',redirect:'error',cache:'no-store',signal:event.request.signal});
+   let remoteResponse;try{remoteResponse=await send();}catch(error){unavailableBackends.add(requestBackend);if(activeBackend===requestBackend)backendSession=null;if(!['GET','HEAD'].includes(event.request.method))throw error;session=await ensureBackendSession();requestBackend=activeBackend;headers.set('X-Nyx-Host-Session',session);remoteResponse=await send();}
    if(remoteResponse.status===428){
     const detail=await remoteResponse.clone().json().catch(()=>null);
     if(detail?.code==='HOST_SESSION_REQUIRED'){
      const previous=backendSession;if(await previous===session&&backendSession===previous)backendSession=null;
-     session=await ensureBackendSession();headers.set('X-Nyx-Host-Session',session);remoteResponse=await send();
+     session=await ensureBackendSession();requestBackend=activeBackend;headers.set('X-Nyx-Host-Session',session);remoteResponse=await send();
     }
    }
    const returnedHeaders=new Headers(remoteResponse.headers);if(event.request.headers.get('origin')==='null'&&/^\/(?:reading|math|gn-math|gms-games|gms-studies|reds-misc)-/.test(url.pathname))returnedHeaders.set('Access-Control-Allow-Origin','null');

@@ -1,0 +1,8 @@
+Upstream: https://github.com/zaka13alt/history
+Pinned commit: 2950dc3fc54b59279c343904fc18ffa0c7e37ab3
+Matching SJ runtime: 2.0.67-alpha.2; controller: 0.0.14.
+The copied libraries and their embedded copyright/license notices are unchanged.
+SJ runtime/controller are AGPL-3.0; upstream source and history are available at the pinned repository above.
+libcurl and epoxy are copied byte-for-byte, including the upstream customized/obfuscated implementations.
+upstream.json records every copied file and SHA-256. Nyx integration is separate in js/document-engine.mjs.
+Optional upstream challenge-solver helper is included unchanged; no FlareSolverr service is installed or enabled by this integration.

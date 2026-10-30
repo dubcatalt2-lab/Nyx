@@ -3689,7 +3689,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       .replace(atob("bGliY3VybA=="), "libcurl")
       .replace("textlib", "libcurl");
     if (name === "libcurl" || name === "libcurlraw") return "libcurlRaw";
-    if (name === "auto") return name;
+    if (name === "auto" || name === "epoxy") return name;
     return DEFAULT_BROWSER_TRANSPORT;
   }
   if (String(store.text("nyx.transport", DEFAULT_BROWSER_TRANSPORT)).toLowerCase() === "libcurl") {
@@ -6275,6 +6275,10 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     };
     try {
       const parsed = new URL(raw, location.href);
+      if (parsed.origin === location.origin && parsed.pathname.startsWith('/assets/vendor/r93d51/nZ970vr4/')) {
+        const match=parsed.pathname.slice('/assets/vendor/r93d51/nZ970vr4/'.length).match(/^[^/]+\/[^/]+\/(.+)$/);
+        if(match){try{return decodeURIComponent(match[1])+parsed.search+parsed.hash}catch{}}
+      }
       if (parsed.origin === location.origin && parsed.pathname.startsWith('/apps/r7f29c1/view/')) {
         return decodeRetiredAddress(parsed.href.slice((parsed.origin+'/apps/r7f29c1/view/').length));
       }
@@ -8090,7 +8094,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     const legacyLibcurlOption = transportSelect?.querySelector('option[value="libcurl"]');
     if (legacyLibcurlOption) {
       legacyLibcurlOption.value = "libcurlRaw";
-      legacyLibcurlOption.textContent = "Libcurl";
+      legacyLibcurlOption.textContent = "_a72f9";
     }
     if (transportSelect && !transportSelect.querySelector('option[value="auto"]')) {
       transportSelect.prepend(new Option("Auto (recommended)", "auto"));
@@ -8100,9 +8104,10 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     }
     if (transportSelect) {
       const transportLabels = {
-        wisp: "Wisp",
-        libcurl: "Libcurl",
-        libcurlRaw: "Libcurl",
+        wisp: "_c83a1",
+        libcurl: "_a72f9",
+        libcurlRaw: "_a72f9",
+        epoxy: "_b41d8",
         auto: "Auto",
       };
       [...transportSelect.options].forEach((option) => {
@@ -10171,7 +10176,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     return url;
   }
   const documentEngine = () => import('/js/document-engine.mjs');
-  async function openDocumentEngine() { return (await documentEngine()).prepareDocumentEngine(wispUrl()); }
+  async function openDocumentEngine() { return (await documentEngine()).prepareDocumentEngine(wispUrl(), normalizeBrowserTransportName(store.text('nyx.transport', DEFAULT_BROWSER_TRANSPORT))); }
   window.nyxProxyGameUrl = async (url) => {
     const target = proxyTargetUrl(url);
     if (!target) return "";
@@ -10235,7 +10240,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       const engine = await openDocumentEngine();
       if (signal?.aborted || !frame.isConnected) return;
       frame.removeAttribute("srcdoc");
-      frame.src = engine.encodeRef(target);
+      engine.openView(frame,target);
       return {managed:true,engine:"document",url:target};
     }
     if (mode === "iframe") return { managed: false, engine: "iframe", url: target };
@@ -13573,7 +13578,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
     if (location.protocol === "file:" || !("serviceWorker" in navigator)) return false;
     await preflightEngineReady(target);
     const registrations = await Promise.all([
-      navigator.serviceWorker.getRegistration("/apps/r7f29c1/").catch(() => null),
+      navigator.serviceWorker.getRegistration("/assets/vendor/r93d51/").catch(() => null),
     ]);
     return registrations.some(
       (registration) => registration?.active || registration?.waiting || registration?.installing,
@@ -16069,13 +16074,13 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
       openDocumentEngine().then(engine=>{
         if(!state.tabs.includes(t)||t.navigationIntent!==intent)return;
         t.scramjetVersion="document";
-        t.scramjetFrame={go:next=>{t.frame.src=engine.encodeRef(next)}};
+        t.scramjetFrame={go:next=>engine.openView(t.frame,next)};
         if(!t.documentEngineLoad){
           t.documentEngineLoad=true;
           t.frame.addEventListener('load',()=>{
             if(!state.tabs.includes(t)||t.scramjetVersion!=="document")return;
             const next=browserShellSourceUrl(t.frame.getAttribute('src')||'');
-            let actual=next;try{actual=String(t.frame.contentWindow.__u22?.meta?.url||next)}catch{}
+            let actual=engine.sourceOf(t.frame)||next;
             if(/^https?:/.test(actual)){t.sourceUrl=actual;setTabMeta(t,actual,actual!==t.history[t.index]);}
             setTabLoading(t,false);syncLoadedTabIcon(t);
           });
@@ -18673,7 +18678,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
           <h2>Change Proxy</h2>
           <p>Choose the br00ser engine N7X uses for external sites.
 The current engine handles website navigation.
-Auto uses Scramjet with Libcurl by default and can recover with another relay if the connection fails.</p>
+Auto uses the default connection.</p>
           <select id="settingBrowserMode">
             <option value="auto">Auto</option>
             <option value="scramjet">Use Learning tools</option>
@@ -18688,7 +18693,8 @@ Auto uses Scramjet with Libcurl by default and can recover with another relay if
             <option value="auto">Auto (recommended)</option>
 
 
-            <option value="libcurlRaw">Libcurl</option>
+            <option value="libcurlRaw">_a72f9</option>
+            <option value="epoxy">_b41d8</option>
           </select>
           <button data-qadbd812e260f8845b0>Save br00ser Settings</button>
         </section>

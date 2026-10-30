@@ -1479,7 +1479,7 @@ async function loadLibrary() {
   const publish = () => {
     state.games = mergeCatalogs([...loaded.values()]);
     state.gamesByKey = new Map(state.games.map((game) => [game.key, game]));
-    if (state.activeLibrary !== "all" && !libraryGameCount(state.activeLibrary))
+    if (state.activeLibrary !== "all" && (completed === catalogs.length || loaded.has(state.activeLibrary) || failed.some(item => item.id === state.activeLibrary)) && !libraryGameCount(state.activeLibrary))
       state.activeLibrary = "all";
     renderLibraryTabs();
     render();
@@ -1494,7 +1494,7 @@ async function loadLibrary() {
       state.games.length > 0 || completed === catalogs.length,
     );
 
-    if (state.games.length === 0 && completed < catalogs.length) elements.empty.hidden = true;
+    if (completed < catalogs.length && (state.games.length === 0 || (!loaded.has(state.activeLibrary) && !failed.some(item => item.id === state.activeLibrary)))) elements.empty.hidden = true;
 
     if (!requestedOpened && requested && state.gamesByKey.has(requested)) {
       requestedOpened = true;

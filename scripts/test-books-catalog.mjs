@@ -36,7 +36,7 @@ try {
   await page.route('**/assets/studies/studies.json', route => route.fulfill(json(manifest)));
   await page.route('**/test-games/ugs.json', route => route.fulfill(json([{ title: 'Shared Game', path: 'shared.html' }, { title: 'Nyx Only', path: 'nyx.html' }])));
   await page.route('**/test-games/covers.json', route => route.fulfill(json([])));
-  await page.route('**/test-games/gn.json', route => route.fulfill(json([{ title: 'Shared Game', path: 'shared.html', cover: '/test-games/cover.png' }, { title: 'GN Only', path: 'gn.html', cover: '/test-games/cover.png' }])));
+  await page.route('**/test-games/gn.json', async route => {await new Promise(resolve=>setTimeout(resolve,500));return route.fulfill(json([{ title: 'Shared Game', path: 'shared.html', cover: '/test-games/cover.png' }, { title: 'GN Only', path: 'gn.html', cover: '/test-games/cover.png' }]))});
   await page.route('**/test-games/gms.json', route => route.fulfill(json([{ title: 'GMS Only', path: 'gms.html', cover: '/test-games/cover.png' }])));
   await page.route('**/zengs-games', route => route.fulfill(json(zengsFixture)));
   await page.route(url => url.pathname === '/assets/reading/play.html' && url.searchParams.get('game') === 'shared.html', route => route.fulfill({

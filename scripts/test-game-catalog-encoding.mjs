@@ -14,10 +14,10 @@ assert.throws(() => αποκωδικοποίηση({ representation: "n7x-xor-1"
 const προσωρινό = await mkdtemp(join(tmpdir(), "n7x-catalog-"));
 try {
   await mkdir(join(προσωρινό, "assets/studies"), { recursive: true });
-  await mkdir(join(προσωρινό, "assets/gn-math"), { recursive: true });
-  await writeFile(join(προσωρινό, "assets/gn-math/games.json"), JSON.stringify(δείγμα));
+  await mkdir(join(προσωρινό, "assets/reading"), { recursive: true });
+  await writeFile(join(προσωρινό, "assets/reading/games.json"), JSON.stringify(δείγμα));
   await writeFile(join(προσωρινό, "assets/studies/studies.json"), JSON.stringify({ catalogs: [
-    { url: "/assets/gn-math/games.json", player: "/assets/gn-math/play.html?game={path}" }
+    { url: "/assets/reading/games.json", player: "/assets/reading/play.html?game={path}" }
   ] }));
   const first = await buildGameCatalogs(προσωρινό);
   const second = await buildGameCatalogs(προσωρινό);
@@ -25,7 +25,7 @@ try {
   for (const aliases of [first, second]) {
     const manifest = αποκωδικοποίηση(JSON.parse(await readFile(join(προσωρινό, aliases["/assets/studies/studies.json"]), "utf8")));
     assert.deepEqual(αποκωδικοποίηση(JSON.parse(await readFile(join(προσωρινό, manifest.catalogs[0].url), "utf8"))), δείγμα);
-    assert.equal(manifest.catalogs[0].player, "/assets/gn-math/play.html?game={path}");
+    assert.equal(manifest.catalogs[0].player, "/assets/reading/play.html?game={path}");
   }
 } finally { await rm(προσωρινό, { recursive: true, force: true }); }
 
@@ -64,10 +64,10 @@ try {
     console.error({ errors, text: (await page.locator("body").innerText()).slice(0, 1800) });
     throw error;
   }
-  const πάροχος = page.getByRole("button", { name: "GN Math, 1 games", exact: true });
+  const πάροχος = page.getByRole("button", { name: "Reading, 1 games", exact: true });
   const όνομα = await πάροχος.innerText();
-  assert(όνομα.includes("𝙂𝙉 𝙈𝙖𝙩𝙝"), "Provider presentation must retain Unicode after the production build");
-  assert.match(όνομα.normalize("NFKC"), /GN Math/);
+  assert(/[\u{1d400}-\u{1d7ff}]/u.test(όνομα), 'Provider presentation must retain Unicode after the production build');
+  assert.match(όνομα.normalize("NFKC"), /Reading/);
   await launch.click();
   const frame = page.locator('iframe[src*="/fixture/play.html"]');
   await frame.waitFor(); assert.match(await frame.getAttribute("src"), /game=test.html/);

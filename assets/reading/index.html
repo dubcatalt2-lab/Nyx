@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GN Math Games</title>
+  <title>Reading Games</title>
   <style>
     :root{
       --bg:#0b0f17;
@@ -102,10 +102,10 @@
 <body>
   <header>
     <div>
-      <h1>GN Math Games</h1>
+      <h1>Reading Games</h1>
       <div class="source" id="source">Loading game library...</div>
     </div>
-    <input id="search" class="search" placeholder="Search GN Math games" autocomplete="off">
+    <input id="search" class="search" placeholder="Search Reading games" autocomplete="off">
   </header>
   <main>
     <div id="grid" class="grid"></div>
@@ -122,11 +122,11 @@
       if(title) return title;
       const clean=String(path || '').replace(/\.html?$/i,'');
       const id=(clean.match(/^\d+/) || [''])[0];
-      return id ? `GN Math ${id}` : clean.replace(/[-_]+/g,' ');
+      return id ? `Reading ${id}` : clean.replace(/[-_]+/g,' ');
     }
 
     function gameUrl(path){
-      return new URL(`/assets/gn-math/play.html?v=20260903-game-ad-guard-v1&game=${encodeURIComponent(path)}`,location.origin).href;
+      return new URL(`/assets/reading/play.html?v=20260903-game-ad-guard-v1&game=${encodeURIComponent(path)}`,location.origin).href;
     }
 
     function render(){
@@ -166,7 +166,7 @@
     },true);
     search.addEventListener('input',render);
 
-    fetch('/assets/gn-math/games.json',{cache:'no-store'})
+    fetch('/assets/reading/games.json',{cache:'no-store'})
       .then(response=>response.json())
       .then(data=>{
         games=(Array.isArray(data.games) ? data.games : []).map(game=>({
@@ -174,12 +174,12 @@
           title:titleFromPath(game.path,game.title),
           url:gameUrl(game.path)
         })).sort((a,b)=>a.path.localeCompare(b.path,undefined,{numeric:true}));
-        source.textContent=`${games.length} games from GN Math.`;
+        source.textContent=`${games.length} games from Reading.`;
         render();
       })
       .catch(()=>{
-        source.textContent='Could not load GN Math.';
-        empty.textContent='Could not load the GN Math game list.';
+        source.textContent='Could not load Reading.';
+        empty.textContent='Could not load the Reading game list.';
         empty.style.display='block';
       });
   </script>

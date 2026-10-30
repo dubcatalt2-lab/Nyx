@@ -10,8 +10,8 @@ const manifest = {
   version: 1,
   catalogs: [
     { id: 'local', format: 'ugs', url: '/test-games/ugs.json', coversUrl: '/test-games/covers.json', player: '/assets/ugs/play.html?game={path}', priority: 50 },
-    { id: 'gn', format: 'gn', url: '/test-games/gn.json', player: '/assets/gn-math/play.html?game={path}', priority: 40 },
-    { id: 'gms', format: 'gms', url: '/test-games/gms.json', player: '/assets/gms-studies/play.html?game={path}', priority: 30 },
+    { id: 'gn', format: 'gn', url: '/test-games/gn.json', player: '/assets/reading/play.html?game={path}', priority: 40 },
+    { id: 'gms', format: 'gms', url: '/test-games/gms.json', player: '/assets/math/play.html?game={path}', priority: 30 },
     { id: 'zengs', format: 'zengs', url: '/zengs-games', priority: 20 }
   ]
 };
@@ -39,7 +39,7 @@ try {
   await page.route('**/test-games/gn.json', route => route.fulfill(json([{ title: 'Shared Game', path: 'shared.html', cover: '/test-games/cover.png' }, { title: 'GN Only', path: 'gn.html', cover: '/test-games/cover.png' }])));
   await page.route('**/test-games/gms.json', route => route.fulfill(json([{ title: 'GMS Only', path: 'gms.html', cover: '/test-games/cover.png' }])));
   await page.route('**/zengs-games', route => route.fulfill(json(zengsFixture)));
-  await page.route(url => url.pathname === '/assets/gn-math/play.html' && url.searchParams.get('game') === 'shared.html', route => route.fulfill({
+  await page.route(url => url.pathname === '/assets/reading/play.html' && url.searchParams.get('game') === 'shared.html', route => route.fulfill({
     contentType: 'text/html',
     body: `<!doctype html><script>parent.postMessage({type:'nyx:game-launched'},'*')<\/script>`
   }));
@@ -51,8 +51,8 @@ try {
   const libraries = (await page.locator('[data-library]').allTextContents()).map(text=>text.normalize('NFKC'));
   assert(!libraries.some(label => label.includes('Zengs')), 'Removed provider appeared in library labels');
   assert(await page.getByRole('heading', {name:'Books',exact:true}).first().textContent() === 'Books', 'Main title must be plain Books');
-  assert(libraries.some(label => label.includes('GN Math')), `GN Math library is missing (${libraries.join(', ')})`);
-  assert(libraries.some(label => label.includes('GMS')), `GMS library is missing (${libraries.join(', ')})`);
+  assert(libraries.some(label => label.includes('Reading')), `Reading shelf is missing (${libraries.join(', ')})`);
+  assert(libraries.some(label => label.includes('Math')), `Math shelf is missing (${libraries.join(', ')})`);
   assert(libraries.some(label => label.includes('N7X Archive')), `N7X Archive library is missing (${libraries.join(', ')})`);
   assert(libraries.some(label => label.includes('Miscellaneous')), `Miscellaneous coverless library is missing (${libraries.join(', ')})`);
 
@@ -85,7 +85,7 @@ try {
   await page.locator('[data-library="gn"]').click();
 
   await page.getByRole('button', { name: 'Play Shared Game' }).click();
-  assert((await page.locator('#qcb196f617df1').getAttribute('src'))?.includes('/assets/gn-math/play.html'), 'A game opened from GN did not prefer its GN source');
+  assert((await page.locator('#qcb196f617df1').getAttribute('src'))?.includes('/assets/reading/play.html'), 'A game opened from GN did not prefer its GN source');
   const optimizer = page.locator('#q8eae2f4e61bb');
   assert(await optimizer.getAttribute('data-mode') === 'auto' && await optimizer.getAttribute('data-level') === '0', 'Auto optimizer did not begin at full quality on the simulated capable device');
   await page.evaluate(async () => {
@@ -169,7 +169,7 @@ try {
   const progressiveManifest = {
     version: 1,
     catalogs: [
-      { id: 'gn', format: 'gn', url: '/test-games/progressive-local.json', player: '/assets/gn-math/play.html?game={path}', priority: 50 },
+      { id: 'gn', format: 'gn', url: '/test-games/progressive-local.json', player: '/assets/reading/play.html?game={path}', priority: 50 },
       { id: 'gms', format: 'gms', url: '/test-games/stalled-gms.json', priority: 20 }
     ]
   };
@@ -213,7 +213,7 @@ try {
       if (url.includes('/assets/studies/study-ad-protection.js')) guardLoaded = true;
       if (/imasdk\.googleapis\.com|cdn\.r9x\.in|doubleclick\.net|adtrafficquality\.google|gamemonetize\.com/i.test(url)) realAdRequests.push(url);
     });
-    await realGame.goto(`${baseUrl}/assets/gn-math/play.html?game=${encodeURIComponent(process.env.NYX_TEST_REAL_GAME)}`, { waitUntil: 'domcontentloaded' });
+    await realGame.goto(`${baseUrl}/assets/reading/play.html?game=${encodeURIComponent(process.env.NYX_TEST_REAL_GAME)}`, { waitUntil: 'domcontentloaded' });
     await realGame.waitForTimeout(8_000);
     assert(guardLoaded, 'The real GN Math runner did not load the in-frame ad guard');
     assert(realAdRequests.length === 0, `A real game requested blocked ad resources (${realAdRequests.join(', ')})`);

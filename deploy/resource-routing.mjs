@@ -38,3 +38,9 @@ export function enableResourceRouting(source){
 }\n`;
  return source.slice(0,open+1)+changed+source.slice(end-1);
 }
+
+export function refreshResourceRouting(source){
+ const pattern=/(@nyx_resource_reads\s*\{[\s\S]*?\n\s*path )[^\n]+/g;
+ const matches=[...source.matchAll(pattern)];if(matches.length!==1)throw Error('Expected one read-only resource matcher');
+ return source.replace(pattern,(_,prefix)=>prefix+resourcePaths.join(' '));
+}

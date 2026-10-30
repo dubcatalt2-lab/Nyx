@@ -124,7 +124,7 @@ export function createDomHookTransform({ allOwned = false } = {}) {
   const classCall = (node) => node?.type === "CallExpression" && property(node.callee?.object) === "classList";
   const dataset = (node) => node?.type === "MemberExpression" && property(node.object) === "dataset";
   function collect(source, path) {
-    πλήρης = allOwned || /^(?:assets\/(?:studies|gms-studies)\/|apps\/cloud-studies\/)/.test(path);
+    πλήρης = allOwned || /^(?:assets\/(?:studies|math)\/|apps\/cloud-studies\/)/.test(path);
     if (path.endsWith(".html")) {
       collectMarkup(source.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ""));
       source.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi, (_, attrs, code) => {
@@ -278,7 +278,7 @@ export function createDomHookTransform({ allOwned = false } = {}) {
 export async function buildDomHooks(output, files) {
   const owned = files.filter(path => /\.(html|css|js|mjs)$/.test(path) &&
     (/^(?:[^/]+\.html$|script\.js|startup\.js|styles\.css|css\/|js\/|app\/|district\/|apps\/)/.test(path) ||
-     /^assets\/(?:studies|gms-studies|gn-math|backgrounds)\//.test(path)));
+     /^assets\/(?:studies|math|reading|backgrounds)\//.test(path)));
   const transform = createDomHookTransform({ allOwned: true }), sources = new Map();
   for (const path of owned) {
     let source;

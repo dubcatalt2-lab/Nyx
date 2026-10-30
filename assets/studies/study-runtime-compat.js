@@ -173,7 +173,7 @@
                     const bases = [baseUrl];
                     try {
                       const base = new URL(baseUrl);
-                      const proxied = /^\/gn-math-resource\/(https?)\/(.+)$/.exec(base.pathname);
+                      const proxied = /^\/reading-resource\/(https?)\/(.+)$/.exec(base.pathname);
                       if (proxied) bases.push(proxied[1] + "://" + proxied[2]);
                     } catch {}
                     const matching = bases.find(base => scriptFolder.startsWith(base));

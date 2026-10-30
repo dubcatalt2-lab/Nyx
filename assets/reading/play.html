@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GN Math Game</title>
+  <title>Reading Game</title>
   <style>
     *{box-sizing:border-box;font-weight:400!important;font-style:normal!important}
     html,body{height:100%;margin:0;background:#0b0f17;color:#f8fafc;font-family:Outfit,Arial,sans-serif}
@@ -78,7 +78,7 @@
       <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
     </div>
   </div>
-  <iframe id="gameFrame" class="game-frame" title="GN Math game" sandbox="allow-scripts allow-forms allow-modals allow-downloads allow-pointer-lock allow-presentation" allow="fullscreen; gamepad; autoplay; keyboard-map; clipboard-read; clipboard-write; camera; microphone; display-capture; accelerometer; gyroscope; magnetometer; xr-spatial-tracking" allowfullscreen tabindex="0"></iframe>
+  <iframe id="gameFrame" class="game-frame" title="Reading game" sandbox="allow-scripts allow-forms allow-modals allow-downloads allow-pointer-lock allow-presentation" allow="fullscreen; gamepad; autoplay; keyboard-map; clipboard-read; clipboard-write; camera; microphone; display-capture; accelerometer; gyroscope; magnetometer; xr-spatial-tracking" allowfullscreen tabindex="0"></iframe>
   <script src="/assets/studies/study-health.js" data-provider="gn"></script>
   <script type="module">
     import {prepareGameDocument} from '/assets/studies/study-document.js';
@@ -227,7 +227,7 @@
     let requestedPath=safeGamePath(game);
     if(requestedPath){
       try{
-        const response=await fetch('/assets/gn-math/games.json',{signal:AbortSignal.timeout(5000)});
+        const response=await fetch('/assets/reading/games.json',{signal:AbortSignal.timeout(5000)});
         if(response.ok)requestedPath=currentGnPath(requestedPath,await response.json());
       }catch{/* A cached link can still load when the catalog is unavailable. */}
     }
@@ -236,7 +236,7 @@
     if(archiveGame){
       location.replace('/assets/ugs/play.html?game='+encodeURIComponent(archiveGame));
     }else if(!gamePath){
-      fail('Missing GN Math game path.');
+      fail('Missing Reading game path.');
     }else{
       startGameProgress();
       const rawUrl=`https://raw.githubusercontent.com/freebuisness/html/main/${encodeURIComponent(gamePath)}`;
@@ -246,7 +246,7 @@
         // First-party documents already contain their own runtime and asset paths.
         // Rewriting encoded production documents as remote HTML breaks their loader.
         frame.src=localGame;
-      }else fetch(`/gn-math-fetch?path=${encodeURIComponent(gamePath)}`,{cache:'no-store'})
+      }else fetch(`/reading-fetch?path=${encodeURIComponent(gamePath)}`,{cache:'no-store'})
         .then(response=>{
           if(response.ok){
             setGameProgress(48);
@@ -267,7 +267,7 @@
           setGameProgress(88);
           setTimeout(finishGameProgress,7000);
         })
-        .catch(error=>fail(`Could not load GN Math game: ${error?.message || error || 'Network error'}`));
+        .catch(error=>fail(`Could not load Reading game: ${error?.message || error || 'Network error'}`));
     }
   </script>
 </body>

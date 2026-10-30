@@ -35,7 +35,9 @@ self.addEventListener('fetch',event=>{
   const config=await settings;
   if(config.features?.chat===false && /^\/(?:apps\/chat|api\/chat|socket\.io)(?:\/|$)/.test(url.pathname))return new Response('Not found',{status:404});
   if(config.features?.blooket===false && /^\/(?:apps\/blooket|blooket)(?:\/|$)/.test(url.pathname))return new Response('Not found',{status:404});
-  const remote=/^\/(?:api(?:\/|$)|socket\.io(?:\/|$)|healthz$|resources\/live(?:\/|$)|wisp(?:\/|$)|download\/|(?:gn-math|gms-games|gms-studies|reds-misc)-|cloud\/v1\/)/.test(url.pathname);
+  const entry=config.entryAliases?.[url.pathname];
+  if(entry){url.pathname=entry;if(event.request.mode==='navigate')return Response.redirect(url.href,308);}
+  const remote=/^\/(?:api(?:\/|$)|socket\.io(?:\/|$)|healthz$|resources\/live(?:\/|$)|wisp(?:\/|$)|download\/|(?:reading|math|gn-math|gms-games|gms-studies|reds-misc)-|cloud\/v1\/)/.test(url.pathname);
   if(remote){
    let session=await ensureBackendSession();
    const headers=new Headers(event.request.headers);headers.delete('host');headers.set('X-Nyx-Host-Session',session);
@@ -49,7 +51,7 @@ self.addEventListener('fetch',event=>{
      session=await ensureBackendSession();headers.set('X-Nyx-Host-Session',session);remoteResponse=await send();
     }
    }
-   const returnedHeaders=new Headers(remoteResponse.headers);if(event.request.headers.get('origin')==='null'&&/^\/(?:gn-math|gms-games|gms-studies|reds-misc)-/.test(url.pathname))returnedHeaders.set('Access-Control-Allow-Origin','null');
+   const returnedHeaders=new Headers(remoteResponse.headers);if(event.request.headers.get('origin')==='null'&&/^\/(?:reading|math|gn-math|gms-games|gms-studies|reds-misc)-/.test(url.pathname))returnedHeaders.set('Access-Control-Allow-Origin','null');
    return new Response([204,205,304].includes(remoteResponse.status)||event.request.method==='HEAD'?null:remoteResponse.body,{status:remoteResponse.status,statusText:remoteResponse.statusText,headers:returnedHeaders});
   }
   if(config.aliases[url.pathname])url.pathname=config.aliases[url.pathname];

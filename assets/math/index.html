@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GMS Games</title>
+  <title>Math Books</title>
   <style>
     :root{--bg:#0b0f17;--panel:rgba(15,23,42,.72);--text:#f8fafc;--muted:#a8b3c7;--line:#fb7185}
     *{box-sizing:border-box;font-weight:400!important;font-style:normal!important}
@@ -30,10 +30,10 @@
 <body>
   <header>
     <div>
-      <h1>GMS Games</h1>
+      <h1>Math Books</h1>
       <div class="source" id="source">Loading game library...</div>
     </div>
-    <input id="search" class="search" placeholder="Search GMS games" autocomplete="off">
+    <input id="search" class="search" placeholder="Search math books" autocomplete="off">
   </header>
   <main>
     <div id="grid" class="grid"></div>
@@ -46,15 +46,15 @@
     const source=document.getElementById('source');
     let games=[];
     function gameUrl(game){
-      if(game.type==='gba' && game.romId) return new URL(`/assets/gms-studies/play.html?v=20260903-game-ad-guard-v1&gba=${encodeURIComponent(game.romId)}`,location.origin).href;
-      return new URL(`/assets/gms-studies/play.html?v=20260903-game-ad-guard-v1&game=${encodeURIComponent(game.path)}`,location.origin).href;
+      if(game.type==='gba' && game.romId) return new URL(`/assets/math/play.html?v=20260903-game-ad-guard-v1&gba=${encodeURIComponent(game.romId)}`,location.origin).href;
+      return new URL(`/assets/math/play.html?v=20260903-game-ad-guard-v1&game=${encodeURIComponent(game.path)}`,location.origin).href;
     }
     function coverUrl(url){
       if(!url) return '';
       try{
         const parsed=new URL(url,location.href);
         if(['raw.githubusercontent.com','cdn.jsdelivr.net','rawcdn.githack.com','raw.githack.com'].includes(parsed.hostname)){
-          return `/gms-studies-proxy?url=${encodeURIComponent(parsed.href)}`;
+          return `/math-proxy?url=${encodeURIComponent(parsed.href)}`;
         }
         return parsed.href;
       }catch{
@@ -85,16 +85,16 @@
       if(event.target?.classList?.contains('thumb')) event.target.classList.add('broken');
     },true);
     search.addEventListener('input',render);
-    fetch('/assets/gms-studies/studies.json',{cache:'no-store'})
+    fetch('/assets/math/studies.json',{cache:'no-store'})
       .then(response=>response.json())
       .then(data=>{
         games=(Array.isArray(data.studies) ? data.studies : []).map(game=>({...game,url:gameUrl(game),cover:coverUrl(game.cover)}));
-        source.textContent=`${games.length} games from GMS Games.`;
+        source.textContent=`${games.length} games from Math Books.`;
         render();
       })
       .catch(()=>{
-        source.textContent='Could not load GMS Games.';
-        empty.textContent='Could not load the GMS Games list.';
+        source.textContent='Could not load Math Books.';
+        empty.textContent='Could not load the Math Books list.';
         empty.style.display='block';
       });
   </script>

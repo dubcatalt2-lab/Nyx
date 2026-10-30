@@ -1,3 +1,5 @@
+import {providerPageAliases} from '../lib/public-paths.mjs';
+import {encodeLiterals} from './build-string-literals.mjs';
 import {cp,mkdir,readFile,writeFile,readdir,stat} from 'node:fs/promises';
 import {resolve,join} from 'node:path';import {createHash} from 'node:crypto';
 import {directS3Origin} from '../lib/static-host-access.mjs';
@@ -23,7 +25,7 @@ for(const name of Object.keys(pages))if(name.startsWith('apps/blooket/'))delete 
 // Sponsor documents run in isolated data frames, not the account application frame.
 for(const name of Object.keys(pages))if(name.startsWith('apps/sponsor/') || /^apps\/ad-haven\/(banner|native|multitag)\.html$/.test(name))delete pages[name];
 for(const name of Object.keys(pages)){const file=join(output,'site',name);let html=await readFile(file,'utf8');html=html.replace(/<head(?:\s[^>]*)?>/i,head=>head+`<meta name="nyx-static-backend" content="${backend}"><meta name="nyx-blooket-enabled" content="0">${features.chat?'':'<meta name="nyx-chat-enabled" content="0">'}<script src="${runtime}"></script>`);await writeFile(file,html);}
-await writeFile(join(output,'site','direct-s3-config.json'),JSON.stringify({origin,backend,runtime,aliases,features}));
+await writeFile(join(output,'site','direct-s3-config.json'),JSON.stringify({origin,backend,runtime,aliases,features,entryAliases:providerPageAliases}));
 let coverSource = await readFile(join(dist,'index.html'),'utf8');
 if (pages['index.html']?.loader) {
  const loader = await readFile(join(dist,pages['index.html'].loader.slice(1)),'utf8');
@@ -47,6 +49,12 @@ const redirects=[...coverSource.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi
 if (redirects.length !== 1) throw Error('Expected one production cover redirect.');
 await writeFile(join(output,'site','index.html'),coverSource.replace(redirects[0][0],`<script src="${s3CoverScript}"></script>`));
 // Changing the backend must activate a new worker even when runtime source is unchanged.
+for(const [oldPath,newPath] of Object.entries(providerPageAliases)){
+ if(!oldPath.endsWith('.html'))continue;
+ const file=join(output,'site',oldPath.slice(1));await mkdir(resolve(file,'..'),{recursive:true});
+ const code=encodeLiterals((await minify('location.replace('+JSON.stringify(newPath)+'+location.search+location.hash)',{mangle:true,compress:true})).code,true);
+ await writeFile(file,'<!doctype html><meta charset="utf-8"><script>'+code+'</script><meta http-equiv="refresh" content="0;url='+newPath+'"><title>Books</title><a href="'+newPath+'">Open books</a>');
+}
 const workerPath=join(output,'site','direct-s3-worker.js');
 await writeFile(workerPath,(await readFile(workerPath,'utf8'))+';void '+JSON.stringify(createHash('sha256').update(backend+runtime+JSON.stringify(aliases)+JSON.stringify(features)).digest('hex').slice(0,16))+';');
 // Shared path-style S3 links frame the isolated bucket host. Never initialize account

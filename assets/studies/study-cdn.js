@@ -46,14 +46,14 @@ export function normalizeGameCdnUrl(value, base) {
 export function gameResourceUrl(value, base, origin) {
   const url = normalizeGameCdnUrl(value, base);
   return url
-    ? `${origin}/gn-math-resource/${url.protocol.slice(0, -1)}/${url.host}${url.pathname}${url.search}${url.hash}`
+    ? `${origin}/reading-resource/${url.protocol.slice(0, -1)}/${url.host}${url.pathname}${url.search}${url.hash}`
     : String(value);
 }
 
 export function gameResourceTarget(requestUrl) {
   try {
     const request = new URL(requestUrl, "https://nyx.invalid");
-    const match = request.pathname.match(/^\/gn-math-resource\/(https?)\/([^/]+)(\/.*)$/);
+    const match = request.pathname.match(/^\/reading-resource\/(https?)\/([^/]+)(\/.*)$/);
     return match
       ? normalizeGameCdnUrl(`${match[1]}://${match[2]}${match[3]}${request.search}`)
       : null;

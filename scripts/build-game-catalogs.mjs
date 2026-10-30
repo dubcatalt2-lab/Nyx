@@ -27,7 +27,7 @@ export async function buildGameCatalogs(output) {
   for (const catalog of manifest.catalogs) {
     for (const field of ["url", "coversUrl"]) {
       const path = catalog[field];
-      if (!/^\/assets\/(?:ugs|gn-math|gms-studies)\/[a-z-]+\.json$/.test(path || "")) continue;
+      if (!/^\/assets\/(?:ugs|reading|math)\/[a-z-]+\.json$/.test(path || "")) continue;
       catalog[field] = aliases[path] || await δημοσίευση(path,
         JSON.parse(await readFile(join(output, path.slice(1)), "utf8")));
     }

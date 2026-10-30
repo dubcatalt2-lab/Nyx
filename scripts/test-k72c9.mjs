@@ -15,14 +15,14 @@ const legacy='2'.repeat(32),signature=createHmac('sha256',secret).update('nyx_q7
 assert.equal((await sessions.read(await sessions.issue({origin,client,cookie:'nyx_q74bd9='+legacy+'.'+signature}),origin)).id,legacy);
 const access=createStaticHostAccess([origin],{secret:async()=>secret}),app=express();app.use(access.middleware);
 app.get('/api/private',(req,res)=>req.headers.authorization==='Bearer fixture'?res.json({id:req.q74bd9}):res.sendStatus(401));
-app.get('/gms-studies-fetch',(req,res)=>{res.set('Access-Control-Allow-Origin','*');res.json({id:req.q74bd9});});
+app.get('/math-fetch',(req,res)=>{res.set('Access-Control-Allow-Origin','*');res.json({id:req.q74bd9});});
 const server=app.listen(0,'127.0.0.1');await new Promise(r=>server.once('listening',r));
 try{
  const base='http://127.0.0.1:'+server.address().port,headers={Origin:origin,'X-Nyx-Host-Client':client};
  const start=await fetch(base+'/api/static-host/check',{headers});const session=(await start.json()).session;assert(session);
  const protectedHeaders={Origin:origin,'X-Nyx-Host-Session':session};
  assert.equal((await fetch(base+'/api/private',{headers:protectedHeaders})).status,401,'Connection identity grants no account access');
- const game=await fetch(base+'/gms-studies-fetch',{headers:protectedHeaders});assert.equal(game.status,200);assert.equal(game.headers.get('access-control-allow-origin'),origin,'Credentialed response cannot use wildcard origin');
+ const game=await fetch(base+'/math-fetch',{headers:protectedHeaders});assert.equal(game.status,200);assert.equal(game.headers.get('access-control-allow-origin'),origin,'Credentialed response cannot use wildcard origin');
  const identity=(await game.json()).id;
  assert.equal((await(await fetch(base+'/api/private',{headers:{...protectedHeaders,Authorization:'Bearer fixture'}})).json()).id,identity);
  const moderation=q74bd9({firebase:async()=>({firestore:{collection:()=>({doc:id=>({get:async()=>({data:()=>({banned:id===identity})})})})}}),ownerUid:()=>'',authorize:async()=>({}),sameOrigin:()=>true});

@@ -4,7 +4,7 @@ const browser=await chromium.launch({channel:'msedge',args:['--disable-features=
 await mkdir('.codex-artifacts',{recursive:true});
 try{for(const [name,path] of [['Slope','198.html'],['Run3','177.html'],['CookieClicker','82-a.html'],['BasketRandom','66.html'],['RetroBowl','33-ff.html'],['Gladihoppers','4-pf.html']]){
  const context=await browser.newContext({viewport:{width:1280,height:720}});await context.route('**/api/**',r=>['GET','HEAD'].includes(r.request().method())?r.continue():r.fulfill({json:{}}));const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto(base+'/assets/gn-math/play.html?game='+path);
+ await page.goto(base+'/assets/reading/play.html?game='+path);
  let ready=false;
  for(let attempt=0;attempt<60&&!ready;attempt++){
   for(const frame of page.frames().slice(1)){

@@ -195,7 +195,7 @@ export function prepareGameDocument(html, path, sourceUrl) {
            const ignorable=/adinplay|googletagmanager|google-analytics|googlesyndication|doubleclick|facebook|recaptcha|cdn\\.r9x\\.in|pagead/i;
           const important=/\\.(?:wasm|data|unityweb|json|swf|zip|7z|js)(?:[?#]|$)|\\/Build\\//i;
           const repoRoot=${JSON.stringify(repoRoot)};
-          const prox='${resourceOrigin}/gn-math-resource/';
+          const prox='${resourceOrigin}/reading-resource/';
           const proxHosts=['cdn.jsdelivr.net','raw.githubusercontent.com','rawcdn.githack.com','raw.githack.com'];
           const repairPath=${repairGameResourcePath.toString()};
           // Some older Unity loaders prepend their asset directory to blob URLs.
@@ -207,7 +207,7 @@ export function prepareGameDocument(html, path, sourceUrl) {
           const own=url=>{
             try{
               const raw=String(url || '').trim();
-              if(raw.startsWith('/gn-math-resource/'))return new URL(raw,prox).href;
+              if(raw.startsWith('/reading-resource/'))return new URL(raw,prox).href;
               for(const blob of objectUrls)if(raw.endsWith('/'+blob))return blob;
               // Laya derives about:// from srcdoc instead of honoring <base>.
               if(/^about:\\/\\//i.test(raw))return new URL(raw.slice(8),document.baseURI).href;

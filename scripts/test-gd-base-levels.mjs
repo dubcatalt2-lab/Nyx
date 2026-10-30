@@ -24,7 +24,7 @@ async function run(id){
   const context=await browser.newContext({viewport:{width:1280,height:720}});
   try{
     const page=await context.newPage();
-    await page.goto(`${base}/assets/gn-math/play.html?game=785-upd3.html`);
+    await page.goto(`${base}/assets/reading/play.html?game=785-upd3.html`);
     let frame;
     const loadUntil=Date.now()+90000;
     while(Date.now()<loadUntil){

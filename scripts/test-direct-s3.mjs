@@ -19,8 +19,8 @@ const shellSource=await readFile('script.js','utf8'),relayStart=shellSource.inde
 const relayUrl=Function('location','return ('+shellSource.slice(relayStart,relayEnd)+')()')({protocol:'https:',host:new URL(origin).host});
 assert.equal(relayUrl,'wss://'+new URL(origin).host+'/api/tutsi-relay/socket/');
 const seen=[];backendApp.use((req,res,next)=>{seen.push({path:req.path,authorization:req.headers.authorization,cookie:req.headers.cookie,identity:req.q74bd9});next();});
-backendApp.get(/^\/gn-math-resource\//,(req,res)=>{res.set('Access-Control-Allow-Origin',req.headers.origin||'*');res.json({loaded:true})});
-backendApp.get(['/gms-studies-fetch','/gms-games-fetch','/reds-misc-fetch'],(_req,res)=>{res.setHeader('Access-Control-Allow-Origin','*');res.type('html').send('<title>Content fixture</title>')});
+backendApp.get(/^\/reading-resource\//,(req,res)=>{res.set('Access-Control-Allow-Origin',req.headers.origin||'*');res.json({loaded:true})});
+backendApp.get(['/math-fetch','/gms-games-fetch','/reds-misc-fetch'],(_req,res)=>{res.setHeader('Access-Control-Allow-Origin','*');res.type('html').send('<title>Content fixture</title>')});
 backendApp.get('/api/private',(req,res)=>{if(req.headers.authorization!=='Bearer test-only')return res.status(401).json({error:'Sign in'});res.append('Set-Cookie','nyx_q74bd9=signed-fixture; Path=/; HttpOnly; SameSite=Lax; Secure');res.json({ok:true});});
 backendApp.post('/api/stream',(req,res)=>{if(req.headers.authorization!=='Bearer test-only')return res.sendStatus(401);res.type('text/event-stream');res.write('data: first\n\n');setTimeout(()=>res.end('data: second\n\n'),250);});
 backendApp.get('/api/media',(req,res)=>{assert.equal(req.headers.range,'bytes=0-3');res.status(206).set({'Content-Type':'application/octet-stream','Content-Range':'bytes 0-3/8'}).send(Buffer.from([0,1,2,3]));});
@@ -69,7 +69,7 @@ try{
  assert.deepEqual(await application.evaluate(async()=>{const r=await fetch('/api/private',{mode:'same-origin',cache:'no-store',headers:{Authorization:'Bearer test-only'}});return r.json()}),{ok:true});
  await application.evaluate(()=>fetch('/api/private',{mode:'same-origin',cache:'no-store',headers:{Authorization:'Bearer test-only'}}));if(!noCookies)assert(seen.at(-1).cookie.includes('nyx_q74bd9=signed-fixture'));else assert(!seen.at(-1).cookie);
  assert.deepEqual(await application.evaluate(async()=>{const r=await fetch('/api/media',{headers:{Range:'bytes=0-3'}});return [r.status,r.headers.get('content-range'),...new Uint8Array(await r.arrayBuffer())]}),[206,'bytes 0-3/8',0,1,2,3]);
- for(const path of ['/gms-studies-fetch','/gms-games-fetch','/reds-misc-fetch'])assert.equal(await application.evaluate(async path=>(await fetch(path)).text(),path),'<title>Content fixture</title>');
+ for(const path of ['/math-fetch','/gms-games-fetch','/reds-misc-fetch'])assert.equal(await application.evaluate(async path=>(await fetch(path)).text(),path),'<title>Content fixture</title>');
  const oldLocation=globalThis.location,oldDocument=globalThis.document;let nestedHtml;
  try{globalThis.location={origin};globalThis.document={querySelector:()=>({content:backendOrigin})};nestedHtml=prepareGameDocument('<html><head></head><body><script>fetch("https://cdn.jsdelivr.net/gh/fixture/test@main/file.json").then(r=>r.json()).then(value=>parent.postMessage({type:"s3-game-fixture",value},"*")).catch(e=>parent.postMessage({type:"s3-game-fixture",error:e.message},"*"));</script></body></html>','fixture.html','https://cdn.jsdelivr.net/gh/fixture/test@main/index.html');}finally{globalThis.location=oldLocation;globalThis.document=oldDocument;}
  const nested=await application.evaluate(async html=>{

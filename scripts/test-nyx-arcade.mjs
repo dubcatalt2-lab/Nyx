@@ -9,13 +9,13 @@ try {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.route('**/assets/studies/studies.json', route => route.fulfill(json({ catalogs: [
-    { id: 'gn', format: 'gn', url: '/arcade-test/catalog.json', player: '/assets/gn-math/play.html?game={path}', priority: 40 }
+    { id: 'gn', format: 'gn', url: '/arcade-test/catalog.json', player: '/assets/reading/play.html?game={path}', priority: 40 }
   ] })));
   await page.route('**/arcade-test/catalog.json', route => route.fulfill(json(
     ['Slope', 'Retro Bowl', 'Geometry Dash'].map((title, index) => ({ title, path: `${index}.html`, cover: '/arcade-test/cover.svg' }))
   )));
   await page.route('**/arcade-test/cover.svg', route => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#246"/></svg>' }));
-  await page.route(url => url.pathname === '/assets/gn-math/play.html', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><p>Game ready</p><script>parent.postMessage({type:"nyx:game-launched"},"*")</script>' }));
+  await page.route(url => url.pathname === '/assets/reading/play.html', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><p>Game ready</p><script>parent.postMessage({type:"nyx:game-launched"},"*")</script>' }));
   await page.route('**/apps/cloud-studies/**', route => route.fulfill({ contentType: 'text/html', body: '<!doctype html><p>Cloud games</p>' }));
 
   await page.goto(base + '/assets/studies/');

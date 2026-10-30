@@ -6665,7 +6665,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         "",
     );
     if (
-      /(?:pixelclient\.xyz|play\.geforcenow\.com|geforcenow\.com|\/assets\/(?:studies|ugs|gn-math|gms-studies)\/)/i.test(
+      /(?:pixelclient\.xyz|play\.geforcenow\.com|geforcenow\.com|\/assets\/(?:studies|ugs|reading|math)\/)/i.test(
         activeSource,
       )
     ) {
@@ -13919,7 +13919,7 @@ html body .n7x-credits-thanks .n7x-credits-p2p-icon{display:block;width:60px;hei
         browserShellSourceUrl(t?.sourceUrl || t?.url || "") || t?.sourceUrl || t?.url || "",
       );
       if (
-        /(?:play\.geforcenow\.com|geforcenow\.com|nvidia|pixelclient\.xyz|\/assets\/studies\/|\/assets\/ugs\/|\/assets\/gn-math\/|\/assets\/gms-studies\/)/i.test(
+        /(?:play\.geforcenow\.com|geforcenow\.com|nvidia|pixelclient\.xyz|\/assets\/studies\/|\/assets\/ugs\/|\/assets\/reading\/|\/assets\/math\/)/i.test(
           source,
         )
       )

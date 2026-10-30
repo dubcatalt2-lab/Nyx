@@ -13,7 +13,7 @@ try {
  await page.route('https://fixture.test/**',async route=>{
    const url=new URL(route.request().url());requests.push(url.pathname);
    if(url.pathname.startsWith('/assets/studies/'))return route.fulfill({contentType:'text/javascript',body:await readFile(staticRoot+url.pathname)});
-   if(url.pathname.startsWith('/gn-math-resource/'))return route.fulfill({contentType:'text/javascript',body:''});
+   if(url.pathname.startsWith('/reading-resource/'))return route.fulfill({contentType:'text/javascript',body:''});
    return route.fulfill({contentType:'text/html',body:'<!doctype html><body></body>'});
  });
  await page.goto('https://fixture.test/');
@@ -36,7 +36,7 @@ try {
    const result=await Promise.race([loaded,new Promise(r=>setTimeout(()=>r(false),1000))]);
    return {src:script.src,sdkLoaded:result,sdkConnected:sdk.isConnected,sdkPresent:!!PokiSDK,origin:globalThis.origin};
  });
- assert(result.src.includes('/gn-math-resource/https/cdn.jsdelivr.net/gh/taskmaster773/google-class@main/game.js'));
+ assert(result.src.includes('/reading-resource/https/cdn.jsdelivr.net/gh/taskmaster773/google-class@main/game.js'));
  assert.equal(result.sdkLoaded,true,'Stubbed SDK must release the engine loader callback');
  assert.equal(result.sdkConnected,false);assert.equal(result.sdkPresent,true);assert.equal(result.origin,'null');
  assert(!requests.some(url=>url.includes('/sdk.poki.com/')),'Blocked SDK must not reach the network');

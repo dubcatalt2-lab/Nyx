@@ -13,16 +13,16 @@
     {
       "id": "gn",
       "format": "gn",
-      "url": "/assets/gn-math/games.json",
-      "player": "/assets/gn-math/play.html?v=20261001-game-startup-v4&game={path}",
+      "url": "/assets/reading/games.json",
+      "player": "/assets/reading/play.html?v=20261001-game-startup-v4&game={path}",
       "priority": 40
     },
     {
       "id": "gms",
       "format": "gms",
-      "url": "/assets/gms-studies/studies.json",
-      "player": "/assets/gms-studies/play.html?v=20261001-game-startup-v4&game={path}",
-      "gbaPlayer": "/assets/gms-studies/play.html?v=20261001-game-startup-v4&gba={romId}",
+      "url": "/assets/math/studies.json",
+      "player": "/assets/math/play.html?v=20261001-game-startup-v4&game={path}",
+      "gbaPlayer": "/assets/math/play.html?v=20261001-game-startup-v4&gba={romId}",
       "priority": 30
     },
     {

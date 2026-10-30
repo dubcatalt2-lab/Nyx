@@ -114,7 +114,11 @@ let catClassGamesCache = { games: [], expires: 0, promise: null };
 let catClassCoverUrls = new Set();
 const nyxCustomRoleLabelLimit = 64;
 const app = express();
-app.use((req,_res,next)=>{req.url=rewriteLegacyPublicPath(req.url);next();});
+app.use((req,res,next)=>{
+  const path=rewriteLegacyPublicPath(req.url);
+  if(path!==req.url && ['GET','HEAD'].includes(req.method) && /^\/assets\/(?:gn-math|gms-games|gms-studies)\/[^?]*\.html(?:[?]|$)/.test(req.url))return res.redirect(308,path);
+  req.url=path;next();
+});
 const nyxChatEnabled = process.env.NYX_CHAT_ENABLED !== '0';
 const staticHostAccess=createStaticHostAccess(String(process.env.NYX_STATIC_ORIGINS||'').split(',').map(value=>value.trim()),{secret:()=>q74bd9Access.hostingKey()});
 app.use(staticHostAccess.middleware);
@@ -832,7 +836,7 @@ app.use((req, res, next) => {
     "/nyx-scramjet-runtime-guard.js"
   ]);
   if (req.path.startsWith("/oldsj/") && req.path.endsWith(".js")) res.setHeader("Service-Worker-Allowed", "/");
-  const noStorePrefix = /^\/(?:assets\/(?:gms-studies|reds-misc)\/|gms-studies-|reds-misc-)/i.test(req.path);
+  const noStorePrefix = /^\/(?:assets\/(?:math|reds-misc)\/|math-|reds-misc-)/i.test(req.path);
   const opaqueProxyAsset = /^\/(?:(?:scramjet|st7dyj3t)(?:-v1)?\/|controller\/|oldsj\/|libcurl\/|textlib\/|baremux\/|assets\/transports\/|apps\/tutsi\/)?@?r[0-9a-f]{24}!?\.(?:js|mjs|wasm)$/.test(req.path);
   if (noStorePaths.has(req.path) || noStorePrefix || opaqueProxyAsset) {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
@@ -1129,7 +1133,7 @@ async function loadDuckMathGames() {
   duckMathGamesCache.promise = (async () => {
     const page = await fetchText("https://duckmath.org/");
     const bundlePath = page.match(/<script[^>]+src=["']([^"']*\/assets\/index-[^"']+\.js)["']/i)?.[1];
-    if (!bundlePath) throw new Error("DuckMath game bundle was not found");
+    if (!bundlePath) throw new Error("Practice source was not found");
     const bundleUrl = new URL(bundlePath, "https://duckmath.org/").href;
     const bundle = await fetchText(bundleUrl, { accept: "text/javascript,*/*;q=0.8" });
     const games = [];
@@ -1144,7 +1148,7 @@ async function loadDuckMathGames() {
       seen.add(key);
       games.push({ title, url });
     }
-    if (games.length < 50) throw new Error("DuckMath returned an incomplete game list");
+    if (games.length < 50) throw new Error("Practice source returned an incomplete list");
     duckMathGamesCache = {
       games,
       expires: Date.now() + 60 * 60 * 1000,
@@ -1166,7 +1170,7 @@ app.get("/duckmath-games", async (_req, res) => {
     res.setHeader("Cache-Control", "public, max-age=300");
     res.json({ games });
   } catch (error) {
-    res.status(502).json({ error: `DuckMath list network error: ${error?.message || error}` });
+    res.status(502).json({ error: `Practice list network error: ${error?.message || error}` });
   }
 });
 
@@ -1824,7 +1828,7 @@ function gnMathZonePath(value) {
 
 function gnMathZoneCover(value, fallbackPath = "") {
   const path = safeGnMathPath(String(value || "").replace(/^\{COVER_URL\}\/?/i, "")) || gnMathCoverName(fallbackPath);
-  return path ? `/gn-math-asset?repo=covers&path=${encodeURIComponent(path)}` : "";
+  return path ? `/reading-asset?repo=covers&path=${encodeURIComponent(path)}` : "";
 }
 
 function gnMathCoverName(path) {
@@ -1843,7 +1847,7 @@ function setGnMathCors(req, res) {
   res.setHeader("Vary", "Origin");
 }
 
-app.options(["/gn-math-fetch", "/gn-math-asset", "/gn-math-proxy"], (req, res) => {
+app.options(["/reading-fetch", "/reading-asset", "/reading-proxy"], (req, res) => {
   setGnMathCors(req, res);
   res.sendStatus(204);
 });
@@ -1866,7 +1870,7 @@ async function fetchText(url, headers = {}) {
   return upstream.text();
 }
 
-app.get("/gn-math-games", async (_req, res) => {
+app.get("/reading-games", async (_req, res) => {
   const now = Date.now();
   if (gnMathGamesCache.games.length && now - gnMathGamesCache.timestamp < 10 * 60 * 1000) {
     res.json({ games: gnMathGamesCache.games });
@@ -1899,14 +1903,14 @@ app.get("/gn-math-games", async (_req, res) => {
     res.setHeader("Cache-Control", "public, max-age=300");
     res.json({ games });
   } catch (error) {
-    res.status(502).json({ error: `GN Math list network error: ${error?.message || error}` });
+    res.status(502).json({ error: `Reading list network error: ${error?.message || error}` });
   }
 });
 
-app.get("/gn-math-title", async (req, res) => {
+app.get("/reading-title", async (req, res) => {
   const path = safeGnMathHtmlPath(req.query.path);
   if (!path) {
-    res.status(400).json({ error: "Invalid GN Math path" });
+    res.status(400).json({ error: "Invalid Reading path" });
     return;
   }
   if (gnMathTitleCache.has(path)) {
@@ -1920,15 +1924,15 @@ app.get("/gn-math-title", async (req, res) => {
     res.setHeader("Cache-Control", "public, max-age=86400");
     res.json({ title });
   } catch (error) {
-    res.status(502).json({ error: `GN Math title network error: ${error?.message || error}` });
+    res.status(502).json({ error: `Reading title network error: ${error?.message || error}` });
   }
 });
 
-app.get("/gn-math-fetch", async (req, res) => {
+app.get("/reading-fetch", async (req, res) => {
   setGnMathCors(req, res);
   const path = safeGnMathHtmlPath(req.query.path);
   if (!path) {
-    res.status(400).type("text/plain").send("Invalid GN Math path");
+    res.status(400).type("text/plain").send("Invalid Reading path");
     return;
   }
   try {
@@ -1938,16 +1942,16 @@ app.get("/gn-math-fetch", async (req, res) => {
     res.setHeader("Cache-Control", "public, max-age=300");
     res.type("html").send(html);
   } catch (error) {
-    res.status(502).type("text/plain").send(`GN Math network error: ${error?.message || error}`);
+    res.status(502).type("text/plain").send(`Reading network error: ${error?.message || error}`);
   }
 });
 
-app.get("/gn-math-asset", async (req, res) => {
+app.get("/reading-asset", async (req, res) => {
   setGnMathCors(req, res);
   const repo = String(req.query.repo || "");
   const path = safeGnMathPath(req.query.path);
   if (!gnMathRepos.has(repo) || !path) {
-    res.status(400).type("text/plain").send("Invalid GN Math asset path");
+    res.status(400).type("text/plain").send("Invalid Reading asset path");
     return;
   }
   try {
@@ -1955,7 +1959,7 @@ app.get("/gn-math-asset", async (req, res) => {
       candidates: [new URL(`https://raw.githubusercontent.com/${gnMathOwner}/${repo}/main/${path}`)],
       cacheControl: 'public, max-age=3600'
     });
-  } catch (error) { gameProxyError(res, error, 'GN Math asset network error'); }
+  } catch (error) { gameProxyError(res, error, 'Reading asset network error'); }
 
 });
 
@@ -2061,7 +2065,7 @@ function rewriteGnMathJsonAssets(url, result) {
 
 
 
-        ? `gn-math-proxy?url=${encodeURIComponent(asset.href)}`
+        ? `reading-proxy?url=${encodeURIComponent(asset.href)}`
         : value;
     };
     return {
@@ -2074,11 +2078,11 @@ function rewriteGnMathJsonAssets(url, result) {
   }
 }
 
-app.get("/gn-math-proxy", async (req, res) => {
+app.get("/reading-proxy", async (req, res) => {
   setGnMathCors(req, res);
   const url = safeGnMathProxyUrl(req.query.url);
   if (!url) {
-    res.status(400).type("text/plain").send("Invalid GN Math proxy URL");
+    res.status(400).type("text/plain").send("Invalid Reading proxy URL");
     return;
   }
   try {
@@ -2087,12 +2091,12 @@ app.get("/gn-math-proxy", async (req, res) => {
       transform: (candidate, type) => /\.json$/i.test(candidate.pathname)
         ? body => rewriteGnMathJsonAssets(candidate, {body, contentType: type}).body : null
     });
-  } catch (error) { gameProxyError(res, error, 'GN Math proxy error'); }
+  } catch (error) { gameProxyError(res, error, 'Reading proxy error'); }
 
 });
 
-app.options(/^\/gn-math-resource\//, (req, res) => { setGnMathCors(req, res); res.sendStatus(204); });
-app.get(/^\/gn-math-resource\//, async (req, res) => {
+app.options(/^\/reading-resource\//, (req, res) => { setGnMathCors(req, res); res.sendStatus(204); });
+app.get(/^\/reading-resource\//, async (req, res) => {
   setGnMathCors(req, res);
   const target = gameResourceTarget(req.originalUrl);
   if (!target || !safeGnMathProxyUrl(target.href)) return res.status(400).type('text/plain').send('Invalid game resource URL');
@@ -2145,7 +2149,7 @@ function rewriteGmsCssUrls(buffer, baseUrl) {
   return Buffer.from(css.replace(/url\(\s*(["']?)(?![a-z][a-z0-9+.-]*:|\/\/|#|data:|blob:)([^"')]+)\1\s*\)/gi, (_match, quote, raw) => {
     try {
       const next = new URL(String(raw || "").trim(), baseUrl).href;
-      return `url(${quote}/gms-studies-proxy?url=${encodeURIComponent(next)}${quote})`;
+      return `url(${quote}/math-proxy?url=${encodeURIComponent(next)}${quote})`;
     } catch {
       return _match;
     }
@@ -2179,8 +2183,8 @@ async function handleGmsGamesProxy(req, res) {
   } catch (error) { gameProxyError(res, error, 'GMS proxy error'); }
 }
 
-app.get("/gms-studies-fetch", handleGmsGamesFetch);
-app.get("/gms-studies-proxy", handleGmsGamesProxy);
+app.get("/math-fetch", handleGmsGamesFetch);
+app.get("/math-proxy", handleGmsGamesProxy);
 app.get("/reds-misc-fetch", handleGmsGamesFetch);
 app.get("/reds-misc-proxy", handleGmsGamesProxy);
 
@@ -3567,7 +3571,7 @@ async function nyxAiGroqWorkspaceMessages(req) {
 
 app.use((req, res, next) => {
   const referer = String(req.get("referer") || "");
-  const fromGmsRunner = /\/assets\/(?:gms-studies|reds-misc)\/play\.html/i.test(referer);
+  const fromGmsRunner = /\/assets\/(?:math|reds-misc)\/play\.html/i.test(referer);
   if (fromGmsRunner && (req.path === "/" || req.path === "/index.html")) {
     res.status(409).type("html").send(`<!doctype html>
 <meta charset="utf-8">
@@ -12975,7 +12979,7 @@ const gameReportCatalog=new Map();
 let gameReportCatalogReady=false;
 function loadGameReportCatalog(){
   if(gameReportCatalogReady)return true;
-  try {for(const [provider,folder] of [['local','ugs'],['gn','gn-math'],['gms','gms-studies']]){
+  try {for(const [provider,folder] of [['local','ugs'],['gn','reading'],['gms','math']]){
     const raw=JSON.parse(readFileSync(join(__dirname,'assets',folder,provider==='gms'?'studies.json':'games.json'),'utf8'));
     for(const game of (Array.isArray(raw)?raw:raw.studies||raw.games||[]))if(game.path)gameReportCatalog.set(`${provider}:${game.path}`,String(game.title||game.name||game.path).slice(0,160));
   }gameReportCatalogReady=true;return true;}catch{return false;}

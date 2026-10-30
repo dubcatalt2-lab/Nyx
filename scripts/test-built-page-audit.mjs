@@ -18,7 +18,7 @@ try{
  assert.equal((await page.locator('#authTitle').innerText()).normalize('NFKC'),'Create an account');
  assert.equal(drop.length,0,'Active Agents must not load retired Drop assets');
  assert.deepEqual(errors,[]);
- await page.goto(origin+'/assets/gn-math/');await page.waitForTimeout(1500);
+ await page.goto(origin+'/assets/reading/');await page.waitForTimeout(1500);
  for(const width of [1440,390]){await page.setViewportSize({width,height:900});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Game catalog overflow at '+width)}
  const thumbs=await page.request.get(origin+'/assets/ugs/thumbs.json');assert.equal(thumbs.status(),200);assert(Array.isArray(await thumbs.json()));
  const missing=[];page.on('response',r=>{if(r.status()===404&&r.url().includes('background'))missing.push(r.url())});

@@ -23,7 +23,7 @@ for(const path of ['bubbls/fnf-mods@main/alternated/PsychEngine.js','waycrosspub
  assert.equal(context.result,'assets.test');
 }
 globalThis.location={origin:'https://fixture.test'};
-assert(prepareGameDocument('<base href = "https://cdn.jsdelivr.net/gh/test/repo@main/game/"><script src="engine.js"></script>','768.html').includes('/gn-math-resource/https/cdn.jsdelivr.net/gh/test/repo@main/game/engine.js'));
+assert(prepareGameDocument('<base href = "https://cdn.jsdelivr.net/gh/test/repo@main/game/"><script src="engine.js"></script>','768.html').includes('/reading-resource/https/cdn.jsdelivr.net/gh/test/repo@main/game/engine.js'));
 const html=prepareGameDocument('<html><head></head><body><script>async function load(){const response={arrayBuffer:async()=>new ArrayBuffer(8)};var EJS_color;await response.rrayBuffer();EJS_color = "#0064ff";a;return true;}</script></body></html>','823-fix2.html');
 delete globalThis.location;
 const repairedScript=[...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].find(m=>m[1].includes('async function load'))[1];

@@ -34,7 +34,7 @@ const games = zones.map(zone => {
     author: String(zone.author || ""),
     authorLink: String(zone.authorLink || ""),
     tags: Array.isArray(zone.special) ? zone.special.map(tag => String(tag)) : [],
-    cover: coverPath ? `/gn-math-asset?repo=covers&path=${encodeURIComponent(coverPath)}` : "",
+    cover: coverPath ? `/reading-asset?repo=covers&path=${encodeURIComponent(coverPath)}` : "",
     rawUrl: `https://raw.githubusercontent.com/freebuisness/html/main/${path}`,
     coverFallback: coverPath ? `https://raw.githubusercontent.com/freebuisness/covers/main/${coverPath}` : ""
   };

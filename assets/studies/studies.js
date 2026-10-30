@@ -101,11 +101,11 @@ const state = {
 };
 
 const GAME_LIBRARIES = Object.freeze([
-  {id:"lumin",label:"𝖫𝗎𝗆𝗂𝗇𝖲𝖣𝖪",shortLabel:"𝖫𝗎𝗆𝗂𝗇",description:"Additional source"},
+  {id:"lumin",label:"Reference",shortLabel:"Reference",description:"Reference shelf"},
   { id: "all", label: "All games", shortLabel: "All", description: "Every available game" },
 
-  { id: "gn", label: "GN Math", shortLabel: "GN", description: "The GN Math source" },
-  { id: "gms", label: "GMS", shortLabel: "GMS", description: "The GMS source" },
+  { id: "gn", label: "Reading", shortLabel: "Reading", description: "Reading shelf" },
+  { id: "gms", label: "Math", shortLabel: "Math", description: "Math shelf" },
   {
     id: "local",
     label: dropGames ? "Archive" : "N7X Archive",
@@ -114,8 +114,8 @@ const GAME_LIBRARIES = Object.freeze([
   },
   {
     id: "duckmath",
-    label: "DuckMath",
-    shortLabel: "DuckMath",
+    label: "Practice",
+    shortLabel: "Practice",
     description: "Extra fallback sources",
   },
   {
@@ -678,7 +678,7 @@ function safeCover(url) {
       "raw.githack.com",
     ]);
     return proxiedHosts.has(parsed.hostname)
-      ? `/gms-studies-proxy?url=${encodeURIComponent(parsed.href)}`
+      ? `/math-proxy?url=${encodeURIComponent(parsed.href)}`
       : parsed.href;
   } catch {
     return "";
@@ -696,7 +696,7 @@ function directCover(url) {
         if (owner.toLowerCase() === "gn-math" && repository.toLowerCase() === "covers") {
           return `https://raw.githack.com/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/${encodeURIComponent(branch)}/${path.map(encodeURIComponent).join("/")}`;
         }
-        return `/gms-studies-proxy?url=${encodeURIComponent(parsed.href)}`;
+        return `/math-proxy?url=${encodeURIComponent(parsed.href)}`;
       }
     }
     return parsed.protocol === "https:" ? parsed.href : "";
@@ -1276,11 +1276,11 @@ function gameSources(game = state.activeGame) {
 function gameProviderLabel(source, index) {
   const labels = {
     local: dropGames ? "Archive" : "N7X Archive",
-    gn: "GN Math",
-    gms: "GMS",
+    gn: "Reading",
+    gms: "Math",
     zengs: "Zengs",
-    lumin: "𝖫𝗎𝗆𝗂𝗇𝖲𝖣𝖪",
-    duckmath: "DuckMath",
+    lumin: "Reference",
+    duckmath: "Practice",
   };
   return labels[source?.source] || `Provider ${index + 1}`;
 }
@@ -1588,7 +1588,7 @@ elements.frame.addEventListener("load", () => {
     sameOrigin = parsed.origin === location.origin;
     managedRunner =
       sameOrigin &&
-      /^\/assets\/(?:ugs|gn-math|gms-games|reds-misc)\/play\.html$/i.test(parsed.pathname);
+      /^\/assets\/(?:ugs|reading|math|gms-games|reds-misc)\/play\.html$/i.test(parsed.pathname);
     if (sameOrigin && parsed.pathname === "/assets/studies/remote-play.html") managedRunner = true;
   } catch {}
 
@@ -1662,7 +1662,7 @@ window.addEventListener("message", (event) => {
   if (event.source !== elements.frame.contentWindow || !state.activeGame) return;
   if(event.data?.type==='nyx:gladi-save'){
     const sourceUrl=new URL(elements.frame.src,location.href);
-    if(event.origin!==location.origin||sourceUrl.pathname!=='/assets/gn-math/play.html'||sourceUrl.searchParams.get('game')!=='4-pf.html')return;
+    if(event.origin!==location.origin||sourceUrl.pathname!=='/assets/reading/play.html'||sourceUrl.searchParams.get('game')!=='4-pf.html')return;
     const {requestId,action}=event.data;
     if(typeof requestId!=='string'||requestId.length>120||!['load','save'].includes(action))return;
     const frame=event.source,attempt=state.sourceAttempt,localKey='nyx.unitySave.gladihoppers',gameKey='gladihoppers-unity-v1';

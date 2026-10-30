@@ -25,7 +25,7 @@ await updatePage.addInitScript(()=>{
 });
 await updatePage.route('**/*',async route=>{
  const url=route.request().url();if(route.request().resourceType()==='document')return route.fulfill({contentType:'text/html',body:await connectionCheckPage(origin,backend)});
- if(url.includes('/gms-studies-fetch?'))return route.fulfill({status:await updatePage.evaluate(()=>window.workerUpdated)?400:403,contentType:'text/plain',body:'Invalid GMS path'});
+ if(url.includes('/math-fetch?'))return route.fulfill({status:await updatePage.evaluate(()=>window.workerUpdated)?400:403,contentType:'text/plain',body:'Invalid GMS path'});
  if(url.startsWith(backend))return route.fulfill({headers:{'access-control-allow-origin':origin,'access-control-allow-credentials':'true'},contentType:'application/json',body:'{"supported":true,"cookies":true}'});
  return route.fulfill({contentType:'application/json',body:'{}'});
 });

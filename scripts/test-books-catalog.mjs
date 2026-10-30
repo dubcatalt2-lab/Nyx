@@ -10,8 +10,8 @@ const manifest = {
   version: 1,
   catalogs: [
     { id: 'local', format: 'ugs', url: '/test-games/ugs.json', coversUrl: '/test-games/covers.json', player: '/assets/ugs/play.html?game={path}', priority: 50 },
-    { id: 'gn', format: 'gn', url: '/test-games/gn.json', player: '/assets/gn-math/play.html?game={path}', priority: 40 },
-    { id: 'gms', format: 'gms', url: '/test-games/gms.json', player: '/assets/gms-studies/play.html?game={path}', priority: 30 },
+    { id: 'gn', format: 'gn', url: '/test-games/gn.json', player: '/assets/reading/play.html?game={path}', priority: 40 },
+    { id: 'gms', format: 'gms', url: '/test-games/gms.json', player: '/assets/math/play.html?game={path}', priority: 30 },
     { id: 'zengs', format: 'zengs', url: '/zengs-games', priority: 20 }
   ]
 };
@@ -39,7 +39,7 @@ try {
   await page.route('**/test-games/gn.json', route => route.fulfill(json([{ title: 'Shared Game', path: 'shared.html', cover: '/test-games/cover.png' }, { title: 'GN Only', path: 'gn.html', cover: '/test-games/cover.png' }])));
   await page.route('**/test-games/gms.json', route => route.fulfill(json([{ title: 'GMS Only', path: 'gms.html', cover: '/test-games/cover.png' }])));
   await page.route('**/zengs-games', route => route.fulfill(json(zengsFixture)));
-  await page.route(url => url.pathname === '/assets/gn-math/play.html' && url.searchParams.get('game') === 'shared.html', route => route.fulfill({
+  await page.route(url => url.pathname === '/assets/reading/play.html' && url.searchParams.get('game') === 'shared.html', route => route.fulfill({
     contentType: 'text/html',
     body: `<!doctype html><script>parent.postMessage({type:'nyx:game-launched'},'*')<\/script>`
   }));
@@ -51,8 +51,8 @@ try {
   const libraries = (await page.locator('[data-library]').allTextContents()).map(text=>text.normalize('NFKC'));
   assert(!libraries.some(label => label.includes('Zengs')), 'Removed provider appeared in library labels');
   assert(await page.getByRole('heading', {name:'Books',exact:true}).first().textContent() === 'Books', 'Main title must be plain Books');
-  assert(libraries.some(label => label.includes('GN Math')), `GN Math library is missing (${libraries.join(', ')})`);
-  assert(libraries.some(label => label.includes('GMS')), `GMS library is missing (${libraries.join(', ')})`);
+  assert(libraries.some(label => label.includes('Reading')), `Reading shelf is missing (${libraries.join(', ')})`);
+  assert(libraries.some(label => label.includes('Math')), `Math shelf is missing (${libraries.join(', ')})`);
   assert(libraries.some(label => label.includes('N7X Archive')), `N7X Archive library is missing (${libraries.join(', ')})`);
   assert(libraries.some(label => label.includes('Miscellaneous')), `Miscellaneous coverless library is missing (${libraries.join(', ')})`);
 

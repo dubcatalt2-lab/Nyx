@@ -16,20 +16,20 @@ const {app}=await import('../server.js');
 const server=app.listen(0,'127.0.0.1');await once(server,'listening');
 const base=`http://127.0.0.1:${server.address().port}`;
 try{
-  const js=await originalFetch(base+'/gn-math-resource/https/cdn.jsdelivr.net/gh/bubbls/youtube-playables@main/aquapark-io/main.js');
+  const js=await originalFetch(base+'/reading-resource/https/cdn.jsdelivr.net/gh/bubbls/youtube-playables@main/aquapark-io/main.js');
   assert.equal(js.status,200);assert.match(js.headers.get('content-type'),/javascript/);assert.match(await js.text(),/playBtnClicked/);
-  const binary=await originalFetch(base+'/gn-math-resource/https/cdn.jsdelivr.net/gh/fixture/test@main/file.wasm');
+  const binary=await originalFetch(base+'/reading-resource/https/cdn.jsdelivr.net/gh/fixture/test@main/file.wasm');
   assert.match(binary.headers.get('content-type'),/application\/wasm/);assert.equal(binary.headers.get('cache-control'),'no-store');
   const body=new Uint8Array(await binary.arrayBuffer());assert.equal(body.length,1024*1024);assert.ok(body.every(x=>x===7));
-  const json=await(await originalFetch(base+'/gn-math-proxy?url='+encodeURIComponent('https://cdn.jsdelivr.net/gh/fixture/test@main/Build/game.json'))).json();
-  assert.match(json.dataUrl,/^gn-math-proxy\?url=/);
-  const css=await(await originalFetch(base+'/gms-studies-proxy?url='+encodeURIComponent('https://raw.githubusercontent.com/isaacduh123/reds-exploit-corner/main/misc/style.css'))).text();
-  assert.match(css,/gms-studies-proxy\?url=/);
+  const json=await(await originalFetch(base+'/reading-proxy?url='+encodeURIComponent('https://cdn.jsdelivr.net/gh/fixture/test@main/Build/game.json'))).json();
+  assert.match(json.dataUrl,/^reading-proxy\?url=/);
+  const css=await(await originalFetch(base+'/math-proxy?url='+encodeURIComponent('https://raw.githubusercontent.com/isaacduh123/reds-exploit-corner/main/misc/style.css'))).text();
+  assert.match(css,/math-proxy\?url=/);
   for(const [extension,mime] of [['js?version=1',/javascript/],['mjs',/javascript/],['css',/text\/css/],['wasm',/application\/wasm/],['json',/application\/json/]]){
-    const response=await originalFetch(base+'/gms-studies-proxy?url='+encodeURIComponent('https://raw.githubusercontent.com/isaacduh123/reds-exploit-corner/main/misc/game/asset.'+extension));
+    const response=await originalFetch(base+'/math-proxy?url='+encodeURIComponent('https://raw.githubusercontent.com/isaacduh123/reds-exploit-corner/main/misc/game/asset.'+extension));
     assert.equal(response.status,200);assert.match(response.headers.get('content-type'),mime);await response.body.cancel();
   }
-  const image=await originalFetch(base+'/gn-math-asset?repo=covers&path=1.png');assert.equal(image.headers.get('cache-control'),'public, max-age=3600');assert.equal(await image.text(),'fixture');
-  assert.equal((await originalFetch(base+'/gn-math-proxy?url=http://localhost/private')).status,400);
+  const image=await originalFetch(base+'/reading-asset?repo=covers&path=1.png');assert.equal(image.headers.get('cache-control'),'public, max-age=3600');assert.equal(await image.text(),'fixture');
+  assert.equal((await originalFetch(base+'/reading-proxy?url=http://localhost/private')).status,400);
   console.log('PASS real Express routes: streamed binary, loader repair, MIME, JSON/CSS rewriting, cover cache and denied upstream host');
 }finally{globalThis.fetch=originalFetch;server.closeAllConnections();await new Promise(r=>server.close(r));}

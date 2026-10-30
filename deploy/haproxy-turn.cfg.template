@@ -3,7 +3,7 @@ global
     user haproxy
     group haproxy
     # Long-lived proxy and desktop sockets share this listener with web traffic.
-    maxconn 4096
+    maxconn 8192
 
 defaults
     mode tcp

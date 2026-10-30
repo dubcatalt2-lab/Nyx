@@ -37,7 +37,7 @@ self.addEventListener('fetch',event=>{
   if(config.features?.blooket===false && /^\/(?:apps\/blooket|blooket)(?:\/|$)/.test(url.pathname))return new Response('Not found',{status:404});
   const entry=config.entryAliases?.[url.pathname];
   if(entry){url.pathname=entry;if(event.request.mode==='navigate')return Response.redirect(url.href,308);}
-  const remote=/^\/(?:api(?:\/|$)|socket\.io(?:\/|$)|healthz$|resources\/live(?:\/|$)|wisp(?:\/|$)|download\/|(?:reading|math|gn-math|gms-games|gms-studies|reds-misc)-|cloud\/v1\/)/.test(url.pathname);
+  const remote=/^\/(?:api(?:\/|$)|socket\.io(?:\/|$)|healthz$|resources\/live(?:\/|$)|wisp(?:\/|$)|download\/|game-cover$|duckmath-games$|(?:reading|math|gn-math|gms-games|gms-studies|reds-misc)-|cloud\/v1\/)/.test(url.pathname);
   if(remote){
    let session=await ensureBackendSession();
    const headers=new Headers(event.request.headers);headers.delete('host');headers.set('X-Nyx-Host-Session',session);

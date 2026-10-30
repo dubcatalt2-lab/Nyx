@@ -26,7 +26,7 @@
  // Render the workspace immediately; only requests needing the worker wait for it.
  window[Symbol.for('nyx.direct-s3.ready')]=ready;
  ready.catch(error=>{if(parent!==window&&(!workerContextReady||error.code==='HOST_CONTEXT_REQUIRED'))parent.postMessage({type:'nyx:host-context-required'},'*');});
- window.fetch=function(input,options){const url=new URL(input instanceof Request?input.url:input,location.href);return url.origin===location.origin?ready.then(()=>nativeFetch(input,options)):nativeFetch(input,options);};
+ window.fetch=function(input,options){const url=new URL(input instanceof Request?input.url:input,location.href);const remote=url.origin===location.origin&&/^\/(?:api(?:\/|$)|socket\.io(?:\/|$)|healthz$|resources\/live(?:\/|$)|wisp(?:\/|$)|download\/|game-cover$|duckmath-games$|(?:reading|math|gn-math|gms-games|gms-studies|reds-misc)-|cloud\/v1\/)/.test(url.pathname);return remote?ready.then(()=>nativeFetch(input,options)):nativeFetch(input,options);};
  const target=new URL(backend),NativeSocket=window.WebSocket;
  window.WebSocket=class extends NativeSocket{
   get protocol(){const value=super.protocol;return value.startsWith('nyx-host.')?'':value;}

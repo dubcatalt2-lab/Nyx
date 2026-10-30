@@ -10,7 +10,8 @@ if(generated.error||generated.status!==0){await rm(certificateDir,{recursive:tru
 const noCookies=process.env.NYX_TEST_NO_COOKIES==='1';
 const tls={key:await readFile(join(certificateDir,'key.pem')),cert:await readFile(join(certificateDir,'cert.pem'))};
 for(const bad of ['https://s3.amazonaws.com','https://nyx-fixture.s3.amazonaws.com:8443','https://nyx-fixture.s3.amazonaws.com/','https://attacker.test'])assert.throws(()=>directS3Origin(bad));
-const access=createStaticHostAccess([origin]),backendApp=express();if(noCookies)backendApp.use((_req,res,next)=>{const set=res.setHeader;res.setHeader=function(name,value){if(String(name).toLowerCase()==='set-cookie')return this;return set.call(this,name,value)};next()});backendApp.use(access.middleware);backendApp.use(express.json());
+let failSessionSetup=false;
+const access=createStaticHostAccess([origin]),backendApp=express();backendApp.use((req,res,next)=>failSessionSetup&&req.path==='/api/static-host/check'?res.status(503).json({error:'Session fixture unavailable'}):next());if(noCookies)backendApp.use((_req,res,next)=>{const set=res.setHeader;res.setHeader=function(name,value){if(String(name).toLowerCase()==='set-cookie')return this;return set.call(this,name,value)};next()});backendApp.use(access.middleware);backendApp.use(express.json());
 const serverSource=await readFile('server.js','utf8');
 const corsStart=serverSource.indexOf('function setPresenceCors('),corsEnd=serverSource.indexOf('\nfunction nyxGuestIdentity(',corsStart);
 const presenceCors=Function('return ('+serverSource.slice(corsStart,corsEnd)+')')();
@@ -35,7 +36,7 @@ if(source==='dist'){const aliases=JSON.parse(await readFile('dist/frontend-asset
 const exportConfig=exported?JSON.parse(await readFile(source+'/direct-s3-config.json','utf8')):null;if(exportConfig){runtime=exportConfig.runtime;entry=exportConfig.aliases['/js/direct-s3-entry.js']||entry;worker='/direct-s3-worker.js';}
 let httpModule='/apps/tutsi/http-relay.mjs';
 if(source==='dist'||exported){const modules=JSON.parse(await readFile(source+'/public-modules.json','utf8')).aliases;httpModule=modules[httpModule]||httpModule;}
-const frontendApp=express();frontendApp.use((_req,res,next)=>{res.set('Access-Control-Allow-Origin','*');next()});frontendApp.get('/assets/backgrounds/fixture.html',(_req,res)=>res.type('html').send('<title>Static background</title>'));frontendApp.get('/fixture-relay.mjs',async(_req,res)=>res.type('text/javascript').send(await readFile(source+httpModule,'utf8')));frontendApp.get('/direct-s3-config.json',(_req,res)=>res.json({origin,backend:backendOrigin,runtime,aliases:exportConfig?.aliases||{},features:exportConfig?.features||{blooket:false}}));
+const frontendApp=express();frontendApp.use((_req,res,next)=>{res.set('Access-Control-Allow-Origin','*');next()});frontendApp.get('/static-library.json',(_req,res)=>res.json({html:'<main>Books fixture loaded</main>'}));frontendApp.get('/assets/backgrounds/fixture.html',(_req,res)=>res.type('html').send('<title>Static background</title>'));frontendApp.get('/fixture-relay.mjs',async(_req,res)=>res.type('text/javascript').send(await readFile(source+httpModule,'utf8')));frontendApp.get('/direct-s3-config.json',(_req,res)=>res.json({origin,backend:backendOrigin,runtime,aliases:exportConfig?.aliases||{},features:exportConfig?.features||{blooket:false}}));
 frontendApp.get('/direct-s3-worker.js',async(_req,res)=>res.type('text/javascript').send(await readFile(source+worker,'utf8')));
 if(!exported)frontendApp.get('/index.html',(_req,res)=>res.type('html').send(`<html><head></head><body><p role="status">Connecting</p><script src="${entry}"></script></body></html>`));
 if(!exported)frontendApp.get('/studies.html',(_req,res)=>res.type('html').send(`<html><head><meta name="nyx-static-backend" content="${backendOrigin}"><meta name="nyx-blooket-enabled" content="0"><script src="${runtime}"></script></head><body>Fixture workspace</body></html>`));frontendApp.use(express.static(source));
@@ -105,5 +106,13 @@ try{
  }),'http-relay');
  const preflight=await page.request.fetch(backendOrigin+'/api/private',{method:'OPTIONS',headers:{Origin:origin,'Access-Control-Request-Headers':'authorization,content-type'}});assert.equal(preflight.status(),204);assert.equal(preflight.headers()['access-control-allow-origin'],origin);
  const denied=await page.request.fetch(backendOrigin+'/api/private',{headers:{Origin:'https://other.s3.amazonaws.com'}});assert.equal(denied.headers()['access-control-allow-origin'],undefined);
+ failSessionSetup=true;
+ const unavailableContext=await browser.newContext({ignoreHTTPSErrors:true});const unavailable=await unavailableContext.newPage();
+ await unavailable.goto(origin+'/studies.html');
+ await unavailable.evaluate(async()=>{await window[Symbol.for('nyx.direct-s3.ready')].catch(()=>{});const result=await fetch('/static-library.json');document.body.innerHTML=(await result.json()).html;});
+ await unavailable.getByText('Books fixture loaded',{exact:true}).waitFor();
+ assert.equal(await unavailable.evaluate(async()=>{try{await fetch('/api/private');return false}catch{return true}}),true);
+ await unavailableContext.close();failSessionSetup=false;
+ console.log('PASS S3 browser static library renders with backend session503; protected API does not bypass access');
  console.log('PASS direct-S3 controlled HTTPS: worker startup, unauthenticated rejection, bearer preservation, persistent connection identity, sandbox game resources, streaming, ranges, WebSocket routing, real HTTP relay batches and exact-origin CORS (cookies '+(noCookies?'blocked':'allowed')+'). No live accounts/providers used.');
 }finally{await browser.close();stopHttp();for(const socket of upstream.clients)socket.terminate();upstream.close();relay.close();sockets.close();backend.closeAllConnections();frontend.closeAllConnections();await Promise.all([new Promise(r=>backend.close(r)),new Promise(r=>frontend.close(r))]);await rm(certificateDir,{recursive:true,force:true});}
